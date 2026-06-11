@@ -1,16 +1,12 @@
-import type { AnyRouter } from "@tanstack/react-router"
-import {
-  createStartHandler,
-  defaultStreamHandler,
-  type HandlerCallback,
-} from "@tanstack/react-start/server"
+import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions/workflow-runtime"
+import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyantjs/worker-runtime"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import type {
   createInlineDispatcher,
   StepDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
-import { dispatchHonoApiRequest, isHonoApiRequest } from "./hono-api-dispatch"
+import { operatorApiDispatch } from "./hono-api-dispatch"
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,
   CHANNEL_PUSH_BOOKING_LINK_CRON,
@@ -20,55 +16,12 @@ import {
   PROMOTION_BOUNDARY_SCHEDULER_CRON,
 } from "./scheduled-crons"
 
-type ManifestRoute = {
-  assets?: Array<unknown>
-  preloads?: Array<unknown>
-}
+const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))
 
-type SsrManifest = {
-  inlineCss?: unknown
-  routes: Record<string, ManifestRoute | undefined>
-}
-
-type StartHandlerCallback = HandlerCallback<AnyRouter>
-type RouteMatch = ReturnType<AnyRouter["stores"]["matches"]["get"]>[number]
-
-type RouterWithSsrManifest = AnyRouter & {
-  ssr?: {
-    readonly manifest?: SsrManifest
-  }
-}
-
-const activeRouteStreamHandler: StartHandlerCallback = (ctx) => {
-  restrictSsrManifestToActiveRoutes(ctx.router as RouterWithSsrManifest)
-  return defaultStreamHandler(ctx)
-}
-
-const startHandler = createStartHandler(activeRouteStreamHandler)
-
-function restrictSsrManifestToActiveRoutes(router: RouterWithSsrManifest): void {
-  const ssr = router.ssr
-  if (!ssr?.manifest) return
-
-  router.ssr = {
-    get manifest() {
-      const manifest = ssr.manifest
-      if (!manifest) return manifest
-
-      const activeRouteIds = new Set(
-        router.stores.matches.get().map((match: RouteMatch) => match.routeId),
-      )
-      const routes = Object.fromEntries(
-        Object.entries(manifest.routes).filter(([routeId]) => activeRouteIds.has(routeId)),
-      )
-
-      return {
-        ...manifest,
-        routes,
-      }
-    },
-  }
-}
+const workerFetch = createWorkerFetch<CloudflareBindings, ExecutionContext>({
+  api: operatorApiDispatch,
+  ssr: (request, env) => startHandler(request, { context: { env } } as never),
+})
 
 let workflowDefinitionsPromise: Promise<unknown> | undefined
 function loadWorkflowDefinitions(): Promise<unknown> {
@@ -89,17 +42,7 @@ function loadWorkflowRuntime(): Promise<
 type InlineDispatcherFactory = typeof createInlineDispatcher
 
 export default {
-  async fetch(request: Request, env: CloudflareBindings, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url)
-
-    // Route /api/* to Hono (strip prefix so Hono sees /v1/*, /auth/*, /health)
-    if (isHonoApiRequest(url.pathname)) {
-      return dispatchHonoApiRequest(request, env, ctx)
-    }
-
-    // Everything else → TanStack Start SSR
-    return startHandler(request, { context: { env } } as never)
-  },
+  fetch: workerFetch,
 
   // Cloudflare Workers cron entrypoint. Triggers are declared in
   // wrangler.jsonc; the channel-push reconciler picks the right scanner
