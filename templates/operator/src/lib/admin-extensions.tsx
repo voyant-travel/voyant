@@ -33,6 +33,7 @@ type AdminExtensionNavMessages = Pick<
   AdminMessages["nav"],
   | "actionLedger"
   | "allTrips"
+  | "availability"
   | "bookings"
   | "catalogAccommodations"
   | "catalogCruises"
@@ -56,6 +57,21 @@ type AdminExtensionNavMessages = Pick<
   | "suppliers"
   | "trips"
 >
+
+// Availability is package-delivered (packaged-admin RFC Phase 3): the
+// extension contributes NO navigation — the Availability item is part of the
+// BASE operator navigation (createOperatorAdminNavigation in @voyantjs/admin),
+// so an entry here would duplicate it. It's registered for the routes seam:
+// the contributions carry the package-owned route metadata (no search
+// contracts — the pages keep their filters local), and the detail pages are
+// the packaged hosts from @voyantjs/availability-ui/admin — the route files
+// under src/routes/_workspace/availability/* only bind route params onto
+// them. The index page stays an app-side wrapper: its bulk update/delete
+// handlers call the availability batch endpoints, which have no
+// availability-react client equivalent yet.
+function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.availability({ label: messages.availability })
+}
 
 // Bookings is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the Bookings item is part of the BASE operator
@@ -245,6 +261,7 @@ function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
+  availability: "Availability",
   bookings: "Bookings",
   catalogAccommodations: "Accommodations",
   catalogCruises: "Cruises",
@@ -273,6 +290,7 @@ export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
+    createAvailabilityExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createCrmExtension(messages),

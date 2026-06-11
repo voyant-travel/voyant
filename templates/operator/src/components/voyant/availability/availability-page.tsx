@@ -6,17 +6,19 @@ import {
   AvailabilityPage as AvailabilityPageBase,
   type AvailabilityPageBulkDeleteHandler,
   type AvailabilityPageBulkUpdateHandler,
-  type AvailabilityPageSlotSubmitHandler,
+  formatLocalizedSelectionLabel,
 } from "@voyantjs/availability-ui"
 import { useState } from "react"
 import { toast } from "sonner"
 import type { BatchMutationResponse } from "@/components/voyant/availability/availability-shared"
-import { formatLocalizedSelectionLabel } from "@/components/voyant/availability/availability-shared"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 
-const SLOTS_ENDPOINT = "/v1/availability/slots"
-
+// App-side wrapper around the packaged AvailabilityPage (packaged-admin RFC
+// Phase 3). It STAYS in the operator because the bulk handlers call the
+// `/v1/availability/*/batch-update|batch-delete` endpoints, which have no
+// client functions or hooks in `@voyantjs/availability-react` yet. Slot
+// create/edit submits through the package default (`useAvailabilitySlotMutation`).
 export function AvailabilityPage() {
   const messages = useAdminMessages()
   const navigate = useNavigate()
@@ -128,21 +130,12 @@ export function AvailabilityPage() {
     )
   }
 
-  const handleSlotSubmit: AvailabilityPageSlotSubmitHandler = async (payload, context) => {
-    if (context.isEditing) {
-      await api.patch(`${SLOTS_ENDPOINT}/${context.id}`, payload)
-      return
-    }
-    await api.post(SLOTS_ENDPOINT, payload)
-  }
-
   return (
     <AvailabilityPageBase
       bulkActionTarget={bulkActionTarget}
       onBulkUpdate={handleBulkUpdate}
       onBulkDelete={handleBulkDelete}
       onSlotOpen={(slotId) => void navigate({ to: "/availability/$id", params: { id: slotId } })}
-      onSlotSubmit={handleSlotSubmit}
     />
   )
 }

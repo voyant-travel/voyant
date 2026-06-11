@@ -1440,9 +1440,27 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/allocation-ui':
+        specifier: workspace:^
+        version: link:../allocation-ui
       '@voyantjs/availability-react':
         specifier: workspace:^
         version: link:../availability-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:^
+        version: link:../bookings-ui
+      '@voyantjs/extras-ui':
+        specifier: workspace:^
+        version: link:../extras-ui
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:^
+        version: link:../products-ui
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui

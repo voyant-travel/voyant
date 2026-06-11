@@ -1,5 +1,6 @@
 "use client"
 
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import {
   type SeatLayoutSpec,
@@ -43,7 +44,6 @@ import {
   Trash2,
 } from "lucide-react"
 import { useMemo, useState } from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
 
 /**
  * Per-option Resource templates editor. Templates drive the Allocation
@@ -85,7 +85,7 @@ export function OptionResourceTemplatesPanel({
   productId,
   optionId,
 }: OptionResourceTemplatesPanelProps) {
-  const adminMessages = useAdminMessages()
+  const adminMessages = useOperatorAdminMessages()
   const t = adminMessages.availability.details.resourceTemplates
   const { data, isPending, isError } = useProductResourceTemplates({ productId })
   const { upsert, remove } = useResourceTemplateMutation(productId)
