@@ -63,7 +63,7 @@ export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
           c.req.header("access-control-request-method") || "GET,POST,PUT,PATCH,DELETE,OPTIONS",
         )
       }
-      return new Response(null, { status: 204 })
+      return c.body(null, 204)
     }
 
     await next()

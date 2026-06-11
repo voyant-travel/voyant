@@ -1,11 +1,21 @@
-import type { Hono } from "hono"
+import { cors } from "@voyantjs/hono/middleware/cors"
+import { Hono } from "hono"
 
 const API_PREFIX = "/api"
+const AUTH_API_PREFIX = `${API_PREFIX}/auth`
 
-type HonoFetchApp = Pick<Hono, "fetch">
+type HonoFetchApp = {
+  fetch: (
+    request: Request,
+    env?: CloudflareBindings,
+    ctx?: ExecutionContext,
+  ) => Response | Promise<Response>
+}
 type HonoAppLoader = () => Promise<HonoFetchApp>
 
 let apiAppPromise: Promise<HonoFetchApp> | undefined
+let authAppPromise: Promise<HonoFetchApp> | undefined
+let authHandlerPromise: Promise<HonoFetchApp> | undefined
 
 export function loadOperatorApiApp(): Promise<HonoFetchApp> {
   if (!apiAppPromise) {
@@ -16,8 +26,28 @@ export function loadOperatorApiApp(): Promise<HonoFetchApp> {
   return apiAppPromise
 }
 
+export function loadOperatorAuthApp(): Promise<HonoFetchApp> {
+  if (!authAppPromise) {
+    const authApp = new Hono<{ Bindings: CloudflareBindings }>()
+    authApp.use("*", cors())
+    authApp.all("*", async (c) => {
+      authHandlerPromise ??= import("./api/auth/handler").then((mod) => ({
+        fetch: (request, env, ctx) => mod.default.fetch(request, env as CloudflareBindings, ctx),
+      }))
+      const authHandler = await authHandlerPromise
+      return authHandler.fetch(c.req.raw, c.env, c.executionCtx)
+    })
+    authAppPromise = Promise.resolve(authApp as HonoFetchApp)
+  }
+  return authAppPromise
+}
+
 export function isHonoApiRequest(pathname: string): boolean {
   return pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`)
+}
+
+export function isHonoAuthApiRequest(pathname: string): boolean {
+  return pathname === AUTH_API_PREFIX || pathname.startsWith(`${AUTH_API_PREFIX}/`)
 }
 
 export function createHonoApiRequest(request: Request): Request {
@@ -47,7 +77,21 @@ export async function dispatchHonoApiRequest(
   env: CloudflareBindings,
   ctx: ExecutionContext,
   loadHonoApp: HonoAppLoader = loadOperatorApiApp,
+  loadAuthApp: HonoAppLoader = loadOperatorAuthApp,
 ): Promise<Response> {
+  if (isHonoAuthApiRequest(new URL(request.url).pathname)) {
+    const authApp = await loadAuthApp()
+    const response = await authApp.fetch(createHonoApiRequest(request), env, ctx)
+    if (request.method !== "OPTIONS") {
+      ctx.waitUntil(
+        loadHonoApp().catch((error) => {
+          console.error("[api] background API warm failed:", error)
+        }),
+      )
+    }
+    return response
+  }
+
   const apiApp = await loadHonoApp()
   return apiApp.fetch(createHonoApiRequest(request), env, ctx)
 }
