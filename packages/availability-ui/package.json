@@ -13,6 +13,7 @@
     ".": "./src/index.ts",
     "./i18n": "./src/i18n/index.ts",
     "./styles.css": "./src/styles.css",
+    "./admin": "./src/admin/index.tsx",
     "./components/*": "./src/components/*.tsx",
     "./utils": "./src/utils.ts"
   },
@@ -27,7 +28,13 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-table": "^8.21.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/availability-react": "workspace:^",
+    "@voyantjs/bookings-ui": "workspace:^",
+    "@voyantjs/extras-ui": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/products-ui": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -40,8 +47,14 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/availability-react": "workspace:^",
+    "@voyantjs/bookings-ui": "workspace:^",
+    "@voyantjs/extras-ui": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/products-ui": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
@@ -74,6 +87,11 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

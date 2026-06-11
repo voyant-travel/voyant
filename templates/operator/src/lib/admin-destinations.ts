@@ -1,7 +1,9 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
-// Type-only: binds the `AdminDestinations` augmentations (the bookings +
-// catalog + crm + finance + legal + suppliers destination keys) into this program without
-// pulling the admin bundles into the workspace-chrome chunk.
+// Type-only: binds the `AdminDestinations` augmentations (the availability +
+// bookings + catalog + crm + finance + legal + suppliers destination keys)
+// into this program without pulling the admin bundles into the
+// workspace-chrome chunk.
+import type {} from "@voyantjs/availability-ui/admin"
 import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
 import type {} from "@voyantjs/crm-ui/admin"
@@ -24,6 +26,9 @@ import type {} from "@voyantjs/suppliers-ui/admin"
  */
 export const operatorAdminDestinations = {
   "availabilitySlot.detail": ({ slotId }) => `/availability/${encodeURIComponent(slotId)}`,
+  "availabilitySlot.list": () => "/availability",
+  "availabilityStartTime.detail": ({ startTimeId }) =>
+    `/availability/start-times/${encodeURIComponent(startTimeId)}`,
   "booking.create": () => "/bookings/new",
   "booking.detail": ({ bookingId, tab }) =>
     `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,

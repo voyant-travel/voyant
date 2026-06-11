@@ -1,14 +1,16 @@
-import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs } from "@voyantjs/admin"
+import { createFileRoute } from "@tanstack/react-router"
 import {
-  AvailabilityRuleDetailPage,
   AvailabilityRuleDetailSkeleton,
-  getAvailabilityRuleDetailQueryOptions,
   loadAvailabilityRuleDetailPage,
 } from "@voyantjs/availability-ui"
+import { AvailabilityRuleDetailHost } from "@voyantjs/availability-ui/admin"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
 
+// Thin host for the package-delivered rule detail page (packaged-admin RFC
+// Phase 3). Page and navigation (semantic destinations, RFC §4.7) are
+// package-owned; this file only binds the route param. The loader stays
+// app-side for the SSR prefetch (the availability context value uses the
+// cookie-forwarding fetcher).
 export const Route = createFileRoute("/_workspace/availability/rules/$id")({
   loader: ({ context, params }) =>
     loadAvailabilityRuleDetailPage(context.queryClient, getAvailabilityContextValue(), params.id),
@@ -18,25 +20,5 @@ export const Route = createFileRoute("/_workspace/availability/rules/$id")({
 
 function RouteComponent() {
   const { id } = Route.useParams()
-  const navigate = useNavigate()
-  const client = getAvailabilityContextValue()
-  const ruleQuery = useQuery(getAvailabilityRuleDetailQueryOptions(client, id))
-  const rule = ruleQuery.data?.data
-
-  useAdminBreadcrumbs([
-    { label: "Availability", href: "/availability" },
-    ...(rule ? [{ label: rule.productName ?? `Rule ${rule.id.slice(-6)}` }] : []),
-  ])
-
-  return (
-    <AvailabilityRuleDetailPage
-      id={id}
-      onBack={() => void navigate({ to: "/availability" })}
-      onDeleted={() => void navigate({ to: "/availability" })}
-      onOpenProduct={(productId) =>
-        void navigate({ to: "/products/$id", params: { id: productId } })
-      }
-      onOpenSlot={(slotId) => void navigate({ to: "/availability/$id", params: { id: slotId } })}
-    />
-  )
+  return <AvailabilityRuleDetailHost ruleId={id} />
 }
