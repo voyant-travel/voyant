@@ -104,6 +104,7 @@ function WorkspaceContent() {
           policies: messages.nav.policies,
           profitability: messages.nav.profitability,
           promotions: messages.nav.promotions,
+          resources: messages.nav.resources,
           supplierInvoices: messages.nav.supplierInvoices,
           suppliers: messages.nav.suppliers,
           trips: messages.nav.trips,

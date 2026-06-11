@@ -1,6 +1,5 @@
-import { ResourceAllocationDialog } from "./resources-dialog-allocation"
-import { ResourceDialog, ResourcePoolDialog } from "./resources-dialogs-core"
-import { ResourceCloseoutDialog, ResourceSlotAssignmentDialog } from "./resources-dialogs-ops"
+"use client"
+
 import type {
   BookingOption,
   ProductOption,
@@ -13,7 +12,11 @@ import type {
   SlotOption,
   StartTimeOption,
   SupplierOption,
-} from "./resources-shared"
+} from "@voyantjs/resources-react"
+
+import { ResourceAllocationDialog } from "./resources-dialog-allocation.js"
+import { ResourceDialog, ResourcePoolDialog } from "./resources-dialogs-core.js"
+import { ResourceCloseoutDialog, ResourceSlotAssignmentDialog } from "./resources-dialogs-ops.js"
 
 export function ResourcesDialogs({
   resourceDialogOpen,

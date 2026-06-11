@@ -9,6 +9,7 @@ import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-ui/admin"
 import { createAvailabilityAdminExtension } from "@voyantjs/availability-ui/admin"
+import { createResourcesAdminExtension } from "@voyantjs/resources-ui/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-ui/admin"
 
 /**
@@ -24,5 +25,6 @@ export const generatedAdminExtensionFactories = {
   bookings: createBookingsAdminExtension,
   finance: createFinanceAdminExtension,
   availability: createAvailabilityAdminExtension,
+  resources: createResourcesAdminExtension,
   legal: createLegalAdminExtension,
 } as const

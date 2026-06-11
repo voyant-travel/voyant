@@ -1,3 +1,21 @@
+"use client"
+
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import {
+  assignmentStatusOptions,
+  type BookingOption,
+  NONE_VALUE,
+  nullableString,
+  type ResourceCloseoutRow,
+  type ResourcePoolRow,
+  type ResourceRow,
+  type ResourceSlotAssignmentRow,
+  type SlotOption,
+  slotLabel,
+  toIsoDateTime,
+  toLocalDateTimeInput,
+  useVoyantResourcesContext,
+} from "@voyantjs/resources-react"
 import {
   Button,
   Dialog,
@@ -15,31 +33,15 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { zodResolver } from "@/lib/zod-resolver"
-import type {
-  BookingOption,
-  ResourceCloseoutRow,
-  ResourcePoolRow,
-  ResourceRow,
-  ResourceSlotAssignmentRow,
-  SlotOption,
-} from "./resources-shared"
-import {
-  assignmentStatusOptions,
-  NONE_VALUE,
-  nullableString,
-  slotLabel,
-  toIsoDateTime,
-  toLocalDateTimeInput,
-} from "./resources-shared"
 
-const getAssignmentFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
+import { sendResourcesMutation } from "./resources-admin-api.js"
+
+const getAssignmentFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
   z.object({
     slotId: z.string().min(1, messages.resources.dialogs.assignment.validationSlotRequired),
     poolId: z.string().optional(),
@@ -70,7 +72,8 @@ export function ResourceSlotAssignmentDialog({
   bookings: BookingOption[]
   onSuccess: () => void
 }) {
-  const messages = useAdminMessages()
+  const client = useVoyantResourcesContext()
+  const messages = useOperatorAdminMessages()
   const dialogMessages = messages.resources.dialogs.assignment
   const assignmentFormSchema = getAssignmentFormSchema(messages)
   const form = useForm({
@@ -119,9 +122,14 @@ export function ResourceSlotAssignmentDialog({
     }
 
     if (isEditing) {
-      await api.patch(`/v1/resources/slot-assignments/${assignment?.id}`, payload)
+      await sendResourcesMutation(
+        client,
+        "PATCH",
+        `/v1/resources/slot-assignments/${assignment?.id}`,
+        payload,
+      )
     } else {
-      await api.post("/v1/resources/slot-assignments", payload)
+      await sendResourcesMutation(client, "POST", "/v1/resources/slot-assignments", payload)
     }
     onSuccess()
   }
@@ -266,7 +274,7 @@ export function ResourceSlotAssignmentDialog({
   )
 }
 
-const getCloseoutFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
+const getCloseoutFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
   z.object({
     resourceId: z.string().min(1, messages.resources.dialogs.closeout.validationResourceRequired),
     dateLocal: z.string().min(1, messages.resources.dialogs.closeout.validationDateRequired),
@@ -289,7 +297,8 @@ export function ResourceCloseoutDialog({
   resources: ResourceRow[]
   onSuccess: () => void
 }) {
-  const messages = useAdminMessages()
+  const client = useVoyantResourcesContext()
+  const messages = useOperatorAdminMessages()
   const dialogMessages = messages.resources.dialogs.closeout
   const closeoutFormSchema = getCloseoutFormSchema(messages)
   const form = useForm({
@@ -332,9 +341,14 @@ export function ResourceCloseoutDialog({
     }
 
     if (isEditing) {
-      await api.patch(`/v1/resources/closeouts/${closeout?.id}`, payload)
+      await sendResourcesMutation(
+        client,
+        "PATCH",
+        `/v1/resources/closeouts/${closeout?.id}`,
+        payload,
+      )
     } else {
-      await api.post("/v1/resources/closeouts", payload)
+      await sendResourcesMutation(client, "POST", "/v1/resources/closeouts", payload)
     }
     onSuccess()
   }
