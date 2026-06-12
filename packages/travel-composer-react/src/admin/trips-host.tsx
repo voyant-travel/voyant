@@ -1,8 +1,9 @@
+"use client"
+
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useOperatorAdminMessages as useAdminMessages, useAdminNavigate } from "@voyantjs/admin"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripEnvelopeStatus, TripsListSortField } from "@voyantjs/travel-composer"
-import { type ListTripsParams, listTripsQueryOptions } from "@voyantjs/travel-composer-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -18,19 +19,20 @@ import {
 } from "@voyantjs/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, X } from "lucide-react"
 import * as React from "react"
+
+import type { ListTripsParams } from "../operations.js"
+import { useVoyantTravelComposerContext } from "../provider.js"
+import { listTripsQueryOptions } from "../query-options.js"
 import {
   componentTitleFor,
   readComponentSchedule,
   sortComponentsBySchedule,
-} from "@/components/voyant/travel-composer/trip-component-display"
+} from "./trip-component-display.js"
 import {
   TRIP_STATUS_ALL,
   TripListFiltersPopover,
   type TripStatusFilter,
-} from "@/components/voyant/trips/trip-list-filters"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+} from "./trip-list-filters.js"
 
 const PAGE_SIZE = 25
 const SKELETON_ROWS = 6
@@ -38,7 +40,12 @@ const TABLE_COLUMN_COUNT = 7
 
 type SortDir = NonNullable<ListTripsParams["sortDir"]>
 
-const initialListParams: ListTripsParams = {
+/**
+ * Initial list parameters mirrored by the `travel-composer-index`
+ * contribution's loader so the SSR-seeded cache entry and the page's first
+ * `useQuery` line up on the same key.
+ */
+export const initialTripsListParams: ListTripsParams = {
   limit: PAGE_SIZE,
   offset: 0,
   sortBy: "updatedAt",
@@ -56,20 +63,18 @@ const statusBadgeVariant: Record<TripEnvelopeStatus, "default" | "secondary" | "
   cancelled: "destructive",
 }
 
-export const Route = createFileRoute("/_workspace/trips/")({
-  ssr: "data-only",
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(
-      listTripsQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }, initialListParams),
-    ),
-  component: TripsIndexRoute,
-})
-
-function TripsIndexRoute() {
+/**
+ * Packaged admin host for the trips list page (packaged-admin RFC Phase 3).
+ * Opening a trip (or composing a new one) resolves the `"trip.detail"`
+ * semantic destination (RFC §4.7); the page keeps its filter/sort/paging
+ * state locally (no URL search contract), so the host takes no props.
+ */
+export function TripsHost() {
   const messages = useAdminMessages().trips
   const listMessages = messages.list
-  const navigate = useNavigate()
-  const client = React.useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
+  const navigateTo = useAdminNavigate()
+  const { baseUrl, fetcher } = useVoyantTravelComposerContext()
+  const client = React.useMemo(() => ({ baseUrl, fetcher }), [baseUrl, fetcher])
 
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<TripStatusFilter>(TRIP_STATUS_ALL)
@@ -225,7 +230,7 @@ function TripsIndexRoute() {
           ) : null}
 
           <div className="ml-auto">
-            <Button onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}>
+            <Button onClick={() => navigateTo("trip.detail", { tripId: "new" })}>
               <Plus className="size-4" aria-hidden="true" />
               {listMessages.newTrip}
             </Button>
@@ -304,9 +309,7 @@ function TripsIndexRoute() {
                     key={trip.envelope.id}
                     trip={trip}
                     messages={messages}
-                    onOpen={() =>
-                      void navigate({ to: "/trips/$id", params: { id: trip.envelope.id } })
-                    }
+                    onOpen={() => navigateTo("trip.detail", { tripId: trip.envelope.id })}
                   />
                 ))
               )}

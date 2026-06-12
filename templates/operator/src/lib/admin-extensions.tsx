@@ -1,9 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import {
-  type AdminExtension,
-  createAdminExtensionRegistry,
-  defineAdminExtension,
-} from "@voyantjs/admin"
+import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/admin"
 import { Button } from "@voyantjs/ui/components/button"
 import { Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
@@ -43,6 +39,7 @@ type AdminExtensionNavMessages = Pick<
   | "catalogProducts"
   | "catalogTours"
   | "channelSync"
+  | "categories"
   | "contractNumberSeries"
   | "contractTemplates"
   | "contracts"
@@ -60,6 +57,7 @@ type AdminExtensionNavMessages = Pick<
   | "payments"
   | "people"
   | "policies"
+  | "products"
   | "profitability"
   | "promotions"
   | "resources"
@@ -298,56 +296,56 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
-  return defineAdminExtension({
-    id: "travel-composer",
-    navigation: [
-      {
-        // Splice Trips in right after Bookings — both belong to the booking
-        // lifecycle. `insertAfter` keeps the contribution shape; the resolver
-        // splices in place rather than appending at the end.
-        insertAfter: "bookings",
-        items: [
-          {
-            id: "travel-composer",
-            title: messages.trips,
-            url: "/trips",
-            icon: Route,
-            items: [
-              {
-                id: "travel-composer-list",
-                title: messages.allTrips,
-                url: "/trips",
-              },
-              {
-                id: "travel-composer-new",
-                title: messages.newTrip,
-                url: "/trips/new",
-              },
-            ],
-          },
-        ],
-      },
-    ],
+// Products is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Products item (with its Categories
+// sub-item) is part of the BASE operator navigation
+// (createOperatorAdminNavigation in @voyantjs/admin), so entries here would
+// duplicate it. It's registered for the routes seam: the contributions carry
+// the package-owned route implementations (no search contracts — the pages
+// keep their filters local), and the list/categories pages are the packaged
+// hosts from @voyantjs/products-react/admin. The detail page is substituted
+// through the factory's `detailPageComponent` seam: the operator wrapper
+// composes the app-owned pieces the package cannot import — the
+// availability-react option resource templates panel (availability-react
+// depends on products-react, so importing it there would be a cycle), the
+// app's /api/v1/uploads storage route, and the product-pre-selected
+// new-booking deep link.
+function createProductsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.products({
+    labels: { products: messages.products, categories: messages.categories },
+    detailPageComponent: () =>
+      import("@/components/voyant/products/product-detail-page").then((module) => ({
+        default: module.ProductDetailPage,
+      })),
   })
 }
 
+// Travel composer is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementations come from @voyantjs/travel-composer-react/admin —
+// the Trips group (spliced after Bookings via `insertAfter`, with All trips /
+// New trip sub-items), the trips list, and the detail page whose Edit mode
+// lazy-mounts the packaged trip composer. The app only supplies the localized
+// labels and the icon.
+function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.travelComposer({
+    labels: {
+      trips: messages.trips,
+      allTrips: messages.allTrips,
+      newTrip: messages.newTrip,
+    },
+    icon: Route,
+  })
+}
+
+// Action ledger is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementation come from @voyantjs/action-ledger-react/admin —
+// the Logs nav item (order 60, past the default admin items) and the
+// cursor-paginated Logs page. The app only supplies the localized label and
+// the icon.
 function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
-  return defineAdminExtension({
-    id: "action-ledger",
-    navigation: [
-      {
-        order: 60,
-        items: [
-          {
-            id: "action-ledger",
-            title: messages.actionLedger,
-            url: "/action-ledger",
-            icon: ScrollText,
-          },
-        ],
-      },
-    ],
+  return generatedAdminExtensionFactories.actionLedger({
+    labels: { actionLedger: messages.actionLedger },
+    icon: ScrollText,
   })
 }
 
@@ -362,6 +360,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogProducts: "Packages",
   catalogTours: "Tours",
   channelSync: "Channel sync",
+  categories: "Categories",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",
@@ -379,6 +378,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   payments: "Payments",
   people: "People",
   policies: "Policies",
+  products: "Products",
   profitability: "Profitability",
   promotions: "Promotions",
   resources: "Resources",
@@ -394,6 +394,7 @@ export function createOperatorAdminExtensions(
     createAvailabilityExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),
+    createProductsExtension(messages),
     createCrmExtension(messages),
     createDistributionExtension(messages),
     createFinanceExtension(messages),

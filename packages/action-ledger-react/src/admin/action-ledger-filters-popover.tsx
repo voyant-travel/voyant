@@ -1,5 +1,6 @@
 "use client"
 
+import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
 import {
   type OrganizationRecord,
@@ -24,8 +25,8 @@ import {
 import { ListFilter } from "lucide-react"
 import * as React from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
+import { useVoyantActionLedgerContext } from "../provider.js"
+import { listWorkflowRuns, type WorkflowRunSummary } from "./admin-api.js"
 
 export const ANY = "__all__"
 export const RISK_ALL = ANY
@@ -459,17 +460,6 @@ function formatPersonName(person: PersonRecord): string {
   return name || person.email || person.id
 }
 
-interface WorkflowRunSummary {
-  id: string
-  workflowName: string
-  status: string
-  startedAt: string
-}
-
-interface WorkflowRunsListResponse {
-  data: WorkflowRunSummary[]
-}
-
 function WorkflowRunCombobox({
   value,
   onChange,
@@ -519,14 +509,14 @@ function WorkflowRunCombobox({
 }
 
 function useWorkflowRunsList() {
+  const client = useVoyantActionLedgerContext()
   const [data, setData] = React.useState<WorkflowRunSummary[] | undefined>(undefined)
   const [isLoading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
     let cancelled = false
     setLoading(true)
-    api
-      .get<WorkflowRunsListResponse>("/v1/admin/workflow-runs?limit=50")
+    listWorkflowRuns(client)
       .then((res) => {
         if (cancelled) return
         setData(res.data ?? [])
@@ -542,7 +532,7 @@ function useWorkflowRunsList() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [client])
 
   return { data, isLoading }
 }

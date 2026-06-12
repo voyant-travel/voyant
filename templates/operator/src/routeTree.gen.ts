@@ -28,15 +28,11 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as authAcceptInvitationRouteImport } from './routes/(auth)/accept-invitation'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
-import { Route as WorkspaceTripsIndexRouteImport } from './routes/_workspace/trips/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
-import { Route as WorkspaceProductsIndexRouteImport } from './routes/_workspace/products/index'
 import { Route as WorkspaceNotificationsIndexRouteImport } from './routes/_workspace/notifications/index'
 import { Route as WorkspaceLegalIndexRouteImport } from './routes/_workspace/legal/index'
 import { Route as WorkspaceFinanceIndexRouteImport } from './routes/_workspace/finance/index'
 import { Route as WorkspaceCatalogIndexRouteImport } from './routes/_workspace/catalog/index'
-import { Route as WorkspaceActionLedgerIndexRouteImport } from './routes/_workspace/action-ledger/index'
-import { Route as WorkspaceTripsIdRouteImport } from './routes/_workspace/trips/$id'
 import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
 import { Route as WorkspaceSettingsTaxesRouteImport } from './routes/_workspace/settings/taxes'
 import { Route as WorkspaceSettingsProductTypesRouteImport } from './routes/_workspace/settings/product-types'
@@ -47,8 +43,6 @@ import { Route as WorkspaceSettingsOperatorRouteImport } from './routes/_workspa
 import { Route as WorkspaceSettingsCostCategoriesRouteImport } from './routes/_workspace/settings/cost-categories'
 import { Route as WorkspaceSettingsChannelsRouteImport } from './routes/_workspace/settings/channels'
 import { Route as WorkspaceSettingsApiTokensRouteImport } from './routes/_workspace/settings/api-tokens'
-import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_workspace/products/categories'
-import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as storefrontShopComposerRouteImport } from './routes/(storefront)/shop_.composer'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
 import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
@@ -146,20 +140,10 @@ const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
   path: '/settings',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
-const WorkspaceTripsIndexRoute = WorkspaceTripsIndexRouteImport.update({
-  id: '/trips/',
-  path: '/trips/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
 const WorkspaceSettingsIndexRoute = WorkspaceSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
-} as any)
-const WorkspaceProductsIndexRoute = WorkspaceProductsIndexRouteImport.update({
-  id: '/products/',
-  path: '/products/',
-  getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceNotificationsIndexRoute =
   WorkspaceNotificationsIndexRouteImport.update({
@@ -180,17 +164,6 @@ const WorkspaceFinanceIndexRoute = WorkspaceFinanceIndexRouteImport.update({
 const WorkspaceCatalogIndexRoute = WorkspaceCatalogIndexRouteImport.update({
   id: '/catalog/',
   path: '/catalog/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceActionLedgerIndexRoute =
-  WorkspaceActionLedgerIndexRouteImport.update({
-    id: '/action-ledger/',
-    path: '/action-ledger/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceTripsIdRoute = WorkspaceTripsIdRouteImport.update({
-  id: '/trips/$id',
-  path: '/trips/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsTeamRoute = WorkspaceSettingsTeamRouteImport.update({
@@ -251,17 +224,6 @@ const WorkspaceSettingsApiTokensRoute =
     path: '/api-tokens',
     getParentRoute: () => WorkspaceSettingsRouteRoute,
   } as any)
-const WorkspaceProductsCategoriesRoute =
-  WorkspaceProductsCategoriesRouteImport.update({
-    id: '/products/categories',
-    path: '/products/categories',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceProductsIdRoute = WorkspaceProductsIdRouteImport.update({
-  id: '/products/$id',
-  path: '/products/$id',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
 const storefrontShopComposerRoute = storefrontShopComposerRouteImport.update({
   id: '/shop_/composer',
   path: '/shop/composer',
@@ -304,8 +266,6 @@ export interface FileRoutesByFullPath {
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/shop/composer': typeof storefrontShopComposerRoute
-  '/products/$id': typeof WorkspaceProductsIdRoute
-  '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
@@ -316,15 +276,11 @@ export interface FileRoutesByFullPath {
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
   '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
-  '/trips/$id': typeof WorkspaceTripsIdRoute
-  '/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/catalog/': typeof WorkspaceCatalogIndexRoute
   '/finance/': typeof WorkspaceFinanceIndexRoute
   '/legal/': typeof WorkspaceLegalIndexRoute
   '/notifications/': typeof WorkspaceNotificationsIndexRoute
-  '/products/': typeof WorkspaceProductsIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
-  '/trips/': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -346,8 +302,6 @@ export interface FileRoutesByTo {
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/': typeof WorkspaceIndexRoute
   '/shop/composer': typeof storefrontShopComposerRoute
-  '/products/$id': typeof WorkspaceProductsIdRoute
-  '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
@@ -358,15 +312,11 @@ export interface FileRoutesByTo {
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
   '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
-  '/trips/$id': typeof WorkspaceTripsIdRoute
-  '/action-ledger': typeof WorkspaceActionLedgerIndexRoute
   '/catalog': typeof WorkspaceCatalogIndexRoute
   '/finance': typeof WorkspaceFinanceIndexRoute
   '/legal': typeof WorkspaceLegalIndexRoute
   '/notifications': typeof WorkspaceNotificationsIndexRoute
-  '/products': typeof WorkspaceProductsIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
-  '/trips': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -393,8 +343,6 @@ export interface FileRoutesById {
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/(storefront)/shop_/composer': typeof storefrontShopComposerRoute
-  '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
-  '/_workspace/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/_workspace/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/_workspace/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/_workspace/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
@@ -405,15 +353,11 @@ export interface FileRoutesById {
   '/_workspace/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
   '/_workspace/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
-  '/_workspace/trips/$id': typeof WorkspaceTripsIdRoute
-  '/_workspace/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/_workspace/catalog/': typeof WorkspaceCatalogIndexRoute
   '/_workspace/finance/': typeof WorkspaceFinanceIndexRoute
   '/_workspace/legal/': typeof WorkspaceLegalIndexRoute
   '/_workspace/notifications/': typeof WorkspaceNotificationsIndexRoute
-  '/_workspace/products/': typeof WorkspaceProductsIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
-  '/_workspace/trips/': typeof WorkspaceTripsIndexRoute
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
@@ -438,8 +382,6 @@ export interface FileRouteTypes {
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
     | '/shop/composer'
-    | '/products/$id'
-    | '/products/categories'
     | '/settings/api-tokens'
     | '/settings/channels'
     | '/settings/cost-categories'
@@ -450,15 +392,11 @@ export interface FileRouteTypes {
     | '/settings/product-types'
     | '/settings/taxes'
     | '/settings/team'
-    | '/trips/$id'
-    | '/action-ledger/'
     | '/catalog/'
     | '/finance/'
     | '/legal/'
     | '/notifications/'
-    | '/products/'
     | '/settings/'
-    | '/trips/'
     | '/shop/confirmation/$bookingId'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
@@ -480,8 +418,6 @@ export interface FileRouteTypes {
     | '/proposal/$quoteVersionId'
     | '/'
     | '/shop/composer'
-    | '/products/$id'
-    | '/products/categories'
     | '/settings/api-tokens'
     | '/settings/channels'
     | '/settings/cost-categories'
@@ -492,15 +428,11 @@ export interface FileRouteTypes {
     | '/settings/product-types'
     | '/settings/taxes'
     | '/settings/team'
-    | '/trips/$id'
-    | '/action-ledger'
     | '/catalog'
     | '/finance'
     | '/legal'
     | '/notifications'
-    | '/products'
     | '/settings'
-    | '/trips'
     | '/shop/confirmation/$bookingId'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
@@ -526,8 +458,6 @@ export interface FileRouteTypes {
     | '/proposal/$quoteVersionId'
     | '/_workspace/'
     | '/(storefront)/shop_/composer'
-    | '/_workspace/products/$id'
-    | '/_workspace/products/categories'
     | '/_workspace/settings/api-tokens'
     | '/_workspace/settings/channels'
     | '/_workspace/settings/cost-categories'
@@ -538,15 +468,11 @@ export interface FileRouteTypes {
     | '/_workspace/settings/product-types'
     | '/_workspace/settings/taxes'
     | '/_workspace/settings/team'
-    | '/_workspace/trips/$id'
-    | '/_workspace/action-ledger/'
     | '/_workspace/catalog/'
     | '/_workspace/finance/'
     | '/_workspace/legal/'
     | '/_workspace/notifications/'
-    | '/_workspace/products/'
     | '/_workspace/settings/'
-    | '/_workspace/trips/'
     | '/(storefront)/shop_/confirmation/$bookingId'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/(storefront)/shop_/products/$entityModule/$entityId'
@@ -697,26 +623,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSettingsRouteRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/trips/': {
-      id: '/_workspace/trips/'
-      path: '/trips'
-      fullPath: '/trips/'
-      preLoaderRoute: typeof WorkspaceTripsIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/settings/': {
       id: '/_workspace/settings/'
       path: '/'
       fullPath: '/settings/'
       preLoaderRoute: typeof WorkspaceSettingsIndexRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/products/': {
-      id: '/_workspace/products/'
-      path: '/products'
-      fullPath: '/products/'
-      preLoaderRoute: typeof WorkspaceProductsIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/notifications/': {
       id: '/_workspace/notifications/'
@@ -744,20 +656,6 @@ declare module '@tanstack/react-router' {
       path: '/catalog'
       fullPath: '/catalog/'
       preLoaderRoute: typeof WorkspaceCatalogIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/action-ledger/': {
-      id: '/_workspace/action-ledger/'
-      path: '/action-ledger'
-      fullPath: '/action-ledger/'
-      preLoaderRoute: typeof WorkspaceActionLedgerIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/trips/$id': {
-      id: '/_workspace/trips/$id'
-      path: '/trips/$id'
-      fullPath: '/trips/$id'
-      preLoaderRoute: typeof WorkspaceTripsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/settings/team': {
@@ -829,20 +727,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/api-tokens'
       preLoaderRoute: typeof WorkspaceSettingsApiTokensRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/products/categories': {
-      id: '/_workspace/products/categories'
-      path: '/products/categories'
-      fullPath: '/products/categories'
-      preLoaderRoute: typeof WorkspaceProductsCategoriesRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/products/$id': {
-      id: '/_workspace/products/$id'
-      path: '/products/$id'
-      fullPath: '/products/$id'
-      preLoaderRoute: typeof WorkspaceProductsIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
     }
     '/(storefront)/shop_/composer': {
       id: '/(storefront)/shop_/composer'
@@ -963,32 +847,20 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
-  WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
-  WorkspaceProductsCategoriesRoute: typeof WorkspaceProductsCategoriesRoute
-  WorkspaceTripsIdRoute: typeof WorkspaceTripsIdRoute
-  WorkspaceActionLedgerIndexRoute: typeof WorkspaceActionLedgerIndexRoute
   WorkspaceCatalogIndexRoute: typeof WorkspaceCatalogIndexRoute
   WorkspaceFinanceIndexRoute: typeof WorkspaceFinanceIndexRoute
   WorkspaceLegalIndexRoute: typeof WorkspaceLegalIndexRoute
   WorkspaceNotificationsIndexRoute: typeof WorkspaceNotificationsIndexRoute
-  WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
-  WorkspaceTripsIndexRoute: typeof WorkspaceTripsIndexRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
-  WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,
-  WorkspaceProductsCategoriesRoute: WorkspaceProductsCategoriesRoute,
-  WorkspaceTripsIdRoute: WorkspaceTripsIdRoute,
-  WorkspaceActionLedgerIndexRoute: WorkspaceActionLedgerIndexRoute,
   WorkspaceCatalogIndexRoute: WorkspaceCatalogIndexRoute,
   WorkspaceFinanceIndexRoute: WorkspaceFinanceIndexRoute,
   WorkspaceLegalIndexRoute: WorkspaceLegalIndexRoute,
   WorkspaceNotificationsIndexRoute: WorkspaceNotificationsIndexRoute,
-  WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
-  WorkspaceTripsIndexRoute: WorkspaceTripsIndexRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(

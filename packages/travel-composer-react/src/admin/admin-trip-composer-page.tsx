@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { useOperatorAdminMessages as useAdminMessages, useAdminNavigate } from "@voyantjs/admin"
 import { emptyPersonPickerValue } from "@voyantjs/bookings-react/components/person-picker-section"
 import { emptyVoucherPickerValue } from "@voyantjs/bookings-react/components/voucher-picker-section"
 import {
@@ -13,20 +13,6 @@ import {
 import { usePerson } from "@voyantjs/crm-react"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
-import {
-  type AddTripComponentBody,
-  addTripComponent,
-  createTrip,
-  defaultFetcher,
-  getTrip,
-  previewTripCancellation,
-  priceTrip,
-  removeTripComponent,
-  reserveTrip,
-  startTripCheckout,
-  updateTripComponent,
-  type VoyantApiError,
-} from "@voyantjs/travel-composer-react"
 import { Button } from "@voyantjs/ui/components/button"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
@@ -34,9 +20,20 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import type { VoyantApiError } from "../client.js"
+import {
+  type AddTripComponentBody,
+  addTripComponent,
+  createTrip,
+  getTrip,
+  previewTripCancellation,
+  priceTrip,
+  removeTripComponent,
+  reserveTrip,
+  startTripCheckout,
+  updateTripComponent,
+} from "../operations.js"
+import { useVoyantTravelComposerContext } from "../provider.js"
 
 type AdminComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]
 
@@ -61,7 +58,7 @@ import {
   TripPreviewRail,
   type TripTraveler,
   TripTravelersSection,
-} from "./admin-trip-composer-panels"
+} from "./admin-trip-composer-panels.js"
 
 interface ComposerState {
   trip: Trip | null
@@ -85,7 +82,7 @@ export interface AdminTripComposerPageProps {
 export function AdminTripComposerPage({
   initialTrip = null,
 }: AdminTripComposerPageProps): React.ReactElement {
-  const navigate = useNavigate()
+  const navigateTo = useAdminNavigate()
   const t = useAdminMessages().trips.adminComposer
   const [state, setState] = useState<ComposerState>({
     trip: initialTrip,
@@ -104,7 +101,8 @@ export function AdminTripComposerPage({
   const [cancellationReason, setCancellationReason] = useState(t.cancellation.defaultReason)
   const [cancellationPreview, setCancellationPreview] = useState<CancellationPreview | null>(null)
 
-  const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: defaultFetcher }), [])
+  const { baseUrl, fetcher } = useVoyantTravelComposerContext()
+  const client = useMemo(() => ({ baseUrl, fetcher }), [baseUrl, fetcher])
   const trip = state.trip
   const envelopeId = trip?.envelope.id
   const components = useMemo(
@@ -262,7 +260,7 @@ export function AdminTripComposerPage({
       // Keep operators in the trip aggregate after reserve; individual booking
       // links remain available from each component card.
       if (reserved.failures.length === 0) {
-        navigate({ to: "/trips/$id", params: { id: reserved.envelope.id } })
+        navigateTo("trip.detail", { tripId: reserved.envelope.id })
       }
     },
     onError: (error) => showError(error),

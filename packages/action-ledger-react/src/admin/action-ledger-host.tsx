@@ -1,9 +1,17 @@
 "use client"
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
 import type { ActionLedgerEntryResponse, ActionLedgerListResponse } from "@voyantjs/action-ledger"
-import { useLocale } from "@voyantjs/admin"
+import {
+  useAdminHref,
+  useOperatorAdminMessages as useAdminMessages,
+  useAdminNavigate,
+  useLocale,
+} from "@voyantjs/admin"
+// Type-only: binds the bookings-react `AdminDestinations` augmentation
+// (`booking.detail`, ...) into this module — the target cell links booking
+// rows through that shared key.
+import type {} from "@voyantjs/bookings-react/admin"
 import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
@@ -21,17 +29,17 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye, Search, X } from "lucide-react"
 import * as React from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { queryKeys } from "@/lib/query-keys"
-import { ActionLedgerEntrySheet } from "./action-ledger-entry-sheet"
+import { useVoyantActionLedgerContext } from "../provider.js"
+import { ActionLedgerEntrySheet } from "./action-ledger-entry-sheet.js"
 import {
   ActionLedgerFiltersPopover,
   PRINCIPAL_TYPE_ALL,
   RISK_ALL,
   STATUS_ALL,
   TARGET_TYPE_ALL,
-} from "./action-ledger-filters-popover"
+} from "./action-ledger-filters-popover.js"
+import { ACTION_LEDGER_PAGE_SIZE, getActionLedgerEntries } from "./admin-api.js"
+import { actionLedgerQueryKeys } from "./query-keys.js"
 
 type LedgerBadgeVariant = "default" | "secondary" | "outline" | "destructive"
 type ActionLedgerCursor = NonNullable<ActionLedgerListResponse["pageInfo"]["nextCursor"]>
@@ -61,7 +69,7 @@ const EMPTY_FILTERS: ActionLedgerFilters = {
   status: STATUS_ALL,
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = ACTION_LEDGER_PAGE_SIZE
 const SKELETON_ROW_COUNT = 6
 const TABLE_COLUMN_COUNT = 8
 
@@ -88,9 +96,17 @@ const RISK_VARIANT: Partial<
   critical: "destructive",
 }
 
-export function ActionLedgerPage() {
+/**
+ * Packaged admin host for the action-ledger Logs page (packaged-admin RFC
+ * Phase 3). The page keeps its filter/cursor state locally (no URL search
+ * contract); booking targets link through the `"booking.detail"` semantic
+ * destination (RFC §4.7). Data flows through the shared provider context —
+ * no app RPC client.
+ */
+export function ActionLedgerHost() {
   const { resolvedLocale } = useLocale()
   const t = useAdminMessages().actionLedgerPage
+  const client = useVoyantActionLedgerContext()
   const [filters, setFilters] = React.useState<ActionLedgerFilters>(EMPTY_FILTERS)
   const [sortDir, setSortDir] = React.useState<SortDir>("desc")
   const [cursorStack, setCursorStack] = React.useState<Array<ActionLedgerCursor | null>>([null])
@@ -104,10 +120,16 @@ export function ActionLedgerPage() {
   )
 
   const ledgerQuery = useQuery({
-    queryKey: queryKeys.actionLedger.entries(
-      `${filterCacheKey}|cursor=${cursorKey(currentCursor)}`,
-    ),
-    queryFn: () => fetchActionLedgerEntries(filters, sortDir, currentCursor),
+    queryKey: actionLedgerQueryKeys.entries(`${filterCacheKey}|cursor=${cursorKey(currentCursor)}`),
+    queryFn: () => {
+      const search = buildFilterSearchParams(filters, sortDir)
+      search.set("limit", String(PAGE_SIZE))
+      if (currentCursor) {
+        search.set("cursorOccurredAt", currentCursor.occurredAt)
+        search.set("cursorId", currentCursor.id)
+      }
+      return getActionLedgerEntries(client, search)
+    },
     placeholderData: keepPreviousData,
   })
 
@@ -378,6 +400,8 @@ function LedgerRow({
   onSelect: (id: string) => void
   viewAriaTemplate: string
 }) {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   return (
     <TableRow className="cursor-pointer" onClick={() => onSelect(entry.id)}>
       <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
@@ -399,15 +423,18 @@ function LedgerRow({
         <div className="font-medium">{formatTargetType(entry.targetType)}</div>
         <div className="mt-0.5 max-w-[14rem] truncate font-mono text-muted-foreground text-xs">
           {entry.targetType === "booking" ? (
-            <Link
-              to="/bookings/$id"
-              params={{ id: entry.targetId }}
-              onClick={(event) => event.stopPropagation()}
+            <a
+              href={resolveHref("booking.detail", { bookingId: entry.targetId })}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                navigateTo("booking.detail", { bookingId: entry.targetId })
+              }}
               className="inline-flex items-center text-primary underline-offset-4 hover:underline"
             >
               {entry.targetId}
               <ExternalLink className="ml-1 h-3 w-3" />
-            </Link>
+            </a>
           ) : (
             entry.targetId
           )}
@@ -443,22 +470,6 @@ function LedgerRow({
       </TableCell>
     </TableRow>
   )
-}
-
-async function fetchActionLedgerEntries(
-  filters: ActionLedgerFilters,
-  sortDir: SortDir,
-  cursor: ActionLedgerCursor | null,
-): Promise<ActionLedgerListResponse> {
-  const search = buildFilterSearchParams(filters, sortDir)
-  search.set("limit", String(PAGE_SIZE))
-
-  if (cursor) {
-    search.set("cursorOccurredAt", cursor.occurredAt)
-    search.set("cursorId", cursor.id)
-  }
-
-  return api.get<ActionLedgerListResponse>(`/v1/admin/action-ledger/entries?${search}`)
 }
 
 function getFilterCacheKey(filters: ActionLedgerFilters, sortDir: SortDir) {

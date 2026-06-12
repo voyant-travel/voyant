@@ -1,9 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+"use client"
+
+import { useQuery } from "@tanstack/react-query"
+import {
+  useAdminHref,
+  useOperatorAdminMessages as useAdminMessages,
+  useAdminNavigate,
+} from "@voyantjs/admin"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
-import { getTripQueryOptions } from "@voyantjs/travel-composer-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
@@ -31,37 +37,42 @@ import {
   Users,
 } from "lucide-react"
 import { lazy, type ReactNode, Suspense, useState } from "react"
+
+import { useVoyantTravelComposerContext } from "../provider.js"
+import { getTripQueryOptions } from "../query-options.js"
 import {
   componentReferenceLabelFor,
   componentTitleFor,
   formatScheduleLabel,
   sortComponentsBySchedule,
-} from "@/components/voyant/travel-composer/trip-component-display"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+} from "./trip-component-display.js"
 
 const AdminTripComposerPage = lazy(() =>
-  import("@/components/voyant/travel-composer/admin-trip-composer-page").then((module) => ({
+  import("./admin-trip-composer-page.js").then((module) => ({
     default: module.AdminTripComposerPage,
   })),
 )
 
-export const Route = createFileRoute("/_workspace/trips/$id")({
-  ssr: "data-only",
-  loader: ({ context, params }) => {
-    if (params.id === "new") return null
-    return context.queryClient.ensureQueryData(
-      getTripQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }, params.id),
-    )
-  },
-  component: TripDetailRoute,
-})
-
-function TripDetailRoute() {
+/**
+ * Packaged admin host for the trip detail page (packaged-admin RFC
+ * Phase 3). The `"new"` pseudo-id mounts the admin trip composer directly;
+ * existing trips render the read-only record page (seeded by the
+ * `travel-composer-detail` contribution's loader) with an Edit toggle into
+ * the composer. Cross-route links (bookings, CRM people, the trips list)
+ * resolve through semantic destinations (RFC §4.7).
+ */
+export function TripDetailHost({ id }: { id: string }) {
   const [mode, setMode] = useState<"record" | "edit">("record")
-  const trip = Route.useLoaderData()
+  const { baseUrl, fetcher } = useVoyantTravelComposerContext()
+  const isNew = id === "new"
+  const tripQuery = useQuery({
+    ...getTripQueryOptions({ baseUrl, fetcher }, id),
+    enabled: !isNew,
+  })
+  const trip = isNew ? null : (tripQuery.data ?? null)
+
   if (!trip) {
+    if (!isNew && tripQuery.isPending) return null
     return (
       <Suspense fallback={null}>
         <AdminTripComposerPage initialTrip={null} />
@@ -81,7 +92,8 @@ function TripDetailRoute() {
 function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
   const messages = useAdminMessages().trips
   const detailMessages = messages.detail
-  const navigate = useNavigate()
+  const navigateTo = useAdminNavigate()
+  const { baseUrl } = useVoyantTravelComposerContext()
   const [copiedPaymentLink, setCopiedPaymentLink] = useState(false)
   const envelope = trip.envelope
   const activeComponents = sortComponentsBySchedule(
@@ -97,7 +109,7 @@ function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
     <main className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-3">
-          <Button variant="ghost" size="sm" onClick={() => void navigate({ to: "/trips" })}>
+          <Button variant="ghost" size="sm" onClick={() => navigateTo("trip.list", {})}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             {detailMessages.breadcrumb}
           </Button>
@@ -185,9 +197,7 @@ function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
                     key={component.id}
                     component={component}
                     messages={detailMessages}
-                    onOpenBooking={(bookingId) =>
-                      void navigate({ to: "/bookings/$id", params: { id: bookingId } })
-                    }
+                    onOpenBooking={(bookingId) => navigateTo("booking.detail", { bookingId })}
                   />
                 ))
               )}
@@ -223,12 +233,14 @@ function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    void copyPaymentLink(envelope.paymentSessionId ?? "").then((copied) => {
-                      setCopiedPaymentLink(copied)
-                      if (copied) {
-                        window.setTimeout(() => setCopiedPaymentLink(false), 2000)
-                      }
-                    })
+                    void copyPaymentLink(envelope.paymentSessionId ?? "", baseUrl).then(
+                      (copied) => {
+                        setCopiedPaymentLink(copied)
+                        if (copied) {
+                          window.setTimeout(() => setCopiedPaymentLink(false), 2000)
+                        }
+                      },
+                    )
                   }
                 >
                   {copiedPaymentLink ? (
@@ -263,9 +275,9 @@ function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
   )
 }
 
-async function copyPaymentLink(paymentSessionId: string): Promise<boolean> {
+async function copyPaymentLink(paymentSessionId: string, apiBaseUrl: string): Promise<boolean> {
   if (!paymentSessionId || typeof window === "undefined") return false
-  const publicCheckoutBaseUrl = await fetchPublicCheckoutBaseUrl()
+  const publicCheckoutBaseUrl = await fetchPublicCheckoutBaseUrl(apiBaseUrl)
   const url = buildPaymentLinkUrl(paymentSessionId, {
     baseUrl: publicCheckoutBaseUrl ?? window.location.origin,
   })
@@ -277,9 +289,9 @@ async function copyPaymentLink(paymentSessionId: string): Promise<boolean> {
   }
 }
 
-async function fetchPublicCheckoutBaseUrl(): Promise<string | null> {
+async function fetchPublicCheckoutBaseUrl(apiBaseUrl: string): Promise<string | null> {
   try {
-    const res = await fetch(`${getApiUrl()}/v1/public/payment-link-config`, {
+    const res = await fetch(`${apiBaseUrl}/v1/public/payment-link-config`, {
       headers: { Accept: "application/json" },
     })
     if (!res.ok) return null
@@ -441,10 +453,19 @@ function TravelerRecordRow({
 }
 
 function PersonLink({ personId, children }: { personId: string; children: ReactNode }) {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   return (
-    <Link to="/people/$id" params={{ id: personId }} className="text-primary hover:underline">
+    <a
+      href={resolveHref("person.detail", { personId })}
+      onClick={(event) => {
+        event.preventDefault()
+        navigateTo("person.detail", { personId })
+      }}
+      className="text-primary hover:underline"
+    >
       {children}
-    </Link>
+    </a>
   )
 }
 

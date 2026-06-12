@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { emptyPaymentScheduleValue } from "@voyantjs/bookings-react/components/payment-schedule-section"
 import { deriveTravelerRoleFromDob } from "@voyantjs/bookings-react/components/travelers-section"
 import {
@@ -88,8 +89,8 @@ import {
   X,
 } from "lucide-react"
 import * as React from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+
+import { useVoyantTravelComposerContext } from "../provider.js"
 
 type CatalogVertical = "products" | "accommodations" | "cruises" | "extras" | "flights"
 export type PendingVerticalKind = "product" | "stay" | "flight" | "cruise" | "manual"
@@ -718,13 +719,13 @@ function createCatalogBookingDraft({
 }
 
 function useProductDepartures(productId: string | null) {
+  const { baseUrl, fetcher } = useVoyantTravelComposerContext()
   return useQuery({
     queryKey: ["admin-trip-composer-product-departures", productId],
     queryFn: async (): Promise<{ rows: AvailabilitySlot[] }> => {
       if (!productId) return { rows: [] }
-      const res = await fetch(
-        `${getApiUrl()}/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
-        { credentials: "include" },
+      const res = await fetcher(
+        `${baseUrl}/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
       )
       if (!res.ok) throw new Error(`Departures request failed: ${res.status}`)
       return res.json()

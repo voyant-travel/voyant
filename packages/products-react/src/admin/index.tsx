@@ -1,0 +1,229 @@
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRoutePageProps,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+import type { ComponentType } from "react"
+
+// Lean statics only: the client module (fetcher) and the skeletons (their
+// own modules, no page imports). Query options + the REST api adapter
+// resolve via dynamic import inside the loaders so the products data layer
+// (client + response schemas) stays out of the workspace-chrome chunk that
+// evaluates this factory.
+import { defaultFetcher } from "../client.js"
+import { ProductDetailSkeleton } from "../components/product-detail/product-detail-skeleton.js"
+import { ProductsListSkeleton } from "./products-list-skeleton.js"
+
+/**
+ * Semantic destinations the products admin surfaces navigate to
+ * (packaged-admin RFC §4.7). The products list opens the owned-product
+ * editor, and the editor links back to the list, into the unified booking
+ * journey, and into the availability slot pages — instead of importing a
+ * host route tree they resolve these keys through `useAdminHref`/
+ * `useAdminNavigate` from `@voyantjs/admin`. Hosts register one resolver
+ * per key (`satisfies AdminDestinationResolvers`).
+ *
+ * `product.detail` is also declared by `@voyantjs/bookings-react/admin` and
+ * `@voyantjs/catalog-react/admin`; `booking.create` by
+ * `@voyantjs/bookings-react/admin`; `availabilitySlot.detail` by
+ * `@voyantjs/availability-react/admin` and others — interface merging
+ * requires the member shapes to stay identical across packages.
+ */
+declare module "@voyantjs/admin" {
+  interface AdminDestinations {
+    /** The owned-products list page. */
+    "product.list": Record<string, never>
+    /** The owned-product editor/detail page. */
+    "product.detail": { productId: string }
+    /** The product categories settings page. */
+    "productCategory.list": Record<string, never>
+    /** The "New booking" entry point (product picker → unified journey). */
+    "booking.create": Record<string, never>
+    /** An availability slot's detail page. */
+    "availabilitySlot.detail": { slotId: string }
+  }
+}
+
+export type { ProductDetailPageComponentProps } from "./pages/product-detail-page.js"
+// Packaged admin hosts (packaged-admin RFC Phase 3): the products pages
+// bound to their data wiring + semantic-destination navigation.
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page
+// or host component values — it is evaluated with the workspace chrome, so
+// a static host re-export would pin the heavy page modules into the entry
+// chunk. Hosts import from their specific modules; only their TYPES
+// re-export here, plus the lean skeletons.
+export type { ProductDetailApiClient } from "./product-detail-api.js"
+export { ProductsListSkeleton } from "./products-list-skeleton.js"
+export { ProductDetailSkeleton }
+
+export interface CreateProductsAdminExtensionOptions {
+  /** Mount path of the products pages inside the admin workspace. Default `/products`. */
+  basePath?: string
+  /** Localized page titles. Defaults are the English operator nav labels. */
+  labels?: {
+    products?: string
+    categories?: string
+  }
+  /**
+   * Substitute implementation for the product detail page, loaded lazily so
+   * it stays in its own chunk. Defaults to the packaged page wrapping the
+   * canonical `ProductDetailPage` with context-derived wiring. The operator
+   * overrides this to compose app-owned seams the package cannot import:
+   * the availability-react option resource templates panel
+   * (`@voyantjs/availability-react` depends on this package — a cycle), the
+   * app's upload route, and the product-pre-selected new-booking deep link.
+   */
+  detailPageComponent?: () => Promise<{
+    default: ComponentType<{ id: string }>
+  }>
+}
+
+/**
+ * The products admin contribution (packaged-admin RFC Phase 3,
+ * `@voyantjs/<domain>-react/admin` convention).
+ *
+ * NAVIGATION: deliberately none. The Products item (with its Categories
+ * sub-item) is part of the BASE operator navigation — see
+ * `createOperatorAdminNavigation` in `@voyantjs/admin` — so contributing
+ * nav entries here would duplicate it. If the base nav ever drops the
+ * products item, this extension is where the entry moves.
+ *
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
+ * host-supplied {@link AdminRouteLoaderContext} (QueryClient + runtime +
+ * params), per-route SSR mode, and pending skeletons. Hosts bind them into
+ * their code-assembled admin route tree; no per-route host files needed.
+ * The pages stay code-split because each contribution's `page` dynamically
+ * imports the specific host/page module — never the admin barrel — so the
+ * heavy page chunks load on navigation, not with workspace chrome.
+ * `ProductsHost` and `ProductCategoriesHost` mount as zero-prop pages; the
+ * detail page reads the product id from {@link AdminRoutePageProps} via the
+ * page thunk below. The pages keep their filter/dialog state local (no URL
+ * search contracts) and resolve every cross-route link through the semantic
+ * destinations declared above — no app RPC client, no host route tree.
+ *
+ * WIDGETS: none contributed and no slots exposed yet.
+ */
+export function createProductsAdminExtension(
+  options: CreateProductsAdminExtensionOptions = {},
+): AdminExtension {
+  const { basePath = "/products", labels = {}, detailPageComponent } = options
+  const { products = "Products", categories = "Categories" } = labels
+
+  return defineAdminExtension({
+    id: "products",
+    routes: [
+      {
+        id: "products-index",
+        path: basePath,
+        title: products,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "product.list",
+        ssr: "data-only",
+        page: () =>
+          import("./products-host.js").then((module) => adminRoutePageModule(module.ProductsHost)),
+        // Dynamic import on purpose: the query options pull the products
+        // data layer (client + response schemas), and a static import here
+        // would pin it into the workspace-chrome chunk that evaluates this
+        // factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getProductsQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
+            getProductsQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
+          )
+        },
+        pendingComponent: ProductsListSkeleton,
+      },
+      {
+        id: "products-categories",
+        path: `${basePath}/categories`,
+        title: categories,
+        destination: "productCategory.list",
+        ssr: "data-only",
+        page: () =>
+          import("./product-categories-host.js").then((module) =>
+            adminRoutePageModule(module.ProductCategoriesHost),
+          ),
+        // Dynamic import on purpose — see the products index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getProductCategoriesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
+            getProductCategoriesQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
+          )
+        },
+      },
+      {
+        id: "products-detail",
+        path: `${basePath}/$id`,
+        title: products,
+        destination: "product.detail",
+        destinationParams: { id: "productId" },
+        ssr: "data-only",
+        pendingComponent: ProductDetailSkeleton,
+        // Critical path only: await the product itself so the header has
+        // data and the loader unblocks after one round-trip. Everything
+        // else is a background prefetch — the page's `useQuery` calls light
+        // up as data arrives. Dynamic imports on purpose — see the products
+        // index loader above.
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const [
+            { getProductQueryOptions },
+            {
+              getChannelsQueryOptions,
+              getProductChannelMappingsQueryOptions,
+              getProductMediaQueryOptions,
+              getProductRulesQueryOptions,
+              getProductSlotsQueryOptions,
+            },
+            { getPricingCategoriesQueryOptions, getProductOptionsQueryOptions },
+            { createProductDetailRestApi },
+          ] = await Promise.all([
+            import("../query-options.js"),
+            import("../components/product-detail/product-detail-shared.js"),
+            import("../components/product-detail/product-options-shared.js"),
+            import("./product-detail-api.js"),
+          ])
+
+          const client = loaderClient(runtime)
+          const api = createProductDetailRestApi(client)
+
+          await queryClient.ensureQueryData(getProductQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(getProductOptionsQueryOptions(client, id))
+          void queryClient.prefetchQuery(getProductSlotsQueryOptions(api, id))
+          void queryClient.prefetchQuery(getProductRulesQueryOptions(api, id))
+          void queryClient.prefetchQuery(getChannelsQueryOptions(api))
+          void queryClient.prefetchQuery(getProductChannelMappingsQueryOptions(api, id))
+          void queryClient.prefetchQuery(getProductMediaQueryOptions(api, id))
+          void queryClient.prefetchQuery(getPricingCategoriesQueryOptions(client))
+        },
+        page: async () => {
+          const module = await (detailPageComponent
+            ? detailPageComponent()
+            : import("./pages/product-detail-page.js"))
+          const Page = module.default
+          return {
+            default: ({ params }: AdminRoutePageProps) => <Page id={params.id ?? ""} />,
+          }
+        },
+      },
+    ],
+  })
+}
+
+/**
+ * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to
+ * the required-fetcher client contract the products query options take —
+ * SSR loaders run with the host runtime's cookie-forwarding fetcher.
+ */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}

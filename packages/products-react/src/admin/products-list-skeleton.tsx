@@ -1,14 +1,29 @@
+"use client"
+
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { useAdminMessages } from "@/lib/admin-i18n"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@voyantjs/ui/components/table"
+
+const SKELETON_ROWS = 6
+const COLUMN_WIDTHS = ["w-48", "w-16", "w-24", "w-8", "w-24"] as const
 
 /**
- * Route-level placeholder for /products. Matches ProductsPage's header row,
- * the search input, and the 5-column product table exactly.
+ * Route-level placeholder for the products list page. Matches
+ * `ProductsPage`'s header row, the search input, and the 5-column product
+ * table exactly. Kept in its own lean module (ui skeleton + table + the
+ * operator admin messages hook only) so the extension factory can attach it
+ * as a `pendingComponent` without pinning the products data layer into the
+ * workspace-chrome chunk.
  */
 export function ProductsListSkeleton() {
-  const productMessages = useAdminMessages().products.core
+  const productMessages = useOperatorAdminMessages().products.core
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -36,11 +51,23 @@ export function ProductsListSkeleton() {
               <TableHead>{productMessages.tableStartDate}</TableHead>
             </TableRow>
           </TableHeader>
-          <SkeletonTableRows
-            rows={6}
-            columns={5}
-            columnWidths={["w-48", "w-16", "w-24", "w-8", "w-24"]}
-          />
+          <TableBody>
+            {Array.from({ length: SKELETON_ROWS }).map((_, row) => (
+              <TableRow
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                key={row}
+              >
+                {COLUMN_WIDTHS.map((width, column) => (
+                  <TableCell
+                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                    key={column}
+                  >
+                    <Skeleton className={`h-4 ${width}`} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
         </Table>
       </div>
 
