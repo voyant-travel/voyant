@@ -1,9 +1,17 @@
 import {
   type CheckoutCapabilityAction,
+  type GuestBookingAccessAction,
   requireCheckoutCapability,
+  requireGuestBookingAccess,
 } from "@voyantjs/bookings/checkout-capability"
 import type { Module, ModuleContainer } from "@voyantjs/core"
-import { idempotencyKey, parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseOptionalJsonBody,
+  parseQuery,
+  UnauthorizedApiError,
+} from "@voyantjs/hono"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { NotificationProvider } from "@voyantjs/notifications"
 import { createNotificationService } from "@voyantjs/notifications"
@@ -65,9 +73,19 @@ function runtimeEnv(c: { env: Record<string, unknown> }): Record<string, string 
   return c.env as Record<string, string | undefined>
 }
 
-function collectionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<Env> {
+type CollectionCapabilityAction = Extract<CheckoutCapabilityAction, GuestBookingAccessAction>
+
+function collectionCapability(action: CollectionCapabilityAction): MiddlewareHandler<Env> {
   return async (c, next) => {
-    await requireCheckoutCapability(c, c.req.param("bookingId")!, action, runtimeEnv(c))
+    const bookingId = c.req.param("bookingId")!
+    try {
+      await requireCheckoutCapability(c, bookingId, action, runtimeEnv(c))
+    } catch (error) {
+      if (!(error instanceof UnauthorizedApiError)) {
+        throw error
+      }
+      await requireGuestBookingAccess(c, bookingId, action, runtimeEnv(c))
+    }
     await next()
   }
 }

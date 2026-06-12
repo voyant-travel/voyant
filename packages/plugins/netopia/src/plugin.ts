@@ -255,6 +255,9 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         c.env,
         financeRuntime ? { eventBus: financeRuntime.eventBus } : undefined,
       )
+      if (result.action === "deferred") {
+        return c.json({ data: result }, 503)
+      }
       return c.json({ data: result })
     })
     .get("/providers/netopia/config", async (c) => {

@@ -16,7 +16,10 @@ vi.mock("../../src/service.js", () => ({
   previewCheckoutCollection: serviceMocks.previewCheckoutCollection,
 }))
 
-import { issueCheckoutCapability } from "@voyantjs/bookings/checkout-capability"
+import {
+  issueCheckoutCapability,
+  issueGuestBookingAccess,
+} from "@voyantjs/bookings/checkout-capability"
 import { createCheckoutRoutes } from "../../src/routes.js"
 
 const TEST_CAPABILITY_ENV = {
@@ -26,6 +29,11 @@ const TEST_CAPABILITY_ENV = {
 async function capabilityHeaders(bookingId = "book_123") {
   const capability = await issueCheckoutCapability(bookingId, TEST_CAPABILITY_ENV)
   return { "X-Voyant-Checkout-Capability": capability.token }
+}
+
+async function guestAccessHeaders(bookingId = "book_123") {
+  const capability = await issueGuestBookingAccess(bookingId, TEST_CAPABILITY_ENV)
+  return { "X-Voyant-Guest-Booking-Access": capability.token }
 }
 
 describe("createCheckoutRoutes", () => {
@@ -140,6 +148,44 @@ describe("createCheckoutRoutes", () => {
 
     expect(res.status).toBe(401)
     expect(serviceMocks.previewCheckoutCollection).not.toHaveBeenCalled()
+  })
+
+  it("accepts guest booking access for booking-scoped collection routes", async () => {
+    serviceMocks.previewCheckoutCollection.mockResolvedValue({
+      bookingId: "book_123",
+      method: "card",
+      stage: "initial",
+      paymentSessionTarget: "invoice",
+      documentType: "invoice",
+      willCreateDefaultPaymentPlan: false,
+      selectedSchedule: null,
+      selectedInvoice: null,
+      amountCents: 12345,
+      currency: "EUR",
+      recommendedAction: "create_invoice_then_payment_session",
+    })
+
+    const routes = createCheckoutRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/collection-plan",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await guestAccessHeaders()) },
+        body: JSON.stringify({ method: "card" }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(200)
+    expect(serviceMocks.previewCheckoutCollection).toHaveBeenCalledTimes(1)
   })
 
   it("bootstraps checkout from a session id with the unified route", async () => {
