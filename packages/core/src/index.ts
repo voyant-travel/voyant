@@ -20,6 +20,7 @@ export type {
   VoyantVariables,
 } from "./env.js"
 export type {
+  DeliveryResult,
   EmitOptions,
   EventBus,
   EventBusOptions,
@@ -28,10 +29,11 @@ export type {
   EventHandler,
   EventMetadata,
   EventSource,
+  OutboxEventStore,
   SubscribeOptions,
   Subscription,
 } from "./events.js"
-export { createEventBus } from "./events.js"
+export { createEventBus, generateEventId } from "./events.js"
 export { hooks } from "./hooks.js"
 export type {
   LinkableDefinition,

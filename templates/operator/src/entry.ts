@@ -13,6 +13,7 @@ import {
   CHANNEL_PUSH_CONTENT_CRON,
   DRAFT_REAPER_CRON,
   EXTERNAL_CRUISE_CATALOG_REFRESH_CRON,
+  OUTBOX_DRAIN_CRON,
   PROMOTION_BOUNDARY_SCHEDULER_CRON,
 } from "./scheduled-crons"
 
@@ -52,6 +53,18 @@ export default {
     env: CloudflareBindings,
     ctx: ExecutionContext,
   ): Promise<void> {
+    if (event.cron === OUTBOX_DRAIN_CRON) {
+      ctx.waitUntil(
+        import("./api/outbox-drain-scheduled")
+          .then((mod) => mod.runScheduledOutboxDrain(event, env))
+          .then((result) => {
+            if (result.claimed > 0 || result.deadLettered > 0) {
+              console.info("[outbox-drain] result", result)
+            }
+          }),
+      )
+      return
+    }
     if (event.cron === DRAFT_REAPER_CRON) {
       ctx.waitUntil(
         import("./api/draft-reaper-scheduled")

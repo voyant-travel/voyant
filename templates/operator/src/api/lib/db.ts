@@ -87,12 +87,38 @@ export function dbFromEnvForApp(env: CloudflareBindings): {
  * `db.transaction(...)`; `createApp` routes transactional surfaces to
  * {@link dbFromEnvForApp} instead.
  *
- * Cached per isolate + connection string: the client is stateless, so
- * unlike the WebSocket Pool it is safe to reuse across requests.
- * Local Postgres doesn't speak Neon's HTTP protocol — local connection
- * strings fall back to the per-request `pg.Pool` path.
+ * Cached per isolate + connection string (and replica set — changing
+ * `DATABASE_URL_REPLICAS` yields a fresh client): the client is
+ * stateless, so unlike the WebSocket Pool it is safe to reuse across
+ * requests. Local Postgres doesn't speak Neon's HTTP protocol — local
+ * connection strings fall back to the per-request `pg.Pool` path and
+ * ignore replicas entirely.
+ *
+ * Read replicas: when `DATABASE_URL_REPLICAS` is set (comma-separated
+ * same-region Neon read replicas), reads round-robin across replicas
+ * via drizzle's `withReplicas`; writes and `db.$primary` go to the
+ * primary. Replicas are eventually consistent (typically ms of lag),
+ * so a request that writes and then reads the same data through this
+ * client may read a slightly stale replica — surfaces needing strict
+ * read-your-writes should read via `db.$primary` or live on the
+ * transactional client ({@link dbFromEnvForApp}), which always talks
+ * to the primary.
  */
 const httpDbCache = new Map<string, NeonDatabase>()
+
+/**
+ * Parse a comma-separated replica connection-string list: trims entries,
+ * drops empties, and drops entries equal to the primary URL (a replica
+ * pointing at the primary would silently defeat the read split).
+ * Exported for unit testing.
+ */
+export function parseReplicaUrls(raw: string | undefined, primaryUrl: string): string[] {
+  if (!raw) return []
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0 && entry !== primaryUrl)
+}
 
 export function httpDbFromEnvForApp(
   env: CloudflareBindings,
@@ -101,12 +127,17 @@ export function httpDbFromEnvForApp(
   if (isLocalConnection(url)) {
     return openDb(url)
   }
-  let db = httpDbCache.get(url)
+  const replicas = parseReplicaUrls(env.DATABASE_URL_REPLICAS, url)
+  const cacheKey = replicas.length > 0 ? `${url}\n${replicas.join(",")}` : url
+  let db = httpDbCache.get(cacheKey)
   if (!db) {
     // Drizzle's runtime API is identical across flavors; downstream call
     // sites are typed against `NeonDatabase` (see `openDb`'s rationale).
-    db = createDbClient(url, { adapter: "edge" }) as unknown as NeonDatabase
-    httpDbCache.set(url, db)
+    db = createDbClient(
+      url,
+      replicas.length > 0 ? { adapter: "edge", replicas } : { adapter: "edge" },
+    ) as unknown as NeonDatabase
+    httpDbCache.set(cacheKey, db)
   }
   return db
 }

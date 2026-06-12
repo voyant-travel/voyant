@@ -1,5 +1,9 @@
 import { ActionLedgerIdempotencyConflictError } from "@voyantjs/action-ledger"
 import {
+  aggregateSnapshotKey,
+  readThroughAggregateSnapshot,
+} from "@voyantjs/db/aggregate-snapshots"
+import {
   idempotencyKey,
   parseJsonBody,
   parseOptionalJsonBody,
@@ -122,7 +126,10 @@ import {
 // ==========================================================================
 
 const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
-const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
+
+/** Server-side snapshot TTL — see readThroughAggregateSnapshot (#1629). */
+const DASHBOARD_AGGREGATES_TTL_SECONDS = 60
 
 function csvDownload(csv: string, filename: string): Response {
   return new Response(csv, {
@@ -211,10 +218,17 @@ export const financeRoutes = new Hono<Env>()
   // Dashboard aggregates
   // ========================================================================
 
+  // Served from a read-through TTL snapshot — the finance aggregate fan-out
+  // is ~11 queries, so a warm dashboard load becomes one indexed read (#1629).
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, financeAggregatesQuerySchema)
     cacheDashboardAggregates(c)
-    return c.json({ data: await financeService.getFinanceAggregates(c.get("db"), query) })
+    const snapshot = await readThroughAggregateSnapshot(c.get("db"), {
+      key: aggregateSnapshotKey("finance", "aggregates", query),
+      ttlSeconds: DASHBOARD_AGGREGATES_TTL_SECONDS,
+      compute: () => financeService.getFinanceAggregates(c.get("db"), query),
+    })
+    return c.json({ data: snapshot.data })
   })
 
   // ========================================================================

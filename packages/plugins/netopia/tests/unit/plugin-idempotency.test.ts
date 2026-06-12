@@ -1,0 +1,252 @@
+import { createContainer } from "@voyantjs/core"
+import { financeService } from "@voyantjs/finance"
+import { Hono } from "hono"
+import { afterEach, describe, expect, it, vi } from "vitest"
+
+import { createNetopiaFinanceRoutes } from "../../src/plugin.js"
+
+const runtimeOptions = {
+  apiUrl: "https://secure.mobilpay.ro/pay",
+  apiKey: "api-key",
+  posSignature: "pos-signature",
+  notifyUrl: "https://api.example.com/netopia/callback",
+  redirectUrl: "https://app.example.com/checkout/return",
+} as const
+
+const baseSession = {
+  id: "pmss_123",
+  targetType: "booking",
+  targetId: "book_123",
+  bookingId: "book_123",
+  orderId: null,
+  invoiceId: null,
+  bookingPaymentScheduleId: null,
+  bookingGuaranteeId: null,
+  paymentInstrumentId: null,
+  paymentAuthorizationId: null,
+  paymentCaptureId: null,
+  paymentId: null,
+  status: "pending",
+  provider: "netopia",
+  providerSessionId: null,
+  providerPaymentId: null,
+  externalReference: "client_ref_123",
+  idempotencyKey: null,
+  clientReference: "client_ref_123",
+  currency: "RON",
+  amountCents: 12500,
+  paymentMethod: null,
+  payerPersonId: null,
+  payerOrganizationId: null,
+  payerEmail: "traveler@example.com",
+  payerName: "Ana Popescu",
+  redirectUrl: null,
+  returnUrl: null,
+  cancelUrl: null,
+  callbackUrl: null,
+  expiresAt: null,
+  completedAt: null,
+  failedAt: null,
+  cancelledAt: null,
+  expiredAt: null,
+  failureCode: null,
+  failureMessage: null,
+  notes: null,
+  providerPayload: null,
+  metadata: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+} as const
+
+/**
+ * In-memory fake implementing only the drizzle chain surface the
+ * `idempotencyKey` middleware touches. Predicates are ignored — each test
+ * uses a single (scope, key) pair, so "first stored row" is exactly the
+ * row the middleware would have matched.
+ */
+function createIdempotencyDbFake() {
+  // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+  const rows: any[] = []
+  return {
+    rows,
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: async () => rows.slice(0, 1),
+        }),
+      }),
+    }),
+    insert: () => ({
+      // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+      values: (value: any) => ({
+        onConflictDoNothing: async () => {
+          rows.push(value)
+        },
+      }),
+    }),
+    delete: () => ({
+      where: async () => {
+        rows.length = 0
+      },
+    }),
+  }
+}
+
+function buildApp() {
+  const db = createIdempotencyDbFake()
+  const container = createContainer()
+  const app = new Hono().use("*", async (c, next) => {
+    c.set("db", db as never)
+    c.set("container", container as never)
+    await next()
+  })
+  app.route("/", createNetopiaFinanceRoutes(runtimeOptions))
+  return { app, db }
+}
+
+const callbackPayload = {
+  order: { orderID: "client_ref_123" },
+  payment: {
+    amount: 125,
+    currency: "RON",
+    ntpID: "ntp_123",
+    status: 3,
+    data: { AuthCode: "AUTH1", RRN: "RRN1" },
+  },
+}
+
+function postCallback(app: Hono) {
+  return app.request("/providers/netopia/callback", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(callbackPayload),
+  })
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+describe("netopia callback — provider-event dedup", () => {
+  it("processes a duplicate callback (same ntpID + status) exactly once and replays the stored response", async () => {
+    vi.spyOn(financeService, "listPaymentSessions").mockResolvedValue({
+      data: [{ ...baseSession }],
+      total: 1,
+      limit: 1,
+      offset: 0,
+    })
+    const completeSpy = vi.spyOn(financeService, "completePaymentSession").mockResolvedValue({
+      ...baseSession,
+      status: "paid",
+      providerSessionId: "ntp_123",
+      providerPaymentId: "ntp_123",
+    })
+
+    const { app, db } = buildApp()
+
+    const first = await postCallback(app)
+    expect(first.status).toBe(200)
+    const firstBody = (await first.json()) as { data: { action: string } }
+    expect(firstBody.data.action).toBe("completed")
+    expect(completeSpy).toHaveBeenCalledTimes(1)
+
+    // The synthetic key derived from the provider event id was stored.
+    expect(db.rows).toHaveLength(1)
+    expect(db.rows[0]?.key).toBe("netopia:ntp_123:3")
+
+    const second = await postCallback(app)
+    expect(second.status).toBe(200)
+    expect(second.headers.get("Idempotency-Replayed")).toBe("true")
+    const secondBody = (await second.json()) as { data: { action: string } }
+    expect(secondBody).toEqual(firstBody)
+
+    // The handler did NOT run again — no second completion.
+    expect(completeSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it("treats distinct provider events (different status) for the same transaction as distinct keys", async () => {
+    vi.spyOn(financeService, "listPaymentSessions").mockResolvedValue({
+      data: [{ ...baseSession }],
+      total: 1,
+      limit: 1,
+      offset: 0,
+    })
+    vi.spyOn(financeService, "updatePaymentSession").mockResolvedValue({
+      ...baseSession,
+      status: "processing",
+    })
+
+    const { app, db } = buildApp()
+
+    // status 15 maps to "processing" by default — a different provider
+    // event than the paid callback, so it must be keyed differently.
+    const res = await app.request("/providers/netopia/callback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ...callbackPayload,
+        payment: { ...callbackPayload.payment, status: 15 },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(db.rows[0]?.key).toBe("netopia:ntp_123:15")
+  })
+
+  it("passes unparseable payloads through unkeyed (rejected by validation, nothing stored)", async () => {
+    const { app, db } = buildApp()
+
+    const res = await app.request("/providers/netopia/callback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "not-json",
+    })
+
+    expect(res.status).toBeGreaterThanOrEqual(400)
+    expect(db.rows).toHaveLength(0)
+  })
+})
+
+describe("netopia collect routes — Idempotency-Key support", () => {
+  it("replays a duplicate invoice collect instead of collecting twice", async () => {
+    const { netopiaService } = await import("../../src/service.js")
+    const collectInvoiceSpy = vi
+      .spyOn(netopiaService, "collectInvoice")
+      .mockResolvedValue({ ok: true } as never)
+
+    const { app } = buildApp()
+
+    const request = () =>
+      app.request("/providers/netopia/invoices/inv_123/collect", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "Idempotency-Key": "collect-once",
+        },
+        body: JSON.stringify({
+          netopia: {
+            billing: {
+              email: "traveler@example.com",
+              phone: "0712345678",
+              firstName: "Ana",
+              lastName: "Popescu",
+              city: "Bucharest",
+              country: 40,
+              state: "B",
+              postalCode: "010101",
+              details: "Str. Exemplu 1",
+            },
+          },
+        }),
+      })
+
+    const first = await request()
+    expect(first.status).toBe(201)
+    expect(collectInvoiceSpy).toHaveBeenCalledTimes(1)
+
+    const second = await request()
+    expect(second.status).toBe(201)
+    expect(second.headers.get("Idempotency-Replayed")).toBe("true")
+    expect(collectInvoiceSpy).toHaveBeenCalledTimes(1)
+  })
+})

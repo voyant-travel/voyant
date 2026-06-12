@@ -38,6 +38,11 @@ export function createTestDb(): PostgresJsDatabase {
     testDbSingleton = createDbClient(TEST_DB_URL, {
       adapter: "node",
       nodeMaxConnections: 1,
+      // Production timeout defaults don't apply to test infrastructure:
+      // cleanupTestDb's TRUNCATE over the full ~350-table schema can
+      // exceed the 10s statement_timeout on a cold Postgres, killing
+      // every integration suite's setup.
+      timeouts: { statementMs: false, queryMs: false, connectMs: false },
     }) as PostgresJsDatabaseWithClient
   }
 

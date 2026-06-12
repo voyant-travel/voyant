@@ -1,8 +1,9 @@
 import type { Extension, ModuleContainer } from "@voyantjs/core"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "@voyantjs/finance"
-import { defineHonoBundle, type HonoBundle, parseJsonBody } from "@voyantjs/hono"
+import { defineHonoBundle, type HonoBundle, idempotencyKey, parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import { resolveNetopiaRuntimeOptions } from "./client.js"
@@ -43,6 +44,41 @@ function getNetopiaRuntime(
   return resolveNetopiaRuntimeOptions(bindings, options)
 }
 
+/**
+ * Netopia doesn't send an `Idempotency-Key` header — its retry identity is
+ * the (ntpID, status) pair in the callback payload (`ntpID` is the Netopia
+ * transaction id; `status` distinguishes the processing/paid/failed events
+ * of the same transaction). This middleware derives a synthetic
+ * `Idempotency-Key` from that pair so the standard `idempotencyKey()`
+ * middleware (and its `infra idempotency_keys` storage) dedupes provider
+ * retries exactly like client-keyed mutations — no parallel dedup
+ * mechanism. Unparseable payloads pass through unkeyed and fall back to
+ * the handler's own already-completed guards.
+ */
+function netopiaCallbackEventKey(): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    if (!c.req.header("Idempotency-Key")) {
+      const rawBody = await c.req.text()
+      let headers: Headers | undefined
+      try {
+        const parsed = JSON.parse(rawBody) as { payment?: { ntpID?: unknown; status?: unknown } }
+        const ntpId = parsed?.payment?.ntpID
+        const status = parsed?.payment?.status
+        if (typeof ntpId === "string" && ntpId.length > 0 && typeof status === "number") {
+          headers = new Headers(c.req.raw.headers)
+          headers.set("Idempotency-Key", `netopia:${ntpId}:${status}`)
+        }
+      } catch {
+        // Not JSON — let the validation layer reject it downstream.
+      }
+      // `c.req.text()` consumed the body; rebuild the request so the
+      // idempotency middleware / handler can re-read it.
+      c.req.raw = new Request(c.req.raw, headers ? { body: rawBody, headers } : { body: rawBody })
+    }
+    return next()
+  }
+}
+
 export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) {
   const handleNetopiaError = (message: string) => {
     if (
@@ -74,7 +110,7 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
   }) => getNetopiaRuntime(c.env, options, (key) => c.var.container.resolve(key))
 
   return new Hono<Env>()
-    .post("/providers/netopia/payment-sessions/:sessionId/start", async (c) => {
+    .post("/providers/netopia/payment-sessions/:sessionId/start", idempotencyKey(), async (c) => {
       try {
         const data = await parseJsonBody(c, netopiaStartPaymentSessionSchema)
         const runtime = resolveRuntime(c)
@@ -102,6 +138,7 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
     })
     .post(
       "/providers/netopia/bookings/:bookingId/payment-schedules/:scheduleId/collect",
+      idempotencyKey(),
       async (c) => {
         try {
           const data = await parseJsonBody(c, netopiaCollectBookingScheduleSchema)
@@ -124,28 +161,32 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         }
       },
     )
-    .post("/providers/netopia/bookings/:bookingId/guarantees/:guaranteeId/collect", async (c) => {
-      try {
-        const data = await parseJsonBody(c, netopiaCollectBookingGuaranteeSchema)
-        const runtime = resolveRuntime(c)
-        const result = await netopiaService.collectBookingGuarantee(
-          c.get("db"),
-          c.req.param("guaranteeId"),
-          data,
-          runtime,
-          undefined,
-          undefined,
-          c.env,
-        )
-        return c.json({ data: result }, 201)
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to collect guarantee payment"
-        const response = handleNetopiaError(message)
-        return c.json({ error: response.message }, response.status)
-      }
-    })
-    .post("/providers/netopia/invoices/:invoiceId/collect", async (c) => {
+    .post(
+      "/providers/netopia/bookings/:bookingId/guarantees/:guaranteeId/collect",
+      idempotencyKey(),
+      async (c) => {
+        try {
+          const data = await parseJsonBody(c, netopiaCollectBookingGuaranteeSchema)
+          const runtime = resolveRuntime(c)
+          const result = await netopiaService.collectBookingGuarantee(
+            c.get("db"),
+            c.req.param("guaranteeId"),
+            data,
+            runtime,
+            undefined,
+            undefined,
+            c.env,
+          )
+          return c.json({ data: result }, 201)
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to collect guarantee payment"
+          const response = handleNetopiaError(message)
+          return c.json({ error: response.message }, response.status)
+        }
+      },
+    )
+    .post("/providers/netopia/invoices/:invoiceId/collect", idempotencyKey(), async (c) => {
       try {
         const data = await parseJsonBody(c, netopiaCollectInvoiceSchema)
         const runtime = resolveRuntime(c)
@@ -165,7 +206,7 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         return c.json({ error: response.message }, response.status)
       }
     })
-    .post("/providers/netopia/callback", async (c) => {
+    .post("/providers/netopia/callback", netopiaCallbackEventKey(), idempotencyKey(), async (c) => {
       const payload = await parseJsonBody(c, netopiaWebhookPayloadSchema)
       const runtime = resolveRuntime(c)
       const financeRuntime = (() => {

@@ -8,6 +8,7 @@ import {
   type ModuleContainer,
   type WorkflowDescriptor,
 } from "@voyantjs/core"
+import { createOutboxEventStore } from "@voyantjs/db/outbox"
 import {
   type BuildManifestArgs,
   buildManifest,
@@ -26,7 +27,7 @@ import { logger } from "./middleware/logger.js"
 import { publicResponseCache } from "./middleware/public-cache.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { expandHonoPlugins } from "./plugin.js"
-import type { VoyantAppConfig, VoyantBindings, VoyantVariables } from "./types.js"
+import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
 function resolveSurfaceMountPath(
   prefix: string,
@@ -80,6 +81,16 @@ export interface VoyantAppExtensions<TBindings = unknown> {
    * there (defaults to `{}` for back-compat with tests).
    */
   ready(bindings?: TBindings): Promise<void>
+  /**
+   * The app's event bus (with every module/plugin subscriber attached).
+   * Exposed for non-request contexts that must deliver events through
+   * the same subscriber set — the outbox drain in a scheduled handler
+   * being the canonical consumer:
+   *
+   *     await app.ready(env)
+   *     await withDbFromEnv(env, (db) => drainOutbox(db, app.eventBus))
+   */
+  eventBus: import("@voyantjs/core").EventBus
 }
 
 export function createApp<TBindings extends VoyantBindings>(
@@ -242,17 +253,45 @@ export function createApp<TBindings extends VoyantBindings>(
     app.use("*", publicResponseCache(config.publicCache ?? {}))
   }
 
+  // Per-request outbox store factory: emits happen in route handlers,
+  // after the db middleware ran, so the request's db client is resolved
+  // lazily at capture time. Outbox writes are single statements — the
+  // cheap http client on non-transactional surfaces handles them fine.
+  const buildOutboxStore = config.outbox
+    ? (c: { get(key: never): unknown }) =>
+        createOutboxEventStore(() => {
+          const requestDb = c.get("db" as never) as VoyantDb | undefined
+          if (!requestDb) {
+            throw new Error(
+              "[voyant] outbox capture needs the per-request db — emit ran before the db middleware",
+            )
+          }
+          return requestDb
+        })
+    : undefined
+
   app.use("*", async (c, next) => {
     c.set("container", container)
     // Request-scoped bus: emits defer non-`inline` subscribers past the
     // response via waitUntil, so handlers doing outbound HTTP (CMS sync,
-    // e-invoicing) no longer add their latency to every mutation. Falls
-    // back to the raw (fully-awaited) bus outside Workers.
+    // e-invoicing) no longer add their latency to every mutation.
+    //
+    // With `outbox: true`, emits are also durable (persisted before
+    // delivery, retried by `drainOutbox` from @voyantjs/db/outbox) —
+    // INCLUDING on runtimes without an ExecutionContext (Node/headless),
+    // where emits await handlers inline but still capture through the
+    // store. Only when there's neither a scheduler nor a store does the
+    // raw bus go on the context unwrapped.
     const executionCtx = tryGetExecutionCtx(c)
+    const outboxStore = buildOutboxStore?.(c)
     c.set(
       "eventBus",
-      executionCtx
-        ? requestScopedEventBus(eventBus, (pending) => executionCtx.waitUntil(pending))
+      executionCtx || outboxStore
+        ? requestScopedEventBus(
+            eventBus,
+            executionCtx ? (pending) => executionCtx.waitUntil(pending) : undefined,
+            outboxStore,
+          )
         : eventBus,
     )
     if (config.link) {
@@ -419,6 +458,7 @@ export function createApp<TBindings extends VoyantBindings>(
   // from `{}` and every later request reuses that broken instance).
   const augmented = app as Hono<{ Bindings: TBindings; Variables: VoyantVariables }> &
     VoyantAppExtensions<TBindings>
+  augmented.eventBus = eventBus
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented

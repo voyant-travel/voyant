@@ -161,4 +161,83 @@ describe("createCheckoutRoutes", () => {
       amountCents: 25000,
     })
   })
+
+  it("replays a duplicate bootstrap with the same Idempotency-Key instead of bootstrapping twice", async () => {
+    serviceMocks.bootstrapCheckoutCollection.mockResolvedValue({
+      bookingId: "book_123",
+      sessionId: "book_123",
+      sourceType: "session",
+      intent: "custom",
+      plan: null,
+      invoice: null,
+      paymentSession: null,
+      invoiceNotification: null,
+      paymentSessionNotification: null,
+      bankTransferInstructions: null,
+      providerStart: null,
+    })
+
+    // In-memory fake of the drizzle chain the idempotencyKey middleware
+    // uses. Predicates are ignored — this test exercises a single
+    // (scope, key) pair, so "first stored row" is the matched row.
+    // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+    const storedRows: any[] = []
+    const dbFake = {
+      select: () => ({
+        from: () => ({
+          where: () => ({ limit: async () => storedRows.slice(0, 1) }),
+        }),
+      }),
+      insert: () => ({
+        // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+        values: (value: any) => ({
+          onConflictDoNothing: async () => {
+            storedRows.push(value)
+          },
+        }),
+      }),
+      delete: () => ({
+        where: async () => {
+          storedRows.length = 0
+        },
+      }),
+    }
+
+    const routes = createCheckoutRoutes()
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("db", dbFake as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const request = () =>
+      app.request("/collections/bootstrap", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "Idempotency-Key": "bootstrap-once",
+        },
+        body: JSON.stringify({
+          sessionId: "book_123",
+          method: "card",
+          stage: "manual",
+          amountCents: 25000,
+        }),
+      })
+
+    const first = await request()
+    expect(first.status).toBe(201)
+    expect(serviceMocks.bootstrapCheckoutCollection).toHaveBeenCalledTimes(1)
+    expect(storedRows).toHaveLength(1)
+
+    const second = await request()
+    expect(second.status).toBe(201)
+    expect(second.headers.get("Idempotency-Replayed")).toBe("true")
+    expect(serviceMocks.bootstrapCheckoutCollection).toHaveBeenCalledTimes(1)
+
+    const firstBody = await first.clone().json()
+    const secondBody = await second.json()
+    expect(secondBody).toEqual(firstBody)
+  })
 })

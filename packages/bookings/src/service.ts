@@ -3,6 +3,7 @@ import {
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
 import type { EventBus } from "@voyantjs/core"
+import { newId } from "@voyantjs/db/lib/typeid"
 import { authUser } from "@voyantjs/db/schema/iam"
 import {
   and,
@@ -3401,8 +3402,53 @@ export const bookingsService = {
   ) {
     const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
+      // Everything that doesn't need the slot locks runs BEFORE the
+      // transaction opens so the `FOR UPDATE` critical section stays as
+      // short as possible (T7, perf RFC): hold-policy resolution and the
+      // catalog name snapshots are plain reads of catalog/policy data
+      // that the slot lock doesn't protect anyway (a product rename
+      // could land mid-transaction either way).
+      const holdExpiresAt = await computeHoldExpiresAt(db, data, data.items)
+
+      // Unlocked pre-read of slot -> product/option so items that omit
+      // productId/optionId can still resolve their catalog snapshot
+      // pre-transaction. `product_id`/`option_id` are immutable on a
+      // slot, so this read cannot diverge from the locked read inside
+      // the transaction. Missing table (catalog-less deployment) or a
+      // missing slot just degrades the snapshot to nulls — the locked
+      // read inside the transaction stays authoritative for existence
+      // and mismatch checks.
+      const slotIds = [...new Set(data.items.map((item) => item.availabilitySlotId))]
+      const slotInfo = new Map<string, { productId: string; optionId: string | null }>()
+      try {
+        const slotRows = await db
+          .select({
+            id: availabilitySlotsRef.id,
+            productId: availabilitySlotsRef.productId,
+            optionId: availabilitySlotsRef.optionId,
+          })
+          .from(availabilitySlotsRef)
+          .where(inArray(availabilitySlotsRef.id, slotIds))
+        for (const row of slotRows) {
+          slotInfo.set(row.id, { productId: row.productId, optionId: row.optionId })
+        }
+      } catch (error) {
+        if (!isUndefinedTableError(error)) throw error
+      }
+
+      const itemSnapshots = await Promise.all(
+        data.items.map((item) => {
+          const preSlot = slotInfo.get(item.availabilitySlotId)
+          return resolveBookingItemSnapshot(db, {
+            productId: item.productId ?? preSlot?.productId ?? null,
+            optionId: item.optionId ?? preSlot?.optionId ?? null,
+            optionUnitId: item.optionUnitId ?? null,
+            availabilitySlotId: item.availabilitySlotId,
+          })
+        }),
+      )
+
       const result = await db.transaction(async (tx) => {
-        const holdExpiresAt = await computeHoldExpiresAt(tx as PostgresJsDatabase, data, data.items)
         const [booking] = await tx
           .insert(bookings)
           .values({
@@ -3445,7 +3491,15 @@ export const bookingsService = {
           throw new BookingServiceError("booking_create_failed")
         }
 
-        for (const item of data.items) {
+        // The locked critical section: per item, only the slot lock +
+        // capacity adjustment runs serially (correctness — that's the
+        // row the `FOR UPDATE` protects). Row payloads are accumulated
+        // and written with ONE batched insert per table afterwards,
+        // instead of two inserts per item while holding the locks.
+        const itemRows: Array<typeof bookingItems.$inferInsert> = []
+        const allocationRows: Array<typeof bookingAllocations.$inferInsert> = []
+
+        for (const [index, item] of data.items.entries()) {
           const capacity = await adjustSlotCapacity(
             tx as PostgresJsDatabase,
             item.availabilitySlotId,
@@ -3475,73 +3529,74 @@ export const bookingsService = {
           const productId = item.productId ?? slot.product_id
           const optionId = item.optionId ?? slot.option_id
           const optionUnitId = item.optionUnitId ?? null
-          const snapshot = await resolveBookingItemSnapshot(tx as PostgresJsDatabase, {
+          const snapshot = itemSnapshots[index]
+
+          // Ids are generated app-side (same `newId` the column default
+          // uses) so allocations can reference their item without
+          // depending on RETURNING order of the batched insert.
+          const bookingItemId = newId("booking_items")
+          itemRows.push({
+            id: bookingItemId,
+            bookingId: booking.id,
+            title: item.title,
+            description: item.description ?? null,
+            itemType: item.itemType,
+            status: "on_hold",
+            serviceDate: slot.date_local,
+            startsAt: slot.starts_at,
+            endsAt: slot.ends_at,
+            quantity: item.quantity,
+            sellCurrency: item.sellCurrency ?? booking.sellCurrency,
+            unitSellAmountCents: item.unitSellAmountCents ?? null,
+            totalSellAmountCents: item.totalSellAmountCents ?? null,
+            costCurrency: item.costCurrency ?? null,
+            unitCostAmountCents: item.unitCostAmountCents ?? null,
+            totalCostAmountCents: item.totalCostAmountCents ?? null,
+            notes: item.notes ?? null,
             productId,
             optionId,
             optionUnitId,
+            pricingCategoryId: item.pricingCategoryId ?? null,
             availabilitySlotId: item.availabilitySlotId,
+            productNameSnapshot: item.productNameSnapshot ?? snapshot?.productName ?? null,
+            optionNameSnapshot: item.optionNameSnapshot ?? snapshot?.optionName ?? null,
+            unitNameSnapshot: item.unitNameSnapshot ?? snapshot?.unitName ?? null,
+            departureLabelSnapshot: item.departureLabelSnapshot ?? snapshot?.departureLabel ?? null,
+            sourceSnapshotId: item.sourceSnapshotId ?? null,
+            sourceOfferId: item.sourceOfferId ?? null,
+            metadata: item.metadata ?? null,
           })
 
-          const [bookingItem] = await tx
-            .insert(bookingItems)
-            .values({
-              bookingId: booking.id,
-              title: item.title,
-              description: item.description ?? null,
-              itemType: item.itemType,
-              status: "on_hold",
-              serviceDate: slot.date_local,
-              startsAt: slot.starts_at,
-              endsAt: slot.ends_at,
-              quantity: item.quantity,
-              sellCurrency: item.sellCurrency ?? booking.sellCurrency,
-              unitSellAmountCents: item.unitSellAmountCents ?? null,
-              totalSellAmountCents: item.totalSellAmountCents ?? null,
-              costCurrency: item.costCurrency ?? null,
-              unitCostAmountCents: item.unitCostAmountCents ?? null,
-              totalCostAmountCents: item.totalCostAmountCents ?? null,
-              notes: item.notes ?? null,
-              productId,
-              optionId,
-              optionUnitId,
-              pricingCategoryId: item.pricingCategoryId ?? null,
-              availabilitySlotId: item.availabilitySlotId,
-              productNameSnapshot: item.productNameSnapshot ?? snapshot.productName ?? null,
-              optionNameSnapshot: item.optionNameSnapshot ?? snapshot.optionName ?? null,
-              unitNameSnapshot: item.unitNameSnapshot ?? snapshot.unitName ?? null,
-              departureLabelSnapshot:
-                item.departureLabelSnapshot ?? snapshot.departureLabel ?? null,
-              sourceSnapshotId: item.sourceSnapshotId ?? null,
-              sourceOfferId: item.sourceOfferId ?? null,
-              metadata: item.metadata ?? null,
-            })
-            .returning()
+          allocationRows.push({
+            bookingId: booking.id,
+            bookingItemId,
+            productId,
+            optionId,
+            optionUnitId,
+            pricingCategoryId: item.pricingCategoryId ?? null,
+            availabilitySlotId: item.availabilitySlotId,
+            quantity: item.quantity,
+            allocationType: item.allocationType,
+            status: "held",
+            holdExpiresAt,
+            metadata: item.metadata ?? null,
+          })
+        }
 
-          if (!bookingItem) {
-            throw new BookingServiceError("booking_item_create_failed")
-          }
+        const insertedItems = await tx
+          .insert(bookingItems)
+          .values(itemRows)
+          .returning({ id: bookingItems.id })
+        if (insertedItems.length !== itemRows.length) {
+          throw new BookingServiceError("booking_item_create_failed")
+        }
 
-          const [allocation] = await tx
-            .insert(bookingAllocations)
-            .values({
-              bookingId: booking.id,
-              bookingItemId: bookingItem.id,
-              productId,
-              optionId,
-              optionUnitId,
-              pricingCategoryId: item.pricingCategoryId ?? null,
-              availabilitySlotId: item.availabilitySlotId,
-              quantity: item.quantity,
-              allocationType: item.allocationType,
-              status: "held",
-              holdExpiresAt,
-              metadata: item.metadata ?? null,
-            })
-            .returning()
-
-          if (!allocation) {
-            throw new BookingServiceError("allocation_create_failed")
-          }
+        const insertedAllocations = await tx
+          .insert(bookingAllocations)
+          .values(allocationRows)
+          .returning({ id: bookingAllocations.id })
+        if (insertedAllocations.length !== allocationRows.length) {
+          throw new BookingServiceError("allocation_create_failed")
         }
 
         await tx.insert(bookingActivityLog).values({
