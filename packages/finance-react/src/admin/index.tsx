@@ -22,37 +22,68 @@ import { defaultFetcher } from "@voyantjs/react"
 // peer-depends on `@voyantjs/suppliers-react/ui`.
 import { supplierDetailPaymentPolicySlot } from "@voyantjs/suppliers-react/admin"
 import type { ComponentType } from "react"
+import * as React from "react"
 
 // Skeletons are deliberately the ONLY page-adjacent statics this factory
 // touches: they ship from their own light modules, so attaching them as
 // `pendingComponent` doesn't pull the heavy page chunks into the factory.
+// Query options resolve via dynamic import inside the loaders, and the
+// widgets mount through Suspense-wrapped `React.lazy` loaders — both keep
+// the finance data layer (client + response schemas + the payment-policy
+// engine) out of the workspace-chrome chunk that evaluates this factory.
 import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
 import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
-// Query options live in the package data root — static imports here stay in
-// the data layer and never reference the page components.
-import {
-  getAllPaymentsQueryOptions,
-  getDepartureProfitabilityQueryOptions,
-  getInvoiceCreditNotesQueryOptions,
-  getInvoiceLineItemsQueryOptions,
-  getInvoiceNotesQueryOptions,
-  getInvoiceNumberSeriesQueryOptions,
-  getInvoicePaymentsQueryOptions,
-  getInvoiceQueryOptions,
-  getInvoicesQueryOptions,
-  getPaymentQueryOptions,
-} from "../index.js"
-import { BookingInvoicesWidget } from "./booking-invoices-widget.js"
-import { BookingPaymentPolicyWidget } from "./booking-payment-policy-widget.js"
-import { BookingPendingPaymentSessionsWidget } from "./booking-pending-payment-sessions-widget.js"
 import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
 import { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
-import { SupplierPaymentPolicyWidget } from "./supplier-payment-policy-widget.js"
 
 /** The host runtime as the package's query-option client (`fetchWithValidation`). */
 function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }
+
+/**
+ * Suspense-wrapped lazy widget mount: the widget registry takes a sync
+ * component, but the finance cards (and the payment-policy/schedule stack
+ * behind them) must not load with workspace chrome — each widget chunk
+ * fetches when its slot actually renders on a detail page.
+ */
+function lazyWidget(
+  load: () => Promise<{ default: ComponentType<Record<string, unknown>> }>,
+): ComponentType<Record<string, unknown>> {
+  const Lazy = React.lazy(load)
+  return function LazyFinanceAdminWidget(props: Record<string, unknown>) {
+    return (
+      <React.Suspense fallback={null}>
+        <Lazy {...props} />
+      </React.Suspense>
+    )
+  }
+}
+
+const LazyBookingInvoicesWidget = lazyWidget(() =>
+  import("./booking-invoices-widget.js").then((module) => ({
+    default: module.BookingInvoicesWidget as unknown as ComponentType<Record<string, unknown>>,
+  })),
+)
+const LazyBookingPendingPaymentSessionsWidget = lazyWidget(() =>
+  import("./booking-pending-payment-sessions-widget.js").then((module) => ({
+    default: module.BookingPendingPaymentSessionsWidget as unknown as ComponentType<
+      Record<string, unknown>
+    >,
+  })),
+)
+const LazyBookingPaymentPolicyWidget = lazyWidget(() =>
+  import("./booking-payment-policy-widget.js").then((module) => ({
+    default: module.BookingPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
+  })),
+)
+const LazySupplierPaymentPolicyWidget = lazyWidget(() =>
+  import("./supplier-payment-policy-widget.js").then((module) => ({
+    default: module.SupplierPaymentPolicyWidget as unknown as ComponentType<
+      Record<string, unknown>
+    >,
+  })),
+)
 
 /**
  * Semantic destinations the finance admin surfaces navigate to
@@ -78,33 +109,23 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the operator-grade
 // finance pages bound to their data wiring + semantic-destination
 // navigation. Host route files only bind route params onto these.
-export {
-  BookingInvoicesWidget,
-  type BookingInvoicesWidgetProps,
-} from "./booking-invoices-widget.js"
-export {
-  BookingPaymentPolicyWidget,
-  type BookingPaymentPolicyWidgetProps,
-} from "./booking-payment-policy-widget.js"
-export {
-  BookingPendingPaymentSessionsWidget,
-  type BookingPendingPaymentSessionsWidgetProps,
-} from "./booking-pending-payment-sessions-widget.js"
-export { CreditNoteDialog, type CreditNoteDialogProps } from "./credit-note-dialog.js"
-export { InvoiceDetailHost, type InvoiceDetailHostProps } from "./invoice-detail-host.js"
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page,
+// host, dialog or widget component values — it is evaluated with the
+// workspace chrome, so a static re-export would pin the heavy finance
+// modules into the entry chunk. Consumers import them from their specific
+// modules; only their TYPES re-export here, plus the lean skeletons.
+export type { BookingInvoicesWidgetProps } from "./booking-invoices-widget.js"
+export type { BookingPaymentPolicyWidgetProps } from "./booking-payment-policy-widget.js"
+export type { BookingPendingPaymentSessionsWidgetProps } from "./booking-pending-payment-sessions-widget.js"
+export type { CreditNoteDialogProps } from "./credit-note-dialog.js"
+export type { InvoiceDetailHostProps } from "./invoice-detail-host.js"
 export { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
-export { LineItemDialog, type LineItemDialogProps } from "./line-item-dialog.js"
-export { PaymentDetailHost, type PaymentDetailHostProps } from "./payment-detail-host.js"
+export type { LineItemDialogProps } from "./line-item-dialog.js"
+export type { PaymentDetailHostProps } from "./payment-detail-host.js"
 export { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
-export { PaymentDialog, type PaymentDialogProps } from "./payment-dialog.js"
-export {
-  RecordPaymentDialog,
-  type RecordPaymentDialogProps,
-} from "./record-payment-dialog.js"
-export {
-  SupplierPaymentPolicyWidget,
-  type SupplierPaymentPolicyWidgetProps,
-} from "./supplier-payment-policy-widget.js"
+export type { PaymentDialogProps } from "./payment-dialog.js"
+export type { RecordPaymentDialogProps } from "./record-payment-dialog.js"
+export type { SupplierPaymentPolicyWidgetProps } from "./supplier-payment-policy-widget.js"
 
 export interface CreateFinanceAdminExtensionOptions {
   /** Mount path of the finance pages inside the admin workspace. Default `/finance`. */
@@ -178,8 +199,14 @@ export function createFinanceAdminExtension(
         title: invoices,
         ssr: "data-only",
         page: () => import("./pages/invoices-index.js"),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(getInvoicesQueryOptions(runtimeClient(runtime))),
+        // Dynamic import on purpose: the query options pull the finance
+        // data layer (client + response schemas), and a static import here
+        // would pin it into the workspace-chrome chunk that evaluates this
+        // factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getInvoicesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(getInvoicesQueryOptions(runtimeClient(runtime)))
+        },
         pendingComponent: InvoicesPageSkeleton,
       },
       {
@@ -191,6 +218,14 @@ export function createFinanceAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the invoices index loader above.
+          const {
+            getInvoiceCreditNotesQueryOptions,
+            getInvoiceLineItemsQueryOptions,
+            getInvoiceNotesQueryOptions,
+            getInvoicePaymentsQueryOptions,
+            getInvoiceQueryOptions,
+          } = await import("../query-options.js")
           const client = runtimeClient(runtime)
 
           await queryClient.ensureQueryData(getInvoiceQueryOptions(client, id))
@@ -214,13 +249,16 @@ export function createFinanceAdminExtension(
           import("../components/invoice-number-series-page.js").then((module) =>
             adminRoutePageModule(module.InvoiceNumberSeriesPage),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the invoices index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getInvoiceNumberSeriesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getInvoiceNumberSeriesQueryOptions(runtimeClient(runtime), {
               limit: 100,
               offset: 0,
             }),
-          ),
+          )
+        },
       },
       {
         id: "finance-payments-index",
@@ -228,8 +266,11 @@ export function createFinanceAdminExtension(
         title: payments,
         ssr: "data-only",
         page: () => import("./pages/payments-index.js"),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(getAllPaymentsQueryOptions(runtimeClient(runtime))),
+        // Dynamic import on purpose — see the invoices index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getAllPaymentsQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(getAllPaymentsQueryOptions(runtimeClient(runtime)))
+        },
         pendingComponent: PaymentsPageSkeleton,
       },
       {
@@ -238,9 +279,11 @@ export function createFinanceAdminExtension(
         title: payments,
         ssr: "data-only",
         page: () => import("./pages/payment-detail.js"),
-        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the invoices index loader above.
+          const { getPaymentQueryOptions } = await import("../query-options.js")
           return queryClient.ensureQueryData(getPaymentQueryOptions(runtimeClient(runtime), id))
         },
         pendingComponent: PaymentDetailSkeleton,
@@ -275,10 +318,13 @@ export function createFinanceAdminExtension(
         title: profitability,
         ssr: "data-only",
         page: () => import("./pages/profitability.js"),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the invoices index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getDepartureProfitabilityQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getDepartureProfitabilityQueryOptions(runtimeClient(runtime)),
-          ),
+          )
+        },
       },
     ],
     widgets: [
@@ -288,7 +334,7 @@ export function createFinanceAdminExtension(
         // The widget registry is untyped (`Record<string, unknown>` props);
         // the typed contract is `BookingDetailHostSlotContext`, which the
         // bookings host passes verbatim to this slot's widgets.
-        component: BookingInvoicesWidget as unknown as ComponentType<Record<string, unknown>>,
+        component: LazyBookingInvoicesWidget,
       } satisfies AdminWidgetContribution,
       {
         id: "finance-booking-pending-payment-sessions",
@@ -296,16 +342,14 @@ export function createFinanceAdminExtension(
         // Same untyped-registry cast; the typed contract is
         // `BookingDetailHostSlotContext`, which the bookings host passes
         // verbatim to this slot's widgets.
-        component: BookingPendingPaymentSessionsWidget as unknown as ComponentType<
-          Record<string, unknown>
-        >,
+        component: LazyBookingPendingPaymentSessionsWidget,
       } satisfies AdminWidgetContribution,
       {
         id: "finance-booking-payment-policy",
         slot: bookingDetailFinanceEndSlot,
         // Same untyped-registry cast; the typed contract is
         // `BookingDetailHostSlotContext`.
-        component: BookingPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
+        component: LazyBookingPaymentPolicyWidget,
       } satisfies AdminWidgetContribution,
       {
         id: "finance-supplier-payment-policy",
@@ -313,7 +357,7 @@ export function createFinanceAdminExtension(
         // Same untyped-registry cast; the typed contract is
         // `SupplierDetailHostSlotContext`, which the supplier detail host
         // passes verbatim to this slot's widgets.
-        component: SupplierPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
+        component: LazySupplierPaymentPolicyWidget,
       } satisfies AdminWidgetContribution,
     ],
   })

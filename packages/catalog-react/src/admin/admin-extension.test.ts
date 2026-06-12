@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  CatalogVerticalHost,
-  CruiseDetailHost,
-  createCatalogAdminExtension,
-  DynamicCatalogHost,
-  ProductDetailHost,
-  productDetailSearchSchema,
-  ScheduledCatalogHost,
-  VerticalDetailHost,
-} from "./index.js"
+import { CatalogVerticalHost } from "./catalog-vertical-host.js"
+import { CruiseDetailHost } from "./cruise-detail-host.js"
+import { DynamicCatalogHost } from "./dynamic-catalog-host.js"
+import { createCatalogAdminExtension, productDetailSearchSchema } from "./index.js"
+import { ProductDetailHost } from "./product-detail-host.js"
+import { ScheduledCatalogHost } from "./scheduled-catalog-host.js"
+import { VerticalDetailHost } from "./vertical-detail-host.js"
 
 describe("createCatalogAdminExtension", () => {
   it("contributes no navigation (catalog nav is base-nav-owned)", () => {
@@ -81,7 +78,7 @@ describe("packaged catalog admin hosts", () => {
   // bind these directly, so a broken import surface fails here, not in an app
   // build. (Behavioral rendering needs the workspace provider stack and lives
   // with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       CatalogVerticalHost,
       CruiseDetailHost,

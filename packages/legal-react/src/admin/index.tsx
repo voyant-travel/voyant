@@ -12,23 +12,11 @@ import {
 // tab union, so re-declaring it here could not stay shape-identical.
 import type {} from "@voyantjs/bookings-react/admin"
 
-import {
-  defaultFetcher,
-  type FetchWithValidationOptions,
-  getLegalContractAttachmentsQueryOptions,
-  getLegalContractNumberSeriesQueryOptions,
-  getLegalContractQueryOptions,
-  getLegalContractSignaturesQueryOptions,
-  getLegalContractsQueryOptions,
-  getLegalContractTemplateQueryOptions,
-  getLegalContractTemplatesQueryOptions,
-  getLegalContractTemplateVersionsQueryOptions,
-  getLegalPoliciesQueryOptions,
-  getLegalPolicyAcceptancesQueryOptions,
-  getLegalPolicyAssignmentsQueryOptions,
-  getLegalPolicyQueryOptions,
-  getLegalPolicyVersionsQueryOptions,
-} from "../index.js"
+// Lean static only: the client module (fetcher + client contract type).
+// Query options resolve via dynamic import inside the loaders so the legal
+// data layer (client + response schemas) stays out of the workspace-chrome
+// chunk that evaluates this factory.
+import { defaultFetcher, type FetchWithValidationOptions } from "../client.js"
 
 /**
  * Semantic destinations the legal admin surfaces navigate to
@@ -60,26 +48,17 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the operator-grade
 // legal pages bound to their data wiring + semantic-destination navigation.
 // Host route files only bind route params onto these.
-export {
-  ContractDetailHost,
-  type ContractDetailHostProps,
-} from "./contract-detail-host.js"
-export { ContractDialog, type ContractDialogProps } from "./contract-dialog.js"
-export { ContractsHost } from "./contracts-host.js"
-export { NumberSeriesDialog } from "./number-series-dialog.js"
-export { NumberSeriesHost } from "./number-series-host.js"
-export { PoliciesHost } from "./policies-host.js"
-export {
-  type AssignmentData,
-  PolicyAssignmentDialog,
-  type PolicyAssignmentDialogProps,
-} from "./policy-assignment-dialog.js"
-export { PolicyDetailHost, type PolicyDetailHostProps } from "./policy-detail-host.js"
-export { PolicyDialog } from "./policy-dialog.js"
-export { TemplateDetailHost, type TemplateDetailHostProps } from "./template-detail-host.js"
-export { TemplateDialog } from "./template-dialog.js"
-export { TemplateVersionDialog } from "./template-version-dialog.js"
-export { TemplatesHost } from "./templates-host.js"
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page,
+// host or dialog component values — it is evaluated with the workspace
+// chrome, so a static re-export would pin the heavy legal modules into the
+// entry chunk. Consumers import them from their specific modules; only
+// their TYPES re-export here.
+export type { ContractDetailHostProps } from "./contract-detail-host.js"
+export type { ContractDialogProps } from "./contract-dialog.js"
+export type { AssignmentData, PolicyAssignmentDialogProps } from "./policy-assignment-dialog.js"
+export type { PolicyDetailHostProps } from "./policy-detail-host.js"
+export type { TemplateDetailHostProps } from "./template-detail-host.js"
 
 /**
  * Bind the host-supplied route runtime to the legal data-client shape the
@@ -152,8 +131,12 @@ export function createLegalAdminExtension(
           import("./contracts-host.js").then((module) =>
             adminRoutePageModule(module.ContractsHost),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose: the query options pull the legal data
+        // layer (client + response schemas), and a static import here would
+        // pin it into the workspace-chrome chunk that evaluates this factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getLegalContractsQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getLegalContractsQueryOptions(toLegalClient(runtime), {
               search: "",
               scope: "all",
@@ -161,7 +144,8 @@ export function createLegalAdminExtension(
               limit: 25,
               offset: 0,
             }),
-          ),
+          )
+        },
       },
       {
         id: "legal-contracts-detail",
@@ -172,6 +156,12 @@ export function createLegalAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the contracts index loader above.
+          const {
+            getLegalContractAttachmentsQueryOptions,
+            getLegalContractQueryOptions,
+            getLegalContractSignaturesQueryOptions,
+          } = await import("../query-options.js")
           const client = toLegalClient(runtime)
 
           await queryClient.ensureQueryData(getLegalContractQueryOptions(client, id))
@@ -193,13 +183,16 @@ export function createLegalAdminExtension(
           import("./templates-host.js").then((module) =>
             adminRoutePageModule(module.TemplatesHost),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the contracts index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getLegalContractTemplatesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getLegalContractTemplatesQueryOptions(toLegalClient(runtime), {
               search: "",
               scope: "all",
             }),
-          ),
+          )
+        },
       },
       {
         id: "legal-templates-detail",
@@ -210,6 +203,11 @@ export function createLegalAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the contracts index loader above.
+          const {
+            getLegalContractTemplateQueryOptions,
+            getLegalContractTemplateVersionsQueryOptions,
+          } = await import("../query-options.js")
           const client = toLegalClient(runtime)
 
           await queryClient.ensureQueryData(getLegalContractTemplateQueryOptions(client, id))
@@ -226,15 +224,18 @@ export function createLegalAdminExtension(
         ssr: "data-only",
         page: () =>
           import("./policies-host.js").then((module) => adminRoutePageModule(module.PoliciesHost)),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the contracts index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getLegalPoliciesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getLegalPoliciesQueryOptions(toLegalClient(runtime), {
               search: "",
               kind: "all",
               limit: 25,
               offset: 0,
             }),
-          ),
+          )
+        },
       },
       {
         id: "legal-policies-detail",
@@ -245,6 +246,13 @@ export function createLegalAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the contracts index loader above.
+          const {
+            getLegalPolicyAcceptancesQueryOptions,
+            getLegalPolicyAssignmentsQueryOptions,
+            getLegalPolicyQueryOptions,
+            getLegalPolicyVersionsQueryOptions,
+          } = await import("../query-options.js")
           const client = toLegalClient(runtime)
 
           await queryClient.ensureQueryData(getLegalPolicyQueryOptions(client, id))
@@ -269,10 +277,13 @@ export function createLegalAdminExtension(
           import("./number-series-host.js").then((module) =>
             adminRoutePageModule(module.NumberSeriesHost),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the contracts index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getLegalContractNumberSeriesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getLegalContractNumberSeriesQueryOptions(toLegalClient(runtime)),
-          ),
+          )
+        },
       },
     ],
   })

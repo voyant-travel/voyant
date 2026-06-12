@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  createResourcesAdminExtension,
-  ensureResourcesPageData,
   ResourceAllocationDetailHost,
   ResourceAssignmentDetailHost,
   ResourceDetailHost,
   ResourcePoolDetailHost,
+} from "./detail-hosts.js"
+import {
+  createResourcesAdminExtension,
   ResourcesBodySkeleton,
-  ResourcesHost,
   ResourcesPageSkeleton,
-  resourcesPageQueryFilters,
 } from "./index.js"
+import { ResourcesHost } from "./resources-host.js"
+import { ensureResourcesPageData, resourcesPageQueryFilters } from "./resources-page-data.js"
 
 describe("createResourcesAdminExtension", () => {
   it("contributes no navigation (resources nav is base-nav-owned)", () => {
@@ -86,11 +87,11 @@ describe("createResourcesAdminExtension", () => {
 })
 
 describe("packaged resources admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       ResourcesHost,
       ResourceDetailHost,

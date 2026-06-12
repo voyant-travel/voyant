@@ -22,6 +22,7 @@
     "./i18n/ro": "./src/i18n/ro.ts",
     "./journey": "./src/journey/index.ts",
     "./admin": "./src/admin/index.tsx",
+    "./admin/*": "./src/admin/*.tsx",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {

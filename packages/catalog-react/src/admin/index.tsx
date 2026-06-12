@@ -1,7 +1,11 @@
 import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
 import { z } from "zod"
+// Lean static: the browse search contract lives in its own schema-only
+// module — importing it through `../index.js` would pin the whole catalog
+// data/components barrel into the workspace-chrome chunk that evaluates
+// this factory.
+import { catalogSearchSchema } from "../catalog-search-params.js"
 import type { CatalogDetailSurface } from "../catalog-surfaces.js"
-import { catalogSearchSchema } from "../index.js"
 
 /**
  * Semantic destinations the catalog admin surfaces navigate to (packaged-admin
@@ -58,8 +62,16 @@ declare module "@voyantjs/admin" {
   }
 }
 
-// Packaged pages + taxonomy consumed by host route files / host wrappers, so
-// thin hosts can import everything catalog-admin from this one entrypoint.
+export { type CatalogSearchParams, catalogSearchSchema } from "../catalog-search-params.js"
+// Lean taxonomy + search contracts consumed by host route files / host
+// wrappers and the generated admin route module.
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page
+// or host component values — it is evaluated with the workspace chrome, so
+// a static page/host re-export would pin the heavy catalog pages into the
+// entry chunk. Pages and hosts import from their specific modules
+// (`@voyantjs/catalog-react/components/*`, `./pages/*` wrappers); only
+// their TYPES re-export here.
 export {
   type CatalogDetailSurface,
   type CatalogVerticalPageId,
@@ -67,43 +79,27 @@ export {
   catalogSurfaceVertical,
   catalogVerticalPageIds,
 } from "../catalog-surfaces.js"
-export { CatalogPage, type CatalogPageProps } from "../components/catalog-page.js"
-export {
-  type CatalogVerticalDetailBreadcrumb,
-  CatalogVerticalDetailPage,
-  type CatalogVerticalDetailPageProps,
+export type { CatalogPageProps } from "../components/catalog-page.js"
+export type {
+  CatalogVerticalDetailBreadcrumb,
+  CatalogVerticalDetailPageProps,
 } from "../components/catalog-vertical-detail-page.js"
-export { CruiseDetailPage, type CruiseDetailPageProps } from "../components/cruise-detail-page.js"
-export {
-  DynamicCatalogPage,
-  type DynamicCatalogPageProps,
-} from "../components/dynamic-catalog-page.js"
-export {
-  type ProductBookSelection,
-  ProductDetailPage,
-  type ProductDetailPageProps,
+export type { CruiseDetailPageProps } from "../components/cruise-detail-page.js"
+export type { DynamicCatalogPageProps } from "../components/dynamic-catalog-page.js"
+export type {
+  ProductBookSelection,
+  ProductDetailPageProps,
 } from "../components/product-detail-page.js"
-export {
-  ScheduledCatalogPage,
-  type ScheduledCatalogPageProps,
-  type ScheduledScope,
+export type {
+  ScheduledCatalogPageProps,
+  ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
-export { type CatalogSearchParams, catalogSearchSchema } from "../index.js"
-// Packaged admin hosts (packaged-admin RFC Phase 2): the catalog pages bound
-// to their data wiring + semantic-destination navigation. Host route files
-// only bind route params/search state onto these.
-export {
-  CatalogVerticalHost,
-  type CatalogVerticalHostProps,
-} from "./catalog-vertical-host.js"
-export { CruiseDetailHost, type CruiseDetailHostProps } from "./cruise-detail-host.js"
-export { DynamicCatalogHost, type DynamicCatalogHostProps } from "./dynamic-catalog-host.js"
-export { ProductDetailHost, type ProductDetailHostProps } from "./product-detail-host.js"
-export {
-  ScheduledCatalogHost,
-  type ScheduledCatalogHostProps,
-} from "./scheduled-catalog-host.js"
-export { VerticalDetailHost, type VerticalDetailHostProps } from "./vertical-detail-host.js"
+export type { CatalogVerticalHostProps } from "./catalog-vertical-host.js"
+export type { CruiseDetailHostProps } from "./cruise-detail-host.js"
+export type { DynamicCatalogHostProps } from "./dynamic-catalog-host.js"
+export type { ProductDetailHostProps } from "./product-detail-host.js"
+export type { ScheduledCatalogHostProps } from "./scheduled-catalog-host.js"
+export type { VerticalDetailHostProps } from "./vertical-detail-host.js"
 
 /**
  * Search context carried onto the product detail page so live offers match

@@ -23,24 +23,14 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the operator-grade
 // notifications pages bound to their data wiring + semantic-destination
 // navigation. Host route files only bind route params onto these.
-export { NotificationDeliveriesHost } from "./notification-deliveries-host.js"
-export { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
-export {
-  NotificationReminderRuleDetailHost,
-  type NotificationReminderRuleDetailHostProps,
-} from "./notification-reminder-rule-detail-host.js"
-export { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog.js"
-export { NotificationReminderRulesHost } from "./notification-reminder-rules-host.js"
-export { NotificationReminderRunsHost } from "./notification-reminder-runs-host.js"
-export { NotificationSettingsHost } from "./notification-settings-host.js"
-export { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
-export {
-  NotificationTemplateDetailHost,
-  type NotificationTemplateDetailHostProps,
-} from "./notification-template-detail-host.js"
-export { NotificationTemplateDialog } from "./notification-template-dialog.js"
-export { NotificationTemplatesHost } from "./notification-templates-host.js"
-export { RemindersPreviewHost } from "./reminders-preview-host.js"
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page,
+// host or dialog component values — it is evaluated with the workspace
+// chrome, so a static re-export would pin the heavy notifications modules
+// into the entry chunk. Consumers import them from their specific modules;
+// only their TYPES re-export here.
+export type { NotificationReminderRuleDetailHostProps } from "./notification-reminder-rule-detail-host.js"
+export type { NotificationTemplateDetailHostProps } from "./notification-template-detail-host.js"
 
 export interface CreateNotificationsAdminExtensionOptions {
   /** Mount path of the notifications pages inside the admin workspace. Default `/notifications`. */

@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  createNotificationsAdminExtension,
-  NotificationDeliveriesHost,
-  NotificationDeliveryDetailDialog,
-  NotificationReminderRuleDetailHost,
-  NotificationReminderRuleDialog,
-  NotificationReminderRulesHost,
-  NotificationReminderRunsHost,
-  NotificationSettingsHost,
-  NotificationTemplateDetailHost,
-  NotificationTemplateDialog,
-  NotificationTemplatesHost,
-  RemindersPreviewHost,
-} from "./index.js"
+import { createNotificationsAdminExtension } from "./index.js"
+import { NotificationDeliveriesHost } from "./notification-deliveries-host.js"
+import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
+import { NotificationReminderRuleDetailHost } from "./notification-reminder-rule-detail-host.js"
+import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog.js"
+import { NotificationReminderRulesHost } from "./notification-reminder-rules-host.js"
+import { NotificationReminderRunsHost } from "./notification-reminder-runs-host.js"
+import { NotificationSettingsHost } from "./notification-settings-host.js"
+import { NotificationTemplateDetailHost } from "./notification-template-detail-host.js"
+import { NotificationTemplateDialog } from "./notification-template-dialog.js"
+import { NotificationTemplatesHost } from "./notification-templates-host.js"
+import { RemindersPreviewHost } from "./reminders-preview-host.js"
 
 describe("createNotificationsAdminExtension", () => {
   it("contributes no navigation (notifications nav is base-nav-owned)", () => {

@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest"
 
 import {
   createSuppliersAdminExtension,
-  SupplierDetailHost,
   SupplierDetailSkeleton,
-  SuppliersHost,
   SuppliersListSkeleton,
   supplierDetailPaymentPolicySlot,
 } from "./index.js"
+import { SupplierDetailHost } from "./supplier-detail-host.js"
+import { SuppliersHost } from "./suppliers-host.js"
 
 describe("createSuppliersAdminExtension", () => {
   it("contributes no navigation (suppliers nav is base-nav-owned)", () => {
@@ -75,11 +75,11 @@ describe("createSuppliersAdminExtension", () => {
 })
 
 describe("packaged suppliers admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       SupplierDetailHost,
       SupplierDetailSkeleton,

@@ -6,18 +6,18 @@ import {
   defineAdminExtension,
 } from "@voyantjs/admin"
 
-import { ResourceAllocationDetailSkeleton } from "../components/resource-allocation-detail-page.js"
-import { ResourceAssignmentDetailSkeleton } from "../components/resource-assignment-detail-page.js"
+// Lean statics only: the client module (fetcher) and the skeletons (their
+// own modules, no page imports). The page-data helpers pull the resources
+// query options (client + response schemas), so the loaders resolve them
+// via dynamic import instead of pinning them into the workspace-chrome
+// chunk that evaluates this factory.
+import { defaultFetcher } from "../client.js"
 import {
-  ensureResourceAllocationDetailPageData,
-  ensureResourceAssignmentDetailPageData,
-  ensureResourceDetailPageData,
-  ensureResourcePoolDetailPageData,
-} from "../components/resource-detail-data.js"
-import { ResourceDetailSkeleton } from "../components/resource-detail-page.js"
-import { ResourcePoolDetailSkeleton } from "../components/resource-pool-detail-page.js"
-import { defaultFetcher } from "../index.js"
-import { ensureResourcesPageData } from "./resources-page-data.js"
+  ResourceAllocationDetailSkeleton,
+  ResourceAssignmentDetailSkeleton,
+  ResourceDetailSkeleton,
+  ResourcePoolDetailSkeleton,
+} from "../components/resource-detail-skeletons.js"
 import { ResourcesPageSkeleton } from "./resources-page-skeleton.js"
 
 /**
@@ -58,23 +58,18 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the resources pages
 // bound to their data wiring + semantic-destination navigation. Host route
 // files only bind route params onto these.
-export {
-  ResourceAllocationDetailHost,
-  type ResourceAllocationDetailHostProps,
-  ResourceAssignmentDetailHost,
-  type ResourceAssignmentDetailHostProps,
-  ResourceDetailHost,
-  type ResourceDetailHostProps,
-  ResourcePoolDetailHost,
-  type ResourcePoolDetailHostProps,
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page,
+// host or dialog component values — it is evaluated with the workspace
+// chrome, so a static re-export would pin the heavy resources modules into
+// the entry chunk. Consumers import them from their specific modules; only
+// their TYPES re-export here, plus the lean skeletons.
+export type {
+  ResourceAllocationDetailHostProps,
+  ResourceAssignmentDetailHostProps,
+  ResourceDetailHostProps,
+  ResourcePoolDetailHostProps,
 } from "./detail-hosts.js"
 export type { BatchMutationResponse } from "./resources-admin-api.js"
-export { ResourceAllocationDialog } from "./resources-dialog-allocation.js"
-export { ResourcesDialogs } from "./resources-dialogs.js"
-export { ResourceDialog, ResourcePoolDialog } from "./resources-dialogs-core.js"
-export { ResourceCloseoutDialog, ResourceSlotAssignmentDialog } from "./resources-dialogs-ops.js"
-export { ResourcesHost } from "./resources-host.js"
-export { ensureResourcesPageData, resourcesPageQueryFilters } from "./resources-page-data.js"
 export { ResourcesBodySkeleton, ResourcesPageSkeleton } from "./resources-page-skeleton.js"
 
 export interface CreateResourcesAdminExtensionOptions {
@@ -134,8 +129,13 @@ export function createResourcesAdminExtension(
         // Awaits only the default tab's query and fires the rest as
         // background prefetches (same filters as the page's hooks, so the
         // cache seeds line up).
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          ensureResourcesPageData(queryClient, loaderClient(runtime)),
+        // Dynamic import on purpose: the helper pulls the resources query
+        // options, and a static import here would pin them into the
+        // workspace-chrome chunk that evaluates this factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { ensureResourcesPageData } = await import("./resources-page-data.js")
+          return ensureResourcesPageData(queryClient, loaderClient(runtime))
+        },
         pendingComponent: ResourcesPageSkeleton,
       },
       {
@@ -144,9 +144,13 @@ export function createResourcesAdminExtension(
         title: resources,
         ssr: "data-only",
         page: () => import("./pages/resource-detail-page.js"),
-        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the index loader above.
+          const { ensureResourceDetailPageData } = await import(
+            "../components/resource-detail-data.js"
+          )
           return ensureResourceDetailPageData(queryClient, loaderClient(runtime), id)
         },
         pendingComponent: ResourceDetailSkeleton,
@@ -157,9 +161,13 @@ export function createResourcesAdminExtension(
         title: resources,
         ssr: "data-only",
         page: () => import("./pages/resource-pool-detail-page.js"),
-        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the index loader above.
+          const { ensureResourcePoolDetailPageData } = await import(
+            "../components/resource-detail-data.js"
+          )
           return ensureResourcePoolDetailPageData(queryClient, loaderClient(runtime), id)
         },
         pendingComponent: ResourcePoolDetailSkeleton,
@@ -170,9 +178,13 @@ export function createResourcesAdminExtension(
         title: resources,
         ssr: "data-only",
         page: () => import("./pages/resource-assignment-detail-page.js"),
-        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the index loader above.
+          const { ensureResourceAssignmentDetailPageData } = await import(
+            "../components/resource-detail-data.js"
+          )
           return ensureResourceAssignmentDetailPageData(queryClient, loaderClient(runtime), id)
         },
         pendingComponent: ResourceAssignmentDetailSkeleton,
@@ -183,9 +195,13 @@ export function createResourcesAdminExtension(
         title: resources,
         ssr: "data-only",
         page: () => import("./pages/resource-allocation-detail-page.js"),
-        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the index loader above.
+          const { ensureResourceAllocationDetailPageData } = await import(
+            "../components/resource-detail-data.js"
+          )
           return ensureResourceAllocationDetailPageData(queryClient, loaderClient(runtime), id)
         },
         pendingComponent: ResourceAllocationDetailSkeleton,

@@ -2,21 +2,21 @@ import { describe, expect, it } from "vitest"
 
 import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
 import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
+import { BookingInvoicesWidget } from "./booking-invoices-widget.js"
+import { BookingPaymentPolicyWidget } from "./booking-payment-policy-widget.js"
+import { BookingPendingPaymentSessionsWidget } from "./booking-pending-payment-sessions-widget.js"
+import { CreditNoteDialog } from "./credit-note-dialog.js"
 import {
-  BookingInvoicesWidget,
-  BookingPaymentPolicyWidget,
-  BookingPendingPaymentSessionsWidget,
-  CreditNoteDialog,
   createFinanceAdminExtension,
-  InvoiceDetailHost,
   InvoiceDetailSkeleton,
-  LineItemDialog,
-  PaymentDetailHost,
   PaymentDetailSkeleton,
-  PaymentDialog,
-  RecordPaymentDialog,
-  SupplierPaymentPolicyWidget,
 } from "./index.js"
+import { InvoiceDetailHost } from "./invoice-detail-host.js"
+import { LineItemDialog } from "./line-item-dialog.js"
+import { PaymentDetailHost } from "./payment-detail-host.js"
+import { PaymentDialog } from "./payment-dialog.js"
+import { RecordPaymentDialog } from "./record-payment-dialog.js"
+import { SupplierPaymentPolicyWidget } from "./supplier-payment-policy-widget.js"
 
 /** The contributions that ship their full route implementation (RFC §4.8). */
 const IMPLEMENTED_ROUTE_IDS = [
@@ -127,7 +127,11 @@ describe("createFinanceAdminExtension", () => {
     const widgets = extension.widgets ?? []
     expect(widgets).toHaveLength(4)
     expect(widgets[0]?.slot).toBe("booking.details.invoices-tab")
-    expect(widgets[0]?.component).toBe(BookingInvoicesWidget)
+    // The contribution mounts a Suspense-wrapped lazy loader (the card and
+    // its payment stack stay out of the workspace-chrome chunk), so assert
+    // it is a renderable component rather than the widget identity.
+    expect(typeof widgets[0]?.component).toBe("function")
+    expect(widgets[0]?.component).not.toBe(BookingInvoicesWidget)
   })
 
   it("contributes the finance-tab cards on the booking detail finance slots", () => {
@@ -139,12 +143,15 @@ describe("createFinanceAdminExtension", () => {
       (candidate) => candidate.id === "finance-booking-pending-payment-sessions",
     )
     expect(pending?.slot).toBe("booking.details.finance-start")
-    expect(pending?.component).toBe(BookingPendingPaymentSessionsWidget)
+    // Lazy-wrapped — see the invoices-tab widget test above.
+    expect(typeof pending?.component).toBe("function")
+    expect(pending?.component).not.toBe(BookingPendingPaymentSessionsWidget)
     const policy = extension.widgets?.find(
       (candidate) => candidate.id === "finance-booking-payment-policy",
     )
     expect(policy?.slot).toBe("booking.details.finance-end")
-    expect(policy?.component).toBe(BookingPaymentPolicyWidget)
+    expect(typeof policy?.component).toBe("function")
+    expect(policy?.component).not.toBe(BookingPaymentPolicyWidget)
   })
 
   it("contributes the payment-policy card on the supplier detail slot", () => {
@@ -156,15 +163,16 @@ describe("createFinanceAdminExtension", () => {
       (candidate) => candidate.id === "finance-supplier-payment-policy",
     )
     expect(widget?.slot).toBe("supplier.details.payment-policy")
-    expect(widget?.component).toBe(SupplierPaymentPolicyWidget)
+    expect(typeof widget?.component).toBe("function")
+    expect(widget?.component).not.toBe(SupplierPaymentPolicyWidget)
   })
 })
 
 describe("packaged finance admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
   it("exports the page hosts and dialogs as components from the admin entrypoint", () => {
     for (const host of [
       BookingInvoicesWidget,

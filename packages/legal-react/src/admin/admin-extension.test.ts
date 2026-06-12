@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  ContractDetailHost,
-  ContractDialog,
-  ContractsHost,
-  createLegalAdminExtension,
-  NumberSeriesDialog,
-  NumberSeriesHost,
-  PoliciesHost,
-  PolicyAssignmentDialog,
-  PolicyDetailHost,
-  PolicyDialog,
-  TemplateDetailHost,
-  TemplatesHost,
-} from "./index.js"
+import { ContractDetailHost } from "./contract-detail-host.js"
+import { ContractDialog } from "./contract-dialog.js"
+import { ContractsHost } from "./contracts-host.js"
+import { createLegalAdminExtension } from "./index.js"
+import { NumberSeriesDialog } from "./number-series-dialog.js"
+import { NumberSeriesHost } from "./number-series-host.js"
+import { PoliciesHost } from "./policies-host.js"
+import { PolicyAssignmentDialog } from "./policy-assignment-dialog.js"
+import { PolicyDetailHost } from "./policy-detail-host.js"
+import { PolicyDialog } from "./policy-dialog.js"
+import { TemplateDetailHost } from "./template-detail-host.js"
+import { TemplatesHost } from "./templates-host.js"
 
 describe("createLegalAdminExtension", () => {
   it("contributes no navigation (legal nav is base-nav-owned)", () => {
@@ -81,10 +79,10 @@ describe("createLegalAdminExtension", () => {
 })
 
 describe("packaged legal admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
   it("exports the page hosts and dialogs as components from the admin entrypoint", () => {
     for (const host of [
       ContractDetailHost,

@@ -6,14 +6,11 @@ import {
   defineAdminExtension,
 } from "@voyantjs/admin"
 
-import {
-  defaultFetcher,
-  getSupplierNotesQueryOptions,
-  getSupplierQueryOptions,
-  getSupplierServiceRatesQueryOptions,
-  getSupplierServicesQueryOptions,
-  getSuppliersQueryOptions,
-} from "../index.js"
+// Lean statics only: the client module (fetcher) and the skeletons. Query
+// options resolve via dynamic import inside the loaders so the suppliers
+// data layer (client + response schemas) stays out of the workspace-chrome
+// chunk that evaluates this factory.
+import { defaultFetcher } from "../client.js"
 import { SupplierDetailSkeleton } from "./supplier-detail-skeleton.js"
 import { SuppliersListSkeleton } from "./suppliers-list-skeleton.js"
 
@@ -41,14 +38,18 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the supplier pages
 // bound to their data wiring + semantic-destination navigation. Host route
 // files only bind route params onto these.
-export {
-  SupplierDetailHost,
-  type SupplierDetailHostProps,
-  type SupplierDetailHostSlotContext,
-  supplierDetailPaymentPolicySlot,
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page
+// or host component values — it is evaluated with the workspace chrome, so
+// a static host re-export would pin the heavy page modules into the entry
+// chunk. Hosts import from their specific modules; only their TYPES
+// re-export here, plus the lean slot id and skeletons.
+export { supplierDetailPaymentPolicySlot } from "./slots.js"
+export type {
+  SupplierDetailHostProps,
+  SupplierDetailHostSlotContext,
 } from "./supplier-detail-host.js"
 export { SupplierDetailSkeleton } from "./supplier-detail-skeleton.js"
-export { SuppliersHost } from "./suppliers-host.js"
 export { SuppliersListSkeleton } from "./suppliers-list-skeleton.js"
 
 export interface CreateSuppliersAdminExtensionOptions {
@@ -110,8 +111,14 @@ export function createSuppliersAdminExtension(
           import("./suppliers-host.js").then((module) =>
             adminRoutePageModule(module.SuppliersHost),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(getSuppliersQueryOptions(loaderClient(runtime))),
+        // Dynamic import on purpose: the query options pull the suppliers
+        // data layer (client + response schemas), and a static import here
+        // would pin it into the workspace-chrome chunk that evaluates this
+        // factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getSuppliersQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(getSuppliersQueryOptions(loaderClient(runtime)))
+        },
         pendingComponent: SuppliersListSkeleton,
       },
       {
@@ -122,6 +129,13 @@ export function createSuppliersAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the suppliers index loader above.
+          const {
+            getSupplierNotesQueryOptions,
+            getSupplierQueryOptions,
+            getSupplierServiceRatesQueryOptions,
+            getSupplierServicesQueryOptions,
+          } = await import("../query-options.js")
           const client = loaderClient(runtime)
           const servicesData = await queryClient.ensureQueryData(
             getSupplierServicesQueryOptions(client, id),

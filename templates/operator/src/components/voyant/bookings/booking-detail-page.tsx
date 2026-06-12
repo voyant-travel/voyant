@@ -2,7 +2,7 @@
 
 import { useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
-import { BookingDetailHost } from "@voyantjs/bookings-react/admin"
+import { BookingDetailHost } from "@voyantjs/bookings-react/admin/booking-detail-host"
 import type { BookingDetailTabValue } from "@voyantjs/bookings-react/components/booking-detail-page"
 import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-react/components/booking-payments-summary"
 import { CollectPaymentDialog } from "@voyantjs/checkout-react/ui"

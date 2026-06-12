@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  AvailabilityIndexHost,
-  AvailabilityRuleDetailHost,
-  AvailabilitySlotDetailHost,
-  AvailabilityStartTimeDetailHost,
-  createAvailabilityAdminExtension,
-  ensureAvailabilityPageData,
-  OptionResourceTemplatesPanel,
-} from "./index.js"
+import { AvailabilityIndexHost } from "./availability-index-host.js"
+import { ensureAvailabilityPageData } from "./availability-page-data.js"
+import { createAvailabilityAdminExtension } from "./index.js"
+import { OptionResourceTemplatesPanel } from "./option-resource-templates-panel.js"
+import { AvailabilityRuleDetailHost } from "./rule-detail-host.js"
+import { AvailabilitySlotDetailHost } from "./slot-detail-host.js"
+import { AvailabilityStartTimeDetailHost } from "./start-time-detail-host.js"
 
 describe("createAvailabilityAdminExtension", () => {
   it("contributes no navigation (availability nav is base-nav-owned)", () => {
@@ -87,7 +85,7 @@ describe("packaged availability admin hosts", () => {
   // hosts bind these directly, so a broken import surface fails here, not in
   // an app build. (Behavioral rendering needs the workspace provider stack
   // and lives with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       AvailabilityIndexHost,
       AvailabilityRuleDetailHost,
