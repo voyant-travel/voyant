@@ -1,5 +1,16 @@
 # nextjs-booking-portal
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+  - @voyantjs/finance@0.117.0
+  - @voyantjs/customer-portal@0.104.15
+  - @voyantjs/customer-portal-react@0.104.15
+  - @voyantjs/finance-react@0.117.0
+  - @voyantjs/storefront-react@0.117.0
+
 ## 0.1.12
 
 ### Patch Changes

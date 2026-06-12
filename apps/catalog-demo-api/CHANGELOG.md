@@ -1,5 +1,15 @@
 # catalog-demo-api
 
+## 0.20.11
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/catalog@0.115.0
+  - @voyantjs/db@0.106.0
+
 ## 0.20.10
 
 ### Patch Changes

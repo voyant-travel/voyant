@@ -1,5 +1,27 @@
 # @voyantjs/finance
 
+## 0.117.0
+
+### Patch Changes
+
+- 7255353: Index pass for the hot finance read paths: `supplier_invoices` hot list/filter indexes (`supplier_id`, `(supplier_id, created_at)`, `status`, `(status, created_at)`, `due_date`) are now partial on `deleted_at IS NULL` — every supplier-invoice read path filters soft-deleted rows, so the indexes shrink and stay usable for all of those queries (same index names, definition change only). New `idx_invoices_created` on `invoices(created_at)` backs the dashboard's monthly rollups, which filter a bare `created_at` range.
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/bookings@0.117.0
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+  - @voyantjs/availability@0.114.0
+  - @voyantjs/products@0.117.0
+  - @voyantjs/action-ledger@0.104.6
+
 ## 0.116.0
 
 ### Patch Changes

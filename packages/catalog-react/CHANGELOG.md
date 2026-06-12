@@ -1,5 +1,13 @@
 # @voyantjs/catalog-react
 
+## 0.115.0
+
+### Patch Changes
+
+- @voyantjs/markets-react@0.107.2
+- @voyantjs/products-react@0.117.0
+- @voyantjs/suppliers-react@0.111.2
+
 ## 0.114.0
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyantjs/customer-portal-react
 
+## 0.104.15
+
+### Patch Changes
+
+- @voyantjs/customer-portal@0.104.15
+
 ## 0.104.14
 
 ### Patch Changes

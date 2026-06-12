@@ -1,5 +1,23 @@
 # @voyantjs/products
 
+## 0.117.0
+
+### Patch Changes
+
+- 7255353: Trigram GIN indexes for every `ILIKE '%term%'` search path: `products(name, description)`, `product_tags(name)`, `product_categories(name, slug)`, `destination_translations(name, description)`, `product_locations(title, city)` — admin list search and the public catalog search stop seq-scanning. **Requires the `pg_trgm` Postgres extension** (`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`); the operator template's `0061_perf_phase1_indexes` migration enables it, but self-hosted deployments applying schema by other means must enable it themselves (it ships with stock Postgres, no install needed).
+- 7255353: Catalog-plane read-path batching: `listResolvedProducts` now fetches overlays for the whole page in ONE query (via the new `fetchOverlaysForEntities`) and applies them in-memory per product — 1 overlay query for N products instead of N sequential ones, with byte-identical per-product output. The storefront-card projection extension also folds the available-departures count into its first parallel query wave (6 queries in 2 waves instead of 4+1+1 in 3 sequential steps); only the itinerary-duration estimate still trails, because it depends on the default itinerary picked from the first wave.
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/catalog@0.115.0
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+  - @voyantjs/action-ledger@0.104.6
+
 ## 0.116.0
 
 ### Minor Changes

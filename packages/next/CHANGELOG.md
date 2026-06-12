@@ -1,5 +1,13 @@
 # @voyantjs/next
 
+## 0.104.5
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+
 ## 0.104.4
 
 ### Patch Changes
