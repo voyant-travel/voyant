@@ -18,7 +18,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'agent:ready')
     steps:
       - name: Add issue to Voyant Engineering
-        uses: actions/add-to-project@v1.0.2
+        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
           project-url: ${{ vars.VOYANT_ENGINEERING_PROJECT_URL }}
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}

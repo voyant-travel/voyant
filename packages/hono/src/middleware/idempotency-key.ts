@@ -1,7 +1,6 @@
 import { infraIdempotencyKeysTable } from "@voyantjs/db/schema/infra"
 import { and, eq, lt } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
-
 import {
   type DbFactory,
   resolveDbFactoryResult,
@@ -9,6 +8,9 @@ import {
   type VoyantDb,
   type VoyantVariables,
 } from "../types.js"
+import { RequestValidationError } from "../validation.js"
+import { DEFAULT_REQUEST_BODY_LIMIT_BYTES } from "./body-size.js"
+import { clientIpKey } from "./rate-limit.js"
 
 /**
  * Twenty-four hours, in milliseconds. Default TTL for stored idempotency
@@ -63,6 +65,19 @@ export interface IdempotencyKeyOptions {
    * operational queries to correlate replays with the underlying entity.
    */
   extractReferenceId?: (body: unknown) => string | null | undefined
+  /**
+   * Whether successful JSON responses are replayable. Disable for
+   * endpoints whose response carries session-bound bearer secrets.
+   */
+  replayResponses?: boolean
+  /**
+   * Include the caller/session/IP in the `(scope, key)` namespace.
+   * Enabled by default so client-chosen keys cannot replay another
+   * caller's response on anonymous or shared public surfaces.
+   */
+  scopeWithCaller?: boolean
+  /** Maximum request body bytes the middleware may buffer. Defaults to 10 MiB. */
+  maxBodyBytes?: number
 }
 
 interface ContextWithIdempotency {
@@ -121,8 +136,12 @@ export function idempotencyKey<
     }
 
     const requestUrl = new URL(c.req.url)
-    const scope = options.scope ?? `${c.req.method} ${requestUrl.pathname}`
-    const rawBody = await c.req.text()
+    const baseScope = options.scope ?? `${c.req.method} ${requestUrl.pathname}`
+    const scope = options.scopeWithCaller === false ? baseScope : buildCallerScopedKey(c, baseScope)
+    const rawBody = await readBoundedBody(
+      c,
+      options.maxBodyBytes ?? DEFAULT_REQUEST_BODY_LIMIT_BYTES,
+    )
     const bodyHash = await sha256Hex(
       buildFingerprintInput(rawBody, requestUrl, options.fingerprintSearchParams),
     )
@@ -202,6 +221,7 @@ export function idempotencyKey<
     // Only persist successful, replayable responses (2xx). 4xx/5xx leave
     // the slot open so the client can retry with a corrected body.
     if (response.status < 200 || response.status >= 300) return
+    if (options.replayResponses === false) return
 
     const referenceId =
       options.extractReferenceId?.(parsedBody) ??
@@ -237,6 +257,46 @@ export function idempotencyKey<
       // for this request." Logging is the deployment's responsibility.
     }
   }
+}
+
+async function readBoundedBody(
+  c: { req: { text(): Promise<string>; header(name: string): string | undefined } },
+  maxBytes: number,
+): Promise<string> {
+  const contentLength = c.req.header("content-length")
+  if (contentLength) {
+    const size = Number(contentLength)
+    if (Number.isFinite(size) && size > maxBytes) {
+      throw new RequestValidationError("Request body too large", { maxBytes })
+    }
+  }
+  const body = await c.req.text()
+  if (new TextEncoder().encode(body).byteLength > maxBytes) {
+    throw new RequestValidationError("Request body too large", { maxBytes })
+  }
+  return body
+}
+
+function buildCallerScopedKey(
+  c: {
+    get(key: string): unknown
+    req: { header(name: string): string | undefined }
+  },
+  baseScope: string,
+): string {
+  const stableCaller =
+    pickContextString(c, "apiKeyId") ??
+    pickContextString(c, "apiTokenId") ??
+    pickContextString(c, "sessionId") ??
+    pickContextString(c, "userId")
+
+  if (stableCaller) return `${baseScope}:caller:${stableCaller}`
+  return `${baseScope}:ip:${clientIpKey(c)}`
+}
+
+function pickContextString(c: { get(key: string): unknown }, key: string): string | null {
+  const value = c.get(key)
+  return typeof value === "string" && value.length > 0 ? value : null
 }
 
 function buildFingerprintInput(

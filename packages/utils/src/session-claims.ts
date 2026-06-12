@@ -9,6 +9,12 @@
  * - HMAC-SHA256 signing prevents tampering
  * - 5-minute expiration ensures quick revocation
  * - HttpOnly, Secure, SameSite cookies
+ * - Context-separated signing keys (HKDF-SHA256): the deployment secret
+ *   (`SESSION_CLAIMS_SECRET`) is never used directly as an HMAC key.
+ *   `signSessionClaims`/`verifySessionClaims` derive a dedicated key under
+ *   the `voyant:session-claims:v1` context, so a leak of a token-signing
+ *   key (or any other derived key) does not compromise sibling contexts
+ *   (e.g. the cloud-admin state cookie) or the raw Better Auth secret.
  *
  * Compatible with environments that expose the standard Web Crypto API,
  * including Node.js, browsers, and Cloudflare Workers.
@@ -32,6 +38,98 @@ export interface SessionClaims {
 const CLAIMS_EXPIRY_SECONDS = 5 * 60 // 5 minutes
 
 /**
+ * HKDF context label under which session-claims bearer tokens are signed.
+ * Bumping the version suffix invalidates all outstanding tokens.
+ */
+export const SESSION_CLAIMS_KEY_CONTEXT = "voyant:session-claims:v1"
+
+/**
+ * HKDF context label for the Voyant Cloud admin-auth state-cookie HMAC key.
+ * Consumers (e.g. the operator auth handler) derive this at the boundary and
+ * pass the derived key down as `cookieSecret`.
+ */
+export const CLOUD_STATE_COOKIE_KEY_CONTEXT = "voyant:cloud-state-cookie:v1"
+
+/**
+ * Fixed, public HKDF salt. Domain separation comes from the `info` (context)
+ * parameter; the salt only needs to be a stable application-wide constant.
+ */
+const HKDF_SALT = "voyant:hkdf:salt:v1"
+
+const derivedKeyCache = new Map<string, Promise<string>>()
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "")
+}
+
+/**
+ * Derive a context-separated subkey from a root secret via HKDF-SHA256
+ * (Web Crypto, Workers-compatible).
+ *
+ * The same root secret yields independent keys per context label, so a
+ * compromise of one derived key cannot be replayed against another context
+ * or against anything still using the root secret (e.g. Better Auth).
+ *
+ * @param secret - Root secret (e.g. `SESSION_CLAIMS_SECRET`)
+ * @param context - Context label, e.g. `"voyant:session-claims:v1"`
+ * @returns base64url-encoded 256-bit key (43 chars — satisfies >=32-char
+ *   secret checks downstream)
+ */
+export function deriveContextKey(secret: string, context: string): Promise<string> {
+  const cacheKey = `${context}\u0000${secret}`
+  let cached = derivedKeyCache.get(cacheKey)
+  if (!cached) {
+    cached = deriveContextKeyUncached(secret, context).catch((error: unknown) => {
+      // Don't cache failures (e.g. transient crypto unavailability).
+      derivedKeyCache.delete(cacheKey)
+      throw error
+    })
+    derivedKeyCache.set(cacheKey, cached)
+  }
+  return cached
+}
+
+async function deriveContextKeyUncached(secret: string, context: string): Promise<string> {
+  const webCrypto = getWebCrypto()
+  const encoder = new TextEncoder()
+  const keyMaterial = await webCrypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    "HKDF",
+    false,
+    ["deriveBits"],
+  )
+  const bits = await webCrypto.subtle.deriveBits(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: encoder.encode(HKDF_SALT),
+      info: encoder.encode(context),
+    },
+    keyMaterial,
+    256,
+  )
+  return base64UrlEncode(new Uint8Array(bits))
+}
+
+async function hmacBase64Url(message: string, key: string): Promise<string> {
+  const webCrypto = getWebCrypto()
+  const encoder = new TextEncoder()
+  const cryptoKey = await webCrypto.subtle.importKey(
+    "raw",
+    encoder.encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  )
+  const sigBuffer = await webCrypto.subtle.sign("HMAC", cryptoKey, encoder.encode(message))
+  return base64UrlEncode(new Uint8Array(sigBuffer))
+}
+
+/**
  * Create a short identifier from session ID for inclusion in claims
  * Uses first 16 chars of base64url-encoded SHA-256 hash
  */
@@ -40,13 +138,7 @@ async function hashSessionId(sessionId: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(sessionId)
   const hashBuffer = await webCrypto.subtle.digest("SHA-256", data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  // Convert to base64url manually
-  const hashB64 = btoa(String.fromCharCode(...hashArray))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
-  return hashB64.slice(0, 16)
+  return base64UrlEncode(new Uint8Array(hashBuffer)).slice(0, 16)
 }
 
 /**
@@ -54,9 +146,13 @@ async function hashSessionId(sessionId: string): Promise<string> {
  *
  * Format: base64url(header).base64url(payload).base64url(signature)
  *
+ * The HMAC key is NOT the raw `secret`: it is derived via
+ * `deriveContextKey(secret, SESSION_CLAIMS_KEY_CONTEXT)` so the root secret
+ * is never used directly as a token-signing key (context separation).
+ *
  * @param userId - User ID from verified session
  * @param sessionId - Full session ID (will be hashed)
- * @param secret - HMAC secret for signing
+ * @param secret - Root secret; the signing key is derived from it
  * @returns Signed token string
  */
 export async function signSessionClaims(
@@ -77,34 +173,14 @@ export async function signSessionClaims(
 
   // Encode payload (works in both environments)
   const header = { alg: "HS256", typ: "JWT" }
-  const headerB64 = btoa(JSON.stringify(header))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
-  const payloadB64 = btoa(JSON.stringify(claims))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
-
-  // Create signature
-  const message = `${headerB64}.${payloadB64}`
-
-  const webCrypto = getWebCrypto()
   const encoder = new TextEncoder()
-  const keyData = encoder.encode(secret)
-  const key = await webCrypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  )
-  const sigBuffer = await webCrypto.subtle.sign("HMAC", key, encoder.encode(message))
-  const sigArray = Array.from(new Uint8Array(sigBuffer))
-  const signature = btoa(String.fromCharCode(...sigArray))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
+  const headerB64 = base64UrlEncode(encoder.encode(JSON.stringify(header)))
+  const payloadB64 = base64UrlEncode(encoder.encode(JSON.stringify(claims)))
+
+  // Create signature with the context-derived key
+  const message = `${headerB64}.${payloadB64}`
+  const signingKey = await deriveContextKey(secret, SESSION_CLAIMS_KEY_CONTEXT)
+  const signature = await hmacBase64Url(message, signingKey)
 
   return `${headerB64}.${payloadB64}.${signature}`
 }
@@ -112,8 +188,12 @@ export async function signSessionClaims(
 /**
  * Verify and decode session claims token
  *
+ * Verification uses the same context-derived key as `signSessionClaims`
+ * (`SESSION_CLAIMS_KEY_CONTEXT`), so tokens signed with the raw secret
+ * (pre context-separation) are rejected.
+ *
  * @param token - Signed token from cookie
- * @param secret - HMAC secret for verification
+ * @param secret - Root secret; the verification key is derived from it
  * @returns Decoded claims if valid, null if invalid/expired
  */
 export async function verifySessionClaims(
@@ -133,25 +213,10 @@ export async function verifySessionClaims(
       return null
     }
 
-    // Verify signature
+    // Verify signature with the context-derived key
     const message = `${headerB64}.${payloadB64}`
-
-    const webCrypto = getWebCrypto()
-    const encoder = new TextEncoder()
-    const keyData = encoder.encode(secret)
-    const key = await webCrypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"],
-    )
-    const sigBuffer = await webCrypto.subtle.sign("HMAC", key, encoder.encode(message))
-    const sigArray = Array.from(new Uint8Array(sigBuffer))
-    const expectedSig = btoa(String.fromCharCode(...sigArray))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "")
+    const signingKey = await deriveContextKey(secret, SESSION_CLAIMS_KEY_CONTEXT)
+    const expectedSig = await hmacBase64Url(message, signingKey)
 
     // Constant-time comparison
     if (!constantTimeEqual(signature, expectedSig)) {

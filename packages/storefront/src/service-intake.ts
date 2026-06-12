@@ -91,6 +91,24 @@ function defaultNewsletterSubmissionId(email: string) {
   return `newsletter:${normalizeEmail(email)}`
 }
 
+function normalizePhone(phone: string | undefined) {
+  return phone?.replace(/[^\d+]/g, "").toLowerCase()
+}
+
+function defaultLeadSubmissionId(input: StorefrontLeadIntakeInput) {
+  const contactKey = input.contact.email
+    ? `email:${normalizeEmail(input.contact.email)}`
+    : `phone:${normalizePhone(input.contact.phone) ?? "unknown"}`
+  return [
+    "lead",
+    input.kind,
+    input.source,
+    input.productId ?? "-",
+    input.optionUnitId ?? "-",
+    contactKey,
+  ].join(":")
+}
+
 async function findExistingSignal(
   db: ReturnType<typeof requireDb>,
   input: {
@@ -162,9 +180,10 @@ export async function createStorefrontLeadSignal(input: {
   context: StorefrontRequestContext
 }): Promise<StorefrontIntakeResponse> {
   const db = requireDb(input.context)
+  const sourceSubmissionId = input.body.sourceSubmissionId ?? defaultLeadSubmissionId(input.body)
   const existing = await findExistingSignal(db, {
     kind: input.body.kind,
-    sourceSubmissionId: input.body.sourceSubmissionId,
+    sourceSubmissionId,
   })
   if (existing) return leadResponse(existing, true)
 
@@ -177,7 +196,7 @@ export async function createStorefrontLeadSignal(input: {
     email: input.body.contact.email ? normalizeEmail(input.body.contact.email) : null,
     phone: input.body.contact.phone ?? null,
     source: "storefront",
-    sourceRef: input.body.sourceSubmissionId ?? null,
+    sourceRef: sourceSubmissionId,
     tags: input.body.tags,
   })
   if (!person) throw new Error("Failed to create CRM person for storefront lead")
@@ -192,7 +211,7 @@ export async function createStorefrontLeadSignal(input: {
     priority: "normal",
     notes: input.body.notes ?? null,
     tags: input.body.tags,
-    sourceSubmissionId: input.body.sourceSubmissionId ?? null,
+    sourceSubmissionId,
     metadata: {
       intake: { surface: "storefront", type: "lead" },
       payload: input.body.payload,

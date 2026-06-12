@@ -82,6 +82,8 @@ export const netopiaRuntimeOptionsSchema = z.object({
   language: optionalRuntimeString,
   successStatuses: optionalIntegerArray,
   processingStatuses: optionalIntegerArray,
+  ipnPublicKey: optionalRuntimeString,
+  trustUnverifiedCallbacks: z.boolean().optional(),
   fetch: optionalFetch.optional(),
   resilience: optionalResilience.optional(),
   resolveNotificationProviders: optionalProviderResolver.optional(),
@@ -97,6 +99,8 @@ export const resolvedNetopiaRuntimeOptionsSchema = z.object({
   language: z.string().trim().min(1).default("ro"),
   successStatuses: z.array(z.number().int()).min(1).default([3, 5]),
   processingStatuses: z.array(z.number().int()).min(1).default([1, 15]),
+  ipnPublicKey: z.string().trim().min(1).optional(),
+  trustUnverifiedCallbacks: z.boolean().default(false),
   fetch: optionalFetch.optional(),
   resilience: optionalResilience.optional(),
 })

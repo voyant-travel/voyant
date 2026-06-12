@@ -85,6 +85,65 @@ export function buildSeededResumeJournal(
   }
 }
 
+export type SeedResultsValidation =
+  | { ok: true; seedResults: Record<string, unknown> }
+  | { ok: false; message: string }
+
+const SEED_RESULTS_MAX_ENTRIES = 256
+const SEED_RESULTS_MAX_STEP_ID_LENGTH = 200
+const SEED_RESULTS_MAX_SERIALIZED_CHARS = 1_000_000
+// biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control chars is the point
+const CONTROL_CHARS = /[\x00-\x1f\x7f]/
+
+/**
+ * Strict structural validation for caller-supplied `seedResults`
+ * (`POST /api/runs/:id/resume`). Seeded entries are written verbatim
+ * into the new run's journal as already-completed steps, so they let
+ * the caller assert "this step ran and produced this output" — they
+ * must be gated behind an operator credential AND shape-checked:
+ * a record of bounded, control-character-free step ids to
+ * JSON-serializable values, bounded in count and total size.
+ */
+export function validateSeedResults(value: unknown): SeedResultsValidation {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return { ok: false, message: "seedResults must be an object of stepId → output" }
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+  if (entries.length > SEED_RESULTS_MAX_ENTRIES) {
+    return {
+      ok: false,
+      message: `seedResults may contain at most ${SEED_RESULTS_MAX_ENTRIES} entries`,
+    }
+  }
+  for (const [stepId, output] of entries) {
+    if (stepId.length === 0 || stepId.length > SEED_RESULTS_MAX_STEP_ID_LENGTH) {
+      return {
+        ok: false,
+        message: `seedResults step ids must be 1-${SEED_RESULTS_MAX_STEP_ID_LENGTH} characters`,
+      }
+    }
+    if (CONTROL_CHARS.test(stepId)) {
+      return { ok: false, message: "seedResults step ids must not contain control characters" }
+    }
+    let serialized: string | undefined
+    try {
+      serialized = JSON.stringify(output)
+    } catch {
+      return { ok: false, message: `seedResults["${stepId}"] is not JSON-serializable` }
+    }
+    if (serialized === undefined) {
+      return { ok: false, message: `seedResults["${stepId}"] is not JSON-serializable` }
+    }
+    if (serialized.length > SEED_RESULTS_MAX_SERIALIZED_CHARS) {
+      return {
+        ok: false,
+        message: `seedResults["${stepId}"] exceeds the ${SEED_RESULTS_MAX_SERIALIZED_CHARS}-character serialized limit`,
+      }
+    }
+  }
+  return { ok: true, seedResults: value as Record<string, unknown> }
+}
+
 function findFirstFailedStep(parent: RunRecord): string | undefined {
   for (const [stepId, entry] of Object.entries(parent.journal.stepResults)) {
     if (entry.status === "err") return stepId

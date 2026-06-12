@@ -36,13 +36,13 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
@@ -72,7 +72,7 @@ jobs:
           fi
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ inputs.release_version }}
           name: v${{ inputs.release_version }}
@@ -93,13 +93,13 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -124,6 +124,10 @@ jobs:
         if: steps.release_plan.outputs.pending == 'true'
         run: pnpm verify:package-exports ${{ steps.release_plan.outputs.package_filters }}
 
+      - name: Verify before publish
+        if: steps.release_plan.outputs.pending == 'true'
+        run: pnpm verify:fast
+
       - name: Verify publish tarballs
         if: steps.release_plan.outputs.pending == 'true'
         # `Build pending publish workspaces` above already produced fresh dist
@@ -142,7 +146,7 @@ jobs:
       - name: Create or update Release PR
         id: changesets
         if: steps.release_plan.outputs.has_releasable_changesets == 'true'
-        uses: changesets/action@v1
+        uses: changesets/action@8eb63fb4cfc7f9643537c7d39d0b68c835012a19 # v1.5.3
         with:
           createGithubReleases: false
           version: pnpm version-packages

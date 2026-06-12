@@ -7,12 +7,93 @@ import {
 } from "./contract-document-runtime"
 import { createDocumentStorage, guessMimeType } from "./lib/storage"
 
+const SCRIPTABLE_MIME_TYPES = new Set([
+  "application/ecmascript",
+  "application/javascript",
+  "application/xhtml+xml",
+  "application/xml",
+  "image/svg+xml",
+  "text/ecmascript",
+  "text/html",
+  "text/javascript",
+  "text/xml",
+])
+
 type OperatorContractDocumentRouteEnv = {
   Bindings: CloudflareBindings
   Variables: {
     db: PostgresJsDatabase
     eventBus?: EventBus
   }
+}
+
+function maybeString(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  return trimmed && trimmed.length > 0 ? trimmed : null
+}
+
+function safeAsciiFilename(filename: string | null | undefined) {
+  const normalized = maybeString(filename)
+  if (!normalized) return "document"
+
+  const safe = normalized
+    .normalize("NFKD")
+    .replace(/[^\w .-]+/g, "-")
+    .replace(/[\r\n"\\]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160)
+
+  return safe || "document"
+}
+
+function contentDispositionForKey(key: string) {
+  return `attachment; filename="${safeAsciiFilename(key.split("/").filter(Boolean).at(-1))}"`
+}
+
+function normalizedMimeType(contentType: string | null | undefined) {
+  const value = maybeString(contentType)
+  if (!value) return null
+  return value.split(";")[0]?.trim().toLowerCase() || null
+}
+
+function isScriptableMimeType(contentType: string | null | undefined) {
+  const normalized = normalizedMimeType(contentType)
+  return normalized ? SCRIPTABLE_MIME_TYPES.has(normalized) : false
+}
+
+function safeServedContentType(key: string) {
+  const guessed = guessMimeType(key)
+  return isScriptableMimeType(guessed) ? "application/octet-stream" : guessed
+}
+
+function parseDocumentKey(path: string) {
+  const rawKey = path.replace(/^\/v1\/admin\/documents\/files\//, "")
+  if (!rawKey) return null
+
+  const segments: string[] = []
+  for (const rawSegment of rawKey.split("/")) {
+    if (!rawSegment) return null
+    let segment: string
+    try {
+      segment = decodeURIComponent(rawSegment)
+    } catch {
+      return null
+    }
+    if (
+      !segment ||
+      segment === "." ||
+      segment === ".." ||
+      segment.includes("/") ||
+      segment.includes("\\") ||
+      segment.includes("\0")
+    ) {
+      return null
+    }
+    segments.push(segment)
+  }
+
+  return segments.join("/")
 }
 
 export function mountOperatorContractDocumentRoutes(
@@ -67,21 +148,18 @@ export function mountOperatorContractDocumentRoutes(
       return c.json({ error: "Storage not configured" }, 503)
     }
 
-    const rawKey = c.req.path.replace("/v1/admin/documents/files/", "")
-    const key = rawKey
-      .split("/")
-      .map((segment) => decodeURIComponent(segment))
-      .join("/")
-    if (!key) return c.json({ error: "Missing key" }, 400)
+    const key = parseDocumentKey(c.req.path)
+    if (!key) return c.json({ error: "Invalid document key" }, 400)
 
     const buffer = await storage.get(key)
     if (!buffer) return c.json({ error: "Not found" }, 404)
 
     const headers = new Headers()
-    headers.set("Content-Type", guessMimeType(key))
+    headers.set("Content-Type", safeServedContentType(key))
+    headers.set("X-Content-Type-Options", "nosniff")
     headers.set("Cache-Control", "private, no-store")
     headers.set("Content-Length", String(buffer.byteLength))
-    headers.set("Content-Disposition", `inline; filename="${key.split("/").pop() ?? "document"}"`)
+    headers.set("Content-Disposition", contentDispositionForKey(key))
 
     return new Response(buffer, { headers })
   })

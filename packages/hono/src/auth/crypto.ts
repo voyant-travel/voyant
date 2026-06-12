@@ -13,6 +13,15 @@ export async function sha256Hex(input: string | Uint8Array): Promise<string> {
   return arr.map((b) => b.toString(16).padStart(2, "0")).join("")
 }
 
+export function constantTimeEqual(a: string, b: string): boolean {
+  const length = Math.max(a.length, b.length, 1)
+  let diff = a.length === b.length ? 0 : 1
+  for (let i = 0; i < length; i++) {
+    diff |= (a.charCodeAt(i) | 0) ^ (b.charCodeAt(i) | 0)
+  }
+  return diff === 0
+}
+
 export function generateNumericCode(length: number): string {
   const max = 10 ** length
   const buf = new Uint32Array(1)

@@ -28,10 +28,6 @@ export function requirePermission<TBindings extends VoyantBindings>(
   return async (c, next) => {
     const permission: VoyantPermission = { resource, action }
 
-    if (c.get("isInternalRequest")) {
-      return next()
-    }
-
     const scopes = c.get("scopes")
     if (
       scopes &&

@@ -18,15 +18,24 @@ import { Hono } from "hono"
 
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
+import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
 import { requestScopedEventBus } from "./lib/request-event-bus.js"
 import { requireAuth } from "./middleware/auth.js"
+import { DEFAULT_REQUEST_BODY_LIMIT_BYTES, requestBodyLimit } from "./middleware/body-size.js"
 import { cors } from "./middleware/cors.js"
 import { db } from "./middleware/db.js"
 import { handleApiError, requestId } from "./middleware/error-boundary.js"
 import { logger } from "./middleware/logger.js"
 import { metrics } from "./middleware/metrics.js"
 import { publicResponseCache } from "./middleware/public-cache.js"
+import {
+  type RateLimitConfig,
+  type RateLimitPolicy,
+  rateLimit,
+  resolveRateLimitStore,
+} from "./middleware/rate-limit.js"
 import { requireActor } from "./middleware/require-actor.js"
+import { securityHeaders } from "./middleware/security-headers.js"
 import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
@@ -46,6 +55,29 @@ function resolveSurfaceMountPath(
   }
 
   return `${prefix}/${normalized.replace(/^\/+|\/+$/g, "")}`
+}
+
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
+
+function resolveConfiguredRateLimitStore<TBindings extends VoyantBindings>(
+  config: RateLimitConfig | undefined,
+  env: TBindings,
+) {
+  if (!config?.store) return undefined
+  return typeof config.store === "function" ? config.store(env) : config.store
+}
+
+function buildRateLimitPolicy<TBindings extends VoyantBindings>(
+  config: RateLimitConfig | undefined,
+  env: TBindings,
+  bucket: string,
+  defaults: { max: number; windowSeconds: number },
+): RateLimitPolicy {
+  return {
+    bucket,
+    ...defaults,
+    store: resolveConfiguredRateLimitStore(config, env) ?? resolveRateLimitStore({ env }),
+  }
 }
 
 type ManifestWorkflowDescriptor = BuildManifestArgs["workflows"][number]
@@ -250,6 +282,46 @@ export function createApp<TBindings extends VoyantBindings>(
   // CORS (allowlist via env CORS_ALLOWLIST)
   app.use("*", cors())
 
+  if (config.securityHeaders !== false) {
+    app.use("*", securityHeaders(config.securityHeaders))
+  }
+
+  if (config.requestBodyLimit !== false) {
+    app.use(
+      "*",
+      requestBodyLimit({
+        maxBytes: config.requestBodyLimit?.maxBytes ?? DEFAULT_REQUEST_BODY_LIMIT_BYTES,
+      }),
+    )
+  }
+
+  if (config.rateLimit !== false) {
+    const rateLimitConfig = config.rateLimit
+
+    if (rateLimitConfig?.auth !== false) {
+      const authRule = rateLimitConfig?.auth ?? { max: 10, windowSeconds: 60 }
+      app.use("/auth/*", async (c, next) => {
+        if (c.req.method !== "POST") return next()
+        return rateLimit(buildRateLimitPolicy(rateLimitConfig, c.env, "auth", authRule))(c, next)
+      })
+    }
+
+    if (rateLimitConfig?.publicWrite !== false) {
+      const publicWriteRule = rateLimitConfig?.publicWrite ?? { max: 60, windowSeconds: 60 }
+      app.use("*", async (c, next) => {
+        if (!WRITE_METHODS.has(c.req.method)) return next()
+        const pathname = normalizePathname(new URL(c.req.url).pathname)
+        const isPublicWrite =
+          pathname.startsWith("/v1/public/") ||
+          matchesPublicPath(pathname, config.publicPaths ?? [])
+        if (!isPublicWrite) return next()
+        return rateLimit(
+          buildRateLimitPolicy(rateLimitConfig, c.env, "public-write", publicWriteRule),
+        )(c, next)
+      })
+    }
+  }
+
   // Shared response cache for the public surface. Mounted BEFORE the
   // runtime bootstrap on purpose: a cache hit skips module-graph
   // instantiation, auth, and the per-request db client entirely — the
@@ -397,6 +469,14 @@ export function createApp<TBindings extends VoyantBindings>(
   // Actor guards for the two API surfaces
   app.use("/v1/admin/*", requireActor("staff"))
   app.use("/v1/public/*", requireActor("customer", "partner", "supplier"))
+  const requireLegacyActor = requireActor<TBindings>("staff")
+  app.use("/v1/*", (c, next) => {
+    const pathname = new URL(c.req.url).pathname
+    if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
+      return next()
+    }
+    return requireLegacyActor(c, next)
+  })
 
   // Admin capability discovery — GET /v1/admin/_meta/capabilities. A built-in
   // framework route (like /health), mounted only when the deployment supplies

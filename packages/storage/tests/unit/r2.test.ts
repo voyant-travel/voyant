@@ -89,13 +89,17 @@ describe("createR2Provider", () => {
     expect(signer).toHaveBeenCalledWith("k", 120)
   })
 
-  it("signedUrl falls back to publicBaseUrl when no signer is set", async () => {
+  it("signedUrl throws when no signer is configured, even with a publicBaseUrl", async () => {
+    // Regression guard (assessment L7): the old behavior silently returned a
+    // PERMANENT public URL while ignoring `expiresIn`.
     const bucket = fakeBucket()
     const provider = createR2Provider({
       bucket,
       publicBaseUrl: "https://cdn.example.com/",
     })
-    expect(await provider.signedUrl("k", 60)).toBe("https://cdn.example.com/k")
+    await expect(provider.signedUrl("k", 60)).rejects.toThrow(
+      R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
+    )
   })
 
   it("signedUrl throws when neither publicBaseUrl nor signer is configured", async () => {
@@ -105,5 +109,20 @@ describe("createR2Provider", () => {
     await expect(provider.signedUrl("file.pdf", 300)).rejects.toThrow(
       R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
     )
+  })
+
+  it("publicUrl returns the permanent public URL when publicBaseUrl is set", () => {
+    const bucket = fakeBucket()
+    const provider = createR2Provider({
+      bucket,
+      publicBaseUrl: "https://cdn.example.com/",
+    })
+    expect(provider.publicUrl("a.png")).toBe("https://cdn.example.com/a.png")
+  })
+
+  it("publicUrl throws when publicBaseUrl is not configured", () => {
+    const bucket = fakeBucket()
+    const provider = createR2Provider({ bucket })
+    expect(() => provider.publicUrl("a.png")).toThrow(/publicBaseUrl/)
   })
 })

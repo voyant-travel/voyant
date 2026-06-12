@@ -128,6 +128,60 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
     })
   })
 
+  it("deduplicates public lead intake without trusting a client submission id", async () => {
+    const intakeApp = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        await next()
+      })
+      .route("/", createStorefrontPublicRoutes())
+
+    const payload = {
+      kind: "request_offer",
+      source: "form",
+      contact: {
+        email: "DUPLICATE@example.com",
+      },
+      productId: "prod_duplicate_intake",
+      consent: {
+        gdpr: true,
+      },
+    }
+
+    const first = await intakeApp.request("/leads", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "content-type": "application/json" },
+    })
+    const second = await intakeApp.request("/leads", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(first.status).toBe(201)
+    expect(second.status).toBe(201)
+    const firstBody = await first.json()
+    const secondBody = await second.json()
+    expect(firstBody.data.duplicate).toBe(false)
+    expect(secondBody.data).toMatchObject({
+      id: firstBody.data.id,
+      duplicate: true,
+    })
+
+    const rows = await db
+      .select()
+      .from(customerSignals)
+      .where(
+        eq(
+          customerSignals.sourceSubmissionId,
+          "lead:request_offer:form:prod_duplicate_intake:-:email:duplicate@example.com",
+        ),
+      )
+
+    expect(rows).toHaveLength(1)
+  })
+
   it("records newsletter subscriptions idempotently and requests double opt-in once", async () => {
     const requestNewsletterDoubleOptIn = vi.fn()
     const eventBus = createEventBus()

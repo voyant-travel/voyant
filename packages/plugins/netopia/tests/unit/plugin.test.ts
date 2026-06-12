@@ -63,6 +63,7 @@ const runtimeOptions = {
   posSignature: "pos-signature",
   notifyUrl: "https://api.example.com/netopia/callback",
   redirectUrl: "https://app.example.com/checkout/return",
+  trustUnverifiedCallbacks: true,
 } as const
 
 const billingInput = {
@@ -396,6 +397,40 @@ describe("netopiaService.collect flows", () => {
 })
 
 describe("netopiaService.handleCallback", () => {
+  it("defers callbacks when server-side status verification is unavailable", async () => {
+    vi.spyOn(financeService, "listPaymentSessions").mockResolvedValue({
+      data: [{ ...baseSession, provider: "netopia", externalReference: "client_ref_123" }],
+      total: 1,
+      limit: 1,
+      offset: 0,
+    })
+    const completeSpy = vi.spyOn(financeService, "completePaymentSession")
+
+    const result = await netopiaService.handleCallback(
+      {} as never,
+      {
+        order: { orderID: "client_ref_123" },
+        payment: {
+          amount: 125,
+          currency: "RON",
+          ntpID: "ntp_123",
+          status: 3,
+        },
+      },
+      {
+        ...runtimeOptions,
+        trustUnverifiedCallbacks: false,
+        fetch: async () => {
+          throw new Error("network unavailable")
+        },
+      },
+    )
+
+    expect(result.action).toBe("deferred")
+    expect(result.verification?.outcome).toBe("unavailable")
+    expect(completeSpy).not.toHaveBeenCalled()
+  })
+
   it("completes a successful callback exactly once", async () => {
     vi.spyOn(financeService, "listPaymentSessions").mockResolvedValue({
       data: [{ ...baseSession, provider: "netopia", externalReference: "client_ref_123" }],

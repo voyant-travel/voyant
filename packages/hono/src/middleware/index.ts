@@ -1,4 +1,9 @@
 export { requireAuth } from "./auth.js"
+export {
+  DEFAULT_REQUEST_BODY_LIMIT_BYTES,
+  type RequestBodyLimitOptions,
+  requestBodyLimit,
+} from "./body-size.js"
 export { cors } from "./cors.js"
 export { db } from "./db.js"
 export { errorBoundary, handleApiError, requestId } from "./error-boundary.js"
@@ -22,6 +27,23 @@ export {
   publicResponseCache,
   resetPublicCacheStateForTests,
 } from "./public-cache.js"
-export { LIVE_LIMITS, rateLimit } from "./rate-limit.js"
+export {
+  type CloudflareRateLimiterBinding,
+  clientIpKey,
+  createCloudflareRateLimitStore,
+  createKvRateLimitStore,
+  createMemoryRateLimitStore,
+  enforceRateLimit,
+  LIVE_LIMITS,
+  type RateLimitConfig,
+  type RateLimitPolicy,
+  type RateLimitRequestContext,
+  type RateLimitResult,
+  type RateLimitRule,
+  type RateLimitStore,
+  rateLimit,
+  resolveRateLimitStore,
+} from "./rate-limit.js"
 export { requireActor } from "./require-actor.js"
 export { requirePermission } from "./require-permission.js"
+export { type SecurityHeadersOptions, securityHeaders } from "./security-headers.js"

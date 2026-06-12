@@ -307,7 +307,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           scheduleDelayedRun(resumed)
         })
       }, delayMs)
-      timer.unref?.()
+      ;(timer as { unref?: () => void }).unref?.()
     }
 
     async function triggerRecord(

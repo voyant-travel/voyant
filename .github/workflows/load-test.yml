@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Refuse write scenario without allow_writes
         if: inputs.scenario == 'payday-spike' && !inputs.allow_writes
@@ -52,7 +52,7 @@ jobs:
           echo "::error::payday-spike mutates data on the target tenant. Re-run with allow_writes=true against a STAGING tenant only."
           exit 1
 
-      - uses: grafana/setup-k6-action@v1.2.1
+      - uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
 
       # k6 exits non-zero on any threshold breach, which fails this step (and
       # the job) — that is the SLO gate. The summary JSON is still written
@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload summary artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: k6-summary-${{ inputs.scenario }}-${{ github.run_id }}
           path: k6-summary.json

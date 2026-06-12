@@ -27,6 +27,7 @@ export interface VoyantExecutionContext {
 
 export interface VoyantBindings {
   INTERNAL_API_KEY?: string
+  INTERNAL_API_KEY_SCOPES?: string
   SESSION_CLAIMS_SECRET?: string
   BETTER_AUTH_SECRET?: string
   DATABASE_URL: string
@@ -36,6 +37,7 @@ export interface VoyantBindings {
   API_BASE_URL?: string
   RATE_LIMIT?: KVStore
   CACHE?: KVStore
+  RATE_LIMITER?: import("./middleware/rate-limit.js").CloudflareRateLimiterBinding
   /**
    * Workers Analytics Engine dataset receiving per-request metrics
    * (see the `metrics` middleware). Optional — without it the
@@ -267,6 +269,23 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * set `false` to disable entirely.
    */
   metrics?: boolean
+  /**
+   * Default request body limit enforced by `Content-Length` before route
+   * handlers parse JSON/form data. Enabled by default at 10 MiB. Set
+   * `false` to disable or pass `{ maxBytes }` to override.
+   */
+  requestBodyLimit?: false | { maxBytes: number }
+  /**
+   * Default app-wide security headers. Enabled by default. Set `false`
+   * to disable, or override CSP/HSTS via the option object.
+   */
+  securityHeaders?: false | import("./middleware/security-headers.js").SecurityHeadersOptions
+  /**
+   * Default app-wide rate limits. Enabled by default for `/auth/*` POSTs
+   * and unauthenticated public writes. Set `false` to disable or tune
+   * individual policies.
+   */
+  rateLimit?: false | import("./middleware/rate-limit.js").RateLimitConfig
   publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**
    * Workflow runtime configuration. When set, `createApp()` collects

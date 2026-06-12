@@ -21,11 +21,43 @@ export interface NetopiaStartPaymentResult {
   orderId: string
 }
 
+export type NetopiaCallbackAction =
+  /** Session moved to `processing` based on the server-verified status. */
+  | "processing"
+  /** Session completed (paid) based on the server-verified status. */
+  | "completed"
+  /** Session failed based on the server-verified status. */
+  | "failed"
+  /** No-op (unknown session / already completed). */
+  | "ignored"
+  /**
+   * Callback refused: IPN signature invalid, or the server-verified data
+   * contradicts the session (order/amount mismatch). No state transition.
+   */
+  | "rejected"
+  /**
+   * Fail-closed: the authoritative status could not be fetched from Netopia.
+   * No state transition — the route layer answers with a retryable error so
+   * Netopia redelivers the IPN.
+   */
+  | "deferred"
+
+export interface NetopiaCallbackVerification {
+  outcome: "verified" | "trusted_unverified" | "unavailable" | "rejected"
+  /** `payment.status` as claimed by the (untrusted) callback body. */
+  claimedStatus: number
+  /** `payment.status` fetched server-side from `POST /operation/status`. */
+  verifiedStatus?: number
+  reason?: string
+}
+
 export interface NetopiaCallbackResult {
-  action: "processing" | "completed" | "failed" | "ignored"
+  action: NetopiaCallbackAction
   reason?: string
   session: PaymentSession | null
   orderId: string
+  /** How the callback was authenticated/verified (observability + tests). */
+  verification?: NetopiaCallbackVerification
 }
 
 export interface NetopiaCollectPaymentResult extends NetopiaStartPaymentResult {

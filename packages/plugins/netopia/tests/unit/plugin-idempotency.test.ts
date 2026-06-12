@@ -4,6 +4,7 @@ import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { createNetopiaFinanceRoutes } from "../../src/plugin.js"
+import { netopiaService } from "../../src/service.js"
 
 const runtimeOptions = {
   apiUrl: "https://secure.mobilpay.ro/pay",
@@ -11,6 +12,7 @@ const runtimeOptions = {
   posSignature: "pos-signature",
   notifyUrl: "https://api.example.com/netopia/callback",
   redirectUrl: "https://app.example.com/checkout/return",
+  trustUnverifiedCallbacks: true,
 } as const
 
 const baseSession = {
@@ -191,6 +193,33 @@ describe("netopia callback — provider-event dedup", () => {
 
     expect(res.status).toBe(200)
     expect(db.rows[0]?.key).toBe("netopia:ntp_123:15")
+  })
+
+  it("returns a retryable response for deferred callbacks without storing an idempotency replay", async () => {
+    const handleCallbackSpy = vi.spyOn(netopiaService, "handleCallback").mockResolvedValue({
+      action: "deferred",
+      reason: "status_lookup_failed",
+      session: { ...baseSession },
+      orderId: "client_ref_123",
+      verification: {
+        outcome: "unavailable",
+        claimedStatus: 3,
+        reason: "status_lookup_failed",
+      },
+    } as never)
+
+    const { app, db } = buildApp()
+
+    const first = await postCallback(app)
+    expect(first.status).toBe(503)
+    const firstBody = (await first.json()) as { data: { action: string } }
+    expect(firstBody.data.action).toBe("deferred")
+    expect(db.rows).toHaveLength(0)
+
+    const second = await postCallback(app)
+    expect(second.status).toBe(503)
+    expect(second.headers.get("Idempotency-Replayed")).not.toBe("true")
+    expect(handleCallbackSpy).toHaveBeenCalledTimes(2)
   })
 
   it("passes unparseable payloads through unkeyed (rejected by validation, nothing stored)", async () => {

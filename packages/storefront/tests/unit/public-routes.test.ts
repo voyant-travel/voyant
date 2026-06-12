@@ -250,6 +250,28 @@ describe("createStorefrontPublicRoutes", () => {
     )
   })
 
+  it("requires an idempotency key before accepting async booking bootstrap", async () => {
+    const app = new Hono().route(
+      "/",
+      createStorefrontPublicRoutes({
+        bookingIntents: {
+          resolveDb: () => ({}),
+        },
+      }),
+    )
+
+    const res = await app.request("/bookings/sessions/bootstrap?async=1", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    })
+
+    expect(res.status).toBe(428)
+    expect(await res.json()).toEqual({
+      error: "Idempotency-Key header is required for async bootstrap",
+    })
+  })
+
   it("resolves storefront settings from request context", async () => {
     const requestDb = { tenant: "tenant_123" }
     const app = new Hono()

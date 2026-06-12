@@ -188,6 +188,21 @@ function isLocalRequest(request: Request): boolean {
 function shouldUseBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
   return env.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
 }
+
+function allowAuthSecretLogging(env: CloudflareBindings): boolean {
+  return env.VOYANT_AUTH_LOG_SECRET_FALLBACKS === "1"
+}
+
+function betterAuthSecondaryStorage(env: CloudflareBindings) {
+  const kv = env.RATE_LIMIT ?? env.CACHE
+  if (!kv) return undefined
+  return {
+    get: (key: string) => kv.get(key),
+    set: (key: string, value: string, ttl?: number) =>
+      kv.put(key, value, ttl ? { expirationTtl: Math.max(60, Math.ceil(ttl)) } : undefined),
+    delete: (key: string) => kv.delete(key),
+  }
+}
 /**
  * Build a Better Auth instance backed by a caller-provided drizzle
  * client. The caller owns the Pool lifecycle (open before, dispose
@@ -216,10 +231,11 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     // the cast is structurally safe — better-auth's drizzleAdapter
     // works on any PgDatabase. See #500 for context.
     db: authDb,
-    secret: env.SESSION_CLAIMS_SECRET,
+    secret: env.BETTER_AUTH_SECRET,
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
+    secondaryStorage: betterAuthSecondaryStorage(env),
     plugins: cloudAuthExchange
       ? [
           createVoyantCloudAdminAuthPlugin({
@@ -231,8 +247,11 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
       : undefined,
     sendResetPassword: async ({ user, url }) => {
       if (!cloud) {
-        console.info(`[auth] reset-password (no VOYANT_API_KEY) → ${user.email}: ${url}`)
-        return
+        if (allowAuthSecretLogging(env)) {
+          console.info(`[auth] reset-password (debug fallback) -> ${user.email}: ${url}`)
+          return
+        }
+        throw new Error("Password reset email provider is not configured")
       }
       await cloud.email.sendMessage({
         from: emailFrom,
@@ -244,8 +263,11 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
       if (!cloud) {
-        console.info(`[auth] verification-otp (no VOYANT_API_KEY) [${type}] → ${email}: ${otp}`)
-        return
+        if (allowAuthSecretLogging(env)) {
+          console.info(`[auth] verification-otp (debug fallback) [${type}] -> ${email}: ${otp}`)
+          return
+        }
+        throw new Error("Verification OTP email provider is not configured")
       }
       await cloud.email.sendMessage({
         from: emailFrom,

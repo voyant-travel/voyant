@@ -5,9 +5,10 @@ import type { KVStore } from "@voyantjs/utils/cache"
 import { and, eq, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
-import { sha256Base64Url } from "../auth/crypto.js"
+import { constantTimeEqual, sha256Base64Url, sha256Hex } from "../auth/crypto.js"
 import { extractBearerToken, verifySession } from "../auth/session-jwt.js"
 import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
+import { matchesPublicPath, normalizePathname } from "../lib/public-paths.js"
 import {
   type DbSource,
   selectDbFactory,
@@ -18,6 +19,45 @@ import {
 import { acquireRequestDb } from "./request-db.js"
 
 const API_KEY_PREFIX = "voy_"
+
+/**
+ * Parse `INTERNAL_API_KEY` as one-or-more comma-separated values, so the
+ * credential can be rotated without a window where one side rejects the
+ * other: deploy `new,old`, flip callers to `new`, then drop `old`.
+ */
+function parseInternalApiKeys(raw: string | undefined): string[] {
+  if (!raw) return []
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function parseInternalApiKeyScopes(raw: string | undefined): string[] {
+  const scopes = (raw ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+  return scopes.length > 0 ? scopes : ["*:*"]
+}
+
+/**
+ * Timing-safe membership check for the internal API key. Both sides are
+ * SHA-256-hashed before comparison so the constant-time equality runs on
+ * fixed-length digests — masking both content and length of the
+ * configured keys. Every configured key is checked (no early exit) so
+ * the match position is not observable either.
+ */
+async function matchesInternalApiKey(token: string, keys: string[]): Promise<boolean> {
+  const tokenDigest = await sha256Hex(token)
+  let matched = false
+  for (const key of keys) {
+    if (constantTimeEqual(tokenDigest, await sha256Hex(key))) {
+      matched = true
+    }
+  }
+  return matched
+}
 
 // ---- API-key lookup cache (env.CACHE KV) ----
 //
@@ -102,30 +142,30 @@ export function requireAuth<TBindings extends VoyantBindings>(
     const dbFactory = selectDbFactory(dbSource, c.req.path)
 
     const url = new URL(c.req.url)
-    const p = url.pathname.replace(/\/$/, "")
+    const p = normalizePathname(url.pathname)
     const isPublicAuth = p === "/auth/callback" || p.startsWith("/auth/")
     const isHealthCheck = p === "/health"
 
     if (isPublicAuth || isHealthCheck) return next()
 
-    for (const pp of publicPaths) {
-      if (p === pp || p.startsWith(`${pp}/`)) {
-        if (p.startsWith("/v1/public/")) {
-          c.set("actor", "customer")
-        }
-        return next()
+    if (matchesPublicPath(p, publicPaths)) {
+      if (p.startsWith("/v1/public/")) {
+        c.set("actor", "customer")
       }
+      return next()
     }
 
     const authHeader = c.req.header("authorization") || c.req.header("Authorization")
     const token = extractBearerToken(authHeader)
 
     // Strategy 1: Internal API Key
-    const internalKey = c.env.INTERNAL_API_KEY
-    if (token && internalKey && token === internalKey) {
+    const internalKeys = parseInternalApiKeys(c.env.INTERNAL_API_KEY)
+    if (token && internalKeys.length > 0 && (await matchesInternalApiKey(token, internalKeys))) {
       applyAuthContext(c, {
         callerType: "internal",
         isInternalRequest: true,
+        actor: "staff",
+        scopes: parseInternalApiKeyScopes(c.env.INTERNAL_API_KEY_SCOPES),
       })
       return next()
     }
@@ -156,7 +196,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           }
         }
 
-        if (!row || !row.enabled) {
+        if (!row?.enabled) {
           return c.json({ error: "Invalid API key" }, 401)
         }
 

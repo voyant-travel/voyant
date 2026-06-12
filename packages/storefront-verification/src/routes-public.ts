@@ -1,8 +1,8 @@
 import type { ModuleContainer } from "@voyantjs/core"
-import { parseJsonBody } from "@voyantjs/hono"
+import { clientIpKey, enforceRateLimit, parseJsonBody } from "@voyantjs/hono"
 import type { NotificationProvider } from "@voyantjs/notifications"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 import {
   createStorefrontVerificationSendersFromProviders,
   createStorefrontVerificationService,
@@ -101,6 +101,38 @@ function errorResponse(error: unknown) {
   return { status: 400 as const, body: { error: message } }
 }
 
+function normalizeDestination(channel: "email" | "sms", destination: string): string {
+  return channel === "email" ? destination.trim().toLowerCase() : destination.trim()
+}
+
+async function enforceVerificationStartLimits(
+  c: Context<Env>,
+  channel: "email" | "sms",
+  destination: string,
+) {
+  const normalized = normalizeDestination(channel, destination)
+  return (
+    (await enforceRateLimit(c, {
+      bucket: `storefront-verification:${channel}:destination-cooldown`,
+      max: 1,
+      windowSeconds: 30,
+      clientKey: () => normalized,
+    })) ??
+    (await enforceRateLimit(c, {
+      bucket: `storefront-verification:${channel}:destination-hour`,
+      max: channel === "sms" ? 5 : 10,
+      windowSeconds: 60 * 60,
+      clientKey: () => normalized,
+    })) ??
+    (await enforceRateLimit(c, {
+      bucket: `storefront-verification:${channel}:ip-hour`,
+      max: channel === "sms" ? 20 : 40,
+      windowSeconds: 60 * 60,
+      clientKey: clientIpKey,
+    }))
+  )
+}
+
 export function createStorefrontVerificationPublicRoutes(
   options?: StorefrontVerificationRoutesOptions,
 ) {
@@ -109,9 +141,12 @@ export function createStorefrontVerificationPublicRoutes(
   return new Hono<Env>()
     .post("/email/start", async (c) => {
       try {
+        const body = await parseJsonBody(c, startEmailVerificationChallengeSchema)
+        const limited = await enforceVerificationStartLimits(c, "email", body.email)
+        if (limited) return limited
         const result = await service.startEmailChallenge(
           c.get("db"),
-          await parseJsonBody(c, startEmailVerificationChallengeSchema),
+          body,
           getSenders(c.env, options, (key) => c.var.container.resolve(key)),
         )
         return c.json({ data: result }, 201)
@@ -134,9 +169,12 @@ export function createStorefrontVerificationPublicRoutes(
     })
     .post("/sms/start", async (c) => {
       try {
+        const body = await parseJsonBody(c, startSmsVerificationChallengeSchema)
+        const limited = await enforceVerificationStartLimits(c, "sms", body.phone)
+        if (limited) return limited
         const result = await service.startSmsChallenge(
           c.get("db"),
-          await parseJsonBody(c, startSmsVerificationChallengeSchema),
+          body,
           getSenders(c.env, options, (key) => c.var.container.resolve(key)),
         )
         return c.json({ data: result }, 201)

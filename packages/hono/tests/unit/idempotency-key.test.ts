@@ -293,6 +293,67 @@ describe("idempotencyKey middleware", () => {
     expect(fakeDb.rows).toHaveLength(2)
   })
 
+  it("scopes keys by caller by default", async () => {
+    const fakeDb = createFakeDb()
+    const app = new Hono()
+    let caller = "user_a"
+    app.use("*", async (c, next) => {
+      // biome-ignore lint/suspicious/noExplicitAny: test fake
+      c.set("db", fakeDb as any)
+      c.set("userId", caller)
+      await next()
+    })
+    app.post("/things", idempotencyKey({ scope: "test" }), (c) => c.json({ caller }, 201))
+
+    const first = await app.request("/things", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "shared" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+    expect(first.status).toBe(201)
+
+    caller = "user_b"
+    const second = await app.request("/things", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "shared" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+
+    expect(second.headers.get("Idempotency-Replayed")).toBeNull()
+    expect(((await second.json()) as { caller: string }).caller).toBe("user_b")
+    expect(fakeDb.rows).toHaveLength(2)
+  })
+
+  it("does not store responses when replayResponses is disabled", async () => {
+    const fakeDb = createFakeDb()
+    const app = new Hono()
+    let calls = 0
+    app.use("*", async (c, next) => {
+      // biome-ignore lint/suspicious/noExplicitAny: test fake
+      c.set("db", fakeDb as any)
+      await next()
+    })
+    app.post("/things", idempotencyKey({ scope: "test", replayResponses: false }), (c) => {
+      calls++
+      return c.json({ token: `secret_${calls}` }, 201)
+    })
+
+    await app.request("/things", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "shared" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+    const second = await app.request("/things", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "shared" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+
+    expect(second.headers.get("Idempotency-Replayed")).toBeNull()
+    expect(((await second.json()) as { token: string }).token).toBe("secret_2")
+    expect(fakeDb.rows).toHaveLength(0)
+  })
+
   it("does not store responses for non-2xx outcomes", async () => {
     const { app, fakeDb } = buildApp((c) => c.json({ error: "validation" }, 400))
     await postJson(app, { foo: 1 }, { "Idempotency-Key": "k1" })

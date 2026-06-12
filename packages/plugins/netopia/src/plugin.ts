@@ -7,6 +7,7 @@ import type { MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import { resolveNetopiaRuntimeOptions } from "./client.js"
+import { verifyNetopiaIpnToken } from "./ipn.js"
 import { netopiaService } from "./service.js"
 import type { NetopiaRuntimeOptions, ResolvedNetopiaRuntimeOptions } from "./types.js"
 import {
@@ -73,6 +74,7 @@ function netopiaCallbackEventKey(): MiddlewareHandler<Env> {
       }
       // `c.req.text()` consumed the body; rebuild the request so the
       // idempotency middleware / handler can re-read it.
+      c.set("netopiaCallbackRawBody" as never, rawBody as never)
       c.req.raw = new Request(c.req.raw, headers ? { body: rawBody, headers } : { body: rawBody })
     }
     return next()
@@ -209,6 +211,36 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
     .post("/providers/netopia/callback", netopiaCallbackEventKey(), idempotencyKey(), async (c) => {
       const payload = await parseJsonBody(c, netopiaWebhookPayloadSchema)
       const runtime = resolveRuntime(c)
+      const rawBody = c.get("netopiaCallbackRawBody" as never) as string | undefined
+      if (!runtime.trustUnverifiedCallbacks) {
+        if (!runtime.ipnPublicKey) {
+          return c.json(
+            {
+              error: "Netopia callback verification is not configured",
+              code: "netopia_callback_verification_not_configured",
+            },
+            503,
+          )
+        }
+        const verification = await verifyNetopiaIpnToken({
+          token:
+            c.req.header("Verification-token") ??
+            c.req.header("verification-token") ??
+            c.req.header("X-Netopia-Verification-Token"),
+          rawBody: rawBody ?? JSON.stringify(payload),
+          posSignature: runtime.posSignature,
+          publicKeyPem: runtime.ipnPublicKey,
+        })
+        if (!verification.ok) {
+          return c.json(
+            {
+              error: "Netopia callback verification failed",
+              code: verification.reason,
+            },
+            401,
+          )
+        }
+      }
       const financeRuntime = (() => {
         try {
           return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
@@ -223,6 +255,9 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         c.env,
         financeRuntime ? { eventBus: financeRuntime.eventBus } : undefined,
       )
+      if (result.action === "deferred") {
+        return c.json({ data: result }, 503)
+      }
       return c.json({ data: result })
     })
     .get("/providers/netopia/config", async (c) => {

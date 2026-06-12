@@ -192,6 +192,31 @@ describe("generateLinkTableSql", () => {
     })
     expect(() => generateLinkTableSql(def)).toThrow(/read-only link/)
   })
+
+  it("escapes embedded double quotes in identifiers (defense in depth)", () => {
+    const def = defineLink(person, product, {
+      database: {
+        tableName: 'evil"; DROP TABLE users; --',
+        leftColumn: 'left" col',
+        rightColumn: 'right" col',
+      },
+    })
+    const { createTable, indexes } = generateLinkTableSql(def)
+
+    // Embedded quotes are doubled, keeping the DDL a single well-formed
+    // identifier instead of letting the name break out of quoting.
+    expect(createTable).toContain('CREATE TABLE IF NOT EXISTS "evil""; DROP TABLE users; --"')
+    expect(createTable).toContain('"left"" col" text NOT NULL')
+    expect(createTable).toContain('"right"" col" text NOT NULL')
+    expect(createTable).not.toContain('"evil"; DROP')
+
+    for (const stmt of indexes) {
+      expect(stmt).toContain('"evil""; DROP TABLE users; --')
+      expect(stmt).not.toContain('"evil"; DROP')
+    }
+    const pairIdx = indexes.find((stmt) => stmt.includes("_pair_idx"))
+    expect(pairIdx).toContain('("left"" col", "right"" col")')
+  })
 })
 
 describe("resolveLinkFromSpec", () => {

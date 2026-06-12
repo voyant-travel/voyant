@@ -102,17 +102,10 @@ const API_TOKEN_UPDATE_FIELDS = [
 export type { ApiTokenRotationStore }
 
 export function getAuthSecret(): string {
-  const secret = process.env.BETTER_AUTH_SECRET || process.env.SESSION_CLAIMS_SECRET || ""
+  const secret = process.env.BETTER_AUTH_SECRET || ""
 
   if (!secret || secret.length < 32) {
-    // During build, env vars may not be available.
-    // Return a placeholder so module-level initialization succeeds.
-    if (typeof process.env.NEXT_PHASE === "string") {
-      return "build-phase-placeholder-secret-not-used-at-runtime!!"
-    }
-    throw new Error(
-      "Missing BETTER_AUTH_SECRET (or SESSION_CLAIMS_SECRET) with at least 32 characters",
-    )
+    throw new Error("Missing BETTER_AUTH_SECRET with at least 32 characters")
   }
 
   return secret
@@ -560,6 +553,15 @@ export interface CreateBetterAuthOptions<
    * `maxAge` (seconds).
    */
   sessionCookieCache?: false | { maxAge?: number }
+  /** Better Auth secondary storage, typically Redis/KV, used for distributed rate limits. */
+  secondaryStorage?: BetterAuthOptions["secondaryStorage"]
+  /** Better Auth rate-limit config. Defaults to secondary storage when present. */
+  rateLimit?: BetterAuthOptions["rateLimit"]
+  /**
+   * Controls Better Auth's Secure cookie flag. Defaults to secure except in
+   * explicit local development (`NODE_ENV=development`).
+   */
+  useSecureCookies?: boolean
 }
 
 /**
@@ -595,6 +597,16 @@ export function createBetterAuth<
     apikey: apikeyTable,
     ...(options.extraSchema ?? {}),
   } satisfies BetterAuthDrizzleSchema
+  const rateLimit =
+    options.rateLimit ??
+    (options.secondaryStorage
+      ? ({
+          enabled: true,
+          window: 60,
+          max: 100,
+          storage: "secondary-storage",
+        } as BetterAuthOptions["rateLimit"])
+      : undefined)
 
   const authOptions = {
     appName: "Voyant",
@@ -605,6 +617,8 @@ export function createBetterAuth<
       provider: "pg",
       schema,
     }),
+    ...(options.secondaryStorage ? { secondaryStorage: options.secondaryStorage } : {}),
+    ...(rateLimit ? { rateLimit } : {}),
     ...(options.sessionCookieCache === false
       ? {}
       : {
@@ -714,7 +728,7 @@ export function createBetterAuth<
       },
     },
     advanced: {
-      useSecureCookies: process.env.NODE_ENV === "production",
+      useSecureCookies: options.useSecureCookies ?? process.env.NODE_ENV !== "development",
     },
   } as ResolvedCreateBetterAuthOptions<UserOptions, Plugins>
 
