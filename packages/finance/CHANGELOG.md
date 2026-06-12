@@ -1,5 +1,13 @@
 # @voyantjs/finance
 
+## 0.119.2
+
+### Patch Changes
+
+- 3f52991: Split finance schema and admin route internals into smaller domain modules while preserving the public package exports.
+- Updated dependencies [d097ac1]
+  - @voyantjs/products@0.119.2
+
 ## 0.119.1
 
 ### Patch Changes
