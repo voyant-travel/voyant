@@ -34,6 +34,15 @@ import {
 } from "./validation.js"
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
+/**
+ * Shared-cache marker for non-personalized catalog reads (departure
+ * detail/list, itineraries). Same data for every visitor; the framework
+ * cache layer (`publicResponseCache` in @voyantjs/hono) and the platform
+ * dispatcher only cache responses explicitly marked like this. Applied
+ * to success responses only.
+ */
+const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
+
 type Env = {
   Bindings: VoyantBindings
   Variables: {
@@ -161,18 +170,18 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         c.req.param("departureId"),
       )
 
-      return departure
-        ? c.json({ data: departure })
-        : c.json({ error: "Storefront departure not found" }, 404)
+      if (!departure) return c.json({ error: "Storefront departure not found" }, 404)
+      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      return c.json({ data: departure })
     })
     .get("/products/:productId/departures", async (c) => {
-      return c.json(
-        await storefrontService.listProductDepartures(
-          c.get("db" as never),
-          c.req.param("productId"),
-          await parseQuery(c, storefrontDepartureListQuerySchema),
-        ),
+      const result = await storefrontService.listProductDepartures(
+        c.get("db" as never),
+        c.req.param("productId"),
+        await parseQuery(c, storefrontDepartureListQuerySchema),
       )
+      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      return c.json(result)
     })
     .post("/departures/:departureId/price", async (c) => {
       const preview = await storefrontService.previewDeparturePrice(
@@ -286,9 +295,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         productId: c.req.param("productId"),
       })
 
-      return itinerary
-        ? c.json({ data: itinerary })
-        : c.json({ error: "Storefront itinerary not found" }, 404)
+      if (!itinerary) return c.json({ error: "Storefront itinerary not found" }, 404)
+      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      return c.json({ data: itinerary })
     })
     .get("/products/:productId/offers", async (c) => {
       const query = await parseQuery(c, storefrontPromotionalOfferListQuerySchema)

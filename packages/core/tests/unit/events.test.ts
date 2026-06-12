@@ -99,7 +99,7 @@ describe("createEventBus", () => {
     errorSpy.mockRestore()
   })
 
-  it("awaits async handlers sequentially", async () => {
+  it("runs handlers in parallel — a slow handler does not serialize a fast one", async () => {
     const bus = createEventBus()
     const order: number[] = []
     bus.subscribe("x", async () => {
@@ -112,6 +112,113 @@ describe("createEventBus", () => {
 
     await bus.emit("x", {})
 
-    expect(order).toEqual([1, 2])
+    // Both completed before emit resolved, but the synchronous handler
+    // did not wait behind the slow one.
+    expect(order).toEqual([2, 1])
+  })
+
+  it("awaits all handlers before resolving when no scheduler is provided", async () => {
+    const bus = createEventBus()
+    let done = false
+    bus.subscribe("x", async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      done = true
+    })
+
+    await bus.emit("x", {})
+
+    expect(done).toBe(true)
+  })
+
+  it("stops awaiting a handler that exceeds handlerTimeoutMs", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const bus = createEventBus({ handlerTimeoutMs: 20 })
+    let hungResolved = false
+    bus.subscribe("x", async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      hungResolved = true
+    })
+
+    const start = Date.now()
+    await bus.emit("x", {})
+    const elapsed = Date.now() - start
+
+    expect(elapsed).toBeLessThan(150)
+    expect(hungResolved).toBe(false)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("exceeded 20ms"))
+    errorSpy.mockRestore()
+  })
+
+  describe("deferred emission via EmitOptions.schedule", () => {
+    it("hands deferrable handlers to the scheduler and resolves without awaiting them", async () => {
+      const bus = createEventBus()
+      let deferredRan = false
+      const scheduled: Promise<unknown>[] = []
+      bus.subscribe("x", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        deferredRan = true
+      })
+
+      await bus.emit("x", {}, undefined, { schedule: (p) => scheduled.push(p) })
+
+      expect(deferredRan).toBe(false)
+      expect(scheduled).toHaveLength(1)
+      await Promise.all(scheduled)
+      expect(deferredRan).toBe(true)
+    })
+
+    it("still awaits inline-marked handlers before resolving", async () => {
+      const bus = createEventBus()
+      const order: string[] = []
+      const scheduled: Promise<unknown>[] = []
+      bus.subscribe(
+        "x",
+        async () => {
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          order.push("inline")
+        },
+        { inline: true },
+      )
+      // Deferred work starts concurrently — `schedule` only means emit
+      // doesn't wait for it. Make it slower than the inline handler so
+      // we can observe that emit resolved without it.
+      bus.subscribe("x", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        order.push("deferred")
+      })
+
+      await bus.emit("x", {}, undefined, { schedule: (p) => scheduled.push(p) })
+
+      expect(order).toEqual(["inline"])
+      await Promise.all(scheduled)
+      expect(order).toEqual(["inline", "deferred"])
+    })
+
+    it("does not invoke the scheduler when every handler is inline", async () => {
+      const bus = createEventBus()
+      const schedule = vi.fn()
+      const handler = vi.fn()
+      bus.subscribe("x", handler, { inline: true })
+
+      await bus.emit("x", {}, undefined, { schedule })
+
+      expect(handler).toHaveBeenCalledOnce()
+      expect(schedule).not.toHaveBeenCalled()
+    })
+
+    it("scheduled batch never rejects even when a deferred handler throws", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+      const bus = createEventBus()
+      const scheduled: Promise<unknown>[] = []
+      bus.subscribe("x", () => {
+        throw new Error("boom")
+      })
+
+      await bus.emit("x", {}, undefined, { schedule: (p) => scheduled.push(p) })
+      await expect(Promise.all(scheduled)).resolves.toBeDefined()
+
+      expect(errorSpy).toHaveBeenCalled()
+      errorSpy.mockRestore()
+    })
   })
 })

@@ -3,20 +3,10 @@ import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyantjs/t
 import type { MiddlewareHandler } from "hono"
 
 import { requireUserId } from "../auth/require-user.js"
-import {
-  type DbFactory,
-  resolveDbFactoryResult,
-  type VoyantAuthIntegration,
-  type VoyantBindings,
-  type VoyantVariables,
-} from "../types.js"
-
-/** See db middleware: structural shape avoids a hard `@cloudflare/workers-types` dep. */
-interface ExecutionContextLike {
-  waitUntil(promise: Promise<unknown>): void
-}
-
+import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
+import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
 import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
+import { acquireRequestDb } from "./request-db.js"
 
 export function requirePermission<TBindings extends VoyantBindings>(
   dbFactory: DbFactory<TBindings>,
@@ -61,14 +51,17 @@ export function requirePermission<TBindings extends VoyantBindings>(
       return c.json({ error: "No auth permission checker configured" }, 500)
     }
 
-    const { db, dispose } = resolveDbFactoryResult(dbFactory(c.env))
+    // Reuses the per-request client created by the auth/db middleware
+    // upstream (same factory) instead of opening another Pool.
+    const lease = acquireRequestDb(c, dbFactory)
 
     try {
       const allowed = await opts.auth.hasPermission({
         request: c.req.raw,
         env: c.env,
-        db,
-        ctx: c.executionCtx,
+        db: lease.db,
+        // Guarded: Hono throws on `executionCtx` access outside Workers.
+        ctx: tryGetExecutionCtx(c),
         auth: {
           userId,
           actor,
@@ -87,16 +80,13 @@ export function requirePermission<TBindings extends VoyantBindings>(
         throw new ForbiddenApiError()
       }
 
-      return next()
+      // `await` is load-bearing: a bare `return next()` would run the
+      // `finally` (and release the shared client) as soon as the
+      // downstream promise is created, while the route is still
+      // querying it.
+      return await next()
     } finally {
-      if (dispose) {
-        const ctx = c.executionCtx as ExecutionContextLike | undefined
-        if (ctx && typeof ctx.waitUntil === "function") {
-          ctx.waitUntil(dispose())
-        } else {
-          await dispose()
-        }
-      }
+      await lease.release()
     }
   }
 }

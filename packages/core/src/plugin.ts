@@ -38,6 +38,13 @@ export interface Subscriber<
   event: string
   /** Callback invoked when the event is emitted. */
   handler: EventHandler<TData, TMetadata>
+  /**
+   * When `true`, the handler completes before `emit()` resolves even on
+   * runtimes that defer subscriber work past the HTTP response. Reserve
+   * for handlers whose side effects must be read-your-writes visible
+   * within the emitting request. Default deferrable.
+   */
+  inline?: boolean
 }
 
 /**
@@ -149,7 +156,9 @@ export function registerPlugins(
       for (const sub of plugin.subscribers) {
         subscribers.push(sub)
         if (options.eventBus) {
-          subscriptions.push(options.eventBus.subscribe(sub.event, sub.handler))
+          subscriptions.push(
+            options.eventBus.subscribe(sub.event, sub.handler, { inline: sub.inline ?? false }),
+          )
         }
       }
     }

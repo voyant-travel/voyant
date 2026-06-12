@@ -9,6 +9,11 @@ export {
   purgeExpiredIdempotencyKeys,
 } from "./idempotency-key.js"
 export { consoleLoggerProvider, logger } from "./logger.js"
+export {
+  type PublicCacheOptions,
+  publicResponseCache,
+  resetPublicCacheStateForTests,
+} from "./public-cache.js"
 export { LIVE_LIMITS, rateLimit } from "./rate-limit.js"
 export { requireActor } from "./require-actor.js"
 export { requirePermission } from "./require-permission.js"

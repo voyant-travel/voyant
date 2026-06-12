@@ -20,12 +20,15 @@ export type {
   VoyantVariables,
 } from "./env.js"
 export type {
+  EmitOptions,
   EventBus,
+  EventBusOptions,
   EventCategory,
   EventEnvelope,
   EventHandler,
   EventMetadata,
   EventSource,
+  SubscribeOptions,
   Subscription,
 } from "./events.js"
 export { createEventBus } from "./events.js"

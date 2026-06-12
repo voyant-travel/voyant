@@ -150,7 +150,10 @@ function orderProducts(query: PublicCatalogProductListQuery) {
 }
 
 export const publicProductsService = {
-  async listCatalogProducts(db: PostgresJsDatabase, query: PublicCatalogProductListQuery) {
+  async listCatalogProducts(
+    db: PostgresJsDatabase,
+    query: PublicCatalogProductListQuery & { includeContent?: boolean },
+  ) {
     const conditions = [
       eq(products.status, "active"),
       eq(products.activated, true),
@@ -264,6 +267,7 @@ export const publicProductsService = {
 
     return {
       data: await hydrateCatalogProducts(db, rows, {
+        includeContent: query.includeContent === true,
         languageTag: normalizeLanguageTag(query.languageTag),
       }),
       total: countResult[0]?.count ?? 0,

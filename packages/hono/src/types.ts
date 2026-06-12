@@ -170,6 +170,16 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   publicPaths?: string[]
   logger?: LoggerProvider
   /**
+   * Shared response cache for the public surface (`/v1/public/*` by
+   * default). Enabled by default but inert until a route marks its
+   * response `Cache-Control: public, s-maxage=…` — personalized routes
+   * are never cached. Set `false` to disable, or pass options to tune
+   * prefixes/limits. Uses the Cache API where the runtime provides it
+   * and falls back to the `env.CACHE` KV binding (Voyant Cloud
+   * namespaced workers have no `caches.default`).
+   */
+  publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
+  /**
    * Workflow runtime configuration. When set, `createApp()` collects
    * `module.workflows` + `module.eventFilters` (plus the same fields
    * from plugins), invokes `workflows.driver` with framework deps, and

@@ -15,11 +15,14 @@ import {
 } from "@voyantjs/workflows/events"
 import { Hono } from "hono"
 
+import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
+import { requestScopedEventBus } from "./lib/request-event-bus.js"
 import { requireAuth } from "./middleware/auth.js"
 import { cors } from "./middleware/cors.js"
 import { db } from "./middleware/db.js"
 import { handleApiError, requestId } from "./middleware/error-boundary.js"
 import { logger } from "./middleware/logger.js"
+import { publicResponseCache } from "./middleware/public-cache.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantVariables } from "./types.js"
@@ -104,7 +107,7 @@ export function createApp<TBindings extends VoyantBindings>(
     }
   }
   for (const sub of expanded?.subscribers ?? []) {
-    eventBus.subscribe(sub.event, sub.handler)
+    eventBus.subscribe(sub.event, sub.handler, { inline: sub.inline ?? false })
   }
 
   // ---- Workflow runtime wiring (synchronous setup; manifest registration
@@ -219,9 +222,38 @@ export function createApp<TBindings extends VoyantBindings>(
     return bootstrapPromise
   }
 
+  // Request ID header
+  app.use("*", requestId)
+
+  // Structured logger
+  app.use("*", logger(config.logger))
+
+  // CORS (allowlist via env CORS_ALLOWLIST)
+  app.use("*", cors())
+
+  // Shared response cache for the public surface. Mounted BEFORE the
+  // runtime bootstrap on purpose: a cache hit skips module-graph
+  // instantiation, auth, and the per-request db client entirely — the
+  // hit path allocates nothing but the cached body. Only responses a
+  // route explicitly marks `Cache-Control: public, s-maxage=…` are
+  // stored (see middleware docs).
+  if (config.publicCache !== false) {
+    app.use("*", publicResponseCache(config.publicCache ?? {}))
+  }
+
   app.use("*", async (c, next) => {
     c.set("container", container)
-    c.set("eventBus", eventBus)
+    // Request-scoped bus: emits defer non-`inline` subscribers past the
+    // response via waitUntil, so handlers doing outbound HTTP (CMS sync,
+    // e-invoicing) no longer add their latency to every mutation. Falls
+    // back to the raw (fully-awaited) bus outside Workers.
+    const executionCtx = tryGetExecutionCtx(c)
+    c.set(
+      "eventBus",
+      executionCtx
+        ? requestScopedEventBus(eventBus, (pending) => executionCtx.waitUntil(pending))
+        : eventBus,
+    )
     if (config.link) {
       c.set("link", config.link)
     }
@@ -244,15 +276,6 @@ export function createApp<TBindings extends VoyantBindings>(
     }
     return next()
   })
-
-  // Request ID header
-  app.use("*", requestId)
-
-  // Structured logger
-  app.use("*", logger(config.logger))
-
-  // CORS (allowlist via env CORS_ALLOWLIST)
-  app.use("*", cors())
 
   // Health check (public, no auth)
   app.get("/health", (c) => c.json({ status: "ok" }))
