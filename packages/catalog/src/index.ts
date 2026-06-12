@@ -219,6 +219,7 @@ export {
 } from "./services/indexer-service.js"
 // Runtime services — drizzle-bound entry points for verticals.
 export {
+  fetchOverlaysForEntities,
   fetchOverlaysForEntity,
   listOverlaysByOrigin,
   type OverlayOriginFilter,

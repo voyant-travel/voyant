@@ -133,14 +133,48 @@ export function createCrudService<
     return rows[0]?.count ?? 0
   }
 
+  /**
+   * One roundtrip instead of two: the total rides along as a
+   * `count(*) OVER ()` window column and is stripped from the returned
+   * rows. The separate-count approach paid the full filtered scan in
+   * `count()` anyway — the window adds no scan cost, and on per-query
+   * transports (neon-http: one fetch per query) it halves the
+   * roundtrips/subrequests per list endpoint. The only case needing a
+   * fallback query is an offset pointing past the last row, where the
+   * page is empty and the window total is unobservable.
+   */
   async function listAndCount(
     db: DrizzleClient,
     opts: ListOptions = {},
   ): Promise<{ data: Row[]; total: number }> {
-    const [data, total] = await Promise.all([
-      list(db, opts),
-      count(db, opts.where, { includeDeleted: opts.includeDeleted }),
-    ])
+    let query = asDb(db)
+      .select({
+        ...getTableColumns(table),
+        __voyantWindowTotal: sql<number>`count(*) over()::int`,
+      })
+      .from(table)
+    const where = composeWhere(opts)
+    if (where) query = query.where(where)
+    if (opts.orderBy) {
+      const orders = Array.isArray(opts.orderBy) ? opts.orderBy : [opts.orderBy]
+      query = query.orderBy(...orders)
+    }
+    if (typeof opts.limit === "number") query = query.limit(opts.limit)
+    if (typeof opts.offset === "number") query = query.offset(opts.offset)
+    const rows = (await query) as Array<Row & { __voyantWindowTotal: number }>
+
+    const first = rows[0]
+    if (!first) {
+      // Empty page. Without an offset the filtered set is genuinely
+      // empty; with one, the offset may simply point past the end.
+      const total = opts.offset
+        ? await count(db, opts.where, { includeDeleted: opts.includeDeleted })
+        : 0
+      return { data: [], total }
+    }
+
+    const total = first.__voyantWindowTotal
+    const data = rows.map(({ __voyantWindowTotal: _total, ...rest }) => rest as unknown as Row)
     return { data, total }
   }
 

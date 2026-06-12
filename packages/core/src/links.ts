@@ -311,6 +311,26 @@ export interface LinkRow {
 }
 
 /**
+ * Filter for {@link LinkService.list}. All provided fields are ANDed.
+ *
+ * The plural fields (`leftIds`/`rightIds`) match any of the given IDs in a
+ * single batched lookup — implementations MUST resolve them with one
+ * query/roundtrip, not one per ID. An empty array can never match and
+ * short-circuits to `[]`. Singular and plural fields for the same side
+ * combine by intersection.
+ */
+export interface LinkListFilter {
+  /** Match a single left-side ID. */
+  leftId?: string
+  /** Match a single right-side ID. */
+  rightId?: string
+  /** Match any of the given left-side IDs (one batched query). */
+  leftIds?: string[]
+  /** Match any of the given right-side IDs (one batched query). */
+  rightIds?: string[]
+}
+
+/**
  * Runtime service for manipulating link rows. Templates register an
  * implementation in the module container under `"link"`.
  */
@@ -329,5 +349,5 @@ export interface LinkService {
   delete(spec: LinkSpec): Promise<void>
 
   /** List link rows matching the given filter (non-soft-deleted only). */
-  list(linkKey: string, filter?: { leftId?: string; rightId?: string }): Promise<LinkRow[]>
+  list(linkKey: string, filter?: LinkListFilter): Promise<LinkRow[]>
 }

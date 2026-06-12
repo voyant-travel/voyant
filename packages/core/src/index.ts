@@ -39,6 +39,7 @@ export type {
   LinkDefinition,
   LinkDefinitionOptions,
   LinkKeyRecord,
+  LinkListFilter,
   LinkRow,
   LinkService,
   LinkSide,

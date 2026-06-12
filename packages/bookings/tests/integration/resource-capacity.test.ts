@@ -94,11 +94,19 @@ describe.skipIf(!DB_AVAILABLE)(
         .insert(bookings)
         .values({ bookingNumber: nextBookingNumber(), sellCurrency: "EUR" })
         .returning()
+      // booking_allocations.booking_item_id is NOT NULL — allocations hang
+      // off an item, so seed a minimal one first.
+      const itemId = `bitm_${booking.id.slice(-20)}`
       await db.execute(sql`
-        INSERT INTO booking_allocations (id, booking_id, availability_slot_id, quantity, allocation_type, status)
+        INSERT INTO booking_items (id, booking_id, title, sell_currency)
+        VALUES (${itemId}, ${booking.id}, 'Capacity test item', 'EUR')
+      `)
+      await db.execute(sql`
+        INSERT INTO booking_allocations (id, booking_id, booking_item_id, availability_slot_id, quantity, allocation_type, status)
         VALUES (
           'balc_' || substr(md5(random()::text), 1, 24),
           ${booking.id},
+          ${itemId},
           ${input.slotId},
           1,
           'unit',
@@ -175,6 +183,63 @@ describe.skipIf(!DB_AVAILABLE)(
         { pii },
       )
       expect(updated?.traveler.id).toBe(created!.traveler.id)
+    })
+
+    it("checks multiple allocation kinds in one save via the grouped count", async () => {
+      const slotId = "slot_capacity_test_3"
+      const roomId = "alrs_dbl_test_3"
+      const seatId = "alrs_seat_test_3"
+      await seedSlot({ slotId, productId: "prod_test_3" })
+      await seedResource({ resourceId: roomId, slotId, kind: "room", capacity: 1 })
+      await seedResource({ resourceId: seatId, slotId, kind: "seat", capacity: 5 })
+
+      // Fill the room with a traveler from another booking.
+      const bookingA = await seedBookingOnSlot({ slotId })
+      const [travelerA] = await db
+        .insert(bookingTravelers)
+        .values({
+          bookingId: bookingA,
+          firstName: "Delta",
+          lastName: "Four",
+          participantType: "traveler",
+        })
+        .returning()
+      const pii = await buildPii()
+      await pii.upsertTravelerTravelDetails(db, travelerA.id, {
+        allocations: { room: roomId },
+      })
+
+      // Assigning room + seat together must reject on the full room —
+      // both kinds are validated by the single grouped query.
+      const bookingB = await seedBookingOnSlot({ slotId })
+      await expect(
+        bookingsService.createTravelerWithTravelDetails(
+          db,
+          bookingB,
+          {
+            firstName: "Echo",
+            lastName: "Five",
+            participantType: "traveler",
+            allocations: { room: roomId, seat: seatId },
+          },
+          { pii },
+        ),
+      ).rejects.toMatchObject({ code: "resource_capacity_exhausted" })
+
+      // The seat alone still has capacity — the rejection above was the
+      // room's, not a false positive from the grouped form.
+      const created = await bookingsService.createTravelerWithTravelDetails(
+        db,
+        bookingB,
+        {
+          firstName: "Echo",
+          lastName: "Five",
+          participantType: "traveler",
+          allocations: { seat: seatId },
+        },
+        { pii },
+      )
+      expect(created?.traveler.id).toBeDefined()
     })
   },
 )

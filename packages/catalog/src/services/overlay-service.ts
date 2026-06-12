@@ -16,7 +16,7 @@
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
-import { and, eq, isNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry, Visibility } from "../contract.js"
 import {
@@ -71,6 +71,57 @@ export async function fetchOverlaysForEntity(
     market: row.market,
     value: row.value,
   }))
+}
+
+/**
+ * Batched form of `fetchOverlaysForEntity`: fetch all active overlays for
+ * many entities of one module in a single query, grouped by entity id.
+ *
+ * Every requested id is present in the returned map (entities without
+ * overlays map to an empty array), so callers can index without null
+ * checks. Pass the per-entity array straight into
+ * `resolveEntityViewWithOverlays` — the result is identical to calling
+ * `resolveEntityView` once per entity, minus the N-1 round trips.
+ */
+export async function fetchOverlaysForEntities(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityIds: ReadonlyArray<string>,
+): Promise<Map<string, ResolverOverlay[]>> {
+  const byEntity = new Map<string, ResolverOverlay[]>()
+  for (const id of entityIds) {
+    if (!byEntity.has(id)) byEntity.set(id, [])
+  }
+  if (byEntity.size === 0) return byEntity
+
+  const rows = await db
+    .select({
+      entity_id: catalogOverlayTable.entity_id,
+      field_path: catalogOverlayTable.field_path,
+      locale: catalogOverlayTable.locale,
+      audience: catalogOverlayTable.audience,
+      market: catalogOverlayTable.market,
+      value: catalogOverlayTable.value,
+    })
+    .from(catalogOverlayTable)
+    .where(
+      and(
+        eq(catalogOverlayTable.entity_module, entityModule),
+        inArray(catalogOverlayTable.entity_id, [...byEntity.keys()]),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
+
+  for (const row of rows) {
+    byEntity.get(row.entity_id)?.push({
+      field_path: row.field_path,
+      locale: row.locale,
+      audience: row.audience,
+      market: row.market,
+      value: row.value,
+    })
+  }
+  return byEntity
 }
 
 /**

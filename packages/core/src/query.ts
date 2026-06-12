@@ -199,25 +199,23 @@ export async function queryGraph(
       throw new Error(`queryGraph: no fetcher registered for target entity "${targetEntity}"`)
     }
 
-    // Fan out link lookups in parallel, one per base record.
-    const baseIds = baseRecords.map((r) => r.id)
-    const linkRowsPerBase = await Promise.all(
-      baseIds.map((id) =>
-        ourSideIsLeft
-          ? linkService.list(def.tableName, { leftId: id })
-          : linkService.list(def.tableName, { rightId: id }),
-      ),
+    // ONE batched link lookup for all base records — per-base fan-out costs
+    // a query (and on Workers a subrequest) per record.
+    const baseIds = unique(baseRecords.map((r) => r.id))
+    const linkRows = await linkService.list(
+      def.tableName,
+      ourSideIsLeft ? { leftIds: baseIds } : { rightIds: baseIds },
     )
 
-    // baseId → targetIds for stitching.
+    // baseId → targetIds for stitching. Rows arrive in the link service's
+    // list order (created_at ASC), so per-base target order is preserved.
     const idMap = new Map<string, string[]>()
-    baseIds.forEach((baseId, i) => {
-      const rows = linkRowsPerBase[i] ?? []
-      const targetIds = ourSideIsLeft
-        ? rows.map((row) => row.rightId)
-        : rows.map((row) => row.leftId)
-      idMap.set(baseId, targetIds)
-    })
+    for (const baseId of baseIds) idMap.set(baseId, [])
+    for (const row of linkRows) {
+      const baseId = ourSideIsLeft ? row.leftId : row.rightId
+      const targetId = ourSideIsLeft ? row.rightId : row.leftId
+      idMap.get(baseId)?.push(targetId)
+    }
 
     // Hydrate all target records in one call.
     const allTargetIds = unique(Array.from(idMap.values()).flat())

@@ -823,6 +823,9 @@ export const invoices = pgTable(
     index("idx_invoices_status").on(table.status),
     index("idx_invoices_status_created").on(table.status, table.createdAt),
     index("idx_invoices_outstanding_due").on(table.status, table.balanceDueCents, table.dueDate),
+    // Bare created_at index for the dashboard's monthly rollups, which
+    // filter a created_at range without a leading status column.
+    index("idx_invoices_created").on(table.createdAt),
     index("idx_invoices_fx_rate_set").on(table.fxRateSetId),
     index("idx_invoices_number").on(table.invoiceNumber),
     uniqueIndex("invoices_invoice_number_type_active_idx")
@@ -1116,11 +1119,22 @@ export const supplierInvoices = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    index("idx_supplier_invoices_supplier").on(table.supplierId),
-    index("idx_supplier_invoices_supplier_created").on(table.supplierId, table.createdAt),
-    index("idx_supplier_invoices_status").on(table.status),
-    index("idx_supplier_invoices_status_created").on(table.status, table.createdAt),
-    index("idx_supplier_invoices_due_date").on(table.dueDate),
+    // Every supplier-invoice read path filters `deleted_at IS NULL`
+    // (soft delete), so the hot list/filter indexes are partial — smaller
+    // and the planner can use them for all of those queries.
+    index("idx_supplier_invoices_supplier")
+      .on(table.supplierId)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_supplier_invoices_supplier_created")
+      .on(table.supplierId, table.createdAt)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_supplier_invoices_status").on(table.status).where(sql`${table.deletedAt} IS NULL`),
+    index("idx_supplier_invoices_status_created")
+      .on(table.status, table.createdAt)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_supplier_invoices_due_date")
+      .on(table.dueDate)
+      .where(sql`${table.deletedAt} IS NULL`),
     index("idx_supplier_invoices_fx_rate_set").on(table.fxRateSetId),
     // The supplier's number is unique per supplier (AP convention), ignoring voids.
     uniqueIndex("supplier_invoices_supplier_number_active_idx")

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   defineLink,
   type LinkableDefinition,
+  type LinkListFilter,
   type LinkRow,
   type LinkService,
 } from "../../src/links.js"
@@ -61,11 +62,13 @@ function makeLinkService(rowsByKey: Record<string, LinkRow[]>): LinkService {
     create: vi.fn(),
     dismiss: vi.fn(),
     delete: vi.fn(),
-    list: vi.fn(async (linkKey: string, filter: { leftId?: string; rightId?: string } = {}) => {
+    list: vi.fn(async (linkKey: string, filter: LinkListFilter = {}) => {
       const all = rowsByKey[linkKey] ?? []
       return all.filter((row) => {
         if (filter.leftId !== undefined && row.leftId !== filter.leftId) return false
         if (filter.rightId !== undefined && row.rightId !== filter.rightId) return false
+        if (filter.leftIds !== undefined && !filter.leftIds.includes(row.leftId)) return false
+        if (filter.rightIds !== undefined && !filter.rightIds.includes(row.rightId)) return false
         return true
       })
     }),
@@ -376,6 +379,109 @@ describe("queryGraph — relation traversal", () => {
     await expect(
       queryGraph(ctx, { entity: "person", fields: ["id", "product.*"] }),
     ).rejects.toThrow(/no fetcher registered for target entity "product"/)
+  })
+
+  it("issues ONE batched link lookup for N base records", async () => {
+    const personFetcher = makeFetcher([{ id: "pers_a" }, { id: "pers_b" }, { id: "pers_c" }])
+    const productFetcher = makeFetcher([
+      { id: "prod_1", title: "Safari" },
+      { id: "prod_2", title: "Cruise" },
+    ])
+    const linkService = makeLinkService({
+      [personProductLink.tableName]: [
+        makeRow("lnk_1", "pers_a", "prod_1"),
+        makeRow("lnk_2", "pers_a", "prod_2"),
+        makeRow("lnk_3", "pers_c", "prod_2"),
+      ],
+    })
+
+    const ctx = createQueryContext(
+      { person: personFetcher, product: productFetcher },
+      [personProductLink],
+      linkService,
+    )
+
+    const { data } = await queryGraph(ctx, {
+      entity: "person",
+      fields: ["id", "product.*"],
+    })
+
+    // One list call total, carrying every base id — not one call per record.
+    expect(linkService.list).toHaveBeenCalledTimes(1)
+    expect(linkService.list).toHaveBeenCalledWith(personProductLink.tableName, {
+      leftIds: ["pers_a", "pers_b", "pers_c"],
+    })
+
+    // And the batched rows still group back to the right base records.
+    const byId = new Map(data.map((r) => [r.id, r]))
+    expect((byId.get("pers_a")?.product as EntityRecord[]).map((p) => p.id)).toEqual([
+      "prod_1",
+      "prod_2",
+    ])
+    expect(byId.get("pers_b")?.product).toEqual([])
+    expect((byId.get("pers_c")?.product as EntityRecord[]).map((p) => p.id)).toEqual(["prod_2"])
+  })
+
+  it("issues ONE batched link lookup with rightIds when traversing from the right side", async () => {
+    const personFetcher = makeFetcher([{ id: "pers_a", name: "Alice" }])
+    const productFetcher = makeFetcher([
+      { id: "prod_1", title: "Safari" },
+      { id: "prod_2", title: "Cruise" },
+    ])
+    const linkService = makeLinkService({
+      [personProductLink.tableName]: [
+        makeRow("lnk_1", "pers_a", "prod_1"),
+        makeRow("lnk_2", "pers_a", "prod_2"),
+      ],
+    })
+
+    const ctx = createQueryContext(
+      { person: personFetcher, product: productFetcher },
+      [personProductLink],
+      linkService,
+    )
+
+    const { data } = await queryGraph(ctx, {
+      entity: "product",
+      fields: ["id", "person.*"],
+    })
+
+    expect(linkService.list).toHaveBeenCalledTimes(1)
+    expect(linkService.list).toHaveBeenCalledWith(personProductLink.tableName, {
+      rightIds: ["prod_1", "prod_2"],
+    })
+    expect(data.find((r) => r.id === "prod_1")?.person).toEqual({ id: "pers_a", name: "Alice" })
+    expect(data.find((r) => r.id === "prod_2")?.person).toEqual({ id: "pers_a", name: "Alice" })
+  })
+
+  it("dedupes base ids in the batched link lookup", async () => {
+    // A fetcher can legitimately return the same record twice (e.g. a join
+    // upstream); the link lookup should still carry each id once.
+    const personFetcher: EntityFetcher = {
+      list: vi.fn(async () => [
+        { id: "pers_a", name: "Alice" },
+        { id: "pers_a", name: "Alice" },
+      ]),
+    }
+    const productFetcher = makeFetcher([{ id: "prod_1", title: "Safari" }])
+    const linkService = makeLinkService({
+      [personProductLink.tableName]: [makeRow("lnk_1", "pers_a", "prod_1")],
+    })
+
+    const ctx = createQueryContext(
+      { person: personFetcher, product: productFetcher },
+      [personProductLink],
+      linkService,
+    )
+
+    const { data } = await queryGraph(ctx, { entity: "person", fields: ["product.*"] })
+
+    expect(linkService.list).toHaveBeenCalledWith(personProductLink.tableName, {
+      leftIds: ["pers_a"],
+    })
+    // Both duplicate base records still get the relation attached.
+    expect((data[0]?.product as EntityRecord[])[0]?.id).toBe("prod_1")
+    expect((data[1]?.product as EntityRecord[])[0]?.id).toBe("prod_1")
   })
 
   it("dedupes target fetches across base records", async () => {

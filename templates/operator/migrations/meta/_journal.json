@@ -435,6 +435,13 @@
       "when": 1781118000000,
       "tag": "20260610190000_invoice_aggregate_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1781260398475,
+      "tag": "0061_perf_phase1_indexes",
+      "breakpoints": true
     }
   ]
 }
