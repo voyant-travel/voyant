@@ -1,4 +1,3 @@
-// agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { formatMessage } from "@voyantjs/i18n"
@@ -27,112 +26,33 @@ import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type PaymentMethod,
   type PaymentStatus,
-  paymentMethodSchema,
-  paymentStatusSchema,
   useInvoiceFxRate,
   useInvoiceMutation,
   useInvoicePaymentMutation,
   useInvoices,
   usePaymentMutation,
 } from "../index.js"
+import type {
+  FormState,
+  RecordBookingPaymentDialogProps,
+} from "./record-booking-payment-dialog/shared.js"
+import {
+  buildInitialFormState,
+  deriveBaseAmountCents,
+  formatAmount,
+  formatCommissionPercent,
+  formatFxRateInput,
+  formatRateDisplay,
+  normalizeCurrency,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  parseFxRate,
+} from "./record-booking-payment-dialog/shared.js"
 
-const PAYMENT_METHODS = paymentMethodSchema.options
-const PAYMENT_STATUSES = paymentStatusSchema.options
-
-export interface EditingPaymentSnapshot {
-  id: string
-  invoiceId: string
-  amountCents: number
-  currency: string
-  baseCurrency: string | null
-  baseAmountCents: number | null
-  paymentMethod: PaymentMethod
-  status: PaymentStatus
-  paymentDate: string
-  referenceNumber: string | null
-  notes: string | null
-}
-
-export interface RecordBookingPaymentDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  bookingId: string
-  /** Pre-fill currency when no invoices have loaded yet. */
-  defaultCurrency?: string
-  onRecorded?: () => void
-  /**
-   * When set, the dialog runs in edit mode: it prefills from the
-   * snapshot and PATCHes `/v1/admin/finance/payments/:id` on submit instead
-   * of POSTing a new payment. The invoice selector is locked because
-   * reassigning a payment to a different invoice is out of scope for
-   * this dialog.
-   */
-  editingPayment?: EditingPaymentSnapshot | null
-}
-
-interface FormState {
-  invoiceId: string
-  amountCents: number
-  currency: string
-  fxRate: string
-  fxOverride: boolean
-  paymentMethod: PaymentMethod
-  status: PaymentStatus
-  paymentDate: string
-  referenceNumber: string
-  notes: string
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function buildInitialFormState(currency: string): FormState {
-  return {
-    invoiceId: "",
-    amountCents: 0,
-    currency,
-    fxRate: "",
-    fxOverride: false,
-    paymentMethod: "bank_transfer",
-    status: "completed",
-    paymentDate: todayIso(),
-    referenceNumber: "",
-    notes: "",
-  }
-}
-
-function formatAmount(cents: number): string {
-  return (cents / 100).toFixed(2)
-}
-
-function normalizeCurrency(currency: string | null | undefined): string {
-  return currency?.trim().toUpperCase() ?? ""
-}
-
-function parseFxRate(raw: string): number | null {
-  const normalized = raw.trim().replace(",", ".")
-  if (!normalized) return null
-  const value = Number.parseFloat(normalized)
-  return Number.isFinite(value) && value > 0 ? value : null
-}
-
-function deriveBaseAmountCents(amountCents: number, fxRate: number | null): number | null {
-  if (!fxRate || amountCents <= 0) return null
-  return Math.round(amountCents / fxRate)
-}
-
-function formatFxRateInput(rate: number): string {
-  return rate.toFixed(4)
-}
-
-function formatRateDisplay(rate: number): string {
-  return rate.toFixed(4)
-}
-
-function formatCommissionPercent(bps: number): string {
-  return (bps / 100).toFixed(2)
-}
+export type {
+  EditingPaymentSnapshot,
+  RecordBookingPaymentDialogProps,
+} from "./record-booking-payment-dialog/shared.js"
 
 export function RecordBookingPaymentDialog({
   open,
