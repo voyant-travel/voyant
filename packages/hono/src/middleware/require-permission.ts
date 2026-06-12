@@ -80,7 +80,11 @@ export function requirePermission<TBindings extends VoyantBindings>(
         throw new ForbiddenApiError()
       }
 
-      return next()
+      // `await` is load-bearing: a bare `return next()` would run the
+      // `finally` (and release the shared client) as soon as the
+      // downstream promise is created, while the route is still
+      // querying it.
+      return await next()
     } finally {
       await lease.release()
     }
