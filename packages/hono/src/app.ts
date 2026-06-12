@@ -274,19 +274,23 @@ export function createApp<TBindings extends VoyantBindings>(
     c.set("container", container)
     // Request-scoped bus: emits defer non-`inline` subscribers past the
     // response via waitUntil, so handlers doing outbound HTTP (CMS sync,
-    // e-invoicing) no longer add their latency to every mutation. Falls
-    // back to the raw (fully-awaited) bus outside Workers.
+    // e-invoicing) no longer add their latency to every mutation.
     //
     // With `outbox: true`, emits are also durable (persisted before
-    // delivery, retried by `drainOutbox` from @voyantjs/db/outbox).
+    // delivery, retried by `drainOutbox` from @voyantjs/db/outbox) —
+    // INCLUDING on runtimes without an ExecutionContext (Node/headless),
+    // where emits await handlers inline but still capture through the
+    // store. Only when there's neither a scheduler nor a store does the
+    // raw bus go on the context unwrapped.
     const executionCtx = tryGetExecutionCtx(c)
+    const outboxStore = buildOutboxStore?.(c)
     c.set(
       "eventBus",
-      executionCtx
+      executionCtx || outboxStore
         ? requestScopedEventBus(
             eventBus,
-            (pending) => executionCtx.waitUntil(pending),
-            buildOutboxStore?.(c),
+            executionCtx ? (pending) => executionCtx.waitUntil(pending) : undefined,
+            outboxStore,
           )
         : eventBus,
     )

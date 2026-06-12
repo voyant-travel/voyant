@@ -55,4 +55,16 @@ describe("requestScopedEventBus", () => {
     const options = inner.emit.mock.calls[0]?.[3] as { store?: unknown }
     expect(options.store).toBeUndefined()
   })
+
+  it("still threads the store with NO scheduler (Node/headless runtimes keep durable capture)", async () => {
+    const inner = fakeBus()
+    const store = { insert: vi.fn(), complete: vi.fn(), fail: vi.fn() }
+
+    const bus = requestScopedEventBus(inner, undefined, store)
+    await bus.emit("x", {})
+
+    const options = inner.emit.mock.calls[0]?.[3] as { store?: unknown; schedule?: unknown }
+    expect(options.store).toBe(store)
+    expect(options.schedule).toBeUndefined()
+  })
 })

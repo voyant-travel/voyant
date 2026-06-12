@@ -20,9 +20,13 @@ import type { EmitOptions, EventBus, EventMetadata, OutboxEventStore } from "@vo
  */
 export function requestScopedEventBus(
   bus: EventBus,
-  schedule: (pending: Promise<unknown>) => void,
+  schedule: ((pending: Promise<unknown>) => void) | undefined,
   store?: OutboxEventStore,
 ): EventBus {
+  // Without a scheduler (Node/headless — no executionCtx), emits await
+  // all handlers inline, exactly like the raw bus; the wrapper then only
+  // exists to thread the outbox store through.
+  const base: EmitOptions = schedule ? { schedule } : {}
   return {
     async emit<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,
@@ -31,10 +35,10 @@ export function requestScopedEventBus(
       options?: EmitOptions,
     ): Promise<void> {
       if (!store) {
-        return bus.emit(event, data, metadata, { schedule, ...options })
+        return bus.emit(event, data, metadata, { ...base, ...options })
       }
       try {
-        return await bus.emit(event, data, metadata, { schedule, store, ...options })
+        return await bus.emit(event, data, metadata, { ...base, store, ...options })
       } catch (err) {
         // Only the outbox insert can reject (handler errors are
         // collected, bookkeeping failures are swallowed inside the bus).
@@ -42,7 +46,7 @@ export function requestScopedEventBus(
           `[events] outbox capture failed for "${event}" — falling back to direct delivery:`,
           err,
         )
-        return bus.emit(event, data, metadata, { schedule, ...options })
+        return bus.emit(event, data, metadata, { ...base, ...options })
       }
     },
     subscribe(event, handler, options) {
