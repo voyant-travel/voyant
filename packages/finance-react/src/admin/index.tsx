@@ -204,6 +204,14 @@ export function createFinanceAdminExtension(
     id: "finance",
     routes: [
       {
+        // Index redirect (formerly the host's `finance/index.tsx` file
+        // route): `/finance` lands on the invoices page.
+        id: "finance-index",
+        path: basePath,
+        title: invoices,
+        redirectTo: `${basePath}/invoices`,
+      },
+      {
         id: "finance-invoices-index",
         path: `${basePath}/invoices`,
         title: invoices,

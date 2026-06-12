@@ -136,6 +136,7 @@ export {
   type BindableAdminRoute,
   createAdminExtensionRegistry,
   defineAdminExtension,
+  findAdminRouteContribution,
   type ImplementedAdminRoute,
   type ResolveAdminNavigationOptions,
   type ResolveAdminWidgetsOptions,

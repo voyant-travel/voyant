@@ -23,9 +23,10 @@ describe("createLegalAdminExtension", () => {
   it("describes the legal routes with unique ids and paths", () => {
     const extension = createLegalAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(7)
+    expect(routes).toHaveLength(8)
     expect(new Set(routes.map((route) => route.id)).size).toBe(routes.length)
     expect(routes.map((route) => route.path)).toEqual([
+      "/legal",
       "/legal/contracts",
       "/legal/contracts/$id",
       "/legal/templates",
@@ -34,6 +35,14 @@ describe("createLegalAdminExtension", () => {
       "/legal/policies/$id",
       "/legal/number-series",
     ])
+  })
+
+  it("redirects the legal index to the contracts page", () => {
+    const extension = createLegalAdminExtension()
+    const index = extension.routes?.find((route) => route.id === "legal-index")
+    expect(index?.path).toBe("/legal")
+    expect(index?.redirectTo).toBe("/legal/contracts")
+    expect(index?.page).toBeUndefined()
   })
 
   it("honors basePath and labels", () => {
@@ -54,7 +63,7 @@ describe("createLegalAdminExtension", () => {
     // them into their code-assembled route tree. Pages are lazy module
     // loaders (never eager `component` references) so they stay code-split.
     const extension = createLegalAdminExtension()
-    const routes = extension.routes ?? []
+    const routes = (extension.routes ?? []).filter((route) => !route.redirectTo)
     expect(routes).toHaveLength(7)
     for (const route of routes) {
       expect(route.component).toBeUndefined()
@@ -67,6 +76,7 @@ describe("createLegalAdminExtension", () => {
   it("resolves every lazy page to a module with a default component", async () => {
     const extension = createLegalAdminExtension()
     for (const route of extension.routes ?? []) {
+      if (route.redirectTo) continue
       const module = await route.page?.()
       expect(typeof module?.default).toBe("function")
     }

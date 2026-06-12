@@ -1,7 +1,13 @@
 import { useNavigate } from "@tanstack/react-router"
-import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  adminRoutePageModule,
+  createAdminExtensionRegistry,
+} from "@voyantjs/admin"
+import { createAdminCoreExtension } from "@voyantjs/admin-app/core-extension"
 import { Button } from "@voyantjs/ui/components/button"
-import { Route, ScrollText, Tag } from "lucide-react"
+import { Building, Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -65,6 +71,61 @@ type AdminExtensionNavMessages = Pick<
   | "suppliers"
   | "trips"
 >
+
+// The CORE admin surfaces — dashboard, account, settings — are
+// package-delivered by `@voyantjs/admin-app` (packaged-admin RFC §4.2): the
+// extension contributes NO navigation (Dashboard/Settings are part of the
+// BASE operator navigation; Account is linked from the user menu) and is
+// registered for the routes seam. The app composes two seams through the
+// factory options:
+// - the dashboard SSR loader: the operator prefetches the dashboard
+//   aggregates through TanStack Start server functions that read the
+//   database directly (cookie-authenticated), which no package can own —
+//   the package page consumes the same dashboard query keys client-side.
+// - the Operator Profile settings page: an app-custom page (it talks to the
+//   operator template's `/v1/admin/settings/operator-*` endpoints, which
+//   have no packaged client yet) spliced into the packaged settings layout
+//   as an extra page, leading the General group.
+function createCoreExtension() {
+  return createAdminCoreExtension({
+    dashboard: {
+      // Dynamic import on purpose: the SSR query options pull the server-fn
+      // module, and a static import here would pin it into the
+      // workspace-chrome chunk that evaluates this registry.
+      loader: async ({ queryClient }: AdminRouteLoaderContext) => {
+        const {
+          getOperatorDashboardBookingsAggregatesQueryOptions,
+          getOperatorDashboardFinanceAggregatesQueryOptions,
+          getOperatorDashboardProductsAggregatesQueryOptions,
+          getOperatorDashboardSuppliersAggregatesQueryOptions,
+        } = await import("@/lib/dashboard-ssr-query-options")
+        await Promise.all([
+          queryClient.ensureQueryData(getOperatorDashboardBookingsAggregatesQueryOptions()),
+          queryClient.ensureQueryData(getOperatorDashboardProductsAggregatesQueryOptions()),
+          queryClient.ensureQueryData(getOperatorDashboardSuppliersAggregatesQueryOptions()),
+          queryClient.ensureQueryData(getOperatorDashboardFinanceAggregatesQueryOptions()),
+        ])
+      },
+    },
+    settings: {
+      extraPages: [
+        {
+          id: "operator",
+          path: "/operator",
+          title: "Operator Profile",
+          label: (messages) => messages.settings.operator,
+          icon: Building,
+          group: "general",
+          order: 10,
+          page: () =>
+            import("@/components/voyant/settings/operator-settings-page").then((module) =>
+              adminRoutePageModule(module.OperatorSettingsPage),
+            ),
+        },
+      ],
+    },
+  })
+}
 
 // Availability is package-delivered (packaged-admin RFC Phase 3): the
 // extension contributes NO navigation — the Availability item is part of the
@@ -391,6 +452,7 @@ export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
+    createCoreExtension(),
     createAvailabilityExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),

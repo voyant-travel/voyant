@@ -5,6 +5,7 @@ import {
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
 import { AllocationUiMessagesProvider } from "@voyantjs/allocation-ui/i18n"
+import { AuthUiMessagesProvider } from "@voyantjs/auth-react/i18n"
 // Provider subpath on purpose: the availability main barrel re-exports the
 // whole data layer (schemas pull `@voyantjs/availability` validation), and
 // this module evaluates with workspace chrome — the `/provider` entry is
@@ -35,6 +36,9 @@ const AvailabilityProvider: AdminChildProvider = ({ children }) => (
 const appProviders = [TooltipProvider, AvailabilityProvider] satisfies readonly AdminChildProvider[]
 
 const domainMessageProviders = [
+  // Localizes the packaged account + API tokens pages (auth-react reads
+  // these messages; without the provider it falls back to English).
+  AuthUiMessagesProvider,
   BookingsUiMessagesProvider,
   CatalogUiMessagesProvider,
   ProductsUiMessagesProvider,

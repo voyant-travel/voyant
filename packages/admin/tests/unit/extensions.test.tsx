@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   type AdminExtension,
   defineAdminExtension,
+  findAdminRouteContribution,
+  requireImplementedAdminRoute,
   resolveAdminNavigation,
   resolveAdminWidgets,
 } from "../../src/extensions.js"
@@ -74,5 +76,60 @@ describe("admin extensions", () => {
     const widgets = resolveAdminWidgets({ slot: "booking.details.sidebar", extensions })
 
     expect(widgets.map((widget) => widget.id)).toEqual(["audit", "status"])
+  })
+
+  it("accepts a redirect contribution as implemented", () => {
+    const extension = defineAdminExtension({
+      id: "catalog",
+      routes: [
+        {
+          id: "catalog-index",
+          path: "/catalog",
+          title: "Catalog",
+          redirectTo: "/catalog/products",
+        },
+      ],
+    })
+
+    const route = requireImplementedAdminRoute(extension, "catalog-index")
+
+    expect(route.redirectTo).toBe("/catalog/products")
+  })
+
+  it("rejects a contribution without page, component, or redirectTo", () => {
+    const extension = defineAdminExtension({
+      id: "catalog",
+      routes: [{ id: "catalog-index", path: "/catalog", title: "Catalog" }],
+    })
+
+    expect(() => requireImplementedAdminRoute(extension, "catalog-index")).toThrow(
+      /carries no implementation/,
+    )
+  })
+
+  it("resolves nested child contributions by id", () => {
+    const extension = defineAdminExtension({
+      id: "core",
+      routes: [
+        {
+          id: "core-settings",
+          path: "/settings",
+          title: "Settings",
+          page: () => Promise.resolve({ default: () => null }),
+          children: [
+            { id: "core-settings-index", path: "/", title: "Settings", redirectTo: "/x" },
+            {
+              id: "core-settings-team",
+              path: "/team",
+              title: "Team",
+              page: () => Promise.resolve({ default: () => null }),
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(findAdminRouteContribution(extension.routes, "core-settings-team")?.path).toBe("/team")
+    expect(requireImplementedAdminRoute(extension, "core-settings-index").redirectTo).toBe("/x")
   })
 })

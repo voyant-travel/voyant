@@ -92,6 +92,14 @@ export function createNotificationsAdminExtension(
     id: "notifications",
     routes: [
       {
+        // Index redirect (formerly the host's `notifications/index.tsx`
+        // file route): `/notifications` lands on the templates page.
+        id: "notifications-index",
+        path: basePath,
+        title: templates,
+        redirectTo: `${basePath}/templates`,
+      },
+      {
         id: "notifications-templates-index",
         path: `${basePath}/templates`,
         title: templates,

@@ -1,0 +1,124 @@
+import { Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { cn } from "@voyantjs/ui/lib/utils"
+
+import {
+  type AdminCoreSettingsExtraNavEntry,
+  type AdminCoreSettingsNavGroup,
+  type AdminCoreSettingsNavIcon,
+  type AdminCoreSettingsPageId,
+  adminCoreSettingsNavEntries,
+} from "./settings-nav.js"
+
+/**
+ * The settings area layout (packaged from the operator template's
+ * `SettingsLayout`): a grouped sub-navigation sidebar plus an outlet for
+ * the active settings page. Mounted as the core extension's `/settings`
+ * layout route; the child pages render into the outlet.
+ *
+ * Built-in nav entries resolve their labels reactively through
+ * `useOperatorAdminMessages`; app-supplied extras pass a string or a
+ * messages-resolver through the core extension factory.
+ */
+export interface AdminCoreSettingsLayoutProps {
+  basePath: string
+  omit?: ReadonlyArray<AdminCoreSettingsPageId>
+  extras?: ReadonlyArray<AdminCoreSettingsExtraNavEntry>
+}
+
+interface ResolvedNavItem {
+  id: string
+  label: string
+  href: string
+  icon?: AdminCoreSettingsNavIcon
+  order: number
+}
+
+export function AdminCoreSettingsLayout({
+  basePath,
+  omit = [],
+  extras = [],
+}: AdminCoreSettingsLayoutProps) {
+  const messages = useOperatorAdminMessages()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+
+  const itemsByGroup = new Map<AdminCoreSettingsNavGroup, ResolvedNavItem[]>()
+  const push = (group: AdminCoreSettingsNavGroup, item: ResolvedNavItem) => {
+    const bucket = itemsByGroup.get(group) ?? []
+    bucket.push(item)
+    itemsByGroup.set(group, bucket)
+  }
+
+  for (const entry of adminCoreSettingsNavEntries) {
+    if (omit.includes(entry.id)) continue
+    push(entry.group, {
+      id: entry.id,
+      label: entry.label(messages.settings),
+      href: `${basePath}${entry.path}`,
+      icon: entry.icon,
+      order: entry.order,
+    })
+  }
+  for (const extra of extras) {
+    push(extra.group, {
+      id: extra.id,
+      label: typeof extra.label === "function" ? extra.label(messages) : extra.label,
+      href: extra.href,
+      icon: extra.icon,
+      order: extra.order,
+    })
+  }
+
+  const navGroups = (
+    [
+      { group: "general", title: messages.settings.generalGroup },
+      { group: "products", title: messages.settings.productsGroup },
+    ] satisfies Array<{ group: AdminCoreSettingsNavGroup; title: string }>
+  )
+    .map(({ group, title }) => ({
+      title,
+      items: [...(itemsByGroup.get(group) ?? [])].sort((a, b) => a.order - b.order),
+    }))
+    .filter((group) => group.items.length > 0)
+
+  const isActive = (href: string) => pathname.replace(/\/$/, "") === href
+
+  return (
+    <div className="flex h-[calc(100vh-0px)]">
+      <aside className="w-64 shrink-0 overflow-y-auto border-r p-6">
+        <h1 className="text-xl font-semibold tracking-tight">{messages.settings.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{messages.settings.description}</p>
+        <nav className="mt-6 flex flex-col gap-6">
+          {navGroups.map((group) => (
+            <div key={group.title}>
+              <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {group.title}
+              </h3>
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                        isActive(item.href)
+                          ? "bg-accent font-medium text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                      )}
+                    >
+                      {item.icon ? <item.icon className="h-4 w-4" /> : null}
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
+      <div className="flex-1 overflow-y-auto">
+        <Outlet />
+      </div>
+    </div>
+  )
+}

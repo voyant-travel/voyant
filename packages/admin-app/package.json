@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./root": "./src/root.tsx",
     "./router": "./src/router.tsx",
-    "./workspace": "./src/workspace.tsx"
+    "./workspace": "./src/workspace.tsx",
+    "./core-extension": "./src/core-extension/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -22,6 +23,11 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
     "@voyantjs/admin": "workspace:^",
+    "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -33,6 +39,11 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
+    "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
@@ -66,6 +77,11 @@
         "types": "./dist/workspace.d.ts",
         "import": "./dist/workspace.js",
         "default": "./dist/workspace.js"
+      },
+      "./core-extension": {
+        "types": "./dist/core-extension/index.d.ts",
+        "import": "./dist/core-extension/index.js",
+        "default": "./dist/core-extension/index.js"
       }
     },
     "main": "./dist/index.js",
@@ -75,5 +91,22 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/admin-app"
+  },
+  "peerDependenciesMeta": {
+    "@voyantjs/auth-react": {
+      "optional": true
+    },
+    "@voyantjs/distribution-react": {
+      "optional": true
+    },
+    "@voyantjs/finance-react": {
+      "optional": true
+    },
+    "@voyantjs/pricing-react": {
+      "optional": true
+    },
+    "@voyantjs/products-react": {
+      "optional": true
+    }
   }
 }
