@@ -4,12 +4,18 @@ import type { MiddlewareHandler } from "hono"
 
 import { requireUserId } from "../auth/require-user.js"
 import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
-import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
+import {
+  type DbSource,
+  selectDbFactory,
+  type VoyantAuthIntegration,
+  type VoyantBindings,
+  type VoyantVariables,
+} from "../types.js"
 import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
 import { acquireRequestDb } from "./request-db.js"
 
 export function requirePermission<TBindings extends VoyantBindings>(
-  dbFactory: DbFactory<TBindings>,
+  dbSource: DbSource<TBindings>,
   resource: string,
   action: string,
   opts?: {
@@ -53,7 +59,7 @@ export function requirePermission<TBindings extends VoyantBindings>(
 
     // Reuses the per-request client created by the auth/db middleware
     // upstream (same factory) instead of opening another Pool.
-    const lease = acquireRequestDb(c, dbFactory)
+    const lease = acquireRequestDb(c, selectDbFactory(dbSource, c.req.path))
 
     try {
       const allowed = await opts.auth.hasPermission({

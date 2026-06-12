@@ -1,16 +1,69 @@
 import type { VoyantAuthContext } from "@voyantjs/core"
-import { apikeyTable } from "@voyantjs/db/schema/iam"
+import { apikeyTable, type SelectApikey } from "@voyantjs/db/schema/iam"
 import { permissionsToStrings } from "@voyantjs/types/api-keys"
-import { and, eq } from "drizzle-orm"
+import type { KVStore } from "@voyantjs/utils/cache"
+import { and, eq, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
 import { sha256Base64Url } from "../auth/crypto.js"
 import { extractBearerToken, verifySession } from "../auth/session-jwt.js"
 import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
-import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
+import {
+  type DbSource,
+  selectDbFactory,
+  type VoyantAuthIntegration,
+  type VoyantBindings,
+  type VoyantVariables,
+} from "../types.js"
 import { acquireRequestDb } from "./request-db.js"
 
 const API_KEY_PREFIX = "voy_"
+
+// ---- API-key lookup cache (env.CACHE KV) ----
+//
+// Validating a `voy_` key costs one Postgres SELECT per request. For
+// keys WITHOUT a usage quota (`remaining === null`) the row is cached in
+// KV for a short TTL so steady-state server-to-server traffic skips the
+// DB roundtrip. Quota-limited keys are never cached — their remaining
+// count must be read fresh. Trade-off: disabling/revoking a cached key
+// takes effect within the TTL, not instantly.
+
+const API_KEY_CACHE_PREFIX = "apikey:v1:"
+/** KV minimum is 60s; keep revocation latency at that floor. */
+const API_KEY_CACHE_TTL_SECONDS = 60
+const API_KEY_DATE_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "expiresAt",
+  "lastRequest",
+  "lastRefillAt",
+] as const
+
+async function readCachedApiKey(kv: KVStore, keyHash: string): Promise<SelectApikey | null> {
+  try {
+    const entry = await kv.get<Record<string, unknown>>(`${API_KEY_CACHE_PREFIX}${keyHash}`, {
+      type: "json",
+    })
+    if (!entry || typeof entry !== "object") return null
+    for (const field of API_KEY_DATE_FIELDS) {
+      const value = entry[field]
+      if (typeof value === "string") entry[field] = new Date(value)
+    }
+    return entry as unknown as SelectApikey
+  } catch {
+    return null
+  }
+}
+
+async function writeCachedApiKey(kv: KVStore, keyHash: string, row: SelectApikey): Promise<void> {
+  try {
+    await kv.put(`${API_KEY_CACHE_PREFIX}${keyHash}`, JSON.stringify(row), {
+      expirationTtl: API_KEY_CACHE_TTL_SECONDS,
+    })
+  } catch {
+    // cache writes are best-effort
+  }
+}
 
 function applyAuthContext(
   c: {
@@ -30,7 +83,7 @@ function applyAuthContext(
 }
 
 export function requireAuth<TBindings extends VoyantBindings>(
-  dbFactory: DbFactory<TBindings>,
+  dbSource: DbSource<TBindings>,
   opts?: {
     publicPaths?: string[]
     auth?: VoyantAuthIntegration<TBindings>
@@ -43,6 +96,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
 
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
+
+    // Resolve the surface-appropriate factory once — the db middleware
+    // downstream resolves the same one, so both share one client.
+    const dbFactory = selectDbFactory(dbSource, c.req.path)
 
     const url = new URL(c.req.url)
     const p = url.pathname.replace(/\/$/, "")
@@ -82,13 +139,24 @@ export function requireAuth<TBindings extends VoyantBindings>(
       try {
         const keyHash = await sha256Base64Url(token)
 
-        const [row] = await db
-          .select()
-          .from(apikeyTable)
-          .where(and(eq(apikeyTable.key, keyHash), eq(apikeyTable.enabled, true)))
-          .limit(1)
-
+        const kv = c.env.CACHE
+        let row = kv ? await readCachedApiKey(kv, keyHash) : null
         if (!row) {
+          const [dbRow] = await db
+            .select()
+            .from(apikeyTable)
+            .where(and(eq(apikeyTable.key, keyHash), eq(apikeyTable.enabled, true)))
+            .limit(1)
+          row = dbRow ?? null
+          // Only quota-less keys are cacheable — `remaining` must be
+          // read fresh for limited keys.
+          if (row && row.remaining === null && kv) {
+            const cacheable = row
+            tryGetExecutionCtx(c)?.waitUntil(writeCachedApiKey(kv, keyHash, cacheable))
+          }
+        }
+
+        if (!row || !row.enabled) {
           return c.json({ error: "Invalid API key" }, 401)
         }
 
@@ -115,30 +183,21 @@ export function requireAuth<TBindings extends VoyantBindings>(
           }
         }
 
-        // Usage counters update off the response path. The query promise
-        // starts immediately either way; `waitUntil` (when the runtime has
-        // one) just keeps the isolate alive until it settles.
-        const counterUpdate =
-          row.remaining !== null
-            ? db
-                .update(apikeyTable)
-                .set({
-                  remaining: row.remaining - 1,
-                  requestCount: row.requestCount + 1,
-                  lastRequest: new Date(),
-                })
-                .where(eq(apikeyTable.id, row.id))
-                .then(() => {})
-                .catch(() => {})
-            : db
-                .update(apikeyTable)
-                .set({
-                  requestCount: row.requestCount + 1,
-                  lastRequest: new Date(),
-                })
-                .where(eq(apikeyTable.id, row.id))
-                .then(() => {})
-                .catch(() => {})
+        // Usage counters update off the response path, as SQL increments
+        // so concurrent requests (and cache-served rows) never clobber
+        // each other with stale arithmetic. The query promise starts
+        // immediately either way; `waitUntil` (when the runtime has one)
+        // just keeps the isolate alive until it settles.
+        const counterUpdate = db
+          .update(apikeyTable)
+          .set({
+            requestCount: sql`${apikeyTable.requestCount} + 1`,
+            lastRequest: new Date(),
+            ...(row.remaining !== null ? { remaining: sql`${apikeyTable.remaining} - 1` } : {}),
+          })
+          .where(eq(apikeyTable.id, row.id))
+          .then(() => {})
+          .catch(() => {})
         tryGetExecutionCtx(c)?.waitUntil(counterUpdate)
 
         const scopes = permissionsToStrings(row.permissions)

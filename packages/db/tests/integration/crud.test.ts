@@ -190,6 +190,32 @@ describe.skipIf(!DB_AVAILABLE)("createCrudService", () => {
       expect(res.data).toHaveLength(2)
       expect(res.total).toBe(3)
     })
+
+    it("listAndCount rows never leak the window-total column", async () => {
+      const svc = createCrudService(crudItems)
+      await svc.create(db, { id: "w1", name: "One" })
+      const res = await svc.listAndCount(db, { limit: 10 })
+      expect(res.data[0]).toBeDefined()
+      expect(Object.keys(res.data[0] as object)).not.toContain("__voyantWindowTotal")
+      expect(res.data[0]).toMatchObject({ id: "w1", name: "One" })
+    })
+
+    it("listAndCount reports the true total when offset points past the last row", async () => {
+      const svc = createCrudService(crudItems)
+      await svc.create(db, { id: "o1", name: "One" })
+      await svc.create(db, { id: "o2", name: "Two" })
+      const res = await svc.listAndCount(db, { limit: 10, offset: 50 })
+      expect(res.data).toHaveLength(0)
+      expect(res.total).toBe(2)
+    })
+
+    it("listAndCount returns total 0 for an empty filtered set without an extra query", async () => {
+      const svc = createCrudService(crudItems)
+      await svc.create(db, { id: "e1", name: "One", tag: "keep" })
+      const res = await svc.listAndCount(db, { where: eq(crudItems.tag, "nope"), limit: 10 })
+      expect(res.data).toHaveLength(0)
+      expect(res.total).toBe(0)
+    })
   })
 
   describe("update", () => {

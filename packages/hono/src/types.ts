@@ -70,6 +70,53 @@ export type DbFactory<TBindings extends VoyantBindings = VoyantBindings> = (
   env: TBindings,
 ) => VoyantDb | DisposableDb
 
+/**
+ * Result of routing a request path to a db factory (see
+ * {@link DbFactorySelector}).
+ */
+export interface DbSurfaceSelection<TBindings extends VoyantBindings = VoyantBindings> {
+  factory: DbFactory<TBindings>
+  /**
+   * Whether this surface must receive an interactive-transaction-capable
+   * client. The db middleware asserts the resolved client's capability
+   * tag when `true` and skips the assertion when `false` (the default
+   * http-backed client is deliberately transaction-incapable).
+   */
+  mustSupportTransactions: boolean
+}
+
+/**
+ * Routes a request path to the db factory that should serve it. Built by
+ * `createApp` when the deployment supplies both a default (http-backed)
+ * and a transactional (WebSocket-backed) factory: surfaces owned by
+ * modules that declare `requiresTransactionalDb` get the transactional
+ * factory; everything else gets the cheap default. The selector MUST
+ * return stable factory references — per-request client sharing
+ * (`acquireRequestDb`) keys on factory identity.
+ */
+export interface DbFactorySelector<TBindings extends VoyantBindings = VoyantBindings> {
+  select(path: string): DbSurfaceSelection<TBindings>
+}
+
+/** Either a single factory for all requests, or a per-path selector. */
+export type DbSource<TBindings extends VoyantBindings = VoyantBindings> =
+  | DbFactory<TBindings>
+  | DbFactorySelector<TBindings>
+
+export function isDbFactorySelector<TBindings extends VoyantBindings>(
+  source: DbSource<TBindings>,
+): source is DbFactorySelector<TBindings> {
+  return typeof source !== "function" && typeof source.select === "function"
+}
+
+/** Normalize a {@link DbSource} to the factory serving `path`. */
+export function selectDbFactory<TBindings extends VoyantBindings>(
+  source: DbSource<TBindings>,
+  path: string,
+): DbFactory<TBindings> {
+  return isDbFactorySelector(source) ? source.select(path).factory : source
+}
+
 export function isDisposableDb(value: VoyantDb | DisposableDb): value is DisposableDb {
   return (
     typeof (value as DisposableDb).dispose === "function" &&
@@ -160,6 +207,23 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
 
 export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindings> {
   db: DbFactory<TBindings>
+  /**
+   * Optional transaction-capable db factory (e.g. a per-request Neon
+   * WebSocket Pool). When provided, `createApp` routes requests by
+   * surface: routes of modules declaring `requiresTransactionalDb` (plus
+   * any `dbTransactionalPaths`) get this factory; every other request is
+   * served by the cheap `db` factory (typically neon-http — zero
+   * connection handshake). When omitted, `db` serves everything
+   * (previous behavior).
+   */
+  dbTransactional?: DbFactory<TBindings>
+  /**
+   * Extra path prefixes that must receive the transactional client —
+   * for template-owned routes mounted via `additionalRoutes` that run
+   * interactive transactions (e.g. `"/api/checkout"`). Only meaningful
+   * together with `dbTransactional`.
+   */
+  dbTransactionalPaths?: string[]
   modules?: HonoModule[]
   extensions?: HonoExtension[]
   plugins?: HonoBundle[]

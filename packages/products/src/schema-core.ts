@@ -99,6 +99,11 @@ export const products = pgTable(
       table.visibility,
       table.createdAt,
     ),
+    // Trigram GIN indexes back the `ILIKE '%term%'` search in the admin
+    // list + public product search. Requires the pg_trgm extension
+    // (enabled in the operator template's migrations).
+    index("idx_products_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+    index("idx_products_description_trgm").using("gin", table.description.op("gin_trgm_ops")),
   ],
 )
 

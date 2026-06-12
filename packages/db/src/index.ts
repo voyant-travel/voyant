@@ -189,8 +189,39 @@ export function createServerlessDbClient<
 }
 
 /**
- * Get the main database instance.
- * All data is now consolidated in a single EU database.
+ * Run `fn` with a scoped transaction-capable client (Neon WebSocket
+ * Pool), disposing it on settle. For code paths that need
+ * `db.transaction(...)` but run outside the request middleware that
+ * normally provides the transactional client — event handlers, workflow
+ * steps, scheduled jobs, scripts.
+ *
+ *     const result = await withServerlessDb(env.DATABASE_URL, (db) =>
+ *       db.transaction(async (tx) => { ... }),
+ *     )
+ */
+export async function withServerlessDb<
+  T,
+  TSchema extends Record<string, unknown> = Record<string, never>,
+>(
+  connectionString: string,
+  fn: (db: NeonWsDatabase<TSchema>) => Promise<T>,
+  options?: {
+    schema?: TSchema
+    pool?: Omit<PoolConfig, "connectionString">
+    timeouts?: DbTimeoutOptions
+  },
+): Promise<T> {
+  const { db, dispose } = createServerlessDbClient<TSchema>(connectionString, options)
+  try {
+    return await fn(db)
+  } finally {
+    await dispose()
+  }
+}
+
+/**
+ * Get the main database instance for the configured `DATABASE_URL`.
+ * (Single-database deployments; region is chosen per deployment.)
  */
 export function getDb(adapter?: DbAdapter) {
   const url = process.env.DATABASE_URL!

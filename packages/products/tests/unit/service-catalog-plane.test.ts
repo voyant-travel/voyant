@@ -1,3 +1,4 @@
+import { resolveEntityView } from "@voyantjs/catalog"
 import { createFieldPolicyRegistry } from "@voyantjs/catalog/contract"
 import { resolveOverlay } from "@voyantjs/catalog/overlay/resolver"
 import type { AnyDrizzleDb } from "@voyantjs/db"
@@ -6,6 +7,7 @@ import { describe, expect, it } from "vitest"
 import { productCatalogPolicy } from "../../src/catalog-policy.js"
 import {
   createProductStorefrontCardProjectionExtension,
+  listResolvedProducts,
   productProvenance,
   productRowToProjection,
 } from "../../src/service-catalog-plane.js"
@@ -153,6 +155,126 @@ describe("end-to-end: projection + resolver visibility filter", () => {
   })
 })
 
+describe("listResolvedProducts (batched overlay fetch)", () => {
+  const secondRow = { ...sampleRow, id: "prod_def", name: "Alps Hiking Week" }
+
+  // Overlay rows as the catalog_overlay table would return them. The batched
+  // fetch keys them by entity_id; the per-entity fetch ignores that column.
+  const overlayRows = [
+    {
+      entity_id: "prod_abc",
+      field_path: "name",
+      locale: "en-GB",
+      audience: "customer",
+      market: "default",
+      value: "✨ Sunset Wellness Escape",
+    },
+    {
+      entity_id: "prod_abc",
+      field_path: "description",
+      locale: "default",
+      audience: "default",
+      market: "default",
+      value: "Overlaid description",
+    },
+    {
+      entity_id: "prod_def",
+      field_path: "name",
+      locale: "en-GB",
+      audience: "customer",
+      market: "default",
+      value: "Alps Hiking Week — Last Seats",
+    },
+  ]
+
+  const context = {
+    sellerOperatorId: "op_xyz",
+    scope: {
+      locale: "en-GB",
+      audience: "customer",
+      market: "default",
+      actor: "customer",
+    } as const,
+  }
+
+  /**
+   * Mock for the bare `db.select({...}).from(...).where(...)` chain the
+   * overlay fetchers use. Responses are scripted per `select` call so the
+   * same factory serves both the batched (1 call, all rows) and the serial
+   * (1 call per entity) paths.
+   */
+  function overlaySelectDb(responses: ReadonlyArray<ReadonlyArray<Record<string, unknown>>>) {
+    let selectCalls = 0
+    const db = {
+      select: () => {
+        const rows = responses[selectCalls] ?? []
+        selectCalls++
+        return {
+          from: () => ({
+            where: async () => rows,
+          }),
+        }
+      },
+    }
+    return { db: db as unknown as AnyDrizzleDb, selectCount: () => selectCalls }
+  }
+
+  it("issues ONE overlay query for N products", async () => {
+    const { db, selectCount } = overlaySelectDb([overlayRows])
+    const views = await listResolvedProducts(db, [sampleRow, secondRow], context)
+    expect(views).toHaveLength(2)
+    expect(selectCount()).toBe(1)
+  })
+
+  it("produces per-product output identical to calling resolveEntityView per id", async () => {
+    const { db: batchedDb } = overlaySelectDb([overlayRows])
+    const batched = await listResolvedProducts(batchedDb, [sampleRow, secondRow], context)
+
+    // Baseline: the old serial path — one resolveEntityView (and thus one
+    // overlay fetch) per product id.
+    const { db: serialDb, selectCount } = overlaySelectDb([
+      overlayRows.filter((row) => row.entity_id === "prod_abc"),
+      overlayRows.filter((row) => row.entity_id === "prod_def"),
+    ])
+    const registry = createFieldPolicyRegistry(productCatalogPolicy)
+    const baseline = []
+    for (const row of [sampleRow, secondRow]) {
+      baseline.push(
+        await resolveEntityView(
+          serialDb,
+          registry,
+          "products",
+          row.id,
+          productRowToProjection(row, { sellerOperatorId: context.sellerOperatorId }),
+          context.scope,
+        ),
+      )
+    }
+    expect(selectCount()).toBe(2)
+
+    expect(batched).toEqual(baseline)
+    // Spot-check the overlays actually landed (guards against a vacuously
+    // equal pair of broken outputs).
+    expect(batched[0]?.values.get("name")).toBe("✨ Sunset Wellness Escape")
+    expect(batched[0]?.values.get("description")).toBe("Overlaid description")
+    expect(batched[1]?.values.get("name")).toBe("Alps Hiking Week — Last Seats")
+  })
+
+  it("resolves products without overlays from the source projection alone", async () => {
+    const { db } = overlaySelectDb([[]])
+    const views = await listResolvedProducts(db, [secondRow], context)
+    expect(views[0]?.values.get("name")).toBe("Alps Hiking Week")
+    expect(views[0]?.provenance.get("name")).toBeNull()
+  })
+
+  it("returns [] (and skips the overlay query) for an empty page", async () => {
+    const { db, selectCount } = overlaySelectDb([])
+    const views = await listResolvedProducts(db, [], context)
+    expect(views).toEqual([])
+    expect(selectCount()).toBe(0)
+  })
+})
+
 describe("createProductStorefrontCardProjectionExtension", () => {
   it("preserves base rich text fields when a translation is absent", async () => {
     const extension = createProductStorefrontCardProjectionExtension()
@@ -194,5 +316,53 @@ describe("createProductStorefrontCardProjectionExtension", () => {
     expect(projection.has("inclusionsHtml")).toBe(false)
     expect(projection.has("exclusionsHtml")).toBe(false)
     expect(projection.has("termsHtml")).toBe(false)
+  })
+
+  it("runs the departures count in the first query wave; only the duration estimate trails", async () => {
+    // Logs each db call at INVOCATION time. Everything inside the first
+    // Promise.all is kicked off synchronously, so wave membership shows up
+    // as invocation order: 4 selects + the departures-count execute first,
+    // then (after the wave settles) the duration-days select.
+    const log: string[] = []
+    let selectCalls = 0
+    const selectResponses: ReadonlyArray<ReadonlyArray<Record<string, unknown>>> = [
+      [], // translations
+      [], // media
+      [], // locations
+      [{ id: "itin_1", isDefault: true }], // itineraries
+      [{ dayNumber: 1 }, { dayNumber: 5 }], // product days (duration estimate)
+    ]
+    const db = {
+      select: () => {
+        const rows = selectResponses[selectCalls] ?? []
+        selectCalls++
+        log.push(`select:${selectCalls}`)
+        return {
+          from: () => ({
+            where: () => ({
+              orderBy: async () => rows,
+            }),
+          }),
+        }
+      },
+      execute: async () => {
+        log.push("execute:departures-count")
+        return [{ count: 3 }]
+      },
+    } as unknown as AnyDrizzleDb
+
+    const extension = createProductStorefrontCardProjectionExtension()
+    const projection = await extension.project(db, "prod_abc", customerSlice)
+
+    expect(log).toEqual([
+      "select:1",
+      "select:2",
+      "select:3",
+      "select:4",
+      "execute:departures-count",
+      "select:5",
+    ])
+    expect(projection.get("availableDeparturesCount")).toBe(3)
+    expect(projection.get("durationDays")).toBe(5)
   })
 })

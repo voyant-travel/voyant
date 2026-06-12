@@ -551,6 +551,15 @@ export interface CreateBetterAuthOptions<
   }) => Promise<void>
   /** Called to send a verification OTP. If not provided, logs to console. */
   sendVerificationOTP?: (data: { email: string; otp: string; type: string }) => Promise<void>
+  /**
+   * Better Auth session cookie cache: session data rides in a short-lived
+   * signed cookie so `getSession` skips the Postgres lookup on most
+   * requests. Enabled by default with a 5-minute TTL — the trade-off is
+   * that a revoked/expired session can stay usable for up to `maxAge`
+   * seconds. Pass `false` for revocation-sensitive deployments, or tune
+   * `maxAge` (seconds).
+   */
+  sessionCookieCache?: false | { maxAge?: number }
 }
 
 /**
@@ -596,6 +605,19 @@ export function createBetterAuth<
       provider: "pg",
       schema,
     }),
+    ...(options.sessionCookieCache === false
+      ? {}
+      : {
+          session: {
+            cookieCache: {
+              enabled: true,
+              // Caps how long a revoked session stays usable from the
+              // cookie alone; within the window getSession answers from
+              // the signed cookie with zero DB roundtrips.
+              maxAge: options.sessionCookieCache?.maxAge ?? 300,
+            },
+          },
+        }),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

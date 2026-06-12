@@ -153,6 +153,11 @@ export const catalogAuthoringRoutes = new Hono<Env>()
 const catalogAuthoringExtensionDef: Extension = {
   name: "catalog-authoring",
   module: "products",
+  // The compose + duplicate routes run interactive transactions
+  // (atomic clone of the product graph). This extension mounts under
+  // /v1/admin/products, so the flag upgrades that surface to the
+  // transaction-capable db client in deployments that split factories.
+  requiresTransactionalDb: true,
 }
 
 export const catalogAuthoringExtension: HonoExtension = {
