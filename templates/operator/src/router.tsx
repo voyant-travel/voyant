@@ -21,13 +21,25 @@ export type RouterContext = AdminRouterContext
  * their typed-link entries come from `admin.routes.generated.tsx` and are
  * stamped onto the tree via `_addFileTypes` — `Link`/`navigate` stay fully
  * typed for file routes AND extension routes alike.
+ *
+ * Extension routes REPLACE file routes on key conflicts (Omit before the
+ * intersection), mirroring `attachAdminExtensionRoutes`' replace-by-path
+ * graft semantics — e.g. the pathless workspace layout claims `/` in the
+ * generated file types, but at runtime `/` is the core extension's
+ * dashboard route.
  */
+type MergeRouteTypeMaps<TFileMap, TExtensionMap> = Omit<TFileMap, keyof TExtensionMap> &
+  TExtensionMap
+
 export interface OperatorFileRouteTypes {
-  fileRoutesByFullPath: FileRouteTypes["fileRoutesByFullPath"] & AdminExtensionRoutesByFullPath
+  fileRoutesByFullPath: MergeRouteTypeMaps<
+    FileRouteTypes["fileRoutesByFullPath"],
+    AdminExtensionRoutesByFullPath
+  >
   fullPaths: FileRouteTypes["fullPaths"] | keyof AdminExtensionRoutesByFullPath
-  fileRoutesByTo: FileRouteTypes["fileRoutesByTo"] & AdminExtensionRoutesByTo
+  fileRoutesByTo: MergeRouteTypeMaps<FileRouteTypes["fileRoutesByTo"], AdminExtensionRoutesByTo>
   to: FileRouteTypes["to"] | keyof AdminExtensionRoutesByTo
-  fileRoutesById: FileRouteTypes["fileRoutesById"] & AdminExtensionRoutesById
+  fileRoutesById: MergeRouteTypeMaps<FileRouteTypes["fileRoutesById"], AdminExtensionRoutesById>
   id: FileRouteTypes["id"] | keyof AdminExtensionRoutesById
 }
 

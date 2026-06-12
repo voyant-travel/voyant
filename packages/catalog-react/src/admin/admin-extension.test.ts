@@ -15,15 +15,23 @@ describe("createCatalogAdminExtension", () => {
     expect(extension.navigation).toBeUndefined()
   })
 
-  it("describes one route per catalog surface page with unique ids and paths", () => {
+  it("describes the index redirect plus one route per catalog surface page", () => {
     const extension = createCatalogAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(10)
-    expect(new Set(routes.map((route) => route.id)).size).toBe(10)
-    expect(new Set(routes.map((route) => route.path)).size).toBe(10)
+    expect(routes).toHaveLength(11)
+    expect(new Set(routes.map((route) => route.id)).size).toBe(11)
+    expect(new Set(routes.map((route) => route.path)).size).toBe(11)
     for (const surface of ["products", "excursions", "tours", "cruises", "accommodations"]) {
       expect(routes.some((route) => route.path === `/catalog/${surface}`)).toBe(true)
     }
+  })
+
+  it("redirects the catalog index to the products surface", () => {
+    const extension = createCatalogAdminExtension()
+    const index = extension.routes?.find((route) => route.id === "catalog-index")
+    expect(index?.path).toBe("/catalog")
+    expect(index?.redirectTo).toBe("/catalog/products")
+    expect(index?.page).toBeUndefined()
   })
 
   it("honors basePath and surface labels", () => {
@@ -57,9 +65,11 @@ describe("createCatalogAdminExtension", () => {
     // each contribution carries a lazy `page` module loader the host binder
     // wraps into a code-based route, keeping every page in its own chunk.
     // No contribution attaches an eager `component` — that would pin the
-    // page into the chunk that evaluates the extension factory.
+    // page into the chunk that evaluates the extension factory. The index
+    // redirect carries no page at all.
     const extension = createCatalogAdminExtension()
     for (const route of extension.routes ?? []) {
+      if (route.redirectTo) continue
       expect(typeof route.page).toBe("function")
       expect(route.component).toBeUndefined()
     }

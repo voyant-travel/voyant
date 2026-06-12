@@ -123,6 +123,17 @@ export function createLegalAdminExtension(
     id: "legal",
     routes: [
       {
+        // Index redirect (formerly the host's `legal/index.tsx` file
+        // route): `/legal` lands on the contracts page. This is the route
+        // behind the hand-written `legal.home` resolver — it stays
+        // unannotated (no `destination:`) until the host's generated
+        // destinations module is regenerated to claim it.
+        id: "legal-index",
+        path: basePath,
+        title: contracts,
+        redirectTo: `${basePath}/contracts`,
+      },
+      {
         id: "legal-contracts-index",
         path: `${basePath}/contracts`,
         title: contracts,

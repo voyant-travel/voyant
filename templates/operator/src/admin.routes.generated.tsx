@@ -11,7 +11,7 @@
 // To eject a route, remove it here (and from the maps below) and add a
 // hand-written route file — the generator skips files without this header.
 import { createRoute } from "@tanstack/react-router"
-import { adminExtensionRouteOptions } from "@voyantjs/admin-app"
+import { adminExtensionChildRoutes, adminExtensionRouteOptions } from "@voyantjs/admin-app"
 import {
   bookingDetailSearchSchema,
   bookingsIndexSearchSchema,
@@ -93,6 +93,12 @@ export const BookingsDetailRoute = createRoute({
 
 const catalogExtension = extension("catalog")
 
+export const CatalogIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/catalog",
+  ...adminExtensionRouteOptions(catalogExtension, "catalog-index", runtime),
+})
+
 export const CatalogProductsIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/catalog/products",
@@ -160,6 +166,122 @@ export const CatalogAccommodationsDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// core
+// ---------------------------------------------------------------------------
+
+const coreExtension = extension("core")
+
+export const CoreDashboardRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/",
+  ...adminExtensionRouteOptions(coreExtension, "core-dashboard", runtime),
+})
+
+export const CoreAccountRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/account",
+  ...adminExtensionRouteOptions(coreExtension, "core-account", runtime),
+})
+
+export const CoreSettingsRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/settings",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings", runtime),
+})
+
+const coreSettings = () => CoreSettingsRoute
+
+export const CoreSettingsIndexRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-index", runtime),
+})
+
+export const CoreSettingsTeamRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/team",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-team", runtime),
+})
+
+export const CoreSettingsApiTokensRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/api-tokens",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-api-tokens", runtime),
+})
+
+export const CoreSettingsChannelsRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/channels",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-channels", runtime),
+})
+
+export const CoreSettingsTaxesRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/taxes",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-taxes", runtime),
+})
+
+export const CoreSettingsCostCategoriesRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/cost-categories",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-cost-categories", runtime),
+})
+
+export const CoreSettingsPricingCategoriesRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/pricing-categories",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-pricing-categories", runtime),
+})
+
+export const CoreSettingsPriceCatalogsRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/price-catalogs",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-price-catalogs", runtime),
+})
+
+export const CoreSettingsProductTypesRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/product-types",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-product-types", runtime),
+})
+
+export const CoreSettingsProductTagsRoute = createRoute({
+  getParentRoute: coreSettings,
+  path: "/product-tags",
+  ...adminExtensionRouteOptions(coreExtension, "core-settings-product-tags", runtime),
+})
+
+// Settings subtree: the static children above keep literal paths for typed
+// links; app-supplied extra settings pages (factory `settings.extraPages`,
+// invisible to the generator) bind at runtime via adminExtensionChildRoutes.
+export const CoreSettingsRouteWithChildren = CoreSettingsRoute.addChildren([
+  CoreSettingsIndexRoute,
+  CoreSettingsTeamRoute,
+  CoreSettingsApiTokensRoute,
+  CoreSettingsChannelsRoute,
+  CoreSettingsTaxesRoute,
+  CoreSettingsCostCategoriesRoute,
+  CoreSettingsPricingCategoriesRoute,
+  CoreSettingsPriceCatalogsRoute,
+  CoreSettingsProductTypesRoute,
+  CoreSettingsProductTagsRoute,
+  ...adminExtensionChildRoutes(coreExtension, "core-settings", coreSettings, runtime, {
+    exclude: [
+      "/",
+      "/team",
+      "/api-tokens",
+      "/channels",
+      "/taxes",
+      "/cost-categories",
+      "/pricing-categories",
+      "/price-catalogs",
+      "/product-types",
+      "/product-tags",
+    ],
+  }),
+])
+
+// ---------------------------------------------------------------------------
 // crm
 // ---------------------------------------------------------------------------
 
@@ -194,6 +316,12 @@ export const CrmOrganizationsDetailRoute = createRoute({
 // ---------------------------------------------------------------------------
 
 const financeExtension = extension("finance")
+
+export const FinanceIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/finance",
+  ...adminExtensionRouteOptions(financeExtension, "finance-index", runtime),
+})
 
 export const FinanceInvoicesIndexRoute = createRoute({
   getParentRoute: workspace,
@@ -236,6 +364,12 @@ export const FinanceProfitabilityRoute = createRoute({
 // ---------------------------------------------------------------------------
 
 const legalExtension = extension("legal")
+
+export const LegalIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/legal",
+  ...adminExtensionRouteOptions(legalExtension, "legal-index", runtime),
+})
 
 export const LegalContractsIndexRoute = createRoute({
   getParentRoute: workspace,
@@ -284,6 +418,12 @@ export const LegalNumberSeriesRoute = createRoute({
 // ---------------------------------------------------------------------------
 
 const notificationsExtension = extension("notifications")
+
+export const NotificationsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/notifications",
+  ...adminExtensionRouteOptions(notificationsExtension, "notifications-index", runtime),
+})
 
 export const NotificationsTemplatesIndexRoute = createRoute({
   getParentRoute: workspace,
@@ -418,6 +558,7 @@ export const adminExtensionRoutes = [
   AvailabilityStartTimeDetailRoute,
   BookingsIndexRoute,
   BookingsDetailRoute,
+  CatalogIndexRoute,
   CatalogProductsIndexRoute,
   CatalogProductsDetailRoute,
   CatalogExcursionsIndexRoute,
@@ -428,16 +569,21 @@ export const adminExtensionRoutes = [
   CatalogCruisesDetailRoute,
   CatalogAccommodationsIndexRoute,
   CatalogAccommodationsDetailRoute,
+  CoreDashboardRoute,
+  CoreAccountRoute,
+  CoreSettingsRouteWithChildren,
   CrmPeopleIndexRoute,
   CrmPeopleDetailRoute,
   CrmOrganizationsIndexRoute,
   CrmOrganizationsDetailRoute,
+  FinanceIndexRoute,
   FinanceInvoicesIndexRoute,
   FinanceInvoicesDetailRoute,
   FinanceInvoiceNumberSeriesRoute,
   FinancePaymentsIndexRoute,
   FinancePaymentsDetailRoute,
   FinanceProfitabilityRoute,
+  LegalIndexRoute,
   LegalContractsIndexRoute,
   LegalContractsDetailRoute,
   LegalTemplatesIndexRoute,
@@ -445,6 +591,7 @@ export const adminExtensionRoutes = [
   LegalPoliciesIndexRoute,
   LegalPoliciesDetailRoute,
   LegalNumberSeriesRoute,
+  NotificationsIndexRoute,
   NotificationsTemplatesIndexRoute,
   NotificationsTemplatesDetailRoute,
   NotificationsReminderRulesIndexRoute,
@@ -470,6 +617,7 @@ export interface AdminExtensionRoutesByFullPath {
   "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
+  "/catalog": typeof CatalogIndexRoute
   "/catalog/products": typeof CatalogProductsIndexRoute
   "/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/catalog/excursions": typeof CatalogExcursionsIndexRoute
@@ -480,16 +628,31 @@ export interface AdminExtensionRoutesByFullPath {
   "/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/": typeof CoreDashboardRoute
+  "/account": typeof CoreAccountRoute
+  "/settings": typeof CoreSettingsRouteWithChildren
+  "/settings/": typeof CoreSettingsIndexRoute
+  "/settings/team": typeof CoreSettingsTeamRoute
+  "/settings/api-tokens": typeof CoreSettingsApiTokensRoute
+  "/settings/channels": typeof CoreSettingsChannelsRoute
+  "/settings/taxes": typeof CoreSettingsTaxesRoute
+  "/settings/cost-categories": typeof CoreSettingsCostCategoriesRoute
+  "/settings/pricing-categories": typeof CoreSettingsPricingCategoriesRoute
+  "/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
+  "/settings/product-types": typeof CoreSettingsProductTypesRoute
+  "/settings/product-tags": typeof CoreSettingsProductTagsRoute
   "/people": typeof CrmPeopleIndexRoute
   "/people/$id": typeof CrmPeopleDetailRoute
   "/organizations": typeof CrmOrganizationsIndexRoute
   "/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/finance": typeof FinanceIndexRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/finance/payments": typeof FinancePaymentsIndexRoute
   "/finance/payments/$id": typeof FinancePaymentsDetailRoute
   "/finance/profitability": typeof FinanceProfitabilityRoute
+  "/legal": typeof LegalIndexRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/legal/templates": typeof LegalTemplatesIndexRoute
@@ -497,6 +660,7 @@ export interface AdminExtensionRoutesByFullPath {
   "/legal/policies": typeof LegalPoliciesIndexRoute
   "/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/legal/number-series": typeof LegalNumberSeriesRoute
+  "/notifications": typeof NotificationsIndexRoute
   "/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
   "/notifications/reminder-rules": typeof NotificationsReminderRulesIndexRoute
@@ -522,6 +686,7 @@ export interface AdminExtensionRoutesByTo {
   "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
+  "/catalog": typeof CatalogIndexRoute
   "/catalog/products": typeof CatalogProductsIndexRoute
   "/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/catalog/excursions": typeof CatalogExcursionsIndexRoute
@@ -532,16 +697,30 @@ export interface AdminExtensionRoutesByTo {
   "/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/": typeof CoreDashboardRoute
+  "/account": typeof CoreAccountRoute
+  "/settings": typeof CoreSettingsIndexRoute
+  "/settings/team": typeof CoreSettingsTeamRoute
+  "/settings/api-tokens": typeof CoreSettingsApiTokensRoute
+  "/settings/channels": typeof CoreSettingsChannelsRoute
+  "/settings/taxes": typeof CoreSettingsTaxesRoute
+  "/settings/cost-categories": typeof CoreSettingsCostCategoriesRoute
+  "/settings/pricing-categories": typeof CoreSettingsPricingCategoriesRoute
+  "/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
+  "/settings/product-types": typeof CoreSettingsProductTypesRoute
+  "/settings/product-tags": typeof CoreSettingsProductTagsRoute
   "/people": typeof CrmPeopleIndexRoute
   "/people/$id": typeof CrmPeopleDetailRoute
   "/organizations": typeof CrmOrganizationsIndexRoute
   "/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/finance": typeof FinanceIndexRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/finance/payments": typeof FinancePaymentsIndexRoute
   "/finance/payments/$id": typeof FinancePaymentsDetailRoute
   "/finance/profitability": typeof FinanceProfitabilityRoute
+  "/legal": typeof LegalIndexRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/legal/templates": typeof LegalTemplatesIndexRoute
@@ -549,6 +728,7 @@ export interface AdminExtensionRoutesByTo {
   "/legal/policies": typeof LegalPoliciesIndexRoute
   "/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/legal/number-series": typeof LegalNumberSeriesRoute
+  "/notifications": typeof NotificationsIndexRoute
   "/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
   "/notifications/reminder-rules": typeof NotificationsReminderRulesIndexRoute
@@ -574,6 +754,7 @@ export interface AdminExtensionRoutesById {
   "/_workspace/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
+  "/_workspace/catalog": typeof CatalogIndexRoute
   "/_workspace/catalog/products": typeof CatalogProductsIndexRoute
   "/_workspace/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/_workspace/catalog/excursions": typeof CatalogExcursionsIndexRoute
@@ -584,16 +765,31 @@ export interface AdminExtensionRoutesById {
   "/_workspace/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/_workspace/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/_workspace/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/_workspace/": typeof CoreDashboardRoute
+  "/_workspace/account": typeof CoreAccountRoute
+  "/_workspace/settings": typeof CoreSettingsRouteWithChildren
+  "/_workspace/settings/": typeof CoreSettingsIndexRoute
+  "/_workspace/settings/team": typeof CoreSettingsTeamRoute
+  "/_workspace/settings/api-tokens": typeof CoreSettingsApiTokensRoute
+  "/_workspace/settings/channels": typeof CoreSettingsChannelsRoute
+  "/_workspace/settings/taxes": typeof CoreSettingsTaxesRoute
+  "/_workspace/settings/cost-categories": typeof CoreSettingsCostCategoriesRoute
+  "/_workspace/settings/pricing-categories": typeof CoreSettingsPricingCategoriesRoute
+  "/_workspace/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
+  "/_workspace/settings/product-types": typeof CoreSettingsProductTypesRoute
+  "/_workspace/settings/product-tags": typeof CoreSettingsProductTagsRoute
   "/_workspace/people": typeof CrmPeopleIndexRoute
   "/_workspace/people/$id": typeof CrmPeopleDetailRoute
   "/_workspace/organizations": typeof CrmOrganizationsIndexRoute
   "/_workspace/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/_workspace/finance": typeof FinanceIndexRoute
   "/_workspace/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/_workspace/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/_workspace/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/_workspace/finance/payments": typeof FinancePaymentsIndexRoute
   "/_workspace/finance/payments/$id": typeof FinancePaymentsDetailRoute
   "/_workspace/finance/profitability": typeof FinanceProfitabilityRoute
+  "/_workspace/legal": typeof LegalIndexRoute
   "/_workspace/legal/contracts": typeof LegalContractsIndexRoute
   "/_workspace/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/_workspace/legal/templates": typeof LegalTemplatesIndexRoute
@@ -601,6 +797,7 @@ export interface AdminExtensionRoutesById {
   "/_workspace/legal/policies": typeof LegalPoliciesIndexRoute
   "/_workspace/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/_workspace/legal/number-series": typeof LegalNumberSeriesRoute
+  "/_workspace/notifications": typeof NotificationsIndexRoute
   "/_workspace/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/_workspace/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
   "/_workspace/notifications/reminder-rules": typeof NotificationsReminderRulesIndexRoute

@@ -1,6 +1,8 @@
 import {
   type AnyRoute,
+  createRoute,
   lazyRouteComponent,
+  redirect,
   useNavigate,
   useParams,
   useSearch,
@@ -9,6 +11,8 @@ import {
   type AdminExtension,
   type AdminRoutePageProps,
   type AdminRouteRuntime,
+  type AdminUiRouteContribution,
+  findAdminRouteContribution,
   type ImplementedAdminRoute,
   requireImplementedAdminRoute,
 } from "@voyantjs/admin"
@@ -58,8 +62,15 @@ type PreloadableComponent = React.FunctionComponent & {
 }
 
 export interface AdminExtensionRouteOptions {
-  component: PreloadableComponent
+  /** Absent for `redirectTo` contributions — the redirect never renders. */
+  component?: PreloadableComponent
   loader: (args: AdminExtensionRouteLoaderArgs) => unknown
+  /**
+   * Set for `redirectTo` contributions: throws the router redirect before
+   * the route matches, which also covers SSR (the server responds with the
+   * redirect instead of rendering an empty page).
+   */
+  beforeLoad?: () => void
   ssr?: boolean | "data-only"
   /**
    * Set for lazy `page` contributions: the binder component suspends while
@@ -133,12 +144,25 @@ export function adminExtensionRouteOptions(
   runtime: AdminExtensionRouteRuntime,
 ): AdminExtensionRouteOptions {
   const route = requireImplementedAdminRoute(extension, routeId)
+  return adminRouteOptionsFromContribution(route, runtime)
+}
+
+function adminRouteOptionsFromContribution(
+  route: ImplementedAdminRoute,
+  runtime: AdminExtensionRouteRuntime,
+): AdminExtensionRouteOptions {
+  const redirectTo = route.redirectTo
   const component = route.page
     ? createAdminRoutePageComponent(route)
-    : (route.component as PreloadableComponent)
+    : (route.component as PreloadableComponent | undefined)
 
   return {
     component,
+    beforeLoad: redirectTo
+      ? () => {
+          throw redirect({ to: redirectTo, replace: true })
+        }
+      : undefined,
     loader: ({ context, params }: AdminExtensionRouteLoaderArgs) =>
       route.loader?.({
         queryClient: context.queryClient,
@@ -152,6 +176,69 @@ export function adminExtensionRouteOptions(
       | React.FunctionComponent<{ error: Error; reset: () => void }>
       | undefined,
   }
+}
+
+export interface AdminExtensionChildRoutesOptions {
+  /**
+   * Child contribution paths the host's generated module already binds
+   * statically (with literal paths + typed-link map entries). Children on
+   * this list are skipped; everything else — e.g. app-supplied extra
+   * settings pages the generator cannot scan — is built here at runtime.
+   */
+  exclude?: ReadonlyArray<string>
+}
+
+/**
+ * Build code-based child routes for a layout contribution's
+ * `children` that are NOT statically emitted by the host's generated
+ * module (packaged-admin RFC §4.8 + core-extension nesting).
+ *
+ * Static children keep literal paths in the generated module for typed
+ * links; dynamic children (app-supplied at factory time) bind here and are
+ * reachable via plain string navigation only.
+ */
+export function adminExtensionChildRoutes(
+  extension: AdminExtension,
+  parentRouteId: string,
+  getParentRoute: () => AnyRoute,
+  runtime: AdminExtensionRouteRuntime,
+  options: AdminExtensionChildRoutesOptions = {},
+): Array<AnyRoute> {
+  const parent = findAdminRouteContribution(extension.routes, parentRouteId)
+  if (!parent) {
+    throw new Error(
+      `[voyant-admin-app] Extension "${extension.id}" has no route contribution "${parentRouteId}".`,
+    )
+  }
+  const exclude = new Set(options.exclude ?? [])
+
+  return (parent.children ?? [])
+    .filter((child) => !exclude.has(child.path))
+    .map((child) => {
+      const options = {
+        getParentRoute,
+        path: child.path,
+        validateSearch: child.validateSearch,
+        ...adminRouteOptionsFromContribution(requireChildImplementation(extension, child), runtime),
+      }
+      // Runtime-built routes carry no typed-link contract (they are invisible
+      // to the host's generated typed-link maps), so the loose cast is sound.
+      return createRoute(options as never) as unknown as AnyRoute
+    })
+}
+
+function requireChildImplementation(
+  extension: AdminExtension,
+  child: AdminUiRouteContribution,
+): ImplementedAdminRoute {
+  if (!child.page && !child.component && !child.redirectTo) {
+    throw new Error(
+      `[voyant-admin-app] Child route contribution "${child.id}" of extension ` +
+        `"${extension.id}" carries no implementation (neither \`page\`, \`component\`, ` +
+        `nor \`redirectTo\`).`,
+    )
+  }
+  return child as ImplementedAdminRoute
 }
 
 /**

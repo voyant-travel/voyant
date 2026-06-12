@@ -131,6 +131,24 @@ export interface AdminUiRouteContribution {
    * to {@link AdminUiRouteContribution.destination}.
    */
   destinationParams?: Record<string, string>
+  /**
+   * Redirect target: the route navigates here instead of rendering
+   * (host binders emit a `beforeLoad`-style redirect, which also covers
+   * SSR). A redirect contribution needs no `page`/`component` — it counts
+   * as implemented on its own. Used for the index redirects that used to be
+   * host route files (e.g. `/catalog` → `/catalog/products`).
+   */
+  redirectTo?: string
+  /**
+   * Nested child contributions rendered inside this route's layout (this
+   * contribution becomes a LAYOUT route — its page renders an outlet).
+   * Child `path`s are RELATIVE to the parent path and start with `/`;
+   * a child path of exactly `"/"` is the parent's index route. Hosts bind
+   * children under the parent's code-based route (packaged-admin RFC §4.8 —
+   * see `attachAdminExtensionRoutes` / `adminExtensionChildRoutes` in
+   * `@voyantjs/admin-app`).
+   */
+  children?: ReadonlyArray<AdminUiRouteContribution>
 }
 
 /**
@@ -220,15 +238,38 @@ export function requireAdminRoute(extension: AdminExtension, routeId: string): B
 }
 
 /**
- * A route contribution guaranteed to carry an implementation — either a
- * lazy `page` module loader or an eager zero-prop `component`.
+ * A route contribution guaranteed to carry an implementation — a lazy
+ * `page` module loader, an eager zero-prop `component`, or a `redirectTo`
+ * target (redirect routes render nothing).
  */
 export type ImplementedAdminRoute = AdminUiRouteContribution &
-  ({ page: () => Promise<AdminRoutePageModule> } | { component: React.FunctionComponent })
+  (
+    | { page: () => Promise<AdminRoutePageModule> }
+    | { component: React.FunctionComponent }
+    | { redirectTo: string }
+  )
 
 /**
- * Look up a route contribution by id and assert it carries an
- * implementation (`page` or `component`).
+ * Depth-first lookup of a route contribution by id, descending into
+ * {@link AdminUiRouteContribution.children} so nested contributions (e.g.
+ * settings pages under the settings layout) resolve like top-level ones.
+ */
+export function findAdminRouteContribution(
+  routes: ReadonlyArray<AdminUiRouteContribution> | undefined,
+  routeId: string,
+): AdminUiRouteContribution | undefined {
+  for (const route of routes ?? []) {
+    if (route.id === routeId) return route
+    const nested = findAdminRouteContribution(route.children, routeId)
+    if (nested) return nested
+  }
+  return undefined
+}
+
+/**
+ * Look up a route contribution by id (including nested `children`) and
+ * assert it carries an implementation (`page`, `component`, or
+ * `redirectTo`).
  *
  * This is the binding contract of the code-assembled admin route tree
  * (packaged-admin RFC §4.8 endgame): the host's generated route module
@@ -240,18 +281,18 @@ export function requireImplementedAdminRoute(
   extension: AdminExtension,
   routeId: string,
 ): ImplementedAdminRoute {
-  const route = extension.routes?.find((candidate) => candidate.id === routeId)
+  const route = findAdminRouteContribution(extension.routes, routeId)
   if (!route) {
     throw new Error(
       `[voyant-admin] Extension "${extension.id}" has no route contribution "${routeId}". ` +
         `Regenerate the host's admin route module with \`voyant admin generate --routes\`.`,
     )
   }
-  if (!route.page && !route.component) {
+  if (!route.page && !route.component && !route.redirectTo) {
     throw new Error(
       `[voyant-admin] Route contribution "${routeId}" of extension "${extension.id}" carries no ` +
-        `implementation (neither \`page\` nor \`component\`). Add one to the extension, or keep ` +
-        `the route as a hand-written host route file.`,
+        `implementation (neither \`page\`, \`component\`, nor \`redirectTo\`). Add one to the ` +
+        `extension, or keep the route as a hand-written host route file.`,
     )
   }
   return route as ImplementedAdminRoute

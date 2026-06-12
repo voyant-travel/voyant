@@ -13,13 +13,11 @@ import { Route as PayRouteImport } from './routes/pay'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as storefrontRouteRouteImport } from './routes/(storefront)/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
-import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as ProposalQuoteVersionIdRouteImport } from './routes/proposal.$quoteVersionId'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
 import { Route as AccountantTokenRouteImport } from './routes/accountant.$token'
 import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
 import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
-import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as storefrontShopRouteImport } from './routes/(storefront)/shop'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
@@ -29,26 +27,10 @@ import { Route as authOnboardingRouteImport } from './routes/(auth)/onboarding'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as authAcceptInvitationRouteImport } from './routes/(auth)/accept-invitation'
-import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as WorkspaceTripsIndexRouteImport } from './routes/_workspace/trips/index'
-import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
 import { Route as WorkspaceProductsIndexRouteImport } from './routes/_workspace/products/index'
-import { Route as WorkspaceNotificationsIndexRouteImport } from './routes/_workspace/notifications/index'
-import { Route as WorkspaceLegalIndexRouteImport } from './routes/_workspace/legal/index'
-import { Route as WorkspaceFinanceIndexRouteImport } from './routes/_workspace/finance/index'
-import { Route as WorkspaceCatalogIndexRouteImport } from './routes/_workspace/catalog/index'
 import { Route as WorkspaceActionLedgerIndexRouteImport } from './routes/_workspace/action-ledger/index'
 import { Route as WorkspaceTripsIdRouteImport } from './routes/_workspace/trips/$id'
-import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
-import { Route as WorkspaceSettingsTaxesRouteImport } from './routes/_workspace/settings/taxes'
-import { Route as WorkspaceSettingsProductTypesRouteImport } from './routes/_workspace/settings/product-types'
-import { Route as WorkspaceSettingsProductTagsRouteImport } from './routes/_workspace/settings/product-tags'
-import { Route as WorkspaceSettingsPricingCategoriesRouteImport } from './routes/_workspace/settings/pricing-categories'
-import { Route as WorkspaceSettingsPriceCatalogsRouteImport } from './routes/_workspace/settings/price-catalogs'
-import { Route as WorkspaceSettingsOperatorRouteImport } from './routes/_workspace/settings/operator'
-import { Route as WorkspaceSettingsCostCategoriesRouteImport } from './routes/_workspace/settings/cost-categories'
-import { Route as WorkspaceSettingsChannelsRouteImport } from './routes/_workspace/settings/channels'
-import { Route as WorkspaceSettingsApiTokensRouteImport } from './routes/_workspace/settings/api-tokens'
 import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_workspace/products/categories'
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspaceBookingsComposeRouteImport } from './routes/_workspace/bookings_.compose'
@@ -79,11 +61,6 @@ const authRouteRoute = authRouteRouteImport.update({
   id: '/(auth)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
 const ProposalQuoteVersionIdRoute = ProposalQuoteVersionIdRouteImport.update({
   id: '/proposal/$quoteVersionId',
   path: '/proposal/$quoteVersionId',
@@ -107,11 +84,6 @@ const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
 const WorkspaceChannelSyncRoute = WorkspaceChannelSyncRouteImport.update({
   id: '/channel-sync',
   path: '/channel-sync',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const storefrontShopRoute = storefrontShopRouteImport.update({
@@ -159,45 +131,14 @@ const authAcceptInvitationRoute = authAcceptInvitationRouteImport.update({
   path: '/accept-invitation',
   getParentRoute: () => authRouteRoute,
 } as any)
-const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
 const WorkspaceTripsIndexRoute = WorkspaceTripsIndexRouteImport.update({
   id: '/trips/',
   path: '/trips/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
-const WorkspaceSettingsIndexRoute = WorkspaceSettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => WorkspaceSettingsRouteRoute,
-} as any)
 const WorkspaceProductsIndexRoute = WorkspaceProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceNotificationsIndexRoute =
-  WorkspaceNotificationsIndexRouteImport.update({
-    id: '/notifications/',
-    path: '/notifications/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceLegalIndexRoute = WorkspaceLegalIndexRouteImport.update({
-  id: '/legal/',
-  path: '/legal/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceFinanceIndexRoute = WorkspaceFinanceIndexRouteImport.update({
-  id: '/finance/',
-  path: '/finance/',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceCatalogIndexRoute = WorkspaceCatalogIndexRouteImport.update({
-  id: '/catalog/',
-  path: '/catalog/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceActionLedgerIndexRoute =
@@ -211,64 +152,6 @@ const WorkspaceTripsIdRoute = WorkspaceTripsIdRouteImport.update({
   path: '/trips/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
-const WorkspaceSettingsTeamRoute = WorkspaceSettingsTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => WorkspaceSettingsRouteRoute,
-} as any)
-const WorkspaceSettingsTaxesRoute = WorkspaceSettingsTaxesRouteImport.update({
-  id: '/taxes',
-  path: '/taxes',
-  getParentRoute: () => WorkspaceSettingsRouteRoute,
-} as any)
-const WorkspaceSettingsProductTypesRoute =
-  WorkspaceSettingsProductTypesRouteImport.update({
-    id: '/product-types',
-    path: '/product-types',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsProductTagsRoute =
-  WorkspaceSettingsProductTagsRouteImport.update({
-    id: '/product-tags',
-    path: '/product-tags',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsPricingCategoriesRoute =
-  WorkspaceSettingsPricingCategoriesRouteImport.update({
-    id: '/pricing-categories',
-    path: '/pricing-categories',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsPriceCatalogsRoute =
-  WorkspaceSettingsPriceCatalogsRouteImport.update({
-    id: '/price-catalogs',
-    path: '/price-catalogs',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsOperatorRoute =
-  WorkspaceSettingsOperatorRouteImport.update({
-    id: '/operator',
-    path: '/operator',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsCostCategoriesRoute =
-  WorkspaceSettingsCostCategoriesRouteImport.update({
-    id: '/cost-categories',
-    path: '/cost-categories',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsChannelsRoute =
-  WorkspaceSettingsChannelsRouteImport.update({
-    id: '/channels',
-    path: '/channels',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
-const WorkspaceSettingsApiTokensRoute =
-  WorkspaceSettingsApiTokensRouteImport.update({
-    id: '/api-tokens',
-    path: '/api-tokens',
-    getParentRoute: () => WorkspaceSettingsRouteRoute,
-  } as any)
 const WorkspaceProductsCategoriesRoute =
   WorkspaceProductsCategoriesRouteImport.update({
     id: '/products/categories',
@@ -340,9 +223,8 @@ const storefrontShopBookEntityModuleEntityIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof WorkspaceIndexRoute
+  '/': typeof WorkspaceRouteRouteWithChildren
   '/pay': typeof PayRoute
-  '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
   '/forgot-password': typeof authForgotPasswordRoute
@@ -352,7 +234,6 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
-  '/account': typeof WorkspaceAccountRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
@@ -363,24 +244,9 @@ export interface FileRoutesByFullPath {
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
-  '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
-  '/settings/channels': typeof WorkspaceSettingsChannelsRoute
-  '/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
-  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
-  '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
-  '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
-  '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
-  '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
-  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
-  '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/trips/$id': typeof WorkspaceTripsIdRoute
   '/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
-  '/catalog/': typeof WorkspaceCatalogIndexRoute
-  '/finance/': typeof WorkspaceFinanceIndexRoute
-  '/legal/': typeof WorkspaceLegalIndexRoute
-  '/notifications/': typeof WorkspaceNotificationsIndexRoute
   '/products/': typeof WorkspaceProductsIndexRoute
-  '/settings/': typeof WorkspaceSettingsIndexRoute
   '/trips/': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -391,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof WorkspaceRouteRouteWithChildren
   '/pay': typeof PayRoute
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
@@ -401,36 +268,19 @@ export interface FileRoutesByTo {
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
-  '/account': typeof WorkspaceAccountRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
-  '/': typeof WorkspaceIndexRoute
   '/shop/composer': typeof storefrontShopComposerRoute
   '/bookings/new': typeof WorkspaceBookingsNewRoute
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
-  '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
-  '/settings/channels': typeof WorkspaceSettingsChannelsRoute
-  '/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
-  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
-  '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
-  '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
-  '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
-  '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
-  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
-  '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/trips/$id': typeof WorkspaceTripsIdRoute
   '/action-ledger': typeof WorkspaceActionLedgerIndexRoute
-  '/catalog': typeof WorkspaceCatalogIndexRoute
-  '/finance': typeof WorkspaceFinanceIndexRoute
-  '/legal': typeof WorkspaceLegalIndexRoute
-  '/notifications': typeof WorkspaceNotificationsIndexRoute
   '/products': typeof WorkspaceProductsIndexRoute
-  '/settings': typeof WorkspaceSettingsIndexRoute
   '/trips': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -446,7 +296,6 @@ export interface FileRoutesById {
   '/(storefront)': typeof storefrontRouteRouteWithChildren
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/pay': typeof PayRoute
-  '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/(auth)/accept-invitation': typeof authAcceptInvitationRoute
   '/(auth)/accept-invite': typeof authAcceptInviteRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
@@ -456,36 +305,19 @@ export interface FileRoutesById {
   '/(auth)/sign-up': typeof authSignUpRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/(storefront)/shop': typeof storefrontShopRoute
-  '/_workspace/account': typeof WorkspaceAccountRoute
   '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
-  '/_workspace/': typeof WorkspaceIndexRoute
   '/(storefront)/shop_/composer': typeof storefrontShopComposerRoute
   '/_workspace/bookings/new': typeof WorkspaceBookingsNewRoute
   '/_workspace/bookings_/compose': typeof WorkspaceBookingsComposeRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
   '/_workspace/products/categories': typeof WorkspaceProductsCategoriesRoute
-  '/_workspace/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
-  '/_workspace/settings/channels': typeof WorkspaceSettingsChannelsRoute
-  '/_workspace/settings/cost-categories': typeof WorkspaceSettingsCostCategoriesRoute
-  '/_workspace/settings/operator': typeof WorkspaceSettingsOperatorRoute
-  '/_workspace/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
-  '/_workspace/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
-  '/_workspace/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
-  '/_workspace/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
-  '/_workspace/settings/taxes': typeof WorkspaceSettingsTaxesRoute
-  '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
   '/_workspace/trips/$id': typeof WorkspaceTripsIdRoute
   '/_workspace/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
-  '/_workspace/catalog/': typeof WorkspaceCatalogIndexRoute
-  '/_workspace/finance/': typeof WorkspaceFinanceIndexRoute
-  '/_workspace/legal/': typeof WorkspaceLegalIndexRoute
-  '/_workspace/notifications/': typeof WorkspaceNotificationsIndexRoute
   '/_workspace/products/': typeof WorkspaceProductsIndexRoute
-  '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/trips/': typeof WorkspaceTripsIndexRoute
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/_workspace/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -500,7 +332,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/pay'
-    | '/settings'
     | '/accept-invitation'
     | '/accept-invite'
     | '/forgot-password'
@@ -510,7 +341,6 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/shop'
-    | '/account'
     | '/channel-sync'
     | '/flights'
     | '/accountant/$token'
@@ -521,24 +351,9 @@ export interface FileRouteTypes {
     | '/bookings/compose'
     | '/products/$id'
     | '/products/categories'
-    | '/settings/api-tokens'
-    | '/settings/channels'
-    | '/settings/cost-categories'
-    | '/settings/operator'
-    | '/settings/price-catalogs'
-    | '/settings/pricing-categories'
-    | '/settings/product-tags'
-    | '/settings/product-types'
-    | '/settings/taxes'
-    | '/settings/team'
     | '/trips/$id'
     | '/action-ledger/'
-    | '/catalog/'
-    | '/finance/'
-    | '/legal/'
-    | '/notifications/'
     | '/products/'
-    | '/settings/'
     | '/trips/'
     | '/shop/confirmation/$bookingId'
     | '/finance/supplier-invoices/$id'
@@ -549,6 +364,7 @@ export interface FileRouteTypes {
     | '/catalog/journey/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/pay'
     | '/accept-invitation'
     | '/accept-invite'
@@ -559,36 +375,19 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/shop'
-    | '/account'
     | '/channel-sync'
     | '/flights'
     | '/accountant/$token'
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
-    | '/'
     | '/shop/composer'
     | '/bookings/new'
     | '/bookings/compose'
     | '/products/$id'
     | '/products/categories'
-    | '/settings/api-tokens'
-    | '/settings/channels'
-    | '/settings/cost-categories'
-    | '/settings/operator'
-    | '/settings/price-catalogs'
-    | '/settings/pricing-categories'
-    | '/settings/product-tags'
-    | '/settings/product-types'
-    | '/settings/taxes'
-    | '/settings/team'
     | '/trips/$id'
     | '/action-ledger'
-    | '/catalog'
-    | '/finance'
-    | '/legal'
-    | '/notifications'
     | '/products'
-    | '/settings'
     | '/trips'
     | '/shop/confirmation/$bookingId'
     | '/finance/supplier-invoices/$id'
@@ -603,7 +402,6 @@ export interface FileRouteTypes {
     | '/(storefront)'
     | '/_workspace'
     | '/pay'
-    | '/_workspace/settings'
     | '/(auth)/accept-invitation'
     | '/(auth)/accept-invite'
     | '/(auth)/forgot-password'
@@ -613,36 +411,19 @@ export interface FileRouteTypes {
     | '/(auth)/sign-up'
     | '/(auth)/verify-email'
     | '/(storefront)/shop'
-    | '/_workspace/account'
     | '/_workspace/channel-sync'
     | '/_workspace/flights'
     | '/accountant/$token'
     | '/pay_/$sessionId'
     | '/proposal/$quoteVersionId'
-    | '/_workspace/'
     | '/(storefront)/shop_/composer'
     | '/_workspace/bookings/new'
     | '/_workspace/bookings_/compose'
     | '/_workspace/products/$id'
     | '/_workspace/products/categories'
-    | '/_workspace/settings/api-tokens'
-    | '/_workspace/settings/channels'
-    | '/_workspace/settings/cost-categories'
-    | '/_workspace/settings/operator'
-    | '/_workspace/settings/price-catalogs'
-    | '/_workspace/settings/pricing-categories'
-    | '/_workspace/settings/product-tags'
-    | '/_workspace/settings/product-types'
-    | '/_workspace/settings/taxes'
-    | '/_workspace/settings/team'
     | '/_workspace/trips/$id'
     | '/_workspace/action-ledger/'
-    | '/_workspace/catalog/'
-    | '/_workspace/finance/'
-    | '/_workspace/legal/'
-    | '/_workspace/notifications/'
     | '/_workspace/products/'
-    | '/_workspace/settings/'
     | '/_workspace/trips/'
     | '/(storefront)/shop_/confirmation/$bookingId'
     | '/_workspace/finance/supplier-invoices/$id'
@@ -693,13 +474,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_workspace/': {
-      id: '/_workspace/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof WorkspaceIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/proposal/$quoteVersionId': {
       id: '/proposal/$quoteVersionId'
       path: '/proposal/$quoteVersionId'
@@ -733,13 +507,6 @@ declare module '@tanstack/react-router' {
       path: '/channel-sync'
       fullPath: '/channel-sync'
       preLoaderRoute: typeof WorkspaceChannelSyncRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/account': {
-      id: '/_workspace/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof WorkspaceAccountRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/(storefront)/shop': {
@@ -805,13 +572,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAcceptInvitationRouteImport
       parentRoute: typeof authRouteRoute
     }
-    '/_workspace/settings': {
-      id: '/_workspace/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof WorkspaceSettingsRouteRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/trips/': {
       id: '/_workspace/trips/'
       path: '/trips'
@@ -819,46 +579,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceTripsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/settings/': {
-      id: '/_workspace/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof WorkspaceSettingsIndexRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
     '/_workspace/products/': {
       id: '/_workspace/products/'
       path: '/products'
       fullPath: '/products/'
       preLoaderRoute: typeof WorkspaceProductsIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/notifications/': {
-      id: '/_workspace/notifications/'
-      path: '/notifications'
-      fullPath: '/notifications/'
-      preLoaderRoute: typeof WorkspaceNotificationsIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/legal/': {
-      id: '/_workspace/legal/'
-      path: '/legal'
-      fullPath: '/legal/'
-      preLoaderRoute: typeof WorkspaceLegalIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/finance/': {
-      id: '/_workspace/finance/'
-      path: '/finance'
-      fullPath: '/finance/'
-      preLoaderRoute: typeof WorkspaceFinanceIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/catalog/': {
-      id: '/_workspace/catalog/'
-      path: '/catalog'
-      fullPath: '/catalog/'
-      preLoaderRoute: typeof WorkspaceCatalogIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/action-ledger/': {
@@ -874,76 +599,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/trips/$id'
       preLoaderRoute: typeof WorkspaceTripsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/settings/team': {
-      id: '/_workspace/settings/team'
-      path: '/team'
-      fullPath: '/settings/team'
-      preLoaderRoute: typeof WorkspaceSettingsTeamRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/taxes': {
-      id: '/_workspace/settings/taxes'
-      path: '/taxes'
-      fullPath: '/settings/taxes'
-      preLoaderRoute: typeof WorkspaceSettingsTaxesRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/product-types': {
-      id: '/_workspace/settings/product-types'
-      path: '/product-types'
-      fullPath: '/settings/product-types'
-      preLoaderRoute: typeof WorkspaceSettingsProductTypesRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/product-tags': {
-      id: '/_workspace/settings/product-tags'
-      path: '/product-tags'
-      fullPath: '/settings/product-tags'
-      preLoaderRoute: typeof WorkspaceSettingsProductTagsRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/pricing-categories': {
-      id: '/_workspace/settings/pricing-categories'
-      path: '/pricing-categories'
-      fullPath: '/settings/pricing-categories'
-      preLoaderRoute: typeof WorkspaceSettingsPricingCategoriesRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/price-catalogs': {
-      id: '/_workspace/settings/price-catalogs'
-      path: '/price-catalogs'
-      fullPath: '/settings/price-catalogs'
-      preLoaderRoute: typeof WorkspaceSettingsPriceCatalogsRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/operator': {
-      id: '/_workspace/settings/operator'
-      path: '/operator'
-      fullPath: '/settings/operator'
-      preLoaderRoute: typeof WorkspaceSettingsOperatorRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/cost-categories': {
-      id: '/_workspace/settings/cost-categories'
-      path: '/cost-categories'
-      fullPath: '/settings/cost-categories'
-      preLoaderRoute: typeof WorkspaceSettingsCostCategoriesRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/channels': {
-      id: '/_workspace/settings/channels'
-      path: '/channels'
-      fullPath: '/settings/channels'
-      preLoaderRoute: typeof WorkspaceSettingsChannelsRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
-    }
-    '/_workspace/settings/api-tokens': {
-      id: '/_workspace/settings/api-tokens'
-      path: '/api-tokens'
-      fullPath: '/settings/api-tokens'
-      preLoaderRoute: typeof WorkspaceSettingsApiTokensRouteImport
-      parentRoute: typeof WorkspaceSettingsRouteRoute
     }
     '/_workspace/products/categories': {
       id: '/_workspace/products/categories'
@@ -1081,57 +736,15 @@ const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(
   storefrontRouteRouteChildren,
 )
 
-interface WorkspaceSettingsRouteRouteChildren {
-  WorkspaceSettingsApiTokensRoute: typeof WorkspaceSettingsApiTokensRoute
-  WorkspaceSettingsChannelsRoute: typeof WorkspaceSettingsChannelsRoute
-  WorkspaceSettingsCostCategoriesRoute: typeof WorkspaceSettingsCostCategoriesRoute
-  WorkspaceSettingsOperatorRoute: typeof WorkspaceSettingsOperatorRoute
-  WorkspaceSettingsPriceCatalogsRoute: typeof WorkspaceSettingsPriceCatalogsRoute
-  WorkspaceSettingsPricingCategoriesRoute: typeof WorkspaceSettingsPricingCategoriesRoute
-  WorkspaceSettingsProductTagsRoute: typeof WorkspaceSettingsProductTagsRoute
-  WorkspaceSettingsProductTypesRoute: typeof WorkspaceSettingsProductTypesRoute
-  WorkspaceSettingsTaxesRoute: typeof WorkspaceSettingsTaxesRoute
-  WorkspaceSettingsTeamRoute: typeof WorkspaceSettingsTeamRoute
-  WorkspaceSettingsIndexRoute: typeof WorkspaceSettingsIndexRoute
-}
-
-const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
-  {
-    WorkspaceSettingsApiTokensRoute: WorkspaceSettingsApiTokensRoute,
-    WorkspaceSettingsChannelsRoute: WorkspaceSettingsChannelsRoute,
-    WorkspaceSettingsCostCategoriesRoute: WorkspaceSettingsCostCategoriesRoute,
-    WorkspaceSettingsOperatorRoute: WorkspaceSettingsOperatorRoute,
-    WorkspaceSettingsPriceCatalogsRoute: WorkspaceSettingsPriceCatalogsRoute,
-    WorkspaceSettingsPricingCategoriesRoute:
-      WorkspaceSettingsPricingCategoriesRoute,
-    WorkspaceSettingsProductTagsRoute: WorkspaceSettingsProductTagsRoute,
-    WorkspaceSettingsProductTypesRoute: WorkspaceSettingsProductTypesRoute,
-    WorkspaceSettingsTaxesRoute: WorkspaceSettingsTaxesRoute,
-    WorkspaceSettingsTeamRoute: WorkspaceSettingsTeamRoute,
-    WorkspaceSettingsIndexRoute: WorkspaceSettingsIndexRoute,
-  }
-
-const WorkspaceSettingsRouteRouteWithChildren =
-  WorkspaceSettingsRouteRoute._addFileChildren(
-    WorkspaceSettingsRouteRouteChildren,
-  )
-
 interface WorkspaceRouteRouteChildren {
-  WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
-  WorkspaceAccountRoute: typeof WorkspaceAccountRoute
   WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
   WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
-  WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceBookingsNewRoute: typeof WorkspaceBookingsNewRoute
   WorkspaceBookingsComposeRoute: typeof WorkspaceBookingsComposeRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
   WorkspaceProductsCategoriesRoute: typeof WorkspaceProductsCategoriesRoute
   WorkspaceTripsIdRoute: typeof WorkspaceTripsIdRoute
   WorkspaceActionLedgerIndexRoute: typeof WorkspaceActionLedgerIndexRoute
-  WorkspaceCatalogIndexRoute: typeof WorkspaceCatalogIndexRoute
-  WorkspaceFinanceIndexRoute: typeof WorkspaceFinanceIndexRoute
-  WorkspaceLegalIndexRoute: typeof WorkspaceLegalIndexRoute
-  WorkspaceNotificationsIndexRoute: typeof WorkspaceNotificationsIndexRoute
   WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
   WorkspaceTripsIndexRoute: typeof WorkspaceTripsIndexRoute
   WorkspaceFinanceSupplierInvoicesIdRoute: typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -1141,21 +754,14 @@ interface WorkspaceRouteRouteChildren {
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
-  WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
-  WorkspaceAccountRoute: WorkspaceAccountRoute,
   WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
   WorkspaceFlightsRoute: WorkspaceFlightsRoute,
-  WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceBookingsNewRoute: WorkspaceBookingsNewRoute,
   WorkspaceBookingsComposeRoute: WorkspaceBookingsComposeRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,
   WorkspaceProductsCategoriesRoute: WorkspaceProductsCategoriesRoute,
   WorkspaceTripsIdRoute: WorkspaceTripsIdRoute,
   WorkspaceActionLedgerIndexRoute: WorkspaceActionLedgerIndexRoute,
-  WorkspaceCatalogIndexRoute: WorkspaceCatalogIndexRoute,
-  WorkspaceFinanceIndexRoute: WorkspaceFinanceIndexRoute,
-  WorkspaceLegalIndexRoute: WorkspaceLegalIndexRoute,
-  WorkspaceNotificationsIndexRoute: WorkspaceNotificationsIndexRoute,
   WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
   WorkspaceTripsIndexRoute: WorkspaceTripsIndexRoute,
   WorkspaceFinanceSupplierInvoicesIdRoute:

@@ -38,9 +38,10 @@ describe("createFinanceAdminExtension", () => {
   it("describes the finance routes with unique ids and paths", () => {
     const extension = createFinanceAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(8)
+    expect(routes).toHaveLength(9)
     expect(new Set(routes.map((route) => route.id)).size).toBe(routes.length)
     expect(routes.map((route) => route.path)).toEqual([
+      "/finance",
       "/finance/invoices",
       "/finance/invoices/$id",
       "/finance/invoice-number-series",
@@ -50,6 +51,14 @@ describe("createFinanceAdminExtension", () => {
       "/finance/supplier-invoices/$id",
       "/finance/profitability",
     ])
+  })
+
+  it("redirects the finance index to the invoices page", () => {
+    const extension = createFinanceAdminExtension()
+    const index = extension.routes?.find((route) => route.id === "finance-index")
+    expect(index?.path).toBe("/finance")
+    expect(index?.redirectTo).toBe("/finance/invoices")
+    expect(index?.page).toBeUndefined()
   })
 
   it("honors basePath and labels", () => {

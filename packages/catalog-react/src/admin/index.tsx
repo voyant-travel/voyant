@@ -178,6 +178,14 @@ export function createCatalogAdminExtension(
     id: "catalog",
     routes: [
       {
+        // Index redirect (formerly the host's `catalog/index.tsx` file
+        // route): `/catalog` lands on the products surface.
+        id: "catalog-index",
+        path: basePath,
+        title: products,
+        redirectTo: `${basePath}/products`,
+      },
+      {
         id: "catalog-products-index",
         path: `${basePath}/products`,
         title: products,

@@ -23,9 +23,10 @@ describe("createNotificationsAdminExtension", () => {
   it("describes the notifications routes with unique ids and paths", () => {
     const extension = createNotificationsAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(8)
+    expect(routes).toHaveLength(9)
     expect(new Set(routes.map((route) => route.id)).size).toBe(routes.length)
     expect(routes.map((route) => route.path)).toEqual([
+      "/notifications",
       "/notifications/templates",
       "/notifications/templates/$id",
       "/notifications/reminder-rules",
@@ -35,6 +36,14 @@ describe("createNotificationsAdminExtension", () => {
       "/notifications/preview",
       "/notifications/settings",
     ])
+  })
+
+  it("redirects the notifications index to the templates page", () => {
+    const extension = createNotificationsAdminExtension()
+    const index = extension.routes?.find((route) => route.id === "notifications-index")
+    expect(index?.path).toBe("/notifications")
+    expect(index?.redirectTo).toBe("/notifications/templates")
+    expect(index?.page).toBeUndefined()
   })
 
   it("honors basePath and labels", () => {
@@ -60,7 +69,7 @@ describe("createNotificationsAdminExtension", () => {
     // fetch client-side with component-local filter state, so contributions
     // carry a lazy `page` module loader and nothing else.
     const extension = createNotificationsAdminExtension()
-    const routes = extension.routes ?? []
+    const routes = (extension.routes ?? []).filter((route) => !route.redirectTo)
     expect(routes).toHaveLength(8)
     for (const route of routes) {
       expect(route.component).toBeUndefined()
@@ -73,6 +82,7 @@ describe("createNotificationsAdminExtension", () => {
   it("resolves every lazy page to a module with a default component", async () => {
     const extension = createNotificationsAdminExtension()
     for (const route of extension.routes ?? []) {
+      if (route.redirectTo) continue
       const module = await route.page?.()
       expect(typeof module?.default).toBe("function")
     }
