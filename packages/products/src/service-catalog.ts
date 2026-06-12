@@ -54,6 +54,22 @@ function normalizeLanguageTag(value: string | null | undefined) {
   return normalized || null
 }
 
+/**
+ * Cap applied to `description` on summary (list) payloads. Full richtext
+ * bodies stay on detail lookups (`includeContent: true`); see #1686 —
+ * unbounded per-row content drives Worker isolates toward the memory
+ * ceiling under storefront list load.
+ */
+const SUMMARY_DESCRIPTION_MAX_LENGTH = 500
+
+function trimSummaryDescription(description: string | null) {
+  if (!description || description.length <= SUMMARY_DESCRIPTION_MAX_LENGTH) {
+    return description
+  }
+
+  return description.slice(0, SUMMARY_DESCRIPTION_MAX_LENGTH)
+}
+
 function normalizeLanguageTagList(values: Array<string | null | undefined>) {
   return Array.from(
     new Set(
@@ -542,7 +558,16 @@ export const catalogProductsService = {
       }
 
       if (!options.includeContent) {
-        return base
+        // Summary (list) shape: heavy richtext fields are nulled and the
+        // long-form description is capped. Detail callers pass
+        // `includeContent: true` and keep the full content (#1686).
+        return {
+          ...base,
+          description: trimSummaryDescription(base.description),
+          inclusionsHtml: null,
+          exclusionsHtml: null,
+          termsHtml: null,
+        }
       }
 
       return {

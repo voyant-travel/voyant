@@ -75,68 +75,168 @@ export interface Subscription {
  * Event naming convention: `<resource>.<pastTenseAction>` in dot-case.
  * Examples: `booking.created`, `quote.accepted`, `payment.received`.
  */
+/**
+ * Per-subscription options.
+ */
+export interface SubscribeOptions {
+  /**
+   * Inline handlers complete before `emit()` resolves even when the
+   * emitter supplies a deferral scheduler (see {@link EmitOptions}).
+   * Use for the rare subscriber whose side effects must be visible to
+   * the code that follows the emit (e.g. read-after-write within the
+   * same request). Default `false` — handlers are deferrable.
+   */
+  inline?: boolean
+}
+
+/**
+ * Per-emit options. Call sites normally omit this; runtime adapters
+ * (e.g. `@voyantjs/hono`'s request-scoped bus) supply `schedule` so
+ * deferrable handlers run after the HTTP response instead of blocking
+ * it.
+ */
+export interface EmitOptions {
+  /**
+   * Receives a single promise covering all deferrable (non-`inline`)
+   * handlers for this emit. When provided, `emit()` resolves after the
+   * `inline` handlers only; the scheduler owns keeping the runtime
+   * alive for the rest (Workers: `executionCtx.waitUntil`). When
+   * omitted, all handlers complete before `emit()` resolves.
+   */
+  schedule?: (pending: Promise<unknown>) => void
+}
+
+export interface EventBusOptions {
+  /**
+   * Per-handler timeout in milliseconds. A handler that exceeds it is
+   * logged and no longer awaited — it is NOT cancelled (JS can't), so
+   * it may still finish in the background. Defaults to 15s, which
+   * bounds how long one slow third-party subscriber (CMS sync,
+   * e-invoicing API) can hold an emit. Set `false` to disable.
+   */
+  handlerTimeoutMs?: number | false
+}
+
 export interface EventBus {
   /** Emit an event. Fire-and-forget; subscribers cannot affect the emitter. */
   emit<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
     event: string,
     data: TData,
     metadata?: TMetadata,
+    options?: EmitOptions,
   ): Promise<void>
 
   /** Subscribe to an event by name. Returns an unsubscribe handle. */
   subscribe<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
     event: string,
     handler: EventHandler<TData, TMetadata>,
+    options?: SubscribeOptions,
   ): Subscription
+}
+
+const DEFAULT_HANDLER_TIMEOUT_MS = 15_000
+
+interface RegisteredHandler {
+  inline: boolean
 }
 
 /**
  * Create an in-process event bus.
  *
- * Handlers run sequentially in the order they were subscribed. Errors
- * thrown by a handler are caught and logged but do not block subsequent
- * handlers from running, matching the "subscribers are fire-and-forget"
- * contract.
+ * Handlers run **in parallel** — they are independent observers by
+ * contract, so one slow subscriber doesn't serialize behind another.
+ * Errors thrown by a handler are caught and logged and never affect the
+ * emitter or sibling handlers ("subscribers are fire-and-forget").
+ * Each handler is bounded by {@link EventBusOptions.handlerTimeoutMs}.
+ *
+ * When the emitter passes {@link EmitOptions.schedule}, handlers not
+ * marked `inline` are handed to the scheduler as one promise and
+ * `emit()` resolves without waiting for them — this is how the HTTP
+ * runtime moves subscriber work (third-party syncs, notifications)
+ * after the response.
  */
-export function createEventBus(): EventBus {
-  const handlers = new Map<string, Set<EventHandler>>()
+export function createEventBus(options: EventBusOptions = {}): EventBus {
+  const handlers = new Map<string, Map<EventHandler, RegisteredHandler>>()
+  const timeoutMs = options.handlerTimeoutMs ?? DEFAULT_HANDLER_TIMEOUT_MS
+
+  /** Runs one handler; never rejects. */
+  async function runHandler(event: string, handler: EventHandler, envelope: EventEnvelope) {
+    try {
+      if (timeoutMs === false) {
+        await handler(envelope)
+        return
+      }
+      let timer: ReturnType<typeof setTimeout> | null = null
+      const timedOut = new Promise<"timeout">((resolve) => {
+        timer = setTimeout(() => resolve("timeout"), timeoutMs)
+      })
+      try {
+        const result = await Promise.race([
+          Promise.resolve(handler(envelope)).then(() => "done" as const),
+          timedOut,
+        ])
+        if (result === "timeout") {
+          // The handler keeps running detached — we just stop waiting.
+          console.error(`[events] subscriber for "${event}" exceeded ${timeoutMs}ms; not awaited`)
+        }
+      } finally {
+        if (timer !== null) clearTimeout(timer)
+      }
+    } catch (err) {
+      // Subscribers are fire-and-forget — log and continue.
+      console.error(`[events] subscriber error for "${event}":`, err)
+    }
+  }
 
   return {
     async emit<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,
       data: TData,
       metadata?: TMetadata,
+      emitOptions?: EmitOptions,
     ) {
-      const set = handlers.get(event)
-      if (!set) return
+      const registered = handlers.get(event)
+      if (!registered || registered.size === 0) return
       const envelope: EventEnvelope<TData, TMetadata> = {
         name: event,
         data,
         emittedAt: new Date().toISOString(),
         ...(metadata === undefined ? {} : { metadata }),
       }
-      for (const handler of set) {
-        try {
-          await handler(envelope)
-        } catch (err) {
-          // Subscribers are fire-and-forget — log and continue.
-          console.error(`[events] subscriber error for "${event}":`, err)
-        }
+
+      const inline: EventHandler[] = []
+      const deferrable: EventHandler[] = []
+      for (const [handler, meta] of registered) {
+        ;(meta.inline ? inline : deferrable).push(handler)
       }
+
+      const run = (batch: EventHandler[]) =>
+        Promise.all(batch.map((h) => runHandler(event, h, envelope as EventEnvelope))).then(
+          () => undefined,
+        )
+
+      if (emitOptions?.schedule && deferrable.length > 0) {
+        emitOptions.schedule(run(deferrable))
+        if (inline.length > 0) await run(inline)
+        return
+      }
+
+      await run([...inline, ...deferrable])
     },
     subscribe<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,
       handler: EventHandler<TData, TMetadata>,
+      subscribeOptions?: SubscribeOptions,
     ) {
-      let set = handlers.get(event)
-      if (!set) {
-        set = new Set()
-        handlers.set(event, set)
+      let registered = handlers.get(event)
+      if (!registered) {
+        registered = new Map()
+        handlers.set(event, registered)
       }
-      set.add(handler as EventHandler)
+      registered.set(handler as EventHandler, { inline: subscribeOptions?.inline ?? false })
       return {
         unsubscribe() {
-          set?.delete(handler as EventHandler)
+          registered?.delete(handler as EventHandler)
         },
       }
     },

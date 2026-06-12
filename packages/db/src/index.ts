@@ -8,6 +8,12 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 
+import {
+  type DbTimeoutOptions,
+  resolveNodePostgresOptions,
+  resolveServerlessPoolConfig,
+  warnIfDirectNeonEndpoint,
+} from "./connection-config.js"
 import { VOYANT_DB_DISPOSE, VOYANT_DB_SUPPORTS_TRANSACTIONS } from "./transaction-capability.js"
 
 export type DbAdapter = "edge" | "node" | "serverless"
@@ -23,6 +29,16 @@ export interface DbClientOptions<TSchema extends Record<string, unknown> = Recor
   replicas?: string[]
   nodeMaxConnections?: number
   serverlessPool?: Omit<PoolConfig, "connectionString">
+  /**
+   * Query/connection timeouts (ms) applied per adapter. Defaults:
+   * `statementMs: 10_000`, `queryMs: 15_000`, `connectMs: 10_000` — queries
+   * now fail fast instead of pinning a Worker isolate for its full lifetime.
+   * Pass `false` per field to disable. The `edge` (neon-http) adapter does
+   * not support client-side timeouts and ignores this option entirely —
+   * http queries rely on the server-side default `statement_timeout` and
+   * the Workers runtime's own limits. See {@link DbTimeoutOptions}.
+   */
+  timeouts?: DbTimeoutOptions
 }
 
 function tagTransactionCapability<TDb extends object>(
@@ -68,10 +84,12 @@ export function createDbClient<TSchema extends Record<string, unknown> = Record<
     schema,
     replicas = [],
     nodeMaxConnections,
+    timeouts,
   } = options || {}
 
   if (adapter === "node") {
-    const client = postgres(connectionString, nodeMaxConnections ? { max: nodeMaxConnections } : {})
+    const nodeOptions = resolveNodePostgresOptions({ max: nodeMaxConnections, timeouts })
+    const client = postgres(connectionString, nodeOptions)
     const primary = tagTransactionCapability(
       schema ? drizzlePostgres(client, { schema }) : drizzlePostgres(client),
       true,
@@ -82,10 +100,7 @@ export function createDbClient<TSchema extends Record<string, unknown> = Record<
     }
 
     const replicaInstances = replicas.map((replicaUrl) => {
-      const replicaClient = postgres(
-        replicaUrl,
-        nodeMaxConnections ? { max: nodeMaxConnections } : {},
-      )
+      const replicaClient = postgres(replicaUrl, nodeOptions)
       return schema ? drizzlePostgres(replicaClient, { schema }) : drizzlePostgres(replicaClient)
     })
     const [firstReplica, ...otherReplicas] = replicaInstances
@@ -102,9 +117,14 @@ export function createDbClient<TSchema extends Record<string, unknown> = Record<
     return createServerlessDbClient(connectionString, {
       schema,
       pool: options?.serverlessPool,
+      timeouts,
     }).db
   }
 
+  // edge (neon-http): the Neon HTTP client has no client-side query/statement
+  // timeout config — queries rely on the server-side default statement_timeout
+  // and the Workers runtime's own request limits. A follow-up handles request
+  // deadlines at a different layer; do NOT try to bolt timeouts on here.
   const sql = neon(connectionString)
   const primary = tagTransactionCapability(
     schema ? drizzleNeon(sql, { schema }) : drizzleNeon(sql),
@@ -128,6 +148,19 @@ export function createDbClient<TSchema extends Record<string, unknown> = Record<
   return primary
 }
 
+/**
+ * Create a per-request Neon WebSocket pool + drizzle client.
+ *
+ * Timeout defaults (overridable via `timeouts`, or per-field via `pool`):
+ * `statement_timeout: 10_000`, `query_timeout: 15_000`,
+ * `connectionTimeoutMillis: 10_000`. Both `statement_timeout` (server-side)
+ * and `query_timeout` (client-side) are set because transaction-mode poolers
+ * (PgBouncer) may ignore `statement_timeout` as a startup parameter — see
+ * {@link resolveServerlessPoolConfig}.
+ *
+ * Warns (once per connection string) when pointed at a Neon direct endpoint
+ * instead of the `-pooler` host.
+ */
 export function createServerlessDbClient<
   TSchema extends Record<string, unknown> = Record<string, never>,
 >(
@@ -135,9 +168,11 @@ export function createServerlessDbClient<
   options?: {
     schema?: TSchema
     pool?: Omit<PoolConfig, "connectionString">
+    timeouts?: DbTimeoutOptions
   },
 ): DisposableDbClient<NeonWsDatabase<TSchema>> {
-  const pool = new Pool({ ...options?.pool, connectionString })
+  warnIfDirectNeonEndpoint(connectionString)
+  const pool = new Pool(resolveServerlessPoolConfig(connectionString, options))
   const dispose = () => pool.end().catch(() => {})
   const db = tagTransactionCapability(
     options?.schema
@@ -187,6 +222,7 @@ export const db = new Proxy({} as ReturnType<typeof createDbClient>, {
 })
 
 // Re-export lib utilities
+export * from "./connection-config.js"
 export * from "./helpers.js"
 export * from "./lib/index.js"
 export * from "./lifecycle.js"

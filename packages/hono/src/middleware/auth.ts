@@ -6,13 +6,9 @@ import type { MiddlewareHandler } from "hono"
 
 import { sha256Base64Url } from "../auth/crypto.js"
 import { extractBearerToken, verifySession } from "../auth/session-jwt.js"
-import {
-  type DbFactory,
-  resolveDbFactoryResult,
-  type VoyantAuthIntegration,
-  type VoyantBindings,
-  type VoyantVariables,
-} from "../types.js"
+import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
+import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
+import { acquireRequestDb } from "./request-db.js"
 
 const API_KEY_PREFIX = "voy_"
 
@@ -79,7 +75,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
 
     // Strategy 2: Core-owned API key support (voy_ prefixed)
     if (token?.startsWith(API_KEY_PREFIX)) {
-      const { db, dispose } = resolveDbFactoryResult(dbFactory(c.env))
+      // Shared per-request client — the db middleware downstream reuses
+      // this same client instead of opening a second Pool.
+      const lease = acquireRequestDb(c, dbFactory)
+      const db = lease.db
       try {
         const keyHash = await sha256Base64Url(token)
 
@@ -106,7 +105,8 @@ export function requireAuth<TBindings extends VoyantBindings>(
             request: c.req.raw,
             env: c.env,
             db,
-            ctx: c.executionCtx,
+            // Guarded: Hono throws on `executionCtx` access outside Workers.
+            ctx: tryGetExecutionCtx(c),
             apiKey: row,
           })
 
@@ -115,32 +115,31 @@ export function requireAuth<TBindings extends VoyantBindings>(
           }
         }
 
-        if (row.remaining !== null) {
-          c.executionCtx.waitUntil?.(
-            db
-              .update(apikeyTable)
-              .set({
-                remaining: row.remaining - 1,
-                requestCount: row.requestCount + 1,
-                lastRequest: new Date(),
-              })
-              .where(eq(apikeyTable.id, row.id))
-              .then(() => {})
-              .catch(() => {}),
-          )
-        } else {
-          c.executionCtx.waitUntil?.(
-            db
-              .update(apikeyTable)
-              .set({
-                requestCount: row.requestCount + 1,
-                lastRequest: new Date(),
-              })
-              .where(eq(apikeyTable.id, row.id))
-              .then(() => {})
-              .catch(() => {}),
-          )
-        }
+        // Usage counters update off the response path. The query promise
+        // starts immediately either way; `waitUntil` (when the runtime has
+        // one) just keeps the isolate alive until it settles.
+        const counterUpdate =
+          row.remaining !== null
+            ? db
+                .update(apikeyTable)
+                .set({
+                  remaining: row.remaining - 1,
+                  requestCount: row.requestCount + 1,
+                  lastRequest: new Date(),
+                })
+                .where(eq(apikeyTable.id, row.id))
+                .then(() => {})
+                .catch(() => {})
+            : db
+                .update(apikeyTable)
+                .set({
+                  requestCount: row.requestCount + 1,
+                  lastRequest: new Date(),
+                })
+                .where(eq(apikeyTable.id, row.id))
+                .then(() => {})
+                .catch(() => {})
+        tryGetExecutionCtx(c)?.waitUntil(counterUpdate)
 
         const scopes = permissionsToStrings(row.permissions)
 
@@ -160,21 +159,24 @@ export function requireAuth<TBindings extends VoyantBindings>(
       } catch {
         // fall through to next strategy
       } finally {
-        // Schedule pool teardown AFTER the queries above settle. waitUntil
-        // keeps the worker alive for the close handshake.
-        if (dispose) c.executionCtx.waitUntil?.(dispose())
+        // Releases the lease AFTER downstream completes (we're past
+        // `return next()` here). The creating lease schedules pool
+        // teardown via waitUntil so the worker stays alive for the
+        // close handshake; reuse leases are no-ops.
+        await lease.release()
       }
     }
 
     // Strategy 3: App-provided auth resolution (cookies, provider tokens, etc.)
     if (opts?.auth?.resolve) {
-      const { db: resolveDb, dispose: resolveDispose } = resolveDbFactoryResult(dbFactory(c.env))
+      const lease = acquireRequestDb(c, dbFactory)
       try {
         const resolved = await opts.auth.resolve({
           request: c.req.raw,
           env: c.env,
-          db: resolveDb,
-          ctx: c.executionCtx,
+          db: lease.db,
+          // Guarded: Hono throws on `executionCtx` access outside Workers.
+          ctx: tryGetExecutionCtx(c),
         })
 
         if (resolved?.userId) {
@@ -182,7 +184,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           return next()
         }
       } finally {
-        if (resolveDispose) c.executionCtx.waitUntil?.(resolveDispose())
+        await lease.release()
       }
     }
 
