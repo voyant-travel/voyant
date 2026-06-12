@@ -1,5 +1,11 @@
 # @voyantjs/customer-portal
 
+## 0.104.20
+
+### Patch Changes
+
+- f71eddf: Refactor oversized public storefront and customer portal modules into focused internal slices while preserving the existing public package entry points.
+
 ## 0.104.19
 
 ### Patch Changes
