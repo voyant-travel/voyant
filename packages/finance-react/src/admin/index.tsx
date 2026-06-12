@@ -197,6 +197,10 @@ export function createFinanceAdminExtension(
         id: "finance-invoices-index",
         path: `${basePath}/invoices`,
         title: invoices,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "invoice.list",
         ssr: "data-only",
         page: () => import("./pages/invoices-index.js"),
         // Dynamic import on purpose: the query options pull the finance
@@ -213,6 +217,9 @@ export function createFinanceAdminExtension(
         id: "finance-invoices-detail",
         path: `${basePath}/invoices/$id`,
         title: invoices,
+        // Key declared by @voyantjs/bookings-react/admin (bound above).
+        destination: "invoice.detail",
+        destinationParams: { id: "invoiceId" },
         ssr: "data-only",
         page: () => import("./pages/invoice-detail.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -264,6 +271,7 @@ export function createFinanceAdminExtension(
         id: "finance-payments-index",
         path: `${basePath}/payments`,
         title: payments,
+        destination: "payment.list",
         ssr: "data-only",
         page: () => import("./pages/payments-index.js"),
         // Dynamic import on purpose — see the invoices index loader above.
@@ -277,6 +285,9 @@ export function createFinanceAdminExtension(
         id: "finance-payments-detail",
         path: `${basePath}/payments/$id`,
         title: payments,
+        // Key declared by @voyantjs/bookings-react/admin (bound above).
+        destination: "payment.detail",
+        destinationParams: { id: "paymentId" },
         ssr: "data-only",
         page: () => import("./pages/payment-detail.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {

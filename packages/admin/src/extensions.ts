@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
+import type { AdminDestinationKey, AdminDestinations } from "./navigation/destinations.js"
 import type { NavItem } from "./types.js"
 
 /**
@@ -109,6 +110,27 @@ export interface AdminUiRouteContribution {
   capability?: string
   /** Preload policy override, mirroring the host router's option. */
   preload?: false | "intent" | "render" | "viewport"
+  /**
+   * The semantic destination key this route SATISFIES (packaged-admin RFC
+   * §4.7 endgame). Declare it only when the destination's semantics map 1:1
+   * onto this route's path with pure param interpolation — the binding lets
+   * `voyant admin generate --destinations` emit the host's resolver for the
+   * key instead of the host hand-writing it. Destinations that need search
+   * params, multiple candidate routes, or any construction beyond path
+   * interpolation must NOT be bound here; their resolvers stay hand-written
+   * in the host map. The key must be declared on {@link AdminDestinations}
+   * (by this package or one whose augmentation is in scope), which keeps the
+   * annotation typo-proof.
+   */
+  destination?: AdminDestinationKey
+  /**
+   * Route param name → destination param name, for params whose names
+   * differ (e.g. route `/suppliers/$id` satisfying
+   * `"supplier.detail": { supplierId: string }` maps `{ id: "supplierId" }`).
+   * Params absent from the map keep their route name. Only meaningful next
+   * to {@link AdminUiRouteContribution.destination}.
+   */
+  destinationParams?: Record<string, string>
 }
 
 /**

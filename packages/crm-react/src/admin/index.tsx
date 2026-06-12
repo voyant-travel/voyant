@@ -119,6 +119,10 @@ export function createCrmAdminExtension(
         id: "crm-people-index",
         path: peopleBasePath,
         title: people,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "person.list",
         ssr: "data-only",
         page: () =>
           import("./people-host.js").then((module) => adminRoutePageModule(module.PeopleHost)),
@@ -137,6 +141,8 @@ export function createCrmAdminExtension(
         id: "crm-people-detail",
         path: `${peopleBasePath}/$id`,
         title: people,
+        destination: "person.detail",
+        destinationParams: { id: "personId" },
         page: () => import("./pages/person-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
@@ -160,6 +166,7 @@ export function createCrmAdminExtension(
         id: "crm-organizations-index",
         path: organizationsBasePath,
         title: organizations,
+        destination: "organization.list",
         ssr: "data-only",
         page: () =>
           import("./organizations-host.js").then((module) =>
@@ -178,6 +185,8 @@ export function createCrmAdminExtension(
         id: "crm-organizations-detail",
         path: `${organizationsBasePath}/$id`,
         title: organizations,
+        destination: "organization.detail",
+        destinationParams: { id: "organizationId" },
         page: () => import("./pages/organization-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id

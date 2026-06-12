@@ -117,6 +117,10 @@ export function createAvailabilityAdminExtension(
         id: "availability-index",
         path: basePath,
         title: availability,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "availabilitySlot.list",
         ssr: "data-only",
         page: () =>
           import("./availability-index-host.js").then((module) =>
@@ -137,6 +141,9 @@ export function createAvailabilityAdminExtension(
         id: "availability-slot-detail",
         path: `${basePath}/$id`,
         title: availability,
+        // Key declared by @voyantjs/bookings-react/admin (bound type-only above).
+        destination: "availabilitySlot.detail",
+        destinationParams: { id: "slotId" },
         page: () => import("./pages/availability-slot-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
@@ -173,6 +180,8 @@ export function createAvailabilityAdminExtension(
         id: "availability-start-time-detail",
         path: `${basePath}/start-times/$id`,
         title: availability,
+        destination: "availabilityStartTime.detail",
+        destinationParams: { id: "startTimeId" },
         page: () => import("./pages/availability-start-time-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
