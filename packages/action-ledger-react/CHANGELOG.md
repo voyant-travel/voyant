@@ -1,5 +1,13 @@
 # @voyantjs/action-ledger-react
 
+## 0.5.0
+
+### Patch Changes
+
+- @voyantjs/products-react@0.118.0
+- @voyantjs/bookings-react@0.118.0
+- @voyantjs/crm-react@0.118.0
+
 ## 0.4.0
 
 ### Patch Changes

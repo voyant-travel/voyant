@@ -1,5 +1,15 @@
 # @voyantjs/identity-react
 
+## 0.118.0
+
+### Patch Changes
+
+- @voyantjs/products-react@0.118.0
+- @voyantjs/bookings-react@0.118.0
+- @voyantjs/crm-react@0.118.0
+- @voyantjs/identity@0.118.0
+- @voyantjs/suppliers-react@0.111.4
+
 ## 0.117.1
 
 ### Patch Changes

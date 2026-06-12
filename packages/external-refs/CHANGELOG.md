@@ -1,5 +1,7 @@
 # @voyantjs/external-refs
 
+## 0.118.0
+
 ## 0.117.1
 
 ### Patch Changes

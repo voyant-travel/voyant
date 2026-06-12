@@ -1,5 +1,20 @@
 # @voyantjs/storefront
 
+## 0.118.0
+
+### Patch Changes
+
+- 004fc38: `GET /products/:productId/departures` is read-through against the `env.CACHE` KV binding with a 120s TTL (keyed per product + query params). Departure availability shifts with every booking, so this is deliberately TTL-bounded rather than invalidated — browse-grade freshness within 2 minutes, while checkout always re-verifies capacity on the live transactional path. Degrades to the live query without the binding.
+- Updated dependencies [004fc38]
+  - @voyantjs/products@0.118.0
+  - @voyantjs/availability@0.115.0
+  - @voyantjs/bookings@0.118.0
+  - @voyantjs/extras@0.118.0
+  - @voyantjs/finance@0.118.0
+  - @voyantjs/pricing@0.118.0
+  - @voyantjs/sellability@0.118.0
+  - @voyantjs/crm@0.118.0
+
 ## 0.117.1
 
 ### Patch Changes
