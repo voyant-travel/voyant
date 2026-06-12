@@ -1,5 +1,24 @@
 # @voyantjs/admin
 
+## 0.109.0
+
+### Minor Changes
+
+- faec538: Generated destination resolver maps (packaged-admin RFC §4.7 endgame).
+
+  `AdminUiRouteContribution` gains `destination?: AdminDestinationKey` +
+  `destinationParams?: Record<string, string>`: a route contribution now
+  DECLARES which semantic destination key its path satisfies by pure param
+  interpolation (e.g. `/suppliers/$id` satisfying
+  `"supplier.detail": { supplierId: string }` via `{ id: "supplierId" }`).
+  The eight domain packages annotate their 29 route-backed destinations, so
+  `voyant admin generate --destinations` can emit the host's resolver map
+  instead of the host hand-writing it — the operator's map shrank to
+  `{ ...generatedAdminDestinations, ...custom }` with only seven genuinely
+  custom resolvers (search-param construction, multi-route targets, and
+  host-owned pages), and `voyant admin doctor` gates on drift between the
+  annotations and the generated module.
+
 ## 0.108.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @voyantjs/allocation-ui
 
+## 0.110.0
+
+### Patch Changes
+
+- Updated dependencies [279f97c]
+- Updated dependencies [faec538]
+  - @voyantjs/availability-react@0.109.0
+
 ## 0.109.0
 
 ### Patch Changes
