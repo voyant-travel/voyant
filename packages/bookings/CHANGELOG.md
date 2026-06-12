@@ -1,5 +1,20 @@
 # @voyantjs/bookings
 
+## 0.117.1
+
+### Patch Changes
+
+- b7056f1: `GET /aggregates` (admin dashboard KPIs) is now served through a read-through TTL snapshot (`readThroughAggregateSnapshot` from `@voyantjs/db/aggregate-snapshots`, 60s TTL, keyed by endpoint + query params): the first request computes and stores, subsequent requests within the TTL are ONE indexed read instead of the full aggregate fan-out (finance alone was ~11 queries per dashboard load). Response shapes are unchanged. `Cache-Control` on these endpoints tightened from `private, max-age=60` to `private, max-age=30` (availability gains the header for the first time). Requires the `aggregate_snapshots` table from the upcoming @voyantjs/db migration — until it is applied, endpoints transparently fall back to live computation.
+- b7056f1: `reserveBooking` holds its `FOR UPDATE` slot locks for far less time (perf T7). Catalog snapshot resolution (`resolveBookingItemSnapshot` — product/option/unit names + departure label) and hold-policy resolution now run BEFORE the transaction opens instead of inside it while locks were held; the snapshot reads only immutable catalog data the slot lock never protected. Inside the transaction, the per-item insert loop is replaced by ONE batched `bookingItems` insert and ONE batched `bookingAllocations` insert (item ids pre-generated app-side so allocations link without relying on RETURNING order). For a 3-item booking the transaction shrinks from ~29 statements (incl. 4 cross-table snapshot reads per item under lock) to 10. Returned shape, error codes (slot_not_found / slot_unavailable / insufficient_capacity / mismatches), capacity semantics, and all-or-nothing rollback are unchanged.
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyantjs/core@0.109.0
+  - @voyantjs/db@0.107.0
+  - @voyantjs/hono@0.108.0
+  - @voyantjs/action-ledger@0.104.7
+
 ## 0.117.0
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @voyantjs/hono
 
+## 0.108.0
+
+### Minor Changes
+
+- b7056f1: `createApp({ outbox: true })` makes request emits durable: envelopes persist to the `event_outbox` table (via the per-request db client) before any subscriber runs; failed deliveries are retried by `drainOutbox` (run it from a cron — see the operator template's `*/2min` drain). If the durable capture itself fails (DB unreachable), the emit falls back to direct delivery with an error log rather than failing the request. The augmented app now exposes `app.eventBus` so scheduled handlers can drain through the same subscriber set.
+
+### Patch Changes
+
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyantjs/core@0.109.0
+  - @voyantjs/db@0.107.0
+  - @voyantjs/types@0.104.4
+  - @voyantjs/workflows@0.107.3
+
 ## 0.107.0
 
 ### Minor Changes
