@@ -1,5 +1,11 @@
 # @voyantjs/plugin-payload-cms
 
+## 0.104.8
+
+### Patch Changes
+
+- a224ef6: Refine plugin HTTP fetch adapters to avoid unsafe implementation casts.
+
 ## 0.104.7
 
 ### Patch Changes

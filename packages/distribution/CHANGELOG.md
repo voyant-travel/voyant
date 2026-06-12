@@ -1,5 +1,11 @@
 # @voyantjs/distribution
 
+## 0.109.7
+
+### Patch Changes
+
+- a224ef6: Use explicit parser and payload mapping seams in channel push delivery helpers.
+
 ## 0.109.6
 
 ### Patch Changes
