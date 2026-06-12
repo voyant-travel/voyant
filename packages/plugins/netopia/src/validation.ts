@@ -67,6 +67,11 @@ const optionalProviderResolver = z.custom<NetopiaRuntimeOptions["resolveNotifica
   "Expected a notification provider resolver function",
 )
 
+const optionalResilience = z.custom<NetopiaRuntimeOptions["resilience"]>(
+  (value) => value === undefined || (typeof value === "object" && value !== null),
+  "Expected valid resilience options",
+)
+
 export const netopiaRuntimeOptionsSchema = z.object({
   apiUrl: optionalRuntimeUrl,
   apiKey: optionalRuntimeString,
@@ -78,6 +83,7 @@ export const netopiaRuntimeOptionsSchema = z.object({
   successStatuses: optionalIntegerArray,
   processingStatuses: optionalIntegerArray,
   fetch: optionalFetch.optional(),
+  resilience: optionalResilience.optional(),
   resolveNotificationProviders: optionalProviderResolver.optional(),
 })
 
@@ -92,6 +98,7 @@ export const resolvedNetopiaRuntimeOptionsSchema = z.object({
   successStatuses: z.array(z.number().int()).min(1).default([3, 5]),
   processingStatuses: z.array(z.number().int()).min(1).default([1, 15]),
   fetch: optionalFetch.optional(),
+  resilience: optionalResilience.optional(),
 })
 
 export const netopiaStartPaymentSessionSchema = z.object({

@@ -24,6 +24,7 @@ import { cors } from "./middleware/cors.js"
 import { db } from "./middleware/db.js"
 import { handleApiError, requestId } from "./middleware/error-boundary.js"
 import { logger } from "./middleware/logger.js"
+import { metrics } from "./middleware/metrics.js"
 import { publicResponseCache } from "./middleware/public-cache.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { expandHonoPlugins } from "./plugin.js"
@@ -239,6 +240,12 @@ export function createApp<TBindings extends VoyantBindings>(
 
   // Structured logger
   app.use("*", logger(config.logger))
+
+  // Per-request metrics → Analytics Engine (no-op without the binding).
+  // Mounted before the cache middleware so cache hits are measured too.
+  if (config.metrics !== false) {
+    app.use("*", metrics())
+  }
 
   // CORS (allowlist via env CORS_ALLOWLIST)
   app.use("*", cors())

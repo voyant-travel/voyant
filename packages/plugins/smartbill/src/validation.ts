@@ -47,6 +47,11 @@ const optionalRateLimit = z.custom<SmartbillClientOptions["rateLimit"] | undefin
   )
 }, "Expected valid SmartBill rate-limit options")
 
+const optionalResilience = z.custom<SmartbillClientOptions["resilience"] | undefined>(
+  (value) => value === undefined || (typeof value === "object" && value !== null),
+  "Expected valid resilience options",
+)
+
 const optionalLogger = z.custom<SmartbillLogger | undefined>(
   (value) =>
     value === undefined ||
@@ -150,6 +155,7 @@ export const smartbillPluginOptionsSchema = z.object({
   apiUrl: optionalUrl,
   fetch: optionalFetch.optional(),
   rateLimit: optionalRateLimit.optional(),
+  resilience: optionalResilience.optional(),
   language: optionalString,
   isTaxIncluded: z.boolean().optional(),
   measuringUnitName: optionalEventText.optional(),

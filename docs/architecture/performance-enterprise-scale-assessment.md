@@ -209,7 +209,21 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > per-locale, exact invalidation via an admin-surface middleware, shared id-keyed doc behind a
 > short-TTL slug mapping) + departures read-through (120s, TTL-bounded by design — checkout
 > verifies live); Typesense remains the query plane (browse/search already serves cards from
-> index documents, no Postgres). Repeat storefront reads now cost one KV get, zero DB queries. Note: drizzle
+> index documents, no Postgres). Repeat storefront reads now cost one KV get, zero DB queries.
+> **Platform#458 SHIPPED** (voyant-cloud #460/#461/#462): dispatcher response cache honoring
+> tenant `Cache-Control` (X-Cache exposed), per-plan dispatch CPU/subrequest limits
+> (free 100ms/50 → scale unlimited), DISPATCH_METRICS AE dataset, publisher DO+migrations/AE/D1
+> pass-through (un-breaking WORKFLOW_RUN_DO on cloud; AE datasets namespaced {org}_{env}_{name}),
+> per-plan Neon endpoint tiers + explicit pooled URIs + DATABASE_URL_DIRECT (reserved, never
+> reaches worker secrets). Remaining platform ops: backfill --apply, Node-runner DB env wiring,
+> namespace logpush, Smart Placement test.
+> **Phase 3 foundations (perf/phase-3-foundations):** 3.3 resilience primitives
+> (@voyantjs/utils/resilience: resilientFetch — 10s timeout, jittered idempotent-safe retries,
+> per-isolate circuit breaker; adopted in plugin HTTP clients), 3.4 in-worker metrics middleware
+> (env.METRICS AE dataset: method/route/surface/cache-status blobs, duration/status/db-query-count
+> doubles — complements DISPATCH_METRICS), 3.5 k6 suite (storefront-firehose, payday-spike,
+> mixed + workflow_dispatch runner). Remaining Phase 3: 3.1 bounded-context worker split
+> (dedicated design PR), 3.2 queued write pipeline, logpush/SLO wiring, CI load-test cadence. Note: drizzle
 > snapshot-chain poisoning by timestamp-named migration files was diagnosed and fixed (stale
 > 20260609 snapshot removed, chain re-parented) — future `drizzle-kit generate` runs are clean.
 
@@ -255,7 +269,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 | 3.2 | **Queued write pipeline for spikes.** Booking/payment intents enqueued via outbox table or platform queue → platform-level consumer dispatching back into the namespace (Voyant Cloud already runs this exact pattern for webhook delivery and workflow schedules — extend it, don't invent it); controlled concurrency; idempotent processing; backpressure returns 202 + status polling instead of thundering herd. The per-slot DO serialization pattern is the escalation path for ultra-hot inventory (requires publisher DO-binding support). Pair with **per-dispatch CPU/subrequest limits** — available in WfP, currently unused (`dispatcher/src/index.ts:205` calls `namespace.get()` without limits) — as the platform-level bulkhead. | Payday spike survives by design |
 | 3.3 | **Resilience primitives in the platform client.** `@voyantjs` fetch/client defaults: timeouts, retry+jitter, circuit breaker, bulkhead config; per-subscriber timeouts (from 0.6) hardened into contract. | Slow dependency degrades, never cascades |
 | 3.4 | **Observability as a primitive.** Per-request structured metrics (duration, db time, query count, payload size) → Analytics Engine (supported on WfP user workers, but the build publisher must learn to emit the binding); platform fleet view via logpush/tail worker configured once on the dispatcher — covers every user worker in the namespace (none configured today); request-id tracing across worker hops; SLOs + alerts; Neon `pg_stat_statements` review cadence. | We can see the next #1686 before users do |
-| 3.5 | **Load testing in CI.** k6 scenario suite: storefront firehose (read), payday spike (write), mixed; run against a staging tenant per release; assert SLO budgets. | The "enterprise-ready" claim becomes a regression test |
+| 3.5 | **Load testing in CI.** k6 scenario suite: storefront firehose (read), payday spike (write), mixed; run against a staging tenant per release; assert SLO budgets. *Delivered:* `scripts/load/` (see its README) + `.github/workflows/load-test.yml` (`workflow_dispatch`, threshold breach fails the job). | The "enterprise-ready" claim becomes a regression test |
 
 ## 5. Target end-state (one paragraph)
 

@@ -1,7 +1,45 @@
+import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
 import { createNetopiaClient, resolveNetopiaRuntimeOptions } from "../../src/client.js"
-import type { NetopiaFetch } from "../../src/types.js"
+import type { NetopiaFetch, NetopiaStartPaymentRequest } from "../../src/types.js"
+
+function makeStartRequest(): NetopiaStartPaymentRequest {
+  const address = {
+    email: "traveler@example.com",
+    phone: "0712345678",
+    firstName: "Ana",
+    lastName: "Popescu",
+    city: "Bucharest",
+    country: 40,
+    state: "B",
+    postalCode: "010101",
+    details: "Str. Exemplu 1",
+  }
+  return {
+    config: {
+      emailTemplate: "confirm",
+      notifyUrl: "https://api.example.com/callback",
+      redirectUrl: "https://app.example.com/return",
+      language: "ro",
+    },
+    payment: {
+      options: { installments: 1 },
+    },
+    order: {
+      posSignature: "pos-signature",
+      dateTime: new Date().toISOString(),
+      description: "Tour deposit",
+      orderID: "pmss_123",
+      amount: 125,
+      currency: "RON",
+      billing: address,
+      shipping: address,
+      products: [{ name: "Tour deposit", price: 125, vat: 0 }],
+      installments: { selected: 1, available: [0] },
+    },
+  }
+}
 
 function jsonResponse(status: number, body: unknown) {
   const text = JSON.stringify(body)
@@ -331,5 +369,42 @@ describe("createNetopiaClient.startCardPayment", () => {
         },
       }),
     ).rejects.toThrow(/\(500\)/)
+  })
+})
+
+describe("createNetopiaClient — resilience", () => {
+  it("never retries payment initiation, even on 503", async () => {
+    const fetchMock = vi.fn<NetopiaFetch>(async () => textResponse(503, "gateway unavailable"))
+    const client = createNetopiaClient({
+      apiUrl: "https://secure.sandbox.netopia-payments.com",
+      apiKey: "api-key",
+      fetch: fetchMock,
+      // Fresh breaker so this test doesn't share the module-level one.
+      resilience: { breaker: createCircuitBreaker() },
+    })
+
+    await expect(client.startCardPayment(makeStartRequest())).rejects.toThrow(/\(503\)/)
+    // Money movement: exactly one attempt, no automatic retry.
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it("fails fast with CircuitOpenError once the breaker trips", async () => {
+    const breaker = createCircuitBreaker({ failureThreshold: 1, openMs: 60_000 })
+    const fetchMock = vi.fn<NetopiaFetch>(async () => textResponse(500, "down"))
+    const client = createNetopiaClient({
+      apiUrl: "https://secure.sandbox.netopia-payments.com",
+      apiKey: "api-key",
+      fetch: fetchMock,
+      resilience: { breaker },
+    })
+
+    await expect(client.startCardPayment(makeStartRequest())).rejects.toThrow(/\(500\)/)
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    // Breaker is open now: no network call, fail fast.
+    await expect(client.startCardPayment(makeStartRequest())).rejects.toBeInstanceOf(
+      CircuitOpenError,
+    )
+    expect(fetchMock).toHaveBeenCalledOnce()
   })
 })

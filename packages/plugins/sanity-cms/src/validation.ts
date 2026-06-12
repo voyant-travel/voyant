@@ -30,6 +30,11 @@ const optionalMapEvent = z.custom<SanityMapFn | undefined>(
   "Expected a mapEvent function",
 )
 
+const optionalResilience = z.custom<SanityCmsPluginOptions["resilience"]>(
+  (value) => value === undefined || (typeof value === "object" && value !== null),
+  "Expected valid resilience options",
+)
+
 const optionalEvents = z.custom<SanitySyncEventNames | undefined>((value) => {
   if (value === undefined) return true
   if (typeof value !== "object" || value === null) return false
@@ -48,6 +53,7 @@ export const sanityCmsPluginOptionsSchema = z.object({
   voyantIdField: optionalString,
   apiHost: optionalString,
   fetch: optionalFetch.optional(),
+  resilience: optionalResilience.optional(),
   events: optionalEvents.optional(),
   mapEvent: optionalMapEvent.optional(),
   logger: optionalLogger.optional(),

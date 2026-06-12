@@ -52,6 +52,17 @@
   //                      with `wrangler kv namespace create
   //                      WORKFLOW_MANIFESTS` and replace the placeholder
   //                      id below before deploy.
+  // Per-request metrics (RFC voyant#1687 Phase 3.4). On Voyant Cloud the
+  // build publisher namespaces the dataset per tenant
+  // ({org}_{env}_voyant_operator_metrics); self-hosted deployments get
+  // the dataset auto-created on first write. The middleware is inert
+  // when the binding is absent.
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS",
+      "dataset": "voyant_operator_metrics"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "WORKFLOW_MANIFESTS",

@@ -2,6 +2,7 @@ import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
 import type { MiddlewareHandler } from "hono"
 
 import { type DbSource, isDbFactorySelector, type VoyantBindings, type VoyantDb } from "../types.js"
+import { DB_METRICS_CONTEXT_KEY, type RequestDbMetrics, withQueryCounting } from "./metrics.js"
 import { acquireRequestDb } from "./request-db.js"
 
 export interface DbMiddlewareOptions {
@@ -84,7 +85,13 @@ export function db<TBindings extends VoyantBindings>(
       }
       txCapabilityVerified = true
     }
-    c.set("db", lease.db)
+    // When the metrics middleware put a counter on the context, expose a
+    // query-counting view of the client so per-route db-query counts land
+    // in Analytics Engine. The lease (and its dispose) stay unwrapped.
+    const dbMetrics = (c as unknown as { get(key: string): unknown }).get(DB_METRICS_CONTEXT_KEY) as
+      | RequestDbMetrics
+      | undefined
+    c.set("db", dbMetrics ? withQueryCounting(lease.db, dbMetrics) : lease.db)
     try {
       await next()
     } finally {

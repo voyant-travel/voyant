@@ -1,11 +1,16 @@
+import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   createSmartbillClient,
+  SmartbillApiError,
   SmartbillRateLimitCircuitOpenError,
   SmartbillRateLimitError,
 } from "../../src/client.js"
 import type { SmartbillFetch } from "../../src/types.js"
+
+/** Keeps retrying tests fast and deterministic (no real backoff sleeps). */
+const fastRetry = { retry: { baseDelayMs: 0, maxDelayMs: 1 } }
 
 function jsonResponse(status: number, body: unknown) {
   const text = JSON.stringify(body)
@@ -189,12 +194,18 @@ describe("createSmartbillClient.cancelInvoice", () => {
     expect(body).toEqual({ companyVatCode: "RO123", seriesName: "A", number: "42" })
   })
 
-  it("throws on error", async () => {
+  it("throws on error (after exhausting retries)", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "fail"))
-    const client = createSmartbillClient({ ...baseOptions, fetch: fetchMock })
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: fastRetry,
+    })
     await expect(client.cancelInvoice("RO123", "A", "1")).rejects.toThrow(
       /SmartBill cancelInvoice failed \(500\)/,
     )
+    // Cancel is an idempotent PUT — 5xx retries, final response is surfaced.
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })
 
@@ -396,6 +407,71 @@ describe("createSmartbillClient — fetch handling", () => {
     } finally {
       globalThis.fetch = originalFetch
     }
+  })
+})
+
+describe("createSmartbillClient — resilience", () => {
+  it("retries a 503 GET and succeeds on a later attempt", async () => {
+    const fetchMock = vi
+      .fn<SmartbillFetch>()
+      .mockResolvedValueOnce(textResponse(503, "unavailable"))
+      .mockResolvedValueOnce(jsonResponse(200, { ...okEnvelope, taxes: [] }))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: fastRetry,
+    })
+    expect(await client.listTaxes()).toMatchObject({ status: "Ok" })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not retry createInvoice POST on 503 (no idempotency keys)", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(503, "unavailable"))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: fastRetry,
+    })
+    await expect(
+      client.createInvoice({
+        companyVatCode: "RO123",
+        client: { name: "X" },
+        seriesName: "A",
+        currency: "RON",
+        products: [],
+      }),
+    ).rejects.toThrow(/SmartBill createInvoice failed \(503\)/)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it("does not retry reverseInvoice despite the PUT (issues a new reversal invoice)", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(503, "unavailable"))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: fastRetry,
+    })
+    await expect(client.reverseInvoice("RO123", "A", "42")).rejects.toBeInstanceOf(
+      SmartbillApiError,
+    )
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it("fails fast with CircuitOpenError once the breaker trips", async () => {
+    const breaker = createCircuitBreaker({ failureThreshold: 1, openMs: 60_000 })
+    const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "down"))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: { breaker, retry: false },
+    })
+
+    await expect(client.listTaxes()).rejects.toThrow(/SmartBill listTaxes failed \(500\)/)
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    // Breaker is open now: no network call, fail fast.
+    await expect(client.listTaxes()).rejects.toBeInstanceOf(CircuitOpenError)
+    expect(fetchMock).toHaveBeenCalledOnce()
   })
 })
 

@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@voyantjs/core": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {

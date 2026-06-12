@@ -1,4 +1,5 @@
 import type { NotificationProvider } from "@voyantjs/notifications"
+import type { CircuitBreaker } from "@voyantjs/utils/resilience"
 
 export type NetopiaFetch = (
   input: string,
@@ -149,6 +150,26 @@ export interface NetopiaStartPaymentInput {
 
 export type NetopiaMode = "sandbox" | "live"
 
+/**
+ * Outbound-HTTP resilience knobs for the Netopia client. Payment initiation
+ * is money movement, so it is NEVER auto-retried — these only tune the
+ * per-attempt timeout and the circuit breaker that fails fast when Netopia
+ * is down instead of burning the request's CPU/subrequest budget.
+ */
+export interface NetopiaResilienceOptions {
+  /**
+   * Per-attempt timeout. Defaults to 15s — payment initiation gets a longer
+   * ceiling than the 10s used for non-payment upstreams.
+   */
+  timeoutMs?: number
+  /**
+   * Override/share the circuit breaker. Defaults to one module-level
+   * breaker per Netopia base URL (clients are created per request, so the
+   * breaker must outlive them).
+   */
+  breaker?: CircuitBreaker
+}
+
 export interface NetopiaRuntimeOptions {
   /**
    * Selects the Netopia environment. Resolves to a known base URL via
@@ -168,6 +189,8 @@ export interface NetopiaRuntimeOptions {
   successStatuses?: number[]
   processingStatuses?: number[]
   fetch?: NetopiaFetch
+  /** Timeout/circuit-breaker tuning. See {@link NetopiaResilienceOptions}. */
+  resilience?: NetopiaResilienceOptions
   resolveNotificationProviders?: (
     bindings: Record<string, unknown>,
   ) => ReadonlyArray<NotificationProvider>
@@ -184,4 +207,6 @@ export interface ResolvedNetopiaRuntimeOptions {
   successStatuses: number[]
   processingStatuses: number[]
   fetch?: NetopiaFetch
+  /** Timeout/circuit-breaker tuning. See {@link NetopiaResilienceOptions}. */
+  resilience?: NetopiaResilienceOptions
 }
