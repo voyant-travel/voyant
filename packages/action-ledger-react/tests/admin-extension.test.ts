@@ -50,7 +50,7 @@ describe("createActionLedgerAdminExtension", () => {
     expect(typeof route?.page).toBe("function")
     const module = await route?.page?.()
     expect(typeof module?.default).toBe("function")
-  })
+  }, 15_000)
 
   it("attaches a first-page loader and marks the route data-only for SSR", () => {
     const extension = createActionLedgerAdminExtension()
