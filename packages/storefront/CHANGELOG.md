@@ -1,5 +1,13 @@
 # @voyantjs/storefront
 
+## 0.120.1
+
+### Patch Changes
+
+- f71eddf: Refactor oversized public storefront and customer portal modules into focused internal slices while preserving the existing public package entry points.
+- Updated dependencies [d097ac1]
+  - @voyantjs/products@0.119.2
+
 ## 0.120.0
 
 ### Minor Changes
