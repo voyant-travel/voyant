@@ -1,5 +1,12 @@
 # @voyantjs/crm-react
 
+## 0.119.1
+
+### Patch Changes
+
+- @voyantjs/crm@0.119.1
+- @voyantjs/identity-react@0.119.1
+
 ## 0.119.0
 
 ### Patch Changes

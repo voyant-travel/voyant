@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator-node
 
+## 0.107.5
+
+### Patch Changes
+
+- @voyantjs/workflows@0.107.5
+- @voyantjs/workflows-orchestrator@0.107.5
+
 ## 0.107.4
 
 ### Patch Changes
