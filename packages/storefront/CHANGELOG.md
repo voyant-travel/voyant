@@ -1,5 +1,24 @@
 # @voyantjs/storefront
 
+## 0.116.0
+
+### Patch Changes
+
+- 418fa82: Public departure reads (`GET /departures/:id`, `GET /products/:id/departures`, `GET /products/:id/departures/:id/itinerary`) now emit `Cache-Control: public, s-maxage=60, stale-while-revalidate=300` on success, making them eligible for the framework/platform shared cache (they are non-personalized catalog data; see #1686).
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+  - @voyantjs/core@0.107.0
+  - @voyantjs/hono@0.106.0
+  - @voyantjs/products@0.116.0
+  - @voyantjs/availability@0.113.0
+  - @voyantjs/bookings@0.116.0
+  - @voyantjs/crm@0.116.0
+  - @voyantjs/extras@0.116.0
+  - @voyantjs/finance@0.116.0
+  - @voyantjs/pricing@0.116.0
+  - @voyantjs/sellability@0.116.0
+
 ## 0.115.0
 
 ### Patch Changes

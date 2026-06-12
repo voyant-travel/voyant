@@ -1,5 +1,18 @@
 # @voyantjs/travel-composer-react
 
+## 0.107.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.114.0
+- @voyantjs/finance@0.116.0
+- @voyantjs/travel-composer@0.107.0
+- @voyantjs/flights@0.116.0
+- @voyantjs/bookings-react@0.116.0
+- @voyantjs/catalog-react@0.114.0
+- @voyantjs/flights-react@0.116.0
+- @voyantjs/crm-react@0.116.0
+
 ## 0.106.0
 
 ### Minor Changes

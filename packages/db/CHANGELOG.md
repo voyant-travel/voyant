@@ -1,5 +1,16 @@
 # @voyantjs/db
 
+## 0.105.0
+
+### Minor Changes
+
+- 418fa82: `createDbClient` now applies default query/connection timeouts (behavior change: slow queries fail after ~10-15s instead of hanging for the Worker's full 30s lifetime). Serverless adapter (Neon WebSocket `Pool`): `statement_timeout: 10_000` ms (server-side), `query_timeout: 15_000` ms (client-side backstop — transaction-mode poolers like PgBouncer may ignore `statement_timeout` as a startup parameter), `connectionTimeoutMillis: 10_000`. Node adapter (postgres-js): `statement_timeout: 10_000` ms via connection params, `connect_timeout: 10` s. Edge (neon-http) is unchanged — the HTTP client has no client-side timeout config. Override via the new `timeouts?: { statementMs?, queryMs?, connectMs? }` option (each accepts `false` to disable) or via explicit `serverlessPool`/`pool` values, which win over defaults. Also new: `createServerlessDbClient` warns once per connection string when pointed at a Neon DIRECT endpoint instead of the `-pooler` host (direct endpoints have a low max_connections ceiling that per-request pools exhaust); helpers `isPooledNeonConnectionString`, `isNeonConnectionString`, `resolveServerlessPoolConfig`, and `resolveNodePostgresOptions` are exported.
+
+### Patch Changes
+
+- Updated dependencies [418fa82]
+  - @voyantjs/core@0.107.0
+
 ## 0.104.4
 
 ### Patch Changes

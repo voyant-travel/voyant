@@ -1,5 +1,22 @@
 # @voyantjs/promotions
 
+## 0.111.1
+
+### Patch Changes
+
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+  - @voyantjs/core@0.107.0
+  - @voyantjs/db@0.105.0
+  - @voyantjs/hono@0.106.0
+  - @voyantjs/products@0.116.0
+  - @voyantjs/storefront@0.116.0
+  - @voyantjs/catalog@0.114.0
+  - @voyantjs/workflows@0.107.1
+
 ## 0.111.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # nextjs-booking-portal
 
+## 0.1.12
+
+### Patch Changes
+
+- @voyantjs/customer-portal@0.104.14
+- @voyantjs/finance@0.116.0
+- @voyantjs/finance-react@0.116.0
+- @voyantjs/customer-portal-react@0.104.14
+- @voyantjs/storefront-react@0.116.0
+
 ## 0.1.11
 
 ### Patch Changes

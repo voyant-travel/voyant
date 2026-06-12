@@ -1,5 +1,15 @@
 # @voyantjs/finance-react
 
+## 0.116.0
+
+### Patch Changes
+
+- @voyantjs/finance@0.116.0
+- @voyantjs/products-react@0.116.0
+- @voyantjs/availability-react@0.113.0
+- @voyantjs/bookings-react@0.116.0
+- @voyantjs/suppliers-react@0.111.1
+
 ## 0.115.0
 
 ### Minor Changes

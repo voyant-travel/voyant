@@ -1,5 +1,17 @@
 # @voyantjs/legal-react
 
+## 0.116.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.116.0
+- @voyantjs/products-react@0.116.0
+- @voyantjs/bookings-react@0.116.0
+- @voyantjs/crm-react@0.116.0
+- @voyantjs/distribution-react@0.109.1
+- @voyantjs/markets-react@0.107.1
+- @voyantjs/suppliers-react@0.111.1
+
 ## 0.115.0
 
 ### Minor Changes
