@@ -1,8 +1,14 @@
 import type { Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  BOOKING_BOOTSTRAP_INTENT_EVENT,
+  createBookingBootstrapIntentHandler,
+} from "./booking-intents.js"
 import { createStorefrontAdminRoutes } from "./routes-admin.js"
 import { createStorefrontPublicRoutes } from "./routes-public.js"
+import type { StorefrontRequestContext } from "./service.js"
 
 export type {
   GuestBookingGuardOptions,
@@ -175,9 +181,36 @@ export function createStorefrontHonoModule(
   options?: Parameters<typeof createStorefrontPublicRoutes>[0],
 ): HonoModule {
   return {
-    module: storefrontModule,
+    module: {
+      ...storefrontModule,
+      bootstrap: ({ bindings, eventBus }) => {
+        if (!options?.bookingIntents || !eventBus) return
+        const { resolveDb } = options.bookingIntents
+        eventBus.subscribe(
+          BOOKING_BOOTSTRAP_INTENT_EVENT,
+          createBookingBootstrapIntentHandler({
+            // The resolver returns either drizzle flavor; the bootstrap
+            // queries are runtime-compatible — narrow at this boundary
+            // (same stance as notifications' resolveDb).
+            resolveDb: () => resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase,
+            // The APP bus: booking events from the async reserve flow
+            // reach the same subscribers as a sync bootstrap.
+            eventBus,
+            env: bindings as StorefrontRequestContext["env"],
+            serviceOptions: options,
+          }),
+        )
+      },
+    },
     adminRoutes: createStorefrontAdminRoutes(options),
     publicPath: "/",
     publicRoutes: createStorefrontPublicRoutes(options),
   }
 }
+export {
+  BOOKING_BOOTSTRAP_INTENT_EVENT,
+  BOOKING_BOOTSTRAP_INTENT_KIND,
+  type BookingBootstrapIntentDeps,
+  type BookingBootstrapIntentPayload,
+  createBookingBootstrapIntentHandler,
+} from "./booking-intents.js"

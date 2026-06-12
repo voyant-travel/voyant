@@ -222,8 +222,12 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > per-isolate circuit breaker; adopted in plugin HTTP clients), 3.4 in-worker metrics middleware
 > (env.METRICS AE dataset: method/route/surface/cache-status blobs, duration/status/db-query-count
 > doubles — complements DISPATCH_METRICS), 3.5 k6 suite (storefront-firehose, payday-spike,
-> mixed + workflow_dispatch runner). Remaining Phase 3: 3.1 bounded-context worker split
-> (dedicated design PR), 3.2 queued write pipeline, logpush/SLO wiring, CI load-test cadence. Note: drizzle
+> mixed + workflow_dispatch runner). **3.2 SHIPPED (perf/phase-32-queued-writes):** async
+> booking-bootstrap intents — 202 + status polling over the transactional outbox (write_intents
+> mailbox, idempotency-key dedup, business-conflict-vs-infra-error retry semantics, checkout
+> capability issued at poll time, stale-intent sweep on the drain cron; migration 0063).
+> **3.1 is DEFERRED to last resort** (see its row above). Remaining: namespace logpush + SLO
+> alerts on the AE datasets, k6 staging baselines, CI load-test cadence — ops-side. Note: drizzle
 > snapshot-chain poisoning by timestamp-named migration files was diagnosed and fixed (stale
 > 20260609 snapshot removed, chain re-parented) — future `drizzle-kit generate` runs are clean.
 
@@ -265,7 +269,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 
 | # | Work item | Detail |
 |---|---|---|
-| 3.1 | **Bounded-context workers, shipped as packages.** Split into `public-read` (KV read models, no PG, tiny graph), `checkout/booking` (transactional, queue-backed), `operator-admin` (current app minus public), `workflows` (exists). Entries built with `@voyantjs/worker-runtime` factories so the split arrives via version bump, not template surgery (#1641). WfP routes per hostname/path at the dispatcher. | Failure isolation + each worker far below memory/startup ceilings |
+| 3.1 | **Bounded-context workers — DEFERRED, last-resort by decision (2026-06-12).** Phases 0–2 removed the pressures this was designed for: public reads no longer enter the isolate (dispatcher cache + KV read models), payloads/timeouts bound memory, per-plan dispatch limits give budget isolation, and the lean-auth split already covers cold-start's worst case. Decomposition's underweighted cost: event subscribers live per-worker, so the outbox drain needs the full subscriber graph — the "small" workers either pull the graph back in or stop being independent failure domains for the write path. **Revisit only when metrics say so**: sustained isolate memory pressure or cold-start p95 visibly limiting a real tenant in DISPATCH_METRICS / the in-worker AE dataset / k6 baselines — and then start with the smallest cut (a public-read script) justified by that data. | Avoided: multi-script publisher+dispatcher routing complexity, deploy version skew, subscriber-graph duplication |
 | 3.2 | **Queued write pipeline for spikes.** Booking/payment intents enqueued via outbox table or platform queue → platform-level consumer dispatching back into the namespace (Voyant Cloud already runs this exact pattern for webhook delivery and workflow schedules — extend it, don't invent it); controlled concurrency; idempotent processing; backpressure returns 202 + status polling instead of thundering herd. The per-slot DO serialization pattern is the escalation path for ultra-hot inventory (requires publisher DO-binding support). Pair with **per-dispatch CPU/subrequest limits** — available in WfP, currently unused (`dispatcher/src/index.ts:205` calls `namespace.get()` without limits) — as the platform-level bulkhead. | Payday spike survives by design |
 | 3.3 | **Resilience primitives in the platform client.** `@voyantjs` fetch/client defaults: timeouts, retry+jitter, circuit breaker, bulkhead config; per-subscriber timeouts (from 0.6) hardened into contract. | Slow dependency degrades, never cascades |
 | 3.4 | **Observability as a primitive.** Per-request structured metrics (duration, db time, query count, payload size) → Analytics Engine (supported on WfP user workers, but the build publisher must learn to emit the binding); platform fleet view via logpush/tail worker configured once on the dispatcher — covers every user worker in the namespace (none configured today); request-id tracing across worker hops; SLOs + alerts; Neon `pg_stat_statements` review cadence. | We can see the next #1686 before users do |
