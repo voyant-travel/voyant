@@ -26,6 +26,20 @@ describe.skipIf(!DB_AVAILABLE)("write intents", () => {
 
   beforeAll(async () => {
     await db.execute(/* sql */ `
+      CREATE TABLE IF NOT EXISTS "event_outbox" (
+        "id" text PRIMARY KEY,
+        "event_id" text NOT NULL,
+        "name" text NOT NULL,
+        "payload" jsonb,
+        "metadata" jsonb,
+        "status" text NOT NULL DEFAULT 'pending',
+        "attempts" integer NOT NULL DEFAULT 0,
+        "max_attempts" integer NOT NULL DEFAULT 8,
+        "next_attempt_at" timestamptz NOT NULL DEFAULT now(),
+        "last_error" text,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "delivered_at" timestamptz
+      );
       CREATE TABLE IF NOT EXISTS "write_intents" (
         "id" text PRIMARY KEY,
         "kind" text NOT NULL,
@@ -44,10 +58,12 @@ describe.skipIf(!DB_AVAILABLE)("write intents", () => {
 
   afterEach(async () => {
     await db.execute(/* sql */ `DELETE FROM "write_intents"`)
+    await db.execute(/* sql */ `DELETE FROM "event_outbox"`)
   })
 
   afterAll(async () => {
     await db.execute(/* sql */ `DROP TABLE IF EXISTS "write_intents"`)
+    await db.execute(/* sql */ `DROP TABLE IF EXISTS "event_outbox"`)
   })
 
   it("enqueues with a generated idempotency key and reads back", async () => {
@@ -118,5 +134,47 @@ describe.skipIf(!DB_AVAILABLE)("write intents", () => {
     expect(expired).toBe(1)
     expect((await getWriteIntent(db, old.id))?.status).toBe("failed")
     expect((await getWriteIntent(db, fresh.id))?.status).toBe("pending")
+  })
+
+  it("never expires an old intent whose outbox event is still PENDING (spike backlog)", async () => {
+    const { intent } = await enqueueWriteIntent(db, {
+      kind: "k",
+      payload: {},
+      idempotencyKey: "backlogged",
+    })
+    await db.execute(
+      /* sql */ `UPDATE "write_intents" SET "created_at" = now() - interval '2 hours' WHERE "id" = '${intent.id}'`,
+    )
+    // A queued (pending) outbox event still references the intent — the
+    // drain just hasn't reached it yet.
+    await db.execute(
+      /* sql */ `INSERT INTO "event_outbox" ("id", "event_id", "name", "payload", "status")
+        VALUES ('evob_backlog', 'evt_backlog', 'k.requested', '{"intentId": "${intent.id}"}'::jsonb, 'pending')`,
+    )
+
+    const expired = await expireStaleWriteIntents(db, { olderThanMinutes: 30 })
+
+    expect(expired).toBe(0)
+    expect((await getWriteIntent(db, intent.id))?.status).toBe("pending")
+  })
+
+  it("expires an old intent whose outbox event dead-lettered", async () => {
+    const { intent } = await enqueueWriteIntent(db, {
+      kind: "k",
+      payload: {},
+      idempotencyKey: "deadlettered",
+    })
+    await db.execute(
+      /* sql */ `UPDATE "write_intents" SET "created_at" = now() - interval '2 hours' WHERE "id" = '${intent.id}'`,
+    )
+    await db.execute(
+      /* sql */ `INSERT INTO "event_outbox" ("id", "event_id", "name", "payload", "status")
+        VALUES ('evob_dead', 'evt_dead', 'k.requested', '{"intentId": "${intent.id}"}'::jsonb, 'failed')`,
+    )
+
+    const expired = await expireStaleWriteIntents(db, { olderThanMinutes: 30 })
+
+    expect(expired).toBe(1)
+    expect((await getWriteIntent(db, intent.id))?.status).toBe("failed")
   })
 })

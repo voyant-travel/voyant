@@ -1,6 +1,7 @@
 import { newId } from "@voyantjs/schema-kit/typeid"
 import { eq, sql } from "drizzle-orm"
 
+import { eventOutboxTable } from "./schema/infra/event_outbox.js"
 import { type WriteIntentRow, writeIntentsTable } from "./schema/infra/write_intents.js"
 import type { DrizzleClient } from "./types.js"
 
@@ -77,9 +78,20 @@ export async function settleWriteIntent(
 }
 
 /**
- * Fail pending intents older than the window — the backstop for intents
- * whose `<kind>.requested` event dead-lettered in the outbox. Run from
- * the same cron as the outbox drain. Returns the failed count.
+ * Fail pending intents older than the window whose delivery can no
+ * longer happen — the backstop for dead-lettered or never-emitted
+ * events. Run from the same cron as the outbox drain.
+ *
+ * An old intent is NOT expired while a PENDING outbox event still
+ * references it (`event_outbox.payload->>'intentId'`): during a spike
+ * the outbox drains a bounded batch per tick, so a deep backlog can
+ * legitimately hold valid intents past the age window — sweeping those
+ * would fail exactly the requests the queue exists to protect, and the
+ * eventual delivery would then skip the no-longer-pending intent. This
+ * is why intent events MUST carry `{ intentId }` in their payload (the
+ * storefront handler's contract).
+ *
+ * Returns the failed count.
  */
 export async function expireStaleWriteIntents(
   db: DrizzleClient,
@@ -93,6 +105,11 @@ export async function expireStaleWriteIntents(
         "completed_at" = now()
     WHERE "status" = 'pending'
       AND "created_at" < now() - (${minutes} * interval '1 minute')
+      AND NOT EXISTS (
+        SELECT 1 FROM ${eventOutboxTable}
+        WHERE ${eventOutboxTable.status} = 'pending'
+          AND ${eventOutboxTable.payload} ->> 'intentId' = ${writeIntentsTable.id}
+      )
     RETURNING "id"
   `)) as unknown
   const rows = Array.isArray(result) ? result : ((result as { rows?: unknown[] }).rows ?? [])

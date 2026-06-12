@@ -178,20 +178,7 @@ export const storefrontModule: Module = {
 }
 
 export function createStorefrontHonoModule(
-  options?: Parameters<typeof createStorefrontPublicRoutes>[0] & {
-    /**
-     * Enables the async booking-bootstrap intent handler (queued write
-     * pipeline, RFC voyant#1687 §3.2). When set, the module's bootstrap
-     * subscribes the handler on the app bus — async-mode bootstrap
-     * requests (`?async=1` / `Prefer: respond-async`) are then executed
-     * out of band with outbox-grade retries. Without it, async-mode
-     * intents are stored but never processed (the stale sweep fails
-     * them), so wire this wherever the async route mode is used.
-     */
-    bookingIntents?: {
-      resolveDb: (bindings: Record<string, unknown>) => unknown
-    }
-  },
+  options?: Parameters<typeof createStorefrontPublicRoutes>[0],
 ): HonoModule {
   return {
     module: {

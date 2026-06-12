@@ -49,6 +49,18 @@ import type {
 } from "./validation-transport-eligibility.js"
 
 export interface StorefrontServiceOptions {
+  /**
+   * Enables the async booking-bootstrap mode (queued write pipeline,
+   * RFC voyant#1687 §3.2). When set, `createStorefrontHonoModule`'s
+   * bootstrap registers the intent handler on the app bus AND the
+   * public bootstrap route honors `?async=1` / `Prefer: respond-async`.
+   * When omitted, async-mode requests fall back to the SYNC path — an
+   * intent with no registered handler would otherwise 202 and then
+   * stale-fail, which is strictly worse than just doing the work.
+   */
+  bookingIntents?: {
+    resolveDb: (bindings: Record<string, unknown>) => unknown
+  }
   settings?: StorefrontSettingsInput
   resolveSettings?: (
     context: StorefrontRequestContext,

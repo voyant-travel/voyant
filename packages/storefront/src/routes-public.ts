@@ -262,9 +262,14 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         // thundering-herding the slot locks. The handler is
         // `createBookingBootstrapIntentHandler` (booking-intents.ts),
         // registered on the app bus by the deployment.
+        // Async mode is honored ONLY when the deployment wired the
+        // intent handler (`bookingIntents` option) — otherwise a 202'd
+        // intent would never be settled and the caller would watch it
+        // stale-fail. Unwired deployments silently get the sync path.
         const wantsAsync =
-          c.req.query("async") === "1" ||
-          (c.req.header("prefer") ?? "").toLowerCase().includes("respond-async")
+          Boolean(options?.bookingIntents) &&
+          (c.req.query("async") === "1" ||
+            (c.req.header("prefer") ?? "").toLowerCase().includes("respond-async"))
         if (wantsAsync) {
           const body = await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema)
           const db = c.get("db" as never) as NonNullable<StorefrontRequestContext["db"]>

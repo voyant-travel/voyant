@@ -120,9 +120,13 @@ describe("createBookingBootstrapIntentHandler", () => {
 })
 
 describe("async bootstrap route mode", () => {
-  function buildApp() {
+  function buildApp(options?: { withBookingIntents?: boolean }) {
     const emit = vi.fn(async () => {})
-    const routes = createStorefrontPublicRoutes()
+    const routes = createStorefrontPublicRoutes(
+      options?.withBookingIntents === false
+        ? undefined
+        : { bookingIntents: { resolveDb: () => ({}) } },
+    )
     const app = new Hono()
     app.use("*", async (c, next) => {
       c.set("db" as never, {} as never)
@@ -207,6 +211,30 @@ describe("async bootstrap route mode", () => {
     )
 
     expect(res.status).toBe(202)
+    expect(emit).not.toHaveBeenCalled()
+  })
+
+  it("falls back to the SYNC path when bookingIntents is not wired (no orphaned 202s)", async () => {
+    bootstrapBookingSession.mockResolvedValue({
+      status: "ok",
+      bootstrap: { session: { sessionId: "bs_sync" } },
+    })
+    const { app, emit } = buildApp({ withBookingIntents: false })
+
+    const res = await app.request(
+      "/bookings/sessions/bootstrap?async=1",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(VALID_INPUT),
+      },
+      { SESSION_CLAIMS_SECRET: "0123456789abcdef0123456789abcdef" },
+    )
+
+    // Synchronous 201 with the real session — never an unprocessable 202.
+    expect(res.status).toBe(201)
+    expect(bootstrapBookingSession).toHaveBeenCalledOnce()
+    expect(writeIntents.enqueueWriteIntent).not.toHaveBeenCalled()
     expect(emit).not.toHaveBeenCalled()
   })
 })
