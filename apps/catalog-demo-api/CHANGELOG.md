@@ -1,5 +1,11 @@
 # catalog-demo-api
 
+## 0.20.5
+
+### Patch Changes
+
+- @voyantjs/catalog@0.109.0
+
 ## 0.20.4
 
 ### Patch Changes

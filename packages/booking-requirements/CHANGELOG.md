@@ -1,5 +1,11 @@
 # @voyantjs/booking-requirements
 
+## 0.107.1
+
+### Patch Changes
+
+- @voyantjs/products@0.111.0
+
 ## 0.107.0
 
 ### Patch Changes

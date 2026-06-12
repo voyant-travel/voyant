@@ -1,5 +1,13 @@
 # @voyantjs/charters-react
 
+## 0.109.0
+
+### Patch Changes
+
+- Updated dependencies [478aa7c]
+  - @voyantjs/catalog-react@0.109.0
+  - @voyantjs/charters@0.109.0
+
 ## 0.108.0
 
 ### Minor Changes
