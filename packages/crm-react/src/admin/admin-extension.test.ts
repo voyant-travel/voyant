@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest"
 
 import {
   createCrmAdminExtension,
-  OrganizationDetailHost,
   OrganizationDetailSkeleton,
-  OrganizationsHost,
   OrganizationsListSkeleton,
-  PeopleHost,
   PeopleListSkeleton,
-  PersonDetailHost,
   PersonDetailSkeleton,
   personDetailBookingsTabSlot,
 } from "./index.js"
+import { OrganizationDetailHost } from "./organization-detail-host.js"
+import { OrganizationsHost } from "./organizations-host.js"
+import { PeopleHost } from "./people-host.js"
+import { PersonDetailHost } from "./person-detail-host.js"
 
 describe("createCrmAdminExtension", () => {
   it("contributes no navigation (people/organizations nav is base-nav-owned)", () => {
@@ -89,11 +89,11 @@ describe("createCrmAdminExtension", () => {
 })
 
 describe("packaged crm admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       OrganizationDetailHost,
       OrganizationDetailSkeleton,

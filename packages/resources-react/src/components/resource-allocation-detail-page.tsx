@@ -13,13 +13,19 @@ import {
   useStartTimes,
 } from "../index.js"
 import {
-  ResourceDetailSkeleton as BaseResourceDetailSkeleton,
   type ConfirmAction,
   ResourceDetailCard,
   ResourceDetailField,
   ResourceDetailHeader,
   ResourceDetailState,
 } from "./resource-detail-shared.js"
+import { ResourceAllocationDetailSkeleton } from "./resource-detail-skeletons.js"
+
+// The skeleton lives in `./resource-detail-skeletons.js` — a lean module —
+// so the resources admin extension factory can attach it as a
+// `pendingComponent` without pinning this page module into the workspace
+// chrome chunk. Re-exported here for backwards compatibility.
+export { ResourceAllocationDetailSkeleton }
 
 export interface ResourceAllocationDetailPageProps {
   id: string
@@ -163,11 +169,5 @@ export function ResourceAllocationDetailPage({
         </div>
       </ResourceDetailCard>
     </div>
-  )
-}
-
-export function ResourceAllocationDetailSkeleton() {
-  return (
-    <BaseResourceDetailSkeleton actionCount={3} detailRows={7} showNotes={false} stackedCards={0} />
   )
 }

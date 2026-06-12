@@ -8,26 +8,13 @@ import {
 } from "@voyantjs/admin"
 
 import { PersonDetailPage } from "../components/person-detail-page.js"
+import { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot } from "./slots.js"
 
-/**
- * Widget slot rendered as the person detail page's Bookings tab
- * (packaged-admin RFC §4.7 cycle resolution): `@voyantjs/bookings-react/ui`
- * depends on this package, so the host cannot import the bookings-owned
- * person-bookings card directly — instead the bookings admin extension
- * contributes a widget targeting this slot and the host mounts the tab
- * whenever a contribution exists. Widgets receive
- * {@link PersonDetailBookingsTabContext} as props.
- */
-export const personDetailBookingsTabSlot = "person.details.bookings-tab"
-
-/**
- * Render context handed to widget contributions targeting
- * {@link personDetailBookingsTabSlot}.
- */
-export interface PersonDetailBookingsTabContext {
-  /** The person whose detail page hosts the tab. */
-  personId: string
-}
+// The slot id + its context type live in `./slots.js` — a lean,
+// component-free module — so other domains' admin extension factories
+// (evaluated with workspace chrome) can import them without pulling this
+// host into the entry chunk. Re-exported here for backwards compatibility.
+export { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot }
 
 export interface PersonDetailHostProps {
   id: string

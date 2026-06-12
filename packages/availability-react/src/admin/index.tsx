@@ -14,15 +14,17 @@ import {
 // (its booking items link to slots), so this package consumes rather than
 // re-declares it.
 import type {} from "@voyantjs/bookings-react/admin"
-
+// Lean static only: the client module (fetcher). The page-data helper pulls
+// the availability query options (client + response schemas), so the index
+// loader resolves it via dynamic import instead of pinning it into the
+// workspace-chrome chunk that evaluates this factory.
+import { defaultFetcher } from "../client.js"
 import {
   AvailabilityPageSkeleton,
   AvailabilityRuleDetailSkeleton,
   AvailabilitySlotDetailSkeleton,
   AvailabilityStartTimeDetailSkeleton,
 } from "../components/availability-skeletons.js"
-import { defaultFetcher } from "../index.js"
-import { ensureAvailabilityPageData } from "./availability-page-data.js"
 
 /**
  * Semantic destinations the availability admin surfaces navigate to
@@ -44,24 +46,17 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the operator-grade
 // availability pages bound to their data wiring + semantic-destination
 // navigation. Host route files only bind route params onto these.
-export { AvailabilityIndexHost } from "./availability-index-host.js"
-export { ensureAvailabilityPageData } from "./availability-page-data.js"
-export {
-  OptionResourceTemplatesPanel,
-  type OptionResourceTemplatesPanelProps,
-} from "./option-resource-templates-panel.js"
-export {
-  AvailabilityRuleDetailHost,
-  type AvailabilityRuleDetailHostProps,
-} from "./rule-detail-host.js"
-export {
-  AvailabilitySlotDetailHost,
-  type AvailabilitySlotDetailHostProps,
-} from "./slot-detail-host.js"
-export {
-  AvailabilityStartTimeDetailHost,
-  type AvailabilityStartTimeDetailHostProps,
-} from "./start-time-detail-host.js"
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page,
+// host or panel component values — it is evaluated with the workspace
+// chrome, so a static re-export would pin the heavy availability modules
+// into the entry chunk. Consumers import them from their specific modules
+// (`@voyantjs/availability-react/admin/option-resource-templates-panel`,
+// ...); only their TYPES re-export here.
+export type { OptionResourceTemplatesPanelProps } from "./option-resource-templates-panel.js"
+export type { AvailabilityRuleDetailHostProps } from "./rule-detail-host.js"
+export type { AvailabilitySlotDetailHostProps } from "./slot-detail-host.js"
+export type { AvailabilityStartTimeDetailHostProps } from "./start-time-detail-host.js"
 
 export interface CreateAvailabilityAdminExtensionOptions {
   /** Mount path of the availability pages inside the admin workspace. Default `/availability`. */
@@ -133,9 +128,13 @@ export function createAvailabilityAdminExtension(
           ),
         // Awaits only what the slots tab + the products picker need for
         // first paint; the slot dialog's rules/start-times dimensions
-        // prefetch in the background.
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          ensureAvailabilityPageData(queryClient, loaderClient(runtime)),
+        // prefetch in the background. Dynamic import on purpose: the helper
+        // pulls the availability query options, and a static import here
+        // would pin them into the workspace-chrome chunk.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { ensureAvailabilityPageData } = await import("./availability-page-data.js")
+          return ensureAvailabilityPageData(queryClient, loaderClient(runtime))
+        },
         pendingComponent: AvailabilityPageSkeleton,
       },
       {

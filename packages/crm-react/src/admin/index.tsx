@@ -6,15 +6,11 @@ import {
   defineAdminExtension,
 } from "@voyantjs/admin"
 
-import {
-  defaultFetcher,
-  getActivitiesQueryOptions,
-  getOrganizationQueryOptions,
-  getOrganizationsQueryOptions,
-  getPeopleQueryOptions,
-  getPersonQueryOptions,
-  getQuotesQueryOptions,
-} from "../index.js"
+// Lean statics only: the client module (fetcher) and the skeletons. Query
+// options resolve via dynamic import inside the loaders so the data layer
+// (client + response schemas) stays out of the workspace-chrome chunk that
+// evaluates this factory.
+import { defaultFetcher } from "../client.js"
 import { OrganizationDetailSkeleton } from "./organization-detail-skeleton.js"
 import { OrganizationsListSkeleton } from "./organizations-list-skeleton.js"
 import { PeopleListSkeleton } from "./people-list-skeleton.js"
@@ -49,22 +45,19 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the CRM pages bound to
 // their data wiring + semantic-destination navigation. Host route files only
 // bind route params onto these.
-export {
-  OrganizationDetailHost,
-  type OrganizationDetailHostProps,
-} from "./organization-detail-host.js"
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page
+// or host component values — it is evaluated with the workspace chrome, so
+// a static host re-export would pin the heavy page modules into the entry
+// chunk. Hosts import from their specific modules; only their TYPES
+// re-export here, plus the lean slot id and skeletons.
+export type { OrganizationDetailHostProps } from "./organization-detail-host.js"
 export { OrganizationDetailSkeleton } from "./organization-detail-skeleton.js"
-export { OrganizationsHost } from "./organizations-host.js"
 export { OrganizationsListSkeleton } from "./organizations-list-skeleton.js"
-export { PeopleHost } from "./people-host.js"
 export { PeopleListSkeleton } from "./people-list-skeleton.js"
-export {
-  type PersonDetailBookingsTabContext,
-  PersonDetailHost,
-  type PersonDetailHostProps,
-  personDetailBookingsTabSlot,
-} from "./person-detail-host.js"
+export type { PersonDetailHostProps } from "./person-detail-host.js"
 export { PersonDetailSkeleton } from "./person-detail-skeleton.js"
+export { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot } from "./slots.js"
 
 export interface CreateCrmAdminExtensionOptions {
   /** Mount path of the people pages inside the admin workspace. Default `/people`. */
@@ -133,10 +126,15 @@ export function createCrmAdminExtension(
         ssr: "data-only",
         page: () =>
           import("./people-host.js").then((module) => adminRoutePageModule(module.PeopleHost)),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose: the query options pull the CRM data
+        // layer (client + response schemas), and a static import here would
+        // pin it into the workspace-chrome chunk that evaluates this factory.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getPeopleQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getPeopleQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
-          ),
+          )
+        },
         pendingComponent: PeopleListSkeleton,
       },
       {
@@ -149,6 +147,10 @@ export function createCrmAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the people index loader above.
+          const { getOrganizationQueryOptions, getPersonQueryOptions } = await import(
+            "../query-options.js"
+          )
           const client = loaderClient(runtime)
           const person = await queryClient.ensureQueryData(getPersonQueryOptions(client, id))
 
@@ -170,10 +172,13 @@ export function createCrmAdminExtension(
           import("./organizations-host.js").then((module) =>
             adminRoutePageModule(module.OrganizationsHost),
           ),
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(
+        // Dynamic import on purpose — see the people index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getOrganizationsQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
             getOrganizationsQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
-          ),
+          )
+        },
         pendingComponent: OrganizationsListSkeleton,
       },
       {
@@ -186,6 +191,13 @@ export function createCrmAdminExtension(
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id
           if (!id) return
+          // Dynamic import on purpose — see the people index loader above.
+          const {
+            getActivitiesQueryOptions,
+            getOrganizationQueryOptions,
+            getPeopleQueryOptions,
+            getQuotesQueryOptions,
+          } = await import("../query-options.js")
           const client = loaderClient(runtime)
 
           await Promise.all([

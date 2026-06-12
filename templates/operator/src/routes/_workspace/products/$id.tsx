@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
-import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin"
+import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin/option-resource-templates-panel"
 import { getProductQueryOptions } from "@voyantjs/products-react"
 import {
   getChannelsQueryOptions,

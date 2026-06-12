@@ -22,32 +22,18 @@ import type { BookingPaymentsSummaryRow } from "../components/booking-payments-s
 import { type BookingRecord, useBooking } from "../index.js"
 import { BookingDocumentsTable } from "./booking-documents-table.js"
 import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
+import {
+  bookingDetailFinanceEndSlot,
+  bookingDetailFinanceStartSlot,
+  bookingDetailInvoicesTabSlot,
+} from "./slots.js"
 import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events.js"
 
-/**
- * Widget slot rendered as the booking detail page's Invoices tab
- * (packaged-admin RFC §4.7 cycle resolution): `@voyantjs/finance-react/ui` depends
- * on this package, so the host cannot import the finance-owned invoices card
- * directly — instead finance's admin extension contributes a widget targeting
- * this slot and the host mounts the tab whenever a contribution exists.
- * Widgets receive {@link BookingDetailHostSlotContext} as props.
- */
-export const bookingDetailInvoicesTabSlot = "booking.details.invoices-tab"
-
-/**
- * Widget slot rendered at the top of the booking detail page's Finance tab
- * (same §4.7 cycle resolution as {@link bookingDetailInvoicesTabSlot}).
- * `@voyantjs/finance-react/ui` contributes its pending payment-sessions card here.
- * Widgets receive {@link BookingDetailHostSlotContext} as props.
- */
-export const bookingDetailFinanceStartSlot = "booking.details.finance-start"
-
-/**
- * Widget slot rendered at the bottom of the booking detail page's Finance
- * tab. `@voyantjs/finance-react/ui` contributes its payment-policy override card
- * here. Widgets receive {@link BookingDetailHostSlotContext} as props.
- */
-export const bookingDetailFinanceEndSlot = "booking.details.finance-end"
+// The slot ids live in `./slots.js` — a lean, component-free module — so
+// other domains' admin extension factories (evaluated with workspace chrome)
+// can import them without pulling this host into the entry chunk.
+// Re-exported here for backwards compatibility.
+export { bookingDetailFinanceEndSlot, bookingDetailFinanceStartSlot, bookingDetailInvoicesTabSlot }
 
 /**
  * Render context handed to the host's app-supplied slots AND to widget

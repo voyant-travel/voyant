@@ -15,13 +15,19 @@ import {
   useSlots,
 } from "../index.js"
 import {
-  ResourceDetailSkeleton as BaseResourceDetailSkeleton,
   type ConfirmAction,
   ResourceDetailCard,
   ResourceDetailField,
   ResourceDetailHeader,
   ResourceDetailState,
 } from "./resource-detail-shared.js"
+import { ResourceAssignmentDetailSkeleton } from "./resource-detail-skeletons.js"
+
+// The skeleton lives in `./resource-detail-skeletons.js` — a lean module —
+// so the resources admin extension factory can attach it as a
+// `pendingComponent` without pinning this page module into the workspace
+// chrome chunk. Re-exported here for backwards compatibility.
+export { ResourceAssignmentDetailSkeleton }
 
 export interface ResourceAssignmentDetailPageProps {
   id: string
@@ -172,11 +178,5 @@ export function ResourceAssignmentDetailPage({
         </ResourceDetailCard>
       ) : null}
     </div>
-  )
-}
-
-export function ResourceAssignmentDetailSkeleton() {
-  return (
-    <BaseResourceDetailSkeleton actionCount={3} detailRows={9} showNotes={false} stackedCards={0} />
   )
 }

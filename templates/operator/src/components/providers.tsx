@@ -5,7 +5,11 @@ import {
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
 import { AllocationUiMessagesProvider } from "@voyantjs/allocation-ui/i18n"
-import { VoyantAvailabilityProvider } from "@voyantjs/availability-react"
+// Provider subpath on purpose: the availability main barrel re-exports the
+// whole data layer (schemas pull `@voyantjs/availability` validation), and
+// this module evaluates with workspace chrome — the `/provider` entry is
+// the lean context-only module.
+import { VoyantAvailabilityProvider } from "@voyantjs/availability-react/provider"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/i18n"
 import { CatalogUiMessagesProvider } from "@voyantjs/catalog-react/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/crm-react/i18n"

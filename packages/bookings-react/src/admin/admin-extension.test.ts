@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
 
+import { BookingDetailHost } from "./booking-detail-host.js"
+import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
+import { BookingsHost } from "./bookings-host.js"
 import {
-  BookingDetailHost,
   BookingDetailSkeleton,
-  BookingInvoiceSheet,
-  BookingsHost,
   BookingsListSkeleton,
   bookingDetailSearchSchema,
   bookingsFiltersToSearch,
@@ -134,11 +134,13 @@ describe("bookings list search contract", () => {
 })
 
 describe("packaged bookings admin hosts", () => {
-  // Importable + renderable component types — the operator's thin route hosts
-  // bind these directly, so a broken import surface fails here, not in an app
-  // build. (Behavioral rendering needs the workspace provider stack and lives
-  // with the host apps.)
-  it("exports the page hosts as components from the admin entrypoint", () => {
+  // Importable + renderable component types — host apps bind these from
+  // their SPECIFIC modules (the admin barrel re-exports types only, so the
+  // workspace-chrome chunk that evaluates the factory never pins the heavy
+  // hosts). A broken import surface fails here, not in an app build.
+  // (Behavioral rendering needs the workspace provider stack and lives with
+  // the host apps.)
+  it("exports the page hosts as components from their specific modules", () => {
     for (const host of [
       BookingDetailHost,
       BookingDetailSkeleton,

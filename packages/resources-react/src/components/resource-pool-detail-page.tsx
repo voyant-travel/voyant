@@ -27,13 +27,19 @@ import {
 import { useResourcePoolMembers } from "./resource-detail-data.js"
 import { ResourceAssignmentSummary } from "./resource-detail-page.js"
 import {
-  ResourceDetailSkeleton as BaseResourceDetailSkeleton,
   type ConfirmAction,
   ResourceDetailCard,
   ResourceDetailField,
   ResourceDetailHeader,
   ResourceDetailState,
 } from "./resource-detail-shared.js"
+import { ResourcePoolDetailSkeleton } from "./resource-detail-skeletons.js"
+
+// The skeleton lives in `./resource-detail-skeletons.js` — a lean module —
+// so the resources admin extension factory can attach it as a
+// `pendingComponent` without pinning this page module into the workspace
+// chrome chunk. Re-exported here for backwards compatibility.
+export { ResourcePoolDetailSkeleton }
 
 export interface ResourcePoolDetailPageProps {
   id: string
@@ -245,10 +251,6 @@ export function ResourcePoolDetailPage({
       </Card>
     </div>
   )
-}
-
-export function ResourcePoolDetailSkeleton() {
-  return <BaseResourceDetailSkeleton actionCount={2} detailRows={4} stackedCards={3} />
 }
 
 export function PoolAllocationSummary({

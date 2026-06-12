@@ -11,23 +11,19 @@ import {
 // this package already peer-depends on `@voyantjs/crm-react/ui`.
 import { personDetailBookingsTabSlot } from "@voyantjs/crm-react/admin"
 import type { ComponentType, ReactNode } from "react"
+import * as React from "react"
 import { z } from "zod"
+// Lean statics only: the client module (fetcher), query-key types, and the
+// skeletons. Query options and page data helpers resolve via dynamic import
+// inside the loaders so the data layer (clients + response schemas) stays
+// out of the workspace-chrome chunk that evaluates this factory.
+import { defaultFetcher } from "../client.js"
 import type { BookingDetailTabValue } from "../components/booking-detail-page.js"
 import type { BookingListFiltersState } from "../components/booking-list.js"
-import {
-  type BookingsListSortDir,
-  type BookingsListSortField,
-  defaultFetcher,
-  getBookingActivityQueryOptions,
-  getBookingNotesQueryOptions,
-  getBookingQueryOptions,
-  getBookingsQueryOptions,
-  getSupplierStatusesQueryOptions,
-  getTravelersQueryOptions,
-} from "../index.js"
+import type { BookingsListSortDir, BookingsListSortField } from "../query-keys.js"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
 import { BookingsListSkeleton } from "./bookings-list-skeleton.js"
-import { PersonBookingsWidget } from "./person-bookings-widget.js"
+import type { PersonBookingsWidgetProps } from "./person-bookings-widget.js"
 
 /**
  * Semantic destinations the bookings admin surfaces navigate to
@@ -79,36 +75,31 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the bookings pages
 // bound to their data wiring + semantic-destination navigation. Host route
 // files only bind route params/search state onto these.
+//
+// Endgame rule (packaged-admin RFC §4.8): this barrel re-exports NO page
+// or host component values — it is evaluated with the workspace chrome, so
+// a static host re-export would pin the heavy page modules into the entry
+// chunk. Hosts/dialogs/widgets import from their specific modules
+// (`@voyantjs/bookings-react/admin/booking-detail-host`, ...); only their
+// TYPES re-export here, plus the lean slot ids and skeletons.
+export type { BookingContractDialogProps } from "./booking-contract-dialog.js"
+export type {
+  BookingDetailHostProps,
+  BookingDetailHostSlot,
+  BookingDetailHostSlotContext,
+  BookingDetailHostSlots,
+} from "./booking-detail-host.js"
+export { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
+export type { BookingDocumentsTableProps } from "./booking-documents-table.js"
+export type { BookingInvoiceSheetProps } from "./booking-invoice-sheet.js"
+export type { BookingsHostProps } from "./bookings-host.js"
+export { BookingsListSkeleton } from "./bookings-list-skeleton.js"
+export type { PersonBookingsWidgetProps } from "./person-bookings-widget.js"
 export {
-  BookingContractDialog,
-  type BookingContractDialogProps,
-} from "./booking-contract-dialog.js"
-export {
-  BookingDetailHost,
-  type BookingDetailHostProps,
-  type BookingDetailHostSlot,
-  type BookingDetailHostSlotContext,
-  type BookingDetailHostSlots,
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
-} from "./booking-detail-host.js"
-export { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
-export {
-  BookingDocumentsTable,
-  type BookingDocumentsTableProps,
-} from "./booking-documents-table.js"
-export {
-  BookingInvoiceSheet,
-  type BookingInvoiceSheetProps,
-} from "./booking-invoice-sheet.js"
-export { BookingsHost, type BookingsHostProps } from "./bookings-host.js"
-export { BookingsListSkeleton } from "./bookings-list-skeleton.js"
-export {
-  PersonBookingsWidget,
-  type PersonBookingsWidgetProps,
-} from "./person-bookings-widget.js"
-export { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events.js"
+} from "./slots.js"
 
 const bookingsListSortBySchema = z.enum([
   "bookingNumber",
@@ -273,6 +264,26 @@ function loaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }
 
+const LazyPersonBookingsWidget = React.lazy(() =>
+  import("./person-bookings-widget.js").then((module) => ({
+    default: module.PersonBookingsWidget,
+  })),
+)
+
+/**
+ * Suspense-wrapped lazy mount of {@link LazyPersonBookingsWidget}. The widget
+ * registry takes a sync component, but the card (and the booking-list stack
+ * behind it) must not load with workspace chrome — the chunk fetches when the
+ * CRM person page actually renders the Bookings tab.
+ */
+function PersonBookingsWidgetLoader(props: PersonBookingsWidgetProps) {
+  return (
+    <React.Suspense fallback={null}>
+      <LazyPersonBookingsWidget {...props} />
+    </React.Suspense>
+  )
+}
+
 /**
  * The bookings admin contribution (packaged-admin RFC Phase 3,
  * `@voyantjs/<domain>-ui/admin` convention).
@@ -333,8 +344,14 @@ export function createBookingsAdminExtension(
         ssr: "data-only",
         validateSearch: (search) => bookingsIndexSearchSchema.parse(search),
         pendingComponent: BookingsListSkeleton,
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          queryClient.ensureQueryData(getBookingsQueryOptions(loaderClient(runtime))),
+        // Dynamic import on purpose: the query options pull the bookings
+        // data layer (client + response schemas), and a static import here
+        // would pin it into the workspace-chrome chunk that evaluates this
+        // factory. The loader and the page resolve shared modules once.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getBookingsQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(getBookingsQueryOptions(loaderClient(runtime)))
+        },
         page: async () => {
           const module = await import("./pages/bookings-index-page.js")
           const Page = module.default
@@ -360,6 +377,14 @@ export function createBookingsAdminExtension(
           const id = params.id
           if (!id || id === "new") return
 
+          // Dynamic import on purpose — see the index loader above.
+          const {
+            getBookingActivityQueryOptions,
+            getBookingNotesQueryOptions,
+            getBookingQueryOptions,
+            getSupplierStatusesQueryOptions,
+            getTravelersQueryOptions,
+          } = await import("../query-options.js")
           const client = loaderClient(runtime)
 
           // Critical: booking itself drives the header. Everything else
@@ -396,7 +421,7 @@ export function createBookingsAdminExtension(
         // The widget registry is untyped (`Record<string, unknown>` props);
         // the typed contract is `PersonDetailBookingsTabContext`, which
         // crm-ui's person detail host passes verbatim to this slot's widgets.
-        component: PersonBookingsWidget as unknown as ComponentType<Record<string, unknown>>,
+        component: PersonBookingsWidgetLoader as unknown as ComponentType<Record<string, unknown>>,
       } satisfies AdminWidgetContribution,
     ],
   })
