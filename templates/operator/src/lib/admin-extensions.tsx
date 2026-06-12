@@ -42,9 +42,11 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "channelSync"
   | "contractNumberSeries"
   | "contractTemplates"
   | "contracts"
+  | "flights"
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
@@ -166,6 +168,33 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
       supplierInvoices: messages.supplierInvoices,
       profitability: messages.profitability,
     },
+  })
+}
+
+// Flights is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Flights item is part of the BASE
+// operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
+// an entry here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route implementations + search
+// contracts (flightsIndexSearchSchema / flightsBookSearchSchema), and the
+// host assembles them into its code-based route tree — no route files. The
+// booking wizard mounts as a flat sibling of the search page (the old
+// file-based tree's `flights_.book` escape), and its hand-written
+// `flightBooking.start` resolver lives in src/lib/admin-destinations.ts.
+function createFlightsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.flights({ labels: { flights: messages.flights } })
+}
+
+// Distribution is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Channel sync item is part of the
+// BASE operator navigation (createOperatorAdminNavigation in
+// @voyantjs/admin), so an entry here would duplicate it. It's registered for
+// the routes seam: the contribution carries the package-owned channel-sync
+// page (no search contract — the page keeps its filters local), and the host
+// assembles it into its code-based route tree — no route file.
+function createDistributionExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.distribution({
+    labels: { channelSync: messages.channelSync },
   })
 }
 
@@ -332,9 +361,11 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  channelSync: "Channel sync",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",
+  flights: "Flights",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
@@ -364,7 +395,9 @@ export function createOperatorAdminExtensions(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createCrmExtension(messages),
+    createDistributionExtension(messages),
     createFinanceExtension(messages),
+    createFlightsExtension(messages),
     createSuppliersExtension(messages),
     createLegalExtension(messages),
     createResourcesExtension(messages),

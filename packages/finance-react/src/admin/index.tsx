@@ -103,6 +103,10 @@ declare module "@voyantjs/admin" {
     "payment.list": Record<string, never>
     /** A supplier's detail page. */
     "supplier.detail": { supplierId: string }
+    /** The supplier-invoices (accounts payable) list page. */
+    "supplierInvoice.list": Record<string, never>
+    /** A supplier invoice's detail page. */
+    "supplierInvoice.detail": { supplierInvoiceId: string }
   }
 }
 
@@ -126,6 +130,7 @@ export { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
 export type { PaymentDialogProps } from "./payment-dialog.js"
 export type { RecordPaymentDialogProps } from "./record-payment-dialog.js"
 export type { SupplierPaymentPolicyWidgetProps } from "./supplier-payment-policy-widget.js"
+export type { SupplierPicker } from "./use-supplier-picker.js"
 
 export interface CreateFinanceAdminExtensionOptions {
   /** Mount path of the finance pages inside the admin workspace. Default `/finance`. */
@@ -151,7 +156,7 @@ export interface CreateFinanceAdminExtensionOptions {
  * If the base nav ever drops the finance group, this extension is where the
  * entries move.
  *
- * ROUTES: six of the eight contributions carry the FULL route implementation
+ * ROUTES: all eight contributions carry the FULL route implementation
  * (packaged-admin RFC §4.8 endgame) — a lazy `page` module loader, a data
  * loader fed by the host runtime (`baseUrl` + cookie-forwarding fetcher),
  * `ssr: "data-only"`, and the pending skeleton where the operator route had
@@ -161,8 +166,13 @@ export interface CreateFinanceAdminExtensionOptions {
  * param-taking pages read the matched `$id` off `AdminRoutePageProps` and
  * bind it onto {@link InvoiceDetailHost} / {@link PaymentDetailHost}.
  * Cross-route links resolve through the semantic destinations declared
- * above. The two supplier-invoices contributions remain metadata-only — see
- * their inline notes.
+ * above. The supplier-invoices pages carry their previously app-owned wiring
+ * package-side now: attachment uploads post to the template-level
+ * `/v1/uploads` route through the shared finance provider context (the
+ * `BookingInvoicesWidget` precedent), inline supplier creation rides the
+ * suppliers package's `useSupplierMutation`, and the allocation dialog's
+ * cross-domain target search composes the bookings / products /
+ * availability packages' query options through the same context client.
  *
  * WIDGETS: the cycle-resolution piece (RFC §4.7). The booking detail page
  * needs the finance-owned invoices card, but this package peer-depends on
@@ -299,29 +309,38 @@ export function createFinanceAdminExtension(
         },
         pendingComponent: PaymentDetailSkeleton,
       },
-      /**
-       * Metadata-only on purpose: the operator's supplier-invoices pages
-       * carry app-owned wiring (file uploads to the app's `/v1/uploads`,
-       * inline supplier creation, cross-domain target search), so they
-       * remain host-route-file-bound until the package API can carry that
-       * wiring.
-       */
       {
         id: "finance-supplier-invoices-index",
         path: `${basePath}/supplier-invoices`,
         title: supplierInvoices,
+        destination: "supplierInvoice.list",
+        ssr: "data-only",
+        page: () => import("./pages/supplier-invoices-index.js"),
+        // Dynamic import on purpose — see the invoices index loader above.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getSupplierInvoicesQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
+            getSupplierInvoicesQueryOptions(runtimeClient(runtime)),
+          )
+        },
       },
-      /**
-       * Metadata-only on purpose: the operator's supplier-invoices pages
-       * carry app-owned wiring (file uploads to the app's `/v1/uploads`,
-       * inline supplier creation, cross-domain target search), so they
-       * remain host-route-file-bound until the package API can carry that
-       * wiring.
-       */
       {
         id: "finance-supplier-invoices-detail",
         path: `${basePath}/supplier-invoices/$id`,
         title: supplierInvoices,
+        destination: "supplierInvoice.detail",
+        destinationParams: { id: "supplierInvoiceId" },
+        ssr: "data-only",
+        page: () => import("./pages/supplier-invoice-detail.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          // Dynamic import on purpose — see the invoices index loader above.
+          const { getSupplierInvoiceQueryOptions } = await import("../query-options.js")
+          return queryClient.ensureQueryData(
+            getSupplierInvoiceQueryOptions(runtimeClient(runtime), id),
+          )
+        },
       },
       {
         id: "finance-profitability",
