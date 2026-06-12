@@ -1,9 +1,7 @@
-// agent-quality: file-size exception -- owner: flights-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
 import type {
-  CabinClass,
   FlightOffer,
   FlightSearchRequest,
   PassengerCounts,
@@ -19,62 +17,41 @@ import {
   SheetTitle,
 } from "@voyantjs/ui/components/sheet"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ChevronLeft, ChevronRight, Pencil, Plane } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plane } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { flightsQueryKeys, useAirlines, useAirports, useFlightSearch } from "../index.js"
-import {
-  EMPTY_FLIGHT_FILTERS,
-  FlightFiltersBar,
-  type FlightFiltersValue,
-} from "./flight-filters-bar.js"
-import { FlightItinerary } from "./flight-itinerary.js"
+import { FlightFiltersBar, type FlightFiltersValue } from "./flight-filters-bar.js"
 import { FlightOfferDetail } from "./flight-offer-detail.js"
 import { FlightOfferRow } from "./flight-offer-row.js"
-import { FlightSearchForm, type TripType } from "./flight-search-form.js"
-import { DEFAULT_POPULAR_ROUTES, type PopularRoute, PopularRoutes } from "./popular-routes.js"
+import { FlightSearchForm } from "./flight-search-form.js"
+import type { FlightsPageProps, FlowStage } from "./flights-page-types.js"
 
-const PAGE_SIZE = 20
+export type {
+  FlightBookingNavigationTarget,
+  FlightsPageProps,
+  FlightsPageSearchChangeOptions,
+  FlightsPageSearchParams,
+} from "./flights-page-types.js"
 
-type FlowStage = "outbound" | "return" | "ready"
-
-export interface FlightsPageSearchParams {
-  tripType?: TripType
-  from?: string
-  to?: string
-  depart?: string
-  ret?: string
-  leg?: "outbound" | "return"
-  outboundOfferId?: string
-  returnOfferId?: string
-  pax_a?: number
-  pax_c?: number
-  pax_i?: number
-  cabin?: CabinClass
-  carriers?: string[]
-  maxStops?: number
-  maxPrice?: number
-  page?: number
-}
-
-export interface FlightsPageSearchChangeOptions {
-  replace?: boolean
-}
-
-export interface FlightBookingNavigationTarget {
-  outboundOfferId: string
-  returnOfferId?: string
-  passengers: PassengerCounts
-  cabin: CabinClass
-}
-
-export interface FlightsPageProps {
-  search: FlightsPageSearchParams
-  onSearchChange: (next: FlightsPageSearchParams, options?: FlightsPageSearchChangeOptions) => void
-  onBookOffer: (target: FlightBookingNavigationTarget) => void
-  routes?: PopularRoute[]
-  className?: string
-}
+import {
+  CacheColdBanner,
+  hasActiveFilters,
+  NoResults,
+  PickedLegBanner,
+  ReadyToBookPanel,
+} from "./flights-page-panels.js"
+import {
+  composeRequest,
+  EMPTY_REQUEST_FOR_DISABLED,
+  legHeading,
+  PAGE_SIZE,
+  readOfferFromCache,
+  selectLabel,
+  urlToBaseRequest,
+  urlToFilters,
+} from "./flights-page-utils.js"
+import { DEFAULT_POPULAR_ROUTES, PopularRoutes } from "./popular-routes.js"
 
 export function FlightsPage({
   search,
@@ -475,235 +452,4 @@ export function FlightsPage({
       </Sheet>
     </div>
   )
-}
-
-function PickedLegBanner({
-  label,
-  offer,
-  carrierName,
-  airportName,
-  onChange,
-}: {
-  label: string
-  offer: FlightOffer
-  carrierName: (code: string) => string | undefined
-  airportName: (code: string) => string | undefined
-  onChange: () => void
-}) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
-  const itinerary = offer.itineraries[0]
-  if (!itinerary) return null
-  return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="font-medium text-[11px] uppercase tracking-wider text-emerald-700">
-          {label}
-        </span>
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-base tabular-nums">
-            {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
-          </span>
-          <Button variant="ghost" size="sm" onClick={onChange}>
-            <Pencil className="mr-1 h-3.5 w-3.5" />
-            {messages.change}
-          </Button>
-        </div>
-      </div>
-      <FlightItinerary
-        itinerary={itinerary}
-        compact
-        carrierName={carrierName}
-        airportName={airportName}
-      />
-    </div>
-  )
-}
-
-function ReadyToBookPanel({
-  outbound,
-  returnLeg,
-  carrierName,
-  airportName,
-  onChangeOutbound,
-  onChangeReturn,
-  onContinue,
-}: {
-  outbound: FlightOffer
-  returnLeg: FlightOffer
-  carrierName: (code: string) => string | undefined
-  airportName: (code: string) => string | undefined
-  onChangeOutbound: () => void
-  onChangeReturn: () => void
-  onContinue: () => void
-}) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
-  const total = Number(outbound.totalPrice.amount) + Number(returnLeg.totalPrice.amount)
-  const currency = outbound.totalPrice.currency
-  return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <PickedLegBanner
-          label={messages.selectedOutbound}
-          offer={outbound}
-          carrierName={carrierName}
-          airportName={airportName}
-          onChange={onChangeOutbound}
-        />
-        <PickedLegBanner
-          label={messages.selectedReturn}
-          offer={returnLeg}
-          carrierName={carrierName}
-          airportName={airportName}
-          onChange={onChangeReturn}
-        />
-      </div>
-      <div className="flex flex-col items-stretch gap-3 rounded-xl border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col leading-tight">
-          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">
-            {messages.tripTotal}
-          </span>
-          <span className="font-semibold text-2xl tabular-nums">
-            {formatMoney(total.toFixed(2), currency)}
-          </span>
-          <span className="text-muted-foreground text-xs">{messages.tripTotalDescription}</span>
-        </div>
-        <Button size="lg" onClick={onContinue} className="md:px-8">
-          {messages.continueToBooking}
-          <ChevronRight className="ml-1 h-4 w-4" />
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-function CacheColdBanner({ message, onReset }: { message: string; onReset: () => void }) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
-  return (
-    <div className="rounded-md border border-dashed bg-card p-6 text-center text-muted-foreground text-sm">
-      <p>{message}</p>
-      <Button className="mt-3" variant="outline" onClick={onReset}>
-        <ChevronLeft className="mr-1 h-4 w-4" />
-        {messages.pickOutboundAgain}
-      </Button>
-    </div>
-  )
-}
-
-function legHeading(
-  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightsPage"],
-  stage: FlowStage,
-  isRoundTrip: boolean,
-  from?: string,
-  to?: string,
-): string {
-  if (!isRoundTrip) return messages.availableFlights
-  if (stage === "outbound") {
-    return formatMessage(messages.outboundHeading, { from: from ?? "?", to: to ?? "?" })
-  }
-  if (stage === "return") {
-    return formatMessage(messages.returnHeading, { from: to ?? "?", to: from ?? "?" })
-  }
-  return messages.tripHeading
-}
-
-function selectLabel(
-  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightsPage"],
-  stage: FlowStage,
-  isRoundTrip: boolean,
-): string {
-  if (!isRoundTrip) return messages.bookThisFlight
-  if (stage === "outbound") return messages.selectOutbound
-  if (stage === "return") return messages.selectReturn
-  return messages.continueToBooking
-}
-
-function NoResults({ hasFilters }: { hasFilters: boolean }) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
-  return (
-    <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground text-sm">
-      {hasFilters ? messages.noFilteredResults : messages.noRouteResults}
-    </div>
-  )
-}
-
-function hasActiveFilters(filters: FlightFiltersValue): boolean {
-  return filters.carriers.length > 0 || filters.maxStops != null || filters.maxPrice != null
-}
-
-function readOfferFromCache(
-  qc: ReturnType<typeof useQueryClient>,
-  offerId: string,
-): FlightOffer | null {
-  const cached = qc.getQueryData<{ offer: FlightOffer }>(flightsQueryKeys.offerDetail(offerId))
-  return cached?.offer ?? null
-}
-
-function formatMoney(amount: string, currency: string): string {
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
-const EMPTY_REQUEST_FOR_DISABLED: FlightSearchRequest = {
-  slices: [],
-  passengers: { adults: 1 },
-  cabin: "economy",
-}
-
-function urlToBaseRequest(
-  search: FlightsPageSearchParams,
-  leg: "outbound" | "return",
-): FlightSearchRequest | null {
-  if (!search.from || !search.to || !search.depart) return null
-  const isRoundTrip = (search.tripType ?? "round_trip") === "round_trip"
-  if (leg === "return" && (!isRoundTrip || !search.ret)) return null
-
-  const slice =
-    leg === "outbound"
-      ? { origin: search.from, destination: search.to, departureDate: search.depart }
-      : { origin: search.to, destination: search.from, departureDate: search.ret as string }
-
-  return {
-    slices: [slice],
-    passengers: {
-      adults: search.pax_a ?? 1,
-      children: search.pax_c ?? 0,
-      infants: search.pax_i ?? 0,
-    },
-    cabin: search.cabin ?? "economy",
-  }
-}
-
-function urlToFilters(search: FlightsPageSearchParams): FlightFiltersValue {
-  return {
-    ...EMPTY_FLIGHT_FILTERS,
-    carriers: search.carriers ?? [],
-    maxStops: search.maxStops ?? null,
-    maxPrice: search.maxPrice ?? null,
-  }
-}
-
-function composeRequest(
-  base: FlightSearchRequest,
-  filters: FlightFiltersValue,
-  page: number,
-): FlightSearchRequest {
-  const searchOptions: FlightSearchRequest["searchOptions"] = {}
-  if (filters.carriers.length > 0) searchOptions.includeCarriers = filters.carriers
-  if (filters.maxStops === 0) searchOptions.directOnly = true
-  else if (filters.maxStops != null) searchOptions.maxStops = filters.maxStops
-  if (filters.maxPrice != null) searchOptions.maxPrice = filters.maxPrice
-
-  return {
-    ...base,
-    ...(Object.keys(searchOptions).length > 0 ? { searchOptions } : {}),
-    pagination: {
-      limit: PAGE_SIZE,
-      ...(page > 1 ? { cursor: String(page) } : {}),
-    },
-  }
 }
