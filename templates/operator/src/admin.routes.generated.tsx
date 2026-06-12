@@ -17,6 +17,7 @@ import {
   bookingsIndexSearchSchema,
 } from "@voyantjs/bookings-react/admin"
 import { catalogSearchSchema, productDetailSearchSchema } from "@voyantjs/catalog-react/admin"
+import { flightsBookSearchSchema, flightsIndexSearchSchema } from "@voyantjs/flights-react/admin"
 
 import { adminExtensions } from "@/lib/admin-extensions"
 import { getApiUrl } from "@/lib/env"
@@ -190,6 +191,18 @@ export const CrmOrganizationsDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// distribution
+// ---------------------------------------------------------------------------
+
+const distributionExtension = extension("distribution")
+
+export const DistributionChannelSyncRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/channel-sync",
+  ...adminExtensionRouteOptions(distributionExtension, "distribution-channel-sync", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // finance
 // ---------------------------------------------------------------------------
 
@@ -225,10 +238,42 @@ export const FinancePaymentsDetailRoute = createRoute({
   ...adminExtensionRouteOptions(financeExtension, "finance-payments-detail", runtime),
 })
 
+export const FinanceSupplierInvoicesIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/finance/supplier-invoices",
+  ...adminExtensionRouteOptions(financeExtension, "finance-supplier-invoices-index", runtime),
+})
+
+export const FinanceSupplierInvoicesDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/finance/supplier-invoices/$id",
+  ...adminExtensionRouteOptions(financeExtension, "finance-supplier-invoices-detail", runtime),
+})
+
 export const FinanceProfitabilityRoute = createRoute({
   getParentRoute: workspace,
   path: "/finance/profitability",
   ...adminExtensionRouteOptions(financeExtension, "finance-profitability", runtime),
+})
+
+// ---------------------------------------------------------------------------
+// flights
+// ---------------------------------------------------------------------------
+
+const flightsExtension = extension("flights")
+
+export const FlightsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/flights",
+  validateSearch: flightsIndexSearchSchema,
+  ...adminExtensionRouteOptions(flightsExtension, "flights-index", runtime),
+})
+
+export const FlightsBookRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/flights/book/$offerId",
+  validateSearch: flightsBookSearchSchema,
+  ...adminExtensionRouteOptions(flightsExtension, "flights-book", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -432,12 +477,17 @@ export const adminExtensionRoutes = [
   CrmPeopleDetailRoute,
   CrmOrganizationsIndexRoute,
   CrmOrganizationsDetailRoute,
+  DistributionChannelSyncRoute,
   FinanceInvoicesIndexRoute,
   FinanceInvoicesDetailRoute,
   FinanceInvoiceNumberSeriesRoute,
   FinancePaymentsIndexRoute,
   FinancePaymentsDetailRoute,
+  FinanceSupplierInvoicesIndexRoute,
+  FinanceSupplierInvoicesDetailRoute,
   FinanceProfitabilityRoute,
+  FlightsIndexRoute,
+  FlightsBookRoute,
   LegalContractsIndexRoute,
   LegalContractsDetailRoute,
   LegalTemplatesIndexRoute,
@@ -484,12 +534,17 @@ export interface AdminExtensionRoutesByFullPath {
   "/people/$id": typeof CrmPeopleDetailRoute
   "/organizations": typeof CrmOrganizationsIndexRoute
   "/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/channel-sync": typeof DistributionChannelSyncRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/finance/payments": typeof FinancePaymentsIndexRoute
   "/finance/payments/$id": typeof FinancePaymentsDetailRoute
+  "/finance/supplier-invoices": typeof FinanceSupplierInvoicesIndexRoute
+  "/finance/supplier-invoices/$id": typeof FinanceSupplierInvoicesDetailRoute
   "/finance/profitability": typeof FinanceProfitabilityRoute
+  "/flights": typeof FlightsIndexRoute
+  "/flights/book/$offerId": typeof FlightsBookRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/legal/templates": typeof LegalTemplatesIndexRoute
@@ -536,12 +591,17 @@ export interface AdminExtensionRoutesByTo {
   "/people/$id": typeof CrmPeopleDetailRoute
   "/organizations": typeof CrmOrganizationsIndexRoute
   "/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/channel-sync": typeof DistributionChannelSyncRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/finance/payments": typeof FinancePaymentsIndexRoute
   "/finance/payments/$id": typeof FinancePaymentsDetailRoute
+  "/finance/supplier-invoices": typeof FinanceSupplierInvoicesIndexRoute
+  "/finance/supplier-invoices/$id": typeof FinanceSupplierInvoicesDetailRoute
   "/finance/profitability": typeof FinanceProfitabilityRoute
+  "/flights": typeof FlightsIndexRoute
+  "/flights/book/$offerId": typeof FlightsBookRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/legal/templates": typeof LegalTemplatesIndexRoute
@@ -588,12 +648,17 @@ export interface AdminExtensionRoutesById {
   "/_workspace/people/$id": typeof CrmPeopleDetailRoute
   "/_workspace/organizations": typeof CrmOrganizationsIndexRoute
   "/_workspace/organizations/$id": typeof CrmOrganizationsDetailRoute
+  "/_workspace/channel-sync": typeof DistributionChannelSyncRoute
   "/_workspace/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/_workspace/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
   "/_workspace/finance/invoice-number-series": typeof FinanceInvoiceNumberSeriesRoute
   "/_workspace/finance/payments": typeof FinancePaymentsIndexRoute
   "/_workspace/finance/payments/$id": typeof FinancePaymentsDetailRoute
+  "/_workspace/finance/supplier-invoices": typeof FinanceSupplierInvoicesIndexRoute
+  "/_workspace/finance/supplier-invoices/$id": typeof FinanceSupplierInvoicesDetailRoute
   "/_workspace/finance/profitability": typeof FinanceProfitabilityRoute
+  "/_workspace/flights": typeof FlightsIndexRoute
+  "/_workspace/flights/book/$offerId": typeof FlightsBookRoute
   "/_workspace/legal/contracts": typeof LegalContractsIndexRoute
   "/_workspace/legal/contracts/$id": typeof LegalContractsDetailRoute
   "/_workspace/legal/templates": typeof LegalTemplatesIndexRoute

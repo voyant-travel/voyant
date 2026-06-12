@@ -2,10 +2,12 @@ import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // Type-only: binds the `AdminDestinations` augmentations of the admin
 // entries whose keys the CUSTOM resolvers below cover (bookings: the
 // booking.* keys + product.detail; catalog: the journey/browse/detail keys;
-// legal: legal.home) into this program without pulling the admin bundles
-// into the workspace-chrome chunk. The generated module binds the rest.
+// flights: flightBooking.start; legal: legal.home) into this program without
+// pulling the admin bundles into the workspace-chrome chunk. The generated
+// module binds the rest.
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
+import type {} from "@voyantjs/flights-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
 
 import { generatedAdminDestinations } from "@/admin.destinations.generated"
@@ -24,10 +26,10 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  * interpolation, and `voyant admin doctor` gates on drift between the
  * annotations and the generated module. Hand-written below are ONLY the
  * genuinely custom resolvers: search-param construction (`booking.detail`,
- * `bookingJourney.start`, `catalog.detail`), multi-route targets
- * (`catalog.browse` spans the five surface routes), and host-owned pages the
- * packages don't contribute (`booking.create`, `product.detail`,
- * `legal.home`).
+ * `bookingJourney.start`, `catalog.detail`, `flightBooking.start`),
+ * multi-route targets (`catalog.browse` spans the five surface routes), and
+ * host-owned pages the packages don't contribute (`booking.create`,
+ * `product.detail`, `legal.home`).
  *
  * Hrefs must match what the routes' typed `navigate` calls produced before
  * the contract existed — paths embed encoded params, search params keep the
@@ -58,6 +60,14 @@ export const operatorAdminDestinations = {
   "catalog.browse": ({ surface }) => `/catalog/${surface}`,
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
+  "flightBooking.start": ({ offerId, returnOfferId, adults, children, infants, cabin }) =>
+    `/flights/book/${encodeURIComponent(offerId)}${searchString({
+      return: returnOfferId,
+      pax_a: adults,
+      pax_c: children,
+      pax_i: infants,
+      cabin,
+    })}`,
   "legal.home": () => "/legal",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
 } satisfies AdminDestinationResolvers

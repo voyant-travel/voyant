@@ -17,8 +17,6 @@ import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as ProposalQuoteVersionIdRouteImport } from './routes/proposal.$quoteVersionId'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
 import { Route as AccountantTokenRouteImport } from './routes/accountant.$token'
-import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
-import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as storefrontShopRouteImport } from './routes/(storefront)/shop'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
@@ -54,9 +52,6 @@ import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/pro
 import { Route as WorkspaceBookingsComposeRouteImport } from './routes/_workspace/bookings_.compose'
 import { Route as WorkspaceBookingsNewRouteImport } from './routes/_workspace/bookings/new'
 import { Route as storefrontShopComposerRouteImport } from './routes/(storefront)/shop_.composer'
-import { Route as WorkspaceFinanceSupplierInvoicesIndexRouteImport } from './routes/_workspace/finance/supplier-invoices/index'
-import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_workspace/flights_.book.$offerId'
-import { Route as WorkspaceFinanceSupplierInvoicesIdRouteImport } from './routes/_workspace/finance/supplier-invoices/$id'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
 import { Route as WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.journey.$entityModule.$entityId'
 import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
@@ -98,16 +93,6 @@ const AccountantTokenRoute = AccountantTokenRouteImport.update({
   id: '/accountant/$token',
   path: '/accountant/$token',
   getParentRoute: () => rootRouteImport,
-} as any)
-const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
-  id: '/flights',
-  path: '/flights',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceChannelSyncRoute = WorkspaceChannelSyncRouteImport.update({
-  id: '/channel-sync',
-  path: '/channel-sync',
-  getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
   id: '/account',
@@ -296,24 +281,6 @@ const storefrontShopComposerRoute = storefrontShopComposerRouteImport.update({
   path: '/shop/composer',
   getParentRoute: () => storefrontRouteRoute,
 } as any)
-const WorkspaceFinanceSupplierInvoicesIndexRoute =
-  WorkspaceFinanceSupplierInvoicesIndexRouteImport.update({
-    id: '/finance/supplier-invoices/',
-    path: '/finance/supplier-invoices/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceFlightsBookOfferIdRoute =
-  WorkspaceFlightsBookOfferIdRouteImport.update({
-    id: '/flights_/book/$offerId',
-    path: '/flights/book/$offerId',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceFinanceSupplierInvoicesIdRoute =
-  WorkspaceFinanceSupplierInvoicesIdRouteImport.update({
-    id: '/finance/supplier-invoices/$id',
-    path: '/finance/supplier-invoices/$id',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
 const storefrontShopConfirmationBookingIdRoute =
   storefrontShopConfirmationBookingIdRouteImport.update({
     id: '/shop_/confirmation/$bookingId',
@@ -353,8 +320,6 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
-  '/channel-sync': typeof WorkspaceChannelSyncRoute
-  '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
@@ -383,9 +348,6 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/trips/': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
-  '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
-  '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/finance/supplier-invoices/': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
@@ -402,8 +364,6 @@ export interface FileRoutesByTo {
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
-  '/channel-sync': typeof WorkspaceChannelSyncRoute
-  '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
@@ -433,9 +393,6 @@ export interface FileRoutesByTo {
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/trips': typeof WorkspaceTripsIndexRoute
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
-  '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
-  '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/finance/supplier-invoices': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
@@ -457,8 +414,6 @@ export interface FileRoutesById {
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/(storefront)/shop': typeof storefrontShopRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
-  '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
-  '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
@@ -488,9 +443,6 @@ export interface FileRoutesById {
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/trips/': typeof WorkspaceTripsIndexRoute
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
-  '/_workspace/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
-  '/_workspace/flights_/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/_workspace/finance/supplier-invoices/': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/_workspace/catalog_/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
@@ -511,8 +463,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/shop'
     | '/account'
-    | '/channel-sync'
-    | '/flights'
     | '/accountant/$token'
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
@@ -541,9 +491,6 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/trips/'
     | '/shop/confirmation/$bookingId'
-    | '/finance/supplier-invoices/$id'
-    | '/flights/book/$offerId'
-    | '/finance/supplier-invoices/'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
@@ -560,8 +507,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/shop'
     | '/account'
-    | '/channel-sync'
-    | '/flights'
     | '/accountant/$token'
     | '/pay/$sessionId'
     | '/proposal/$quoteVersionId'
@@ -591,9 +536,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/trips'
     | '/shop/confirmation/$bookingId'
-    | '/finance/supplier-invoices/$id'
-    | '/flights/book/$offerId'
-    | '/finance/supplier-invoices'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
@@ -614,8 +556,6 @@ export interface FileRouteTypes {
     | '/(auth)/verify-email'
     | '/(storefront)/shop'
     | '/_workspace/account'
-    | '/_workspace/channel-sync'
-    | '/_workspace/flights'
     | '/accountant/$token'
     | '/pay_/$sessionId'
     | '/proposal/$quoteVersionId'
@@ -645,9 +585,6 @@ export interface FileRouteTypes {
     | '/_workspace/settings/'
     | '/_workspace/trips/'
     | '/(storefront)/shop_/confirmation/$bookingId'
-    | '/_workspace/finance/supplier-invoices/$id'
-    | '/_workspace/flights_/book/$offerId'
-    | '/_workspace/finance/supplier-invoices/'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/(storefront)/shop_/products/$entityModule/$entityId'
     | '/_workspace/catalog_/journey/$entityModule/$entityId'
@@ -720,20 +657,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/accountant/$token'
       preLoaderRoute: typeof AccountantTokenRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_workspace/flights': {
-      id: '/_workspace/flights'
-      path: '/flights'
-      fullPath: '/flights'
-      preLoaderRoute: typeof WorkspaceFlightsRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/channel-sync': {
-      id: '/_workspace/channel-sync'
-      path: '/channel-sync'
-      fullPath: '/channel-sync'
-      preLoaderRoute: typeof WorkspaceChannelSyncRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/account': {
       id: '/_workspace/account'
@@ -980,27 +903,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof storefrontShopComposerRouteImport
       parentRoute: typeof storefrontRouteRoute
     }
-    '/_workspace/finance/supplier-invoices/': {
-      id: '/_workspace/finance/supplier-invoices/'
-      path: '/finance/supplier-invoices'
-      fullPath: '/finance/supplier-invoices/'
-      preLoaderRoute: typeof WorkspaceFinanceSupplierInvoicesIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/flights_/book/$offerId': {
-      id: '/_workspace/flights_/book/$offerId'
-      path: '/flights/book/$offerId'
-      fullPath: '/flights/book/$offerId'
-      preLoaderRoute: typeof WorkspaceFlightsBookOfferIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/finance/supplier-invoices/$id': {
-      id: '/_workspace/finance/supplier-invoices/$id'
-      path: '/finance/supplier-invoices/$id'
-      fullPath: '/finance/supplier-invoices/$id'
-      preLoaderRoute: typeof WorkspaceFinanceSupplierInvoicesIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/(storefront)/shop_/confirmation/$bookingId': {
       id: '/(storefront)/shop_/confirmation/$bookingId'
       path: '/shop/confirmation/$bookingId'
@@ -1119,8 +1021,6 @@ const WorkspaceSettingsRouteRouteWithChildren =
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
-  WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
-  WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceBookingsNewRoute: typeof WorkspaceBookingsNewRoute
   WorkspaceBookingsComposeRoute: typeof WorkspaceBookingsComposeRoute
@@ -1134,17 +1034,12 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceNotificationsIndexRoute: typeof WorkspaceNotificationsIndexRoute
   WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
   WorkspaceTripsIndexRoute: typeof WorkspaceTripsIndexRoute
-  WorkspaceFinanceSupplierInvoicesIdRoute: typeof WorkspaceFinanceSupplierInvoicesIdRoute
-  WorkspaceFlightsBookOfferIdRoute: typeof WorkspaceFlightsBookOfferIdRoute
-  WorkspaceFinanceSupplierInvoicesIndexRoute: typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   WorkspaceCatalogJourneyEntityModuleEntityIdRoute: typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
-  WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
-  WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceBookingsNewRoute: WorkspaceBookingsNewRoute,
   WorkspaceBookingsComposeRoute: WorkspaceBookingsComposeRoute,
@@ -1158,11 +1053,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceNotificationsIndexRoute: WorkspaceNotificationsIndexRoute,
   WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
   WorkspaceTripsIndexRoute: WorkspaceTripsIndexRoute,
-  WorkspaceFinanceSupplierInvoicesIdRoute:
-    WorkspaceFinanceSupplierInvoicesIdRoute,
-  WorkspaceFlightsBookOfferIdRoute: WorkspaceFlightsBookOfferIdRoute,
-  WorkspaceFinanceSupplierInvoicesIndexRoute:
-    WorkspaceFinanceSupplierInvoicesIndexRoute,
   WorkspaceCatalogJourneyEntityModuleEntityIdRoute:
     WorkspaceCatalogJourneyEntityModuleEntityIdRoute,
 }
