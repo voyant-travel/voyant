@@ -1,5 +1,32 @@
 # @voyantjs/db
 
+## 0.107.0
+
+### Minor Changes
+
+- b7056f1: New `@voyantjs/db/aggregate-snapshots` subpath: `readThroughAggregateSnapshot(db, { key, ttlSeconds, compute })` — a read-through TTL cache over the new `aggregate_snapshots` table (`key` text PK, `payload` jsonb, `computed_at`, `stale_after`). Fresh rows (`stale_after > now`) are served without running `compute`; stale/missing rows recompute and upsert in a single `INSERT ... ON CONFLICT (key) DO UPDATE` (neon-http compatible). The cache is strictly best-effort: read or upsert failures fall back to live computation. Two concurrent cold requests may both compute (last write wins — no locking by design). Also exports `aggregateSnapshotKey(...parts)` which joins parts with `:`, stable-stringifies object params (sorted keys), and replaces long parts with an FNV-1a 64 digest.
+
+  **BREAKING-ish deploy note: the new `aggregate_snapshots` table requires the upcoming combined migration.** This release deliberately ships NO migration file — the table is exported from `@voyantjs/db/schema` and will be picked up by the next generated migration. Until that migration is applied, `readThroughAggregateSnapshot` degrades gracefully to computing live on every call (the read failure is treated as a cache miss).
+
+- b7056f1: New `@voyantjs/db/outbox` module + `event_outbox` table (`schema/infra`, TypeID prefix `evob`) — the Postgres half of the transactional outbox (RFC #1687 Phase 2.1). **Requires the `event_outbox` migration.**
+
+  - `createOutboxEventStore(getDb)` — plugs into `createEventBus`'s durable emit.
+  - `insertOutboxEvents(dbOrTx, envelopes)` — atomic capture inside a domain transaction ("transactional outbox" proper); dedups on `metadata.eventId`.
+  - `claimDueOutboxEvents` — visibility-timeout claiming (single statement, `FOR UPDATE SKIP LOCKED` subquery — safe on neon-http and under concurrent drains; a crashed claimer's rows simply become due again).
+  - `drainOutbox(db, bus, opts)` — claim → redeliver via `bus.deliver` → complete / reschedule with exponential backoff (5s·2^attempts, 15min cap, jitter) / dead-letter after `max_attempts`.
+  - `pruneDeliveredOutboxEvents`, `getOutboxStats`.
+
+  Delivery is **at-least-once**: subscribers must be idempotent (the workflow forwarder already dedups on eventId; plugin subscribers key on external refs).
+
+  Also: `createTestDb()` disables the Phase-1 default statement/query timeouts for test clients — `cleanupTestDb`'s full-schema TRUNCATE could exceed the 10s production default and kill integration-suite setup.
+
+### Patch Changes
+
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyantjs/core@0.109.0
+  - @voyantjs/schema-kit@0.105.1
+
 ## 0.106.0
 
 ### Minor Changes

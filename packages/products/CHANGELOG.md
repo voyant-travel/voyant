@@ -1,5 +1,20 @@
 # @voyantjs/products
 
+## 0.117.1
+
+### Patch Changes
+
+- b7056f1: `GET /aggregates` (admin dashboard KPIs) is now served through a read-through TTL snapshot (`readThroughAggregateSnapshot` from `@voyantjs/db/aggregate-snapshots`, 60s TTL, keyed by endpoint + query params): the first request computes and stores, subsequent requests within the TTL are ONE indexed read instead of the full aggregate fan-out (finance alone was ~11 queries per dashboard load). Response shapes are unchanged. `Cache-Control` on these endpoints tightened from `private, max-age=60` to `private, max-age=30` (availability gains the header for the first time). Requires the `aggregate_snapshots` table from the upcoming @voyantjs/db migration — until it is applied, endpoints transparently fall back to live computation.
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyantjs/core@0.109.0
+  - @voyantjs/db@0.107.0
+  - @voyantjs/hono@0.108.0
+  - @voyantjs/action-ledger@0.104.7
+  - @voyantjs/catalog@0.115.1
+
 ## 0.117.0
 
 ### Patch Changes

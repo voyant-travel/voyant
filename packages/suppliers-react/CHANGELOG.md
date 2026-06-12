@@ -1,5 +1,12 @@
 # @voyantjs/suppliers-react
 
+## 0.111.3
+
+### Patch Changes
+
+- Updated dependencies [b7056f1]
+  - @voyantjs/suppliers@0.111.3
+
 ## 0.111.2
 
 ### Patch Changes

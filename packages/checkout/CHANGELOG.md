@@ -1,5 +1,20 @@
 # @voyantjs/checkout
 
+## 0.117.1
+
+### Patch Changes
+
+- b7056f1: The checkout collection POST routes (`/bookings/:bookingId/collection-plan`, `/bookings/:bookingId/initiate-collection`, `/collections/bootstrap`) now accept the standard `Idempotency-Key` header via the shared `idempotencyKey()` middleware — a duplicate request with the same key replays the stored response instead of re-initiating the collection (double invoices / payment sessions / notifications). The header stays optional, so existing clients are unaffected.
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyantjs/bookings@0.117.1
+  - @voyantjs/finance@0.117.1
+  - @voyantjs/core@0.109.0
+  - @voyantjs/hono@0.108.0
+  - @voyantjs/notifications@0.111.3
+
 ## 0.117.0
 
 ### Patch Changes

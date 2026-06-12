@@ -1,5 +1,21 @@
 # @voyantjs/products-react
 
+## 0.117.1
+
+### Patch Changes
+
+- Updated dependencies [b7056f1]
+  - @voyantjs/products@0.117.1
+  - @voyantjs/finance@0.117.1
+  - @voyantjs/availability@0.114.1
+  - @voyantjs/availability-react@0.114.1
+  - @voyantjs/catalog-react@0.115.1
+  - @voyantjs/extras-react@0.117.1
+  - @voyantjs/finance-react@0.117.1
+  - @voyantjs/markets-react@0.107.3
+  - @voyantjs/pricing-react@0.117.1
+  - @voyantjs/suppliers-react@0.111.3
+
 ## 0.117.0
 
 ### Patch Changes
