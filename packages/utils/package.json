@@ -23,6 +23,7 @@
     "./kms": "./src/kms.ts",
     "./session-claims": "./src/session-claims.ts",
     "./cache": "./src/cache.ts",
+    "./resilience": "./src/resilience.ts",
     "./template-renderer": "./src/template-renderer.ts",
     "./pdf-renderer": "./src/pdf-renderer.ts"
   },
@@ -95,6 +96,11 @@
         "types": "./dist/cache.d.ts",
         "import": "./dist/cache.js",
         "default": "./dist/cache.js"
+      },
+      "./resilience": {
+        "types": "./dist/resilience.d.ts",
+        "import": "./dist/resilience.js",
+        "default": "./dist/resilience.js"
       },
       "./template-renderer": {
         "types": "./dist/template-renderer.d.ts",

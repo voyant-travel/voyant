@@ -1,7 +1,11 @@
+import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
 import { createSanityClient } from "../../src/client.js"
 import type { SanityFetch } from "../../src/types.js"
+
+/** Keeps retrying tests fast and deterministic (no real backoff sleeps). */
+const fastRetry = { retry: { baseDelayMs: 0, maxDelayMs: 1 } }
 
 function jsonResponse(status: number, body: unknown) {
   const text = JSON.stringify(body)
@@ -92,12 +96,14 @@ describe("createSanityClient.findByVoyantId", () => {
     expect(url).toContain("https://abc123.sanity.internal.example.com/")
   })
 
-  it("throws on non-2xx response", async () => {
+  it("throws on non-2xx response (after exhausting retries)", async () => {
     const fetchMock = vi.fn<SanityFetch>(async () => textResponse(500, "boom"))
-    const client = createSanityClient({ ...baseOptions, fetch: fetchMock })
+    const client = createSanityClient({ ...baseOptions, fetch: fetchMock, resilience: fastRetry })
     await expect(client.findByVoyantId("product", "x")).rejects.toThrow(
       /Sanity findByVoyantId\(product\) failed \(500\)/,
     )
+    // 5xx is retried; the final failing response is surfaced to error mapping.
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })
 
@@ -213,11 +219,63 @@ describe("createSanityClient.deleteByVoyantId", () => {
     const fetchMock = vi
       .fn<SanityFetch>()
       .mockResolvedValueOnce(jsonResponse(200, { result: { _id: "sn_1" } }))
-      .mockResolvedValueOnce(textResponse(500, "boom"))
-    const client = createSanityClient({ ...baseOptions, fetch: fetchMock })
+      .mockResolvedValue(textResponse(500, "boom"))
+    const client = createSanityClient({ ...baseOptions, fetch: fetchMock, resilience: fastRetry })
     await expect(client.deleteByVoyantId("product", "p")).rejects.toThrow(
       /Sanity delete\(product\/sn_1\) failed \(500\)/,
     )
+  })
+})
+
+describe("createSanityClient — resilience", () => {
+  it("retries a 503 GET and succeeds on a later attempt", async () => {
+    const fetchMock = vi
+      .fn<SanityFetch>()
+      .mockResolvedValueOnce(textResponse(503, "unavailable"))
+      .mockResolvedValueOnce(jsonResponse(200, { result: { _id: "sn_1" } }))
+    const client = createSanityClient({ ...baseOptions, fetch: fetchMock, resilience: fastRetry })
+    expect(await client.findByVoyantId("product", "p")).toEqual({ _id: "sn_1" })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("retries the mutate POST (idempotent by construction via voyantId)", async () => {
+    const fetchMock = vi
+      .fn<SanityFetch>()
+      .mockResolvedValueOnce(jsonResponse(200, { result: null }))
+      .mockResolvedValueOnce(textResponse(503, "unavailable"))
+      .mockResolvedValueOnce(
+        jsonResponse(200, { results: [{ id: "sn_new", operation: "create" }] }),
+      )
+    const client = createSanityClient({ ...baseOptions, fetch: fetchMock, resilience: fastRetry })
+    expect(await client.upsertByVoyantId("product", "prod_1", { name: "X" })).toEqual({
+      _id: "sn_new",
+      created: true,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it("does not retry 4xx responses", async () => {
+    const fetchMock = vi.fn<SanityFetch>(async () => textResponse(400, "bad request"))
+    const client = createSanityClient({ ...baseOptions, fetch: fetchMock, resilience: fastRetry })
+    await expect(client.findByVoyantId("product", "p")).rejects.toThrow(/failed \(400\)/)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it("fails fast with CircuitOpenError once the breaker trips", async () => {
+    const breaker = createCircuitBreaker({ failureThreshold: 1, openMs: 60_000 })
+    const fetchMock = vi.fn<SanityFetch>(async () => textResponse(500, "down"))
+    const client = createSanityClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      resilience: { breaker, retry: false },
+    })
+
+    await expect(client.findByVoyantId("product", "p")).rejects.toThrow(/failed \(500\)/)
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    // Breaker is open now: no network call, fail fast.
+    await expect(client.findByVoyantId("product", "p")).rejects.toBeInstanceOf(CircuitOpenError)
+    expect(fetchMock).toHaveBeenCalledOnce()
   })
 })
 

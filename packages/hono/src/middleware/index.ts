@@ -10,6 +10,14 @@ export {
 } from "./idempotency-key.js"
 export { consoleLoggerProvider, logger } from "./logger.js"
 export {
+  type AnalyticsEngineDatasetLike,
+  DB_METRICS_CONTEXT_KEY,
+  type MetricsMiddlewareOptions,
+  metrics,
+  type RequestDbMetrics,
+  withQueryCounting,
+} from "./metrics.js"
+export {
   type PublicCacheOptions,
   publicResponseCache,
   resetPublicCacheStateForTests,

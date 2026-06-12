@@ -1,4 +1,10 @@
 interface CloudflareBindings {
+  /**
+   * Per-request metrics dataset (Workers Analytics Engine). Optional —
+   * the metrics middleware is a no-op without it.
+   */
+  METRICS?: AnalyticsEngineDataset
+
   // KV namespaces
   RATE_LIMIT: KVNamespace
   CACHE: KVNamespace

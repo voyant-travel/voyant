@@ -1,4 +1,59 @@
+import {
+  type CircuitBreaker,
+  CircuitOpenError,
+  createCircuitBreaker,
+  type RetryOptions,
+  resilientFetch,
+} from "@voyantjs/utils/resilience"
+
 import type { SanityDocBody, SanityFetch } from "./types.js"
+
+/**
+ * Outbound-HTTP resilience knobs for the Sanity client. Every call goes
+ * through `resilientFetch`, so a slow or down CMS fails fast instead of
+ * burning the Worker request's CPU/subrequest budget.
+ */
+export interface SanityResilienceOptions {
+  /** Per-attempt timeout. Default 10s. */
+  timeoutMs?: number
+  /**
+   * Retry tuning (attempts/backoff), or `false` to disable retries.
+   * Defaults to 3 attempts on network errors/timeouts/429/5xx. All Sanity
+   * calls are idempotent by construction — find is a GET, patch/delete
+   * mutations are keyed by `_id`, create is keyed by the `voyantId` field —
+   * so retries apply to every call.
+   */
+  retry?: Pick<RetryOptions, "attempts" | "baseDelayMs" | "maxDelayMs"> | false
+  /**
+   * Override/share the circuit breaker. Defaults to one breaker per client
+   * instance (clients are per-worker singletons, i.e. one per upstream).
+   */
+  breaker?: CircuitBreaker
+}
+
+/**
+ * Retry on network errors/timeouts/429/5xx, but surface the FINAL failing
+ * response to the caller instead of throwing, so the client's error mapping
+ * keeps the upstream status + body.
+ */
+function surfacingRetry(
+  maxAttempts: number,
+  tuning?: { baseDelayMs?: number; maxDelayMs?: number },
+): RetryOptions {
+  let failedAttempts = 0
+  return {
+    baseDelayMs: tuning?.baseDelayMs,
+    maxDelayMs: tuning?.maxDelayMs,
+    attempts: maxAttempts,
+    retryOn: ({ response, error }) => {
+      failedAttempts += 1
+      if (failedAttempts >= maxAttempts) return false
+      if (error) return !(error instanceof CircuitOpenError)
+      const status = response?.status ?? 0
+      return status === 429 || status >= 500
+    },
+  }
+}
 
 /**
  * Options for {@link createSanityClient}.
@@ -31,6 +86,8 @@ export interface SanityClientOptions {
   apiHost?: string
   /** Override `fetch` (e.g. in tests). Defaults to global `fetch`. */
   fetch?: SanityFetch
+  /** Timeout/retry/circuit-breaker tuning. See {@link SanityResilienceOptions}. */
+  resilience?: SanityResilienceOptions
 }
 
 interface SanityQueryResponse {
@@ -67,6 +124,13 @@ export function createSanityClient(options: SanityClientOptions): SanityClient {
   const apiHost = options.apiHost ?? "api.sanity.io"
   const baseUrl = `https://${options.projectId}.${apiHost}/v${apiVersion}/data`
   const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as SanityFetch | undefined)
+  const resilience = options.resilience ?? {}
+  // One breaker per upstream Sanity project — the client is a per-worker
+  // singleton, so a per-instance breaker has the right scope.
+  const breaker = resilience.breaker ?? createCircuitBreaker()
+  const timeoutMs = resilience.timeoutMs ?? 10_000
+  const retryTuning = resilience.retry === false ? undefined : resilience.retry
+  const maxAttempts = resilience.retry === false ? 1 : (retryTuning?.attempts ?? 3)
 
   function headers(): Record<string, string> {
     return {
@@ -88,7 +152,15 @@ export function createSanityClient(options: SanityClientOptions): SanityClient {
       headers: headers(),
     }
     if (body !== undefined) init.body = JSON.stringify(body)
-    const response = await fetchImpl(`${baseUrl}${path}`, init)
+    const response = await resilientFetch(`${baseUrl}${path}`, init, {
+      timeoutMs,
+      breaker,
+      // Every Sanity call is idempotent by construction (mutations keyed by
+      // _id / voyantId), so POST mutations retry alongside GET queries.
+      retryNonIdempotent: true,
+      retry: surfacingRetry(maxAttempts, retryTuning),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     let text = ""
     let json: unknown = null
     try {

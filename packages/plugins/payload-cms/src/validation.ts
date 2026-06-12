@@ -30,6 +30,11 @@ const optionalMapEvent = z.custom<PayloadMapFn | undefined>(
   "Expected a mapEvent function",
 )
 
+const optionalResilience = z.custom<PayloadCmsPluginOptions["resilience"]>(
+  (value) => value === undefined || (typeof value === "object" && value !== null),
+  "Expected valid resilience options",
+)
+
 const optionalEvents = z.custom<PayloadSyncEventNames | undefined>((value) => {
   if (value === undefined) return true
   if (typeof value !== "object" || value === null) return false
@@ -46,6 +51,7 @@ export const payloadCmsPluginOptionsSchema = z.object({
   voyantIdField: optionalString,
   apiKeyAuthScheme: optionalString,
   fetch: optionalFetch.optional(),
+  resilience: optionalResilience.optional(),
   events: optionalEvents.optional(),
   mapEvent: optionalMapEvent.optional(),
   logger: optionalLogger.optional(),

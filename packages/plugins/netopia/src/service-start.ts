@@ -50,6 +50,7 @@ export async function startPaymentSession(
       apiUrl: runtime.apiUrl,
       apiKey: runtime.apiKey,
       fetch: runtime.fetch,
+      resilience: runtime.resilience,
     })
 
   const description = input.description ?? session.notes ?? `Payment ${session.id}`

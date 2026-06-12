@@ -1,3 +1,11 @@
+import {
+  type CircuitBreaker,
+  CircuitOpenError,
+  createCircuitBreaker,
+  type RetryOptions,
+  resilientFetch,
+} from "@voyantjs/utils/resilience"
+
 import type {
   SmartbillEnvelope,
   SmartbillEstimateInvoicesResponse,
@@ -9,6 +17,56 @@ import type {
   SmartbillStatusResponse,
   SmartbillTaxesResponse,
 } from "./types.js"
+
+/**
+ * Outbound-HTTP resilience knobs for the SmartBill client. Every call goes
+ * through `resilientFetch`, so a slow or down SmartBill fails fast instead
+ * of burning the Worker request's CPU/subrequest budget. Retries only apply
+ * to idempotent operations (GETs, PDF downloads, cancel/restore/delete);
+ * document-creating calls (invoice/proforma create, conversion, reversal)
+ * never retry because SmartBill has no idempotency keys.
+ */
+export interface SmartbillResilienceOptions {
+  /** Per-attempt timeout. Default 10s. */
+  timeoutMs?: number
+  /**
+   * Retry tuning (attempts/backoff) for retry-eligible operations, or
+   * `false` to disable retries entirely. Defaults to 3 attempts on network
+   * errors/timeouts/429/5xx.
+   */
+  retry?: Pick<RetryOptions, "attempts" | "baseDelayMs" | "maxDelayMs"> | false
+  /**
+   * Override/share the circuit breaker. Defaults to one breaker per client
+   * instance (clients are per-worker singletons, i.e. one per upstream).
+   * Distinct from the SmartBill-specific rate-limit circuit (`rateLimit`),
+   * which reacts to SmartBill's 403 quota responses.
+   */
+  breaker?: CircuitBreaker
+}
+
+/**
+ * Retry on network errors/timeouts/429/5xx, but surface the FINAL failing
+ * response to the caller instead of throwing, so `buildApiError` keeps the
+ * upstream status + body (including SmartBill's rate-limit envelope).
+ */
+function surfacingRetry(
+  maxAttempts: number,
+  tuning?: { baseDelayMs?: number; maxDelayMs?: number },
+): RetryOptions {
+  let failedAttempts = 0
+  return {
+    baseDelayMs: tuning?.baseDelayMs,
+    maxDelayMs: tuning?.maxDelayMs,
+    attempts: maxAttempts,
+    retryOn: ({ response, error }) => {
+      failedAttempts += 1
+      if (failedAttempts >= maxAttempts) return false
+      if (error) return !(error instanceof CircuitOpenError)
+      const status = response?.status ?? 0
+      return status === 429 || status >= 500
+    },
+  }
+}
 
 /**
  * Options for {@link createSmartbillClient}.
@@ -34,6 +92,8 @@ export interface SmartbillClientOptions {
     /** Test hook for deterministic time. */
     now?: () => Date
   }
+  /** Timeout/retry/circuit-breaker tuning. See {@link SmartbillResilienceOptions}. */
+  resilience?: SmartbillResilienceOptions
 }
 
 export interface SmartbillClientApi {
@@ -259,6 +319,16 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
   const fetchImpl = options.fetch ?? createGlobalSmartbillFetch()
   const now = options.rateLimit?.now ?? (() => new Date())
   let rateLimitCircuitOpenUntil: Date | undefined
+  const resilience = options.resilience ?? {}
+  // One breaker per upstream SmartBill account — the client is a per-worker
+  // singleton, so a per-instance breaker has the right scope.
+  const breaker = resilience.breaker ?? createCircuitBreaker()
+  const timeoutMs = resilience.timeoutMs ?? 10_000
+  const retryTuning = resilience.retry === false ? undefined : resilience.retry
+
+  function maxAttemptsFor(retryable: boolean): number {
+    return retryable && resilience.retry !== false ? (retryTuning?.attempts ?? 3) : 1
+  }
 
   function authHeader(): string {
     return `Basic ${btoa(`${options.username}:${options.apiToken}`)}`
@@ -277,6 +347,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     method: string,
     path: string,
     body?: unknown,
+    requestOptions?: { retryable?: boolean },
   ): Promise<T> {
     if (!fetchImpl) {
       throw new Error("SmartBill client requires a fetch implementation")
@@ -287,7 +358,18 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
       headers: headers(),
     }
     if (body !== undefined) init.body = JSON.stringify(body)
-    const response = await fetchImpl(`${apiUrl}${path}`, init)
+    // Default policy: GET/PUT/DELETE are idempotent against SmartBill (state
+    // setters, lookups), POSTs create documents and must not retry. Call
+    // sites override where the HTTP method is misleading (e.g. reverse).
+    const retryable = requestOptions?.retryable ?? method !== "POST"
+    const response = await resilientFetch(`${apiUrl}${path}`, init, {
+      timeoutMs,
+      breaker,
+      // Per-operation policy above already gates retries via attempts.
+      retryNonIdempotent: true,
+      retry: surfacingRetry(maxAttemptsFor(retryable), retryTuning),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     let text = ""
     let parsed: unknown = null
     try {
@@ -311,10 +393,20 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
       throw new Error("SmartBill client requires a fetch implementation")
     }
     assertRateLimitCircuitClosed(operation)
-    const response = await fetchImpl(`${apiUrl}${path}`, {
-      method: "GET",
-      headers: { ...headers(), Accept: "application/octet-stream" },
-    })
+    const response = await resilientFetch(
+      `${apiUrl}${path}`,
+      {
+        method: "GET",
+        headers: { ...headers(), Accept: "application/octet-stream" },
+      },
+      {
+        timeoutMs,
+        breaker,
+        // PDF downloads are pure reads — always safe to retry.
+        retry: surfacingRetry(maxAttemptsFor(true), retryTuning),
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      },
+    )
     if (!response.ok) {
       const text = await response.text().catch(() => "")
       throw buildApiError(operation, response.status, text, parseJson(text))
@@ -391,10 +483,14 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
   }
 
   async function createInvoice(body: SmartbillInvoiceBody): Promise<SmartbillInvoiceResponse> {
+    // No retry: POST creates an invoice and SmartBill has no idempotency
+    // keys — a duplicate invoice is worse than a failed sync (the outbox
+    // redelivers, and external-ref dedup skips already-created invoices).
     return request<SmartbillInvoiceResponse>("createInvoice", "POST", "/invoice", body)
   }
 
   async function createProforma(body: SmartbillInvoiceBody): Promise<SmartbillInvoiceResponse> {
+    // No retry: creates a proforma document (same reasoning as createInvoice).
     return request<SmartbillInvoiceResponse>("createProforma", "POST", "/estimate", body)
   }
 
@@ -404,6 +500,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     estimateNumber: string,
     body: SmartbillInvoiceBody,
   ): Promise<SmartbillInvoiceResponse> {
+    // No retry: POST creates the converted invoice (no idempotency keys).
     return request<SmartbillInvoiceResponse>("convertEstimateToInvoice", "POST", "/invoice", {
       ...body,
       companyVatCode,
@@ -421,6 +518,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     seriesName: string,
     number: string,
   ): Promise<SmartbillEnvelope> {
+    // Retried: cancel is an idempotent state-setter (cancelling twice is a no-op).
     return request<SmartbillEnvelope>("cancelInvoice", "PUT", "/invoice/cancel", {
       companyVatCode,
       seriesName,
@@ -457,11 +555,19 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     seriesName: string,
     number: string,
   ): Promise<SmartbillInvoiceResponse> {
-    return request<SmartbillInvoiceResponse>("reverseInvoice", "PUT", "/invoice/reverse", {
-      companyVatCode,
-      seriesName,
-      number,
-    })
+    // No retry despite the PUT: reversing issues a NEW credit-note style
+    // reversal invoice, so a retried ambiguous failure could double-reverse.
+    return request<SmartbillInvoiceResponse>(
+      "reverseInvoice",
+      "PUT",
+      "/invoice/reverse",
+      {
+        companyVatCode,
+        seriesName,
+        number,
+      },
+      { retryable: false },
+    )
   }
 
   async function viewInvoicePdf(

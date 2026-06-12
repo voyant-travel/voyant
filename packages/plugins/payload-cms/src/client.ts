@@ -1,4 +1,59 @@
+import {
+  type CircuitBreaker,
+  CircuitOpenError,
+  createCircuitBreaker,
+  type RetryOptions,
+  resilientFetch,
+} from "@voyantjs/utils/resilience"
+
 import type { PayloadDocBody, PayloadFetch } from "./types.js"
+
+/**
+ * Outbound-HTTP resilience knobs for the Payload client. Every call goes
+ * through `resilientFetch`, so a slow or down CMS fails fast instead of
+ * burning the Worker request's CPU/subrequest budget.
+ */
+export interface PayloadResilienceOptions {
+  /** Per-attempt timeout. Default 10s. */
+  timeoutMs?: number
+  /**
+   * Retry tuning (attempts/backoff), or `false` to disable retries.
+   * Defaults to 3 attempts on network errors/timeouts/429/5xx. All Payload
+   * calls are idempotent by construction — find is a GET, update PATCHes by
+   * doc id, create is keyed by the unique `voyantId` field — so retries
+   * apply to every call.
+   */
+  retry?: Pick<RetryOptions, "attempts" | "baseDelayMs" | "maxDelayMs"> | false
+  /**
+   * Override/share the circuit breaker. Defaults to one breaker per client
+   * instance (clients are per-worker singletons, i.e. one per upstream).
+   */
+  breaker?: CircuitBreaker
+}
+
+/**
+ * Retry on network errors/timeouts/429/5xx, but surface the FINAL failing
+ * response to the caller instead of throwing, so the client's error mapping
+ * keeps the upstream status + body.
+ */
+function surfacingRetry(
+  maxAttempts: number,
+  tuning?: { baseDelayMs?: number; maxDelayMs?: number },
+): RetryOptions {
+  let failedAttempts = 0
+  return {
+    baseDelayMs: tuning?.baseDelayMs,
+    maxDelayMs: tuning?.maxDelayMs,
+    attempts: maxAttempts,
+    retryOn: ({ response, error }) => {
+      failedAttempts += 1
+      if (failedAttempts >= maxAttempts) return false
+      if (error) return !(error instanceof CircuitOpenError)
+      const status = response?.status ?? 0
+      return status === 429 || status >= 500
+    },
+  }
+}
 
 /**
  * Options for {@link createPayloadClient}.
@@ -25,6 +80,8 @@ export interface PayloadClientOptions {
   apiKeyAuthScheme?: string
   /** Override `fetch` (e.g. in tests). Defaults to global `fetch`. */
   fetch?: PayloadFetch
+  /** Timeout/retry/circuit-breaker tuning. See {@link PayloadResilienceOptions}. */
+  resilience?: PayloadResilienceOptions
 }
 
 /**
@@ -59,6 +116,13 @@ export function createPayloadClient(options: PayloadClientOptions): PayloadClien
   const authScheme = options.apiKeyAuthScheme ?? "users API-Key"
   const apiUrl = options.apiUrl.replace(/\/$/, "")
   const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as PayloadFetch | undefined)
+  const resilience = options.resilience ?? {}
+  // One breaker per upstream Payload deployment — the client is a
+  // per-worker singleton, so a per-instance breaker has the right scope.
+  const breaker = resilience.breaker ?? createCircuitBreaker()
+  const timeoutMs = resilience.timeoutMs ?? 10_000
+  const retryTuning = resilience.retry === false ? undefined : resilience.retry
+  const maxAttempts = resilience.retry === false ? 1 : (retryTuning?.attempts ?? 3)
 
   function headers(): Record<string, string> {
     return {
@@ -80,7 +144,15 @@ export function createPayloadClient(options: PayloadClientOptions): PayloadClien
       headers: headers(),
     }
     if (body !== undefined) init.body = JSON.stringify(body)
-    const response = await fetchImpl(`${apiUrl}${path}`, init)
+    const response = await resilientFetch(`${apiUrl}${path}`, init, {
+      timeoutMs,
+      breaker,
+      // Every Payload call is idempotent by construction (keyed by the
+      // unique voyantId field), so POST/PATCH retry alongside GET/DELETE.
+      retryNonIdempotent: true,
+      retry: surfacingRetry(maxAttempts, retryTuning),
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     // Payload sends JSON for all 2xx/4xx; pull both eagerly.
     let text = ""
     let json: unknown = null

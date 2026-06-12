@@ -36,6 +36,12 @@ export interface VoyantBindings {
   API_BASE_URL?: string
   RATE_LIMIT?: KVStore
   CACHE?: KVStore
+  /**
+   * Workers Analytics Engine dataset receiving per-request metrics
+   * (see the `metrics` middleware). Optional — without it the
+   * middleware is a no-op.
+   */
+  METRICS?: import("./middleware/metrics.js").AnalyticsEngineDatasetLike
 }
 
 export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase | NeonWsDatabase
@@ -254,6 +260,13 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * `insertOutboxEvents(tx, ...)`. Default off.
    */
   outbox?: boolean
+  /**
+   * Per-request metrics to the `env.METRICS` Analytics Engine dataset
+   * (method, route pattern, surface, cache status, duration, status,
+   * db query count). Enabled by default and inert without the binding;
+   * set `false` to disable entirely.
+   */
+  metrics?: boolean
   publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**
    * Workflow runtime configuration. When set, `createApp()` collects

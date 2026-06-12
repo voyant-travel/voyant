@@ -1267,12 +1267,14 @@ describe("smartbillPlugin — invoice PDF artifacts", () => {
     const fetchMock = vi
       .fn<SmartbillFetch>()
       .mockResolvedValueOnce(jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }))
-      .mockResolvedValueOnce(textResponse(503, "pdf unavailable"))
+      .mockResolvedValue(textResponse(503, "pdf unavailable"))
     const logger = makeLogger()
     const plugin = smartbillPlugin({
       ...baseOptions,
       fetch: fetchMock,
       logger,
+      // Keep the retried PDF 503s fast in tests.
+      resilience: { retry: { baseDelayMs: 0, maxDelayMs: 1 } },
       artifacts: {
         db: {} as never,
         documentStorage: {
@@ -1295,7 +1297,8 @@ describe("smartbillPlugin — invoice PDF artifacts", () => {
       }),
     )
 
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    // 1 createInvoice POST (no retry) + 3 PDF GET attempts (503 is retried).
+    expect(fetchMock).toHaveBeenCalledTimes(4)
     expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
       expect.anything(),
       "inv_pdf_fail",
@@ -1525,6 +1528,8 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
       ...baseOptions,
       fetch: fetchMock,
       logger,
+      // Keep the retried cancel 500s fast in tests.
+      resilience: { retry: { baseDelayMs: 0, maxDelayMs: 1 } },
       artifacts: { db: {} as never },
     })
     const handler = subscriberFor(plugin, "invoice.voided").handler
@@ -1588,7 +1593,13 @@ describe("smartbillPlugin — invoice.external.sync.requested subscriber", () =>
   it("logs error on failure (fire-and-forget)", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "timeout"))
     const logger = makeLogger()
-    const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger,
+      // Keep the retried status 500s fast in tests.
+      resilience: { retry: { baseDelayMs: 0, maxDelayMs: 1 } },
+    })
     const handler = subscriberFor(plugin, "invoice.external.sync.requested").handler
 
     await handler(eventEnvelope({ id: "inv_err", externalNumber: "1" }))

@@ -1,3 +1,8 @@
+import {
+  type CircuitBreaker,
+  createCircuitBreaker,
+  resilientFetch,
+} from "@voyantjs/utils/resilience"
 import { ZodError } from "zod"
 import type {
   NetopiaFetch,
@@ -30,8 +35,25 @@ export interface NetopiaClientApi {
 }
 
 export interface NetopiaClientOptions
-  extends Pick<ResolvedNetopiaRuntimeOptions, "apiUrl" | "apiKey"> {
+  extends Pick<ResolvedNetopiaRuntimeOptions, "apiUrl" | "apiKey" | "resilience"> {
   fetch?: NetopiaFetch
+}
+
+/**
+ * One circuit breaker per Netopia base URL, module-level because clients
+ * are constructed per payment-start request and the breaker must outlive
+ * them to be useful (state is per-isolate, which is the right scope on
+ * edge runtimes).
+ */
+const breakersByBaseUrl = new Map<string, CircuitBreaker>()
+
+function breakerFor(apiUrl: string): CircuitBreaker {
+  let breaker = breakersByBaseUrl.get(apiUrl)
+  if (!breaker) {
+    breaker = createCircuitBreaker()
+    breakersByBaseUrl.set(apiUrl, breaker)
+  }
+  return breaker
 }
 
 export function resolveNetopiaRuntimeOptions(
@@ -64,6 +86,7 @@ export function resolveNetopiaRuntimeOptions(
       successStatuses: options.successStatuses,
       processingStatuses: options.processingStatuses,
       fetch: options.fetch,
+      resilience: options.resilience,
     })
   } catch (error) {
     if (error instanceof ZodError) {
@@ -96,6 +119,10 @@ function resolveMode(raw: string | undefined): NetopiaMode {
 export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClientApi {
   const apiUrl = options.apiUrl.replace(/\/$/, "")
   const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as NetopiaFetch | undefined)
+  const breaker = options.resilience?.breaker ?? breakerFor(apiUrl)
+  // Payments get a longer per-attempt ceiling than the 10s default used for
+  // non-payment upstreams; no stricter timeout existed before this.
+  const timeoutMs = options.resilience?.timeoutMs ?? 15_000
 
   async function request(
     method: string,
@@ -106,15 +133,29 @@ export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClien
       throw new Error("Netopia client requires a fetch implementation")
     }
 
-    const response = await fetchImpl(`${apiUrl}${path}`, {
-      method,
-      headers: {
-        Authorization: options.apiKey,
-        "Content-Type": "application/json",
-        Accept: "application/json",
+    const response = await resilientFetch(
+      `${apiUrl}${path}`,
+      {
+        method,
+        headers: {
+          Authorization: options.apiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
+      {
+        timeoutMs,
+        breaker,
+        // NEVER retry: payment initiation moves money and Netopia exposes no
+        // idempotency keys — a duplicate charge is worse than a failed
+        // checkout the customer can retry. `retryOn: () => false` also
+        // surfaces 5xx responses so the rich error mapping below keeps the
+        // upstream status + body (the breaker still records the failure).
+        retry: { retryOn: () => false },
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      },
+    )
 
     let text = ""
     let json: unknown = null

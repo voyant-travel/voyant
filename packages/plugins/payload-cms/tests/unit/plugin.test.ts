@@ -159,6 +159,8 @@ describe("payloadCmsPlugin", () => {
       ...baseOptions,
       fetch: fetchMock,
       logger: { error: errorFn },
+      // Keep the retried 500s fast in tests.
+      resilience: { retry: { baseDelayMs: 0, maxDelayMs: 1 } },
     })
     registerPlugins([plugin], { eventBus: bus })
 
