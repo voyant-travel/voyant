@@ -1,5 +1,11 @@
 # @voyantjs/plugin-netopia
 
+## 0.104.19
+
+### Patch Changes
+
+- a224ef6: Refine plugin HTTP fetch adapters to avoid unsafe implementation casts.
+
 ## 0.104.18
 
 ### Patch Changes

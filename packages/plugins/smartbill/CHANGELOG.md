@@ -1,5 +1,11 @@
 # @voyantjs/plugin-smartbill
 
+## 0.119.1
+
+### Patch Changes
+
+- a224ef6: Refine plugin HTTP fetch adapters to avoid unsafe implementation casts.
+
 ## 0.119.0
 
 ### Patch Changes
