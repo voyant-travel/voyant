@@ -1,5 +1,11 @@
 # @voyantjs/extras
 
+## 0.115.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.113.0
+
 ## 0.114.0
 
 ### Patch Changes

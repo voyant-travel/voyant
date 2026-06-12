@@ -1,5 +1,24 @@
 # @voyantjs/travel-composer-react
 
+## 0.106.0
+
+### Minor Changes
+
+- 6d496d0: Add the `./admin` entry: `createTravelComposerAdminExtension` delivers the trips admin surface per the packaged-admin RFC — the Trips nav group (spliced after Bookings via `insertAfter`, with All trips / New trip sub-items and a host-supplied icon), the trips list (`TripsHost` with the filters popover), and the trip detail page whose Edit mode lazy-mounts the now-packaged admin trip composer (previously an operator-template component). Loaders are SSR `data-only` and seed the list/detail queries through the host runtime; routes carry `trip.list`/`trip.detail` destination annotations and all cross-route links resolve through semantic destinations (`booking.detail`, `person.detail`). The composer/page stack reads its API client from the shared provider context instead of app env helpers.
+
+### Patch Changes
+
+- Updated dependencies [41b08db]
+  - @voyantjs/admin@0.111.0
+  - @voyantjs/catalog-react@0.113.0
+  - @voyantjs/bookings-react@0.115.0
+  - @voyantjs/crm-react@0.115.0
+  - @voyantjs/flights-react@0.115.0
+  - @voyantjs/catalog@0.113.0
+  - @voyantjs/finance@0.115.0
+  - @voyantjs/flights@0.115.0
+  - @voyantjs/travel-composer@0.106.0
+
 ## 0.105.8
 
 ### Patch Changes

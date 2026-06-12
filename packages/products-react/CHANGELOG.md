@@ -1,5 +1,25 @@
 # @voyantjs/products-react
 
+## 0.115.0
+
+### Minor Changes
+
+- 6d496d0: Add the `./admin` entry: `createProductsAdminExtension` contributes the full products admin routes (list, categories, detail) per the packaged-admin RFC — lazy page hosts (`ProductsHost`, `ProductCategoriesHost`, a packaged default detail page), SSR `data-only` loaders fed by the host runtime, the `ProductsListSkeleton`/`ProductDetailSkeleton` pending components, and route-backed destination annotations (`product.list`, `product.detail`, `productCategory.list`). The detail page exposes a `detailPageComponent` substitution seam for app-owned composition (e.g. the operator passes its wrapper that adds the availability-react option resource templates panel — a dependency cycle from this package — plus its app upload route and a product-pre-selected new-booking deep link). A new `createProductDetailRestApi` builds the `ProductDetailApi` REST transport from a plain `baseUrl` + fetcher pair. No navigation contributed — Products is base-nav-owned.
+
+### Patch Changes
+
+- Updated dependencies [41b08db]
+  - @voyantjs/admin@0.111.0
+  - @voyantjs/catalog-react@0.113.0
+  - @voyantjs/finance-react@0.115.0
+  - @voyantjs/availability-react@0.112.0
+  - @voyantjs/suppliers-react@0.111.0
+  - @voyantjs/extras-react@0.115.0
+  - @voyantjs/pricing-react@0.115.0
+  - @voyantjs/availability@0.112.0
+  - @voyantjs/finance@0.115.0
+  - @voyantjs/products@0.115.0
+
 ## 0.114.0
 
 ### Patch Changes

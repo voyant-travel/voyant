@@ -1,5 +1,11 @@
 # @voyantjs/admin-react
 
+## 0.111.0
+
+### Patch Changes
+
+- @voyantjs/admin-client@0.111.0
+
 ## 0.110.0
 
 ### Patch Changes

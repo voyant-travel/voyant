@@ -1,5 +1,12 @@
 # @voyantjs/suppliers
 
+## 0.111.0
+
+### Patch Changes
+
+- @voyantjs/identity@0.115.0
+- @voyantjs/facilities@0.107.5
+
 ## 0.110.1
 
 ### Patch Changes
