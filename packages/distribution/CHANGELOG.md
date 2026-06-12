@@ -1,5 +1,24 @@
 # @voyantjs/distribution
 
+## 0.109.1
+
+### Patch Changes
+
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+  - @voyantjs/core@0.107.0
+  - @voyantjs/db@0.105.0
+  - @voyantjs/hono@0.106.0
+  - @voyantjs/products@0.116.0
+  - @voyantjs/availability@0.113.0
+  - @voyantjs/bookings@0.116.0
+  - @voyantjs/catalog@0.114.0
+  - @voyantjs/identity@0.116.0
+  - @voyantjs/suppliers@0.111.1
+  - @voyantjs/workflows@0.107.1
+
 ## 0.109.0
 
 ### Patch Changes
