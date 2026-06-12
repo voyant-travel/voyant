@@ -1,5 +1,11 @@
 # @voyantjs/availability
 
+## 0.116.2
+
+### Patch Changes
+
+- e639610: Split availability allocation services into focused modules while preserving the existing public API and allocation behavior.
+
 ## 0.116.1
 
 ### Patch Changes
