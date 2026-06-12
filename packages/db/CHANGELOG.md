@@ -1,5 +1,19 @@
 # @voyantjs/db
 
+## 0.106.0
+
+### Minor Changes
+
+- 7255353: `createLinkService(...).list` accepts batched ID filters: `leftIds?: string[]` / `rightIds?: string[]` alongside the existing singular `leftId`/`rightId` (which keep working unchanged). A batched filter resolves with ONE `col = ANY($1)` query instead of one query per ID — on Workers + neon-http that's one subrequest and one roundtrip for N IDs. Details: ids are deduped; a one-element array collapses to the historical `col = $1` equality shape; singular + plural for the same side combine by intersection; an empty array (or an out-of-set singular) short-circuits to `[]` without touching the database; soft-delete filtering and `created_at ASC` ordering are unchanged. Read-only links stay correct: their resolvers only understand singular filters, so batched filters fan out one resolver call per ID (with any second batched side applied locally) — existing read-only resolver implementations need no changes.
+- 7255353: - `createCrudService(...).listAndCount` now runs **one** query instead of two: the total rides along as a `count(*) OVER ()` window column (stripped from returned rows). Results are identical, including soft-delete filtering and the offset-past-end case (which falls back to a count query). On per-query transports (neon-http) this halves the roundtrips and subrequests of every list endpoint.
+  - New `withServerlessDb(connectionString, fn, options?)`: runs `fn` with a scoped transaction-capable Neon WebSocket client and disposes it on settle — for event handlers, workflow steps, scheduled jobs, and scripts that need `db.transaction(...)` outside the request middleware.
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+
 ## 0.105.0
 
 ### Minor Changes

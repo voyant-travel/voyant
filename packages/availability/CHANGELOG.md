@@ -1,5 +1,19 @@
 # @voyantjs/availability
 
+## 0.114.0
+
+### Patch Changes
+
+- 7255353: New `idx_availability_slots_starts_at` on `availability_slots(starts_at)` — backs date-range scans that don't lead with a product/status column (the dashboard aggregates' from..to window).
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+
 ## 0.113.0
 
 ### Patch Changes

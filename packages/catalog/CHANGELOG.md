@@ -1,5 +1,22 @@
 # @voyantjs/catalog
 
+## 0.115.0
+
+### Minor Changes
+
+- 7255353: New `fetchOverlaysForEntities(db, entityModule, entityIds)` — batched form of `fetchOverlaysForEntity` that fetches active overlays for many entities of one module in a single `IN`-list query, returned as a `Map<entityId, ResolverOverlay[]>` (every requested id present; no-overlay entities map to `[]`). Pair it with the existing `resolveEntityViewWithOverlays` to resolve a whole page of entities with one overlay round trip instead of one per entity.
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+
 ## 0.114.0
 
 ### Patch Changes

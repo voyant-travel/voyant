@@ -1,5 +1,16 @@
 # @voyantjs/finance-react
 
+## 0.117.0
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+  - @voyantjs/finance@0.117.0
+  - @voyantjs/availability-react@0.114.0
+  - @voyantjs/bookings-react@0.117.0
+  - @voyantjs/products-react@0.117.0
+  - @voyantjs/suppliers-react@0.111.2
+
 ## 0.116.0
 
 ### Patch Changes

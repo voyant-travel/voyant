@@ -1,5 +1,16 @@
 # @voyantjs/availability-react
 
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+  - @voyantjs/availability@0.114.0
+  - @voyantjs/bookings-react@0.117.0
+  - @voyantjs/extras-react@0.117.0
+  - @voyantjs/products-react@0.117.0
+  - @voyantjs/allocation-ui@0.115.0
+
 ## 0.113.0
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @voyantjs/auth
 
+## 0.113.0
+
+### Minor Changes
+
+- 7255353: `createBetterAuth` enables Better Auth's session `cookieCache` by default (signed cookie, 5-minute TTL): `getSession` answers from the cookie with zero Postgres roundtrips on most requests. Trade-off: a revoked session can stay usable for up to `maxAge` seconds. Disable with `sessionCookieCache: false` or tune via `sessionCookieCache: { maxAge }` for revocation-sensitive deployments.
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/db@0.106.0
+
 ## 0.112.1
 
 ### Patch Changes

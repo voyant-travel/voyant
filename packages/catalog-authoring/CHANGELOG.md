@@ -1,5 +1,26 @@
 # @voyantjs/catalog-authoring
 
+## 0.106.14
+
+### Patch Changes
+
+- 7255353: The catalog-authoring extension declares `requiresTransactionalDb: true` — its compose/duplicate routes run interactive transactions (atomic product-graph clone) and mount under `/v1/admin/products`, so apps that split db factories per surface now serve that surface with the transaction-capable client.
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+  - @voyantjs/availability@0.114.0
+  - @voyantjs/products@0.117.0
+  - @voyantjs/extras@0.117.0
+  - @voyantjs/pricing@0.117.0
+
 ## 0.106.13
 
 ### Patch Changes

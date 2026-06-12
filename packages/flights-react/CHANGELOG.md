@@ -1,5 +1,16 @@
 # @voyantjs/flights-react
 
+## 0.117.0
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+  - @voyantjs/finance@0.117.0
+  - @voyantjs/flights@0.117.0
+  - @voyantjs/bookings-react@0.117.0
+  - @voyantjs/checkout-react@0.117.0
+  - @voyantjs/crm-react@0.117.0
+
 ## 0.116.0
 
 ### Patch Changes

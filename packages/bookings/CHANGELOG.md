@@ -1,5 +1,20 @@
 # @voyantjs/bookings
 
+## 0.117.0
+
+### Patch Changes
+
+- 7255353: Resource capacity check no longer runs one `COUNT(DISTINCT ...)` query per allocation entry: all checked (kind, resource) pairs are counted in ONE grouped query via a `VALUES` join (2 queries total — the unchanged `FOR UPDATE` lock plus the grouped count — instead of 1 + N). Semantics are unchanged: same lock, same per-resource violations and error messages, missing/mismatched resources still reported without a count.
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyantjs/core@0.108.0
+  - @voyantjs/db@0.106.0
+  - @voyantjs/hono@0.107.0
+  - @voyantjs/action-ledger@0.104.6
+
 ## 0.116.0
 
 ### Patch Changes

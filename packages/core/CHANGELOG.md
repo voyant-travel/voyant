@@ -1,5 +1,15 @@
 # @voyantjs/core
 
+## 0.108.0
+
+### Minor Changes
+
+- 7255353: `queryGraph` resolves each relation with ONE batched link lookup instead of one `LinkService.list` call per base record — listing 50 products with `category.*` previously fired 50 link-table queries (each a subrequest + roundtrip on Workers + neon-http); it now fires 1. Attach semantics are unchanged: list sides still attach as arrays, non-list sides as object-or-null, target IDs are deduped before hydration, and per-base target order is preserved (rows arrive in the link service's `created_at ASC` order and are grouped locally). To support this, the `LinkService` interface's `list` filter is now the new exported `LinkListFilter` type, which adds optional `leftIds`/`rightIds` arrays (matched as one batched query) next to the existing singular fields — existing implementations remain assignable, but custom `LinkService` implementations and test mocks must handle the plural fields to be queried by `queryGraph`.
+
+### Patch Changes
+
+- 7255353: `Extension` gains an optional `requiresTransactionalDb` flag. Extensions mount under their target module's path prefix, so a transacting extension (e.g. catalog-authoring's compose/duplicate routes under `/v1/admin/products`) must be able to force the transaction-capable db client onto that surface when an app splits db factories per surface.
+
 ## 0.107.0
 
 ### Minor Changes
