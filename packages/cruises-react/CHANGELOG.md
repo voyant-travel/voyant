@@ -1,5 +1,13 @@
 # @voyantjs/cruises-react
 
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [41b08db]
+  - @voyantjs/catalog-react@0.113.0
+  - @voyantjs/cruises@0.114.0
+
 ## 0.113.0
 
 ### Patch Changes

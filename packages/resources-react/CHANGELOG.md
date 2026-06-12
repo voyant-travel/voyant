@@ -1,5 +1,13 @@
 # @voyantjs/resources-react
 
+## 0.111.0
+
+### Patch Changes
+
+- Updated dependencies [41b08db]
+  - @voyantjs/admin@0.111.0
+  - @voyantjs/resources@0.111.0
+
 ## 0.110.0
 
 ### Patch Changes

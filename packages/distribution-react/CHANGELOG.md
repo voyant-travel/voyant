@@ -1,5 +1,13 @@
 # @voyantjs/distribution-react
 
+## 0.109.0
+
+### Patch Changes
+
+- Updated dependencies [41b08db]
+  - @voyantjs/admin@0.111.0
+  - @voyantjs/distribution@0.109.0
+
 ## 0.108.0
 
 ### Minor Changes

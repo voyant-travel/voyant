@@ -1,5 +1,14 @@
 # @voyantjs/sellability-react
 
+## 0.115.0
+
+### Patch Changes
+
+- Updated dependencies [6d496d0]
+  - @voyantjs/products-react@0.115.0
+  - @voyantjs/distribution-react@0.109.0
+  - @voyantjs/sellability@0.115.0
+
 ## 0.114.0
 
 ### Patch Changes
