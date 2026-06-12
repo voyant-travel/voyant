@@ -1,4 +1,3 @@
-// agent-quality: file-size exception -- owner: distribution-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -11,19 +10,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Label,
-  Sheet,
-  SheetBody,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@voyantjs/ui/components"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@voyantjs/ui/components/empty"
@@ -35,149 +22,34 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { AlertTriangle, ChevronDown, Loader2, RotateCw, X } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { AlertTriangle, Loader2, X } from "lucide-react"
+import { useState } from "react"
 import { useDistributionUiMessagesOrDefault } from "../i18n/index.js"
-import { defaultFetcher, useVoyantDistributionContext, type VoyantFetcher } from "../index.js"
+import { defaultFetcher, useVoyantDistributionContext } from "../index.js"
+import { AutoRefreshIndicator, ReconcileMenu } from "./channel-sync-controls.js"
+import { DeliveriesDrawer } from "./channel-sync-deliveries-drawer.js"
+import {
+  type BookingRecord,
+  type BookingsResponse,
+  type ChannelRecord,
+  type ChannelSyncPageProps,
+  type ChannelsResponse,
+  fetchJson,
+  formatChannelKind,
+  formatRelative,
+  formatTemplate,
+  LINKS_REFETCH_MS,
+  type LinksResponse,
+  type PushStatus,
+  type ReconcilerResult,
+  STATUS_TILES,
+  STATUS_VARIANTS,
+  THROTTLING_REFETCH_MS,
+  type ThrottlingResponse,
+  useDebouncedValue,
+} from "./channel-sync-page-utils.js"
 
-// Types matching the admin API at distribution/src/channel-push/admin-routes.ts
-
-type PushStatus = "pending" | "ok" | "failed" | "compensated"
-
-interface ChannelBookingLinkRow {
-  link: {
-    id: string
-    channelId: string
-    bookingId: string
-    bookingItemId: string | null
-    sourceKind: string | null
-    sourceConnectionId: string | null
-    pushStatus: PushStatus | string
-    pushAttempts: number
-    lastPushAt: string | null
-    lastError: string | null
-    externalBookingId: string | null
-    externalReference: string | null
-    externalStatus: string | null
-    createdAt: string
-  }
-  channelName: string
-  channelKind: string
-}
-
-interface LinksResponse {
-  data: ChannelBookingLinkRow[]
-  counts: Record<string, number>
-}
-
-interface DeliveryRow {
-  id: string
-  sourceModule: string
-  sourceEvent: string
-  sourceEntityId: string | null
-  targetUrl: string
-  targetKind: string | null
-  targetRef: string | null
-  requestMethod: string
-  responseStatus: number | null
-  responseBodyExcerpt: string | null
-  attemptNumber: number
-  status: string
-  errorClass: string | null
-  errorMessage: string | null
-  durationMs: number | null
-  createdAt: string
-}
-
-interface DeliveriesResponse {
-  data: DeliveryRow[]
-}
-
-interface ThrottlingRow {
-  channelId: string | null
-  count: number
-}
-
-interface ThrottlingResponse {
-  data: ThrottlingRow[]
-  sinceMs: number
-}
-
-interface ReconcilerResult {
-  scanned: number
-  triggered: number
-}
-
-interface BookingRecord {
-  id: string
-  bookingNumber: string
-  status: string
-}
-
-interface BookingsResponse {
-  data: BookingRecord[]
-}
-
-interface ChannelRecord {
-  id: string
-  name: string
-  kind: string
-  status: string
-}
-
-interface ChannelsResponse {
-  data: ChannelRecord[]
-}
-
-export interface ChannelSyncPageProps {
-  baseUrl?: string
-  fetcher?: VoyantFetcher
-  className?: string
-}
-
-// Fetch helpers
-
-async function fetchJson<T>(
-  path: string,
-  options: { baseUrl: string; fetcher: VoyantFetcher },
-  init?: RequestInit,
-): Promise<T> {
-  const res = await options.fetcher(joinUrl(options.baseUrl, path), {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  })
-  const text = await res.text()
-  const body = text
-    ? (JSON.parse(text) as { data?: T; error?: string })
-    : ({} as { error?: string })
-  if (!res.ok) {
-    throw new Error(body.error ?? `Request failed: ${res.status}`)
-  }
-  return body as T
-}
-
-const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  pending: "secondary",
-  ok: "default",
-  failed: "destructive",
-  compensated: "outline",
-}
-
-const STATUS_TILES: ReadonlyArray<{
-  key: PushStatus
-  tone: "default" | "secondary" | "destructive" | "outline"
-}> = [
-  { key: "pending", tone: "secondary" },
-  { key: "ok", tone: "default" },
-  { key: "failed", tone: "destructive" },
-  { key: "compensated", tone: "outline" },
-]
-
-const LINKS_REFETCH_MS = 15_000
-const THROTTLING_REFETCH_MS = 60_000
+export type { ChannelSyncPageProps } from "./channel-sync-page-utils.js"
 
 // Page
 
@@ -547,265 +419,4 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       />
     </div>
   )
-}
-
-function ReconcileMenu({
-  onRun,
-  isRunning,
-  lastResult,
-  messages,
-}: {
-  onRun: (flow: "bookings" | "availability" | "content") => void
-  isRunning: boolean
-  lastResult: ReconcilerResult | null
-  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="outline" size="sm" disabled={isRunning}>
-            {isRunning ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RotateCw className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {messages.reconcile.trigger}
-            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{messages.reconcile.menuLabel}</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => onRun("bookings")}>
-            {messages.reconcile.bookings}
-            <span className="ml-auto text-xs text-muted-foreground">
-              {messages.reconcile.priority}
-            </span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onRun("availability")}>
-            {messages.reconcile.availability}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onRun("content")}>
-            {messages.reconcile.content}
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        {lastResult ? (
-          <>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              {formatTemplate(messages.reconcile.lastRun, {
-                scanned: lastResult.scanned,
-                triggered: lastResult.triggered,
-              })}
-            </div>
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function AutoRefreshIndicator({
-  isFetching,
-  dataUpdatedAt,
-  intervalMs,
-  messages,
-}: {
-  isFetching: boolean
-  dataUpdatedAt: number
-  intervalMs: number
-  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
-}) {
-  // Tick every second so the "Updated Xs ago" stays current.
-  const [, setNow] = useState(Date.now())
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
-
-  if (!dataUpdatedAt) {
-    return (
-      <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        {messages.refresh.loading}
-      </span>
-    )
-  }
-
-  const seconds = Math.max(0, Math.round((Date.now() - dataUpdatedAt) / 1000))
-  const intervalSec = Math.round(intervalMs / 1000)
-
-  return (
-    <span
-      className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex"
-      title={formatTemplate(messages.refresh.title, { seconds: intervalSec })}
-    >
-      {isFetching ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      ) : (
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-        </span>
-      )}
-      <span className="tabular-nums">
-        {isFetching
-          ? messages.refresh.refreshing
-          : formatTemplate(messages.refresh.updatedAgo, {
-              duration: formatShortDuration(seconds),
-            })}
-      </span>
-    </span>
-  )
-}
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = useState(value)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => setDebounced(value), delayMs)
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [value, delayMs])
-  return debounced
-}
-
-function DeliveriesDrawer({
-  bookingId,
-  client,
-  onClose,
-  messages,
-}: {
-  bookingId: string | null
-  client: { baseUrl: string; fetcher: VoyantFetcher }
-  onClose: () => void
-  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
-}) {
-  const isOpen = bookingId !== null
-  const query = useQuery<DeliveriesResponse>({
-    enabled: isOpen,
-    queryKey: ["channel-push-deliveries", bookingId],
-    queryFn: () => {
-      const params = new URLSearchParams({ bookingId: bookingId ?? "", limit: "200" })
-      return fetchJson<DeliveriesResponse>(
-        `/v1/admin/distribution/channel-push/deliveries?${params}`,
-        client,
-      )
-    },
-  })
-
-  const rows = query.data?.data ?? []
-
-  return (
-    <Sheet open={isOpen} onOpenChange={(open) => (open ? null : onClose())}>
-      <SheetContent side="right" size="xl">
-        <SheetHeader>
-          <SheetTitle>
-            {formatTemplate(messages.drawer.title, { bookingId: bookingId ?? "" })}
-          </SheetTitle>
-        </SheetHeader>
-        <SheetBody className="flex flex-col gap-3">
-          {query.isPending ? (
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : rows.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyTitle>{messages.drawer.emptyTitle}</EmptyTitle>
-                <EmptyDescription>{messages.drawer.emptyDescription}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            rows.map((row) => (
-              <Card key={row.id} className="text-xs">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={row.status === "succeeded" ? "default" : "destructive"}>
-                        {row.status}
-                      </Badge>
-                      <span className="font-mono">{row.sourceEvent}</span>
-                      <span className="text-muted-foreground">
-                        {formatTemplate(messages.drawer.attempt, { number: row.attemptNumber })}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground">
-                      {row.durationMs != null ? `${row.durationMs}ms` : ""}
-                    </span>
-                  </div>
-                  <CardDescription className="font-mono">
-                    {row.requestMethod} {row.targetUrl}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    {row.responseStatus != null ? (
-                      <Badge variant="outline">
-                        {formatTemplate(messages.drawer.httpStatus, { status: row.responseStatus })}
-                      </Badge>
-                    ) : null}
-                    {row.errorClass ? <Badge variant="destructive">{row.errorClass}</Badge> : null}
-                    <span className="text-muted-foreground">{formatRelative(row.createdAt)}</span>
-                  </div>
-                  {row.errorMessage ? (
-                    <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-destructive/10 p-2 text-destructive">
-                      {row.errorMessage}
-                    </pre>
-                  ) : null}
-                  {row.responseBodyExcerpt ? (
-                    <pre className="overflow-x-auto rounded bg-muted p-2">
-                      {row.responseBodyExcerpt}
-                    </pre>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </SheetBody>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
-function joinUrl(baseUrl: string, path: string): string {
-  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
-  const trimmedPath = path.startsWith("/") ? path : `/${path}`
-  return `${trimmedBase}${trimmedPath}`
-}
-
-function formatChannelKind(kind: string): string {
-  return kind.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())
-}
-
-function formatShortDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
-  const min = Math.round(seconds / 60)
-  if (min < 60) return `${min}m`
-  const hours = Math.round(min / 60)
-  return `${hours}h`
-}
-
-function formatRelative(iso: string): string {
-  const date = new Date(iso)
-  const diffMs = Date.now() - date.getTime()
-  const sec = Math.round(diffMs / 1000)
-  if (sec < 60) return `${sec}s ago`
-  const min = Math.round(sec / 60)
-  if (min < 60) return `${min}m ago`
-  const hours = Math.round(min / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.round(hours / 24)
-  return `${days}d ago`
-}
-
-function formatTemplate(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
-    const value = values[key]
-    return value === undefined ? "" : String(value)
-  })
 }
