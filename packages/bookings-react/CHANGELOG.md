@@ -1,5 +1,22 @@
 # @voyantjs/bookings-react
 
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [f7bd971]
+  - @voyantjs/finance-react@0.114.0
+  - @voyantjs/legal-react@0.114.0
+  - @voyantjs/products-react@0.114.0
+  - @voyantjs/availability-react@0.111.0
+  - @voyantjs/identity-react@0.114.0
+  - @voyantjs/catalog-react@0.112.0
+  - @voyantjs/extras-react@0.114.0
+  - @voyantjs/pricing-react@0.114.0
+  - @voyantjs/crm-react@0.114.0
+  - @voyantjs/bookings@0.114.0
+  - @voyantjs/suppliers-react@0.110.1
+
 ## 0.113.0
 
 ### Minor Changes

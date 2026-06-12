@@ -1,5 +1,13 @@
 # @voyantjs/promotions
 
+## 0.110.1
+
+### Patch Changes
+
+- @voyantjs/catalog@0.112.0
+- @voyantjs/products@0.114.0
+- @voyantjs/storefront@0.114.0
+
 ## 0.110.0
 
 ### Patch Changes
