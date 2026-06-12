@@ -18,30 +18,37 @@ export const requestId: MiddlewareHandler = async (c, next) => {
   await next()
 }
 
-const REDACT_HEADERS = new Set(["authorization", "x-api-key"])
+const LOGGED_HEADERS = new Set([
+  "accept",
+  "cf-connecting-ip",
+  "cf-ray",
+  "content-length",
+  "content-type",
+  "origin",
+  "referer",
+  "user-agent",
+  "x-forwarded-for",
+  "x-request-id",
+])
 
 export function handleApiError(err: unknown, c: Context): Response {
   const id = c.res.headers.get("X-Request-Id") || generateRequestId()
   const apiError = normalizeValidationError(err)
   const errRecord = err instanceof Object ? (err as Record<string, unknown>) : {}
-  const code = apiError?.code ?? (typeof errRecord.code === "string" ? errRecord.code : undefined)
-  const status = apiError?.status ?? (typeof errRecord.status === "number" ? errRecord.status : 500)
+  const code = apiError?.code
+  const status = apiError?.status ?? 500
   const details =
     apiError?.details ??
-    (status < 500 && errRecord.details && typeof errRecord.details === "object"
+    (apiError && errRecord.details && typeof errRecord.details === "object"
       ? (errRecord.details as Record<string, unknown>)
       : undefined)
-  const errorMessage =
-    status < 500
-      ? (apiError?.message ??
-        (typeof errRecord.message === "string" ? errRecord.message : "Bad Request"))
-      : "Internal Server Error"
+  const errorMessage = apiError ? apiError.message : "Internal Server Error"
 
   try {
     const headers: Record<string, string> = {}
     c.req.raw.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase()
-      headers[lowerKey] = REDACT_HEADERS.has(lowerKey) ? "[redacted]" : value
+      if (LOGGED_HEADERS.has(lowerKey)) headers[lowerKey] = value
     })
 
     console.error("[API:error]", {

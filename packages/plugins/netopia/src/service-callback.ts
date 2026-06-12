@@ -1,7 +1,7 @@
 import type { EventBus } from "@voyantjs/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { resolveNetopiaRuntimeOptions } from "./client.js"
+import { createNetopiaClient, resolveNetopiaRuntimeOptions } from "./client.js"
 import {
   financeService,
   mapNetopiaPaymentStatus,
@@ -40,9 +40,90 @@ export async function handleCallback(
     }
   }
 
-  const callbackState = mapNetopiaPaymentStatus(payload.payment.status, runtime)
+  let verifiedStatus = payload.payment.status
+  let verification: NetopiaCallbackResult["verification"] = {
+    outcome: runtime.trustUnverifiedCallbacks ? "trusted_unverified" : "verified",
+    claimedStatus: payload.payment.status,
+  }
+
+  if (!runtime.trustUnverifiedCallbacks) {
+    try {
+      const statusResponse = await createNetopiaClient(runtime).getPaymentStatus({
+        posID: runtime.posSignature,
+        ntpID: payload.payment.ntpID,
+        orderID: orderId,
+      })
+      if (statusResponse.order?.orderID && statusResponse.order.orderID !== orderId) {
+        return {
+          action: "rejected",
+          reason: "status_order_mismatch",
+          session,
+          orderId,
+          verification: {
+            outcome: "rejected",
+            claimedStatus: payload.payment.status,
+            reason: "status_order_mismatch",
+          },
+        }
+      }
+      if (statusResponse.payment?.ntpID && statusResponse.payment.ntpID !== payload.payment.ntpID) {
+        return {
+          action: "rejected",
+          reason: "status_transaction_mismatch",
+          session,
+          orderId,
+          verification: {
+            outcome: "rejected",
+            claimedStatus: payload.payment.status,
+            reason: "status_transaction_mismatch",
+          },
+        }
+      }
+      if (typeof statusResponse.payment?.status !== "number") {
+        return {
+          action: "deferred",
+          reason: "status_lookup_missing_payment_status",
+          session,
+          orderId,
+          verification: {
+            outcome: "unavailable",
+            claimedStatus: payload.payment.status,
+            reason: "status_lookup_missing_payment_status",
+          },
+        }
+      }
+      verifiedStatus = statusResponse.payment.status
+      verification = {
+        outcome: "verified",
+        claimedStatus: payload.payment.status,
+        verifiedStatus,
+      }
+    } catch (error) {
+      return {
+        action: "deferred",
+        reason: error instanceof Error ? error.message : "status_lookup_failed",
+        session,
+        orderId,
+        verification: {
+          outcome: "unavailable",
+          claimedStatus: payload.payment.status,
+          reason: "status_lookup_failed",
+        },
+      }
+    }
+  }
+
+  const verifiedPayload: NetopiaWebhookPayload = {
+    ...payload,
+    payment: {
+      ...payload.payment,
+      status: verifiedStatus,
+    },
+  }
+  const callbackState = mapNetopiaPaymentStatus(verifiedPayload.payment.status, runtime)
   const providerPayload = mergeRecord(session.providerPayload, {
     netopiaCallback: payload,
+    netopiaCallbackVerification: verification,
   })
 
   // Note: we intentionally don't validate `payment.amount` / `payment.currency`
@@ -59,8 +140,8 @@ export async function handleCallback(
     const updated = await financeService.updatePaymentSession(db, session.id, {
       status: "processing",
       provider: "netopia",
-      providerSessionId: payload.payment.ntpID,
-      providerPaymentId: payload.payment.ntpID,
+      providerSessionId: verifiedPayload.payment.ntpID,
+      providerPaymentId: verifiedPayload.payment.ntpID,
       externalReference: orderId,
       providerPayload,
     })
@@ -69,6 +150,7 @@ export async function handleCallback(
       action: "processing",
       session: updated,
       orderId,
+      verification,
     }
   }
 
@@ -76,8 +158,8 @@ export async function handleCallback(
     if (session.status === "paid" || session.status === "authorized") {
       const current = await financeService.updatePaymentSession(db, session.id, {
         provider: "netopia",
-        providerSessionId: payload.payment.ntpID,
-        providerPaymentId: payload.payment.ntpID,
+        providerSessionId: verifiedPayload.payment.ntpID,
+        providerPaymentId: verifiedPayload.payment.ntpID,
         externalReference: orderId,
         providerPayload,
       })
@@ -87,6 +169,7 @@ export async function handleCallback(
         reason: "already_completed",
         session: current,
         orderId,
+        verification,
       }
     }
 
@@ -97,23 +180,25 @@ export async function handleCallback(
         status: "paid",
         captureMode: "manual",
         paymentMethod: "credit_card",
-        providerSessionId: payload.payment.ntpID,
-        providerPaymentId: payload.payment.ntpID,
+        providerSessionId: verifiedPayload.payment.ntpID,
+        providerPaymentId: verifiedPayload.payment.ntpID,
         externalReference: orderId,
         externalAuthorizationId:
-          typeof payload.payment.data?.AuthCode === "string"
-            ? payload.payment.data.AuthCode
-            : payload.payment.ntpID,
+          typeof verifiedPayload.payment.data?.AuthCode === "string"
+            ? verifiedPayload.payment.data.AuthCode
+            : verifiedPayload.payment.ntpID,
         externalCaptureId:
-          typeof payload.payment.data?.RRN === "string"
-            ? payload.payment.data.RRN
-            : payload.payment.ntpID,
+          typeof verifiedPayload.payment.data?.RRN === "string"
+            ? verifiedPayload.payment.data.RRN
+            : verifiedPayload.payment.ntpID,
         approvalCode:
-          typeof payload.payment.data?.AuthCode === "string"
-            ? payload.payment.data.AuthCode
+          typeof verifiedPayload.payment.data?.AuthCode === "string"
+            ? verifiedPayload.payment.data.AuthCode
             : undefined,
         referenceNumber:
-          typeof payload.payment.data?.RRN === "string" ? payload.payment.data.RRN : undefined,
+          typeof verifiedPayload.payment.data?.RRN === "string"
+            ? verifiedPayload.payment.data.RRN
+            : undefined,
         authorizedAt: new Date().toISOString(),
         capturedAt: new Date().toISOString(),
         paymentDate: new Date().toISOString(),
@@ -126,20 +211,22 @@ export async function handleCallback(
       action: "completed",
       session: completed,
       orderId,
+      verification,
     }
   }
 
   const failed = await financeService.failPaymentSession(db, session.id, {
-    providerSessionId: payload.payment.ntpID,
-    providerPaymentId: payload.payment.ntpID,
+    providerSessionId: verifiedPayload.payment.ntpID,
+    providerPaymentId: verifiedPayload.payment.ntpID,
     externalReference: orderId,
     failureCode:
-      typeof payload.payment.code === "string" && payload.payment.code.length > 0
-        ? payload.payment.code
-        : `netopia_status_${payload.payment.status}`,
+      typeof verifiedPayload.payment.code === "string" && verifiedPayload.payment.code.length > 0
+        ? verifiedPayload.payment.code
+        : `netopia_status_${verifiedPayload.payment.status}`,
     failureMessage:
-      typeof payload.payment.message === "string" && payload.payment.message.length > 0
-        ? payload.payment.message
+      typeof verifiedPayload.payment.message === "string" &&
+      verifiedPayload.payment.message.length > 0
+        ? verifiedPayload.payment.message
         : "Netopia payment was not approved",
     providerPayload,
   })
@@ -148,5 +235,6 @@ export async function handleCallback(
     action: "failed",
     session: failed,
     orderId,
+    verification,
   }
 }

@@ -166,6 +166,14 @@ async function enforceGuestBookingLookupRateLimit(c: Context, bookingCode: strin
   return c.json({ error: "Too Many Requests" }, 429)
 }
 
+function bookingLookupRateLimitKey(input: {
+  bookingId?: string
+  bookingNumber?: string
+  bookingCode?: string
+}) {
+  return input.bookingCode ?? input.bookingNumber ?? input.bookingId ?? "unknown"
+}
+
 function getRouteRuntime(c: Context): BookingRouteRuntime {
   const container = (c.var as { container?: { resolve: (key: string) => unknown } }).container
   try {
@@ -361,6 +369,13 @@ export const publicBookingRoutes = new Hono<Env>()
   )
   .get("/overview", async (c) => {
     const query = await parseQuery(c, publicBookingOverviewAccessQuerySchema)
+    if (query.email) {
+      const rateLimited = await enforceGuestBookingLookupRateLimit(
+        c,
+        bookingLookupRateLimitKey(query),
+      )
+      if (rateLimited) return rateLimited
+    }
     const overview = query.email
       ? await publicBookingsService.getOverview(c.get("db"), {
           bookingId: query.bookingId,

@@ -7,12 +7,11 @@
 
 // IMPORTANT: the workflow bundle must be staged next to this file as
 // `./bundle.mjs` before `wrangler deploy`.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error — bundle.mjs is staged at deploy time, may not exist in source.
 import "./bundle.mjs"
 
 import { Container } from "@cloudflare/containers"
-import { createBearerVerifier } from "@voyantjs/workflows/auth"
+import { parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
 import { handleStepRequest, type StepRunner } from "@voyantjs/workflows/handler"
 import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
@@ -32,6 +31,7 @@ export interface Env {
   BUNDLE_R2: R2Bucket
   BUNDLE_HASHES: KVNamespace
   VOYANT_API_TOKENS?: string
+  VOYANT_WORKFLOWS_ALLOW_UNAUTHENTICATED?: string
   R2_ACCOUNT_ID?: string
   R2_ACCESS_KEY_ID?: string
   R2_SECRET_ACCESS_KEY?: string
@@ -87,14 +87,12 @@ function createOptionalNodeStepRunner(env: Env): StepRunner | undefined {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const tokens = (env.VOYANT_API_TOKENS ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-
     return handleWorkerRequest(request, {
       runDO: env.WORKFLOW_RUN_DO,
-      verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined,
+      verifyRequest: resolveRequestVerifier({
+        tokens: parseTokenList(env.VOYANT_API_TOKENS),
+        allowUnauthenticated: env.VOYANT_WORKFLOWS_ALLOW_UNAUTHENTICATED === "1",
+      }),
     })
   },
 } satisfies ExportedHandler<Env>

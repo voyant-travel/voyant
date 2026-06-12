@@ -10,6 +10,8 @@ import type {
   NetopiaRuntimeOptions,
   NetopiaStartPaymentRequest,
   NetopiaStartPaymentResponse,
+  NetopiaStatusRequest,
+  NetopiaStatusResponse,
   ResolvedNetopiaRuntimeOptions,
 } from "./types.js"
 import { resolvedNetopiaRuntimeOptionsSchema } from "./validation.js"
@@ -32,6 +34,13 @@ export const NETOPIA_API_BASES: Record<NetopiaMode, string> = {
 
 export interface NetopiaClientApi {
   startCardPayment(request: NetopiaStartPaymentRequest): Promise<NetopiaStartPaymentResponse>
+  /**
+   * Authoritative payment-status lookup (`POST /operation/status`,
+   * merchant-authenticated via the API key). This is the server-to-server
+   * source of truth the callback handler verifies inbound IPNs against —
+   * the IPN body itself is never trusted for state transitions.
+   */
+  getPaymentStatus(request: NetopiaStatusRequest): Promise<NetopiaStatusResponse>
 }
 
 export interface NetopiaClientOptions
@@ -68,6 +77,13 @@ export function resolveNetopiaRuntimeOptions(
   const posSignature = options.posSignature ?? coerceString(env.NETOPIA_POS_SIGNATURE)
   const notifyUrl = options.notifyUrl ?? coerceString(env.NETOPIA_NOTIFY_URL)
   const redirectUrl = options.redirectUrl ?? coerceString(env.NETOPIA_REDIRECT_URL)
+  // PEM material is often stored as a single-line env var with literal `\n`
+  // escapes — normalize those back into real newlines.
+  const ipnPublicKey = (
+    options.ipnPublicKey ?? coerceString(env.NETOPIA_IPN_PUBLIC_KEY)
+  )?.replaceAll("\\n", "\n")
+  const trustUnverifiedCallbacks =
+    options.trustUnverifiedCallbacks ?? coerceBoolean(env.NETOPIA_TRUST_UNVERIFIED_CALLBACKS)
 
   if (!apiKey) throw new Error("Missing Netopia config: NETOPIA_API_KEY")
   if (!posSignature) throw new Error("Missing Netopia config: NETOPIA_POS_SIGNATURE")
@@ -85,6 +101,8 @@ export function resolveNetopiaRuntimeOptions(
       language: options.language,
       successStatuses: options.successStatuses,
       processingStatuses: options.processingStatuses,
+      ipnPublicKey,
+      trustUnverifiedCallbacks,
       fetch: options.fetch,
       resilience: options.resilience,
     })
@@ -104,6 +122,16 @@ export function resolveNetopiaRuntimeOptions(
 
 function coerceString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+function coerceBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "1" || normalized === "true") return true
+    if (normalized === "0" || normalized === "false" || normalized === "") return false
+  }
+  return undefined
 }
 
 function resolveMode(raw: string | undefined): NetopiaMode {
@@ -188,6 +216,25 @@ export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClien
             : stripHtml(res.text).slice(0, 200))
         throw new Error(
           `Netopia start payment failed (${json.error?.code ?? res.status}): ${detail}`,
+        )
+      }
+      return json
+    },
+
+    async getPaymentStatus(requestBody: NetopiaStatusRequest) {
+      // Read-only verification call. Still a single attempt — the IPN
+      // retry loop (we answer the callback with a retryable error when
+      // this fails) is the recovery mechanism, not client-side retries.
+      const res = await request("POST", "/operation/status", requestBody)
+      const json = (res.json ?? {}) as NetopiaStatusResponse
+      if (!res.ok || json.error) {
+        const detail =
+          json.error?.message ??
+          (res.status === 404
+            ? `Endpoint not found at ${apiUrl}/operation/status. Verify NETOPIA_MODE/NETOPIA_URL.`
+            : stripHtml(res.text).slice(0, 200))
+        throw new Error(
+          `Netopia status lookup failed (${json.error?.code ?? res.status}): ${detail}`,
         )
       }
       return json

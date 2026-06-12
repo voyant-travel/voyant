@@ -11,6 +11,7 @@ const runtimeOptions = {
   posSignature: "pos-signature",
   notifyUrl: "https://api.example.com/netopia/callback",
   redirectUrl: "https://app.example.com/checkout/return",
+  trustUnverifiedCallbacks: true,
 } as const
 
 const baseSession = {

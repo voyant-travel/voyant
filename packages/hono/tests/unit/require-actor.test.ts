@@ -119,15 +119,29 @@ describe("requireActor", () => {
     expect(none.status).toBe(401)
   })
 
-  it("bypasses the check for internal requests", async () => {
+  it("does not bypass the check for internal requests without matching actor or scopes", async () => {
     const app = makeApp((c) => {
       c.set("actor", "customer")
+      c.set("callerType", "internal")
       c.set("isInternalRequest", true)
     })
     app.use("*", requireActor("staff"))
     app.get("/", (c) => c.json({ ok: true }))
 
     const res = await app.request("/")
+    expect(res.status).toBe(403)
+  })
+
+  it("allows internal requests with method-derived resource permission", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "internal")
+      c.set("isInternalRequest", true)
+      c.set("scopes", ["products:read"])
+    })
+    app.use("*", requireActor("staff"))
+    app.get("/v1/products", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/products")
     expect(res.status).toBe(200)
   })
 

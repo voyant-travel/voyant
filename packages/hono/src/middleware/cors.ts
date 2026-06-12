@@ -6,7 +6,6 @@ interface CompiledAllowlist {
   entries: string[]
   /** Pre-compiled matcher per entry — equality check or wildcard RegExp. */
   matchers: Array<(origin: string) => boolean>
-  hasLocalhostEntry: boolean
 }
 
 /**
@@ -18,19 +17,17 @@ interface CompiledAllowlist {
  */
 const compiledAllowlists = new Map<string, CompiledAllowlist>()
 
-function isLocalhostOrigin(origin: string): boolean {
-  try {
-    const { hostname } = new URL(origin)
-    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]"
-  } catch {
-    return false
-  }
-}
-
 function compileMatcher(pattern: string): (origin: string) => boolean {
+  // Credentialed CORS must never turn a bare "*" into reflected allow-all.
+  if (pattern === "*") return () => false
   if (!pattern.includes("*")) {
     return (origin) => origin === pattern
   }
+  if (!pattern.startsWith("https://*.") || pattern.slice("https://*.".length).includes("*")) {
+    return () => false
+  }
+  // Keep local development origins exact. A wildcard such as
+  // `http://localhost:*` is too broad for credentialed requests.
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")
   const regex = new RegExp(`^${escaped}$`)
   return (origin) => regex.test(origin)
@@ -48,7 +45,6 @@ function compileAllowlist(raw: string | undefined): CompiledAllowlist {
   const compiled: CompiledAllowlist = {
     entries,
     matchers: entries.map(compileMatcher),
-    hasLocalhostEntry: entries.some((p) => isLocalhostOrigin(p) || p.includes("localhost")),
   }
   compiledAllowlists.set(key, compiled)
   return compiled
@@ -56,8 +52,26 @@ function compileAllowlist(raw: string | undefined): CompiledAllowlist {
 
 function isAllowedOrigin(origin: string, allowlist: CompiledAllowlist): boolean {
   if (allowlist.entries.length === 0) return false
-  if (allowlist.hasLocalhostEntry && isLocalhostOrigin(origin)) return true
   return allowlist.matchers.some((matches) => matches(origin))
+}
+
+const DEFAULT_ALLOWED_REQUEST_HEADERS = new Set([
+  "authorization",
+  "content-type",
+  "idempotency-key",
+  "x-api-key",
+  "x-request-id",
+  "x-voyant-checkout-capability",
+  "x-voyant-guest-booking-access",
+])
+
+function allowedRequestHeaders(requested: string | undefined): string {
+  if (!requested) return "content-type, authorization"
+  const allowed = requested
+    .split(",")
+    .map((header) => header.trim().toLowerCase())
+    .filter((header) => DEFAULT_ALLOWED_REQUEST_HEADERS.has(header))
+  return allowed.length > 0 ? allowed.join(", ") : "content-type, authorization"
 }
 
 export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
@@ -82,7 +96,7 @@ export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
         c.header("Access-Control-Allow-Credentials", "true")
         c.header(
           "Access-Control-Allow-Headers",
-          c.req.header("access-control-request-headers") || "content-type, authorization",
+          allowedRequestHeaders(c.req.header("access-control-request-headers")),
         )
         c.header(
           "Access-Control-Allow-Methods",

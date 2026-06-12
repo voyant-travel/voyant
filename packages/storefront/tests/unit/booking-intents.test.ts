@@ -120,6 +120,18 @@ describe("createBookingBootstrapIntentHandler", () => {
 })
 
 describe("async bootstrap route mode", () => {
+  function idempotencyDbStub() {
+    return {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [],
+          }),
+        }),
+      }),
+    }
+  }
+
   function buildApp(options?: { withBookingIntents?: boolean }) {
     const emit = vi.fn(async () => {})
     const routes = createStorefrontPublicRoutes(
@@ -129,7 +141,7 @@ describe("async bootstrap route mode", () => {
     )
     const app = new Hono()
     app.use("*", async (c, next) => {
-      c.set("db" as never, {} as never)
+      c.set("db" as never, idempotencyDbStub() as never)
       c.set("eventBus" as never, { emit } as never)
       await next()
     })
@@ -150,7 +162,7 @@ describe("async bootstrap route mode", () => {
       "/bookings/sessions/bootstrap?async=1",
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "idempotency-key": "bootstrap-test-1" },
         body: JSON.stringify(VALID_INPUT),
       },
       ENV,
@@ -166,30 +178,27 @@ describe("async bootstrap route mode", () => {
     })
     // The stored input is the PARSED body (zod defaults applied), so the
     // handler re-validates against an already-normalized payload.
-    expect(writeIntents.enqueueWriteIntent).toHaveBeenCalledWith(
-      {},
-      {
-        kind: BOOKING_BOOTSTRAP_INTENT_KIND,
-        payload: {
-          input: {
-            ...VALID_INPUT,
-            session: {
-              ...VALID_INPUT.session,
-              items: [
-                {
-                  ...VALID_INPUT.session.items[0],
-                  itemType: "unit",
-                  quantity: 1,
-                  allocationType: "unit",
-                },
-              ],
-            },
+    expect(writeIntents.enqueueWriteIntent).toHaveBeenCalledWith(expect.any(Object), {
+      kind: BOOKING_BOOTSTRAP_INTENT_KIND,
+      payload: {
+        input: {
+          ...VALID_INPUT,
+          session: {
+            ...VALID_INPUT.session,
+            items: [
+              {
+                ...VALID_INPUT.session.items[0],
+                itemType: "unit",
+                quantity: 1,
+                allocationType: "unit",
+              },
+            ],
           },
-          userId: undefined,
         },
-        idempotencyKey: undefined,
+        userId: undefined,
       },
-    )
+      idempotencyKey: "bootstrap-test-1",
+    })
     expect(emit).toHaveBeenCalledWith(BOOKING_BOOTSTRAP_INTENT_EVENT, { intentId: "wint_1" })
   })
 
@@ -204,7 +213,7 @@ describe("async bootstrap route mode", () => {
       "/bookings/sessions/bootstrap?async=1",
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "idempotency-key": "bootstrap-test-1" },
         body: JSON.stringify(VALID_INPUT),
       },
       ENV,

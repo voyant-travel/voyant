@@ -1,10 +1,14 @@
+import {
+  type CheckoutCapabilityAction,
+  requireCheckoutCapability,
+} from "@voyantjs/bookings/checkout-capability"
 import type { Module, ModuleContainer } from "@voyantjs/core"
 import { idempotencyKey, parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { NotificationProvider } from "@voyantjs/notifications"
 import { createNotificationService } from "@voyantjs/notifications"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
+import { Hono, type MiddlewareHandler } from "hono"
 
 import {
   bootstrapCheckoutCollection,
@@ -57,6 +61,17 @@ export type CheckoutRouteRuntime = {
 
 export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.checkout.runtime"
 
+function runtimeEnv(c: { env: Record<string, unknown> }): Record<string, string | undefined> {
+  return c.env as Record<string, string | undefined>
+}
+
+function collectionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    await requireCheckoutCapability(c, c.req.param("bookingId")!, action, runtimeEnv(c))
+    await next()
+  }
+}
+
 function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: CheckoutRoutesOptions) {
   // Pin the middleware to this module's Env so Hono doesn't intersect the
   // middleware's default VoyantBindings into the handlers' `c.env` type.
@@ -80,7 +95,7 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
         try {
           const plan = await previewCheckoutCollection(
             c.get("db"),
-            c.req.param("bookingId"),
+            c.req.param("bookingId")!,
             await parseOptionalJsonBody(c, previewCheckoutCollectionSchema),
             options.policy,
           )
@@ -102,7 +117,7 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
           const dispatcher = createNotificationService(runtime.providers)
           const result = await initiateCheckoutCollection(
             c.get("db"),
-            c.req.param("bookingId"),
+            c.req.param("bookingId")!,
             await parseJsonBody(c, initiateCheckoutCollectionSchema),
             options.policy,
             dispatcher,
@@ -153,7 +168,10 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
 }
 
 export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
-  return attachCollectionRoutes(new Hono<Env>(), options)
+  const app = new Hono<Env>()
+  app.use("/bookings/:bookingId/collection-plan", collectionCapability("payment:read"))
+  app.use("/bookings/:bookingId/initiate-collection", collectionCapability("payment:start"))
+  return attachCollectionRoutes(app, options)
 }
 
 export function createCheckoutAdminRoutes(options: CheckoutRoutesOptions = {}) {

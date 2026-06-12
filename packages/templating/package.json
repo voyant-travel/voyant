@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./template-renderer": "./src/template-renderer.ts"
+    "./template-renderer": "./src/template-renderer.ts",
+    "./html-hardening": "./src/html-hardening.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -30,13 +31,18 @@
         "types": "./dist/template-renderer.d.ts",
         "import": "./dist/template-renderer.js",
         "default": "./dist/template-renderer.js"
+      },
+      "./html-hardening": {
+        "types": "./dist/html-hardening.d.ts",
+        "import": "./dist/html-hardening.js",
+        "default": "./dist/html-hardening.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "liquidjs": "^10.24.0"
+    "liquidjs": "^10.26.0"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:^",

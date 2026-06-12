@@ -22,6 +22,8 @@
  * client at template level.
  */
 
+import { hardenRenderedHtmlDocument } from "@voyantjs/utils/template-renderer"
+
 import type {
   ContractDocumentGeneratorContext,
   StorageBackedContractDocumentSerializer,
@@ -224,7 +226,7 @@ export function createBrowserRenderedPdfContractDocumentSerializer(
     ((ctx: ContractDocumentGeneratorContext) => `contract-${ctx.contract.id}.pdf`)
 
   return async (context): Promise<StorageBackedContractDocumentUpload> => {
-    const html = await wrapHtml(context)
+    const html = hardenRenderedHtmlDocument(await wrapHtml(context))
     const pdfBytes = await options.cloudClient.browser.pdf({
       html,
       pdfOptions,

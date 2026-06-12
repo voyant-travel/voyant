@@ -5,8 +5,13 @@ import type { MiddlewareHandler } from "hono"
 import type { VoyantBindings, VoyantVariables } from "../types.js"
 
 function apiKeyResourceFromPath(pathname: string): string | null {
-  const match = pathname.match(/^\/v1\/(?:admin|public)\/([^/]+)/)
-  return match?.[1] ?? null
+  const surfaceMatch = pathname.match(/^\/v1\/(?:admin|public)\/([^/]+)/)
+  if (surfaceMatch?.[1]) return surfaceMatch[1]
+  const legacyMatch = pathname.match(/^\/v1\/([^/]+)/)
+  if (legacyMatch?.[1] && legacyMatch[1] !== "admin" && legacyMatch[1] !== "public") {
+    return legacyMatch[1]
+  }
+  return null
 }
 
 function apiKeyPermissionActionsForMethod(method: string): string[] {
@@ -44,8 +49,7 @@ function hasAnyApiKeyPermission(
  * - `/v1/public/*` — customers, partners, suppliers
  *
  * Requests carry an `actor` on `c.var`, typically set by `requireAuth` or a
- * custom `auth.resolve` integration. Internal requests
- * (`isInternalRequest === true`) bypass the check.
+ * custom `auth.resolve` integration.
  *
  * When the caller has no resolved actor, this middleware returns `401
  * Unauthorized`. Earlier versions defaulted unset callers to `"staff"` for
@@ -71,11 +75,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
 
-    if (c.get("isInternalRequest")) {
-      return next()
-    }
-
-    if (c.get("callerType") === "api_key") {
+    if (c.get("callerType") === "api_key" || c.get("callerType") === "internal") {
       const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
 
       // Meta/discovery endpoints (e.g. `/v1/admin/_meta/capabilities`) report

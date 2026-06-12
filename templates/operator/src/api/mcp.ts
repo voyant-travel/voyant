@@ -28,11 +28,22 @@ import type { Context, Hono } from "hono"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
 
-function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
+const PUBLIC_MCP_TOOL_NAMES = new Set([
+  searchCatalogTool.name,
+  getEntityTool.name,
+  suggestAlternativesTool.name,
+  checkAvailabilityTool.name,
+])
+
+function registerPublicTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(searchCatalogTool)
   registry.register(getEntityTool)
   registry.register(suggestAlternativesTool)
   registry.register(checkAvailabilityTool)
+}
+
+function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
+  registerPublicTools(registry)
   registry.register(getQuoteTool)
   registry.register(createTripTool)
   registry.register(reviseTripTool)
@@ -41,9 +52,12 @@ function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): v
 }
 
 export function mountCatalogMcpRoutes(hono: Hono): void {
-  async function handle(c: Context) {
+  async function handle(c: Context, surface: "admin" | "public") {
     const tool = c.req.param("tool")
     if (!tool) return c.json({ error: "Missing tool name" }, 400)
+    if (surface === "public" && !PUBLIC_MCP_TOOL_NAMES.has(tool)) {
+      return c.json({ error: "Tool is not available on the public MCP surface" }, 403)
+    }
     let body: Record<string, unknown>
     try {
       body = await c.req.json<Record<string, unknown>>()
@@ -55,13 +69,14 @@ export function mountCatalogMcpRoutes(hono: Hono): void {
       travelComposer: createTravelComposerMcpServices(c),
     }
     const registry = createMcpToolRegistry({ context: ctx })
-    registerAllTools(registry)
+    if (surface === "admin") registerAllTools(registry)
+    else registerPublicTools(registry)
     const result = await registry.dispatchTool(tool, body)
     return c.json(result)
   }
 
-  hono.post("/v1/admin/mcp/tools/:tool", handle)
-  hono.post("/v1/public/mcp/tools/:tool", handle)
+  hono.post("/v1/admin/mcp/tools/:tool", (c) => handle(c, "admin"))
+  hono.post("/v1/public/mcp/tools/:tool", (c) => handle(c, "public"))
 }
 
 function createTravelComposerMcpServices(c: Context): TravelComposerMcpServices {

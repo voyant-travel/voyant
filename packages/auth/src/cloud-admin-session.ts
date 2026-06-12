@@ -285,7 +285,12 @@ async function upsertVoyantCloudMirrorUser(
   const now = new Date()
   const providerAccountId = assertion.workosUserId
   const displayName = cloudAssertionDisplayName(assertion)
-  const existingUser = await findCloudMirrorUser(db, providerAccountId, assertion.email)
+  const existingUser = await findCloudMirrorUser(
+    db,
+    providerAccountId,
+    assertion.email,
+    assertion.emailVerified,
+  )
   const isNewUser = !existingUser
   const userId = existingUser?.id ?? crypto.randomUUID()
 
@@ -385,6 +390,7 @@ async function findCloudMirrorUser(
   db: ReturnType<typeof getDb>,
   providerAccountId: string,
   email?: string,
+  emailVerified?: boolean,
 ): Promise<{ id: string } | null> {
   const [linked] = await db
     .select({ id: authUser.id })
@@ -413,7 +419,7 @@ async function findCloudMirrorUser(
     .limit(1)
 
   if (account) return account
-  if (!email) return null
+  if (!email || emailVerified !== true) return null
 
   const [emailUser] = await db
     .select({ id: authUser.id })

@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { CreateBetterAuthOptions } from "../../src/server.js"
 
 type BetterAuthConfig = {
+  advanced: {
+    useSecureCookies: boolean
+  }
   databaseHooks: {
     user: {
       create: {
@@ -64,6 +67,31 @@ describe("createBetterAuth", () => {
       select,
     }
   }
+
+  it("defaults secure cookies on outside explicit local development", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(true)
+  })
+
+  it("lets consumers override secure cookie handling for local HTTP", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      useSecureCookies: false,
+    })
+
+    expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(false)
+  })
 
   it("forwards Better Auth user options and keeps Voyant's default change-email setting", async () => {
     const { createBetterAuth } = await import("../../src/server.js")
@@ -150,6 +178,46 @@ describe("createBetterAuth", () => {
       apikey: { name: "apikey" },
       jwks: jwksTable,
     })
+  })
+
+  it("uses secondary storage for Better Auth rate limits when provided", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const secondaryStorage = {
+      get: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+    }
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      secondaryStorage,
+    })
+
+    expect(betterAuthMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secondaryStorage,
+        rateLimit: expect.objectContaining({
+          enabled: true,
+          storage: "secondary-storage",
+        }),
+      }),
+    )
+  })
+
+  it("does not fall back to SESSION_CLAIMS_SECRET for Better Auth", async () => {
+    const { getAuthSecret } = await import("../../src/server.js")
+    const originalBetterAuthSecret = process.env.BETTER_AUTH_SECRET
+    const originalSessionClaimsSecret = process.env.SESSION_CLAIMS_SECRET
+    try {
+      delete process.env.BETTER_AUTH_SECRET
+      process.env.SESSION_CLAIMS_SECRET = "s".repeat(40)
+      expect(() => getAuthSecret()).toThrow(/BETTER_AUTH_SECRET/)
+    } finally {
+      process.env.BETTER_AUTH_SECRET = originalBetterAuthSecret
+      process.env.SESSION_CLAIMS_SECRET = originalSessionClaimsSecret
+    }
   })
 
   it("preserves consumer plugins alongside Voyant's required auth plugins", async () => {

@@ -1,4 +1,5 @@
 export {
+  constantTimeEqual,
   generateNumericCode,
   randomBytesHex,
   sha256Base64Url,

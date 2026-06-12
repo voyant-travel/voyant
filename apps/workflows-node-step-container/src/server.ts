@@ -21,6 +21,14 @@ import { createHash } from "node:crypto"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import { __resetRegistry, getWorkflow } from "@voyantjs/workflows"
 import {
+  createBundleUrlPolicy,
+  createHmacBodyVerifier,
+  createHmacSigner,
+  parseTokenList,
+  STEP_AUTH_HEADER,
+  STEP_RESPONSE_AUTH_HEADER,
+} from "@voyantjs/workflows/auth"
+import {
   type ExecuteWorkflowStepRequest,
   executeWorkflowStep,
   type StepJournalEntry,
@@ -74,6 +82,9 @@ const STOP_AFTER_TARGET = Symbol("STOP_AFTER_TARGET")
  */
 const loadedBundles = new Map<string, Promise<void>>()
 let activeBundleHash: string | undefined
+const bundleUrlAllowed = createBundleUrlPolicy({
+  allowedOrigins: parseTokenList(process.env.VOYANT_BUNDLE_ALLOWED_ORIGINS),
+})
 
 function normalizeHash(hash: string): string {
   return hash.replace(/^sha256:/i, "").toLowerCase()
@@ -84,6 +95,10 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 }
 
 async function fetchBundle(bundle: BundleLocation): Promise<Uint8Array> {
+  const decision = bundleUrlAllowed(bundle.url)
+  if (!decision.ok) {
+    throw new Error(decision.message)
+  }
   const response = await fetch(bundle.url)
   if (!response.ok) {
     throw new Error(`bundle fetch returned HTTP ${response.status}`)
@@ -95,6 +110,29 @@ async function fetchBundle(bundle: BundleLocation): Promise<Uint8Array> {
     throw new Error(`bundle hash mismatch: expected ${expected}, got ${actual}`)
   }
   return buf
+}
+
+let bodyVerifierPromise:
+  | Promise<(body: string, signature: string | null | undefined) => Promise<boolean>>
+  | undefined
+let responseSignerPromise: Promise<(body: string) => Promise<string>> | undefined
+
+async function verifyStepRequest(req: IncomingMessage, rawBody: string): Promise<boolean> {
+  const secret = process.env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
+  if (!secret) {
+    if (process.env.VOYANT_WORKFLOW_STEP_ALLOW_UNAUTHENTICATED === "1") {
+      console.warn(
+        "[node-step-container] AUTH DISABLED: VOYANT_WORKFLOW_STEP_ALLOW_UNAUTHENTICATED=1",
+      )
+      return true
+    }
+    return false
+  }
+  bodyVerifierPromise ??= createHmacBodyVerifier(secret)
+  const verifier = await bodyVerifierPromise
+  const header = req.headers[STEP_AUTH_HEADER]
+  const signature = Array.isArray(header) ? header[0] : header
+  return verifier(rawBody, signature)
 }
 
 async function loadBundle(bundle: BundleLocation): Promise<void> {
@@ -312,6 +350,22 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(bytes)
 }
 
+async function signedStepJson(res: ServerResponse, status: number, body: unknown): Promise<void> {
+  const text = JSON.stringify(body)
+  const bytes = Buffer.from(text, "utf-8")
+  const secret = process.env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
+  const headers: Record<string, string> = {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": String(bytes.byteLength),
+  }
+  if (secret) {
+    responseSignerPromise ??= createHmacSigner(secret)
+    headers[STEP_RESPONSE_AUTH_HEADER] = await (await responseSignerPromise)(text)
+  }
+  res.writeHead(status, headers)
+  res.end(bytes)
+}
+
 async function main(): Promise<void> {
   const port = Number(process.env.PORT ?? 8080)
   const server = createServer(async (req, res) => {
@@ -319,16 +373,22 @@ async function main(): Promise<void> {
       json(res, 404, { error: "not_found" })
       return
     }
+    const rawBody = await readBody(req)
+    if (!(await verifyStepRequest(req, rawBody))) {
+      json(res, 401, { error: "unauthorized" })
+      return
+    }
+
     let payload: StepDispatchPayload
     try {
-      payload = JSON.parse(await readBody(req)) as StepDispatchPayload
+      payload = JSON.parse(rawBody) as StepDispatchPayload
     } catch (err) {
       json(res, 400, { error: "invalid_json", message: String(err) })
       return
     }
     try {
       const entry = await handleStep(payload)
-      json(res, 200, entry)
+      await signedStepJson(res, 200, entry)
     } catch (err) {
       json(res, 500, {
         error: "container_failure",

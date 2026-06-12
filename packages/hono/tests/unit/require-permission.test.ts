@@ -114,6 +114,35 @@ describe("requirePermission", () => {
     )
   })
 
+  it("allows internal requests only when scopes satisfy the permission", async () => {
+    const hasPermission = vi.fn()
+
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("callerType", "internal")
+      c.set("isInternalRequest", true)
+      c.set("actor", "staff")
+      c.set("scopes", ["crm:write"])
+      await next()
+    })
+    app.use(
+      "*",
+      requirePermission(() => ({}) as never, "crm", "write", {
+        auth: { hasPermission },
+      }),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure"),
+      {},
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(hasPermission).not.toHaveBeenCalled()
+  })
+
   it("returns 401 when userId is set but actor is not (upstream wiring bug)", async () => {
     // `requirePermission` runs after `requireActor`. If actor is missing here,
     // it means the auth pipeline silently let an unresolved request through —

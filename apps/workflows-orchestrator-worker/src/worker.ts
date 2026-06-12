@@ -33,7 +33,7 @@
 //     queries need an external index (e.g. a Postgres mirror).
 
 import { Container } from "@cloudflare/containers"
-import { createBearerVerifier } from "@voyantjs/workflows/auth"
+import { parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
 import {
   createKvManifestStore,
   createKvScheduleStateStore,
@@ -73,22 +73,23 @@ export interface Env {
   WORKFLOW_SCHEDULE_STATE?: KVNamespace
   /**
    * Comma-separated bearer tokens accepted on the public
-   * `/api/runs/*` + `/api/events` + `/api/manifests*` surfaces. Unset =
-   * no auth (fine for local dev, dangerous in production). A control
-   * plane issues per-tenant short-lived tokens in the hosted deployment.
+   * `/api/runs/*` + `/api/events` + `/api/manifests*` surfaces. Unset
+   * fails closed unless VOYANT_WORKFLOWS_ALLOW_UNAUTHENTICATED=1 is set.
+   * A control plane issues per-tenant short-lived tokens in hosted deployments.
    */
   VOYANT_API_TOKENS?: string
+  /** Local-development escape hatch only. */
+  VOYANT_WORKFLOWS_ALLOW_UNAUTHENTICATED?: string
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const tokens = (env.VOYANT_API_TOKENS ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
     return handleWorkerRequest(request, {
       runDO: env.WORKFLOW_RUN_DO,
-      verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined,
+      verifyRequest: resolveRequestVerifier({
+        tokens: parseTokenList(env.VOYANT_API_TOKENS),
+        allowUnauthenticated: env.VOYANT_WORKFLOWS_ALLOW_UNAUTHENTICATED === "1",
+      }),
       manifestStore: env.WORKFLOW_MANIFESTS
         ? createKvManifestStore({ kv: env.WORKFLOW_MANIFESTS })
         : undefined,

@@ -8,6 +8,14 @@ export const consoleLoggerProvider: LoggerProvider = {
   },
 }
 
+function logPath(c: Parameters<MiddlewareHandler>[0]): string {
+  const routePath = c.req.routePath
+  if (routePath && routePath !== "/*") return routePath
+  return c.req.path
+    .replace(/(\/accountant\/)[^/]+/g, "$1[token]")
+    .replace(/(\/download\/)[^/]+/g, "$1[token]")
+}
+
 export function logger(provider?: LoggerProvider): MiddlewareHandler {
   const log = provider ?? consoleLoggerProvider
   return async (c, next) => {
@@ -16,7 +24,7 @@ export function logger(provider?: LoggerProvider): MiddlewareHandler {
     const durationMs = Date.now() - start
     log.log({
       method: c.req.method,
-      path: c.req.path,
+      path: logPath(c),
       status: c.res.status,
       durationMs,
     })

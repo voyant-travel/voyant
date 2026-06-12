@@ -1,6 +1,8 @@
 import type { Context } from "hono"
 import { ZodError, type ZodType } from "zod"
 
+import { DEFAULT_REQUEST_BODY_LIMIT_BYTES } from "./middleware/body-size.js"
+
 export class ApiHttpError extends Error {
   readonly status: number
   readonly code?: string
@@ -75,12 +77,13 @@ function validate<T>(schema: ZodType<T>, input: unknown, fallbackMessage?: strin
 export async function parseJsonBody<T>(
   c: Context,
   schema: ZodType<T>,
-  options?: { invalidJsonMessage?: string; invalidBodyMessage?: string },
+  options?: { invalidJsonMessage?: string; invalidBodyMessage?: string; maxBytes?: number },
 ): Promise<T> {
   let input: unknown
 
+  const text = await readBoundedRequestText(c, options?.maxBytes)
   try {
-    input = await c.req.json()
+    input = JSON.parse(text)
   } catch {
     throw new RequestValidationError(options?.invalidJsonMessage ?? "Invalid JSON body")
   }
@@ -94,17 +97,38 @@ export async function parseOptionalJsonBody<T>(
   options?: {
     defaultValue?: unknown
     invalidBodyMessage?: string
+    maxBytes?: number
   },
 ): Promise<T> {
   let input: unknown
 
+  const text = await readBoundedRequestText(c, options?.maxBytes)
+  if (text.length === 0) {
+    return validate(schema, options?.defaultValue ?? {}, options?.invalidBodyMessage)
+  }
   try {
-    input = await c.req.json()
+    input = JSON.parse(text)
   } catch {
     input = options?.defaultValue ?? {}
   }
 
   return validate(schema, input, options?.invalidBodyMessage)
+}
+
+async function readBoundedRequestText(c: Context, maxBytes = DEFAULT_REQUEST_BODY_LIMIT_BYTES) {
+  const contentLength = c.req.header("content-length")
+  if (contentLength) {
+    const size = Number(contentLength)
+    if (Number.isFinite(size) && size > maxBytes) {
+      throw new RequestValidationError("Request body too large", { maxBytes })
+    }
+  }
+
+  const text = await c.req.text()
+  if (new TextEncoder().encode(text).byteLength > maxBytes) {
+    throw new RequestValidationError("Request body too large", { maxBytes })
+  }
+  return text
 }
 
 export function parseQuery<T>(

@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyantjs/hono"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -15,7 +16,17 @@ vi.mock("../../src/service.js", () => ({
   previewCheckoutCollection: serviceMocks.previewCheckoutCollection,
 }))
 
+import { issueCheckoutCapability } from "@voyantjs/bookings/checkout-capability"
 import { createCheckoutRoutes } from "../../src/routes.js"
+
+const TEST_CAPABILITY_ENV = {
+  SESSION_CLAIMS_SECRET: "checkout-capability-test-secret-32chars",
+}
+
+async function capabilityHeaders(bookingId = "book_123") {
+  const capability = await issueCheckoutCapability(bookingId, TEST_CAPABILITY_ENV)
+  return { "X-Voyant-Checkout-Capability": capability.token }
+}
 
 describe("createCheckoutRoutes", () => {
   beforeEach(() => {
@@ -57,6 +68,7 @@ describe("createCheckoutRoutes", () => {
     })
 
     const app = new Hono()
+    app.onError(handleApiError)
     app.use("*", async (c, next) => {
       c.set("db", {} as never)
       await next()
@@ -67,7 +79,7 @@ describe("createCheckoutRoutes", () => {
       "/bookings/book_123/initiate-collection",
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
         body: JSON.stringify({
           method: "card",
           startProvider: {
@@ -88,7 +100,7 @@ describe("createCheckoutRoutes", () => {
           },
         }),
       },
-      { APP_URL: "https://example.com" },
+      { APP_URL: "https://example.com", ...TEST_CAPABILITY_ENV },
     )
 
     expect(res.status).toBe(201)
@@ -104,6 +116,30 @@ describe("createCheckoutRoutes", () => {
       publicCheckoutBaseUrl: "https://brand.example.com",
     })
     expect(runtime.paymentStarters.netopia).toBe(paymentStarter)
+  })
+
+  it("rejects booking collection routes without a checkout capability", async () => {
+    const routes = createCheckoutRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/collection-plan",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(401)
+    expect(serviceMocks.previewCheckoutCollection).not.toHaveBeenCalled()
   })
 
   it("bootstraps checkout from a session id with the unified route", async () => {

@@ -1,7 +1,7 @@
 import type { StorageObject, StorageProvider, StorageUploadBody, UploadOptions } from "../types.js"
 
 export const R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE =
-  "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured"
+  "R2 provider: signedUrl requires a `signer` to be configured — a public base URL cannot produce a time-limited URL. Use publicUrl(key) for permanent public URLs, or configure a signer (e.g. R2's S3-compatible API with SigV4 credentials)."
 
 /**
  * Subset of the Cloudflare Workers `R2Bucket` binding we depend on. Kept
@@ -44,9 +44,11 @@ export interface R2ProviderOptions {
    * signed URLs directly; templates pass a custom signer that either:
    *   - returns a short-lived Worker route URL, or
    *   - calls R2's S3-compatible API with SigV4 credentials.
-   * When omitted, `signedUrl` returns `${publicBaseUrl}${key}`. Calling
-   * `signedUrl` without either a signer or public base URL is a
-   * configuration error because a raw R2 object key is not a URL.
+   * Calling `signedUrl` without a signer is a configuration error: a
+   * `publicBaseUrl` alone can only produce **permanent, unauthenticated**
+   * URLs, which would silently ignore `expiresIn` and defeat the
+   * time-limited-access contract. Use `publicUrl(key)` when a permanent
+   * public URL is actually what you want.
    */
   signer?: (key: string, expiresIn: number) => Promise<string> | string
   /** Provider name (defaults to `"r2"`). */
@@ -56,11 +58,26 @@ export interface R2ProviderOptions {
 }
 
 /**
+ * R2 storage provider. Extends the base {@link StorageProvider} contract
+ * with {@link R2StorageProvider.publicUrl} for the (R2-common) case where
+ * objects are served through a public custom domain or Worker route.
+ */
+export interface R2StorageProvider extends StorageProvider {
+  /**
+   * Permanent, unauthenticated URL for an object: `${publicBaseUrl}${key}`.
+   * Only valid for objects that are meant to be public. Throws when
+   * `publicBaseUrl` is not configured. For time-limited access to private
+   * objects use `signedUrl` (requires a `signer`).
+   */
+  publicUrl(key: string): string
+}
+
+/**
  * Create a Cloudflare R2 storage provider bound to an R2 bucket binding.
  * The R2 binding handles authentication transparently at the Worker
  * runtime boundary, so no credentials are required at this layer.
  */
-export function createR2Provider(options: R2ProviderOptions): StorageProvider {
+export function createR2Provider(options: R2ProviderOptions): R2StorageProvider {
   const name = options.name ?? "r2"
   const publicBaseUrl = options.publicBaseUrl ?? ""
   const generateKey =
@@ -90,9 +107,19 @@ export function createR2Provider(options: R2ProviderOptions): StorageProvider {
       await options.bucket.delete(key)
     },
     async signedUrl(key, expiresIn) {
-      if (options.signer) return options.signer(key, expiresIn)
-      if (!publicBaseUrl) {
+      // Security (assessment L7): never fall back to `${publicBaseUrl}${key}`
+      // here — that would silently return a PERMANENT public URL while the
+      // caller believes it expires after `expiresIn` seconds.
+      if (!options.signer) {
         throw new Error(R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE)
+      }
+      return options.signer(key, expiresIn)
+    },
+    publicUrl(key) {
+      if (!publicBaseUrl) {
+        throw new Error(
+          "R2 provider: publicUrl requires `publicBaseUrl` to be configured (a public R2 custom domain or a Worker route that proxies the bucket)",
+        )
       }
       return `${publicBaseUrl}${key}`
     },

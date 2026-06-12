@@ -86,6 +86,55 @@ export interface NetopiaStartPaymentRequest {
   }
 }
 
+/**
+ * Request body for Netopia v2 `POST /operation/status` — the authoritative,
+ * merchant-authenticated payment status lookup. Field names mirror the
+ * official SDKs (e.g. github.com/netopiapayments/go-sdk `requests.StatusRequest`).
+ */
+export interface NetopiaStatusRequest {
+  /** The merchant POS signature (same value as the start payload's `posSignature`). */
+  posID: string
+  /** The Netopia transaction id. */
+  ntpID: string
+  /** The merchant order id submitted at payment start. */
+  orderID: string
+}
+
+/**
+ * Response of Netopia v2 `POST /operation/status`. `order` echoes the order
+ * we submitted at start (amount/currency exactly as we sent them); `payment`
+ * carries the processed transaction (which may be RON-converted for non-RON
+ * orders).
+ */
+export interface NetopiaStatusResponse {
+  code?: string
+  message?: string
+  error?: {
+    code?: string | number
+    message?: string
+  }
+  order?: {
+    ntpID?: string
+    orderID?: string
+    amount?: number
+    currency?: string
+    description?: string
+    [key: string]: unknown
+  }
+  payment?: {
+    ntpID?: string
+    status?: number
+    amount?: number
+    currency?: string
+    rrn?: string
+    token?: string
+    operationDate?: string
+    data?: Record<string, unknown>
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
 export interface NetopiaStartPaymentResponse {
   code?: string
   message?: string
@@ -188,6 +237,21 @@ export interface NetopiaRuntimeOptions {
   language?: string
   successStatuses?: number[]
   processingStatuses?: number[]
+  /**
+   * PEM of the NETOPIA platform certificate (or its public key) used to
+   * verify the `Verification-token` JWT that Netopia v2 attaches to every
+   * IPN callback. When set, callbacks with a missing/invalid token are
+   * rejected before any verification or state transition. Env:
+   * `NETOPIA_IPN_PUBLIC_KEY` (literal `\n` sequences are unescaped).
+   */
+  ipnPublicKey?: string
+  /**
+   * DANGEROUS — local sandbox/dev escape hatch only. When `true`, the
+   * callback handler trusts the inbound `payment.status` without the
+   * server-side `/operation/status` verification. Defaults to `false`.
+   * Env: `NETOPIA_TRUST_UNVERIFIED_CALLBACKS=1`.
+   */
+  trustUnverifiedCallbacks?: boolean
   fetch?: NetopiaFetch
   /** Timeout/circuit-breaker tuning. See {@link NetopiaResilienceOptions}. */
   resilience?: NetopiaResilienceOptions
@@ -206,6 +270,10 @@ export interface ResolvedNetopiaRuntimeOptions {
   language: string
   successStatuses: number[]
   processingStatuses: number[]
+  /** See {@link NetopiaRuntimeOptions.ipnPublicKey}. */
+  ipnPublicKey?: string
+  /** See {@link NetopiaRuntimeOptions.trustUnverifiedCallbacks}. */
+  trustUnverifiedCallbacks: boolean
   fetch?: NetopiaFetch
   /** Timeout/circuit-breaker tuning. See {@link NetopiaResilienceOptions}. */
   resilience?: NetopiaResilienceOptions

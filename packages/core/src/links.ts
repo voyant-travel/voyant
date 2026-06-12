@@ -180,10 +180,17 @@ export interface LinkTableSql {
 /**
  * Generate the SQL needed to materialize a link's pivot table.
  *
- * Columns: `id` (primary key), `<left>_id`, `<right>_id`, `created_at`,
- * `updated_at`, `deleted_at`. Unique indexes are created based on the
- * link's cardinality so the database enforces the relationship shape.
+ * Quote a SQL identifier, escaping embedded double quotes by doubling them.
+ *
+ * Defense in depth: link identifiers are developer-authored (never HTTP
+ * input), but routing them through a quoting helper guarantees the emitted
+ * DDL stays well-formed even for hostile or accidental quote-containing
+ * names (see security assessment L6).
  */
+function quoteIdent(identifier: string): string {
+  return `"${identifier.replaceAll('"', '""')}"`
+}
+
 export function generateLinkTableSql(def: LinkDefinition): LinkTableSql {
   if (def.readOnly) {
     throw new Error(
@@ -192,12 +199,15 @@ export function generateLinkTableSql(def: LinkDefinition): LinkTableSql {
   }
 
   const { tableName, leftColumn, rightColumn } = def
+  const table = quoteIdent(tableName)
+  const left = quoteIdent(leftColumn)
+  const right = quoteIdent(rightColumn)
 
   const createTable = [
-    `CREATE TABLE IF NOT EXISTS "${tableName}" (`,
+    `CREATE TABLE IF NOT EXISTS ${table} (`,
     `  "id" text PRIMARY KEY NOT NULL,`,
-    `  "${leftColumn}" text NOT NULL,`,
-    `  "${rightColumn}" text NOT NULL,`,
+    `  ${left} text NOT NULL,`,
+    `  ${right} text NOT NULL,`,
     `  "created_at" timestamp with time zone DEFAULT now() NOT NULL,`,
     `  "updated_at" timestamp with time zone DEFAULT now() NOT NULL,`,
     `  "deleted_at" timestamp with time zone`,
@@ -209,28 +219,28 @@ export function generateLinkTableSql(def: LinkDefinition): LinkTableSql {
 
   // Dedupe the pair (ignoring soft-deleted rows).
   indexes.push(
-    `CREATE UNIQUE INDEX IF NOT EXISTS "${tableName}_pair_idx" ON "${tableName}" ("${leftColumn}", "${rightColumn}") WHERE "deleted_at" IS NULL`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS ${quoteIdent(`${tableName}_pair_idx`)} ON ${table} (${left}, ${right}) WHERE "deleted_at" IS NULL`,
   )
 
   // !right.isList → each left has ≤1 right → left_id must be unique.
   if (!def.right.isList) {
     indexes.push(
-      `CREATE UNIQUE INDEX IF NOT EXISTS "${tableName}_l_uniq" ON "${tableName}" ("${leftColumn}") WHERE "deleted_at" IS NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS ${quoteIdent(`${tableName}_l_uniq`)} ON ${table} (${left}) WHERE "deleted_at" IS NULL`,
     )
   } else {
     indexes.push(
-      `CREATE INDEX IF NOT EXISTS "${tableName}_l_idx" ON "${tableName}" ("${leftColumn}") WHERE "deleted_at" IS NULL`,
+      `CREATE INDEX IF NOT EXISTS ${quoteIdent(`${tableName}_l_idx`)} ON ${table} (${left}) WHERE "deleted_at" IS NULL`,
     )
   }
 
   // !left.isList → each right has ≤1 left → right_id must be unique.
   if (!def.left.isList) {
     indexes.push(
-      `CREATE UNIQUE INDEX IF NOT EXISTS "${tableName}_r_uniq" ON "${tableName}" ("${rightColumn}") WHERE "deleted_at" IS NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS ${quoteIdent(`${tableName}_r_uniq`)} ON ${table} (${right}) WHERE "deleted_at" IS NULL`,
     )
   } else {
     indexes.push(
-      `CREATE INDEX IF NOT EXISTS "${tableName}_r_idx" ON "${tableName}" ("${rightColumn}") WHERE "deleted_at" IS NULL`,
+      `CREATE INDEX IF NOT EXISTS ${quoteIdent(`${tableName}_r_idx`)} ON ${table} (${right}) WHERE "deleted_at" IS NULL`,
     )
   }
 

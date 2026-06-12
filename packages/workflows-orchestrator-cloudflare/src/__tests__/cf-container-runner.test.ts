@@ -79,16 +79,17 @@ describe("createCfContainerStepRunner", () => {
     const { namespace } = stubNamespace(async (req) => {
       captured.body = await req.json()
       captured.auth = req.headers.get("x-voyant-step-auth")
-      return new Response(
-        JSON.stringify({
-          attempt: 1,
-          status: "ok",
-          output: null,
-          startedAt: 0,
-          finishedAt: 1,
-        }),
-        { status: 200 },
-      )
+      const body = JSON.stringify({
+        attempt: 1,
+        status: "ok",
+        output: null,
+        startedAt: 0,
+        finishedAt: 1,
+      })
+      return new Response(body, {
+        status: 200,
+        headers: { "x-voyant-step-response-auth": `sig:${body.length}` },
+      })
     })
 
     const runner = createCfContainerStepRunner({
@@ -111,6 +112,26 @@ describe("createCfContainerStepRunner", () => {
       options: { machine: "standard-2", timeout: "30s" },
     })
     expect(captured.auth).toMatch(/^sig:\d+$/)
+  })
+
+  it("rejects unsigned container responses when dispatch signing is enabled", async () => {
+    const entry: StepJournalEntry = {
+      attempt: 1,
+      status: "ok",
+      output: { hash: "sha256:abc" },
+      startedAt: 100,
+      finishedAt: 250,
+    }
+    const { namespace } = stubNamespace(() => new Response(JSON.stringify(entry), { status: 200 }))
+
+    const runner = createCfContainerStepRunner({
+      namespace,
+      sign: (body) => `sig:${body.length}`,
+    })
+    const result = await runner(baseArgs())
+
+    expect(result.status).toBe("err")
+    expect(result.error?.code).toBe("CONTAINER_RESPONSE_SIGNATURE_INVALID")
   })
 
   it("returns a failed StepJournalEntry when the namespace fetch throws", async () => {

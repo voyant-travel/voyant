@@ -2,6 +2,7 @@ export type { VoyantPermission } from "@voyantjs/core"
 export { createApp } from "./app.js"
 export type { SessionAuthContext } from "./auth/index.js"
 export {
+  constantTimeEqual,
   extractBearerToken,
   generateNumericCode,
   randomBytesHex,
@@ -21,10 +22,12 @@ export type {
 export { resolveStoredDocumentDownload } from "./document-download.js"
 export { createPathDbSelector, type PathDbSelectorOptions } from "./lib/db-selector.js"
 export {
+  clientIpKey,
   consoleLoggerProvider,
   cors,
   DEFAULT_IDEMPOTENCY_TTL_MS,
   db,
+  enforceRateLimit,
   errorBoundary,
   handleApiError,
   type IdempotencyKeyOptions,

@@ -26,6 +26,8 @@
 
 import type { StepJournalEntry, StepRunner } from "@voyantjs/workflows/handler"
 
+const STEP_RESPONSE_AUTH_HEADER = "x-voyant-step-response-auth"
+
 /**
  * Minimal subset of `DurableObjectNamespace` that the runner actually
  * uses. Matches the shape exposed by `@cloudflare/containers`'
@@ -256,6 +258,18 @@ export function createCfContainerStepRunner(deps: CfContainerRunnerDeps): StepRu
         new Error(`container returned HTTP ${response.status}: ${text}`),
       )
     }
+    if (deps.sign) {
+      const signature = response.headers.get(STEP_RESPONSE_AUTH_HEADER)
+      const expected = await deps.sign(text)
+      if (!signature || !constantTimeEquals(signature, expected)) {
+        return failed(
+          attempt,
+          startedAt,
+          "CONTAINER_RESPONSE_SIGNATURE_INVALID",
+          new Error("container response signature is missing or invalid"),
+        )
+      }
+    }
     try {
       const entry = JSON.parse(text) as StepJournalEntry
       // Trust the container's own timestamps; they reflect the actual
@@ -270,6 +284,15 @@ export function createCfContainerStepRunner(deps: CfContainerRunnerDeps): StepRu
       )
     }
   }
+}
+
+function constantTimeEquals(a: string, b: string): boolean {
+  const length = Math.max(a.length, b.length, 1)
+  let diff = a.length === b.length ? 0 : 1
+  for (let i = 0; i < length; i++) {
+    diff |= (a.charCodeAt(i) | 0) ^ (b.charCodeAt(i) | 0)
+  }
+  return diff === 0
 }
 
 function failed(attempt: number, startedAt: number, code: string, err: unknown): StepJournalEntry {

@@ -369,6 +369,21 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(overview.documents).toHaveLength(1)
     expect(overview.fulfillments).toHaveLength(1)
     expect(overview.travelers[0]?.firstName).toBe("Elena")
+
+    const rateLimitStore = new Map<string, string>()
+    const rateLimitEnv = {
+      GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE: "1",
+      RATE_LIMIT: {
+        get: async (key: string) => rateLimitStore.get(key) ?? null,
+        put: async (key: string, value: string) => {
+          rateLimitStore.set(key, value)
+        },
+      },
+    }
+    const limitedLookupPath = `/overview?bookingNumber=${encodeURIComponent(session.bookingNumber)}&email=${encodeURIComponent("elena@example.com")}`
+
+    expect((await app.request(limitedLookupPath, { method: "GET" }, rateLimitEnv)).status).toBe(200)
+    expect((await app.request(limitedLookupPath, { method: "GET" }, rateLimitEnv)).status).toBe(429)
   })
 
   it("issues guest booking access after booking code and email lookup", async () => {

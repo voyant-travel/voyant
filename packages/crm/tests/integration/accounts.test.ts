@@ -710,5 +710,28 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.content).toBe("Prefers email outreach")
       expect(body.data.authorUserId).toBe("test-user-id")
     })
+
+    it("neutralizes spreadsheet formula injection in the people CSV export", async () => {
+      const createRes = await app.request("/people", {
+        method: "POST",
+        ...json({
+          firstName: '=HYPERLINK("http://evil.test","click")',
+          lastName: "Doe, Jane",
+          jobTitle: "@SUM(1+9)",
+        }),
+      })
+      expect(createRes.status).toBe(201)
+
+      const res = await app.request("/people/export", { method: "POST" })
+      expect(res.status).toBe(200)
+
+      const csv = await res.text()
+      // Formula prefixes (= @) are neutralized with a leading single quote.
+      expect(csv).toContain(`"'=HYPERLINK(""http://evil.test"",""click"")"`)
+      expect(csv).toContain("'@SUM(1+9)")
+      expect(csv).not.toContain(",=HYPERLINK")
+      // Structural quoting of delimiters is preserved.
+      expect(csv).toContain('"Doe, Jane"')
+    })
   })
 })

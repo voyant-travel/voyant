@@ -8,6 +8,42 @@ import type { VoyantBindings } from "../../src/types.js"
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 
 describe("requireAuth API keys", () => {
+  it("authenticates comma-separated internal API keys with scoped staff context", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get("/secure", (c) =>
+      c.json({
+        callerType: c.get("callerType"),
+        actor: c.get("actor"),
+        scopes: c.get("scopes"),
+        isInternalRequest: c.get("isInternalRequest"),
+      }),
+    )
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: { Authorization: "Bearer new-key" },
+      }),
+      {
+        ...TEST_ENV,
+        INTERNAL_API_KEY: "old-key, new-key",
+        INTERNAL_API_KEY_SCOPES: "products:read,bookings:write",
+      },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      callerType: "internal",
+      actor: "staff",
+      scopes: ["products:read", "bookings:write"],
+      isInternalRequest: true,
+    })
+  })
+
   it("lets app auth integrations reject an otherwise valid API key", async () => {
     const token = "voy_test_api_key"
     const row = makeApiKeyRow({

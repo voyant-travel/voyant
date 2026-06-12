@@ -252,7 +252,10 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     })
     .post(
       "/bookings/sessions/bootstrap",
-      idempotencyKey({ scope: "POST /v1/public/bookings/sessions/bootstrap" }),
+      idempotencyKey({
+        scope: "POST /v1/public/bookings/sessions/bootstrap",
+        replayResponses: false,
+      }),
       async (c) => {
         // Async mode (RFC voyant#1687 Phase 3.2): `?async=1` or
         // `Prefer: respond-async` stores a write intent + durably emits
@@ -271,6 +274,10 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           (c.req.query("async") === "1" ||
             (c.req.header("prefer") ?? "").toLowerCase().includes("respond-async"))
         if (wantsAsync) {
+          const idempotencyKey = c.req.header("idempotency-key")?.trim()
+          if (!idempotencyKey) {
+            return c.json({ error: "Idempotency-Key header is required for async bootstrap" }, 428)
+          }
           const body = await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema)
           const db = c.get("db" as never) as NonNullable<StorefrontRequestContext["db"]>
           const { intent, created } = await enqueueWriteIntent(db, {
@@ -279,7 +286,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
               input: body,
               userId: c.get("userId" as never) as string | undefined,
             } satisfies BookingBootstrapIntentPayload,
-            idempotencyKey: c.req.header("idempotency-key") ?? undefined,
+            idempotencyKey,
           })
           if (created) {
             const eventBus = c.get("eventBus" as never) as

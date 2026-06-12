@@ -77,12 +77,13 @@ describe("worker entry", () => {
       NODE_STEP_POOL: null as unknown as DurableObjectNamespace,
       BUNDLE_R2: null as unknown as R2Bucket,
       BUNDLE_HASHES: null as unknown as KVNamespace,
+      VOYANT_API_TOKENS: "test-token",
     } satisfies Env
 
     const res = await worker.fetch(
       new Request("https://orch/api/runs", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { authorization: "Bearer test-token", "content-type": "application/json" },
         body: JSON.stringify({
           workflowId: "wf",
           workflowVersion: "v1",

@@ -33,7 +33,7 @@
     "@voyantjs/legal": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
-    "liquidjs": "^10.24.0",
+    "liquidjs": "^10.26.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

@@ -1,5 +1,6 @@
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
+import { toCsvRow } from "@voyantjs/utils"
 import type { AnyColumn } from "drizzle-orm"
 import { and, asc, desc, eq, exists, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -491,17 +492,11 @@ export const peopleAccountsService = {
       "organizationId",
     ]
 
-    const csvLines = [headers.join(",")]
+    const csvLines = [toCsvRow(headers)]
     for (const row of rows) {
-      const values = headers.map((header) => {
-        const value = row[header as keyof typeof row]
-        if (value === null || value === undefined) return ""
-        const stringValue = String(value)
-        return stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")
-          ? `"${stringValue.replace(/"/g, '""')}"`
-          : stringValue
-      })
-      csvLines.push(values.join(","))
+      // toCsvRow quotes delimiters/quotes/newlines AND neutralizes
+      // spreadsheet formula-injection prefixes (= + - @ tab CR); see L4.
+      csvLines.push(toCsvRow(headers.map((header) => row[header as keyof typeof row])))
     }
 
     return csvLines.join("\n")

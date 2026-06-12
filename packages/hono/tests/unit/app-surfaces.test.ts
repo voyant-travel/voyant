@@ -170,6 +170,18 @@ describe("createApp surface mounting", () => {
     expect(body.surface).toBe("legacy")
   })
 
+  it("blocks non-staff actors on legacy routes", async () => {
+    const app = build("customer", [makeModule({ name: "things", legacy: true })])
+    const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
+    expect(res.status).toBe(403)
+  })
+
+  it("returns 401 on legacy routes when actor is unresolved", async () => {
+    const app = build(undefined, [makeModule({ name: "things", legacy: true })])
+    const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
+    expect(res.status).toBe(401)
+  })
+
   it("blocks customer on /v1/admin/*", async () => {
     const app = build("customer", [makeModule({ name: "only-admin", admin: true })])
     const res = await app.request("/v1/admin/only-admin/ping", {}, TEST_ENV, TEST_CTX)
