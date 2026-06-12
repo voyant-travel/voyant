@@ -1,5 +1,0 @@
----
-"@voyantjs/storefront": minor
----
-
-Async booking-session bootstrap over the queued write pipeline (RFC #1687 Phase 3.2). `POST /bookings/sessions/bootstrap` with `?async=1` or `Prefer: respond-async` stores a write intent, durably emits its event (transactional outbox: immediate attempt + retries with backoff), and answers **202 + a status URL**; `GET /bookings/intents/:id` reports pending/succeeded/failed, issuing the checkout capability at poll time on success and surfacing conflict detail (incl. `stale_quote` repricing) on failure. Business conclusions (sold out, stale quote) settle the intent without retry; only infra errors redeliver. The handler ships in the package (`createBookingBootstrapIntentHandler`) and self-registers from the module bootstrap when `createStorefrontHonoModule({ bookingIntents: { resolveDb } })` is configured — the operator template wires it. Under a booking spike, callers get instant 202s and reserve transactions drain at the outbox's pace instead of thundering-herding the slot locks.

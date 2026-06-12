@@ -1,5 +1,17 @@
 # @voyantjs/catalog-authoring
 
+## 0.106.18
+
+### Patch Changes
+
+- Updated dependencies [f25e790]
+  - @voyantjs/db@0.108.0
+  - @voyantjs/availability@0.116.1
+  - @voyantjs/extras@0.119.1
+  - @voyantjs/hono@0.109.1
+  - @voyantjs/pricing@0.119.1
+  - @voyantjs/products@0.119.1
+
 ## 0.106.17
 
 ### Patch Changes

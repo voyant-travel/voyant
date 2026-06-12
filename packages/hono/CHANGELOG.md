@@ -1,5 +1,14 @@
 # @voyantjs/hono
 
+## 0.109.1
+
+### Patch Changes
+
+- Updated dependencies [f25e790]
+  - @voyantjs/db@0.108.0
+  - @voyantjs/types@0.104.5
+  - @voyantjs/workflows@0.107.5
+
 ## 0.109.0
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # @voyantjs/ground
 
+## 0.104.19
+
+### Patch Changes
+
+- Updated dependencies [f25e790]
+  - @voyantjs/db@0.108.0
+  - @voyantjs/facilities@0.107.11
+  - @voyantjs/hono@0.109.1
+  - @voyantjs/identity@0.119.1
+
 ## 0.104.18
 
 ### Patch Changes

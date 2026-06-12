@@ -1,5 +1,14 @@
 # @voyantjs/storefront-verification
 
+## 0.120.0
+
+### Patch Changes
+
+- Updated dependencies [f25e790]
+  - @voyantjs/db@0.108.0
+  - @voyantjs/hono@0.109.1
+  - @voyantjs/notifications@0.111.6
+
 ## 0.119.0
 
 ### Patch Changes
