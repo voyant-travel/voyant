@@ -21,7 +21,7 @@ export function DashboardKpiRowSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+        // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
         <DashboardKpiSkeleton key={i} />
       ))}
     </div>
@@ -34,7 +34,7 @@ export function DashboardAreaChartSkeleton() {
       <Skeleton className="h-full w-full rounded-md" />
       <div className="flex justify-between px-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           <Skeleton key={i} className="h-3 w-10" />
         ))}
       </div>
@@ -48,7 +48,7 @@ export function DashboardPieChartSkeleton() {
       <Skeleton className="h-[200px] w-[200px] rounded-full" />
       <div className="flex flex-wrap justify-center gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           <div key={i} className="flex items-center gap-1.5">
             <Skeleton className="h-2.5 w-2.5 rounded-full" />
             <Skeleton className="h-3 w-14" />
@@ -65,13 +65,13 @@ export function DashboardBarChartSkeleton() {
     <div className="flex h-[250px] w-full flex-col justify-end gap-2">
       <div className="flex h-full items-end justify-between gap-2 px-1">
         {heights.map((h, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           <Skeleton key={i} className={`${h} w-full rounded-sm`} />
         ))}
       </div>
       <div className="flex justify-between px-1">
         {heights.map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           <Skeleton key={i} className="h-3 w-10" />
         ))}
       </div>
@@ -84,7 +84,7 @@ export function DashboardUpcomingListSkeleton({ rows = 4 }: { rows?: number } = 
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
         <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           key={i}
           className="flex items-center justify-between rounded-lg border p-3"
         >
@@ -114,7 +114,7 @@ export function DashboardOutstandingInvoicesSkeleton({ rows = 3 }: { rows?: numb
       </div>
       {Array.from({ length: rows }).map((_, i) => (
         <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: admin; existing suppression is intentional pending typed cleanup.
           key={i}
           className="flex items-center justify-between rounded-lg border p-3"
         >

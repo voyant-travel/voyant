@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: pricing; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
 import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm"

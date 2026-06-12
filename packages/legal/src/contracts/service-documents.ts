@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { EventBus } from "@voyantjs/core"
 import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
 import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"

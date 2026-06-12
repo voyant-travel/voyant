@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-contracts; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * `BookingDraft` + V1 engine contract schemas — versioned payloads
  * the journey, hooks, route handlers, owned handlers and source

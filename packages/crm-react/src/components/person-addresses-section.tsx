@@ -32,6 +32,10 @@ const ADDRESS_LABELS = [
 ] as const
 
 type AddressLabel = (typeof ADDRESS_LABELS)[number]
+type AddressTextParts = Pick<
+  AddressRecord,
+  "fullText" | "line1" | "line2" | "city" | "region" | "postalCode" | "country"
+>
 
 type AddressFormState = {
   label: AddressLabel
@@ -80,7 +84,7 @@ function normalizeNullable(value: string): string | null {
   return trimmed ? trimmed : null
 }
 
-function formatAddressText(address: AddressRecord): string | null {
+function formatAddressText(address: AddressTextParts): string | null {
   if (address.fullText?.trim()) return address.fullText.trim()
   const locality = [address.city, address.region, address.postalCode]
     .map((part) => part?.trim())
@@ -137,10 +141,7 @@ export function PersonAddressesSection({ personId }: PersonAddressesSectionProps
       notes: normalizeNullable(form.notes),
       fullText: null as string | null,
     }
-    payload.fullText =
-      formatAddressText({
-        ...(payload as unknown as AddressRecord),
-      }) ?? null
+    payload.fullText = formatAddressText(payload) ?? null
 
     if (editing.kind === "edit") {
       await mutation.update.mutateAsync({ id: editing.id, input: payload })

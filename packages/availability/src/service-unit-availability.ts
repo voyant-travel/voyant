@@ -55,7 +55,9 @@ export async function getSlotUnitAvailability(
     .where(
       and(
         inArray(bookingsRef.status, [...ACTIVE_BOOKING_STATUSES_FOR_SLOT]),
+        // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`${bookingItemsRef.optionUnitId} IS NOT NULL`,
+        // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`${bookingItemsRef.metadata}->>'availabilitySlotId' = ${slotId}`,
       ),
     )

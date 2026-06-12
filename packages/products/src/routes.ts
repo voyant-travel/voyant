@@ -61,7 +61,7 @@ export function readModelInvalidation() {
 
 // Product route groups stay split by domain area; mount at root to preserve public paths.
 export const productRoutes = new Hono<Env>()
-  // biome-ignore lint/suspicious/noExplicitAny: the structural middleware shape doesn't need the full Env generics
+  // biome-ignore lint/suspicious/noExplicitAny: the structural middleware shape doesn't need the full Env generics -- owner: products; existing suppression is intentional pending typed cleanup.
   .use("*", readModelInvalidation() as any)
   .route("/", productConfigurationRoutes)
   .route("/", productMerchandisingRoutes)

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: travel-composer; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 

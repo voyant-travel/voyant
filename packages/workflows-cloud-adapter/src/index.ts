@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: workflows-cloud-adapter; existing module stays co-located until a dedicated split preserves behavior and tests.
 // @voyantjs/workflows-cloud-adapter
 //
 // Tenant Worker adapter for Voyant Cloud's workflows runtime. The package

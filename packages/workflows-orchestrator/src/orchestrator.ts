@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: workflows-orchestrator; existing module stays co-located until a dedicated split preserves behavior and tests.
 // Public entry points for the reference orchestrator.
 //
 // `trigger()` creates a RunRecord, drives it forward through the

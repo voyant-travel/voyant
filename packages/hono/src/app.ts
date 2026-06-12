@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- createApp centralizes middleware ordering, module/plugin expansion, and workflow runtime bootstrap; split only with a dedicated app-factory refactor.
 import {
   createContainer,
   createEventBus,
@@ -9,6 +10,7 @@ import {
   type WorkflowDescriptor,
 } from "@voyantjs/core"
 import { createOutboxEventStore } from "@voyantjs/db/outbox"
+import type { WorkflowDriver } from "@voyantjs/workflows/driver"
 import {
   type BuildManifestArgs,
   buildManifest,
@@ -197,8 +199,7 @@ export function createApp<TBindings extends VoyantBindings>(
   // rather than constructing at module-load time. Mode 2 / InMemory
   // users pass a direct factory; the framework adapts both shapes.
   // See reviewer feedback P2.1 + architecture doc §6.3.
-  // biome-ignore lint/suspicious/noExplicitAny: WorkflowDriver shape varies across driver implementations
-  let workflowDriver: any | undefined
+  let workflowDriver: WorkflowDriver | undefined
 
   let bootstrapPromise: Promise<void> | null = null
   function ensureRuntimeBootstrapped(bindings: TBindings) {
@@ -388,10 +389,7 @@ export function createApp<TBindings extends VoyantBindings>(
       // call `driver.trigger(...)` directly without re-resolving from
       // the container. Also used by the optional HTTP ingest adapter
       // (`mountHttpIngestAdapter` from `@voyantjs/workflows/http-ingest`).
-      ;(c as unknown as { set: (k: string, v: unknown) => void }).set(
-        "workflowDriver",
-        workflowDriver,
-      )
+      c.set("workflowDriver", workflowDriver)
     }
     return next()
   })
@@ -557,12 +555,12 @@ interface WireWorkflowRuntimeArgs {
   modules: ReadonlyArray<Module>
   collectedWorkflows: ReadonlyArray<WorkflowDescriptor>
   collectedFilters: ReadonlyArray<EventFilterDescriptor>
-  // biome-ignore lint/suspicious/noExplicitAny: WorkflowDriver shape varies across drivers
-  driver: any
+  driver: WorkflowDriver
   environment: "production" | "preview" | "development"
   projectId: string
-  // biome-ignore lint/suspicious/noExplicitAny: EventBus.subscribe handler signature varies
-  eventBus: { subscribe(event: string, handler: (e: any) => Promise<void> | void): unknown }
+  eventBus: {
+    subscribe(event: string, handler: (e: EventEnvelope) => Promise<void> | void): unknown
+  }
 }
 
 /**

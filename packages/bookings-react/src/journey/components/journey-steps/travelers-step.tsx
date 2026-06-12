@@ -76,7 +76,7 @@ export function TravelersStep({
   // hand-off) or up to the minimum party size, then keep the derived pax in
   // sync. After this, the rows are authoritative.
   const seeded = useRef(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (seeded.current) return
     seeded.current = true

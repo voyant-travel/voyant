@@ -1,4 +1,5 @@
 // Mode 1 driver — Cloudflare edge composition.
+// agent-quality: file-size exception -- Public edge driver factory currently owns manifest, trigger, event-ingest, concurrency, and admin wiring; split only with a dedicated driver-surface refactor.
 //
 // `createApp({ workflows: { driver: createCloudflareEdgeDriver({ ... }) } })`
 // is the entry point for any deployment that runs the orchestrator on
@@ -89,6 +90,61 @@ const DEFAULT_TENANT_META = {
   tenantId: "default",
   projectId: "default",
   organizationId: "default",
+}
+
+function serializeWorkflowManifest(manifest: WorkflowManifest): Record<string, unknown> {
+  return { ...manifest }
+}
+
+function deserializeWorkflowManifest(manifest: Record<string, unknown>): WorkflowManifest {
+  const {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows,
+    eventFilters,
+    bindings,
+    environments,
+  } = manifest
+
+  if (
+    schemaVersion !== 1 ||
+    typeof projectId !== "string" ||
+    typeof versionId !== "string" ||
+    typeof builtAt !== "number" ||
+    typeof builderVersion !== "string" ||
+    !isStringArray(capabilities) ||
+    !Array.isArray(workflows) ||
+    !Array.isArray(eventFilters) ||
+    !isRecord(bindings) ||
+    !isRecord(environments)
+  ) {
+    throw new Error("stored workflow manifest has an invalid shape")
+  }
+
+  return {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows: workflows as WorkflowManifest["workflows"],
+    eventFilters: eventFilters as WorkflowManifest["eventFilters"],
+    bindings: bindings as WorkflowManifest["bindings"],
+    environments: environments as WorkflowManifest["environments"],
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
 }
 
 // ---- Public factory ----
@@ -251,7 +307,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
       return manifestStore.registerManifest({
         environment: args.environment,
         versionId: args.manifest.versionId,
-        manifest: args.manifest as unknown as Record<string, unknown>,
+        manifest: serializeWorkflowManifest(args.manifest),
       })
     }
 
@@ -260,7 +316,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
     }): Promise<WorkflowManifest | null> {
       const envelope = await manifestStore.getCurrent(args.environment)
       if (!envelope) return null
-      return envelope.manifest as unknown as WorkflowManifest
+      return deserializeWorkflowManifest(envelope.manifest)
     }
 
     async function trigger<TIn, TOut>(
@@ -327,7 +383,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
           message: `No manifest is registered for environment "${args.environment}".`,
         }
       }
-      const manifest = stored.manifest as unknown as WorkflowManifest
+      const manifest = deserializeWorkflowManifest(stored.manifest)
       const eventId = args.envelope.metadata?.eventId ?? (await deriveStableEventId(args.envelope))
       const routed = routeEvent({
         manifest,

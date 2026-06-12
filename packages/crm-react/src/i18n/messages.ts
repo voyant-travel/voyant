@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 export const crmRelationTypes = ["client", "partner", "supplier", "other"] as const
 export const crmRecordStatuses = ["active", "inactive", "archived"] as const
 export const crmActivityTypes = ["note", "call", "email", "meeting", "task", "follow_up"] as const

@@ -25,15 +25,23 @@ function fakeKv() {
   }
 }
 
-function buildApp(kv: ReturnType<typeof fakeKv> | undefined, handler: (c: never) => Response) {
-  const app = new Hono<{ Bindings: { DATABASE_URL: string; CACHE?: ReturnType<typeof fakeKv> } }>()
+interface TestBindings {
+  DATABASE_URL: string
+  CACHE?: ReturnType<typeof fakeKv>
+}
+
+function testEnv(env: TestBindings): Record<string, unknown> {
+  return env as Record<string, unknown>
+}
+
+function buildApp(kv: ReturnType<typeof fakeKv> | undefined, handler: () => Response) {
+  const app = new Hono<{ Bindings: TestBindings }>()
   app.use("*", publicResponseCache())
-  app.get("/v1/public/products", handler as never)
-  app.get("/v1/admin/products", handler as never)
+  app.get("/v1/public/products", handler)
+  app.get("/v1/admin/products", handler)
   const env = { DATABASE_URL: "postgres://localhost/test", CACHE: kv }
   return {
-    request: (path: string, init?: RequestInit) =>
-      app.request(path, init, env as unknown as Record<string, unknown>),
+    request: (path: string, init?: RequestInit) => app.request(path, init, testEnv(env)),
   }
 }
 
@@ -138,14 +146,10 @@ describe("publicResponseCache (KV fallback — no Cache API in the test runtime)
           headers: { "cache-control": "public, s-maxage=60" },
         }),
     )
-    app.post("/v1/public/search", handler as never)
+    app.post("/v1/public/search", handler)
     const env = { DATABASE_URL: "x", CACHE: kv }
 
-    await app.request(
-      "/v1/public/search",
-      { method: "POST" },
-      env as unknown as Record<string, unknown>,
-    )
+    await app.request("/v1/public/search", { method: "POST" }, testEnv(env))
     expect(kv.put).not.toHaveBeenCalled()
   })
 

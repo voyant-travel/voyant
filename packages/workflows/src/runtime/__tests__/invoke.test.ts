@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest"
 import { runWorkflowForTest } from "../../testing/index.js"
-import { __resetRegistry, workflow } from "../../workflow.js"
+import { __resetRegistry, type WorkflowHandle, workflow } from "../../workflow.js"
+
+function unregisteredWorkflow(id: string): WorkflowHandle<unknown, unknown> {
+  return { id }
+}
 
 beforeEach(() => {
   __resetRegistry()
@@ -216,19 +220,12 @@ describe("ctx.invoke — child workflows", () => {
   })
 
   it("errors clearly when a child workflow is not registered and no stub is provided", async () => {
-    const unregistered = { id: "never.registered" } as unknown as Parameters<
-      typeof workflow
-    >[0] extends infer _
-      ? { id: string } & Record<string, never>
-      : never
+    const unregistered = unregisteredWorkflow("never.registered")
 
     const parent = workflow<void, void>({
       id: "parent.missing-child",
       async run(_, ctx) {
-        await ctx.invoke(
-          unregistered as unknown as { id: string; __input?: unknown; __output?: unknown },
-          undefined,
-        )
+        await ctx.invoke(unregistered, undefined)
       },
     })
 

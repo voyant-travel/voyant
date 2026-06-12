@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import { ActionLedgerIdempotencyConflictError } from "@voyantjs/action-ledger"
 import {
   aggregateSnapshotKey,

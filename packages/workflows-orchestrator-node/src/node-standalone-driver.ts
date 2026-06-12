@@ -1,4 +1,5 @@
 // Mode 2 driver — pure Node, Postgres-backed.
+// agent-quality: file-size exception -- Public driver factory currently owns manifest, trigger, event-ingest, schedule, and admin wiring; split only with a dedicated driver-surface refactor.
 //
 // Returns a `DriverFactory` (per architecture doc §6.3) that the framework
 // invokes after `createApp()` has assembled its `ModuleContainer`. Composes:
@@ -125,6 +126,61 @@ const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
 
 const DEFAULT_MANIFEST_KEEP = 3
 
+function serializeWorkflowManifest(manifest: WorkflowManifest): Record<string, unknown> {
+  return { ...manifest }
+}
+
+function deserializeWorkflowManifest(manifest: Record<string, unknown>): WorkflowManifest {
+  const {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows,
+    eventFilters,
+    bindings,
+    environments,
+  } = manifest
+
+  if (
+    schemaVersion !== 1 ||
+    typeof projectId !== "string" ||
+    typeof versionId !== "string" ||
+    typeof builtAt !== "number" ||
+    typeof builderVersion !== "string" ||
+    !isStringArray(capabilities) ||
+    !Array.isArray(workflows) ||
+    !Array.isArray(eventFilters) ||
+    !isRecord(bindings) ||
+    !isRecord(environments)
+  ) {
+    throw new Error("stored workflow manifest has an invalid shape")
+  }
+
+  return {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows: workflows as WorkflowManifest["workflows"],
+    eventFilters: eventFilters as WorkflowManifest["eventFilters"],
+    bindings: bindings as WorkflowManifest["bindings"],
+    environments: environments as WorkflowManifest["environments"],
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
+}
+
 /**
  * Build the Mode 2 driver factory. The factory closes over its options
  * and returns a fresh `WorkflowDriver` when `createApp()` (or a test)
@@ -224,7 +280,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       const result = await manifestStore.registerManifest({
         environment: args.environment as string,
         versionId: args.manifest.versionId,
-        manifest: args.manifest as unknown as Record<string, unknown>,
+        manifest: serializeWorkflowManifest(args.manifest),
       })
       // Best-effort prune; failures here shouldn't fail boot.
       try {
@@ -245,7 +301,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
     async function getManifest(args: { environment: string }): Promise<WorkflowManifest | null> {
       const envelope = await manifestStore.getCurrent(args.environment)
       if (!envelope) return null
-      return envelope.manifest as unknown as WorkflowManifest
+      return deserializeWorkflowManifest(envelope.manifest)
     }
 
     async function trigger<TIn, TOut>(
@@ -289,7 +345,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
         }
       }
       const eventId = await ensureEventId(args.envelope)
-      const manifest = stored.manifest as unknown as WorkflowManifest
+      const manifest = deserializeWorkflowManifest(stored.manifest)
       const routed = routeEvent({
         manifest,
         envelope: args.envelope,

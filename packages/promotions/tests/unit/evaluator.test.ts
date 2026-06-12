@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: promotions; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Unit tests for the promotions rule evaluator.
  *

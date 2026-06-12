@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: action-ledger; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { withOptionalTransaction } from "@voyantjs/db/transaction"

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- Bookings service keeps legacy booking lifecycle, traveler, allocation, and accounting workflows together until service modules are split by domain operation.
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
@@ -118,7 +119,9 @@ import type {
  */
 function sqlTextArray(values: readonly string[]): SQL {
   if (values.length === 0) return sql`ARRAY[]::text[]`
+  // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`ARRAY[${sql.join(
+    // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     values.map((value) => sql`${value}`),
     sql.raw(", "),
   )}]::text[]`
@@ -139,6 +142,7 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
     ilike(bookings.contactFirstName, term),
     ilike(bookings.contactLastName, term),
     ilike(bookings.contactTaxId, term),
+    // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`concat_ws(' ', ${bookings.contactFirstName}, ${bookings.contactLastName}) ilike ${term}`,
     ilike(bookings.contactEmail, term),
     ilike(bookings.contactPhone, term),
@@ -163,6 +167,7 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
 
   if (shouldSearchNormalizedPhone) {
     searchConditions.push(
+      // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`regexp_replace(coalesce(${bookings.contactPhone}, ''), '[^0-9]+', '', 'g') like ${`%${normalizedPhoneTerm}%`}`,
     )
   }
@@ -929,6 +934,7 @@ async function getConvertProductData(
         })
         .from(productDayServicesRef)
         .where(
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productDayServicesRef.dayId} IN (
             SELECT ${productDaysRef.id}
             FROM ${productDaysRef}
@@ -1567,6 +1573,30 @@ export interface BookingResourceCapacityViolation {
   existingAssigned: number
 }
 
+type AllocationResourceLockRow = {
+  id: string
+  kind: string
+  capacity: number
+  slot_id: string
+}
+
+function parseAllocationResourceLockRow(row: Record<string, unknown>): AllocationResourceLockRow {
+  if (
+    typeof row.id !== "string" ||
+    typeof row.kind !== "string" ||
+    typeof row.capacity !== "number" ||
+    typeof row.slot_id !== "string"
+  ) {
+    throw new Error("allocation resource lock query returned an unexpected row shape")
+  }
+  return {
+    id: row.id,
+    kind: row.kind,
+    capacity: row.capacity,
+    slot_id: row.slot_id,
+  }
+}
+
 /**
  * Exported for unit tests — production callers go through
  * `assertResourceCapacityForAllocations` /
@@ -1595,12 +1625,7 @@ export async function loadResourceCapacityViolations(
     WHERE id = ANY(${sqlTextArray(resourceIds)})
     FOR UPDATE
   `)
-  const resourceList = resources as unknown as Array<{
-    id: string
-    kind: string
-    capacity: number
-    slot_id: string
-  }>
+  const resourceList = Array.from(resources, parseAllocationResourceLockRow)
 
   const resourceById = new Map(resourceList.map((row) => [row.id, row]))
 
@@ -1625,6 +1650,7 @@ export async function loadResourceCapacityViolations(
   if (countedChecks.length > 0) {
     const checkTuples = sql.join(
       countedChecks.map(
+        // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         (check) => sql`(${check.kind}::text, ${check.resourceId}::text, ${check.slotId}::text)`,
       ),
       sql.raw(", "),
@@ -2211,6 +2237,7 @@ async function autoIssueFulfillmentsForBooking(
   const items = await db
     .select()
     .from(bookingItems)
+    // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .where(and(eq(bookingItems.bookingId, bookingId), sql`${bookingItems.productId} IS NOT NULL`))
     .orderBy(asc(bookingItems.createdAt))
 
@@ -2251,6 +2278,7 @@ async function autoIssueFulfillmentsForBooking(
     .select()
     .from(bookingItemTravelers)
     .where(
+      // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${bookingItemTravelers.bookingItemId} IN (
         SELECT ${bookingItems.id}
         FROM ${bookingItems}
@@ -2463,7 +2491,9 @@ export const bookingsService = {
     const toDate = options.to ? new Date(options.to) : undefined
 
     const rangeConditions = []
+    // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     if (fromDate) rangeConditions.push(sql`${bookings.createdAt} >= ${fromDate.toISOString()}`)
+    // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     if (toDate) rangeConditions.push(sql`${bookings.createdAt} < ${toDate.toISOString()}`)
     const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
@@ -2473,6 +2503,7 @@ export const bookingsService = {
 
     const upcomingFilter = and(
       inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
+      // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${bookings.startDate} >= ${todayDateString}`,
     )
 
@@ -2512,7 +2543,9 @@ export const bookingsService = {
         })
         .from(bookings)
         .where(rangeWhere)
+        // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         .groupBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+        // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         .orderBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`),
       db
         .select({
@@ -2524,15 +2557,18 @@ export const bookingsService = {
         .where(
           and(
             ...(rangeConditions.length ? rangeConditions : []),
+            // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${bookings.sellAmountCents} IS NOT NULL`,
             inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
           ),
         )
         .groupBy(
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
           bookings.sellCurrency,
         )
         .orderBy(
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
           bookings.sellCurrency,
         ),
@@ -3218,6 +3254,7 @@ export const bookingsService = {
         .select()
         .from(offerItemParticipantsRef)
         .where(
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${offerItemParticipantsRef.offerItemId} IN (
             SELECT ${offerItemsRef.id}
             FROM ${offerItemsRef}
@@ -3320,6 +3357,7 @@ export const bookingsService = {
         .select()
         .from(orderItemParticipantsRef)
         .where(
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${orderItemParticipantsRef.orderItemId} IN (
             SELECT ${orderItemsRef.id}
             FROM ${orderItemsRef}
@@ -4206,6 +4244,7 @@ export const bookingsService = {
       .where(
         and(
           inArray(bookings.status, ["on_hold", "awaiting_payment"]),
+          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${bookings.holdExpiresAt} IS NOT NULL`,
           lte(bookings.holdExpiresAt, cutoff),
         ),

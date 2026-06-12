@@ -433,7 +433,7 @@ function PeopleTableSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable -- owner: crm-react; existing suppression is intentional pending typed cleanup.
         <TableRow key={`skeleton-${idx}`}>
           <TableCell>
             <Skeleton className="h-4 w-40" />

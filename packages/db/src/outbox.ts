@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm"
 import { type EventOutboxRow, eventOutboxTable } from "./schema/infra/event_outbox.js"
 import type { DrizzleClient } from "./types.js"
 
-// biome-ignore lint/suspicious/noExplicitAny: Drizzle generic inference breaks across client flavors — casts isolated to the query-builder boundary (same pattern as crud.ts)
+// biome-ignore lint/suspicious/noExplicitAny: Drizzle generic inference breaks across client flavors — casts isolated to the query-builder boundary (same pattern as crud.ts) -- owner: db; existing suppression is intentional pending typed cleanup.
 type AnyDb = any
 
 /** Base delay before the first retry; doubles per attempt. */

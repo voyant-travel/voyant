@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import {
@@ -573,7 +574,7 @@ export function TravelersSection({
         <div className="flex flex-col gap-2">
           {value.travelers.map((traveler, index) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: row identity is positional
+              // biome-ignore lint/suspicious/noArrayIndexKey: row identity is positional -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
               key={index}
               className="flex flex-col gap-2 rounded-md border p-2"
             >

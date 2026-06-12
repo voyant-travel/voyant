@@ -22,7 +22,7 @@ function nextBookingNumber() {
  * rollback — so the batching can't silently change behavior.
  */
 describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db helper type is loaded dynamically
+  // biome-ignore lint/suspicious/noExplicitAny: test db helper type is loaded dynamically -- owner: bookings; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {
@@ -185,7 +185,7 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     expect(allocations).toHaveLength(3)
 
     // Each allocation references the booking item created for the same slot.
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle rows in a loosely typed test db
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle rows in a loosely typed test db -- owner: bookings; existing suppression is intentional pending typed cleanup.
     const itemBySlot = new Map(items.map((item: any) => [item.availabilitySlotId, item]))
     for (const allocation of allocations) {
       const item = itemBySlot.get(allocation.availabilitySlotId)

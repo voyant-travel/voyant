@@ -175,7 +175,7 @@ function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
               <ul className="flex flex-col divide-y">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <li
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: admin; existing suppression is intentional pending typed cleanup.
                     key={i}
                     className="flex items-center gap-4 py-3"
                   >

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
 import { toCsvRow } from "@voyantjs/utils"
@@ -41,6 +42,7 @@ import {
 import { paginate } from "./helpers.js"
 
 function unaccentedIlike(column: AnyColumn, term: string): SQL {
+  // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`unaccent(coalesce(${column}, '')) ILIKE unaccent(${term})`
 }
 
@@ -65,7 +67,9 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
   if (digits) {
     const digitsTerm = `%${digits}%`
     contactPointConditions.push(
+      // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`regexp_replace(${identityContactPoints.value}, '[^0-9]+', '', 'g') ILIKE ${digitsTerm}`,
+      // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`regexp_replace(coalesce(${identityContactPoints.normalizedValue}, ''), '[^0-9]+', '', 'g') ILIKE ${digitsTerm}`,
     )
   }

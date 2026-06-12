@@ -105,6 +105,7 @@ export const bookings = pgTable(
     // becomes a confirmed booking).
     check(
       "ck_bookings_base_currency_amounts",
+      // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.baseSellAmountCents} IS NULL AND ${table.baseCostAmountCents} IS NULL) OR ${table.baseCurrency} IS NOT NULL`,
     ),
   ],

@@ -21,6 +21,17 @@ export interface StoreStreamOptions {
   clearInterval?: typeof clearInterval
 }
 
+function unrefTimer(timer: unknown): void {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
+    timer.unref()
+  }
+}
+
 export function diffSnapshots(
   prev: readonly StoredRun[],
   next: readonly StoredRun[],
@@ -88,7 +99,7 @@ export function createStoreStream(
   const handle = setIntervalImpl(() => {
     void pollOnce()
   }, intervalMs)
-  ;(handle as unknown as { unref?: () => void }).unref?.()
+  unrefTimer(handle)
 
   return {
     subscribe(listener) {

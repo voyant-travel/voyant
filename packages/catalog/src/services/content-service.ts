@@ -101,6 +101,7 @@ async function tryAdvisoryLock(db: AnyDrizzleDb, key: string): Promise<boolean> 
   // hashtextextended which Postgres exposes for stable string hashing
   // (bigint output, not int4 like hashtext).
   const rows = await db.execute<{ locked: boolean }>(
+    // agent-quality: raw-sql reviewed -- owner: catalog; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`SELECT pg_try_advisory_lock(hashtextextended(${key}, 0)) AS locked`,
   )
   // Drizzle's execute() result shape varies by driver; we accept both
@@ -110,6 +111,7 @@ async function tryAdvisoryLock(db: AnyDrizzleDb, key: string): Promise<boolean> 
 }
 
 async function releaseAdvisoryLock(db: AnyDrizzleDb, key: string): Promise<void> {
+  // agent-quality: raw-sql reviewed -- owner: catalog; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   await db.execute(sql`SELECT pg_advisory_unlock(hashtextextended(${key}, 0))`)
 }
 
@@ -223,7 +225,7 @@ export function createInvalidateOnDrift<TTable extends PgTable & VerticalContent
     // for the WHERE/RETURNING. This keeps the SQL identical to a
     // typed-call while the catalog package stays neutral about the
     // vertical's exact table schema.
-    // biome-ignore lint/suspicious/noExplicitAny: see comment above
+    // biome-ignore lint/suspicious/noExplicitAny: see comment above -- owner: catalog; existing suppression is intentional pending typed cleanup.
     const updateBuilder: any = db.update(table)
     const result = (await updateBuilder
       .set({ fresh_until: sql`now()` })

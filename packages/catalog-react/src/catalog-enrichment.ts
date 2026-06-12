@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-react; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Catalog detail enrichment — the normalized detail view-model
  * (`CatalogDetailEnrichment`) + the client that fetches a single entity's rich

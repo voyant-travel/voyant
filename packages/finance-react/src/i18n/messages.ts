@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type {
   ApServiceType,
   CreditNoteRecord,

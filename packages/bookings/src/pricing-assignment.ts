@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Pure, transport-agnostic logic for mapping travelers onto option_units
  * at booking-create time. Lives in `@voyantjs/bookings` so the

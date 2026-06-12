@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: transactions; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -46,7 +47,7 @@ function nextRef(prefix: string, seq: string) {
 }
 
 async function cleanupTransactionsTestData(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: transactions; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   await db.execute(sql`
@@ -70,7 +71,7 @@ async function cleanupTransactionsTestData(
 
 describe.skipIf(!DB_AVAILABLE)("Transactions routes (integration)", () => {
   let app: Hono
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: transactions; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

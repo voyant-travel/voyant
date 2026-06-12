@@ -5,7 +5,7 @@ import { requireActor } from "../../src/middleware/require-actor.js"
 
 function makeApp(
   setVars: (c: {
-    // biome-ignore lint/suspicious/noExplicitAny: Hono variable setter
+    // biome-ignore lint/suspicious/noExplicitAny: Hono variable setter -- owner: hono; existing suppression is intentional pending typed cleanup.
     set: (k: string, v: any) => void
   }) => void,
 ) {

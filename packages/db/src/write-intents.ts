@@ -5,7 +5,7 @@ import { eventOutboxTable } from "./schema/infra/event_outbox.js"
 import { type WriteIntentRow, writeIntentsTable } from "./schema/infra/write_intents.js"
 import type { DrizzleClient } from "./types.js"
 
-// biome-ignore lint/suspicious/noExplicitAny: Drizzle generic inference breaks across client flavors — casts isolated to the query-builder boundary (same pattern as crud.ts/outbox.ts)
+// biome-ignore lint/suspicious/noExplicitAny: Drizzle generic inference breaks across client flavors — casts isolated to the query-builder boundary (same pattern as crud.ts/outbox.ts) -- owner: db; existing suppression is intentional pending typed cleanup.
 type AnyDb = any
 
 /**
@@ -72,6 +72,7 @@ export async function settleWriteIntent(
       error: outcome.status === "failed" ? outcome.error.slice(0, 2000) : null,
       completedAt: new Date(),
     })
+    // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .where(sql`${writeIntentsTable.id} = ${id} AND ${writeIntentsTable.status} = 'pending'`)
     .returning({ id: writeIntentsTable.id })) as Array<{ id: string }>
   return rows.length > 0

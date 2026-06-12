@@ -120,11 +120,11 @@ function ColumnHeader({ layout }: { layout: SeatMap["columnLayout"] }) {
       <span className="w-6 shrink-0 text-center font-mono text-[10px] text-muted-foreground" />
       {layout.map((col, i) =>
         col == null ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable
+          // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable -- owner: flights-react; existing suppression is intentional pending typed cleanup.
           <div key={`gap-${i}`} className="w-3 shrink-0" />
         ) : (
           <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable
+            // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable -- owner: flights-react; existing suppression is intentional pending typed cleanup.
             key={`col-${i}`}
             className="w-7 shrink-0 text-center font-mono text-[10px] text-muted-foreground"
           >
@@ -160,7 +160,7 @@ function SeatRowView({
       {layout.map((col, i) => {
         if (col == null) {
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable
+            // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable -- owner: flights-react; existing suppression is intentional pending typed cleanup.
             <div key={`aisle-${rowNumber}-${i}`} className="w-3 shrink-0" />
           )
         }
@@ -168,7 +168,7 @@ function SeatRowView({
         if (!seat) {
           return (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable
+              // biome-ignore lint/suspicious/noArrayIndexKey: layout positions are stable -- owner: flights-react; existing suppression is intentional pending typed cleanup.
               key={`gap-${rowNumber}-${i}`}
               className="h-7 w-7 shrink-0 rounded-md border border-dashed border-muted/30"
             />

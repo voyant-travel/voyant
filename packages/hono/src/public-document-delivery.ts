@@ -231,6 +231,7 @@ export function createDrizzlePublicDocumentDeliveryGrantStore(
       await db
         .update(infraPublicDocumentDeliveryGrantsTable)
         .set({
+          // agent-quality: raw-sql reviewed -- owner: hono; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           accessCount: sql`${infraPublicDocumentDeliveryGrantsTable.accessCount} + 1`,
           lastAccessedAt: context.accessedAt,
           lastAccessedIp: context.ip,

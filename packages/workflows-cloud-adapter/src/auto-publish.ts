@@ -126,7 +126,7 @@ export async function publishManifest(ctx: AutoPublishContext): Promise<Workflow
   await ctx.manifestStore.registerManifest({
     environment,
     versionId: manifest.versionId,
-    manifest: manifest as unknown as Record<string, unknown>,
+    manifest: { ...manifest },
   })
   ctx.logger?.("info", "workflows: auto-published manifest", {
     environment,

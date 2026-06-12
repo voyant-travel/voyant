@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: customer-portal; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
 const bookingStatusSchema = z.enum([

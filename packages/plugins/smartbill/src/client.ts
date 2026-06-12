@@ -18,6 +18,7 @@ import type {
   SmartbillTaxesResponse,
 } from "./types.js"
 
+// agent-quality: file-size exception -- SmartBill's broad API client remains co-located until endpoint groups are split.
 /**
  * Outbound-HTTP resilience knobs for the SmartBill client. Every call goes
  * through `resilientFetch`, so a slow or down SmartBill fails fast instead
@@ -368,7 +369,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
       // Per-operation policy above already gates retries via attempts.
       retryNonIdempotent: true,
       retry: surfacingRetry(maxAttemptsFor(retryable), retryTuning),
-      fetchImpl: fetchImpl as unknown as typeof fetch,
+      fetchImpl: asResilientFetch(fetchImpl),
     })
     let text = ""
     let parsed: unknown = null
@@ -404,7 +405,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
         breaker,
         // PDF downloads are pure reads — always safe to retry.
         retry: surfacingRetry(maxAttemptsFor(true), retryTuning),
-        fetchImpl: fetchImpl as unknown as typeof fetch,
+        fetchImpl: asResilientFetch(fetchImpl),
       },
     )
     if (!response.ok) {
@@ -645,4 +646,30 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
 function createGlobalSmartbillFetch(): SmartbillFetch | undefined {
   if (typeof globalThis.fetch !== "function") return undefined
   return (input, init) => globalThis.fetch(input, init)
+}
+
+function headersForPluginFetch(headers: HeadersInit | undefined): Record<string, string> {
+  if (!headers) return {}
+  if (headers instanceof Headers || Array.isArray(headers)) {
+    return Object.fromEntries(new Headers(headers).entries())
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(headers)) out[key] = String(value)
+  return out
+}
+
+function asResilientFetch(fetchImpl: SmartbillFetch): typeof fetch {
+  return async (input, init = {}) => {
+    const response = await fetchImpl(input instanceof Request ? input.url : String(input), {
+      method: init.method ?? "GET",
+      headers: headersForPluginFetch(init.headers),
+      ...(typeof init.body === "string" ? { body: init.body } : {}),
+    })
+    if (response instanceof Response) return response
+    const contentType = response.headers?.get("content-type")
+    return new Response(await response.arrayBuffer(), {
+      status: response.status,
+      headers: contentType ? { "content-type": contentType } : undefined,
+    })
+  }
 }

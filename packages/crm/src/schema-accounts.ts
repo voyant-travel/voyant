@@ -226,6 +226,7 @@ export const personDocuments = pgTable(
     index("idx_person_documents_expiry").on(table.expiryDate),
     uniqueIndex("uidx_person_documents_primary_per_type")
       .on(table.personId, table.type)
+      // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.isPrimary} = true`),
   ],
 )
@@ -280,6 +281,7 @@ export const personRelationships = pgTable(
       table.toPersonId,
       table.kind,
     ),
+    // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     check("person_relationships_no_self", sql`${table.fromPersonId} <> ${table.toPersonId}`),
   ],
 )

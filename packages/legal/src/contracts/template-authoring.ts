@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; existing module stays co-located until a dedicated split preserves behavior and tests.
 export type ContractTemplateVariableType =
   | "string"
   | "number"

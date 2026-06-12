@@ -47,7 +47,7 @@ export function escapeHtml(value: string): string {
 
 function registerFilter(
   name: string,
-  // biome-ignore lint/suspicious/noExplicitAny: matches LiquidJS's FilterImplOptions
+  // biome-ignore lint/suspicious/noExplicitAny: matches LiquidJS's FilterImplOptions -- owner: templating; existing suppression is intentional pending typed cleanup.
   handler: (...args: any[]) => unknown,
 ) {
   liquid.registerFilter(name, handler)

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -974,7 +975,7 @@ function TaxesPageSkeleton({ rows }: { rows: number }) {
       <div className="flex flex-col divide-y">
         {Array.from({ length: rows }).map((_, index) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
             key={index}
             className="flex items-center justify-between px-6 py-3"
           >

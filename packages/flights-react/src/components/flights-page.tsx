@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: flights-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
@@ -372,7 +373,7 @@ export function FlightsPage({
           {flightSearchQuery.isFetching ? (
             <div className="flex flex-col gap-2">
               {Array.from({ length: 4 }).map((_, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable identity.
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable identity. -- owner: flights-react; existing suppression is intentional pending typed cleanup.
                 <div key={index} className="h-24 animate-pulse rounded-lg border bg-muted/40" />
               ))}
             </div>

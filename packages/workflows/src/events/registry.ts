@@ -44,10 +44,8 @@ interface EventFilterRegistry {
   reset(): void
 }
 
-const globalRef = globalThis as unknown as Record<
-  typeof REGISTRY_KEY,
-  Map<string, EventFilterRuntimeEntry> | undefined
->
+const globalRef = globalThis as typeof globalThis &
+  Record<typeof REGISTRY_KEY, Map<string, EventFilterRuntimeEntry> | undefined>
 
 const REGISTRY: Map<string, EventFilterRuntimeEntry> =
   globalRef[REGISTRY_KEY] ?? new Map<string, EventFilterRuntimeEntry>()

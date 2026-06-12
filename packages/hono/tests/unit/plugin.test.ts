@@ -16,7 +16,7 @@ const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 const TEST_CTX = {
   waitUntil: () => {},
   passThroughOnException: () => {},
-  // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests
+  // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests -- owner: hono; existing suppression is intentional pending typed cleanup.
 } as any
 
 function makeModule(name: string, surface: "admin" | "public"): HonoModule {
@@ -67,7 +67,7 @@ describe("expandHonoPlugins", () => {
 describe("createApp with plugins", () => {
   function build(plugins: ReturnType<typeof defineHonoPlugin>[], actor: Actor = "staff") {
     return createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins,
       auth: { resolve: () => ({ userId: "u1", actor }) },
@@ -102,7 +102,7 @@ describe("createApp with plugins", () => {
     const viaPlugin = makeModule("viaPlugin", "admin")
     const plugin = defineHonoPlugin({ name: "p", modules: [viaPlugin] })
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [top],
       plugins: [plugin],
@@ -139,7 +139,7 @@ describe("createApp with plugins", () => {
     const p2 = defineHonoPlugin({ name: "dup" })
     expect(() =>
       createApp({
-        // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+        // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
         db: () => ({}) as any,
         plugins: [p1, p2],
       }),
@@ -204,7 +204,7 @@ describe("createApp with plugins", () => {
     })
 
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins: [plugin],
       auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
@@ -239,7 +239,7 @@ describe("createApp with plugins", () => {
     })
 
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins: [throwingPlugin],
       modules: [goodModule],
@@ -261,7 +261,7 @@ describe("createApp with plugins", () => {
 
   it("exposes bootstrap-registered runtime services through the shared container", async () => {
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [
         {
@@ -291,7 +291,7 @@ describe("createApp with plugins", () => {
     bus.subscribe("booking.updated", handler)
 
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       eventBus: bus,
       modules: [

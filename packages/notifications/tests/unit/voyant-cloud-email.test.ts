@@ -6,7 +6,7 @@ function makeFakeClient(emailResponse: Record<string, unknown>) {
   const sendMessage = vi.fn(async () => emailResponse)
   return {
     sendMessage,
-    client: { email: { sendMessage } } as unknown as Parameters<
+    client: { email: { sendMessage } } as Parameters<
       typeof createVoyantCloudEmailProvider
     >[0]["client"],
   }

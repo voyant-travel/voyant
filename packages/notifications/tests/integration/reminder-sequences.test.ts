@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

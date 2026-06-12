@@ -6,7 +6,7 @@ import { financeOperations } from "./finance.js"
 import { legalOperations } from "./legal.js"
 import { productsOperations } from "./products.js"
 
-// biome-ignore lint/suspicious/noExplicitAny: heterogeneous descriptor registry
+// biome-ignore lint/suspicious/noExplicitAny: heterogeneous descriptor registry -- owner: admin-contracts; existing suppression is intentional pending typed cleanup.
 export type AnyOperation = OperationDescriptor<any, any, any>
 
 function isOperation(value: unknown): value is AnyOperation {

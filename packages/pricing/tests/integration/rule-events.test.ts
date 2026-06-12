@@ -19,7 +19,7 @@ import {
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 describe.skipIf(!DB_AVAILABLE)("pricing rule events", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: pricing; existing suppression is intentional pending typed cleanup.
   let db: any
   let productId: string
   let optionId: string

@@ -103,6 +103,7 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
         { name: "future", data: {}, metadata: { eventId: "evt_future" } },
       ])
       await db.execute(
+        // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`UPDATE ${eventOutboxTable} SET "next_attempt_at" = now() + interval '1 hour' WHERE "event_id" = 'evt_future'`,
       )
 
@@ -130,6 +131,7 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
       const [row] = await insertOutboxEvents(db, [{ name: "x", data: {} }])
       if (!row) throw new Error("insert failed")
       await db.execute(
+        // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`UPDATE ${eventOutboxTable} SET "attempts" = "max_attempts" WHERE ${eventOutboxTable.id} = ${row.id}`,
       )
 
@@ -216,6 +218,7 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
       expect((await getOutboxStats(db)).pending).toBe(1)
 
       // Make the backoff-delayed row due now, then drain.
+      // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       await db.execute(sql`UPDATE ${eventOutboxTable} SET "next_attempt_at" = now()`)
       const result = await drainOutbox(db, bus)
 

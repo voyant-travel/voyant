@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: workflows-orchestrator; existing module stays co-located until a dedicated split preserves behavior and tests.
 // In-memory WorkflowDriver — primarily for tests, also for short-lived
 // scripts and the parameterized compliance suite.
 //

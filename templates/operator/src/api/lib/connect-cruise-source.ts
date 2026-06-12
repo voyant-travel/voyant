@@ -71,7 +71,7 @@ export function createConnectCruiseSourceAdapter(
   // shim's `discover()` / `getContent()` never read price components, so the
   // cast is runtime-safe; it only bridges the published contract drift.
   let adapter = memoizeCruiseAdapter(
-    createConnectCruiseAdapter(options) as unknown as CruiseAdapter,
+    createConnectCruiseAdapter(options) as CruiseAdapter,
     extras?.memoize,
   )
   if (extras?.geo) adapter = withResolvedGeoNames(adapter, extras.geo)

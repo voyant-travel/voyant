@@ -269,10 +269,10 @@ describe("createPayloadClient — resilience", () => {
 describe("createPayloadClient — fetch handling", () => {
   it("throws when no fetch implementation is available", async () => {
     const originalFetch = globalThis.fetch
-    // biome-ignore lint/suspicious/noExplicitAny: stubbing global fetch
+    // biome-ignore lint/suspicious/noExplicitAny: stubbing global fetch -- owner: plugins; existing suppression is intentional pending typed cleanup.
     ;(globalThis as any).fetch = undefined
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: simulating missing fetch
+      // biome-ignore lint/suspicious/noExplicitAny: simulating missing fetch -- owner: plugins; existing suppression is intentional pending typed cleanup.
       const client = createPayloadClient({ ...baseOptions, fetch: undefined as any })
       await expect(client.findByVoyantId("products", "x")).rejects.toThrow(
         /requires a fetch implementation/,

@@ -84,7 +84,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: Chart CSS variables are generated from local config, not user HTML.
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Chart CSS variables are generated from local config, not user HTML. -- owner: ui; existing suppression is intentional pending typed cleanup.
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(

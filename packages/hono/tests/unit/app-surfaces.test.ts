@@ -18,7 +18,7 @@ const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 const TEST_CTX = {
   waitUntil: () => {},
   passThroughOnException: () => {},
-  // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests
+  // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests -- owner: hono; existing suppression is intentional pending typed cleanup.
 } as any
 
 function makeModule(options: {
@@ -48,7 +48,7 @@ function makeModule(options: {
  */
 function build(actor: Actor | undefined, mods: HonoModule[]) {
   return createApp({
-    // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+    // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
     db: () => ({}) as any,
     modules: mods,
     auth: {
@@ -74,7 +74,7 @@ describe("createApp surface mounting", () => {
       }),
     }
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: structural db client for disposal test
+      // biome-ignore lint/suspicious/noExplicitAny: structural db client for disposal test -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => db as any,
       modules: [mod],
     })
@@ -101,7 +101,7 @@ describe("createApp surface mounting", () => {
 
   it("serves capabilities at /v1/admin/_meta/capabilities when adminMeta is provided", async () => {
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [
         makeModule({ name: "bookings", admin: true }),
@@ -214,7 +214,7 @@ describe("createApp surface mounting", () => {
 
   it("supports a module exposing both admin and public routes", async () => {
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [makeModule({ name: "bookings", admin: true, public_: true })],
       auth: {
@@ -238,7 +238,7 @@ describe("createApp surface mounting", () => {
 
   it("treats public-path bypasses under /v1/public/* as customer-facing requests", async () => {
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [makeModule({ name: "checkout", public_: true })],
       publicPaths: ["/v1/public/checkout"],
@@ -251,7 +251,7 @@ describe("createApp surface mounting", () => {
 
   it("exposes /health publicly without auth", async () => {
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [],
     })
@@ -270,7 +270,7 @@ describe("createApp surface mounting", () => {
       dismiss: vi.fn(),
       delete: vi.fn(),
       list: vi.fn(async () => []),
-      // biome-ignore lint/suspicious/noExplicitAny: LinkService has overloaded signatures
+      // biome-ignore lint/suspicious/noExplicitAny: LinkService has overloaded signatures -- owner: hono; existing suppression is intentional pending typed cleanup.
     } as any
     const fetcher: EntityFetcher = {
       list: vi.fn(async () => [{ id: "pers_1", name: "Alice" }]),
@@ -278,7 +278,7 @@ describe("createApp surface mounting", () => {
     const query = createQueryContext({ person: fetcher }, [link], linkService)
 
     const app = createApp({
-      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       link: linkService,
       query,

@@ -29,7 +29,7 @@ function nextSupplierInvoiceNo() {
 }
 
 describe.skipIf(!DB_AVAILABLE)("supplier invoices (accounts payable)", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

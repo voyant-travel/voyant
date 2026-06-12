@@ -49,6 +49,7 @@ export const writeIntentsTable = pgTable(
   (table) => [
     uniqueIndex("write_intents_idempotency_key_uniq").on(table.idempotencyKey),
     // Stale-sweep working set; partial keeps it tiny.
+    // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     index("write_intents_pending_idx").on(table.createdAt).where(sql`${table.status} = 'pending'`),
   ],
 ).enableRLS()

@@ -45,7 +45,7 @@ function createStubDb(initialRow?: SnapshotRow) {
         },
       }),
     }),
-  } as unknown as PostgresJsDatabase
+  } as PostgresJsDatabase
 
   return {
     db,

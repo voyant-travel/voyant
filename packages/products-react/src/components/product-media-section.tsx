@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: products-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -592,7 +593,7 @@ function MediaLightbox({
                 className="max-h-[95vh] max-w-[95vw] object-contain"
               />
             ) : item.mediaType === "video" ? (
-              // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks.
+              // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks. -- owner: products-react; existing suppression is intentional pending typed cleanup.
               <video src={item.url} controls autoPlay className="max-h-[95vh] max-w-[95vw]" />
             ) : (
               <a

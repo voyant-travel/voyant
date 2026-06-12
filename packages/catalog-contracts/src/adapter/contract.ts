@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-contracts; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Public source-adapter contract — the seam through which any external feed
  * projects into the catalog plane.

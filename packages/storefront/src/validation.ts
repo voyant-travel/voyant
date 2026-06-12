@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: storefront; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlotStatusSchema } from "@voyantjs/availability/validation"
 import {
   publicBookingSessionAllocationSchema,

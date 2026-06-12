@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { db } from "../../src/middleware/db.js"
 import { metrics, withQueryCounting } from "../../src/middleware/metrics.js"
-import type { VoyantDb } from "../../src/types.js"
+import type { DbFactory, VoyantDb } from "../../src/types.js"
 
 function fakeDataset() {
   const points: Array<{ blobs?: string[]; doubles?: number[]; indexes?: string[] }> = []
@@ -13,6 +13,15 @@ function fakeDataset() {
       points.push(point)
     }),
   }
+}
+
+interface QueryCountingFakeDb {
+  select: () => { rows: never[] }
+  execute: () => Promise<never[]>
+}
+
+function voyantDb(value: QueryCountingFakeDb): VoyantDb {
+  return value as VoyantDb
 }
 
 describe("metrics middleware", () => {
@@ -75,16 +84,16 @@ describe("metrics middleware", () => {
 
   it("counts db queries issued through the db middleware", async () => {
     const dataset = fakeDataset()
-    const fakeDb = {
+    const fakeDb = voyantDb({
       select: () => ({ rows: [] }),
       execute: async () => [],
-    } as unknown as VoyantDb
+    })
+    const fakeDbFactory: DbFactory = () => fakeDb
     const app = new Hono()
     app.use("*", metrics())
-    // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-    app.use("*", db((() => fakeDb) as any))
+    app.use("*", db(fakeDbFactory))
     app.get("/v1/admin/things", async (c) => {
-      const handle = c.get("db") as unknown as {
+      const handle = c.get("db") as {
         select: () => unknown
         execute: () => Promise<unknown>
       }

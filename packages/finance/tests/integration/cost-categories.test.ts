@@ -9,7 +9,7 @@ import { costCategoriesService } from "../../src/service-cost-categories.js"
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 describe.skipIf(!DB_AVAILABLE)("cost categories", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

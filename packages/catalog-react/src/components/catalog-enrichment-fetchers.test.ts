@@ -11,10 +11,10 @@ function hit(id: string): CatalogSearchHit {
     id,
     score: 1,
     document: {
-      entity: { module: "products", entityId: id },
+      id,
       fields: {},
     },
-  } as unknown as CatalogSearchHit
+  }
 }
 
 function ok(body: unknown, init: ResponseInit = {}): Response {

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyantjs/bookings"
 import type { bookings } from "@voyantjs/bookings/schema"
 import { and, eq } from "drizzle-orm"

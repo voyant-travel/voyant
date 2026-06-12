@@ -113,6 +113,7 @@ export const domainsTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     uniqueIndex("uq_infra_domains_domain").on(sql`lower(${table.domain})`),
     index("idx_infra_domains_status").on(table.status),
     index("idx_infra_domains_provider").on(table.provider),

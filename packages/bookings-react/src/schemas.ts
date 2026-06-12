@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import {
   publicBookingSessionRepriceResultSchema,
   publicBookingSessionSchema,

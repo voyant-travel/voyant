@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: flights; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { describe, expect, it } from "vitest"
 import type { z } from "zod"
 

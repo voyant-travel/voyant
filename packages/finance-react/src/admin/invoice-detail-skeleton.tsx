@@ -54,7 +54,7 @@ function InfoCard({ titleWidth, rows }: { titleWidth: string; rows: number }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="flex items-center justify-between">
             <Skeleton className="h-3.5 w-20" />
             <Skeleton className="h-3.5 w-24" />
@@ -76,7 +76,7 @@ function LineItemsCard() {
         <div className="space-y-0 divide-y rounded-md border">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="flex items-center gap-4 px-4 py-3"
             >
@@ -106,7 +106,7 @@ function PaymentsCard() {
       <CardContent className="space-y-2">
         {Array.from({ length: 2 }).map((_, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
             key={i}
             className="flex items-center justify-between rounded-md border px-3 py-3"
           >
@@ -150,7 +150,7 @@ function NotesCard() {
         <div className="space-y-2">
           {Array.from({ length: 2 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="rounded-md border px-3 py-3 space-y-2"
             >

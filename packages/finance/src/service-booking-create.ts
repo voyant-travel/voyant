@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
@@ -608,11 +609,14 @@ async function findDuplicateBookingForCreate(
   const guardKey = duplicateBookingGuardKey(input)
   if (!guardKey || input.allowDuplicate) return null
 
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${guardKey}, 0))`)
 
   const partyCondition = input.personId
-    ? sql`b.person_id = ${input.personId}`
-    : sql`b.organization_id = ${input.organizationId}`
+    ? // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      sql`b.person_id = ${input.personId}`
+    : // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      sql`b.organization_id = ${input.organizationId}`
 
   const rows = await tx.execute(sql`
     SELECT

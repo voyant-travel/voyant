@@ -53,6 +53,9 @@ wrangler deploy --name "tenant-${PROJECT_ID}-${VERSION}" \
 # HMAC shared with the orchestrator for dispatch auth.
 wrangler secret put VOYANT_DISPATCH_SECRET
 
+# HMAC shared with the Node step container for runtime: "node" dispatches.
+wrangler secret put VOYANT_WORKFLOW_STEP_AUTH_SECRET
+
 # R2 credentials — read-only token scoped to the bundles bucket.
 wrangler secret put R2_ACCESS_KEY_ID
 wrangler secret put R2_SECRET_ACCESS_KEY
@@ -64,6 +67,11 @@ wrangler secret put R2_SECRET_ACCESS_KEY
   the `NodeStepContainer` class in the orchestrator Worker. The
   `script_name` in `wrangler.jsonc` must match the orchestrator's
   Worker name (`voyant-orchestrator` by default).
+- **`VOYANT_WORKFLOW_STEP_AUTH_SECRET` must match the container
+  environment** — `createCfContainerStepRunner` signs `/step`
+  dispatches with this secret, and `apps/workflows-node-step-container`
+  rejects unsigned requests unless unauthenticated mode is explicitly
+  enabled.
 - **`BUNDLE_R2` + `BUNDLE_HASHES`** must reference the same bucket /
   KV namespace as the orchestrator deploy. The container's outbound
   handlers resolve R2 reads through the orchestrator's bindings, but

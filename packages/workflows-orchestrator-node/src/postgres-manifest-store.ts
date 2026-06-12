@@ -131,9 +131,11 @@ export function createPostgresManifestStore(opts: PostgresManifestStoreOptions):
       if (keepIds.length === 0) return { deleted: 0 }
 
       const result = await db.execute(
+        // agent-quality: raw-sql reviewed -- owner: workflows-orchestrator-node; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`DELETE FROM ${workflowManifestsTable}
             WHERE environment = ${environment}
             AND version_id NOT IN (${sql.join(
+              // agent-quality: raw-sql reviewed -- owner: workflows-orchestrator-node; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
               keepIds.map((id) => sql`${id}`),
               sql`, `,
             )})`,

@@ -101,7 +101,7 @@ export function AvailabilityCalendar({
         ))}
         {cells.map((day, i) => {
           if (day == null) {
-            // biome-ignore lint/suspicious/noArrayIndexKey: fixed leading blanks
+            // biome-ignore lint/suspicious/noArrayIndexKey: fixed leading blanks -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
             return <div key={`blank-${i}`} />
           }
           const key = dateKey(year, month, day)

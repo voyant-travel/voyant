@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- legacy service coverage stays co-located pending service test split.
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   type DbTransactionCapability,
@@ -29,6 +30,14 @@ import {
 } from "../../src/service.js"
 
 const baseDate = new Date("2026-05-15T10:00:00.000Z")
+
+function drizzleDb(value: object): AnyDrizzleDb {
+  return value as AnyDrizzleDb
+}
+
+function malformedDecideApprovalInput(value: unknown): DecideActionApprovalInput {
+  return value as DecideActionApprovalInput
+}
 
 function makeEntry(overrides: Partial<ActionLedgerEntry> = {}): ActionLedgerEntry {
   return {
@@ -862,9 +871,9 @@ describe("withOptionalTransaction", () => {
       transaction() {
         throw new Error("transaction should not be called")
       },
-    } as DbTransactionCapability as AnyDrizzleDb
+    } as DbTransactionCapability
 
-    const result = await __test__.withOptionalTransaction(db, async (tx) => {
+    const result = await __test__.withOptionalTransaction(drizzleDb(db), async (tx) => {
       expect(tx).toBe(db)
       return "ok"
     })
@@ -877,9 +886,9 @@ describe("withOptionalTransaction", () => {
       transaction() {
         throw new Error("No transactions support in neon-http driver")
       },
-    } as unknown as AnyDrizzleDb
+    }
 
-    const result = await __test__.withOptionalTransaction(db, async (tx) => {
+    const result = await __test__.withOptionalTransaction(drizzleDb(db), async (tx) => {
       expect(tx).toBe(db)
       return "ok"
     })
@@ -894,10 +903,10 @@ describe("withOptionalTransaction", () => {
       async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
         return callback(tx)
       },
-    } as unknown as AnyDrizzleDb
+    }
 
     await expect(
-      __test__.withOptionalTransaction(db, async (callbackTx) => {
+      __test__.withOptionalTransaction(drizzleDb(db), async (callbackTx) => {
         callbackCalls.push(callbackTx)
         throw new Error("No transactions support in downstream write")
       }),
@@ -1145,7 +1154,7 @@ describe("actionLedgerService approval lifecycle", () => {
       approvals: [pendingApproval],
     })
 
-    const input = {
+    const input = malformedDecideApprovalInput({
       id: pendingApproval.id,
       status: "pending",
       decidedByPrincipalId: "usr_decider",
@@ -1156,7 +1165,7 @@ describe("actionLedgerService approval lifecycle", () => {
         principalId: "usr_decider",
         internalRequest: false,
       },
-    } as unknown as DecideActionApprovalInput
+    })
 
     await expect(actionLedgerService.decideApproval(db, input)).rejects.toMatchObject({
       name: ActionApprovalDecisionStatusError.name,

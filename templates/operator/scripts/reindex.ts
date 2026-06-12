@@ -106,7 +106,7 @@ const tsClient = new TypesenseSdkClient({
   connectionTimeoutSeconds: 10,
 })
 const indexer = createTypesenseIndexer({
-  client: tsClient as unknown as TypesenseClient,
+  client: asTypesenseClient(tsClient),
   vectorDimensions: embeddings?.capabilities.dimensions,
 })
 
@@ -137,32 +137,45 @@ interface VerticalConfig {
   builder: DocumentBuilder
 }
 
+function asTypesenseClient(client: TypesenseSdkClient): TypesenseClient {
+  const sdk = client as { collections(name?: string): unknown }
+  return {
+    collections(name?: string) {
+      return sdk.collections(name) as ReturnType<TypesenseClient["collections"]>
+    },
+  }
+}
+
+function asVerticalTable(table: PgTable): VerticalConfig["table"] {
+  return table as VerticalConfig["table"]
+}
+
 const VERTICAL_CONFIGS: VerticalConfig[] = [
   {
     vertical: "products",
-    table: products as unknown as VerticalConfig["table"],
+    table: asVerticalTable(products),
     // Shared with the live catalog-bridge — keeps destination (and any
     // future child-entity) projections wired identically across paths.
     builder: createProductsDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "extras",
-    table: productExtras as unknown as VerticalConfig["table"],
+    table: asVerticalTable(productExtras),
     builder: createExtraDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "cruises",
-    table: cruises as unknown as VerticalConfig["table"],
+    table: asVerticalTable(cruises),
     builder: createCruisesDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "charters",
-    table: charterProducts as unknown as VerticalConfig["table"],
+    table: asVerticalTable(charterProducts),
     builder: createCharterDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "accommodations",
-    table: roomTypes as unknown as VerticalConfig["table"],
+    table: asVerticalTable(roomTypes),
     builder: createRoomTypeDocumentBuilder(db, { sellerOperatorId }),
   },
 ]

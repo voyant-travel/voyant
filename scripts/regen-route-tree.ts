@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck -- router-generator types do not expose this CLI composition seam yet.
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { Generator, getConfig } from "@tanstack/router-generator"

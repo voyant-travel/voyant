@@ -126,7 +126,7 @@ export function BookingItemDialog({
   // on every render and re-trigger reset → re-render → loop. The methods
   // we call (`reset`) are safe to call from a stale closure since they
   // dispatch into the form's internal store.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (open && item) {
       form.reset({

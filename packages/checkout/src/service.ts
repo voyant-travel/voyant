@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: checkout; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings"
 import {
   bookingPaymentSchedules,

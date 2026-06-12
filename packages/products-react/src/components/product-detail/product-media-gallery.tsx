@@ -279,7 +279,7 @@ function MediaPreview({
           />
         </button>
       ) : item.mediaType === "video" ? (
-        // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks.
+        // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks. -- owner: products-react; existing suppression is intentional pending typed cleanup.
         <video src={item.url} controls className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-xs uppercase text-muted-foreground">
@@ -453,7 +453,7 @@ function Lightbox({
                 className="max-h-[95vh] max-w-[95vw] object-contain"
               />
             ) : item.mediaType === "video" ? (
-              // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks.
+              // biome-ignore lint/a11y/useMediaCaption: Admin preview renders uploaded product media and the current model does not provide caption tracks. -- owner: products-react; existing suppression is intentional pending typed cleanup.
               <video src={item.url} controls autoPlay className="max-h-[95vh] max-w-[95vw]" />
             ) : (
               <div className="rounded-lg bg-background p-8 text-sm text-muted-foreground">

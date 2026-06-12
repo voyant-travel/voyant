@@ -20,8 +20,8 @@ function fakeKv() {
   }
 }
 
-function ctxWith(kv: ReturnType<typeof fakeKv> | undefined) {
-  return { env: { CACHE: kv } } as unknown as Context<never>
+function ctxWith(kv: ReturnType<typeof fakeKv> | undefined): Context<never> {
+  return { env: { CACHE: kv } } as never
 }
 
 describe("departuresDocKey", () => {

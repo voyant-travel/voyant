@@ -1,6 +1,8 @@
 /**
  * Flight search + reference-data + booking routes for the operator admin UI.
  *
+ * agent-quality: file-size exception -- Flight adapter routes stay co-located while search, ancillary, booking, and payment-link behavior share provider runtime helpers.
+ *
  *   POST   /v1/admin/flights/search                      — adapter searchFlights
  *   POST   /v1/admin/flights/ancillaries                 — adapter getAncillaries
  *   POST   /v1/admin/flights/seatmap                     — adapter getSeatMap
@@ -93,7 +95,7 @@ async function ensureFlightOrderPaymentSession(
   order: FlightOrder,
   contact: { email?: string; phone?: string } | undefined,
 ): Promise<PaymentSessionSummary | null> {
-  const db = getDb(c) as unknown as Parameters<typeof financeService.createPaymentSession>[0]
+  const db = getDb(c) as Parameters<typeof financeService.createPaymentSession>[0]
   const passengerForBilling = order.passengers[0]
   if (!passengerForBilling) return null
 
@@ -102,7 +104,7 @@ async function ensureFlightOrderPaymentSession(
   //    set it to avoid Netopia "already processed" errors). Prefer the
   //    most recent non-terminal session so the operator UI surfaces a
   //    *live* link, not a dead failed/expired/cancelled one.
-  const existing = await (db as unknown as AnyDrizzleDb)
+  const existing = await db
     .select()
     .from(paymentSessions)
     .where(
@@ -211,7 +213,7 @@ async function fetchPaymentSessionsByOrderIds(
 ): Promise<Map<string, { id: string; status: string }>> {
   const result = new Map<string, { id: string; status: string }>()
   if (orderIds.length === 0) return result
-  const db = getDb(c) as unknown as AnyDrizzleDb
+  const db = getDb(c)
   const rows = await db
     .select({
       id: paymentSessions.id,

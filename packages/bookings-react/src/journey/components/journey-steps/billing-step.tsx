@@ -76,11 +76,11 @@ export function BillingStep({
             className="flex gap-4"
           >
             {/* RadioGroupItem from radix wires its own internal label association — biome can't see it */}
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
             <label className="flex items-center gap-2 text-sm">
               <RadioGroupItem value="B2C" /> {messages.bookingJourney.billing.individual}
             </label>
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
             <label className="flex items-center gap-2 text-sm">
               <RadioGroupItem value="B2B" /> {messages.bookingJourney.billing.company}
             </label>

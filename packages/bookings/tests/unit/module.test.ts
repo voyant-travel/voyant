@@ -31,9 +31,9 @@ describe("createBookingsHonoModule.bootstrap", () => {
 
   it("uses an injected resolveKmsProvider instead of reading env", async () => {
     const fakeKms: KmsProvider = {
-      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for the test
+      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for the test -- owner: bookings; existing suppression is intentional pending typed cleanup.
       encrypt: vi.fn() as any,
-      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for the test
+      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for the test -- owner: bookings; existing suppression is intentional pending typed cleanup.
       decrypt: vi.fn() as any,
     }
     const resolveKmsProvider = vi.fn(async () => fakeKms)

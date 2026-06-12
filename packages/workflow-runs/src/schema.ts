@@ -76,6 +76,7 @@ export const workflowRuns = pgTable(
     index("idx_workflow_runs_correlation").on(table.correlationId),
     index("idx_workflow_runs_parent").on(table.parentRunId),
     // GIN index on tags so `tags @> '["bookingId:bk_…"]'::jsonb` is fast.
+    // agent-quality: raw-sql reviewed -- owner: workflow-runs; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     index("idx_workflow_runs_tags_gin").using("gin", sql`${table.tags}`),
     check(
       "ck_workflow_runs_completion",

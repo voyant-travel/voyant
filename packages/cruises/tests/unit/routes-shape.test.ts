@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: cruises; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { mountTestApp } from "@voyantjs/voyant-test-utils/http"
 import { afterEach, describe, expect, it, vi } from "vitest"
 

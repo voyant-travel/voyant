@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: scripts; existing automation script stays co-located until a dedicated split preserves behavior and tests.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"

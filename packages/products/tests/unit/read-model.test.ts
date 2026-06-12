@@ -152,7 +152,7 @@ describe("public detail routes — KV document plane", () => {
 describe("admin mutation invalidation middleware", () => {
   function stubAdminApp() {
     const app = new Hono()
-    // biome-ignore lint/suspicious/noExplicitAny: structural middleware shape (same cast as production mounting)
+    // biome-ignore lint/suspicious/noExplicitAny: structural middleware shape (same cast as production mounting) -- owner: products; existing suppression is intentional pending typed cleanup.
     app.use("*", readModelInvalidation() as any)
     app.patch("/:id", (c) => c.json({ ok: true }))
     app.patch("/:id/fails", (c) => c.json({ error: "nope" }, 422))

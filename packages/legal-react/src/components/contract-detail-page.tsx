@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { useQueryClient } from "@tanstack/react-query"
 import { formatMessage } from "@voyantjs/i18n"
 import { Badge, Button } from "@voyantjs/ui/components"

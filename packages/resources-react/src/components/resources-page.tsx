@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: resources-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import type { RowSelectionState } from "@tanstack/react-table"

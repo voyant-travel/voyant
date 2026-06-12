@@ -4,7 +4,7 @@ import { cn } from "../lib/utils.js"
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: This generic wrapper forwards htmlFor/children from consumers.
+    // biome-ignore lint/a11y/noLabelWithoutControl: This generic wrapper forwards htmlFor/children from consumers. -- owner: ui; existing suppression is intentional pending typed cleanup.
     <label
       data-slot="label"
       className={cn(

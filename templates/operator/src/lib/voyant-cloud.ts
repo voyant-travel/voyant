@@ -18,6 +18,8 @@ import {
 } from "@voyantjs/cloud-sdk"
 
 const CLIENT_CACHE = new WeakMap<object, VoyantCloudClient>()
+type CloudClientEnv = Parameters<typeof getVoyantCloudClient>[0]
+type TryCloudClientEnv = Parameters<typeof tryGetVoyantCloudClient>[0]
 
 export type VoyantApiEnv = {
   VOYANT_API_KEY?: string
@@ -31,27 +33,29 @@ export function resolveVoyantApiKey(env: VoyantApiEnv): string | undefined {
 }
 
 export function getCloudClient(env: VoyantApiEnv): VoyantCloudClient {
-  const cached = CLIENT_CACHE.get(env as unknown as object)
+  const cached = CLIENT_CACHE.get(env)
   if (cached) return cached
   const apiKey = resolveVoyantApiKey(env)
-  const client = getVoyantCloudClient(
-    env as unknown as Parameters<typeof getVoyantCloudClient>[0],
-    apiKey ? { apiKey } : undefined,
-  )
-  CLIENT_CACHE.set(env as unknown as object, client)
+  const client = getVoyantCloudClient(asCloudClientEnv(env), apiKey ? { apiKey } : undefined)
+  CLIENT_CACHE.set(env, client)
   return client
 }
 
 export function tryGetCloudClient(env: VoyantApiEnv): VoyantCloudClient | null {
-  const cached = CLIENT_CACHE.get(env as unknown as object)
+  const cached = CLIENT_CACHE.get(env)
   if (cached) return cached
   const apiKey = resolveVoyantApiKey(env)
-  const client = tryGetVoyantCloudClient(
-    env as unknown as Parameters<typeof tryGetVoyantCloudClient>[0],
-    apiKey ? { apiKey } : undefined,
-  )
-  if (client) CLIENT_CACHE.set(env as unknown as object, client)
+  const client = tryGetVoyantCloudClient(asTryCloudClientEnv(env), apiKey ? { apiKey } : undefined)
+  if (client) CLIENT_CACHE.set(env, client)
   return client
+}
+
+function asCloudClientEnv(env: VoyantApiEnv): CloudClientEnv {
+  return env as CloudClientEnv
+}
+
+function asTryCloudClientEnv(env: VoyantApiEnv): TryCloudClientEnv {
+  return env as TryCloudClientEnv
 }
 
 function nonEmpty(value: string | undefined): string | undefined {

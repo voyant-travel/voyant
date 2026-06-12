@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: octo; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { describe, expect, it } from "vitest"
 
 import {
@@ -201,7 +202,7 @@ describe("mapUnit()", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
-      // biome-ignore lint/suspicious/noExplicitAny: relax type for synthetic test row
+      // biome-ignore lint/suspicious/noExplicitAny: relax type for synthetic test row -- owner: octo; existing suppression is intentional pending typed cleanup.
     } as any
 
     const projected = mapUnit(unit)
@@ -263,12 +264,12 @@ describe("buildProductContent()", () => {
         description: null,
         sortOrder: 4,
       },
-      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows
+      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows -- owner: octo; existing suppression is intentional pending typed cleanup.
     ] as any
 
     const faqs = [
       { id: "fq1", productId: "p1", question: "Is it kid-friendly?", answer: "Yes" },
-      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows
+      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows -- owner: octo; existing suppression is intentional pending typed cleanup.
     ] as any
 
     const locations = [
@@ -286,7 +287,7 @@ describe("buildProductContent()", () => {
         applePlaceId: null,
         tripadvisorLocationId: null,
       },
-      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows
+      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows -- owner: octo; existing suppression is intentional pending typed cleanup.
     ] as any
 
     const content = buildProductContent({ features, faqs, locations })
@@ -306,7 +307,7 @@ describe("pickOptionStartTimes()", () => {
       { id: "s1", optionId: "popt_1", startTimeLocal: "09:00" },
       { id: "s2", optionId: "popt_1", startTimeLocal: "13:00" },
       { id: "s3", optionId: null, startTimeLocal: "10:00" },
-      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows
+      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows -- owner: octo; existing suppression is intentional pending typed cleanup.
     ] as any
 
     const option = { id: "popt_1" } as Parameters<typeof pickOptionStartTimes>[0]
@@ -317,7 +318,7 @@ describe("pickOptionStartTimes()", () => {
     const startTimes = [
       { id: "s1", optionId: "popt_other", startTimeLocal: "09:00" },
       { id: "s2", optionId: null, startTimeLocal: "10:00" },
-      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows
+      // biome-ignore lint/suspicious/noExplicitAny: relax for synthetic rows -- owner: octo; existing suppression is intentional pending typed cleanup.
     ] as any
 
     const option = { id: "popt_1" } as Parameters<typeof pickOptionStartTimes>[0]
@@ -366,7 +367,7 @@ describe("mapBookingArtifact()", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
-      // biome-ignore lint/suspicious/noExplicitAny: synthetic test row
+      // biome-ignore lint/suspicious/noExplicitAny: synthetic test row -- owner: octo; existing suppression is intentional pending typed cleanup.
     } as any
   }
 
@@ -432,7 +433,7 @@ describe("buildProjectedAvailability()", () => {
       capacityWaterline: null,
       capacityWaterlineStrategy: null,
       ...overrides,
-      // biome-ignore lint/suspicious/noExplicitAny: synthetic test row
+      // biome-ignore lint/suspicious/noExplicitAny: synthetic test row -- owner: octo; existing suppression is intentional pending typed cleanup.
     } as any
   }
 

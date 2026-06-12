@@ -2,6 +2,7 @@
 //
 // In-process test harness with mocked steps, waits, and invokes.
 // Contract in docs/sdk-surface.md §11.
+// agent-quality: file-size exception -- legacy test harness stays co-located until pause/resume helpers are split.
 //
 // Drives `executeWorkflowStep` across resumptions. Steps resolve
 // from a user-supplied stub map; waitpoints resolve from fixtures.
@@ -30,6 +31,10 @@ import type {
   WorkflowHandle,
 } from "../workflow.js"
 import { getWorkflow } from "../workflow.js"
+
+function workflowForExecutor<TIn, TOut>(def: WorkflowDefinition<TIn, TOut>): WorkflowDefinition {
+  return def as WorkflowDefinition
+}
 
 export interface TestOptions<_TIn> {
   /** Map of stepId → function run in place of the real step body. */
@@ -128,7 +133,7 @@ export async function runWorkflowForTest<TIn, TOut>(
   while (invocationCount < maxInvocations) {
     invocationCount += 1
 
-    const response = await executeWorkflowStep(def as unknown as WorkflowDefinition, {
+    const response = await executeWorkflowStep(workflowForExecutor(def), {
       runId: `run_test_${def.id}`,
       workflowId: def.id,
       workflowVersion: "test",
@@ -363,7 +368,7 @@ export async function resumeWorkflowForTest<TIn, TOut>(
   while (invocationCount < maxInvocations) {
     invocationCount += 1
 
-    const response = await executeWorkflowStep(def as unknown as WorkflowDefinition, {
+    const response = await executeWorkflowStep(workflowForExecutor(def), {
       runId: `run_test_${def.id}`,
       workflowId: def.id,
       workflowVersion: "test",
@@ -681,23 +686,19 @@ async function resolveWaitpoint(
       at: now(),
       data: { childWorkflowId, input: childInput },
     })
-    const childResult = await runWorkflowForTest(
-      child as unknown as WorkflowHandle<unknown, unknown>,
-      childInput,
-      {
-        steps: opts.steps,
-        waitForEvent: opts.waitForEvent,
-        waitForSignal: opts.waitForSignal,
-        waitForToken: opts.waitForToken,
-        invoke: opts.invoke,
-        env: opts.env,
-        environment: opts.environment,
-        now: opts.now,
-        random: opts.random,
-        maxInvocations: opts.maxInvocations,
-        pauseOnWait: detach || opts.pauseOnWait,
-      },
-    )
+    const childResult = await runWorkflowForTest(child, childInput, {
+      steps: opts.steps,
+      waitForEvent: opts.waitForEvent,
+      waitForSignal: opts.waitForSignal,
+      waitForToken: opts.waitForToken,
+      invoke: opts.invoke,
+      env: opts.env,
+      environment: opts.environment,
+      now: opts.now,
+      random: opts.random,
+      maxInvocations: opts.maxInvocations,
+      pauseOnWait: detach || opts.pauseOnWait,
+    })
     parentEvents.push({
       type: "child.finished",
       at: now(),

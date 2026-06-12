@@ -55,7 +55,7 @@ export function db<TBindings extends VoyantBindings>(
   options: DbMiddlewareOptions = {},
 ): MiddlewareHandler<{
   Bindings: TBindings
-  Variables: { db: VoyantDb }
+  Variables: { db: VoyantDb; [DB_METRICS_CONTEXT_KEY]?: RequestDbMetrics }
 }> {
   const requiresTx = options.requiresTransactionalDb ?? []
   // Stays `false` until a request resolves a db whose capability tag is
@@ -88,9 +88,7 @@ export function db<TBindings extends VoyantBindings>(
     // When the metrics middleware put a counter on the context, expose a
     // query-counting view of the client so per-route db-query counts land
     // in Analytics Engine. The lease (and its dispose) stay unwrapped.
-    const dbMetrics = (c as unknown as { get(key: string): unknown }).get(DB_METRICS_CONTEXT_KEY) as
-      | RequestDbMetrics
-      | undefined
+    const dbMetrics = c.get(DB_METRICS_CONTEXT_KEY)
     c.set("db", dbMetrics ? withQueryCounting(lease.db, dbMetrics) : lease.db)
     try {
       await next()

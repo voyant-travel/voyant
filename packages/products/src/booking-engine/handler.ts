@@ -1,5 +1,6 @@
 /**
  * Owned-arm booking handler for the `products` vertical.
+ * agent-quality: file-size exception -- Product booking handler keeps quote, commit, cancel, and status behavior together until booking-engine handlers are split by operation.
  *
  * Per `docs/architecture/booking-journey-architecture.md` §6 +
  * §10 Phase A. Composes:
@@ -897,7 +898,7 @@ async function loadProduct(
   db: AnyDrizzleDb,
   productId: string,
 ): Promise<typeof products.$inferSelect | undefined> {
-  const drizzle = db as unknown as PostgresJsDatabase
+  const drizzle = db as PostgresJsDatabase
   const rows = (await drizzle
     .select()
     .from(products)

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
@@ -363,7 +364,7 @@ export function BookingDetailPage({
           {headerSubtitleParts.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
               {headerSubtitleParts.map((part, idx) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: order-stable, no reordering or removal
+                // biome-ignore lint/suspicious/noArrayIndexKey: order-stable, no reordering or removal -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
                 <Fragment key={idx}>
                   {idx > 0 ? <span className="text-muted-foreground/60">/</span> : null}
                   {part}
@@ -648,7 +649,7 @@ function RecordPaymentHeaderButton({
   if (disabledReason) {
     return (
       <Tooltip>
-        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
         <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
           <Button variant="outline" size="sm" disabled className="pointer-events-none">
             <Plus className="mr-2 h-4 w-4" />

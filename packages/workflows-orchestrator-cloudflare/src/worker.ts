@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: workflows-orchestrator-cloudflare; existing module stays co-located until a dedicated split preserves behavior and tests.
 // Public HTTP surface of the Cloudflare orchestrator. The outer
 // Worker receives a request, resolves the run DO by id (or creates
 // one for a new trigger), and forwards to the DO. This layer owns

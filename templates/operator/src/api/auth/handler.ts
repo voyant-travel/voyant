@@ -1,6 +1,8 @@
 /**
  * Better Auth handler for Hono.
  *
+ * agent-quality: file-size exception -- Auth handler keeps local and Voyant Cloud auth flows co-located until the route surface is split by auth mode.
+ *
  * Mounts Better Auth at /auth/* for authentication operations.
  * Same-origin — no CORS needed. Session cookies work naturally.
  *
@@ -447,7 +449,7 @@ export async function validateApiTokenAccess(
 
   try {
     const revalidation = await revalidateVoyantCloudAdminAuthUser({
-      db: db as unknown as Parameters<typeof revalidateVoyantCloudAdminAuthUser>[0]["db"],
+      db: db as Parameters<typeof revalidateVoyantCloudAdminAuthUser>[0]["db"],
       userId: apiKey.referenceId,
       config: revalidateConfig,
     })

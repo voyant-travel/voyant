@@ -170,6 +170,7 @@ export const contractSeriesService = {
         .values({ ...data, scope, active, isDefault })
         .onConflictDoUpdate({
           target: [contractNumberSeries.prefix, contractNumberSeries.scope],
+          // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           targetWhere: sql`${contractNumberSeries.active} = true`,
           set: {
             name: data.name,

@@ -41,6 +41,7 @@ export const workflowRunsService = {
     if (query.parentRunId) conds.push(eq(workflowRuns.parentRunId, query.parentRunId))
     if (query.tag) {
       // jsonb contains — `tags @> '["bookingId:bk_…"]'::jsonb`
+      // agent-quality: raw-sql reviewed -- owner: workflow-runs; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       conds.push(sql`${workflowRuns.tags} @> ${JSON.stringify([query.tag])}::jsonb`)
     }
     const where = conds.length > 0 ? and(...conds) : undefined

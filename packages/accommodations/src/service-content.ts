@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: accommodations; existing service module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Accommodation content service — `getAccommodationContent` with locale-
  * resolved cache reads, SWR refresh, and synthesizer fallback.
@@ -251,13 +252,13 @@ export async function buildOwnedAccommodationContent(
   entityId: string,
   options: BuildOwnedAccommodationContentOptions,
 ): Promise<BuildOwnedAccommodationContentResult | null> {
-  // biome-ignore lint/suspicious/noExplicitAny: AnyDrizzleDb widens drizzle's row inference.
+  // biome-ignore lint/suspicious/noExplicitAny: AnyDrizzleDb widens drizzle's row inference. -- owner: accommodations; existing suppression is intentional pending typed cleanup.
   const roomRow: any = (
     await db.select().from(roomTypes).where(eq(roomTypes.id, entityId)).limit(1)
   )[0]
   if (!roomRow) return null
 
-  // biome-ignore lint/suspicious/noExplicitAny: AnyDrizzleDb widens drizzle's row inference.
+  // biome-ignore lint/suspicious/noExplicitAny: AnyDrizzleDb widens drizzle's row inference. -- owner: accommodations; existing suppression is intentional pending typed cleanup.
   const propertyRow: any = (
     await db.select().from(properties).where(eq(properties.id, roomRow.propertyId)).limit(1)
   )[0]

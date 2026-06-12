@@ -23,6 +23,7 @@ import { newId } from "@voyantjs/db/lib/typeid"
 import {
   type InfraWebhookDelivery,
   infraWebhookDeliveriesTable,
+  infraWebhookDeliverySelectSchema,
   type SelectInfraWebhookDelivery,
 } from "@voyantjs/db/schema/infra"
 import { eq } from "drizzle-orm"
@@ -134,6 +135,10 @@ export interface PreparedEnvelope {
   complete: (result: OutboundEnvelopeResultInput) => Promise<InfraWebhookDelivery>
 }
 
+function toInfraWebhookDelivery(row: SelectInfraWebhookDelivery): InfraWebhookDelivery {
+  return infraWebhookDeliverySelectSchema.parse(row)
+}
+
 /**
  * Begin an outbound delivery: redacts the request, persists an
  * in-flight row, and returns a `complete()` finisher the caller invokes
@@ -186,7 +191,7 @@ export async function prepareOutboundEnvelope(
   const row = inserted[0]
   if (!row) throw new Error("prepareOutboundEnvelope: insert returned no rows")
 
-  const delivery = row as unknown as InfraWebhookDelivery
+  const delivery = toInfraWebhookDelivery(row)
 
   return {
     delivery,
@@ -213,7 +218,7 @@ export async function prepareOutboundEnvelope(
       if (!finalized) {
         throw new Error("prepareOutboundEnvelope.complete: update returned no rows")
       }
-      return finalized as unknown as InfraWebhookDelivery
+      return toInfraWebhookDelivery(finalized)
     },
   }
 }

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { useQueryClient } from "@tanstack/react-query"
 import { formatMessage } from "@voyantjs/i18n"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
@@ -437,7 +438,7 @@ function PolicyVersionRow({
               {version.body.trim().startsWith("<") ? (
                 <div
                   className="prose prose-invert max-w-none text-sm [&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base [&_p]:my-2"
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: Policy version body is trusted admin-authored HTML rendered for preview.
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: Policy version body is trusted admin-authored HTML rendered for preview. -- owner: legal-react; existing suppression is intentional pending typed cleanup.
                   dangerouslySetInnerHTML={{ __html: version.body }}
                 />
               ) : (

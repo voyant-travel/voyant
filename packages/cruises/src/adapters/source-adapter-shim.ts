@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: cruises; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Adapt a vertical-shaped `CruiseAdapter` (with its multi-method
  * `fetchCruise / fetchSailing / fetchShip / fetchSailingItinerary`

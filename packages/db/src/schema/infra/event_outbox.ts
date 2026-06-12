@@ -60,6 +60,7 @@ export const eventOutboxTable = pgTable(
     uniqueIndex("event_outbox_event_id_uniq").on(table.eventId),
     // The drain's working set: due pending rows only. Partial keeps the
     // index tiny once delivered/failed rows accumulate.
+    // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     index("event_outbox_due_idx").on(table.nextAttemptAt).where(sql`${table.status} = 'pending'`),
     index("event_outbox_created_idx").on(table.createdAt),
   ],

@@ -146,7 +146,7 @@ export function SupplierInvoiceFormDialog({
   }
 
   // Re-seed when the dialog opens or the target invoice changes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed on open/target change only
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed on open/target change only -- owner: finance-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (open) setForm(seed(invoice))
   }, [open, invoice?.id])

@@ -137,7 +137,7 @@ export function AdminBreadcrumbsTrail({
         {segments.map((segment, index) => {
           const isLast = index === segments.length - 1
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional
+            // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional -- owner: admin; existing suppression is intentional pending typed cleanup.
             <Fragment key={`${index}-${segment.label}`}>
               <BreadcrumbItem>
                 {isLast || !segment.href ? (

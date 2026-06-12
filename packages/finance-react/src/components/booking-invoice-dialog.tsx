@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import {
@@ -837,7 +838,7 @@ export function BookingInvoiceDialog({
                   <ul className="flex flex-col gap-1">
                     {attachments.map((file, idx) => (
                       <li
-                        // biome-ignore lint/suspicious/noArrayIndexKey: files in this picker session don't carry stable ids; name+index is the operator-visible identity
+                        // biome-ignore lint/suspicious/noArrayIndexKey: files in this picker session don't carry stable ids; name+index is the operator-visible identity -- owner: finance-react; existing suppression is intentional pending typed cleanup.
                         key={`${file.name}-${idx}`}
                         className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-1.5 text-sm"
                       >

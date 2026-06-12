@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import type { EventBus } from "@voyantjs/core"
 import { sql } from "drizzle-orm"
 import { Hono } from "hono"
@@ -14,7 +15,7 @@ export const json = (body: Record<string, unknown>) => ({
 })
 
 async function cleanupNotificationsTestData(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: notifications; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   await db.execute(sql`

@@ -22,7 +22,7 @@ function stubHandler(entityModule: string): OwnedBookingHandler {
   }
 }
 
-const stubDb = {} as unknown as AnyDrizzleDb
+const stubDb = {} as AnyDrizzleDb
 
 describe("OwnedBookingHandlerRegistry", () => {
   it("registers and resolves handlers by entity_module", () => {

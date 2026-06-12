@@ -1,16 +1,37 @@
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
+type FakeColumnName =
+  | "scope"
+  | "key"
+  | "bodyHash"
+  | "responseStatus"
+  | "responseBody"
+  | "referenceId"
+  | "createdAt"
+  | "expiresAt"
+
+interface FakeColumn {
+  __name: FakeColumnName
+}
+
+type FakePredicate =
+  | { _op: "and"; _args: unknown[] }
+  | { _op: "eq" | "lt"; _args: [FakeColumnName, unknown] }
+
 vi.mock("drizzle-orm", async () => {
   const actual = await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm")
   return {
     ...actual,
-    // biome-ignore lint/suspicious/noExplicitAny: structural fake operator
-    eq: (column: any, value: unknown) => ({ _op: "eq", _args: [column.__name, value] }),
-    // biome-ignore lint/suspicious/noExplicitAny: structural fake operator
-    and: (...args: any[]) => ({ _op: "and", _args: args }),
-    // biome-ignore lint/suspicious/noExplicitAny: structural fake operator
-    lt: (column: any, value: unknown) => ({ _op: "lt", _args: [column.__name, value] }),
+    eq: (column: FakeColumn, value: unknown): FakePredicate => ({
+      _op: "eq",
+      _args: [column.__name, value],
+    }),
+    and: (...args: unknown[]): FakePredicate => ({ _op: "and", _args: args }),
+    lt: (column: FakeColumn, value: unknown): FakePredicate => ({
+      _op: "lt",
+      _args: [column.__name, value],
+    }),
   }
 })
 
@@ -48,20 +69,24 @@ interface StoredRow {
 function createFakeDb() {
   const rows: StoredRow[] = []
 
-  // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
-  function evalWhere(row: StoredRow, predicate: any): boolean {
+  function isFakePredicate(predicate: unknown): predicate is FakePredicate {
+    return typeof predicate === "object" && predicate !== null && "_op" in predicate
+  }
+
+  function evalWhere(row: StoredRow, predicate: unknown): boolean {
     if (!predicate) return true
+    if (!isFakePredicate(predicate)) return false
     const op = predicate._op as string | undefined
     if (op === "and") {
       return predicate._args.every((p: unknown) => evalWhere(row, p))
     }
     if (op === "eq") {
       const [columnName, value] = predicate._args
-      return (row as unknown as Record<string, unknown>)[columnName] === value
+      return row[columnName] === value
     }
     if (op === "lt") {
       const [columnName, value] = predicate._args
-      const v = (row as unknown as Record<string, unknown>)[columnName]
+      const v = row[columnName]
       return (v as Date) < (value as Date)
     }
     return false
@@ -137,8 +162,7 @@ function buildApp(
   const fakeDb = createFakeDb()
   const app = new Hono()
   app.use("*", async (c, next) => {
-    // biome-ignore lint/suspicious/noExplicitAny: test fake
-    c.set("db", fakeDb as any)
+    c.set("db", fakeDb)
     await next()
   })
   app.post("/things", idempotencyKey({ scope: "test" }), (c) => handler(c))
@@ -169,8 +193,7 @@ describe("idempotencyKey middleware", () => {
     const fakeDb = createFakeDb()
     const app = new Hono()
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: test fake
-      c.set("db", fakeDb as any)
+      c.set("db", fakeDb)
       await next()
     })
     app.post("/things", idempotencyKey({ scope: "test", required: true }), (c) =>
@@ -228,8 +251,7 @@ describe("idempotencyKey middleware", () => {
     const app = new Hono()
     let calls = 0
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: test fake
-      c.set("db", fakeDb as any)
+      c.set("db", fakeDb)
       await next()
     })
     app.post(
@@ -269,8 +291,7 @@ describe("idempotencyKey middleware", () => {
     const fakeDb = createFakeDb()
     const app = new Hono()
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: test fake
-      c.set("db", fakeDb as any)
+      c.set("db", fakeDb)
       await next()
     })
     app.post("/a", idempotencyKey({ scope: "scope-a" }), (c) => c.json({ which: "a" }, 201))
@@ -298,8 +319,7 @@ describe("idempotencyKey middleware", () => {
     const app = new Hono()
     let caller = "user_a"
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: test fake
-      c.set("db", fakeDb as any)
+      c.set("db", fakeDb)
       c.set("userId", caller)
       await next()
     })
@@ -329,8 +349,7 @@ describe("idempotencyKey middleware", () => {
     const app = new Hono()
     let calls = 0
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: test fake
-      c.set("db", fakeDb as any)
+      c.set("db", fakeDb)
       await next()
     })
     app.post("/things", idempotencyKey({ scope: "test", replayResponses: false }), (c) => {

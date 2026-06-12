@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: utils; existing module stays co-located until a dedicated split preserves behavior and tests.
 export const timezones = [
   {
     value: "Dateline Standard Time",

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: customer-portal; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import {
   bookingDocuments,
   bookingFulfillments,
@@ -1159,6 +1160,7 @@ async function getAccessibleBookingIds(
       ? db
           .select({ bookingId: bookingTravelers.bookingId })
           .from(bookingTravelers)
+          // agent-quality: raw-sql reviewed -- owner: customer-portal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           .where(sql`lower(${bookingTravelers.email}) = ${email}`)
       : Promise.resolve([]),
   ])
@@ -1183,6 +1185,7 @@ async function hasBookingAccess(params: {
 }) {
   const ownershipConditions = []
   if (params.authEmail) {
+    // agent-quality: raw-sql reviewed -- owner: customer-portal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     ownershipConditions.push(sql`lower(${bookingTravelers.email}) = ${params.authEmail}`)
   }
 
@@ -1482,6 +1485,7 @@ export const publicCustomerPortalService = {
       db
         .select({ id: authUser.id })
         .from(authUser)
+        // agent-quality: raw-sql reviewed -- owner: customer-portal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         .where(sql`lower(${authUser.email}) = ${normalizedEmail}`)
         .limit(1),
       listCustomerRecordCandidatesByEmail(db, normalizedEmail),

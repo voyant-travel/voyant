@@ -49,7 +49,7 @@ export interface RetrieveOptions {
   includeDeleted?: boolean
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Drizzle generic inference breaks on TTable extends AnyPgTable — casts are isolated to the query-builder boundary
+// biome-ignore lint/suspicious/noExplicitAny: reason: Drizzle generic inference breaks on TTable extends AnyPgTable; casts are isolated to the query-builder boundary.
 type AnyDb = any
 
 /**
@@ -174,7 +174,9 @@ export function createCrudService<
     }
 
     const total = first.__voyantWindowTotal
-    const data = rows.map(({ __voyantWindowTotal: _total, ...rest }) => rest as unknown as Row)
+    const data = rows.map(({ __voyantWindowTotal: _total, ...rest }) => {
+      return Object.fromEntries(Object.entries(rest)) as Row
+    })
     return { data, total }
   }
 

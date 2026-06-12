@@ -100,9 +100,7 @@ function createAdminRoutePageComponent(route: ImplementedAdminRoute): Preloadabl
       `[voyant-admin-app] Route contribution "${route.id}" has no \`page\` loader to bind.`,
     )
   }
-  const LazyPage = lazyRouteComponent(
-    page as () => Promise<LazyPageModule>,
-  ) as unknown as React.FunctionComponent<AdminRoutePageProps> & { preload?: () => Promise<void> }
+  const LazyPage = lazyRouteComponent<LazyPageModule>(page)
 
   function AdminExtensionRoutePage() {
     const params = useParams({ strict: false }) as Record<string, string>
@@ -120,9 +118,12 @@ function createAdminRoutePageComponent(route: ImplementedAdminRoute): Preloadabl
       [navigate],
     )
 
-    return (
-      <LazyPage params={params} search={search} updateSearch={updateSearch} title={route.title} />
-    )
+    return React.createElement(LazyPage, {
+      params,
+      search,
+      updateSearch,
+      title: route.title,
+    })
   }
   AdminExtensionRoutePage.displayName = `AdminExtensionRoutePage(${route.id})`
   AdminExtensionRoutePage.preload = (LazyPage as PreloadableComponent).preload
@@ -223,7 +224,7 @@ export function adminExtensionChildRoutes(
       }
       // Runtime-built routes carry no typed-link contract (they are invisible
       // to the host's generated typed-link maps), so the loose cast is sound.
-      return createRoute(options as never) as unknown as AnyRoute
+      return createRoute(options)
     })
 }
 

@@ -67,7 +67,7 @@ const baseSession = {
  * row the middleware would have matched.
  */
 function createIdempotencyDbFake() {
-  // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+  // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain -- owner: plugins; existing suppression is intentional pending typed cleanup.
   const rows: any[] = []
   return {
     rows,
@@ -79,7 +79,7 @@ function createIdempotencyDbFake() {
       }),
     }),
     insert: () => ({
-      // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+      // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain -- owner: plugins; existing suppression is intentional pending typed cleanup.
       values: (value: any) => ({
         onConflictDoNothing: async () => {
           rows.push(value)

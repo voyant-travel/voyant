@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from "hono"
 
+import type { VoyantVariables } from "../types.js"
+
 /**
  * Structural shape of a Workers Analytics Engine dataset binding —
  * declared locally so `@voyantjs/hono` needs no `@cloudflare/workers-types`
@@ -47,7 +49,9 @@ function surfaceOf(path: string): string {
  * `writeDataPoint` is fire-and-forget and never throws into the
  * request; a missing binding short-circuits before timing overhead.
  */
-export function metrics(options: MetricsMiddlewareOptions = {}): MiddlewareHandler {
+export function metrics(options: MetricsMiddlewareOptions = {}): MiddlewareHandler<{
+  Variables: Pick<VoyantVariables, typeof DB_METRICS_CONTEXT_KEY>
+}> {
   const resolveDataset =
     options.dataset ??
     ((env: unknown) => (env as { METRICS?: AnalyticsEngineDatasetLike } | undefined)?.METRICS)
@@ -59,10 +63,7 @@ export function metrics(options: MetricsMiddlewareOptions = {}): MiddlewareHandl
     }
 
     const counter: RequestDbMetrics = { queries: 0 }
-    ;(c as unknown as { set(key: string, value: unknown): void }).set(
-      DB_METRICS_CONTEXT_KEY,
-      counter,
-    )
+    c.set(DB_METRICS_CONTEXT_KEY, counter)
 
     const start = Date.now()
     try {

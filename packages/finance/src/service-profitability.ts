@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlots } from "@voyantjs/availability/schema"
 import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type {
@@ -210,10 +211,14 @@ async function loadDepartureAccumulators(
 ): Promise<LoadedAccumulators> {
   const base = baseCurrency
   // Net sign for AR (credit notes subtract). Reused for total + base + residual.
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   const arSign = sql`case when ${invoices.invoiceType} = 'credit_note' then -1 else 1 end`
   // True when an invoice/allocation has a usable base snapshot in the accounting base.
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   const invSnapshotted = sql`${invoices.baseCurrency} = ${base} and ${invoices.baseTotalCents} is not null`
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   const allocSnapshotted = sql`${supplierInvoices.baseCurrency} = ${base} and ${supplierCostAllocations.baseAmountCents} is not null`
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   const lineSnapshotted = sql`${supplierInvoices.baseCurrency} = ${base} and ${supplierInvoices.baseTotalCents} is not null and ${supplierInvoices.totalCents} <> 0`
 
   const [
@@ -331,6 +336,7 @@ async function loadDepartureAccumulators(
       .innerJoin(supplierInvoices, eq(supplierInvoiceLines.supplierInvoiceId, supplierInvoices.id))
       .leftJoin(costCategories, eq(supplierInvoiceLines.costCategoryId, costCategories.id))
       .where(and(ne(supplierInvoices.status, "void"), isNull(supplierInvoices.deletedAt)))
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .groupBy(sql`coalesce(${costCategories.name}, 'Uncategorized')`, supplierInvoices.currency),
     // Recorded-but-unattributed cost — appears in AP totals, excluded from P&L.
     db

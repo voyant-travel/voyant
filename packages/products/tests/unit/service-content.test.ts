@@ -115,14 +115,14 @@ describe("getProductContent cache ownership", () => {
     const adapter = makeAdapter(true)
 
     const first = await getProductContent(
-      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here.
+      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
       db.db as any,
       "prod_1",
       { preferredLocales: ["en-GB"], market: "GB" },
       { registry: makeRegistry(adapter) },
     )
     const second = await getProductContent(
-      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here.
+      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
       db.db as any,
       "prod_1",
       { preferredLocales: ["en-GB"], market: "GB" },
@@ -142,7 +142,7 @@ describe("getProductContent cache ownership", () => {
     const adapter = makeAdapter(false)
 
     const result = await getProductContent(
-      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here.
+      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
       db.db as any,
       "prod_1",
       { preferredLocales: ["en-GB"], market: "GB" },
@@ -172,7 +172,7 @@ describe("getProductContent cache ownership", () => {
 
     await expect(
       getProductContent(
-        // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here.
+        // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
         db.db as any,
         "prod_1",
         { preferredLocales: ["en-GB"], market: "GB" },

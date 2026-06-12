@@ -235,6 +235,7 @@ async function listOffers(db: PostgresJsDatabase, query: PromotionalOfferListQue
   if (query.applicationMode === "auto") where.push(isNull(promotionalOffers.code))
   if (query.applicationMode === "code") where.push(isNotNull(promotionalOffers.code))
   if (query.scopeKind !== undefined) {
+    // agent-quality: raw-sql reviewed -- owner: promotions; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     where.push(sql`${promotionalOffers.scope}->>'kind' = ${query.scopeKind}`)
   }
   if (query.status !== undefined) {

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: products; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"

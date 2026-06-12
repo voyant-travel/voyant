@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { describe, expect, it, vi } from "vitest"
 
 import {

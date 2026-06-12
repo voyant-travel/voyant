@@ -173,31 +173,32 @@ export async function listOverlaysByOrigin(
   filter: OverlayOriginFilter,
   options: { includeDeleted?: boolean; limit?: number } = {},
 ): Promise<SelectCatalogOverlay[]> {
+  // agent-quality: raw-sql reviewed -- JSONB origin discriminator uses parameterized values; Drizzle has no helper for the `->>` JSON key predicate here.
   const conditions = [sql`${catalogOverlayTable.origin}->>'kind' = ${filter.kind}`]
   if (filter.match) {
     for (const [key, value] of Object.entries(filter.match)) {
       if (key === "kind") continue
+      // agent-quality: raw-sql reviewed -- Origin match keys come from the typed overlay-origin filter and values stay parameterized.
       conditions.push(sql`${catalogOverlayTable.origin}->>${key} = ${String(value)}`)
     }
   }
   if (!options.includeDeleted) {
+    // agent-quality: raw-sql reviewed -- Literal deleted_at null predicate is scoped to the overlay table.
     conditions.push(sql`${catalogOverlayTable.deleted_at} IS NULL`)
   }
 
-  let query = db
-    .select()
-    .from(catalogOverlayTable)
-    .where(and(...conditions)) as unknown as Promise<SelectCatalogOverlay[]>
-
   if (options.limit != null) {
-    query = db
+    return db
       .select()
       .from(catalogOverlayTable)
       .where(and(...conditions))
-      .limit(options.limit) as unknown as Promise<SelectCatalogOverlay[]>
+      .limit(options.limit)
   }
 
-  return query
+  return db
+    .select()
+    .from(catalogOverlayTable)
+    .where(and(...conditions))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

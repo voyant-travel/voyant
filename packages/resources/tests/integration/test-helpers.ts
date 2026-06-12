@@ -17,7 +17,7 @@ function nextSeq() {
 
 export function createResourcesTestContext() {
   let app!: Hono
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: resources; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

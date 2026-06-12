@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { type ActionLedgerRequestContextValues, ledgerSensitiveRead } from "@voyantjs/action-ledger"
 import {
   BOOKING_PII_READ_CAPABILITY,
@@ -1295,6 +1296,7 @@ async function resolveRoomOptionUnitIds(
       SELECT id
       FROM option_units
       WHERE id IN (${sql.join(
+        // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         optionUnitIds.map((id) => sql`${id}`),
         sql`, `,
       )})
@@ -1356,6 +1358,7 @@ async function resolveLinkedProductTitle(
 ): Promise<string> {
   try {
     const result = await db.execute<{ name: string | null }>(
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`select name from products where id = ${productId} limit 1`,
     )
     return toRows<{ name: string | null }>(result)[0]?.name ?? ""

@@ -108,9 +108,11 @@ export const contractTemplates = pgTable(
     uniqueIndex("uq_contract_templates_slug").on(table.slug),
     uniqueIndex("uidx_contract_templates_default_global")
       .on(table.scope, table.language)
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.isDefault} = true AND ${table.channelId} IS NULL`),
     uniqueIndex("uidx_contract_templates_default_channel")
       .on(table.scope, table.channelId, table.language)
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.isDefault} = true AND ${table.channelId} IS NOT NULL`),
   ],
 )
@@ -177,9 +179,11 @@ export const contractNumberSeries = pgTable(
     index("idx_contract_number_series_updated").on(table.updatedAt),
     uniqueIndex("uidx_contract_number_series_prefix_scope_active")
       .on(table.prefix, table.scope)
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.active} = true`),
     uniqueIndex("uidx_contract_number_series_default_scope_active")
       .on(table.scope)
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.active} = true AND ${table.isDefault} = true`),
   ],
 )

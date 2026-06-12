@@ -122,6 +122,7 @@ export async function migrateVouchersFromPaymentInstruments(
     const [existing] = await db
       .select({ id: vouchers.id })
       .from(vouchers)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`lower(${vouchers.code}) = ${code.toLowerCase()}`)
       .limit(1)
     if (existing) {

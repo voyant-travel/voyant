@@ -96,7 +96,7 @@ export function JourneyDeparturePicker({
   // component's input is local state and re-seeds to "" on remount (before
   // slots load). Reflect the selected slot's label once it resolves so a
   // revisited departure shows as selected rather than empty.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: formatLabel is render-stable; slotId/slotMap are the real triggers
+  // biome-ignore lint/correctness/useExhaustiveDependencies: formatLabel is render-stable; slotId/slotMap are the real triggers -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (!slotId) return
     const slot = slotMap.get(slotId)

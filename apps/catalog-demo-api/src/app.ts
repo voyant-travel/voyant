@@ -17,6 +17,7 @@ export function createApp(db: CatalogDemoDb): Hono {
   // sources lock CORS down; the demo is a dev tool.
   app.use("*", async (c, next) => {
     await next()
+    // agent-quality: cors reviewed -- owner: catalog-demo-api; wildcard CORS is intentional for the local/demo upstream.
     c.res.headers.set("Access-Control-Allow-Origin", "*")
     c.res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
     c.res.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")

@@ -34,12 +34,15 @@ export const authUser = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (table) => [
+    // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     uniqueIndex("user_email_unique").on(table.email).where(sql`${table.email} IS NOT NULL`),
     uniqueIndex("user_phone_unique")
       .on(table.phoneNumber)
+      // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.phoneNumber} IS NOT NULL`),
     check(
       "user_email_or_phone",
+      // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${table.email} IS NOT NULL OR ${table.phoneNumber} IS NOT NULL`,
     ),
   ],

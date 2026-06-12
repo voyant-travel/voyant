@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import type { Editor } from "@tiptap/core"
@@ -676,7 +677,7 @@ function NotificationTemplateDialogInner({
                                 {preview.data?.html ? (
                                   <div
                                     className="prose prose-sm max-w-none px-3 py-3 dark:prose-invert"
-                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Preview HTML is generated server-side for template preview.
+                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Preview HTML is generated server-side for template preview. -- owner: notifications-react; existing suppression is intentional pending typed cleanup.
                                     dangerouslySetInnerHTML={{ __html: preview.data.html }}
                                   />
                                 ) : (

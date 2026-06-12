@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- Sellability service currently keeps resolve, snapshot, policy, refresh, expiration, and explanation workflows together; split only with a dedicated service-boundary refactor.
 import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   channelInventoryAllotments,
@@ -360,7 +361,7 @@ async function persistResolvedSnapshot(
       sourceCurrencyCode: primaryCandidate?.pricing.currencyCode ?? null,
       fxRateSetId: primaryCandidate?.pricing.fx?.fxRateSetId ?? null,
       status: input.status ?? "resolved",
-      queryPayload: input.query as unknown as Record<string, unknown>,
+      queryPayload: { ...input.query },
       pricingSummary: {
         totalCandidates: input.resolved.meta.total,
         selectedCandidateIndex: input.selectedCandidateIndex ?? null,

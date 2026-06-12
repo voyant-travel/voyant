@@ -85,6 +85,7 @@ export const bookingItems = pgTable(
     // interpret it.
     check(
       "ck_booking_items_cost_currency_amounts",
+      // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.unitCostAmountCents} IS NULL AND ${table.totalCostAmountCents} IS NULL) OR ${table.costCurrency} IS NOT NULL`,
     ),
   ],

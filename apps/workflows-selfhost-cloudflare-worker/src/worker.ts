@@ -7,15 +7,15 @@
 
 // IMPORTANT: the workflow bundle must be staged next to this file as
 // `./bundle.mjs` before `wrangler deploy`.
-// @ts-expect-error — bundle.mjs is staged at deploy time, may not exist in source.
 import "./bundle.mjs"
 
 import { Container } from "@cloudflare/containers"
-import { parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
+import { createHmacSigner, parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
 import { handleStepRequest, type StepRunner } from "@voyantjs/workflows/handler"
 import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import {
+  type ContainerNamespaceLike,
   createCfContainerStepRunner,
   createInlineDispatcher,
   createR2Presigner,
@@ -36,10 +36,15 @@ export interface Env {
   R2_ACCESS_KEY_ID?: string
   R2_SECRET_ACCESS_KEY?: string
   R2_BUCKET?: string
+  VOYANT_WORKFLOW_STEP_AUTH_SECRET?: string
 }
 
 let stepHandler: StepHandler | undefined
 let dispatcher: StepDispatcher | undefined
+
+function containerNamespace(namespace: unknown): ContainerNamespaceLike {
+  return namespace as never
+}
 
 function buildStepHandler(env: Env): StepHandler {
   const rateLimiter = createInMemoryRateLimiter()
@@ -56,10 +61,17 @@ function buildStepHandler(env: Env): StepHandler {
 }
 
 function createOptionalNodeStepRunner(env: Env): StepRunner | undefined {
-  if (!env.R2_ACCOUNT_ID || !env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY || !env.R2_BUCKET) {
+  if (
+    !env.R2_ACCOUNT_ID ||
+    !env.R2_ACCESS_KEY_ID ||
+    !env.R2_SECRET_ACCESS_KEY ||
+    !env.R2_BUCKET ||
+    !env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
+  ) {
     return undefined
   }
 
+  const signPromise = createHmacSigner(env.VOYANT_WORKFLOW_STEP_AUTH_SECRET)
   const presign = createR2Presigner({
     accountId: env.R2_ACCOUNT_ID,
     accessKeyId: env.R2_ACCESS_KEY_ID,
@@ -68,9 +80,8 @@ function createOptionalNodeStepRunner(env: Env): StepRunner | undefined {
   })
 
   return createCfContainerStepRunner({
-    namespace: env.NODE_STEP_POOL as unknown as Parameters<
-      typeof createCfContainerStepRunner
-    >[0]["namespace"],
+    namespace: containerNamespace(env.NODE_STEP_POOL),
+    sign: async (body) => (await signPromise)(body),
     resolveBundle: async ({ projectId, workflowVersion }) => {
       const key = `${projectId}/${workflowVersion}/container.mjs`
       const url = await presign({ key, expiresIn: 300 })

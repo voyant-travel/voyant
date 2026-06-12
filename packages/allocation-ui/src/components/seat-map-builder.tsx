@@ -156,7 +156,7 @@ export function SeatMapBuilder({
       <div className="flex flex-col items-start gap-1.5 overflow-x-auto rounded-md border bg-muted/10 p-3">
         {spec.rows.map((row, rowIndex) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional by design — row 1 is always the first row of the bus.
+            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional by design — row 1 is always the first row of the bus. -- owner: allocation-ui; existing suppression is intentional pending typed cleanup.
             key={`row-${rowIndex}`}
             className="flex items-center gap-1"
           >
@@ -165,7 +165,7 @@ export function SeatMapBuilder({
             </span>
             {row.cells.map((cell, cellIndex) => (
               <button
-                // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional within a row.
+                // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional within a row. -- owner: allocation-ui; existing suppression is intentional pending typed cleanup.
                 key={`cell-${rowIndex}-${cellIndex}`}
                 type="button"
                 aria-label={formatMessage(t.columnAria, {

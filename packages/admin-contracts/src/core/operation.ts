@@ -86,7 +86,7 @@ export function defineOperation<TParams, TInput extends z.ZodTypeAny, TOutput ex
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: descriptor type extractors need the any-positioned infer
+// biome-ignore lint/suspicious/noExplicitAny: descriptor type extractors need the any-positioned infer -- owner: admin-contracts; existing suppression is intentional pending typed cleanup.
 type AnyOperation = OperationDescriptor<any, any, any>
 
 export type InferParams<D extends AnyOperation> =

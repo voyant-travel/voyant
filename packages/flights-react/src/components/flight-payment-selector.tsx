@@ -53,7 +53,7 @@ export function FlightPaymentSelector({ value, onChange, available }: FlightPaym
         {visibleIntents.map((intent) => {
           const isSelected = value.type === intent.id
           return (
-            // biome-ignore lint/a11y/useSemanticElements: deliberate custom radio (card-styled selectable button); switching to <input type="radio"> would require a visually-hidden input + label styling that doesn't compose with the card layout. aria-checked + role="radio" inside the role="radiogroup" exposes the right semantics to AT.
+            // biome-ignore lint/a11y/useSemanticElements: deliberate custom radio (card-styled selectable button); switching to <input type="radio"> would require a visually-hidden input + label styling that doesn't compose with the card layout. aria-checked + role="radio" inside the role="radiogroup" exposes the right semantics to AT. -- owner: flights-react; existing suppression is intentional pending typed cleanup.
             <button
               key={intent.id}
               type="button"

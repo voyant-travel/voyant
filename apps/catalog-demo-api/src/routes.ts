@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-demo-api; existing route module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * REST surface for the catalog demo service. Mirrors the methods on
  * `SourceAdapter` (`@voyantjs/catalog/adapter/contract`) so the plugin

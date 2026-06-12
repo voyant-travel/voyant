@@ -152,6 +152,7 @@ export const offerItems = pgTable(
     index("idx_offer_items_status_created").on(table.status, table.createdAt),
     check(
       "ck_offer_items_cost_currency_amounts",
+      // agent-quality: raw-sql reviewed -- owner: transactions; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.unitCostAmountCents} IS NULL AND ${table.totalCostAmountCents} IS NULL) OR ${table.costCurrency} IS NOT NULL`,
     ),
   ],

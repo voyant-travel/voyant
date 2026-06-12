@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
 import { type BookingPiiService, shouldRevealBookingPii } from "@voyantjs/bookings"
 import type { EventBus, ModuleContainer } from "@voyantjs/core"

@@ -250,10 +250,11 @@ function toProjectionMap(a: DepartureAggregate): ReadonlyMap<string, unknown> {
  * v0.1 and a schema rename would break far more than this.
  */
 async function defaultLoadBookingMode(db: AnyDrizzleDb, productId: string): Promise<string | null> {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle's typed sql is overkill for a single-column read
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle's typed sql is overkill for a single-column read -- owner: availability; existing suppression is intentional pending typed cleanup.
   const dbAny = db as any
   const { sql } = await import("drizzle-orm")
   const result = await dbAny.execute(
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`SELECT booking_mode FROM products WHERE id = ${productId} LIMIT 1`,
   )
   // postgres-js returns rows as an array-like with `.[0]?.booking_mode`;

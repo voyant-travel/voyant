@@ -70,12 +70,12 @@ function SkeletonRows({ rows, widths }: { rows: number; widths: ReadonlyArray<st
     <TableBody>
       {Array.from({ length: rows }).map((_, r) => (
         <TableRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
           key={r}
         >
           {widths.map((width, c) => (
             <TableCell
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
               key={c}
             >
               <Skeleton className={`h-4 ${width}`} />

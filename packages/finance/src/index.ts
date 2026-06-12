@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
 import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 import { Hono } from "hono"

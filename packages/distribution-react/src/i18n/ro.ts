@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: distribution-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { DistributionUiMessages } from "./messages.js"
 
 export const distributionUiRo = {

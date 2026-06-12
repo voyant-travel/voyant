@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { handleApiError, parseJsonBody, RequestValidationError } from "@voyantjs/hono"
 import type { HonoModule } from "@voyantjs/hono/module"

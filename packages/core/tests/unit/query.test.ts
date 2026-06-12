@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: core; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -72,7 +73,7 @@ function makeLinkService(rowsByKey: Record<string, LinkRow[]>): LinkService {
         return true
       })
     }),
-    // biome-ignore lint/suspicious/noExplicitAny: LinkService has overloaded signatures
+    // biome-ignore lint/suspicious/noExplicitAny: LinkService has overloaded signatures -- owner: core; existing suppression is intentional pending typed cleanup.
   } as any
 }
 

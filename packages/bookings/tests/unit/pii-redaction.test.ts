@@ -118,7 +118,7 @@ describe("redactBookingContact()", () => {
     expect(output.contactAddressLine2).toBe("***")
     expect(output.contactPostalCode).toBe("***")
     // contactCity is NOT in the redaction set — it's coarse-grained
-    expect((output as unknown as { contactCity: string }).contactCity).toBe("Bucharest")
+    expect(output.contactCity).toBe("Bucharest")
   })
 
   it("passes nulls through", () => {

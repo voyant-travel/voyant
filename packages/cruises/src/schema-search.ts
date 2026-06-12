@@ -74,6 +74,7 @@ export const cruiseSearchIndex = pgTable(
     index("idx_cruise_search_index_themes_gin").using("gin", table.themes),
     uniqueIndex("uidx_cruise_search_index_external")
       .on(table.sourceProvider, table.sourceRef)
+      // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.source} = 'external'`),
   ],
 )

@@ -34,6 +34,17 @@ export interface SleepAlarmManager<TStored extends SleepAlarmStoredRun> {
   stop: () => void
 }
 
+function unrefTimer(timer: unknown): void {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
+    timer.unref()
+  }
+}
+
 export function createSleepAlarmManager<TStored extends SleepAlarmStoredRun>(
   deps: SleepAlarmManagerDeps<TStored>,
 ): SleepAlarmManager<TStored> {
@@ -102,7 +113,7 @@ export function createSleepAlarmManager<TStored extends SleepAlarmStoredRun>(
         })
       })
     }, delay)
-    ;(timer as unknown as { unref?: () => void }).unref?.()
+    unrefTimer(timer)
     timers.set(stored.id, timer)
   }
 

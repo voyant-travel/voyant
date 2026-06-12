@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Button } from "@voyantjs/ui/components/button"
@@ -561,7 +562,7 @@ function BookingListPagination({
         </PaginationItem>
         {pages.map((entry, idx) => (
           <PaginationItem
-            // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis sentinels collide on value alone
+            // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis sentinels collide on value alone -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
             key={`${entry}-${idx}`}
           >
             {entry === "…" ? (

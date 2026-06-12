@@ -45,7 +45,7 @@ function stubDb<T>(rows: T[]) {
   const where = { where: vi.fn().mockReturnValue(tail) }
   const from = { from: vi.fn().mockReturnValue(where) }
   return {
-    // biome-ignore lint/suspicious/noExplicitAny: stub for drizzle chained API
+    // biome-ignore lint/suspicious/noExplicitAny: stub for drizzle chained API -- owner: products; existing suppression is intentional pending typed cleanup.
     select: vi.fn().mockReturnValue(from) as any,
   }
 }
@@ -79,7 +79,7 @@ const customerSlice: IndexerSlice = {
 describe("createProductDocumentBuilder — projection extensions", () => {
   it("returns the base document unchanged when no extensions are provided", async () => {
     const db = stubDb([sampleRow])
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
     const doc = await build("prod_abc", customerSlice)
     expect(doc).not.toBeNull()
@@ -90,7 +90,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
 
   it("returns null when the product no longer exists", async () => {
     const db = stubDb<typeof sampleRow>([])
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
     const doc = await build("prod_missing", customerSlice)
     expect(doc).toBeNull()
@@ -98,7 +98,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
 
   it("returns null for customer slices when the product is not publicly visible", async () => {
     const db = stubDb([{ ...sampleRow, visibility: "private" }])
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
     const doc = await build("prod_private", customerSlice)
     expect(doc).toBeNull()
@@ -106,7 +106,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
 
   it("keeps non-public products in staff-admin slices", async () => {
     const db = stubDb([{ ...sampleRow, visibility: "private" }])
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
     const doc = await build("prod_private", {
       ...customerSlice,
@@ -132,7 +132,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       ),
     }
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       { sellerOperatorId: "op_xyz", registry, extensions: [ext] },
     )
@@ -155,7 +155,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       project: async () => new Map<string, unknown>([["regions[]", ["Mediterranean"]]]),
     }
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       { sellerOperatorId: "op_xyz", extensions: [ext] },
     )
@@ -175,7 +175,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       project: async () => new Map<string, unknown>([["countries[]", ["Italy"]]]),
     }
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       { sellerOperatorId: "op_xyz", registry, extensions: [a, b] },
     )
@@ -194,7 +194,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       },
     }
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       { sellerOperatorId: "op_xyz", registry, extensions: [failing] },
     )
@@ -234,7 +234,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       [{ dayNumber: 1 }, { dayNumber: 4 }],
     ])
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       {
         sellerOperatorId: "op_xyz",
@@ -261,7 +261,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
   it("preserves the base product name when storefront-card translations are missing", async () => {
     const db = stubQueuedDb([[sampleRow], [], [], [], []])
     const build = createProductDocumentBuilder(
-      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: products; existing suppression is intentional pending typed cleanup.
       db as any,
       {
         sellerOperatorId: "op_xyz",

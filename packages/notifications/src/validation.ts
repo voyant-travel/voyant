@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
 export const notificationChannelSchema = z.enum(["email", "sms"])

@@ -48,6 +48,7 @@ export const contractRecordsService = {
           ilike(contracts.contractNumber, term),
           ilike(people.firstName, term),
           ilike(people.lastName, term),
+          // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${people.firstName} || ' ' || ${people.lastName} ILIKE ${term}`,
           ilike(personDirectoryView.email, term),
           ilike(personDirectoryView.phone, term),

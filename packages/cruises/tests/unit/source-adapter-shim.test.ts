@@ -334,7 +334,7 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
     expect(result.returned_locale).toBe("en-GB")
     expect(result.content_schema_version).toBe(CRUISES_CONTENT_SCHEMA_VERSION)
 
-    // biome-ignore lint/suspicious/noExplicitAny: result.content is unknown
+    // biome-ignore lint/suspicious/noExplicitAny: result.content is unknown -- owner: cruises; existing suppression is intentional pending typed cleanup.
     const content = result.content as any
     expect(content.cruise.name).toBe("Greek Isles")
     expect(content.cruise.cruise_line).toBe("Sample Line")
@@ -403,7 +403,7 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
       { connection_id: "conn-x" },
       { entity_module: "cruises", entity_id: "crus_cruise-1", locale: "en-GB" },
     )
-    // biome-ignore lint/suspicious/noExplicitAny: shim returns unknown
+    // biome-ignore lint/suspicious/noExplicitAny: shim returns unknown -- owner: cruises; existing suppression is intentional pending typed cleanup.
     expect((result.content as any).ship).toBeNull()
   })
 })

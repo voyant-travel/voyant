@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: availability; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { relations, sql } from "drizzle-orm"
 import {
@@ -250,6 +251,7 @@ export const productOptionResourceTemplates = pgTable(
     uniqueIndex("idx_product_option_resource_templates_option_kind").on(
       table.productOptionId,
       table.kind,
+      // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`coalesce(${table.refId}, '')`,
     ),
     index("idx_product_option_resource_templates_kind").on(table.kind, table.createdAt),

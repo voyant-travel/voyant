@@ -120,7 +120,7 @@ describe("resolveNetopiaRuntimeOptions", () => {
           NETOPIA_REDIRECT_URL: "https://app.example.com/checkout/return",
         },
         {
-          successStatuses: [3.5] as unknown as number[],
+          successStatuses: [3.5],
         },
       ),
     ).toThrow(/Invalid Netopia runtime options/)

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -552,7 +553,7 @@ function DynamicResultsSkeleton() {
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 42 }).map((_, i) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
                 key={i}
                 className={`rounded-md ${i < 7 ? "h-3 bg-muted/15" : "aspect-square animate-pulse bg-muted/20"}`}
               />
@@ -565,7 +566,7 @@ function DynamicResultsSkeleton() {
         <div className="h-5 w-56 animate-pulse rounded bg-muted/30" />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
             <div key={i} className="flex flex-col overflow-hidden rounded-lg border">
               <div className="aspect-[4/3] w-full animate-pulse bg-muted/40" />
               <div className="flex flex-col gap-2 p-3">

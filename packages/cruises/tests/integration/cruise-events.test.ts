@@ -13,7 +13,7 @@ import { cruisesService } from "../../src/service.js"
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 describe.skipIf(!DB_AVAILABLE)("cruise lifecycle events", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: cruises; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(() => {

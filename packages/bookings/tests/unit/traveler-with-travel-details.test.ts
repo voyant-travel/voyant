@@ -70,7 +70,7 @@ describe("bookingsService.createTravelerWithTravelDetails", () => {
     }
     const createSpy = vi
       .spyOn(bookingsService, "createTravelerRecord")
-      // biome-ignore lint/suspicious/noExplicitAny: spy return narrowing
+      // biome-ignore lint/suspicious/noExplicitAny: spy return narrowing -- owner: bookings; existing suppression is intentional pending typed cleanup.
       .mockResolvedValue(fakeRow as any)
 
     const { service: pii, calls } = makeFakePii()
@@ -155,7 +155,7 @@ describe("bookingsService.createTravelerWithTravelDetails", () => {
   it("still upserts an empty encrypted envelope when no encrypted fields are supplied", async () => {
     vi.spyOn(bookingsService, "createTravelerRecord").mockResolvedValue({
       id: "bkps_only_plain",
-      // biome-ignore lint/suspicious/noExplicitAny: minimal stub row
+      // biome-ignore lint/suspicious/noExplicitAny: minimal stub row -- owner: bookings; existing suppression is intentional pending typed cleanup.
     } as any)
     const { service: pii, calls } = makeFakePii()
 
@@ -198,7 +198,7 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
     }
     const updateSpy = vi
       .spyOn(bookingsService, "updateTravelerRecord")
-      // biome-ignore lint/suspicious/noExplicitAny: spy return narrowing
+      // biome-ignore lint/suspicious/noExplicitAny: spy return narrowing -- owner: bookings; existing suppression is intentional pending typed cleanup.
       .mockResolvedValue(fakeRow as any)
 
     const { service: pii, calls } = makeFakePii()
@@ -249,7 +249,7 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
   it("preserves undefined-vs-null distinction for encrypted fields (undefined → preserve, null → clear)", async () => {
     vi.spyOn(bookingsService, "updateTravelerRecord").mockResolvedValue({
       id: "bkps_x",
-      // biome-ignore lint/suspicious/noExplicitAny: minimal stub row
+      // biome-ignore lint/suspicious/noExplicitAny: minimal stub row -- owner: bookings; existing suppression is intentional pending typed cleanup.
     } as any)
     const { service: pii, calls } = makeFakePii()
 

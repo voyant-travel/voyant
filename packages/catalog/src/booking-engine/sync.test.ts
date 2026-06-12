@@ -1,7 +1,7 @@
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { describe, expect, it } from "vitest"
-
 import type { SourceAdapter } from "../adapter/contract.js"
-import type { FieldPolicyRegistry } from "../contract.js"
+import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import type {
   IndexerDocument,
   IndexerSlice,
@@ -12,6 +12,10 @@ import type { DocumentBuilder, IndexerService } from "../services/indexer-servic
 
 import { createSourceAdapterRegistry } from "./registry.js"
 import { syncSources } from "./sync.js"
+
+function drizzleStub(methods: Partial<Record<keyof AnyDrizzleDb, unknown>>): AnyDrizzleDb {
+  return methods as never
+}
 
 /**
  * Stub IndexerService that records every reindex call and synthesizes
@@ -58,27 +62,28 @@ function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
  * the registry's actual policy logic is covered by other tests.
  */
 function makePassthroughRegistry(): FieldPolicyRegistry {
+  const policy = (path: string): FieldPolicy => ({
+    path,
+    class: "managed",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner", "supplier"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "static",
+  })
+
   return {
+    policies: [],
+    byPath: new Map(),
     resolve(path: string) {
-      return {
-        path,
-        class: "managed",
-        merge: "source-only",
-        drift: "low",
-        reindex: "entry",
-        snapshot: "never",
-        query: "indexed-column",
-        localized: false,
-        visibility: ["staff", "customer", "partner", "supplier"],
-        editRole: "none",
-        overrideFriction: "none",
-        sourceFreshness: "static",
-      }
+      return policy(path)
     },
-    paths(): string[] {
-      return []
-    },
-  } as unknown as FieldPolicyRegistry
+  }
 }
 
 function makeAdapter(
@@ -259,7 +264,7 @@ describe("syncSources", () => {
     // Stub db whose .insert(...).values(...).onConflictDoUpdate(...).returning()
     // returns one row. Mirrors enough of the drizzle chain to exercise sync.
     const upsertCalls: unknown[] = []
-    const stubDb = {
+    const stubDb = drizzleStub({
       insert() {
         return {
           values(v: unknown) {
@@ -276,14 +281,13 @@ describe("syncSources", () => {
           },
         }
       },
-    }
+    })
 
     const summary = await syncSources({
       registry,
       indexerService: service,
       fieldPolicyRegistries,
-      // biome-ignore lint/suspicious/noExplicitAny: stub mirrors the drizzle chain shape
-      db: stubDb as any,
+      db: stubDb,
     })
 
     expect(summary.adapters[0]?.sourcedEntriesUpserted).toBe(2)
@@ -359,7 +363,7 @@ describe("syncSources", () => {
     const fieldPolicyRegistries = new Map([["products", makePassthroughRegistry()]])
 
     const updatedIds: string[][] = []
-    const stubDb = {
+    const stubDb = drizzleStub({
       insert() {
         return {
           values() {
@@ -403,14 +407,13 @@ describe("syncSources", () => {
           },
         }
       },
-    }
+    })
 
     const summary = await syncSources({
       registry,
       indexerService: service,
       fieldPolicyRegistries,
-      // biome-ignore lint/suspicious/noExplicitAny: stub mirrors the drizzle chain shape
-      db: stubDb as any,
+      db: stubDb,
       pruneMissing: true,
       verticals: ["products"],
     })

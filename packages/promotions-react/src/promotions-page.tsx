@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: promotions-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 /**
@@ -503,7 +504,7 @@ function PromotionRowSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable -- owner: promotions-react; existing suppression is intentional pending typed cleanup.
         <TableRow key={`promotion-skeleton-${index}`}>
           <TableCell>
             <Skeleton className="h-4 w-40" />

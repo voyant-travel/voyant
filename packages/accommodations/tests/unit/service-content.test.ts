@@ -45,7 +45,7 @@ function fakeDb(rowsByTable: Map<unknown, unknown[]>): AnyDrizzleDb {
         },
       }
     },
-  } as unknown as AnyDrizzleDb
+  } as AnyDrizzleDb
 }
 
 describe("buildOwnedAccommodationContent", () => {

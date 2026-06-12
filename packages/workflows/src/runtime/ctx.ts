@@ -1,4 +1,5 @@
 // Builds the `ctx` object passed to the workflow body.
+// agent-quality: file-size exception -- Central ctx API wiring remains together until wait/stream/group runtime slices can be extracted safely.
 //
 // The executor owns the waitpoint-pending queue and the callbacks
 // into the orchestrator; ctx is a thin shell that delegates.
@@ -360,7 +361,7 @@ export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
       let closed = false
       return {
         async next(): Promise<IteratorResult<T>> {
-          if (closed) return { value: undefined as unknown as T, done: true }
+          if (closed) return { value: undefined, done: true }
           checkCancel()
           const iterId = `${iterIdPrefix}:iter:${nextClientId()}`
           const resolvedIter = lookupWaitpoint(iterId)
@@ -373,7 +374,7 @@ export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
           const payload = resolvedIter.payload as unknown
           if (isStreamEnd(payload)) {
             closed = true
-            return { value: undefined as unknown as T, done: true }
+            return { value: undefined, done: true }
           }
           if (payload === undefined && onTimeout === "throw") {
             throw new Error(`waitpoint ${iterId} timed out`)
@@ -382,7 +383,7 @@ export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
         },
         async return(): Promise<IteratorResult<T>> {
           closed = true
-          return { value: undefined as unknown as T, done: true }
+          return { value: undefined, done: true }
         },
         [Symbol.asyncIterator]() {
           return this
@@ -611,29 +612,25 @@ export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
     }
   }
 
-  const streamImpl = async (
+  const streamImpl = async <T>(
     streamId: string,
-    sourceOrFn: AsyncIterable<unknown> | (() => AsyncGenerator<unknown>),
+    sourceFn: () => AsyncGenerator<T>,
   ): Promise<void> => {
-    const source =
-      typeof sourceOrFn === "function"
-        ? (sourceOrFn as () => AsyncGenerator<unknown>)()
-        : sourceOrFn
+    const source = sourceFn()
     await consumeStream(streamId, source, inferEncoding(source))
   }
 
-  // Typed shape variants. Each forwards to consumeStream with a fixed encoding.
-  ;(streamImpl as unknown as { text: StreamApi["text"] }).text = async (id, source) => {
-    await consumeStream(id, source, "text")
-  }
-  ;(streamImpl as unknown as { json: StreamApi["json"] }).json = async (id, source) => {
-    await consumeStream(id, source, "json")
-  }
-  ;(streamImpl as unknown as { bytes: StreamApi["bytes"] }).bytes = async (id, source) => {
-    await consumeStream(id, source, "base64")
-  }
-
-  const stream = streamImpl as unknown as StreamApi
+  const stream: StreamApi = Object.assign(streamImpl, {
+    text: async (id, source) => {
+      await consumeStream(id, source, "text")
+    },
+    json: async (id, source) => {
+      await consumeStream(id, source, "json")
+    },
+    bytes: async (id, source) => {
+      await consumeStream(id, source, "base64")
+    },
+  } satisfies Pick<StreamApi, "text" | "json" | "bytes">)
 
   // ---- groups ----
 
@@ -769,7 +766,7 @@ function normalizeChunk(value: unknown, encoding: "text" | "json" | "base64"): u
 function toBase64(bytes: Uint8Array): string {
   // Node + modern runtimes provide Buffer or btoa. Use Buffer when
   // available for efficiency; fall back to manual encode for isolates.
-  const g = globalThis as unknown as {
+  const g = globalThis as typeof globalThis & {
     Buffer?: { from(b: Uint8Array): { toString(enc: "base64"): string } }
     btoa?: (s: string) => string
   }

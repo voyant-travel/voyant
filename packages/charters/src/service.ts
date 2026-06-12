@@ -39,6 +39,7 @@ export const chartersService = {
     if (query.lineSupplierId)
       conditions.push(eq(charterProducts.lineSupplierId, query.lineSupplierId))
     if (query.region) {
+      // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       conditions.push(sql`${charterProducts.regions} @> ${JSON.stringify([query.region])}::jsonb`)
     }
     if (query.search) {
@@ -145,7 +146,9 @@ export const chartersService = {
       .where(
         and(
           eq(charterVoyages.productId, productId),
+          // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${charterSuites.availability} <> 'sold_out'`,
+          // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`(${charterSuites.pricesByCurrency} ? ${browseCurrency})`,
         ),
       )
@@ -183,6 +186,7 @@ export const chartersService = {
     if (query.dateTo) conditions.push(lte(charterVoyages.departureDate, query.dateTo))
     if (query.bookingMode) {
       conditions.push(
+        // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`${charterVoyages.bookingModes} @> ${JSON.stringify([query.bookingMode])}::jsonb`,
       )
     }

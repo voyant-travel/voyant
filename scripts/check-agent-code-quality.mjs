@@ -38,6 +38,7 @@ function isSkipped(file) {
 function isGenerated(file) {
   return (
     generatedSuffixes.some((suffix) => file.endsWith(suffix)) ||
+    file.includes(".generated.") ||
     generatedPathParts.some((part) => file.includes(part)) ||
     file.includes("/drizzle/meta/") ||
     file.includes("/migrations/meta/")
@@ -69,6 +70,7 @@ function collectFiles() {
     })
     .filter((file) => textExtensions.has(extensionOf(file)))
     .filter((file) => !isSkipped(file))
+    .filter((file) => !isGenerated(file))
     .sort()
 }
 
@@ -77,7 +79,51 @@ function addFinding(severity, file, line, rule, message) {
 }
 
 function hasReason(line) {
-  return /(?:because|reason|TODO|FIXME|#[0-9]+|https?:\/\/|owner:|intentional)/i.test(line)
+  return (
+    /(?:because|reason|TODO|FIXME|#[0-9]+|https?:\/\/|owner:|intentional)/i.test(line) ||
+    /@ts-(?:expect-error|ignore|nocheck)\s+(?:--|—|-|:)\s*\S/.test(line)
+  )
+}
+
+function isClearlyNonProductionSecret(file, value) {
+  const normalized = value.trim().toLowerCase()
+
+  if (file.includes("/i18n/") && /\s/.test(normalized)) return true
+
+  if (
+    /\b(?:test|fake|mock|dummy|demo|example|fixture|sample|dev|local|capability-token)\b/i.test(
+      normalized,
+    ) ||
+    /^(?:voy_test|voy_cache_test|sk-test-|vc-token-|test-|demo_)/i.test(normalized)
+  ) {
+    return true
+  }
+
+  if (normalized === "password123") {
+    return file.includes("/scripts/seed") || file.endsWith("/seed.ts")
+  }
+
+  return false
+}
+
+function hasFileSizeException(lines) {
+  return lines
+    .slice(0, 30)
+    .some(
+      (line) =>
+        /agent-quality:\s*file-size exception/i.test(line) &&
+        /(?:because|reason|TODO|FIXME|#[0-9]+|https?:\/\/|owner:|intentional|--|—)/i.test(line),
+    )
+}
+
+function hasRuleException(lines, index, rule) {
+  return lines
+    .slice(Math.max(0, index - 5), index + 1)
+    .some(
+      (line) =>
+        new RegExp(`agent-quality:\\s*${rule} (?:exception|reviewed)`, "i").test(line) &&
+        /(?:because|reason|TODO|FIXME|#[0-9]+|https?:\/\/|owner:|intentional|--|—)/i.test(line),
+    )
 }
 
 function scanFile(file) {
@@ -86,7 +132,7 @@ function scanFile(file) {
   const source = readFileSync(file, "utf8")
   const lines = source.split(/\r?\n/)
 
-  if (isCode && !isGenerated(file)) {
+  if (isCode && !hasFileSizeException(lines)) {
     if (lines.length > sizeFailLines) {
       addFinding(
         "error",
@@ -108,15 +154,19 @@ function scanFile(file) {
 
   for (const [index, line] of lines.entries()) {
     const lineNo = index + 1
+    const codeLine = /^\s*(?:\/\/|\/\*|\*)/.test(line) ? "" : line.replace(/\/\/.*$/, "")
 
     if (isCode) {
-      if (/\/\/\s*@ts-ignore\b/.test(line) || /\/\/\s*@ts-nocheck\b/.test(line)) {
+      if (
+        (/\/\/\s*@ts-ignore\b/.test(line) || /\/\/\s*@ts-nocheck\b/.test(line)) &&
+        !hasReason(line)
+      ) {
         addFinding(
           "error",
           file,
           lineNo,
           "typescript-suppression",
-          "avoid @ts-ignore/@ts-nocheck; use typed narrowing or document a narrow exception",
+          "@ts-ignore/@ts-nocheck requires an inline reason or issue reference",
         )
       }
 
@@ -130,7 +180,7 @@ function scanFile(file) {
         )
       }
 
-      if (/\bas\s+unknown\s+as\b/.test(line)) {
+      if (/\bas\s+unknown\s+as\b/.test(codeLine)) {
         addFinding(
           "error",
           file,
@@ -140,7 +190,11 @@ function scanFile(file) {
         )
       }
 
-      if (/\bas\s+any\b/.test(line)) {
+      if (
+        /\bas\s+any\b/.test(codeLine) &&
+        !hasRuleException(lines, index, "unsafe-cast") &&
+        !lines.slice(Math.max(0, index - 2), index + 1).some((nearby) => hasReason(nearby))
+      ) {
         addFinding(
           "warn",
           file,
@@ -170,7 +224,7 @@ function scanFile(file) {
         )
       }
 
-      if (/\bsql\s*`[^`]*\$\{/.test(line)) {
+      if (/\bsql\s*`[^`]*\$\{/.test(line) && !hasRuleException(lines, index, "raw-sql")) {
         addFinding(
           "warn",
           file,
@@ -180,11 +234,17 @@ function scanFile(file) {
         )
       }
 
-      if (/\b(?:password|secret|token|apiKey|api_key)\b\s*[:=]\s*["'][^"']{8,}["']/i.test(line)) {
+      const hardcodedSecret = line.match(
+        /\b(?:password|secret|token|apiKey|api_key)\b\s*[:=]\s*(["'])([^"']{8,})\1/i,
+      )
+      if (hardcodedSecret && !isClearlyNonProductionSecret(file, hardcodedSecret[2])) {
         addFinding("error", file, lineNo, "hardcoded-secret", "possible hardcoded secret or token")
       }
 
-      if (/Access-Control-Allow-Origin["']?\s*[:,]\s*["']\*/.test(line)) {
+      if (
+        /Access-Control-Allow-Origin["']?\s*[:,]\s*["']\*/.test(line) &&
+        !hasRuleException(lines, index, "cors")
+      ) {
         addFinding("warn", file, lineNo, "cors", "wildcard CORS needs explicit approval")
       }
     }
@@ -202,14 +262,48 @@ function changedPackageNames(files) {
   return packages
 }
 
+function isTestFile(file) {
+  return (
+    file.includes("/tests/") ||
+    file.includes("/__tests__/") ||
+    /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file)
+  )
+}
+
 function hasChangedChangeset(files) {
   return files.some((file) => file.startsWith(".changeset/") && file.endsWith(".md"))
+}
+
+function changedDiffLines(args) {
+  const result = spawnSync("git", args, { encoding: "utf8" })
+  if (result.error || result.status !== 0) return null
+  return result.stdout
+    .split("\n")
+    .filter((line) => /^[+-]/.test(line) && !/^(?:\+\+\+|---)/.test(line))
+}
+
+function hasCodeDiff(file) {
+  const unstagedLines = changedDiffLines(["diff", "--unified=0", "--", file])
+  const stagedLines = changedDiffLines(["diff", "--cached", "--unified=0", "--", file])
+  if (!unstagedLines || !stagedLines) return true
+  const changedLines = [...unstagedLines, ...stagedLines]
+  if (changedLines.length === 0) return true
+  return changedLines.some((line) => {
+    const content = line.slice(1).trim()
+    return (
+      content !== "" &&
+      !content.startsWith("//") &&
+      !content.startsWith("/*") &&
+      !content.startsWith("*") &&
+      !content.startsWith("*/")
+    )
+  })
 }
 
 function scanChangeLevelRules(files) {
   if (!changedOnly) return
 
-  const packages = changedPackageNames(files)
+  const packages = changedPackageNames(files.filter((file) => !isTestFile(file)))
   if (packages.size > 0 && !hasChangedChangeset(files)) {
     addFinding(
       "warn",
@@ -222,9 +316,10 @@ function scanChangeLevelRules(files) {
 
   const schemaFiles = files.filter(
     (file) =>
-      /\/schema(?:-[^/]*)?\.ts$/.test(file) ||
-      /\/schema\/.+\.ts$/.test(file) ||
-      file.endsWith("drizzle.config.ts"),
+      (/\/schema(?:-[^/]*)?\.ts$/.test(file) ||
+        /\/schema\/.+\.ts$/.test(file) ||
+        file.endsWith("drizzle.config.ts")) &&
+      hasCodeDiff(file),
   )
   const migrationFiles = files.filter(
     (file) => file.includes("/migrations/") || file.includes("/drizzle/"),

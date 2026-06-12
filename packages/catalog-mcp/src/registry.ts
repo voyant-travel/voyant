@@ -25,7 +25,7 @@ export interface McpToolRegistry {
   /** Dispatch a tool call by name. Validates args with the tool's zod schema. */
   dispatchTool(name: string, args: unknown): Promise<McpToolResult>
   /** Look up a registered tool. Returns `undefined` if not registered. */
-  // biome-ignore lint/suspicious/noExplicitAny: registry is heterogeneous over args
+  // biome-ignore lint/suspicious/noExplicitAny: registry is heterogeneous over args -- owner: catalog-mcp; existing suppression is intentional pending typed cleanup.
   get(name: string): McpToolDefinition<any, McpToolResult> | undefined
 }
 
@@ -45,7 +45,7 @@ export interface CreateMcpToolRegistryOptions {
 }
 
 export function createMcpToolRegistry(options: CreateMcpToolRegistryOptions): McpToolRegistry {
-  // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool args
+  // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool args -- owner: catalog-mcp; existing suppression is intentional pending typed cleanup.
   const tools = new Map<string, McpToolDefinition<any, McpToolResult>>()
 
   return {

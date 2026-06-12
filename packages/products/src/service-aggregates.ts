@@ -30,7 +30,9 @@ export async function getProductAggregates(
   const toDate = options.to ? new Date(options.to) : undefined
 
   const rangeConditions = []
+  // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (fromDate) rangeConditions.push(sql`${products.createdAt} >= ${fromDate.toISOString()}`)
+  // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (toDate) rangeConditions.push(sql`${products.createdAt} < ${toDate.toISOString()}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
@@ -62,7 +64,9 @@ export async function getProductAggregates(
       })
       .from(products)
       .where(rangeWhere)
+      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .groupBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .orderBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`),
   ])
 

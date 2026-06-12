@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: cruises; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import type { EventBus } from "@voyantjs/core"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

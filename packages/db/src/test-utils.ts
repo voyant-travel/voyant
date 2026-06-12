@@ -67,7 +67,7 @@ export async function cleanupTestDb(db: PostgresJsDatabase): Promise<void> {
     sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`,
   )
 
-  const tables = result as unknown as { tablename: string }[]
+  const tables = result as { tablename: string }[]
   if (tables.length > 0) {
     const names = tables.map((r) => `"${r.tablename}"`).join(", ")
     await db.execute(sql.raw(`TRUNCATE ${names} CASCADE`))

@@ -5,6 +5,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { describe, expect, it } from "vitest"
 
 import { productCatalogPolicy } from "../../src/catalog-policy.js"
+import type { Product } from "../../src/schema-core.js"
 import {
   createProductStorefrontCardProjectionExtension,
   listResolvedProducts,
@@ -12,14 +13,23 @@ import {
   productRowToProjection,
 } from "../../src/service-catalog-plane.js"
 
-const sampleRow = {
+function drizzleDb(value: object): AnyDrizzleDb {
+  return value as AnyDrizzleDb
+}
+
+const sampleRow: Product = {
   id: "prod_abc",
   name: "Bali Wellness Retreat",
   status: "active" as const,
   description: "Source description",
+  inclusionsHtml: null,
+  exclusionsHtml: null,
+  termsHtml: null,
+  termsShowOnContract: false,
   bookingMode: "date" as const,
   capacityMode: "limited" as const,
   timezone: "Asia/Jakarta",
+  defaultLanguageTag: null,
   visibility: "public" as const,
   activated: true,
   reservationTimeoutMinutes: 30,
@@ -32,11 +42,14 @@ const sampleRow = {
   endDate: "2026-12-31",
   pax: 12,
   productTypeId: "ptyp_wellness",
+  supplierId: null,
+  contractTemplateId: null,
+  taxClassId: null,
+  customerPaymentPolicy: null,
   tags: ["wellness", "yoga"],
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-04-01"),
-  // biome-ignore lint/suspicious/noExplicitAny: test fixture; product row may have additional cols
-} as any
+}
 
 const customerSlice = {
   vertical: "products",
@@ -60,7 +73,7 @@ function projectionDb(selectResponses: ReadonlyArray<ReadonlyArray<Record<string
     },
     execute: async () => [{ count: 0 }],
   }
-  return db as unknown as AnyDrizzleDb
+  return drizzleDb(db)
 }
 
 describe("productRowToProjection", () => {
@@ -216,7 +229,7 @@ describe("listResolvedProducts (batched overlay fetch)", () => {
         }
       },
     }
-    return { db: db as unknown as AnyDrizzleDb, selectCount: () => selectCalls }
+    return { db: drizzleDb(db), selectCount: () => selectCalls }
   }
 
   it("issues ONE overlay query for N products", async () => {
@@ -349,10 +362,10 @@ describe("createProductStorefrontCardProjectionExtension", () => {
         log.push("execute:departures-count")
         return [{ count: 3 }]
       },
-    } as unknown as AnyDrizzleDb
+    }
 
     const extension = createProductStorefrontCardProjectionExtension()
-    const projection = await extension.project(db, "prod_abc", customerSlice)
+    const projection = await extension.project(drizzleDb(db), "prod_abc", customerSlice)
 
     expect(log).toEqual([
       "select:1",

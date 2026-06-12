@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: cruises; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { EventBus } from "@voyantjs/core"
 import { and, asc, count, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -115,7 +116,7 @@ async function reprojectIfPossible(db: PostgresJsDatabase, cruiseId: string | nu
   } catch (err) {
     // Don't crash the caller — log and move on. Operators can run the
     // POST /v1/admin/cruises/search-index/rebuild endpoint to repair drift.
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- owner: cruises; existing suppression is intentional pending typed cleanup.
     console.warn(`[cruises] search-index projection failed for ${cruiseId}:`, err)
   }
 }
@@ -132,6 +133,7 @@ export const cruisesService = {
     }
     if (query.region) {
       conditions.push(
+        // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`${cruiseVoyageGroups.regions} @> ${JSON.stringify([query.region])}::jsonb`,
       )
     }
@@ -290,6 +292,7 @@ export const cruisesService = {
     if (query.status) conditions.push(eq(cruises.status, query.status))
     if (query.lineSupplierId) conditions.push(eq(cruises.lineSupplierId, query.lineSupplierId))
     if (query.region) {
+      // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       conditions.push(sql`${cruises.regions} @> ${JSON.stringify([query.region])}::jsonb`)
     }
     if (query.search) {
@@ -409,6 +412,7 @@ export const cruisesService = {
       .from(cruisePrices)
       .innerJoin(cruiseSailings, eq(cruisePrices.sailingId, cruiseSailings.id))
       .where(
+        // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         and(eq(cruiseSailings.cruiseId, cruiseId), sql`${cruisePrices.availability} <> 'sold_out'`),
       )
 

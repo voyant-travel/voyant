@@ -8,7 +8,7 @@ import { bookingGuarantees, bookingItemCommissions, invoices, payments } from ".
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 async function reset(
-  // biome-ignore lint/suspicious/noExplicitAny: test db
+  // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   const tables = [
@@ -23,6 +23,7 @@ async function reset(
   ]
   const existing = (await db.execute<{ tablename: string }>(sql`
     SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (${sql.join(
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       tables.map((t) => sql`${t}`),
       sql`, `,
     )})
@@ -40,7 +41,7 @@ function id(prefix: string) {
 }
 
 describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db
+  // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(() => {

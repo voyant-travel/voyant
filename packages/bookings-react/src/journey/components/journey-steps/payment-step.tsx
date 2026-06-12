@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Separator } from "@voyantjs/ui/components"
@@ -88,7 +89,7 @@ export function PaymentStep({
         {allowed.length === 0 ? (
           <p className="text-muted-foreground text-sm">{messages.bookingJourney.payment.empty}</p>
         ) : simpleHoldCard ? (
-          // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the control
+          // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the control -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
           <label className="flex cursor-pointer items-start gap-3 rounded-md border border-input p-3 text-sm transition-colors hover:bg-muted/50">
             <Checkbox
               id="bj-generate-link"
@@ -122,7 +123,7 @@ export function PaymentStep({
               const meta = intentMeta(i, messages, surface)
               const selected = i === intent
               return (
-                // biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem provides the control
+                // biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem provides the control -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
                 <label
                   key={i}
                   className={
@@ -213,7 +214,7 @@ function PaymentScheduleEditor({
   // editor commits a booking with NO payment schedule. Seeds once; after that
   // the operator owns it via onChange.
   const seeded = useRef(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref; reads latest via closure
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref; reads latest via closure -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (seeded.current || total == null) return
     if (draft.paymentSchedules && draft.paymentSchedules.length > 0) {

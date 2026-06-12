@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 /**
@@ -196,7 +197,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const holdState = useRef<{ holdToken?: string; signature?: string }>({})
   const holdSignature = makeHoldSignature(draft, props.entityModule, props.entityId)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values
+  // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     // Wizard: don't hold while still on the configure steps. Stacked:
     // everything's on one page, so the signature (slot + pax present)

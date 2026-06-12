@@ -9,12 +9,12 @@ export function SkeletonRows({ rows, widths }: { rows: number; widths: ReadonlyA
     <TableBody>
       {Array.from({ length: rows }).map((_, row) => (
         <TableRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: crm-react; existing suppression is intentional pending typed cleanup.
           key={row}
         >
           {widths.map((width, column) => (
             <TableCell
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: crm-react; existing suppression is intentional pending typed cleanup.
               key={column}
             >
               <Skeleton className={`h-4 ${width}`} />

@@ -5,7 +5,7 @@ export type CurrentUser = {
   lastName: string | null
   locale: string
   timezone: string | null
-  // biome-ignore lint/complexity/noBannedTypes: UI prefs are opaque JSON blobs passed through app/server boundaries.
+  // biome-ignore lint/complexity/noBannedTypes: UI prefs are opaque JSON blobs passed through app/server boundaries. -- owner: operator; existing suppression is intentional pending typed cleanup.
   uiPrefs: Record<string, {}> | null
   isSuperAdmin: boolean
   isSupportUser: boolean

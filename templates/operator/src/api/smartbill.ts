@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- SmartBill integration keeps event subscribers, settlement polling, and document sync mapping together until provider routes are split.
 import { bookings } from "@voyantjs/bookings/schema"
 import { organizations, people } from "@voyantjs/crm/schema"
 import {
@@ -103,7 +104,7 @@ export function createSmartbillSettlementPollers(
 async function ensureSmartbillInvoiceNumberSeries(env: SmartbillEnv, runtime: SmartbillRuntime) {
   try {
     await withDbFromEnv(env, async (rawDb) => {
-      const db = rawDb as unknown as PostgresJsDatabase
+      const db = rawDb as PostgresJsDatabase
       await financeService.ensureExternalInvoiceNumberSeries(db, [
         {
           provider: "smartbill",
@@ -175,7 +176,7 @@ async function syncIssuedInvoice(
   const invoiceId = payload.invoiceId
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
-    const db = rawDb as unknown as PostgresJsDatabase
+    const db = rawDb as PostgresJsDatabase
     await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
   })
 }

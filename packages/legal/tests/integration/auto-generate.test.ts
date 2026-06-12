@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import type { BookingPiiService } from "@voyantjs/bookings"
 import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: distribution; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Booking-push pipeline.
  *
@@ -511,6 +512,7 @@ async function resolveCompensationPolicy(
       and(
         eq(channelContracts.channelId, channelId),
         eq(channelContracts.status, "active"),
+        // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         or(sql`${channelContracts.endsAt} IS NULL`, lte(channelContracts.startsAt, today)),
       ),
     )

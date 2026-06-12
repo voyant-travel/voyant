@@ -21,7 +21,7 @@ export function AvailabilityBodySkeleton() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
           <Card key={i}>
             <CardHeader className="pb-2">
               <Skeleton className="h-3.5 w-28" />
@@ -41,7 +41,7 @@ export function AvailabilityBodySkeleton() {
         <CardContent className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="flex items-center justify-between rounded-md border px-3 py-2"
             >
@@ -131,7 +131,7 @@ export function AvailabilityRuleDetailSkeleton() {
           </CardHeader>
           <CardContent className="grid gap-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               <div key={i} className="flex items-center gap-2">
                 <Skeleton className="h-3.5 w-32" />
                 <Skeleton className="h-3.5 w-16" />
@@ -149,7 +149,7 @@ export function AvailabilityRuleDetailSkeleton() {
         <CardContent className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="flex items-center justify-between rounded-md border px-3 py-2"
             >
@@ -186,7 +186,7 @@ export function AvailabilityStartTimeDetailSkeleton() {
           </CardHeader>
           <CardContent className="grid gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               <div key={i} className="flex items-center gap-2">
                 <Skeleton className="h-3.5 w-24" />
                 <Skeleton className="h-3.5 w-32" />
@@ -203,7 +203,7 @@ export function AvailabilityStartTimeDetailSkeleton() {
           <CardContent className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
                 key={i}
                 className="rounded-md border p-3 space-y-1.5"
               >
@@ -247,7 +247,7 @@ export function AvailabilitySlotDetailSkeleton() {
         <CardContent className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="rounded-md border p-3 space-y-1.5"
             >
@@ -267,7 +267,7 @@ export function AvailabilitySlotDetailSkeleton() {
         <CardContent className="space-y-2">
           {Array.from({ length: 2 }).map((_, i) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="flex items-center justify-between rounded-md border px-3 py-2"
             >
@@ -289,7 +289,7 @@ function PairListCard({ titleWidth, rows }: { titleWidth: string; rows: number }
       </CardHeader>
       <CardContent className="grid gap-3">
         {Array.from({ length: rows }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="flex items-center gap-2">
             <Skeleton className="h-3.5 w-28" />
             <Skeleton className="h-3.5 w-32" />
@@ -313,7 +313,7 @@ function SkeletonTableRows({
     <TableBody>
       {Array.from({ length: rows }).map((_, r) => (
         <TableRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: availability-react; existing suppression is intentional pending typed cleanup.
           key={r}
         >
           {Array.from({ length: columns }).map((__, c) => {
@@ -322,7 +322,7 @@ function SkeletonTableRows({
 
             return (
               <TableCell
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: availability-react; existing suppression is intentional pending typed cleanup.
                 key={c}
               >
                 <Skeleton className={`h-4 ${width}`} />

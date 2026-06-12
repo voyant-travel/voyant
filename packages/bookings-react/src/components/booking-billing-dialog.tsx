@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import {
@@ -200,7 +201,7 @@ export function BookingBillingDialog({
   })
   const billingAddress = billingAddressQuery.data?.data?.[0] ?? null
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     // `form` is intentionally omitted — react-hook-form returns a fresh
     // wrapper object each render even though the store is in a ref, so
@@ -238,7 +239,7 @@ export function BookingBillingDialog({
     }
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `setAddressFields` only writes to the stable react-hook-form store.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `setAddressFields` only writes to the stable react-hook-form store. -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     if (!billingAddressQuery.data || !pendingAddressPrefillRef.current) return
 

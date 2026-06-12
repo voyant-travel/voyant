@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: pricing; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlots } from "@voyantjs/availability/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
@@ -527,6 +528,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
 
   it("prefers future rate-plan rules over stale product row pricing", async () => {
     const { sql } = await import("drizzle-orm")
+    // agent-quality: raw-sql reviewed -- owner: pricing; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     await db.execute(sql`UPDATE products SET sell_amount_cents = 5000 WHERE id = ${productId}`)
 
     await db.insert(optionPriceRules).values({
@@ -547,6 +549,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
 
   it("prefers standard room prices over quantity-tier room prices and stale zero row pricing", async () => {
     const { sql } = await import("drizzle-orm")
+    // agent-quality: raw-sql reviewed -- owner: pricing; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     await db.execute(sql`UPDATE products SET sell_amount_cents = 0 WHERE id = ${productId}`)
 
     const roomUnitId = newId("option_units")

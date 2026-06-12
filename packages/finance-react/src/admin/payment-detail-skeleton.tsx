@@ -36,7 +36,7 @@ function InfoCard({ titleWidth, rows }: { titleWidth: string; rows: number }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: finance-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="flex items-center justify-between">
             <Skeleton className="h-3.5 w-24" />
             <Skeleton className="h-3.5 w-32" />

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { useOrganization, useOrganizations } from "@voyantjs/crm-react"
 import { useChannel, useChannels } from "@voyantjs/distribution-react"

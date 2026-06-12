@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: agent-runner; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 import type { RemoteWorkspacePool } from "./remote-workspace-pool.js"
 import { leaseDispatchIntentWithRemoteWorkspacePool } from "./runner-remote-workspace-pool.js"

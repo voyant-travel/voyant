@@ -335,8 +335,14 @@ function parseRequest(
   if (typeof r.workflowId !== "string" || r.workflowId.length === 0) {
     return { ok: false, message: "`workflowId` must be a non-empty string" }
   }
+  if (typeof r.workflowVersion !== "string" || r.workflowVersion.length === 0) {
+    return { ok: false, message: "`workflowVersion` must be a non-empty string" }
+  }
   if (typeof r.invocationCount !== "number" || r.invocationCount < 1) {
     return { ok: false, message: "`invocationCount` must be >= 1" }
+  }
+  if (typeof r.deadline !== "number") {
+    return { ok: false, message: "`deadline` must be a number" }
   }
   if (!r.journal || typeof r.journal !== "object") {
     return { ok: false, message: "`journal` must be an object" }
@@ -351,7 +357,22 @@ function parseRequest(
   if (!r.runMeta || typeof r.runMeta !== "object") {
     return { ok: false, message: "`runMeta` must be an object" }
   }
-  return { ok: true, value: r as unknown as WorkflowStepRequest }
+  return {
+    ok: true,
+    value: {
+      protocolVersion: r.protocolVersion as ProtocolVersion,
+      runId: r.runId,
+      workflowId: r.workflowId,
+      workflowVersion: r.workflowVersion,
+      invocationCount: r.invocationCount,
+      input: r.input,
+      journal: r.journal as JournalSlice,
+      environment: env,
+      deadline: r.deadline,
+      tenantMeta: r.tenantMeta as WorkflowStepRequest["tenantMeta"],
+      runMeta: r.runMeta as WorkflowStepRequest["runMeta"],
+    },
+  }
 }
 
 // ---- Helpers ----

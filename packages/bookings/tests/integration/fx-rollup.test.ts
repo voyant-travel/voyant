@@ -22,7 +22,7 @@ function nextNumber() {
 }
 
 describe.skipIf(!DB_AVAILABLE)("bookings FX rollup", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db
+  // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: bookings; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

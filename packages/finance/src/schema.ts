@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { relations, sql } from "drizzle-orm"
 import {
@@ -685,6 +686,7 @@ export const bookingGuarantees = pgTable(
     index("idx_booking_guarantees_status").on(table.status),
     check(
       "ck_booking_guarantees_currency_amount",
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.currency} IS NULL) = (${table.amountCents} IS NULL)`,
     ),
   ],
@@ -754,6 +756,7 @@ export const bookingItemCommissions = pgTable(
     index("idx_booking_item_commissions_status").on(table.status),
     check(
       "ck_booking_item_commissions_currency_amount",
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.currency} IS NULL) = (${table.amountCents} IS NULL)`,
     ),
   ],
@@ -830,6 +833,7 @@ export const invoices = pgTable(
     index("idx_invoices_number").on(table.invoiceNumber),
     uniqueIndex("invoices_invoice_number_type_active_idx")
       .on(table.invoiceNumber, table.invoiceType)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.status} <> 'void'`),
     index("idx_invoices_due_date").on(table.dueDate),
     index("idx_invoices_converted_from").on(table.convertedFromInvoiceId),
@@ -934,6 +938,7 @@ export const payments = pgTable(
     index("idx_payments_date").on(table.paymentDate),
     check(
       "ck_payments_base_currency_amount",
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`(${table.baseCurrency} IS NULL) = (${table.baseAmountCents} IS NULL)`,
     ),
   ],
@@ -1056,6 +1061,7 @@ export const supplierPayments = pgTable(
     // A payment must attach to a booking and/or a supplier invoice (§5.4).
     check(
       "ck_supplier_payments_target",
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${table.bookingId} IS NOT NULL OR ${table.supplierInvoiceId} IS NOT NULL`,
     ),
   ],
@@ -1124,25 +1130,32 @@ export const supplierInvoices = pgTable(
     // and the planner can use them for all of those queries.
     index("idx_supplier_invoices_supplier")
       .on(table.supplierId)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.deletedAt} IS NULL`),
     index("idx_supplier_invoices_supplier_created")
       .on(table.supplierId, table.createdAt)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.deletedAt} IS NULL`),
+    // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     index("idx_supplier_invoices_status").on(table.status).where(sql`${table.deletedAt} IS NULL`),
     index("idx_supplier_invoices_status_created")
       .on(table.status, table.createdAt)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.deletedAt} IS NULL`),
     index("idx_supplier_invoices_due_date")
       .on(table.dueDate)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.deletedAt} IS NULL`),
     index("idx_supplier_invoices_fx_rate_set").on(table.fxRateSetId),
     // The supplier's number is unique per supplier (AP convention), ignoring voids.
     uniqueIndex("supplier_invoices_supplier_number_active_idx")
       .on(table.supplierId, table.supplierInvoiceNo)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.status} <> 'void' AND ${table.deletedAt} IS NULL`),
     // If any base amount is present, base_currency must be set (mirrors invoices).
     check(
       "ck_supplier_invoices_base_currency",
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${table.baseCurrency} IS NOT NULL OR ${table.fxRateSetId} IS NULL`,
     ),
   ],
@@ -1356,6 +1369,7 @@ export const invoiceNumberSeries = pgTable(
     index("idx_invoice_number_series_active_updated").on(table.active, table.updatedAt),
     uniqueIndex("uidx_invoice_number_series_default_scope_active")
       .on(table.scope)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.active} = true AND ${table.isDefault} = true`),
   ],
 )

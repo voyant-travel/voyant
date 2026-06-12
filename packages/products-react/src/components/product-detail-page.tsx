@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: products-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -316,7 +317,7 @@ export function ProductInclusionsCard({ product, className }: ProductOverviewCar
         {html ? (
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module -- owner: products-react; existing suppression is intentional pending typed cleanup.
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
@@ -342,7 +343,7 @@ export function ProductExclusionsCard({ product, className }: ProductOverviewCar
         {html ? (
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module -- owner: products-react; existing suppression is intentional pending typed cleanup.
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
@@ -368,7 +369,7 @@ export function ProductTermsCard({ product, className }: ProductOverviewCardProp
         {html ? (
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module -- owner: products-react; existing suppression is intentional pending typed cleanup.
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (

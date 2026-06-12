@@ -37,7 +37,7 @@ describe("defineFieldPolicy — required axes", () => {
   it("throws if a non-inheriting axis is missing", () => {
     expect(() =>
       defineFieldPolicy([
-        // biome-ignore lint/suspicious/noExplicitAny: deliberately invalid for the test
+        // biome-ignore lint/suspicious/noExplicitAny: deliberately invalid for the test -- owner: catalog; existing suppression is intentional pending typed cleanup.
         { path: "title", class: "merchandisable" } as any,
       ]),
     ).toThrow(FieldPolicyError)

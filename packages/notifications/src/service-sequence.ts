@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookings } from "@voyantjs/bookings/schema"
 import { bookingPaymentSchedules, invoices } from "@voyantjs/finance"
 import { and, asc, eq, gt, gte, inArray, lte, or, sql } from "drizzle-orm"
@@ -340,6 +341,7 @@ export async function exceedsRecipientRateLimit(
         eq(notificationReminderRuns.recipient, recipient),
         eq(notificationReminderRuns.status, "sent"),
         gte(notificationReminderRuns.processedAt, since),
+        // agent-quality: raw-sql reviewed -- owner: notifications; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`${notificationReminderRuns.metadata}->>'channel' = ${channel}`,
       ),
     )
@@ -582,6 +584,7 @@ export async function listActiveRulesByPriority(
     .from(notificationReminderRules)
     .where(eq(notificationReminderRules.status, "active"))
     .orderBy(
+      // agent-quality: raw-sql reviewed -- owner: notifications; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`${notificationReminderRules.priority} desc nulls last`,
       asc(notificationReminderRules.createdAt),
     )

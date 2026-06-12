@@ -23,6 +23,10 @@ const ENV: PredicateEnvelope = {
   emittedAt: "2026-05-09T13:22:08.000Z",
 }
 
+function malformedPredicate(value: unknown): PredicateExpr {
+  return value as PredicateExpr
+}
+
 // ---- resolvePath ----
 
 describe("resolvePath", () => {
@@ -252,7 +256,7 @@ describe("validatePredicate", () => {
   })
 
   test("rejects unknown operator", () => {
-    const result = validatePredicate({ wat: ["x"] } as unknown as PredicateExpr)
+    const result = validatePredicate(malformedPredicate({ wat: ["x"] }))
     expect(result.ok).toBe(false)
     expect(result.errors[0]).toMatch(/unknown predicate operator/)
   })
@@ -266,10 +270,12 @@ describe("validatePredicate", () => {
   })
 
   test("rejects malformed object (multiple operator keys)", () => {
-    const result = validatePredicate({
-      eq: [{ lit: 1 }, { lit: 1 }],
-      neq: [{ lit: 1 }, { lit: 2 }],
-    } as unknown as PredicateExpr)
+    const result = validatePredicate(
+      malformedPredicate({
+        eq: [{ lit: 1 }, { lit: 1 }],
+        neq: [{ lit: 1 }, { lit: 2 }],
+      }),
+    )
     expect(result.ok).toBe(false)
     expect(result.errors[0]).toMatch(/exactly one operator key/)
   })

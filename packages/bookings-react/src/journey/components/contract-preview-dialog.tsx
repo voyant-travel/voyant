@@ -102,7 +102,7 @@ export function ContractPreviewDialog({
   const variablesRef = React.useRef(variables)
   variablesRef.current = variables
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: variablesKey is the meaningful-change signal; the actual variables are read off variablesRef so the effect doesn't re-fire on every render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: variablesKey is the meaningful-change signal; the actual variables are read off variablesRef so the effect doesn't re-fire on every render -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   React.useEffect(() => {
     if (!open) return
     let cancelled = false
@@ -206,7 +206,7 @@ export function ContractPreviewDialog({
 
         <DialogFooter className="border-t p-6 sm:flex-col sm:items-stretch sm:gap-3">
           <div className="space-y-2 text-sm">
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood */}
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
             <label className="flex items-start gap-2">
               <Checkbox
                 checked={acceptedTerms}
@@ -215,7 +215,7 @@ export function ContractPreviewDialog({
               />
               <span>{termsLabel ?? <>{messages.bookingJourney.contract.termsLabel}</>}</span>
             </label>
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood */}
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
             <label className="flex items-start gap-2">
               <Checkbox
                 checked={acceptedMarketing}

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: products; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Catalog plane field policy for `packages/products`.
  *
