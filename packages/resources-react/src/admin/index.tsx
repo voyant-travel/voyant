@@ -126,6 +126,10 @@ export function createResourcesAdminExtension(
         id: "resources-index",
         path: basePath,
         title: resources,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "resource.list",
         ssr: "data-only",
         page: () =>
           import("./resources-host.js").then((module) =>
@@ -142,6 +146,8 @@ export function createResourcesAdminExtension(
         id: "resources-detail",
         path: `${basePath}/$id`,
         title: resources,
+        destination: "resource.detail",
+        destinationParams: { id: "resourceId" },
         ssr: "data-only",
         page: () => import("./pages/resource-detail-page.js"),
         loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -155,6 +161,8 @@ export function createResourcesAdminExtension(
         id: "resources-pool-detail",
         path: `${basePath}/pools/$id`,
         title: resources,
+        destination: "resourcePool.detail",
+        destinationParams: { id: "poolId" },
         ssr: "data-only",
         page: () => import("./pages/resource-pool-detail-page.js"),
         loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -168,6 +176,8 @@ export function createResourcesAdminExtension(
         id: "resources-assignment-detail",
         path: `${basePath}/assignments/$id`,
         title: resources,
+        destination: "resourceAssignment.detail",
+        destinationParams: { id: "assignmentId" },
         ssr: "data-only",
         page: () => import("./pages/resource-assignment-detail-page.js"),
         loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -181,6 +191,8 @@ export function createResourcesAdminExtension(
         id: "resources-allocation-detail",
         path: `${basePath}/allocations/$id`,
         title: resources,
+        destination: "resourceAllocation.detail",
+        destinationParams: { id: "allocationId" },
         ssr: "data-only",
         page: () => import("./pages/resource-allocation-detail-page.js"),
         loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {

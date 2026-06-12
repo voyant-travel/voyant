@@ -105,6 +105,10 @@ export function createSuppliersAdminExtension(
         id: "suppliers-index",
         path: basePath,
         title: suppliers,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "supplier.list",
         ssr: "data-only",
         page: () =>
           import("./suppliers-host.js").then((module) =>
@@ -118,6 +122,8 @@ export function createSuppliersAdminExtension(
         id: "suppliers-detail",
         path: `${basePath}/$id`,
         title: suppliers,
+        destination: "supplier.detail",
+        destinationParams: { id: "supplierId" },
         page: () => import("./pages/supplier-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
           const id = params.id

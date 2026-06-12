@@ -1,24 +1,14 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
-// Type-only: binds the `AdminDestinations` augmentations (the availability +
-// bookings + catalog + crm + finance + legal + suppliers destination keys)
-// into this program without pulling the admin bundles into the
-// workspace-chrome chunk.
-import type {} from "@voyantjs/availability-react/admin"
-// Type-only: binds the `AdminDestinations` augmentations (the bookings +
-// catalog + crm + finance + legal + resources + suppliers destination keys)
-// into this program without pulling the admin bundles into the
-// workspace-chrome chunk.
-// catalog + crm + finance + legal + notifications + suppliers destination keys) into this
-// program without
-// pulling the admin bundles into the workspace-chrome chunk.
+// Type-only: binds the `AdminDestinations` augmentations of the admin
+// entries whose keys the CUSTOM resolvers below cover (bookings: the
+// booking.* keys + product.detail; catalog: the journey/browse/detail keys;
+// legal: legal.home) into this program without pulling the admin bundles
+// into the workspace-chrome chunk. The generated module binds the rest.
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
-import type {} from "@voyantjs/crm-react/admin"
-import type {} from "@voyantjs/finance-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
-import type {} from "@voyantjs/notifications-react/admin"
-import type {} from "@voyantjs/resources-react/admin"
-import type {} from "@voyantjs/suppliers-react/admin"
+
+import { generatedAdminDestinations } from "@/admin.destinations.generated"
 
 /**
  * Operator resolver map for the semantic-destination contract (packaged-admin
@@ -28,20 +18,27 @@ import type {} from "@voyantjs/suppliers-react/admin"
  * mounting a package that declares a new destination fails the typecheck here
  * until the key is resolvable.
  *
+ * Route-backed keys come from the spread of `generatedAdminDestinations`
+ * (`voyant admin generate --destinations`, RFC §4.7 endgame): every route
+ * contribution annotated with `destination:` resolves by pure path
+ * interpolation, and `voyant admin doctor` gates on drift between the
+ * annotations and the generated module. Hand-written below are ONLY the
+ * genuinely custom resolvers: search-param construction (`booking.detail`,
+ * `bookingJourney.start`, `catalog.detail`), multi-route targets
+ * (`catalog.browse` spans the five surface routes), and host-owned pages the
+ * packages don't contribute (`booking.create`, `product.detail`,
+ * `legal.home`).
+ *
  * Hrefs must match what the routes' typed `navigate` calls produced before
  * the contract existed — paths embed encoded params, search params keep the
  * journey schema's key order, and `undefined` values are omitted (key
  * presence is meaningful to the journey).
  */
 export const operatorAdminDestinations = {
-  "availabilitySlot.detail": ({ slotId }) => `/availability/${encodeURIComponent(slotId)}`,
-  "availabilitySlot.list": () => "/availability",
-  "availabilityStartTime.detail": ({ startTimeId }) =>
-    `/availability/start-times/${encodeURIComponent(startTimeId)}`,
+  ...generatedAdminDestinations,
   "booking.create": () => "/bookings/new",
   "booking.detail": ({ bookingId, tab }) =>
     `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,
-  "booking.list": () => "/bookings",
   "bookingJourney.start": ({ entityModule, entityId, ...search }) =>
     `/catalog/journey/${encodeURIComponent(entityModule)}/${encodeURIComponent(entityId)}${searchString(
       {
@@ -61,39 +58,8 @@ export const operatorAdminDestinations = {
   "catalog.browse": ({ surface }) => `/catalog/${surface}`,
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
-  "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
-  "contract.list": () => "/legal/contracts",
-  "contractTemplate.detail": ({ templateId }) =>
-    `/legal/templates/${encodeURIComponent(templateId)}`,
-  "contractTemplate.list": () => "/legal/templates",
-  "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
-  "invoice.list": () => "/finance/invoices",
   "legal.home": () => "/legal",
-  "notificationReminderRule.detail": ({ ruleId }) =>
-    `/notifications/reminder-rules/${encodeURIComponent(ruleId)}`,
-  "notificationReminderRule.list": () => "/notifications/reminder-rules",
-  "notificationTemplate.detail": ({ templateId }) =>
-    `/notifications/templates/${encodeURIComponent(templateId)}`,
-  "notificationTemplate.list": () => "/notifications/templates",
-  "organization.detail": ({ organizationId }) =>
-    `/organizations/${encodeURIComponent(organizationId)}`,
-  "organization.list": () => "/organizations",
-  "payment.detail": ({ paymentId }) => `/finance/payments/${encodeURIComponent(paymentId)}`,
-  "payment.list": () => "/finance/payments",
-  "person.detail": ({ personId }) => `/people/${encodeURIComponent(personId)}`,
-  "person.list": () => "/people",
-  "policy.detail": ({ policyId }) => `/legal/policies/${encodeURIComponent(policyId)}`,
-  "policy.list": () => "/legal/policies",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
-  "resource.detail": ({ resourceId }) => `/resources/${encodeURIComponent(resourceId)}`,
-  "resource.list": () => "/resources",
-  "resourceAllocation.detail": ({ allocationId }) =>
-    `/resources/allocations/${encodeURIComponent(allocationId)}`,
-  "resourceAssignment.detail": ({ assignmentId }) =>
-    `/resources/assignments/${encodeURIComponent(assignmentId)}`,
-  "resourcePool.detail": ({ poolId }) => `/resources/pools/${encodeURIComponent(poolId)}`,
-  "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
-  "supplier.list": () => "/suppliers",
 } satisfies AdminDestinationResolvers
 
 /**

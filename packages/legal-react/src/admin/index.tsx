@@ -147,6 +147,12 @@ export function createLegalAdminExtension(
         id: "legal-contracts-index",
         path: `${basePath}/contracts`,
         title: contracts,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`). `legal.home`
+        // stays hand-written — it targets the host's index redirect, not a
+        // contributed route.
+        destination: "contract.list",
         ssr: "data-only",
         page: () =>
           import("./contracts-host.js").then((module) =>
@@ -167,6 +173,8 @@ export function createLegalAdminExtension(
         id: "legal-contracts-detail",
         path: `${basePath}/contracts/$id`,
         title: contracts,
+        destination: "contract.detail",
+        destinationParams: { id: "contractId" },
         ssr: "data-only",
         page: () => import("./pages/contract-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -188,6 +196,7 @@ export function createLegalAdminExtension(
         id: "legal-templates-index",
         path: `${basePath}/templates`,
         title: contractTemplates,
+        destination: "contractTemplate.list",
         ssr: "data-only",
         page: () =>
           import("./templates-host.js").then((module) =>
@@ -205,6 +214,8 @@ export function createLegalAdminExtension(
         id: "legal-templates-detail",
         path: `${basePath}/templates/$id`,
         title: contractTemplates,
+        destination: "contractTemplate.detail",
+        destinationParams: { id: "templateId" },
         ssr: "data-only",
         page: () => import("./pages/template-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
@@ -223,6 +234,7 @@ export function createLegalAdminExtension(
         id: "legal-policies-index",
         path: `${basePath}/policies`,
         title: policies,
+        destination: "policy.list",
         ssr: "data-only",
         page: () =>
           import("./policies-host.js").then((module) => adminRoutePageModule(module.PoliciesHost)),
@@ -240,6 +252,8 @@ export function createLegalAdminExtension(
         id: "legal-policies-detail",
         path: `${basePath}/policies/$id`,
         title: policies,
+        destination: "policy.detail",
+        destinationParams: { id: "policyId" },
         ssr: "data-only",
         page: () => import("./pages/policy-detail-page.js"),
         loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {

@@ -324,6 +324,12 @@ export function createBookingsAdminExtension(
         id: "bookings-index",
         path: basePath,
         title: bookings,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`). `booking.detail`
+        // is deliberately NOT bound: its resolver constructs the `tab` search
+        // param, which is beyond path interpolation — it stays hand-written.
+        destination: "booking.list",
         ssr: "data-only",
         validateSearch: (search) => bookingsIndexSearchSchema.parse(search),
         pendingComponent: BookingsListSkeleton,

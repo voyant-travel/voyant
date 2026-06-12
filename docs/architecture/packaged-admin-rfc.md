@@ -407,10 +407,31 @@ the host resolves keys to hrefs exactly once:
 
 This is the same `Register`-style declaration merging TanStack Router uses
 for its route tree, applied to cross-domain links: typed keys, no runtime
-registry. Endgame: when the generated typed route tree (§4.2) lands, the
-resolver map becomes generated output of the same build step, and the admin
-doctor check (§4.1) gains a "destination declared but unresolved" finding
-(the doctor half landed first — Finding D, §4.8).
+registry.
+
+**Endgame — delivered: generated resolver maps.** A destination is
+ROUTE-BACKED when its semantics map 1:1 onto one contributed route's path
+with only param interpolation (`"supplier.detail"` → `/suppliers/$id`). The
+binding is DECLARED, never inferred: `AdminUiRouteContribution` carries
+`destination?: AdminDestinationKey` (plus `destinationParams?:
+Record<string, string>` for route-param → destination-param renames, e.g.
+`{ id: "supplierId" }`), and domain packages annotate the route that
+satisfies each key. `voyant admin generate --destinations` statically scans
+the annotations and emits the committed
+`src/admin.destinations.generated.ts` — one `encodeURIComponent`
+path-interpolation resolver per binding, `satisfies
+Partial<AdminDestinationResolvers>`, with the usual generated header +
+ejection contract and `--check` drift gate. The host map shrinks to
+`{ ...generatedAdminDestinations, ...custom } satisfies
+AdminDestinationResolvers`: of the operator's 36 destination keys, 29 are
+generated; hand-written are only the genuinely custom seven — search-param
+construction (`booking.detail`, `bookingJourney.start`, `catalog.detail`),
+the multi-route `catalog.browse`, and host-owned pages (`booking.create`,
+`product.detail`, `legal.home`). `voyant admin doctor`'s Finding D is now
+two-tier: the GENERATED portion is a gate (annotated destination missing
+from the generated module, generated resolver whose annotation vanished, or
+content drift → exit 1, aligned with `--check`), while custom-resolver
+parity against the declared keys stays report-only.
 
 ### 4.8 Route assembly, endgame: the code-assembled extension route tree
 
@@ -502,18 +523,16 @@ journey redirect formerly embedded in the bookings detail route file).
 
 **Remaining horizon.**
 
-1. **Generated resolver maps** (§4.7 endgame's second half). Route-backed
-   destinations are derivable from the same scan — a destination key whose
-   target is an extension route can have its resolver emitted rather than
-   hand-written, shrinking the hand-maintained map to genuinely custom
-   targets. Finding D then flips from report to gate for the generated
-   portion.
-2. **CLI emission.** `voyant admin generate --routes` currently emits the
-   per-route thin files of the previous increment; it needs to emit the
-   code-assembled module + typed-link maps instead, and `voyant admin
-   doctor`'s Finding C (route files ↔ contributions parity) must learn the
-   fileless shape — with no thin hosts on disk, the file-scan half of that
-   finding reports false positives today (report-only, so non-blocking).
+1. ~~**Generated resolver maps** (§4.7 endgame's second half).~~
+   **Delivered** — `destination:` annotations on route contributions drive
+   `voyant admin generate --destinations`, the hand-maintained map shrank to
+   the genuinely custom resolvers, and Finding D gates the generated portion
+   (see §4.7).
+2. ~~**CLI emission.**~~ **Delivered** — `voyant admin generate --routes`
+   emits the code-assembled module + typed-link maps (the legacy per-route
+   thin files remain behind `--routes --files`), and `voyant admin doctor`'s
+   Finding C accepts the fileless shape: a contribution path bound by an
+   entry in the generated module passes without any route file on disk.
 3. **Route-level i18n.** The assembled routes are built once per router from
    default-label extension instances; nav labels stay localized (the
    workspace shell resolves its own localized instances), but contribution
