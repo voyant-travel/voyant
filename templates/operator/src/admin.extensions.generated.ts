@@ -11,8 +11,10 @@ import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-react/admin"
 import { createAvailabilityAdminExtension } from "@voyantjs/availability-react/admin"
+import { createDistributionAdminExtension } from "@voyantjs/distribution-react/admin"
 import { createResourcesAdminExtension } from "@voyantjs/resources-react/admin"
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
+import { createFlightsAdminExtension } from "@voyantjs/flights-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
 import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-react/admin"
 
@@ -31,8 +33,10 @@ export const generatedAdminExtensionFactories = {
   bookings: createBookingsAdminExtension,
   finance: createFinanceAdminExtension,
   availability: createAvailabilityAdminExtension,
+  distribution: createDistributionAdminExtension,
   resources: createResourcesAdminExtension,
   notifications: createNotificationsAdminExtension,
+  flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,
   travelComposer: createTravelComposerAdminExtension,
 } as const

@@ -56,9 +56,20 @@ describe("operator runtime composition", () => {
     // modules ⊆ runtime manifest modules. (Route-only modules like
     // storefront/checkout are mounted-but-schema-less and live only in the
     // runtime manifest, which is fine.)
+    //
+    // Carve-out: modules whose API is mounted APP-LOCALLY instead of as a
+    // package Hono module. `@voyantjs/flights` exports no Hono module — its
+    // routes live in src/api/flights.ts (adapter wiring is app-specific) —
+    // but it must sit in voyant.config `modules` so `voyant admin generate`
+    // composes its package-delivered admin surface
+    // (@voyantjs/flights-react/admin). Not migrated-but-dead: the flights
+    // reference tables are served by those app-local routes.
+    const APP_LOCAL_API_MODULES = new Set(["@voyantjs/flights"])
     const runtime = new Set(OPERATOR_RUNTIME_MANIFEST.modules)
     const schemaModules = (voyantConfig.modules ?? []).map(entryName)
-    const migratedButNotMounted = schemaModules.filter((name) => !runtime.has(name))
+    const migratedButNotMounted = schemaModules.filter(
+      (name) => !runtime.has(name) && !APP_LOCAL_API_MODULES.has(name),
+    )
     expect(migratedButNotMounted).toEqual([])
   })
 

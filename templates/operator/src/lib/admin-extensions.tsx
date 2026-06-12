@@ -38,10 +38,12 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "channelSync"
   | "categories"
   | "contractNumberSeries"
   | "contractTemplates"
   | "contracts"
+  | "flights"
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
@@ -104,12 +106,16 @@ function ComposeTripButton() {
 // operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
 // an entry here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route implementations + search
-// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the
-// host assembles them into its code-based route tree — no route files. The
-// app composes two seams through factory options: the "Compose trip" header
-// action on the list, and the detail-page substitution (the operator wraps
-// the packaged BookingDetailHost with the checkout/finance payment dialogs,
-// which the package cannot import without a dependency cycle).
+// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema /
+// bookingNewSearchSchema / bookingJourneySearchSchema) for the whole booking
+// flow — list, detail, the /bookings/new product picker, the
+// /bookings/compose composer alias, and the unified booking journey at
+// /catalog/journey/$entityModule/$entityId — and the host assembles them
+// into its code-based route tree, no route files. The app composes two seams
+// through factory options: the "Compose trip" header action on the list, and
+// the detail-page substitution (the operator wraps the packaged
+// BookingDetailHost with the checkout/finance payment dialogs, which the
+// package cannot import without a dependency cycle).
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.bookings({
     labels: { bookings: messages.bookings },
@@ -160,6 +166,33 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
       supplierInvoices: messages.supplierInvoices,
       profitability: messages.profitability,
     },
+  })
+}
+
+// Flights is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Flights item is part of the BASE
+// operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
+// an entry here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route implementations + search
+// contracts (flightsIndexSearchSchema / flightsBookSearchSchema), and the
+// host assembles them into its code-based route tree — no route files. The
+// booking wizard mounts as a flat sibling of the search page (the old
+// file-based tree's `flights_.book` escape), and its hand-written
+// `flightBooking.start` resolver lives in src/lib/admin-destinations.ts.
+function createFlightsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.flights({ labels: { flights: messages.flights } })
+}
+
+// Distribution is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Channel sync item is part of the
+// BASE operator navigation (createOperatorAdminNavigation in
+// @voyantjs/admin), so an entry here would duplicate it. It's registered for
+// the routes seam: the contribution carries the package-owned channel-sync
+// page (no search contract — the page keeps its filters local), and the host
+// assembles it into its code-based route tree — no route file.
+function createDistributionExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.distribution({
+    labels: { channelSync: messages.channelSync },
   })
 }
 
@@ -326,10 +359,12 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  channelSync: "Channel sync",
   categories: "Categories",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",
+  flights: "Flights",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
@@ -361,7 +396,9 @@ export function createOperatorAdminExtensions(
     createCatalogExtension(messages),
     createProductsExtension(messages),
     createCrmExtension(messages),
+    createDistributionExtension(messages),
     createFinanceExtension(messages),
+    createFlightsExtension(messages),
     createSuppliersExtension(messages),
     createLegalExtension(messages),
     createResourcesExtension(messages),

@@ -18,7 +18,9 @@ import type {} from "@voyantjs/availability-react/admin"
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
 import type {} from "@voyantjs/crm-react/admin"
+import type {} from "@voyantjs/distribution-react/admin"
 import type {} from "@voyantjs/finance-react/admin"
+import type {} from "@voyantjs/flights-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
 import type {} from "@voyantjs/notifications-react/admin"
 import type {} from "@voyantjs/products-react/admin"
@@ -33,12 +35,14 @@ export const generatedAdminDestinations = {
   "availabilitySlot.list": () => "/availability",
   "availabilityStartTime.detail": ({ startTimeId }) =>
     `/availability/start-times/${encodeURIComponent(startTimeId)}`,
+  "booking.create": () => "/bookings/new",
   "booking.list": () => "/bookings",
   "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
   "contract.list": () => "/legal/contracts",
   "contractTemplate.detail": ({ templateId }) =>
     `/legal/templates/${encodeURIComponent(templateId)}`,
   "contractTemplate.list": () => "/legal/templates",
+  "flight.search": () => "/flights",
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
   "notificationReminderRule.detail": ({ ruleId }) =>
@@ -68,6 +72,9 @@ export const generatedAdminDestinations = {
   "resourcePool.detail": ({ poolId }) => `/resources/pools/${encodeURIComponent(poolId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",
+  "supplierInvoice.detail": ({ supplierInvoiceId }) =>
+    `/finance/supplier-invoices/${encodeURIComponent(supplierInvoiceId)}`,
+  "supplierInvoice.list": () => "/finance/supplier-invoices",
   "trip.detail": ({ tripId }) => `/trips/${encodeURIComponent(tripId)}`,
   "trip.list": () => "/trips",
 } satisfies Partial<AdminDestinationResolvers>

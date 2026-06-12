@@ -24,6 +24,7 @@ export const schema = [
   "../../packages/booking-requirements/src/schema.ts",
   "../../packages/external-refs/src/schema.ts",
   "../../packages/extras/src/schema.ts",
+  "../../packages/flights/src/reference/local-postgres.ts",
   "../../packages/legal/src/schema.ts",
   "../../packages/storefront-verification/src/schema.ts",
   "../../packages/travel-composer/src/schema.ts",
@@ -32,7 +33,6 @@ export const schema = [
   "../../packages/accommodations/src/schema.ts",
   "../../packages/charters/src/schema.ts",
   "../../packages/cruises/src/schema.ts",
-  "../../packages/flights/src/reference/local-postgres.ts",
   "./src/db/schema.ts",
   "./drizzle.links.generated.ts",
 ] as const

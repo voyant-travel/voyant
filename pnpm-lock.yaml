@@ -2135,6 +2135,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/distribution':
         specifier: workspace:^
         version: link:../distribution
@@ -2544,12 +2547,18 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyantjs/availability-react':
+        specifier: workspace:^
+        version: link:../availability-react
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
       '@voyantjs/suppliers-react':
         specifier: workspace:^
         version: link:../suppliers-react
@@ -2655,6 +2664,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
       '@voyantjs/checkout-react':
         specifier: workspace:^
         version: link:../checkout-react

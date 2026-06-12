@@ -25,6 +25,8 @@ const IMPLEMENTED_ROUTE_IDS = [
   "finance-invoice-number-series",
   "finance-payments-index",
   "finance-payments-detail",
+  "finance-supplier-invoices-index",
+  "finance-supplier-invoices-detail",
   "finance-profitability",
 ] as const
 
@@ -65,7 +67,7 @@ describe("createFinanceAdminExtension", () => {
     expect(paymentsDetail?.title).toBe("Plati")
   })
 
-  it("carries the full route implementation on the six package-owned routes", () => {
+  it("carries the full route implementation on all eight package-owned routes", () => {
     // Packaged-admin RFC §4.8 endgame: these contributions ship the lazy
     // page module loader + data loader + per-route SSR mode, so the host's
     // code-assembled route tree binds them without per-route files. `page`
@@ -100,23 +102,28 @@ describe("createFinanceAdminExtension", () => {
     expect(pendingByRoute["finance-payments-index"]).toBe(PaymentsPageSkeleton)
     expect(pendingByRoute["finance-payments-detail"]).toBe(PaymentDetailSkeleton)
     expect(pendingByRoute["finance-invoice-number-series"]).toBeUndefined()
+    expect(pendingByRoute["finance-supplier-invoices-index"]).toBeUndefined()
+    expect(pendingByRoute["finance-supplier-invoices-detail"]).toBeUndefined()
     expect(pendingByRoute["finance-profitability"]).toBeUndefined()
   })
 
-  it("keeps the supplier-invoices routes metadata-only (app-owned wiring)", () => {
-    // Their operator pages carry app-owned wiring — file uploads to the
-    // app's /v1/uploads, inline supplier creation, cross-domain target
-    // search — so they stay host-route-file-bound until the package API can
-    // carry that wiring.
+  it("binds the supplier-invoices routes to their route-backed destinations", () => {
+    // The previously app-owned wiring (uploads to /v1/uploads via the
+    // finance context, inline supplier creation via the suppliers client,
+    // cross-domain target search via package query options) now travels
+    // package-side, so both contributions ship full implementations and
+    // pure path-interpolation destination annotations.
     const extension = createFinanceAdminExtension()
-    for (const id of ["finance-supplier-invoices-index", "finance-supplier-invoices-detail"]) {
-      const route = extension.routes?.find((candidate) => candidate.id === id)
-      expect(route, id).toBeDefined()
-      expect(route?.page, id).toBeUndefined()
-      expect(route?.loader, id).toBeUndefined()
-      expect(route?.component, id).toBeUndefined()
-      expect(route?.ssr, id).toBeUndefined()
-    }
+    const index = extension.routes?.find(
+      (candidate) => candidate.id === "finance-supplier-invoices-index",
+    )
+    expect(index?.destination).toBe("supplierInvoice.list")
+    expect(index?.destinationParams).toBeUndefined()
+    const detail = extension.routes?.find(
+      (candidate) => candidate.id === "finance-supplier-invoices-detail",
+    )
+    expect(detail?.destination).toBe("supplierInvoice.detail")
+    expect(detail?.destinationParams).toEqual({ id: "supplierInvoiceId" })
   })
 
   it("contributes the booking invoices card on the bookings invoices-tab slot", () => {
