@@ -112,8 +112,16 @@ describe("auth + db middleware — single shared client per request", () => {
     )
     // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
     app.use("*", db(factory as any))
-    app.get("/v1/admin/things", (c) => {
+    let disposedBeforeHandlerFinished = false
+    app.get("/v1/admin/things", async (c) => {
       seen.push(c.get("db") as VoyantDb)
+      // Yield the event loop mid-handler: if any upstream middleware
+      // released the shared lease on `return next()` (without await),
+      // the dispose fires during this gap — the route would then be
+      // querying a closed pool. Regression guard for the
+      // try{return next()}finally{release()} footgun.
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      disposedBeforeHandlerFinished = handle.disposeSpy.mock.calls.length > 0
       return c.json({ ok: true })
     })
 
@@ -126,6 +134,7 @@ describe("auth + db middleware — single shared client per request", () => {
     expect(res.status).toBe(200)
     expect(factory).toHaveBeenCalledOnce()
     expect(seen[0]).toBe(seen[1])
+    expect(disposedBeforeHandlerFinished).toBe(false)
     // Outside Workers (no executionCtx) the creator disposes inline after
     // the downstream pipeline completes.
     expect(handle.disposeSpy).toHaveBeenCalledOnce()

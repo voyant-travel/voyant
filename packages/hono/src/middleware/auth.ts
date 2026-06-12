@@ -214,14 +214,18 @@ export function requireAuth<TBindings extends VoyantBindings>(
           actor: "staff",
         })
 
-        return next()
+        // `await` is load-bearing: with a bare `return next()` the
+        // `finally` would run as soon as the downstream promise is
+        // CREATED — releasing the shared client while the route is
+        // still querying it. Awaiting keeps the release after the
+        // entire downstream pipeline completes.
+        return await next()
       } catch {
         // fall through to next strategy
       } finally {
-        // Releases the lease AFTER downstream completes (we're past
-        // `return next()` here). The creating lease schedules pool
-        // teardown via waitUntil so the worker stays alive for the
-        // close handshake; reuse leases are no-ops.
+        // The creating lease schedules pool teardown via waitUntil so
+        // the worker stays alive for the close handshake; reuse leases
+        // are no-ops.
         await lease.release()
       }
     }
@@ -240,7 +244,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
 
         if (resolved?.userId) {
           applyAuthContext(c, resolved)
-          return next()
+          // `await` is load-bearing — see strategy 2: a bare
+          // `return next()` would let the `finally` release the shared
+          // client while downstream is still using it.
+          return await next()
         }
       } finally {
         await lease.release()
