@@ -141,6 +141,9 @@ export const availabilitySlots = pgTable(
     index("idx_availability_slots_start_time_starts_at").on(table.startTimeId, table.startsAt),
     index("idx_availability_slots_date_starts_at").on(table.dateLocal, table.startsAt),
     index("idx_availability_slots_status_starts_at").on(table.status, table.startsAt),
+    // Bare starts_at index for date-range scans that don't lead with a
+    // product/status column (dashboard aggregates' from..to window).
+    index("idx_availability_slots_starts_at").on(table.startsAt),
   ],
 )
 

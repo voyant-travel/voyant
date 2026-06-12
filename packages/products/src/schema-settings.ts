@@ -262,6 +262,11 @@ export const productLocations = pgTable(
       table.createdAt,
     ),
     index("idx_product_locations_country_product").on(table.countryCode, table.productId),
+    // Trigram GIN indexes back the public catalog's case-insensitive
+    // `ILIKE` lookups on location title / city. Requires the pg_trgm
+    // extension.
+    index("idx_product_locations_title_trgm").using("gin", table.title.op("gin_trgm_ops")),
+    index("idx_product_locations_city_trgm").using("gin", table.city.op("gin_trgm_ops")),
   ],
 )
 

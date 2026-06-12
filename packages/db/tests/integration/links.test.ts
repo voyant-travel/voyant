@@ -214,6 +214,53 @@ describe.skipIf(!DB_AVAILABLE)("link service integration", () => {
       expect(rows[0]?.rightId).toBe("prod_2")
     })
 
+    it("lists links matching any of the given left IDs (one batched query)", async () => {
+      const svc = createLinkService(() => db, [personProductOneToMany])
+      await svc.create(personProductOneToMany.tableName, "pers_a", "prod_1")
+      await svc.create(personProductOneToMany.tableName, "pers_a", "prod_2")
+      await svc.create(personProductOneToMany.tableName, "pers_b", "prod_3")
+      await svc.create(personProductOneToMany.tableName, "pers_c", "prod_4")
+
+      const rows = await svc.list(personProductOneToMany.tableName, {
+        leftIds: ["pers_a", "pers_b"],
+      })
+      expect(rows).toHaveLength(3)
+      expect(rows.map((r) => r.rightId).sort()).toEqual(["prod_1", "prod_2", "prod_3"])
+    })
+
+    it("lists links matching any of the given right IDs (one batched query)", async () => {
+      const svc = createLinkService(() => db, [personPostManyToMany])
+      await svc.create(personPostManyToMany.tableName, "pers_a", "blpo_1")
+      await svc.create(personPostManyToMany.tableName, "pers_b", "blpo_1")
+      await svc.create(personPostManyToMany.tableName, "pers_c", "blpo_2")
+      await svc.create(personPostManyToMany.tableName, "pers_d", "blpo_3")
+
+      const rows = await svc.list(personPostManyToMany.tableName, {
+        rightIds: ["blpo_1", "blpo_2"],
+      })
+      expect(rows).toHaveLength(3)
+      expect(rows.map((r) => r.leftId).sort()).toEqual(["pers_a", "pers_b", "pers_c"])
+    })
+
+    it("excludes soft-deleted rows from batched results", async () => {
+      const svc = createLinkService(() => db, [personProductOneToMany])
+      await svc.create(personProductOneToMany.tableName, "pers_a", "prod_1")
+      await svc.create(personProductOneToMany.tableName, "pers_b", "prod_2")
+      await svc.dismiss(personProductOneToMany.tableName, "pers_a", "prod_1")
+
+      const rows = await svc.list(personProductOneToMany.tableName, {
+        leftIds: ["pers_a", "pers_b"],
+      })
+      expect(rows).toHaveLength(1)
+      expect(rows[0]?.rightId).toBe("prod_2")
+    })
+
+    it("returns no rows for an empty batched filter", async () => {
+      const svc = createLinkService(() => db, [personProductOneToMany])
+      await svc.create(personProductOneToMany.tableName, "pers_a", "prod_1")
+      await expect(svc.list(personProductOneToMany.tableName, { leftIds: [] })).resolves.toEqual([])
+    })
+
     it("returns all rows when no filter is provided", async () => {
       const svc = createLinkService(() => db, [personProductOneToMany])
       await svc.create(personProductOneToMany.tableName, "pers_a", "prod_1")

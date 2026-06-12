@@ -1566,7 +1566,12 @@ export interface BookingResourceCapacityViolation {
   existingAssigned: number
 }
 
-async function loadResourceCapacityViolations(
+/**
+ * Exported for unit tests — production callers go through
+ * `assertResourceCapacityForAllocations` /
+ * `persistTravelDetailsWithCapacityCheck` below.
+ */
+export async function loadResourceCapacityViolations(
   db: PostgresJsDatabase,
   travelerId: string,
   allocations: Record<string, string>,
@@ -1597,8 +1602,55 @@ async function loadResourceCapacityViolations(
   }>
 
   const resourceById = new Map(resourceList.map((row) => [row.id, row]))
-  const violations: BookingResourceCapacityViolation[] = []
 
+  // Entries whose resource exists under the requested kind need a traveler
+  // count; the rest (missing resource / kind mismatch) are violations
+  // outright and never had a count in the per-resource form either.
+  const countedChecks: Array<{ kind: string; resourceId: string; slotId: string }> = []
+  for (const [kind, resourceId] of entries) {
+    const resource = resourceById.get(resourceId)
+    if (resource && resource.kind === kind) {
+      countedChecks.push({ kind, resourceId, slotId: resource.slot_id })
+    }
+  }
+
+  // ONE grouped count for all checked (kind, resource) pairs. `kind` varies
+  // per entry (it is the jsonb key inside `btd.allocations`), so a plain
+  // GROUP BY over a static column can't express the check — instead a
+  // VALUES join carries each pair's kind + resource + slot and the jsonb
+  // lookup joins against it. Replaces the COUNT-per-resource loop this
+  // function used to run (N round trips for N allocation entries).
+  const assignedByCheck = new Map<string, number>()
+  if (countedChecks.length > 0) {
+    const checkTuples = sql.join(
+      countedChecks.map(
+        (check) => sql`(${check.kind}::text, ${check.resourceId}::text, ${check.slotId}::text)`,
+      ),
+      sql.raw(", "),
+    )
+    const counts = await db.execute(sql`
+      SELECT checks.kind AS kind,
+             checks.resource_id AS resource_id,
+             COUNT(DISTINCT btd.traveler_id)::int AS count
+      FROM (VALUES ${checkTuples}) AS checks(kind, resource_id, slot_id)
+      JOIN booking_traveler_travel_details btd
+        ON btd.allocations ->> checks.kind = checks.resource_id
+      JOIN booking_travelers bt ON bt.id = btd.traveler_id
+      JOIN booking_allocations ba
+        ON ba.booking_id = bt.booking_id
+       AND ba.availability_slot_id = checks.slot_id
+      JOIN bookings b ON b.id = bt.booking_id
+      WHERE b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+        AND btd.traveler_id <> ${travelerId}
+      GROUP BY checks.kind, checks.resource_id
+    `)
+    for (const row of toRows<{ kind: string; resource_id: string; count: number | null }>(counts)) {
+      assignedByCheck.set(`${row.kind}\u0000${row.resource_id}`, row.count ?? 0)
+    }
+  }
+
+  const violations: BookingResourceCapacityViolation[] = []
   for (const [kind, resourceId] of entries) {
     const resource = resourceById.get(resourceId)
     if (!resource) {
@@ -1622,19 +1674,9 @@ async function loadResourceCapacityViolations(
       continue
     }
 
-    const counts = await db.execute(sql`
-      SELECT COUNT(DISTINCT btd.traveler_id)::int AS count
-      FROM booking_traveler_travel_details btd
-      JOIN booking_travelers bt ON bt.id = btd.traveler_id
-      JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
-      JOIN bookings b ON b.id = bt.booking_id
-      WHERE btd.allocations ->> ${kind} = ${resourceId}
-        AND ba.availability_slot_id = ${resource.slot_id}
-        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
-        AND ba.status IN ('held', 'confirmed', 'fulfilled')
-        AND btd.traveler_id <> ${travelerId}
-    `)
-    const existingAssigned = toRows<{ count: number | null }>(counts)[0]?.count ?? 0
+    // Pairs with no live assignments produce no group row — that is the
+    // zero count, same as the old per-resource COUNT returning 0.
+    const existingAssigned = assignedByCheck.get(`${kind}\u0000${resourceId}`) ?? 0
     if (existingAssigned + 1 > resource.capacity) {
       violations.push({
         slotId: resource.slot_id,

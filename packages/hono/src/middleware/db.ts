@@ -1,7 +1,7 @@
 import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
 import type { MiddlewareHandler } from "hono"
 
-import type { DbFactory, VoyantBindings, VoyantDb } from "../types.js"
+import { type DbSource, isDbFactorySelector, type VoyantBindings, type VoyantDb } from "../types.js"
 import { acquireRequestDb } from "./request-db.js"
 
 export interface DbMiddlewareOptions {
@@ -50,7 +50,7 @@ function buildIncapableDbError(modules: readonly string[]): Error {
  * the creator's `release()` owns the dispose.
  */
 export function db<TBindings extends VoyantBindings>(
-  factory: DbFactory<TBindings>,
+  source: DbSource<TBindings>,
   options: DbMiddlewareOptions = {},
 ): MiddlewareHandler<{
   Bindings: TBindings
@@ -62,10 +62,18 @@ export function db<TBindings extends VoyantBindings>(
   // wired wrong, every request keeps surfacing the actionable error —
   // we don't want the first failing request to silence subsequent
   // checks and let later writes crash with the deep transaction error.
+  //
+  // With a DbFactorySelector the assertion is per-surface: only requests
+  // the selector routes to the transactional factory must resolve a
+  // transaction-capable client — the default (http) factory is allowed,
+  // by design, to be transaction-incapable.
   let txCapabilityVerified = false
   return async (c, next) => {
-    const lease = acquireRequestDb(c, factory)
-    if (!txCapabilityVerified && requiresTx.length > 0) {
+    const selection = isDbFactorySelector(source)
+      ? source.select(c.req.path)
+      : { factory: source, mustSupportTransactions: requiresTx.length > 0 }
+    const lease = acquireRequestDb(c, selection.factory)
+    if (!txCapabilityVerified && selection.mustSupportTransactions && requiresTx.length > 0) {
       if (dbSupportsTransactions(lease.db) === false) {
         try {
           await lease.release()

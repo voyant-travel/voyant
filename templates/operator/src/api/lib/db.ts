@@ -62,17 +62,53 @@ export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
 }
 
 /**
- * Lifecycle-aware factory for `createApp({ db })`. Returns the drizzle
- * client plus a `dispose()` the Hono db middleware schedules via
- * `executionCtx.waitUntil` after the response is sent — so each
+ * Lifecycle-aware factory for `createApp({ dbTransactional })`. Returns
+ * the drizzle client plus a `dispose()` the Hono db middleware schedules
+ * via `executionCtx.waitUntil` after the response is sent — so each
  * request gets its own Pool and closes it before the isolate sleeps,
  * instead of leaking WebSocket connections to Neon at request rate.
+ *
+ * This is the TRANSACTIONAL factory: the WebSocket client is the only
+ * Workers-compatible flavor that supports `db.transaction(...)`, but it
+ * pays a full TLS+auth handshake per request. Surfaces that never open
+ * interactive transactions are served by {@link httpDbFromEnvForApp}.
  */
 export function dbFromEnvForApp(env: CloudflareBindings): {
   db: NeonDatabase
   dispose: () => Promise<void>
 } {
   return openDb(env.DATABASE_URL)
+}
+
+/**
+ * Default (non-transactional) factory for `createApp({ db })`: neon-http
+ * — every query is one HTTPS fetch to Neon's proxy, with NO per-request
+ * connection handshake and no dispose lifecycle. Cannot run
+ * `db.transaction(...)`; `createApp` routes transactional surfaces to
+ * {@link dbFromEnvForApp} instead.
+ *
+ * Cached per isolate + connection string: the client is stateless, so
+ * unlike the WebSocket Pool it is safe to reuse across requests.
+ * Local Postgres doesn't speak Neon's HTTP protocol — local connection
+ * strings fall back to the per-request `pg.Pool` path.
+ */
+const httpDbCache = new Map<string, NeonDatabase>()
+
+export function httpDbFromEnvForApp(
+  env: CloudflareBindings,
+): NeonDatabase | ReturnType<typeof openDb> {
+  const url = env.DATABASE_URL
+  if (isLocalConnection(url)) {
+    return openDb(url)
+  }
+  let db = httpDbCache.get(url)
+  if (!db) {
+    // Drizzle's runtime API is identical across flavors; downstream call
+    // sites are typed against `NeonDatabase` (see `openDb`'s rationale).
+    db = createDbClient(url, { adapter: "edge" }) as unknown as NeonDatabase
+    httpDbCache.set(url, db)
+  }
+  return db
 }
 
 /**

@@ -15,6 +15,7 @@ import {
 } from "@voyantjs/workflows/events"
 import { Hono } from "hono"
 
+import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { requestScopedEventBus } from "./lib/request-event-bus.js"
 import { requireAuth } from "./middleware/auth.js"
@@ -289,17 +290,63 @@ export function createApp<TBindings extends VoyantBindings>(
     })
   }
 
+  // Transactional surface map: a request must be served by a
+  // transaction-capable db client when its path belongs to (a) a module
+  // declaring `requiresTransactionalDb`, (b) a module targeted by an
+  // extension that declares it (extensions mount under the target
+  // module's prefix — e.g. catalog-authoring's compose routes live under
+  // /v1/admin/products), or (c) a template-supplied extra path
+  // (`dbTransactionalPaths` — for additionalRoutes / adapter-wired flows
+  // like the catalog booking engine whose transactionality depends on
+  // template wiring).
+  const txModuleNames = new Set<string>(
+    allModules.filter((m) => m.module.requiresTransactionalDb).map((m) => m.module.name),
+  )
+  for (const ext of allExtensions) {
+    if (ext.extension.requiresTransactionalDb) txModuleNames.add(ext.extension.module)
+  }
+  const txRequiringModules = [...txModuleNames]
+  const txPrefixes: string[] = [...(config.dbTransactionalPaths ?? [])]
+  for (const name of txModuleNames) {
+    // `/v1/public/<name>` is added unconditionally (not only when the
+    // module mounts publicRoutes): other modules mounted at the public
+    // root can serve paths under a flagged module's segment — e.g.
+    // storefront (publicPath "/") handles
+    // /v1/public/bookings/sessions/bootstrap, which reaches
+    // bookings' transactional reserve flow.
+    txPrefixes.push(`/v1/admin/${name}`, `/v1/${name}`, `/v1/public/${name}`)
+  }
+  for (const mod of allModules) {
+    if (txModuleNames.has(mod.module.name) && mod.publicRoutes) {
+      txPrefixes.push(resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name))
+    }
+  }
+  for (const ext of allExtensions) {
+    if (txModuleNames.has(ext.extension.module) && ext.publicRoutes) {
+      txPrefixes.push(resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module))
+    }
+  }
+
+  // With a `dbTransactional` factory, requests are routed per surface:
+  // transactional prefixes get it, everything else gets the cheap
+  // default (typically neon-http — no per-request connection handshake).
+  // Without it, `config.db` serves everything as before.
+  const dbSource = config.dbTransactional
+    ? createPathDbSelector({
+        defaultFactory: config.db,
+        transactionalFactory: config.dbTransactional,
+        transactionalPrefixes: txPrefixes,
+      })
+    : config.db
+
   // Auth middleware for all other routes
-  app.use("*", requireAuth(config.db, { publicPaths: config.publicPaths, auth: config.auth }))
+  app.use("*", requireAuth(dbSource, { publicPaths: config.publicPaths, auth: config.auth }))
 
   // DB middleware — sets c.var.db for all downstream handlers.
   // Pass the list of modules that need interactive transactions so the
   // middleware can throw a clear startup-style error on first request if
   // the wired adapter is neon-http (which doesn't support db.transaction).
-  const txRequiringModules = allModules
-    .filter((m) => m.module.requiresTransactionalDb)
-    .map((m) => m.module.name)
-  app.use("*", db(config.db, { requiresTransactionalDb: txRequiringModules }))
+  app.use("*", db(dbSource, { requiresTransactionalDb: txRequiringModules }))
 
   // Actor guards for the two API surfaces
   app.use("/v1/admin/*", requireActor("staff"))

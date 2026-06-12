@@ -187,6 +187,20 @@ The RFC's diagnosis and sequencing are **correct**. Adjustments for our actual p
 Phases are ordered by leverage-per-risk. Each item is independently shippable and most are
 package-delivered (per #1641: fixes must arrive via version bumps, not template ports).
 
+> **Execution status (2026-06-12):** Phase 0 shipped in PR #1690. Phase 1 implemented on
+> `perf/phase-1`: 1.1 (split data plane — neon-http default + per-surface transactional
+> routing with `dbTransactional`/`dbTransactionalPaths` + `DB_FORCE_TRANSACTIONAL` escape
+> hatch; transaction-reachability audit applied: catalog-authoring extension + bookings/crm/
+> finance/availability/legal/notifications/transactions surfaces, storefront covered via the
+> bookings public prefix, catalog booking-engine + travel-composer via template paths),
+> 1.2 (Better Auth cookieCache default-on + API-key KV cache), 1.3 (index migration 0061:
+> trigram GIN for ILIKE columns, finance partial indexes, rollup btrees; bookings/products
+> partial indexes N/A — no `deleted_at` on those tables; CRM `archived_at` is never queried —
+> follow-up: wire archiving or drop the column), 1.4 (batched link lookups + queryGraph,
+> batched product overlay resolution, grouped capacity counts), 1.5 partially (windowed
+> single-roundtrip `listAndCount`; keyset ADOPTION deferred — cursor contracts need a
+> coordinated client change). 1.6 (Smart Placement) still blocked on the platform question.
+
 ### Phase 0 — Stop the bleeding (days; no architecture changes)
 
 | # | Work item | Where | Effect |
