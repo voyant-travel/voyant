@@ -1,23 +1,24 @@
 "use client"
 
-import type { JourneyOptionSelection, UnitsPickerProps } from "@voyantjs/bookings-react/journey"
+import { useRef, useState } from "react"
+
 import {
   emptyOptionUnitsStepperValue,
   OptionUnitsStepperSection,
   type OptionUnitsStepperUnit,
   type OptionUnitsStepperValue,
-} from "@voyantjs/bookings-react/ui"
-import { useRef, useState } from "react"
+} from "../components/option-units-stepper-section.js"
+import type { JourneyOptionSelection, UnitsPickerProps } from "../journey/index.js"
 
 /**
- * Operator rooms/units picker for the booking journey's `"option-units"`
+ * Admin rooms/units picker for the booking journey's `"option-units"`
  * sub-step. Wraps the shared `OptionUnitsStepperSection` (which loads the
  * product's option units + per-slot availability) and mirrors the picked
  * quantities into the journey draft's `configure.optionSelections`.
  *
- * Wired into `<OperatorBookingJourney />` via the `renderUnitsPicker` slot.
+ * Wired into `<BookingJourneyHost />` via the `renderUnitsPicker` slot.
  */
-export function OperatorUnitsPicker({
+export function JourneyUnitsPicker({
   productId,
   optionId,
   slotId,

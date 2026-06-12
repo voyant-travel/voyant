@@ -46,15 +46,27 @@ export type AdminHrefResolver = <K extends AdminDestinationKey>(
   params: AdminDestinations[K],
 ) => string
 
+/**
+ * History options for a destination navigation. Packaged pages that REDIRECT
+ * (an alias route forwarding to its canonical page, a deep link that resolves
+ * straight into another flow) pass `replace: true` so the intermediate URL
+ * never lands in history — the same semantics a route-level redirect has.
+ */
+export interface AdminNavigateOptions {
+  /** Replace the current history entry instead of pushing a new one. */
+  replace?: boolean
+}
+
 /** Navigate to a destination key + params. Returned by {@link useAdminNavigate}. */
 export type AdminDestinationNavigator = <K extends AdminDestinationKey>(
   key: K,
   params: AdminDestinations[K],
+  options?: AdminNavigateOptions,
 ) => void
 
 interface AdminNavigationContextValue {
   resolvers: AdminDestinationResolvers
-  navigate: (href: string) => void
+  navigate: (href: string, options?: AdminNavigateOptions) => void
 }
 
 const AdminNavigationContext = React.createContext<AdminNavigationContextValue | null>(null)
@@ -65,9 +77,11 @@ export interface AdminNavigationProviderProps {
   /**
    * Host-injected navigation primitive — typically the app router's
    * href-based navigate. Keeping it injected keeps this package
-   * router-agnostic.
+   * router-agnostic. Hosts should honor `options.replace` (map it onto the
+   * router's history-replace mode) so packaged redirects behave like route
+   * redirects; ignoring it only costs an extra history entry.
    */
-  navigate: (href: string) => void
+  navigate: (href: string, options?: AdminNavigateOptions) => void
   children: React.ReactNode
 }
 
@@ -158,10 +172,10 @@ export function useAdminNavigate(): AdminDestinationNavigator {
   const context = React.useContext(AdminNavigationContext)
 
   return React.useCallback<AdminDestinationNavigator>(
-    (key, params) => {
+    (key, params, options) => {
       const href = resolveDestinationHref(context, key, params)
       if (href === null || context === null) return
-      context.navigate(href)
+      context.navigate(href, options)
     },
     [context],
   )

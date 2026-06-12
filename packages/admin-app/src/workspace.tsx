@@ -223,10 +223,12 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   )
   // Resolver-built hrefs may carry a query string, so navigate by `href`
   // (which parses it back into search params) rather than `to` (which would
-  // treat the whole string as a literal pathname).
+  // treat the whole string as a literal pathname). `replace` forwards so
+  // packaged redirect pages (alias routes, deep-link forwards) keep
+  // route-redirect history semantics.
   const navigateToHref = useCallback(
-    (href: string) => {
-      void router.navigate({ href })
+    (href: string, options?: { replace?: boolean }) => {
+      void router.navigate({ href, replace: options?.replace })
     },
     [router],
   )

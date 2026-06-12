@@ -32,6 +32,7 @@ export const generatedAdminDestinations = {
   "availabilitySlot.list": () => "/availability",
   "availabilityStartTime.detail": ({ startTimeId }) =>
     `/availability/start-times/${encodeURIComponent(startTimeId)}`,
+  "booking.create": () => "/bookings/new",
   "booking.list": () => "/bookings",
   "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
   "contract.list": () => "/legal/contracts",

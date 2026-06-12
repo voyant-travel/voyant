@@ -26,6 +26,10 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  * interpolation, and `voyant admin doctor` gates on drift between the
  * annotations and the generated module. Hand-written below are ONLY the
  * genuinely custom resolvers: search-param construction (`booking.detail`,
+ * `bookingJourney.start`, `catalog.detail`), multi-route targets
+ * (`catalog.browse` spans the five surface routes), and host-owned pages the
+ * packages don't contribute (`trip.create` — the trips composer is still an
+ * app-custom route — plus `product.detail` and `legal.home`).
  * `bookingJourney.start`, `catalog.detail`, `flightBooking.start`),
  * multi-route targets (`catalog.browse` spans the five surface routes), and
  * host-owned pages the packages don't contribute (`booking.create`,
@@ -38,7 +42,6 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  */
 export const operatorAdminDestinations = {
   ...generatedAdminDestinations,
-  "booking.create": () => "/bookings/new",
   "booking.detail": ({ bookingId, tab }) =>
     `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,
   "bookingJourney.start": ({ entityModule, entityId, ...search }) =>
@@ -70,6 +73,9 @@ export const operatorAdminDestinations = {
     })}`,
   "legal.home": () => "/legal",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
+  // The packaged /bookings/compose alias forwards here; the trips composer
+  // is an app-custom route ("new" is its create pseudo-id).
+  "trip.create": () => "/trips/new",
 } satisfies AdminDestinationResolvers
 
 /**

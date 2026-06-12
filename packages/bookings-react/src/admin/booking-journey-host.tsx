@@ -1,44 +1,59 @@
 "use client"
 
 /**
- * Operator-flavored wrapper around `<BookingJourney />` —
- * supplies CRM-backed contact pickers, B2B billing default, and
- * post-commit navigation to /orders/catalog.
+ * Packaged admin host for the unified `<BookingJourney />` wizard —
+ * supplies CRM-backed contact pickers, the B2B billing default, real
+ * departure/units/voucher pickers over operator inventory, and post-commit
+ * navigation to the new booking's detail page.
  *
- * Per booking-journey-architecture §8.1 + §10 Phase B.
+ * Per booking-journey-architecture §8.1 + §10 Phase B, packaged per the
+ * packaged-admin RFC Phase 3: cross-route navigation resolves through
+ * semantic destinations (`booking.detail` on commit, `catalog.browse` on
+ * cancel), and the data client comes from the host-mounted
+ * `VoyantReactProvider` — no app route tree, no app fetcher import.
  */
 
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import {
-  type BookingEntitySummary,
-  BookingJourney,
-  type BookingJourneyProps,
-  type LeadContactPickerProps,
-} from "@voyantjs/bookings-react/journey"
-import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-react/ui"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+// Type-only: binds catalog-react's `AdminDestinations` augmentation
+// (`catalog.browse`) into this module without pulling its runtime in.
+import type {} from "@voyantjs/catalog-react/admin"
+import type { CatalogDetailSurface } from "@voyantjs/catalog-react/ui"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { useAddresses } from "@voyantjs/identity-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
-import { BillingDuplicateWarning } from "./billing-duplicate-warning"
-import { OperatorDeparturePicker } from "./operator-departure-picker"
-import { OperatorUnitsPicker } from "./operator-units-picker"
-import { OperatorVoucherPicker } from "./operator-voucher-picker"
+import {
+  emptyPersonPickerValue,
+  PersonPickerSection,
+  type PersonPickerValue,
+} from "../components/person-picker-section.js"
+import {
+  type BookingEntitySummary,
+  BookingJourney,
+  type BookingJourneyProps,
+  type LeadContactPickerProps,
+} from "../journey/index.js"
+import { useVoyantBookingsContext } from "../provider.js"
+import { JourneyBillingDuplicateWarning } from "./journey-billing-duplicate-warning.js"
+import { JourneyDeparturePicker } from "./journey-departure-picker.js"
+import { JourneyUnitsPicker } from "./journey-units-picker.js"
+import { JourneyVoucherPicker } from "./journey-voucher-picker.js"
 
-const emptyPersonPickerValue: PersonPickerValue = {
-  mode: "existing",
-  personId: "",
-  newPerson: { firstName: "", lastName: "", email: "", phone: "" },
-  organizationId: null,
+/** The catalog browse surface the journey returns to when cancelled. */
+function journeyReturnSurface(vertical: string): CatalogDetailSurface {
+  switch (vertical) {
+    case "cruises":
+      return "cruises"
+    case "accommodations":
+      return "accommodations"
+    default:
+      return "products"
+  }
 }
 
-export interface OperatorBookingJourneyProps {
+export interface BookingJourneyHostProps {
   entityModule: string
   entityId: string
   /** Usually omitted — the server resolves provenance from `(module, id)`. */
@@ -61,7 +76,7 @@ export interface OperatorBookingJourneyProps {
   className?: string
 }
 
-export function OperatorBookingJourney({
+export function BookingJourneyHost({
   entityModule,
   entityId,
   sourceKind,
@@ -77,8 +92,8 @@ export function OperatorBookingJourney({
   entityImageUrl,
   draftId,
   className,
-}: OperatorBookingJourneyProps): React.ReactElement {
-  const navigate = useNavigate()
+}: BookingJourneyHostProps): React.ReactElement {
+  const navigate = useAdminNavigate()
   const entitySummary = useEntitySummary(entityModule, entityId, {
     name: entityName,
     heroImageUrl: entityImageUrl,
@@ -101,21 +116,21 @@ export function OperatorBookingJourney({
     },
     renderBillingExtras(ctx) {
       // Warn if the picked lead already booked this departure.
-      return <BillingDuplicateWarning {...ctx} />
+      return <JourneyBillingDuplicateWarning {...ctx} />
     },
     renderDeparturePicker(pickerProps) {
       // Owned: real scheduled departures from availability. Sourced products
       // have none; when one was booked from a specific offer the date came in
       // pre-selected, so we lock it (a different date = a different offer).
-      return <OperatorDeparturePicker {...pickerProps} lockDeparture={Boolean(departureDate)} />
+      return <JourneyDeparturePicker {...pickerProps} lockDeparture={Boolean(departureDate)} />
     },
     renderUnitsPicker(pickerProps) {
       // Rooms/units for the picked option + departure (operator inventory).
-      return <OperatorUnitsPicker {...pickerProps} />
+      return <JourneyUnitsPicker {...pickerProps} />
     },
     renderVoucherPicker(pickerProps) {
       // Admin searches + selects a voucher (no need to know the code).
-      return <OperatorVoucherPicker {...pickerProps} />
+      return <JourneyVoucherPicker {...pickerProps} />
     },
     renderTravelerContactPicker({ apply, selectedPersonId }) {
       // Travelers reuse the same picker (person-only). Adapt the picker's
@@ -139,10 +154,10 @@ export function OperatorBookingJourney({
     },
     onCommitted(result) {
       // Land on the new booking's detail page.
-      navigate({ to: "/bookings/$id", params: { id: result.bookingId } })
+      navigate("booking.detail", { bookingId: result.bookingId })
     },
     onCancelled() {
-      navigate({ to: catalogVerticalPath(entityModule) })
+      navigate("catalog.browse", { surface: journeyReturnSurface(entityModule) })
     },
   }
 
@@ -196,7 +211,7 @@ function useEntitySummary(
   hints: { name?: string; heroImageUrl?: string },
 ): BookingEntitySummary | undefined {
   const tryProductSummary = entityModule === "products" && Boolean(entityId)
-  const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
+  const client = useVoyantBookingsContext()
 
   const productQuery = useQuery({
     ...getProductQueryOptions(client, entityId),
@@ -255,7 +270,7 @@ function CrmLeadPicker({
    *  whose contact was copied from billing). */
   linkedPersonId?: string
 }): React.ReactElement {
-  const t = useAdminMessages().bookings.detail.bookingJourney
+  const t = useOperatorAdminMessages().bookings.detail.bookingJourney
   // The lead picker bills an organization on B2B; everything else is a person.
   const orgMode = variant === "lead" && buyerType === "B2B"
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
