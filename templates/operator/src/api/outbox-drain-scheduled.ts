@@ -4,6 +4,7 @@ import {
   getOutboxStats,
   pruneDeliveredOutboxEvents,
 } from "@voyantjs/db/outbox"
+import { expireStaleWriteIntents } from "@voyantjs/db/write-intents"
 
 import { withDbFromEnv } from "./lib/db"
 
@@ -35,6 +36,12 @@ export async function runScheduledOutboxDrain(
     // debugging, then drop. Failed (dead-lettered) rows are kept until
     // resolved.
     await pruneDeliveredOutboxEvents(db, { olderThanDays: 14 })
+    // Backstop for async write intents whose event dead-lettered: fail
+    // them so pollers see a terminal state instead of pending-forever.
+    const expiredIntents = await expireStaleWriteIntents(db, { olderThanMinutes: 30 })
+    if (expiredIntents > 0) {
+      console.warn(`[outbox-drain] expired ${expiredIntents} stale write intent(s)`)
+    }
     const stats = await getOutboxStats(db)
     if (stats.failed > 0) {
       // Dead-lettered events need a human: surfaced in logs until the

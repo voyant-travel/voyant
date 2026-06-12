@@ -3,6 +3,7 @@ import {
   checkoutCapabilityCookie,
   issueCheckoutCapability,
 } from "@voyantjs/bookings/checkout-capability"
+import { enqueueWriteIntent, getWriteIntent } from "@voyantjs/db/write-intents"
 import {
   idempotencyKey,
   parseJsonBody,
@@ -13,6 +14,11 @@ import {
 import type { Context } from "hono"
 import { Hono } from "hono"
 
+import {
+  BOOKING_BOOTSTRAP_INTENT_EVENT,
+  BOOKING_BOOTSTRAP_INTENT_KIND,
+  type BookingBootstrapIntentPayload,
+} from "./booking-intents.js"
 import {
   createStorefrontService,
   type StorefrontRequestContext,
@@ -248,6 +254,46 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       "/bookings/sessions/bootstrap",
       idempotencyKey({ scope: "POST /v1/public/bookings/sessions/bootstrap" }),
       async (c) => {
+        // Async mode (RFC voyant#1687 Phase 3.2): `?async=1` or
+        // `Prefer: respond-async` stores a write intent + durably emits
+        // its event (outbox), and answers 202 + a status URL — under a
+        // booking spike, callers get instant 202s and the reserve
+        // transactions drain at the outbox's pace instead of
+        // thundering-herding the slot locks. The handler is
+        // `createBookingBootstrapIntentHandler` (booking-intents.ts),
+        // registered on the app bus by the deployment.
+        const wantsAsync =
+          c.req.query("async") === "1" ||
+          (c.req.header("prefer") ?? "").toLowerCase().includes("respond-async")
+        if (wantsAsync) {
+          const body = await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema)
+          const db = c.get("db" as never) as NonNullable<StorefrontRequestContext["db"]>
+          const { intent, created } = await enqueueWriteIntent(db, {
+            kind: BOOKING_BOOTSTRAP_INTENT_KIND,
+            payload: {
+              input: body,
+              userId: c.get("userId" as never) as string | undefined,
+            } satisfies BookingBootstrapIntentPayload,
+            idempotencyKey: c.req.header("idempotency-key") ?? undefined,
+          })
+          if (created) {
+            const eventBus = c.get("eventBus" as never) as
+              | { emit(event: string, data: unknown): Promise<void> }
+              | undefined
+            await eventBus?.emit(BOOKING_BOOTSTRAP_INTENT_EVENT, { intentId: intent.id })
+          }
+          return c.json(
+            {
+              data: {
+                intentId: intent.id,
+                status: intent.status,
+                statusUrl: `/v1/public/bookings/intents/${intent.id}`,
+              },
+            },
+            202,
+          )
+        }
+
         const result = await storefrontService.bootstrapBookingSession(
           getRequestContext(c) as StorefrontRequestContext & {
             db: NonNullable<StorefrontRequestContext["db"]>
@@ -299,6 +345,65 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         )
       },
     )
+    .get("/bookings/intents/:intentId", async (c) => {
+      const db = c.get("db" as never) as NonNullable<StorefrontRequestContext["db"]>
+      const intent = await getWriteIntent(db, c.req.param("intentId"))
+      if (!intent || intent.kind !== BOOKING_BOOTSTRAP_INTENT_KIND) {
+        return c.json({ error: "Booking intent not found" }, 404)
+      }
+
+      if (intent.status === "succeeded") {
+        const stored = intent.result as {
+          bootstrap?: { session: { sessionId: string } } & Record<string, unknown>
+        } | null
+        const bootstrap = stored?.bootstrap
+        if (bootstrap?.session?.sessionId) {
+          // The checkout capability is issued at POLL time (it's a
+          // signed short-lived token derived from the sessionId — the
+          // async handler has no response to attach a cookie to).
+          const capability = await issueCheckoutCapability(
+            bootstrap.session.sessionId,
+            getRuntimeEnv(c),
+          )
+          c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
+            append: true,
+          })
+          return c.json({
+            data: {
+              intentId: intent.id,
+              status: "succeeded",
+              ...bootstrap,
+              session: attachCheckoutCapability(
+                bootstrap.session as { sessionId: string },
+                capability,
+              ),
+            },
+          })
+        }
+      }
+
+      if (intent.status === "failed") {
+        const detail = (intent.result ?? {}) as {
+          conflict?: string
+          httpStatus?: number
+          repricing?: unknown
+        }
+        return c.json({
+          data: {
+            intentId: intent.id,
+            status: "failed",
+            error: detail.conflict
+              ? sessionConflictError(detail.conflict)
+              : (intent.error ?? "Booking intent failed"),
+            ...(detail.conflict ? { conflict: detail.conflict } : {}),
+            ...(detail.httpStatus ? { httpStatus: detail.httpStatus } : {}),
+            ...(detail.repricing !== undefined ? { repricing: detail.repricing } : {}),
+          },
+        })
+      }
+
+      return c.json({ data: { intentId: intent.id, status: "pending" } })
+    })
     .post("/departures/:departureId/eligibility", async (c) => {
       return c.json({
         data: await storefrontService.checkDepartureTransportEligibility({

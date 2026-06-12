@@ -26,6 +26,7 @@
     "./crud": "./src/crud.ts",
     "./links": "./src/links.ts",
     "./outbox": "./src/outbox.ts",
+    "./write-intents": "./src/write-intents.ts",
     "./queries": "./src/queries/index.ts",
     "./runtime": "./src/runtime/index.ts",
     "./schema": "./src/schema/index.ts",
@@ -42,6 +43,7 @@
     "./schema/iam/*": "./src/schema/iam/*.ts",
     "./schema/infra": "./src/schema/infra/index.ts",
     "./schema/infra/event_outbox": "./src/schema/infra/event_outbox.ts",
+    "./schema/infra/write_intents": "./src/schema/infra/write_intents.ts",
     "./schema/infra/domains": "./src/schema/infra/domains.ts",
     "./schema/infra/email_domain_records": "./src/schema/infra/email_domain_records.ts",
     "./schema/infra/idempotency_keys": "./src/schema/infra/idempotency_keys.ts",
@@ -152,6 +154,11 @@
         "import": "./dist/outbox.js",
         "default": "./dist/outbox.js"
       },
+      "./write-intents": {
+        "types": "./dist/write-intents.d.ts",
+        "import": "./dist/write-intents.js",
+        "default": "./dist/write-intents.js"
+      },
       "./queries": {
         "types": "./dist/queries/index.d.ts",
         "import": "./dist/queries/index.js",
@@ -231,6 +238,11 @@
         "types": "./dist/schema/infra/event_outbox.d.ts",
         "import": "./dist/schema/infra/event_outbox.js",
         "default": "./dist/schema/infra/event_outbox.js"
+      },
+      "./schema/infra/write_intents": {
+        "types": "./dist/schema/infra/write_intents.d.ts",
+        "import": "./dist/schema/infra/write_intents.js",
+        "default": "./dist/schema/infra/write_intents.js"
       },
       "./schema/infra/domains": {
         "types": "./dist/schema/infra/domains.d.ts",

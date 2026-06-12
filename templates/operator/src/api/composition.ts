@@ -289,8 +289,14 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveDb: capabilities.resolveDb,
         autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
       }),
-    "@voyantjs/storefront": () =>
-      createStorefrontHonoModule({ offers: createPromotionsStorefrontResolvers() }),
+    "@voyantjs/storefront": ({ capabilities }) =>
+      createStorefrontHonoModule({
+        offers: createPromotionsStorefrontResolvers(),
+        // Async booking-bootstrap intents (queued write pipeline, RFC
+        // voyant#1687 §3.2) — the handler runs on the app bus with
+        // outbox-grade retries; the */2min cron sweeps stale intents.
+        bookingIntents: { resolveDb: capabilities.resolveDb },
+      }),
     "@voyantjs/customer-portal": ({ capabilities }) =>
       createCustomerPortalHonoModule({
         resolveDocumentDownloadUrl: (bindings, storageKey) =>
