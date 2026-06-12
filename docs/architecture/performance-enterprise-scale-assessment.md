@@ -205,7 +205,11 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > replicas (DATABASE_URL_REPLICAS on the http client); 2.4 read-through TTL aggregate snapshots
 > (warm dashboard ~29 queries → 5 PK reads); 2.5 booking hardening (snapshots resolved pre-tx,
 > batched inserts in the locked section, checkout idempotency + Netopia callback dedup).
-> 2.2 (Typesense/KV storefront read models) is the dedicated follow-up PR. Note: drizzle
+> 2.2 SHIPPED (perf/phase-2-read-models): KV document plane — product detail read-through (24h TTL,
+> per-locale, exact invalidation via an admin-surface middleware, shared id-keyed doc behind a
+> short-TTL slug mapping) + departures read-through (120s, TTL-bounded by design — checkout
+> verifies live); Typesense remains the query plane (browse/search already serves cards from
+> index documents, no Postgres). Repeat storefront reads now cost one KV get, zero DB queries. Note: drizzle
 > snapshot-chain poisoning by timestamp-named migration files was diagnosed and fixed (stale
 > 20260609 snapshot removed, chain re-parented) — future `drizzle-kit generate` runs are clean.
 

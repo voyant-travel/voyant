@@ -1,9 +1,16 @@
 import { parseQuery } from "@voyantjs/hono"
+import type { KVStore } from "@voyantjs/utils/cache"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 
+import {
+  productDocKey,
+  productDocVariant,
+  readThroughProductDoc,
+  readThroughSlugMapping,
+} from "./read-model.js"
 import { publicProductsService } from "./service-public.js"
 import {
   publicCatalogCategoryListQuerySchema,
@@ -15,10 +22,19 @@ import {
 import { booleanQueryParam } from "./validation-shared.js"
 
 type Env = {
+  Bindings: {
+    /** Optional KV namespace backing the product-detail read model. */
+    CACHE?: KVStore
+  }
   Variables: {
     db: PostgresJsDatabase
     userId?: string
   }
+}
+
+/** The KV binding is optional — deployments without it serve live. */
+function readModelKv(c: Context<Env>): KVStore | undefined {
+  return c.env?.CACHE
 }
 
 /**
@@ -82,18 +98,30 @@ export const publicProductRoutes = new Hono<Env>()
   })
   .get("/slug/:slug", async (c) => {
     const query = await parseQuery(c, publicCatalogProductLookupBySlugQuerySchema)
-    const row = await publicProductsService.getCatalogProductBySlug(
-      c.get("db"),
-      c.req.param("slug"),
-      query,
-    )
+    const kv = readModelKv(c)
+    const slug = c.req.param("slug")
 
-    if (!row) {
+    // Resolve slug → id through the short-lived KV mapping so both detail
+    // routes share one id-keyed document per variant.
+    const productId = await readThroughSlugMapping(kv, slug, async () => {
+      const row = await publicProductsService.getCatalogProductBySlug(c.get("db"), slug, query)
+      return row ? ((row as { id?: string }).id ?? null) : null
+    })
+    if (!productId) {
+      return c.json({ error: "Catalog product not found" }, 404)
+    }
+
+    const { data } = await readThroughProductDoc(
+      kv,
+      productDocKey(productId, productDocVariant(query)),
+      () => publicProductsService.getCatalogProductById(c.get("db"), productId, query),
+    )
+    if (!data) {
       return c.json({ error: "Catalog product not found" }, 404)
     }
 
     setPublicCacheHeaders(c)
-    return c.json({ data: row })
+    return c.json({ data })
   })
   .get("/categories", async (c) => {
     const query = await parseQuery(c, clampedCategoryListQuerySchema)
@@ -115,18 +143,19 @@ export const publicProductRoutes = new Hono<Env>()
   })
   .get("/:id", async (c) => {
     const query = await parseQuery(c, publicCatalogProductLookupBySlugQuerySchema)
-    const row = await publicProductsService.getCatalogProductById(
-      c.get("db"),
-      c.req.param("id"),
-      query,
+    const productId = c.req.param("id")
+    const { data } = await readThroughProductDoc(
+      readModelKv(c),
+      productDocKey(productId, productDocVariant(query)),
+      () => publicProductsService.getCatalogProductById(c.get("db"), productId, query),
     )
 
-    if (!row) {
+    if (!data) {
       return c.json({ error: "Catalog product not found" }, 404)
     }
 
     setPublicCacheHeaders(c)
-    return c.json({ data: row })
+    return c.json({ data })
   })
   .get("/:id/brochure", async (c) => {
     const query = await parseQuery(c, publicCatalogProductLookupBySlugQuerySchema)
