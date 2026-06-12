@@ -1,5 +1,13 @@
 # @voyantjs/octo
 
+## 0.104.9
+
+### Patch Changes
+
+- @voyantjs/availability@0.108.0
+- @voyantjs/bookings@0.111.0
+- @voyantjs/products@0.111.0
+
 ## 0.104.8
 
 ### Patch Changes
