@@ -161,6 +161,7 @@ export {
   type AdminDestinationResolvers,
   type AdminDestinations,
   type AdminHrefResolver,
+  type AdminNavigateOptions,
   AdminNavigationProvider,
   type AdminNavigationProviderProps,
   useAdminHref,

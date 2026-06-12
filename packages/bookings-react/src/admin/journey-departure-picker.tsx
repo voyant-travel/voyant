@@ -1,9 +1,6 @@
 "use client"
 
 import { useSlots } from "@voyantjs/availability-react"
-import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-react/i18n"
-import type { DeparturePickerProps } from "@voyantjs/bookings-react/journey"
-import { getBookableDepartureSlots } from "@voyantjs/bookings-react/ui"
 import {
   Combobox,
   ComboboxCollection,
@@ -17,15 +14,19 @@ import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
+import { getBookableDepartureSlots } from "../components/booking-create-utils.js"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import type { DeparturePickerProps } from "../journey/index.js"
+
 /**
- * Operator departure picker for the booking journey's `"departure"`
+ * Admin departure picker for the booking journey's `"departure"`
  * sub-step. Loads the owned product's scheduled departures from
  * availability and lets the operator pick a real one (filtered by the
  * chosen product option). When the product has no scheduled
- * departures, it falls back to a free date/time so non-scheduled
+ * departures, it falls back to a free date so non-scheduled
  * products can still be booked.
  *
- * Wired into `<OperatorBookingJourney />` via the journey's
+ * Wired into `<BookingJourneyHost />` via the journey's
  * `renderDeparturePicker` slot.
  */
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -43,7 +44,7 @@ type LoadedSlot = {
   unlimited?: boolean | null
 }
 
-export function OperatorDeparturePicker({
+export function JourneyDeparturePicker({
   productId,
   optionId,
   slotId,

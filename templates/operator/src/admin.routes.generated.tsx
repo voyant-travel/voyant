@@ -14,6 +14,8 @@ import { createRoute } from "@tanstack/react-router"
 import { adminExtensionRouteOptions } from "@voyantjs/admin-app"
 import {
   bookingDetailSearchSchema,
+  bookingJourneySearchSchema,
+  bookingNewSearchSchema,
   bookingsIndexSearchSchema,
 } from "@voyantjs/bookings-react/admin"
 import { catalogSearchSchema, productDetailSearchSchema } from "@voyantjs/catalog-react/admin"
@@ -85,6 +87,26 @@ export const BookingsDetailRoute = createRoute({
   path: "/bookings/$id",
   validateSearch: bookingDetailSearchSchema,
   ...adminExtensionRouteOptions(bookingsExtension, "bookings-detail", runtime),
+})
+
+export const BookingsNewRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/bookings/new",
+  validateSearch: bookingNewSearchSchema,
+  ...adminExtensionRouteOptions(bookingsExtension, "bookings-new", runtime),
+})
+
+export const BookingsComposeRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/bookings/compose",
+  ...adminExtensionRouteOptions(bookingsExtension, "bookings-compose", runtime),
+})
+
+export const BookingsJourneyRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/catalog/journey/$entityModule/$entityId",
+  validateSearch: bookingJourneySearchSchema,
+  ...adminExtensionRouteOptions(bookingsExtension, "bookings-journey", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -418,6 +440,9 @@ export const adminExtensionRoutes = [
   AvailabilityStartTimeDetailRoute,
   BookingsIndexRoute,
   BookingsDetailRoute,
+  BookingsNewRoute,
+  BookingsComposeRoute,
+  BookingsJourneyRoute,
   CatalogProductsIndexRoute,
   CatalogProductsDetailRoute,
   CatalogExcursionsIndexRoute,
@@ -470,6 +495,9 @@ export interface AdminExtensionRoutesByFullPath {
   "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
+  "/bookings/new": typeof BookingsNewRoute
+  "/bookings/compose": typeof BookingsComposeRoute
+  "/catalog/journey/$entityModule/$entityId": typeof BookingsJourneyRoute
   "/catalog/products": typeof CatalogProductsIndexRoute
   "/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/catalog/excursions": typeof CatalogExcursionsIndexRoute
@@ -522,6 +550,9 @@ export interface AdminExtensionRoutesByTo {
   "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
+  "/bookings/new": typeof BookingsNewRoute
+  "/bookings/compose": typeof BookingsComposeRoute
+  "/catalog/journey/$entityModule/$entityId": typeof BookingsJourneyRoute
   "/catalog/products": typeof CatalogProductsIndexRoute
   "/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/catalog/excursions": typeof CatalogExcursionsIndexRoute
@@ -574,6 +605,9 @@ export interface AdminExtensionRoutesById {
   "/_workspace/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
+  "/_workspace/bookings/new": typeof BookingsNewRoute
+  "/_workspace/bookings/compose": typeof BookingsComposeRoute
+  "/_workspace/catalog/journey/$entityModule/$entityId": typeof BookingsJourneyRoute
   "/_workspace/catalog/products": typeof CatalogProductsIndexRoute
   "/_workspace/catalog/products/$productId": typeof CatalogProductsDetailRoute
   "/_workspace/catalog/excursions": typeof CatalogExcursionsIndexRoute

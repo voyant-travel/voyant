@@ -44,8 +44,9 @@ export interface StorefrontBookingJourneyProps {
    * Source provenance — optional on the storefront. When absent,
    * the public engine route resolves it from
    * `(entityModule, entityId)` via the catalog plane's
-   * sourced-entry lookup. Operator surfaces still pass it
-   * explicitly via `<OperatorBookingJourney />`.
+   * sourced-entry lookup. Admin surfaces still pass it explicitly
+   * via the packaged `<BookingJourneyHost />`
+   * (`@voyantjs/bookings-react/admin/booking-journey-host`).
    */
   sourceKind?: string
   sourceConnectionId?: string
