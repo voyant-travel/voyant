@@ -1,5 +1,13 @@
 # @voyantjs/workflows-orchestrator-node
 
+## 0.107.6
+
+### Patch Changes
+
+- c0d2fb0: Split the self-host dashboard server internals into focused request, streaming, static asset, metrics, and runtime dependency modules while preserving the public API.
+  - @voyantjs/workflows@0.107.6
+  - @voyantjs/workflows-orchestrator@0.107.6
+
 ## 0.107.5
 
 ### Patch Changes

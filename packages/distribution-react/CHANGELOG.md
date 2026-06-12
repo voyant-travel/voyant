@@ -1,5 +1,13 @@
 # @voyantjs/distribution-react
 
+## 0.109.8
+
+### Patch Changes
+
+- 9162394: Split oversized distribution service, route, booking-push, integration test, and channel sync UI modules into smaller focused files while preserving existing behavior and exports.
+- Updated dependencies [9162394]
+  - @voyantjs/distribution@0.109.8
+
 ## 0.109.7
 
 ### Patch Changes
