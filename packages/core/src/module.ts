@@ -143,6 +143,17 @@ export interface Extension {
   /** Which module this extension attaches to (e.g., "suppliers") */
   module: string
 
+  /**
+   * Whether this extension's routes run interactive Postgres
+   * transactions (`db.transaction(...)`). Extensions mount under their
+   * target module's path prefix, so a transacting extension forces the
+   * transaction-capable db client onto that module's surface even when
+   * the module itself doesn't declare `requiresTransactionalDb` (e.g.
+   * catalog-authoring's compose/duplicate routes under
+   * `/v1/admin/products`).
+   */
+  requiresTransactionalDb?: boolean
+
   /** Hook handlers keyed by event name */
   hooks?: Record<string, (...args: unknown[]) => Promise<void> | void>
 

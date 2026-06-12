@@ -28,6 +28,7 @@ import {
   type DocumentEmitter,
   type FieldPolicy,
   type FieldPolicyRegistry,
+  fetchOverlaysForEntities,
   type IndexerDocument,
   type IndexerSlice,
   type PricingBasis,
@@ -35,6 +36,7 @@ import {
   type ResolvedView,
   type ResolverScope,
   resolveEntityView,
+  resolveEntityViewWithOverlays,
   type Visibility,
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
@@ -175,16 +177,15 @@ export async function getResolvedProductById(
  * them in. This keeps query construction in the existing service layer and
  * adds the catalog overlay step on top.
  *
- * For Phase B v1, this is a naive per-row resolver that issues one overlay
- * fetch per product. Real list paths (storefront browse, admin search)
- * should go through the search index instead — `IndexerService.search` is
+ * Overlays for the whole page are fetched in ONE query via
+ * `fetchOverlaysForEntities` and applied in-memory per product — the
+ * per-product output is byte-identical to calling `resolveEntityView`
+ * once per row, minus the N-1 sequential round trips.
+ *
+ * Real high-volume list paths (storefront browse, admin search) should
+ * still go through the search index instead — `IndexerService.search` is
  * already wired for that purpose. Use this method for small admin-facing
  * lists or detail-page composition where the index isn't on the read path.
- *
- * Production-grade batched overlay fetch is a TODO; the catalog plane
- * supports it conceptually but `fetchOverlaysForEntity` is currently
- * one-entity-at-a-time. A future `fetchOverlaysForEntities(db, [(module, id), ...])`
- * lands with the indexer hot-path optimization.
  */
 export async function listResolvedProducts(
   db: AnyDrizzleDb,
@@ -192,22 +193,22 @@ export async function listResolvedProducts(
   context: ProductCatalogContext,
 ): Promise<ResolvedView[]> {
   const registry = getProductsRegistry()
-  const views: ResolvedView[] = []
-  for (const row of rows) {
+  const overlaysByEntity = await fetchOverlaysForEntities(
+    db,
+    "products",
+    rows.map((row) => row.id),
+  )
+  return rows.map((row) => {
     const projection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
     })
-    const view = await resolveEntityView(
-      db,
+    return resolveEntityViewWithOverlays(
       registry,
-      "products",
-      row.id,
       projection,
+      overlaysByEntity.get(row.id) ?? [],
       context.scope,
     )
-    views.push(view)
-  }
-  return views
+  })
 }
 
 /**
@@ -399,48 +400,52 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
   return {
     name: "products:storefront-card",
     async project(db, productId, slice) {
-      const [translations, mediaRows, locationRows, itineraryRows] = await Promise.all([
-        db
-          .select({
-            languageTag: productTranslations.languageTag,
-            name: productTranslations.name,
-            slug: productTranslations.slug,
-            shortDescription: productTranslations.shortDescription,
-            inclusionsHtml: productTranslations.inclusionsHtml,
-            exclusionsHtml: productTranslations.exclusionsHtml,
-            termsHtml: productTranslations.termsHtml,
-          })
-          .from(productTranslations)
-          .where(eq(productTranslations.productId, productId))
-          .orderBy(asc(productTranslations.updatedAt)),
-        db
-          .select({
-            url: productMedia.url,
-            mediaType: productMedia.mediaType,
-            isCover: productMedia.isCover,
-            isBrochure: productMedia.isBrochure,
-            sortOrder: productMedia.sortOrder,
-            createdAt: productMedia.createdAt,
-          })
-          .from(productMedia)
-          .where(eq(productMedia.productId, productId))
-          .orderBy(asc(productMedia.sortOrder), asc(productMedia.createdAt)),
-        db
-          .select({
-            latitude: productLocations.latitude,
-            longitude: productLocations.longitude,
-            sortOrder: productLocations.sortOrder,
-            createdAt: productLocations.createdAt,
-          })
-          .from(productLocations)
-          .where(eq(productLocations.productId, productId))
-          .orderBy(asc(productLocations.sortOrder), asc(productLocations.createdAt)),
-        db
-          .select({ id: productItineraries.id, isDefault: productItineraries.isDefault })
-          .from(productItineraries)
-          .where(eq(productItineraries.productId, productId))
-          .orderBy(asc(productItineraries.sortOrder)),
-      ])
+      // Wave 1: everything keyed by productId alone runs concurrently —
+      // including the departures count, which used to trail sequentially.
+      const [translations, mediaRows, locationRows, itineraryRows, availableDeparturesCount] =
+        await Promise.all([
+          db
+            .select({
+              languageTag: productTranslations.languageTag,
+              name: productTranslations.name,
+              slug: productTranslations.slug,
+              shortDescription: productTranslations.shortDescription,
+              inclusionsHtml: productTranslations.inclusionsHtml,
+              exclusionsHtml: productTranslations.exclusionsHtml,
+              termsHtml: productTranslations.termsHtml,
+            })
+            .from(productTranslations)
+            .where(eq(productTranslations.productId, productId))
+            .orderBy(asc(productTranslations.updatedAt)),
+          db
+            .select({
+              url: productMedia.url,
+              mediaType: productMedia.mediaType,
+              isCover: productMedia.isCover,
+              isBrochure: productMedia.isBrochure,
+              sortOrder: productMedia.sortOrder,
+              createdAt: productMedia.createdAt,
+            })
+            .from(productMedia)
+            .where(eq(productMedia.productId, productId))
+            .orderBy(asc(productMedia.sortOrder), asc(productMedia.createdAt)),
+          db
+            .select({
+              latitude: productLocations.latitude,
+              longitude: productLocations.longitude,
+              sortOrder: productLocations.sortOrder,
+              createdAt: productLocations.createdAt,
+            })
+            .from(productLocations)
+            .where(eq(productLocations.productId, productId))
+            .orderBy(asc(productLocations.sortOrder), asc(productLocations.createdAt)),
+          db
+            .select({ id: productItineraries.id, isDefault: productItineraries.isDefault })
+            .from(productItineraries)
+            .where(eq(productItineraries.productId, productId))
+            .orderBy(asc(productItineraries.sortOrder)),
+          countAvailableDepartures(db, productId),
+        ])
 
       const translation = pickTranslation(translations, slice.locale)
       const imageMediaRows = mediaRows.filter((m) => !m.isBrochure && m.mediaType === "image")
@@ -449,10 +454,11 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       const coordinateLocation =
         locationRows.find((l) => l.latitude != null && l.longitude != null) ?? null
       const defaultItinerary = itineraryRows.find((it) => it.isDefault) ?? itineraryRows[0]
+      // Wave 2: the duration estimate needs `defaultItinerary`, which is only
+      // known after the itinerary rows land — it cannot join wave 1.
       const durationDays = defaultItinerary
         ? await estimateItineraryDurationDays(db, defaultItinerary.id)
         : null
-      const availableDeparturesCount = await countAvailableDepartures(db, productId)
 
       const out = new Map<string, unknown>([
         ["slug", translation?.slug ?? null],

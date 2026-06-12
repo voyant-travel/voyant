@@ -18,6 +18,13 @@ interface CloudflareBindings {
   SESSION_CLAIMS_SECRET: string
   BETTER_AUTH_SECRET: string
   DATABASE_URL: string
+  /**
+   * Operational escape hatch for the split data plane: set to "1" to
+   * serve EVERY request with the transaction-capable WebSocket client
+   * (pre-Phase-1 behavior) — e.g. if a transactional surface was missed
+   * in the per-path routing. Costs a connection handshake per request.
+   */
+  DB_FORCE_TRANSACTIONAL?: string
 
   // Admin auth mode. Localhost/self-hosted deployments use local Better Auth
   // flows. Voyant Cloud deployments use Cloud as the exclusive identity broker.

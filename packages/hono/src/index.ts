@@ -19,6 +19,7 @@ export type {
   StoredDocumentReference,
 } from "./document-download.js"
 export { resolveStoredDocumentDownload } from "./document-download.js"
+export { createPathDbSelector, type PathDbSelectorOptions } from "./lib/db-selector.js"
 export {
   consoleLoggerProvider,
   cors,
@@ -81,6 +82,9 @@ export {
 } from "./public-document-delivery.js"
 export type {
   DbFactory,
+  DbFactorySelector,
+  DbSource,
+  DbSurfaceSelection,
   LogEntry,
   LoggerProvider,
   VoyantAppConfig,

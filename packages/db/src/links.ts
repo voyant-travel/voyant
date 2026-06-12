@@ -5,6 +5,7 @@
 
 import type {
   LinkDefinition,
+  LinkListFilter,
   LinkRow,
   LinkService,
   LinkSpec,
@@ -37,6 +38,83 @@ function toDate(v: Date | string): Date {
 function toNullableDate(v: Date | string | null): Date | null {
   if (v === null) return null
   return v instanceof Date ? v : new Date(v)
+}
+
+function unique(ids: string[]): string[] {
+  return Array.from(new Set(ids))
+}
+
+/**
+ * Collapse the singular + plural ID filters for one side into a single
+ * constraint:
+ *
+ * - `undefined` — the side is unconstrained.
+ * - `null` — the filter can never match (empty array, or a singular ID that
+ *   isn't in the plural set); callers short-circuit to `[]` without querying.
+ * - `string[]` — match any of these (deduped) IDs.
+ *
+ * Falsy singular IDs are ignored, matching the historical truthy check.
+ */
+function normalizeIdFilter(
+  single: string | undefined,
+  many: string[] | undefined,
+): string[] | null | undefined {
+  if (single && many) {
+    return many.includes(single) ? [single] : null
+  }
+  if (single) return [single]
+  if (many) {
+    const ids = unique(many)
+    return ids.length === 0 ? null : ids
+  }
+  return undefined
+}
+
+type ReadOnlyResolver = NonNullable<LinkDefinition["readOnly"]>
+
+/**
+ * Resolve a (possibly batched) list filter against a read-only link.
+ *
+ * Read-only resolvers only understand singular `leftId`/`rightId` filters,
+ * so a batched filter fans out one resolver call per ID on one side and
+ * applies any remaining ID-set constraint locally.
+ */
+async function listReadOnly(
+  ro: ReadOnlyResolver,
+  leftIds: string[] | undefined,
+  rightIds: string[] | undefined,
+): Promise<LinkRow[]> {
+  const singleLeft = leftIds && leftIds.length === 1 ? leftIds[0] : undefined
+  const singleRight = rightIds && rightIds.length === 1 ? rightIds[0] : undefined
+
+  // At most one ID per side — the resolver's native filter shape.
+  if ((!leftIds || singleLeft !== undefined) && (!rightIds || singleRight !== undefined)) {
+    const filter: { leftId?: string; rightId?: string } = {}
+    if (singleLeft !== undefined) filter.leftId = singleLeft
+    if (singleRight !== undefined) filter.rightId = singleRight
+    return ro.list(filter)
+  }
+
+  const fanLeft = leftIds !== undefined && singleLeft === undefined
+  const fanIds = (fanLeft ? leftIds : rightIds) as string[]
+  const batches = await Promise.all(
+    fanIds.map((id) => {
+      const filter: { leftId?: string; rightId?: string } = fanLeft
+        ? { leftId: id }
+        : { rightId: id }
+      if (fanLeft && singleRight !== undefined) filter.rightId = singleRight
+      if (!fanLeft && singleLeft !== undefined) filter.leftId = singleLeft
+      return ro.list(filter)
+    }),
+  )
+  let rows = batches.flat()
+  // Both sides batched — the right-side set couldn't be pushed into the
+  // resolver calls, so apply it here.
+  if (fanLeft && rightIds && singleRight === undefined) {
+    const allowed = new Set(rightIds)
+    rows = rows.filter((row) => allowed.has(row.rightId))
+  }
+  return rows
 }
 
 /**
@@ -171,22 +249,32 @@ export function createLinkService(
     await executeRows(query)
   }
 
-  async function list(
-    linkKey: string,
-    filter: { leftId?: string; rightId?: string } = {},
-  ): Promise<LinkRow[]> {
+  async function list(linkKey: string, filter: LinkListFilter = {}): Promise<LinkRow[]> {
     const def = lookupByKey(linkKey)
+
+    const leftIds = normalizeIdFilter(filter.leftId, filter.leftIds)
+    const rightIds = normalizeIdFilter(filter.rightId, filter.rightIds)
+    // A provably-empty filter (e.g. `leftIds: []`) can never match — skip the
+    // query (and on Workers, the subrequest) entirely.
+    if (leftIds === null || rightIds === null) return []
+
     if (def.readOnly) {
-      return def.readOnly.list(filter)
+      return listReadOnly(def.readOnly, leftIds, rightIds)
     }
 
     const table = sql.identifier(def.tableName)
     const leftCol = sql.identifier(def.leftColumn)
     const rightCol = sql.identifier(def.rightColumn)
 
+    // NOTE: a plain array embedded in a drizzle sql template is flattened
+    // into per-element chunks; sql.param() binds it as ONE array parameter,
+    // so a batched filter stays a single `col = ANY($1)` query.
+    const idClause = (col: ReturnType<typeof sql.identifier>, ids: string[]) =>
+      ids.length === 1 ? sql`${col} = ${ids[0]}` : sql`${col} = ANY(${sql.param(ids)})`
+
     const whereClauses = [sql`"deleted_at" IS NULL`]
-    if (filter.leftId) whereClauses.push(sql`${leftCol} = ${filter.leftId}`)
-    if (filter.rightId) whereClauses.push(sql`${rightCol} = ${filter.rightId}`)
+    if (leftIds) whereClauses.push(idClause(leftCol, leftIds))
+    if (rightIds) whereClauses.push(idClause(rightCol, rightIds))
 
     // Manually join clauses with AND.
     let whereSql = whereClauses[0] as ReturnType<typeof sql>

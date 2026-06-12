@@ -31,7 +31,7 @@ import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
-import { dbFromEnvForApp } from "./lib/db"
+import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
@@ -70,11 +70,36 @@ const { modules, extensions } = composeFromManifest(
 )
 
 export const app = createApp<CloudflareBindings>({
-  // `dbFromEnvForApp` returns `{ db, dispose }`; the Hono db middleware
-  // schedules `dispose()` via `executionCtx.waitUntil` after the
-  // response is sent, so each request gets its own Pool and closes it
-  // before the isolate sleeps.
-  db: (env) => dbFromEnvForApp(env),
+  // Split data plane (perf, RFC voyant#1687 Phase 1.1):
+  // - `db` (default): neon-http — one fetch per query, NO connection
+  //   handshake. Serves all reads and single-statement writes.
+  // - `dbTransactional`: per-request Neon WebSocket Pool — the only
+  //   Workers-compatible client that supports db.transaction(). createApp
+  //   routes it to the surfaces of modules/extensions declaring
+  //   `requiresTransactionalDb`, plus `dbTransactionalPaths` below.
+  // `DB_FORCE_TRANSACTIONAL=1` reverts to the WS client for ALL requests
+  // (operational escape hatch if a transactional surface was missed).
+  db: (env) =>
+    env.DB_FORCE_TRANSACTIONAL === "1" ? dbFromEnvForApp(env) : httpDbFromEnvForApp(env),
+  dbTransactional: (env) => dbFromEnvForApp(env),
+  dbTransactionalPaths: [
+    // Catalog booking engine (template-mounted at /v1/{admin,public}/catalog):
+    // book/holds/orders reach bookings' reserve/release transactions through
+    // the owned-product adapter; quote is included conservatively (the
+    // quote-before-reserve path may touch holds). Search and browse stay
+    // on the cheap default client.
+    "/v1/admin/catalog/quote",
+    "/v1/admin/catalog/book",
+    "/v1/admin/catalog/holds",
+    "/v1/admin/catalog/orders",
+    "/v1/public/catalog/quote",
+    "/v1/public/catalog/book",
+    "/v1/public/catalog/holds",
+    // Travel composer reserves trips via injected bookings deps.
+    "/v1/admin/travel-composer",
+    "/v1/public/travel-composer",
+    "/v1/travel-composer",
+  ],
   // Workflow runtime — Cloudflare edge composition. Per-run state lives
   // in the `WorkflowRunDO` Durable Object exported from `entry.ts`;
   // serialized manifests live in the `WORKFLOW_MANIFESTS` KV namespace.

@@ -76,6 +76,11 @@ export const productCategories = pgTable(
       table.sortOrder,
       table.name,
     ),
+    // Trigram GIN indexes back the `ILIKE '%term%'` category search
+    // (name OR slug — both branches need an index for a BitmapOr plan).
+    // Requires the pg_trgm extension.
+    index("idx_product_categories_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+    index("idx_product_categories_slug_trgm").using("gin", table.slug.op("gin_trgm_ops")),
   ],
 )
 
@@ -136,7 +141,11 @@ export const productTags = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("uidx_product_tags_name").on(table.name)],
+  (table) => [
+    uniqueIndex("uidx_product_tags_name").on(table.name),
+    // Backs the `ILIKE '%term%'` tag search. Requires the pg_trgm extension.
+    index("idx_product_tags_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+  ],
 )
 
 export type ProductTag = typeof productTags.$inferSelect
@@ -230,6 +239,14 @@ export const destinationTranslations = pgTable(
       table.createdAt,
     ),
     index("idx_destination_translations_language_created").on(table.languageTag, table.createdAt),
+    // Trigram GIN indexes back the `ILIKE '%term%'` destination search
+    // (name OR description — both branches need an index for a BitmapOr
+    // plan). Requires the pg_trgm extension.
+    index("idx_destination_translations_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+    index("idx_destination_translations_description_trgm").using(
+      "gin",
+      table.description.op("gin_trgm_ops"),
+    ),
   ],
 )
 
