@@ -8,7 +8,7 @@ import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import { resolveStoredDocumentDownload } from "./document-download.js"
-import { getFinanceRouteRuntime } from "./routes.js"
+import { getFinanceRouteRuntime } from "./routes-runtime.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { financeService } from "./service.js"
 import { accountantSharesService, buildAccountantInvoicesCsv } from "./service-accountant-shares.js"
