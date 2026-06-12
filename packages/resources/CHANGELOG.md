@@ -1,5 +1,12 @@
 # @voyantjs/resources
 
+## 0.111.4
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/hono@0.109.0
+
 ## 0.111.3
 
 ### Patch Changes

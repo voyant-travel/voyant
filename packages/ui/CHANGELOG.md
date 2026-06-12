@@ -1,5 +1,12 @@
 # @voyantjs/ui
 
+## 0.106.1
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/utils@0.105.0
+
 ## 0.106.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @voyantjs/pricing
 
+## 0.119.0
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/hono@0.109.0
+  - @voyantjs/availability@0.116.0
+  - @voyantjs/products@0.119.0
+
 ## 0.118.0
 
 ### Patch Changes

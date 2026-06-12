@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/catalog-authoring",
-  "version": "0.106.16",
+  "version": "0.106.17",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

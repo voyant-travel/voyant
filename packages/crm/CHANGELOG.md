@@ -1,5 +1,16 @@
 # @voyantjs/crm
 
+## 0.119.0
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+- Updated dependencies [b0f1e21]
+  - @voyantjs/hono@0.109.0
+  - @voyantjs/utils@0.105.0
+  - @voyantjs/action-ledger@0.104.8
+  - @voyantjs/identity@0.119.0
+
 ## 0.118.0
 
 ### Patch Changes
