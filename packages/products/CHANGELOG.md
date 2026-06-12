@@ -1,5 +1,11 @@
 # @voyantjs/products
 
+## 0.119.2
+
+### Patch Changes
+
+- d097ac1: Refactor products backend service and booking handler internals into smaller operation-focused modules without changing public behavior.
+
 ## 0.119.1
 
 ### Patch Changes
