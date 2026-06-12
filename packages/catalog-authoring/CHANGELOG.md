@@ -1,5 +1,23 @@
 # @voyantjs/catalog-authoring
 
+## 0.106.11
+
+### Patch Changes
+
+- @voyantjs/availability@0.111.0
+- @voyantjs/extras@0.114.0
+- @voyantjs/pricing@0.114.0
+- @voyantjs/products@0.114.0
+
+## 0.106.10
+
+### Patch Changes
+
+- @voyantjs/availability@0.110.0
+- @voyantjs/extras@0.113.0
+- @voyantjs/pricing@0.113.0
+- @voyantjs/products@0.113.0
+
 ## 0.106.9
 
 ### Patch Changes

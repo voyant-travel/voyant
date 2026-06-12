@@ -1,5 +1,48 @@
 # @voyantjs/bookings-react
 
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [f7bd971]
+  - @voyantjs/finance-react@0.114.0
+  - @voyantjs/legal-react@0.114.0
+  - @voyantjs/products-react@0.114.0
+  - @voyantjs/availability-react@0.111.0
+  - @voyantjs/identity-react@0.114.0
+  - @voyantjs/catalog-react@0.112.0
+  - @voyantjs/extras-react@0.114.0
+  - @voyantjs/pricing-react@0.114.0
+  - @voyantjs/crm-react@0.114.0
+  - @voyantjs/bookings@0.114.0
+  - @voyantjs/suppliers-react@0.110.1
+
+## 0.113.0
+
+### Minor Changes
+
+- 9c909e2: Package-deliver the booking-flow admin surfaces (packaged-admin final sweep)
+
+  - **bookings-react**: `createBookingsAdminExtension` now contributes the whole booking flow — three new route contributions alongside list/detail: `bookings-new` (`/bookings/new` owned-product picker that forwards into the unified journey; route-backed `booking.create` destination), `bookings-compose` (`/bookings/compose` legacy alias forwarding to the new `trip.create` destination), and `bookings-journey` (`/catalog/journey/$entityModule/$entityId`, the unified `BookingJourney` host with CRM-backed lead/traveler pickers, departure/units/voucher pickers, duplicate-departure warning, B2B default, and commit→`booking.detail` / cancel→`catalog.browse` navigation via semantic destinations). New exports: `bookingNewSearchSchema`, `bookingJourneySearchSchema` (+ param types) and the `BookingJourneyHost` admin module (`/admin/booking-journey-host`). Declares the `trip.create` destination key.
+  - **admin**: `useAdminNavigate` accepts an optional `AdminNavigateOptions` (`{ replace?: boolean }`) third argument, forwarded to the host-injected navigate so packaged redirect pages keep route-redirect history semantics.
+  - **admin-app**: the workspace shell's injected destination navigate maps `replace` onto the router's history-replace mode.
+
+### Patch Changes
+
+- Updated dependencies [9c909e2]
+  - @voyantjs/admin@0.110.0
+  - @voyantjs/availability-react@0.110.0
+  - @voyantjs/finance-react@0.113.0
+  - @voyantjs/identity-react@0.113.0
+  - @voyantjs/legal-react@0.113.0
+  - @voyantjs/catalog-react@0.111.0
+  - @voyantjs/crm-react@0.113.0
+  - @voyantjs/suppliers-react@0.110.0
+  - @voyantjs/products-react@0.113.0
+  - @voyantjs/extras-react@0.113.0
+  - @voyantjs/pricing-react@0.113.0
+  - @voyantjs/bookings@0.113.0
+
 ## 0.112.0
 
 ### Minor Changes

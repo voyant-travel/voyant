@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/bookings-react",
-  "version": "0.112.0",
+  "version": "0.114.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -206,6 +206,11 @@
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",
         "default": "./dist/components/*.js"
+      },
+      "./admin/*": {
+        "types": "./dist/admin/*.d.ts",
+        "import": "./dist/admin/*.js",
+        "default": "./dist/admin/*.js"
       }
     },
     "main": "./dist/index.js",

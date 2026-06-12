@@ -1,5 +1,21 @@
 # @voyantjs/finance
 
+## 0.114.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.111.0
+- @voyantjs/bookings@0.114.0
+- @voyantjs/products@0.114.0
+
+## 0.113.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.110.0
+- @voyantjs/bookings@0.113.0
+- @voyantjs/products@0.113.0
+
 ## 0.112.0
 
 ### Patch Changes

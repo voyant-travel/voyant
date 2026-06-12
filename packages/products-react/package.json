@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/products-react",
-  "version": "0.112.0",
+  "version": "0.114.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -21,7 +21,8 @@
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
     "./components/*": "./src/components/*.tsx",
-    "./components/product-detail": "./src/components/product-detail/index.ts"
+    "./components/product-detail": "./src/components/product-detail/index.ts",
+    "./admin": "./src/admin/index.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -33,6 +34,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/admin": "workspace:^",
     "@voyantjs/availability": "workspace:^",
     "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
@@ -51,6 +53,9 @@
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@voyantjs/admin": {
+      "optional": true
+    },
     "@voyantjs/availability-react": {
       "optional": true
     },
@@ -91,6 +96,7 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
     "@voyantjs/availability": "workspace:^",
     "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
@@ -178,6 +184,11 @@
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",
         "default": "./dist/components/*.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       }
     },
     "main": "./dist/index.js",

@@ -13,16 +13,21 @@ import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // Type-only: bind the mounted admin entries' `AdminDestinations`
 // augmentations into this module without pulling any runtime code into
 // the chunk that imports the resolver map.
+import type {} from "@voyantjs/action-ledger-react/admin"
 import type {} from "@voyantjs/availability-react/admin"
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
 import type {} from "@voyantjs/crm-react/admin"
+import type {} from "@voyantjs/distribution-react/admin"
 import type {} from "@voyantjs/finance-react/admin"
+import type {} from "@voyantjs/flights-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
 import type {} from "@voyantjs/notifications-react/admin"
+import type {} from "@voyantjs/products-react/admin"
 import type {} from "@voyantjs/promotions-react/admin"
 import type {} from "@voyantjs/resources-react/admin"
 import type {} from "@voyantjs/suppliers-react/admin"
+import type {} from "@voyantjs/travel-composer-react/admin"
 
 /** Resolvers for the route-backed subset of the declared destination keys. */
 export const generatedAdminDestinations = {
@@ -30,12 +35,14 @@ export const generatedAdminDestinations = {
   "availabilitySlot.list": () => "/availability",
   "availabilityStartTime.detail": ({ startTimeId }) =>
     `/availability/start-times/${encodeURIComponent(startTimeId)}`,
+  "booking.create": () => "/bookings/new",
   "booking.list": () => "/bookings",
   "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
   "contract.list": () => "/legal/contracts",
   "contractTemplate.detail": ({ templateId }) =>
     `/legal/templates/${encodeURIComponent(templateId)}`,
   "contractTemplate.list": () => "/legal/templates",
+  "flight.search": () => "/flights",
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
   "notificationReminderRule.detail": ({ ruleId }) =>
@@ -53,6 +60,9 @@ export const generatedAdminDestinations = {
   "person.list": () => "/people",
   "policy.detail": ({ policyId }) => `/legal/policies/${encodeURIComponent(policyId)}`,
   "policy.list": () => "/legal/policies",
+  "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
+  "product.list": () => "/products",
+  "productCategory.list": () => "/products/categories",
   "resource.detail": ({ resourceId }) => `/resources/${encodeURIComponent(resourceId)}`,
   "resource.list": () => "/resources",
   "resourceAllocation.detail": ({ allocationId }) =>
@@ -62,4 +72,9 @@ export const generatedAdminDestinations = {
   "resourcePool.detail": ({ poolId }) => `/resources/pools/${encodeURIComponent(poolId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",
+  "supplierInvoice.detail": ({ supplierInvoiceId }) =>
+    `/finance/supplier-invoices/${encodeURIComponent(supplierInvoiceId)}`,
+  "supplierInvoice.list": () => "/finance/supplier-invoices",
+  "trip.detail": ({ tripId }) => `/trips/${encodeURIComponent(tripId)}`,
+  "trip.list": () => "/trips",
 } satisfies Partial<AdminDestinationResolvers>

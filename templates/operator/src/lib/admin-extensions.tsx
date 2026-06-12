@@ -4,7 +4,6 @@ import {
   type AdminRouteLoaderContext,
   adminRoutePageModule,
   createAdminExtensionRegistry,
-  defineAdminExtension,
 } from "@voyantjs/admin"
 import { createAdminCoreExtension } from "@voyantjs/admin-app/core-extension"
 import { Button } from "@voyantjs/ui/components/button"
@@ -45,9 +44,12 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "channelSync"
+  | "categories"
   | "contractNumberSeries"
   | "contractTemplates"
   | "contracts"
+  | "flights"
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
@@ -61,6 +63,7 @@ type AdminExtensionNavMessages = Pick<
   | "payments"
   | "people"
   | "policies"
+  | "products"
   | "profitability"
   | "promotions"
   | "resources"
@@ -164,12 +167,16 @@ function ComposeTripButton() {
 // operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
 // an entry here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route implementations + search
-// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the
-// host assembles them into its code-based route tree — no route files. The
-// app composes two seams through factory options: the "Compose trip" header
-// action on the list, and the detail-page substitution (the operator wraps
-// the packaged BookingDetailHost with the checkout/finance payment dialogs,
-// which the package cannot import without a dependency cycle).
+// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema /
+// bookingNewSearchSchema / bookingJourneySearchSchema) for the whole booking
+// flow — list, detail, the /bookings/new product picker, the
+// /bookings/compose composer alias, and the unified booking journey at
+// /catalog/journey/$entityModule/$entityId — and the host assembles them
+// into its code-based route tree, no route files. The app composes two seams
+// through factory options: the "Compose trip" header action on the list, and
+// the detail-page substitution (the operator wraps the packaged
+// BookingDetailHost with the checkout/finance payment dialogs, which the
+// package cannot import without a dependency cycle).
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.bookings({
     labels: { bookings: messages.bookings },
@@ -220,6 +227,33 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
       supplierInvoices: messages.supplierInvoices,
       profitability: messages.profitability,
     },
+  })
+}
+
+// Flights is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Flights item is part of the BASE
+// operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
+// an entry here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route implementations + search
+// contracts (flightsIndexSearchSchema / flightsBookSearchSchema), and the
+// host assembles them into its code-based route tree — no route files. The
+// booking wizard mounts as a flat sibling of the search page (the old
+// file-based tree's `flights_.book` escape), and its hand-written
+// `flightBooking.start` resolver lives in src/lib/admin-destinations.ts.
+function createFlightsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.flights({ labels: { flights: messages.flights } })
+}
+
+// Distribution is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Channel sync item is part of the
+// BASE operator navigation (createOperatorAdminNavigation in
+// @voyantjs/admin), so an entry here would duplicate it. It's registered for
+// the routes seam: the contribution carries the package-owned channel-sync
+// page (no search contract — the page keeps its filters local), and the host
+// assembles it into its code-based route tree — no route file.
+function createDistributionExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.distribution({
+    labels: { channelSync: messages.channelSync },
   })
 }
 
@@ -323,56 +357,56 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
-  return defineAdminExtension({
-    id: "travel-composer",
-    navigation: [
-      {
-        // Splice Trips in right after Bookings — both belong to the booking
-        // lifecycle. `insertAfter` keeps the contribution shape; the resolver
-        // splices in place rather than appending at the end.
-        insertAfter: "bookings",
-        items: [
-          {
-            id: "travel-composer",
-            title: messages.trips,
-            url: "/trips",
-            icon: Route,
-            items: [
-              {
-                id: "travel-composer-list",
-                title: messages.allTrips,
-                url: "/trips",
-              },
-              {
-                id: "travel-composer-new",
-                title: messages.newTrip,
-                url: "/trips/new",
-              },
-            ],
-          },
-        ],
-      },
-    ],
+// Products is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Products item (with its Categories
+// sub-item) is part of the BASE operator navigation
+// (createOperatorAdminNavigation in @voyantjs/admin), so entries here would
+// duplicate it. It's registered for the routes seam: the contributions carry
+// the package-owned route implementations (no search contracts — the pages
+// keep their filters local), and the list/categories pages are the packaged
+// hosts from @voyantjs/products-react/admin. The detail page is substituted
+// through the factory's `detailPageComponent` seam: the operator wrapper
+// composes the app-owned pieces the package cannot import — the
+// availability-react option resource templates panel (availability-react
+// depends on products-react, so importing it there would be a cycle), the
+// app's /api/v1/uploads storage route, and the product-pre-selected
+// new-booking deep link.
+function createProductsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.products({
+    labels: { products: messages.products, categories: messages.categories },
+    detailPageComponent: () =>
+      import("@/components/voyant/products/product-detail-page").then((module) => ({
+        default: module.ProductDetailPage,
+      })),
   })
 }
 
+// Travel composer is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementations come from @voyantjs/travel-composer-react/admin —
+// the Trips group (spliced after Bookings via `insertAfter`, with All trips /
+// New trip sub-items), the trips list, and the detail page whose Edit mode
+// lazy-mounts the packaged trip composer. The app only supplies the localized
+// labels and the icon.
+function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.travelComposer({
+    labels: {
+      trips: messages.trips,
+      allTrips: messages.allTrips,
+      newTrip: messages.newTrip,
+    },
+    icon: Route,
+  })
+}
+
+// Action ledger is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementation come from @voyantjs/action-ledger-react/admin —
+// the Logs nav item (order 60, past the default admin items) and the
+// cursor-paginated Logs page. The app only supplies the localized label and
+// the icon.
 function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
-  return defineAdminExtension({
-    id: "action-ledger",
-    navigation: [
-      {
-        order: 60,
-        items: [
-          {
-            id: "action-ledger",
-            title: messages.actionLedger,
-            url: "/action-ledger",
-            icon: ScrollText,
-          },
-        ],
-      },
-    ],
+  return generatedAdminExtensionFactories.actionLedger({
+    labels: { actionLedger: messages.actionLedger },
+    icon: ScrollText,
   })
 }
 
@@ -386,9 +420,12 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  channelSync: "Channel sync",
+  categories: "Categories",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",
+  flights: "Flights",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
@@ -402,6 +439,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   payments: "Payments",
   people: "People",
   policies: "Policies",
+  products: "Products",
   profitability: "Profitability",
   promotions: "Promotions",
   resources: "Resources",
@@ -418,8 +456,11 @@ export function createOperatorAdminExtensions(
     createAvailabilityExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),
+    createProductsExtension(messages),
     createCrmExtension(messages),
+    createDistributionExtension(messages),
     createFinanceExtension(messages),
+    createFlightsExtension(messages),
     createSuppliersExtension(messages),
     createLegalExtension(messages),
     createResourcesExtension(messages),
