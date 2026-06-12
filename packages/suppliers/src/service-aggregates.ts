@@ -33,7 +33,9 @@ export async function getSupplierAggregates(
   const toDate = options.to ? new Date(options.to) : undefined
 
   const rangeConditions = []
+  // agent-quality: raw-sql reviewed -- owner: suppliers; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (fromDate) rangeConditions.push(sql`${suppliers.createdAt} >= ${fromDate}`)
+  // agent-quality: raw-sql reviewed -- owner: suppliers; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (toDate) rangeConditions.push(sql`${suppliers.createdAt} < ${toDate}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 

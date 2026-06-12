@@ -24,7 +24,7 @@ import * as React from "react"
  * `"bookingJourney.start"`). The host then provides a resolver per declared
  * key — `satisfies AdminDestinationResolvers` makes the map exhaustive.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: augmented by domain packages via declaration merging
+// biome-ignore lint/suspicious/noEmptyInterface: augmented by domain packages via declaration merging -- owner: admin; existing suppression is intentional pending typed cleanup.
 export interface AdminDestinations {}
 
 /** Union of all declared destination keys (empty until packages augment). */

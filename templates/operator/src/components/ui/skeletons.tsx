@@ -40,7 +40,7 @@ export function SkeletonTableRows({
     <TableBody>
       {Array.from({ length: rows }).map((_, r) => (
         <TableRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: operator; existing suppression is intentional pending typed cleanup.
           key={r}
         >
           {Array.from({ length: columns }).map((__, c) => {
@@ -49,7 +49,7 @@ export function SkeletonTableRows({
               (c === 0 ? "w-2/3" : c === columns - 1 ? "w-16" : "w-1/2")
             return (
               <TableCell
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: operator; existing suppression is intentional pending typed cleanup.
                 key={c}
               >
                 <Skeleton className={cn("h-4", width)} />

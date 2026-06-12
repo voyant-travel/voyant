@@ -57,7 +57,7 @@ export function FlightOfferRow({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {offer.itineraries.map((itin, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return)
+          // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.
           <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
         ))}
       </div>

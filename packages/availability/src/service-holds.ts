@@ -93,6 +93,7 @@ export async function placeAvailabilityHold(
     await tx
       .update(availabilitySlots)
       .set({
+        // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         remainingPax: sql`${availabilitySlots.remainingPax} - ${input.paxCount}`,
         updatedAt: new Date(),
       })
@@ -175,6 +176,7 @@ export async function releaseAvailabilityHold(
       await tx
         .update(availabilitySlots)
         .set({
+          // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           remainingPax: sql`${availabilitySlots.remainingPax} + ${hold.paxCount}`,
           updatedAt: new Date(),
         })

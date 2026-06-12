@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
@@ -63,7 +64,7 @@ function getIsolatedFinanceTestDbUrl(url: string | undefined) {
 }
 
 async function cleanupFinanceTestData(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   const tableNames = [
@@ -99,6 +100,7 @@ async function cleanupFinanceTestData(
     FROM pg_tables
     WHERE schemaname = 'public'
       AND tablename IN (${sql.join(
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         tableNames.map((name) => sql`${name}`),
         sql`, `,
       )})

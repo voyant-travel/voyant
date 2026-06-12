@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -330,6 +331,16 @@ function PersonBookingsWidgetLoader(props: PersonBookingsWidgetProps) {
   )
 }
 
+function adminWidgetComponent<Props extends object>(
+  Widget: ComponentType<Props>,
+): ComponentType<Record<string, unknown>> {
+  return function AdminWidgetComponent(props: Record<string, unknown>) {
+    return <Widget {...(props as Props)} />
+  }
+}
+
+const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidgetLoader)
+
 /**
  * The bookings admin contribution (packaged-admin RFC Phase 3,
  * `@voyantjs/<domain>-ui/admin` convention).
@@ -501,7 +512,7 @@ export function createBookingsAdminExtension(
         // The widget registry is untyped (`Record<string, unknown>` props);
         // the typed contract is `PersonDetailBookingsTabContext`, which
         // crm-ui's person detail host passes verbatim to this slot's widgets.
-        component: PersonBookingsWidgetLoader as unknown as ComponentType<Record<string, unknown>>,
+        component: PersonBookingsWidgetContribution,
       } satisfies AdminWidgetContribution,
     ],
   })

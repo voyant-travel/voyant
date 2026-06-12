@@ -15,7 +15,7 @@ import { materializeSlotResourcesFromTemplateDefaults } from "../../src/service-
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 describe.skipIf(!DB_AVAILABLE)("materialize template defaults (integration)", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: owner: availability; createTestDb returns a driver-specific drizzle test client
   let db: any
   let productId: string
   let optionId: string
@@ -85,7 +85,7 @@ describe.skipIf(!DB_AVAILABLE)("materialize template defaults (integration)", ()
     const rooms = await db.execute(sql`
       SELECT label, capacity, kind FROM allocation_resources WHERE slot_id = ${slotId} ORDER BY sort_order
     `)
-    const rows = rooms as unknown as Array<{ label: string; capacity: number; kind: string }>
+    const rows = rooms as Array<{ label: string; capacity: number; kind: string }>
     expect(rows.filter((r) => r.kind === "room_sgl")).toHaveLength(5)
     expect(rows.filter((r) => r.kind === "room_dbl")).toHaveLength(20)
   })

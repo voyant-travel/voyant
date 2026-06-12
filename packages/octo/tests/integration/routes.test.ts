@@ -20,7 +20,7 @@ function nextSeq(prefix: string) {
 
 describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
   let app: Hono
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: octo; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

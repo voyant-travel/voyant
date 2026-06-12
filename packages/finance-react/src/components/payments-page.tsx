@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
@@ -570,7 +571,7 @@ function PaymentRowSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable -- owner: finance-react; existing suppression is intentional pending typed cleanup.
         <TableRow key={`skeleton-${idx}`}>
           <TableCell>
             <Skeleton className="h-5 w-20 rounded-full" />

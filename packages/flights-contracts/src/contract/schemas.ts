@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: flights-contracts; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
 import { FLIGHT_CAPABILITIES, type FlightCapability } from "./types.js"

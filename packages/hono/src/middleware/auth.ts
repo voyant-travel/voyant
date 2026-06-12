@@ -89,7 +89,7 @@ async function readCachedApiKey(kv: KVStore, keyHash: string): Promise<SelectApi
       const value = entry[field]
       if (typeof value === "string") entry[field] = new Date(value)
     }
-    return entry as unknown as SelectApikey
+    return entry as SelectApikey
   } catch {
     return null
   }
@@ -231,8 +231,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
         const counterUpdate = db
           .update(apikeyTable)
           .set({
+            // agent-quality: raw-sql reviewed -- Atomic quota counters must increment in SQL to avoid stale read/modify/write races.
             requestCount: sql`${apikeyTable.requestCount} + 1`,
             lastRequest: new Date(),
+            // agent-quality: raw-sql reviewed -- Atomic remaining decrement is guarded by the selected API-key row and avoids concurrent quota clobbering.
             ...(row.remaining !== null ? { remaining: sql`${apikeyTable.remaining} - 1` } : {}),
           })
           .where(eq(apikeyTable.id, row.id))

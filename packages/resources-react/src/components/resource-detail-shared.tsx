@@ -176,7 +176,7 @@ export function ResourceDetailSkeleton({
         </div>
         {Array.from({ length: actionCount }).map((_, index) => (
           <Skeleton
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: resources-react; existing suppression is intentional pending typed cleanup.
             key={index}
             className="h-9 w-28"
           />
@@ -191,7 +191,7 @@ export function ResourceDetailSkeleton({
           <CardContent className="flex flex-col gap-3">
             {Array.from({ length: detailRows }).map((_, index) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: resources-react; existing suppression is intentional pending typed cleanup.
                 key={index}
                 className="flex items-center gap-2"
               >
@@ -217,7 +217,7 @@ export function ResourceDetailSkeleton({
 
       {Array.from({ length: stackedCards }).map((_, cardIndex) => (
         <Card
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: resources-react; existing suppression is intentional pending typed cleanup.
           key={cardIndex}
         >
           <CardHeader className="flex flex-row items-center gap-2">
@@ -227,7 +227,7 @@ export function ResourceDetailSkeleton({
           <CardContent className="flex flex-col gap-3">
             {Array.from({ length: 2 }).map((_, rowIndex) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: resources-react; existing suppression is intentional pending typed cleanup.
                 key={rowIndex}
                 className="flex flex-col gap-2 rounded-md border p-3"
               >

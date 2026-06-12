@@ -39,7 +39,7 @@
 
   // Non-secret R2 config. The credential is set separately via
   // `wrangler secret put R2_ACCESS_KEY_ID` + `R2_SECRET_ACCESS_KEY`
-  // + `VOYANT_DISPATCH_SECRET`.
+  // + `VOYANT_DISPATCH_SECRET` + `VOYANT_WORKFLOW_STEP_AUTH_SECRET`.
   "vars": {
     "R2_ACCOUNT_ID": "replace-with-your-cf-account-id",
     "R2_BUCKET": "voyant-bundles"

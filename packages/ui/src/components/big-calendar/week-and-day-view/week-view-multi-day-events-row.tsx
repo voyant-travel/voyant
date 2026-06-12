@@ -95,7 +95,7 @@ export function WeekViewMultiDayEventsRow({ selectedDate, multiDayEvents }: IPro
               const event = row.find((e) => e.startIndex <= dayIndex && e.endIndex >= dayIndex)
 
               if (!event) {
-                // biome-ignore lint/suspicious/noArrayIndexKey: empty layout spacer slot has no semantic id; rowIndex is stable within the column
+                // biome-ignore lint/suspicious/noArrayIndexKey: empty layout spacer slot has no semantic id; rowIndex is stable within the column -- owner: ui; existing suppression is intentional pending typed cleanup.
                 return <div key={`empty-${rowIndex}`} className="h-6.5" />
               }
 

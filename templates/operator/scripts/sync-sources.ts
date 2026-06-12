@@ -1,5 +1,8 @@
 /**
  * Source discovery sync CLI — pulls projections from every registered
+ *
+ * agent-quality: file-size exception -- Source sync CLI keeps adapter setup, indexing, and progress reporting together until CLI phases are split into reusable modules.
+ *
  * `SourceAdapter` (Voyant Connect peers, GDS connectors, the demo
  * upstream at `apps/catalog-demo-api`) and pushes them into the
  * deployment's Typesense index. Sourced rows then show up in the
@@ -62,6 +65,10 @@ import {
   createDestinationNameResolver,
   createGeoNameResolver,
 } from "../src/api/lib/geo-resolver.js"
+
+function asTypesenseClient(client: TypesenseSdkClient): TypesenseClient {
+  return client as never
+}
 
 config({ path: ".env" })
 config({ path: "../../.env" })
@@ -229,7 +236,7 @@ const tsClient = new TypesenseSdkClient({
   connectionTimeoutSeconds: 10,
 })
 const indexer = createTypesenseIndexer({
-  client: tsClient as unknown as TypesenseClient,
+  client: asTypesenseClient(tsClient),
   vectorDimensions: embeddings?.capabilities.dimensions,
 })
 

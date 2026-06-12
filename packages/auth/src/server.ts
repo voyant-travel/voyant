@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: auth; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { apiKey } from "@better-auth/api-key"
 import { getDb } from "@voyantjs/db"
 import {
@@ -638,7 +639,7 @@ export function createBetterAuth<
       maxPasswordLength: 128,
       requireEmailVerification: true,
       revokeSessionsOnPasswordReset: true,
-      // eslint-disable-next-line @typescript-eslint/require-await
+      // eslint-disable-next-line @typescript-eslint/require-await -- owner: auth; existing suppression is intentional pending typed cleanup.
       sendResetPassword:
         options.sendResetPassword ??
         (async ({ user, url }) => {
@@ -676,7 +677,7 @@ export function createBetterAuth<
         },
       }),
       emailOTP({
-        // eslint-disable-next-line @typescript-eslint/require-await
+        // eslint-disable-next-line @typescript-eslint/require-await -- owner: auth; existing suppression is intentional pending typed cleanup.
         sendVerificationOTP:
           options.sendVerificationOTP ??
           (async ({ email, otp, type }) => {

@@ -20,7 +20,7 @@ const enSlice: IndexerSlice = {
 const NOW = new Date("2026-05-08T12:00:00Z")
 
 describe.skipIf(!DB_AVAILABLE)("createProductDeparturesProjectionExtension (integration)", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: availability; existing suppression is intentional pending typed cleanup.
   let db: any
   let productId: string
 

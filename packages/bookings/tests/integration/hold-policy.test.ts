@@ -15,7 +15,7 @@ function nextBookingNumber() {
 }
 
 describe.skipIf(!DB_AVAILABLE)("booking hold policy", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db helper type is loaded dynamically
+  // biome-ignore lint/suspicious/noExplicitAny: test db helper type is loaded dynamically -- owner: bookings; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

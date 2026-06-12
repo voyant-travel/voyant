@@ -7,7 +7,7 @@ import { migrateVouchersFromPaymentInstruments } from "../../src/service-voucher
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 async function resetTables(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   const tableNames = ["voucher_redemptions", "vouchers", "payment_instruments"]
@@ -17,6 +17,7 @@ async function resetTables(
     FROM pg_tables
     WHERE schemaname = 'public'
       AND tablename IN (${sql.join(
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         tableNames.map((name) => sql`${name}`),
         sql`, `,
       )})

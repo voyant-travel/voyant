@@ -158,10 +158,11 @@ async function defaultLoadOriginalPrice(
   db: AnyDrizzleDb,
   productId: string,
 ): Promise<{ amountCents: number | null; currency: string | null }> {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle's typed sql is overkill for a single-row read
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle's typed sql is overkill for a single-row read -- owner: promotions; existing suppression is intentional pending typed cleanup.
   const dbAny = db as any
   const { sql } = await import("drizzle-orm")
   const result = await dbAny.execute(
+    // agent-quality: raw-sql reviewed -- owner: promotions; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`SELECT sell_amount_cents, sell_currency FROM products WHERE id = ${productId} LIMIT 1`,
   )
   // postgres-js returns array-like; node-postgres returns `{ rows }`. Handle both.

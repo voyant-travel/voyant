@@ -85,6 +85,7 @@ export const cruisePrices = pgTable(
         table.fareCode,
         table.fareVariant,
       )
+      // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.priceScheduleId} IS NULL`),
   ],
 )

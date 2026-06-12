@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: pricing; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { availabilityPickupPoints, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"

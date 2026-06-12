@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { LegalContractRecord } from "../index.js"
 
 export const legalContractScopes = ["customer", "supplier", "partner", "channel", "other"] as const

@@ -72,10 +72,8 @@ export interface ConcurrencyPolicy<TInput> {
  * would create a private map per bundle copy.
  */
 const REGISTRY_KEY = "__voyantWorkflowRegistry" as const
-const globalRef = globalThis as unknown as Record<
-  typeof REGISTRY_KEY,
-  Map<string, WorkflowDefinition> | undefined
->
+const globalRef = globalThis as typeof globalThis &
+  Record<typeof REGISTRY_KEY, Map<string, WorkflowDefinition> | undefined>
 const REGISTRY: Map<string, WorkflowDefinition> =
   globalRef[REGISTRY_KEY] ?? new Map<string, WorkflowDefinition>()
 globalRef[REGISTRY_KEY] = REGISTRY

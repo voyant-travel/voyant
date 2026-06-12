@@ -344,7 +344,7 @@ export function BookingPaymentScheduleList({
         </h2>
         {addScheduleDisabledReason ? (
           <Tooltip>
-            {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
+            {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
             <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
               <Button variant="outline" size="sm" disabled className="pointer-events-none">
                 <Plus className="mr-2 h-4 w-4" />

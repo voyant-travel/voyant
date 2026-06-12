@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: workflows-orchestrator; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import {
   handleStepRequest,

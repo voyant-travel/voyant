@@ -89,7 +89,7 @@ export async function buildOwnedProductContent(
   entityId: string,
   options: BuildOwnedProductContentOptions,
 ): Promise<BuildOwnedProductContentResult | null> {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle's generic returning Pg infers the row shape but the AnyDrizzleDb wrapper widens it
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle's generic returning Pg infers the row shape but the AnyDrizzleDb wrapper widens it -- owner: products; existing suppression is intentional pending typed cleanup.
   const productRow: any = (
     await db.select().from(products).where(eq(products.id, entityId)).limit(1)
   )[0]
@@ -114,7 +114,7 @@ export async function buildOwnedProductContent(
     db.select().from(productTranslations).where(eq(productTranslations.productId, entityId)),
   ])
 
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle row shape
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle row shape -- owner: products; existing suppression is intentional pending typed cleanup.
   const defaultItinerary: any =
     itineraryRows.find((it: { isDefault: boolean }) => it.isDefault) ?? itineraryRows[0]
   const days = defaultItinerary

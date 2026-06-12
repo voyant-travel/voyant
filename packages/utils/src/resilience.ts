@@ -135,6 +135,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function defaultFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  return fetch(input, init)
+}
+
 /**
  * `fetch` with a per-attempt timeout, capped exponential retries with
  * full jitter, and an optional circuit breaker.
@@ -150,12 +154,7 @@ export async function resilientFetch(
   init: RequestInit = {},
   options: ResilientFetchOptions = {},
 ): Promise<Response> {
-  // Normalized signature: runtime fetch types differ across Workers/Node
-  // type libs (CF's generics over Request/CfProperties); the structural
-  // shape is identical.
-  const fetchImpl =
-    options.fetchImpl ??
-    (fetch as unknown as (input: string | URL | Request, init?: RequestInit) => Promise<Response>)
+  const fetchImpl = options.fetchImpl ?? defaultFetch
   const timeoutMs = options.timeoutMs ?? 10_000
   const method = (init.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase()
   const retriesAllowed =

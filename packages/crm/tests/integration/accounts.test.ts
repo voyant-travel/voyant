@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"

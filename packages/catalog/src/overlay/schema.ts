@@ -88,6 +88,7 @@ export const catalogOverlayTable = pgTable(
         table.audience,
         table.market,
       )
+      // agent-quality: raw-sql reviewed -- owner: catalog; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.deleted_at} IS NULL`),
     // Lookup index for the resolver: given an entity, find all its active
     // overlays in one query.

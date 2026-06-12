@@ -14,7 +14,7 @@ import {
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: availability; existing suppression is intentional pending typed cleanup.
   let db: any
   let productId: string
   let slotId: string

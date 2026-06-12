@@ -125,6 +125,7 @@ export function buildFinanceActionLedgerDriftQueries(
             SELECT 1
             FROM ${actionLedgerEntries}
             WHERE ${actionLedgerEntries.actionName} IN (${sql.join(
+              // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
               PAYMENT_SESSION_ACTION_NAMES.map((actionName) => sql`${actionName}`),
               sql`, `,
             )})
@@ -186,6 +187,7 @@ function buildCreatedAtCondition(
   if (Number.isNaN(date.getTime())) {
     throw new Error("createdAtFrom must be a valid date")
   }
+  // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`AND ${column} >= ${date}`
 }
 

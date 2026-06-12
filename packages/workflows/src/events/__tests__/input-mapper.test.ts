@@ -17,6 +17,14 @@ const ENV: PredicateEnvelope = {
   emittedAt: "2026-05-09T13:22:08.000Z",
 }
 
+function malformedInputMapper(value: unknown): InputMapper {
+  return value as InputMapper
+}
+
+function malformedLiteral(value: unknown): null {
+  return value as null
+}
+
 // ---- projectInput ----
 
 describe("projectInput — pass-through variants", () => {
@@ -140,15 +148,15 @@ describe("projectInput — { object }", () => {
 
 describe("projectInput — structural errors throw", () => {
   test("non-object mapper throws", () => {
-    expect(() => projectInput("garbage" as unknown as InputMapper, ENV)).toThrow()
+    expect(() => projectInput(malformedInputMapper("garbage"), ENV)).toThrow()
   })
 
   test("unknown mapper variant throws", () => {
-    expect(() => projectInput({ wat: "x" } as unknown as InputMapper, ENV)).toThrow()
+    expect(() => projectInput(malformedInputMapper({ wat: "x" }), ENV)).toThrow()
   })
 
   test("{ passthrough: false } throws", () => {
-    expect(() => projectInput({ passthrough: false } as unknown as InputMapper, ENV)).toThrow()
+    expect(() => projectInput(malformedInputMapper({ passthrough: false }), ENV)).toThrow()
   })
 })
 
@@ -196,7 +204,7 @@ describe("validateInputMapper", () => {
 
   test("rejects invalid lit type", () => {
     const r = validateInputMapper({
-      object: { ts: { lit: new Date() as unknown as null } },
+      object: { ts: { lit: malformedLiteral(new Date()) } },
     })
     expect(r.ok).toBe(false)
     expect(r.errors[0]).toMatch(/lit.*string \| number \| boolean \| null/)

@@ -107,7 +107,7 @@ describe("booking tax helpers", () => {
     }
     const db = {
       select: makeQuery,
-    } as unknown as PostgresJsDatabase
+    } as PostgresJsDatabase
 
     const app = new Hono()
       .use("*", async (c, next) => {

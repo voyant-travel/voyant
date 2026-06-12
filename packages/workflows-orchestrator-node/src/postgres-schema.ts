@@ -52,6 +52,7 @@ export const snapshotRunsTable = pgTable(
      */
     idempotencyIdx: uniqueIndex("voyant_snapshot_runs_idempotency_idx")
       .on(table.workflowId, table.idempotencyKey)
+      // agent-quality: raw-sql reviewed -- owner: workflows-orchestrator-node; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.idempotencyKey} IS NOT NULL`),
   }),
 )
@@ -95,6 +96,7 @@ export const workflowManifestsTable = pgTable(
     pk: primaryKey({ columns: [table.environment, table.versionId] }),
     currentIdx: uniqueIndex("voyant_workflow_manifests_current_idx")
       .on(table.environment)
+      // agent-quality: raw-sql reviewed -- owner: workflows-orchestrator-node; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.isCurrent}`),
   }),
 )

@@ -46,7 +46,7 @@ export { PROMOTION_BOUNDARY_SCHEDULER_CRON } from "../scheduled-crons"
 
 export async function runScheduledPromotionBoundary(
   _event: ScheduledController,
-  env: CloudflareBindings,
+  env: CloudflareBindings & { TENANT_ID?: string },
 ): Promise<BoundarySchedulerResult & { reindexedProductIds: number }> {
   // `withDbFromEnv` owns the per-tick Pool — the WebSocket closes when
   // this scheduled run finishes, instead of leaking until isolate
@@ -55,7 +55,7 @@ export async function runScheduledPromotionBoundary(
     const result = await runPromotionBoundaryScheduler({ db })
 
     // Build the indexer once per tick (Pool already open via withDbFromEnv).
-    const sellerOperatorId = (env as unknown as { TENANT_ID?: string }).TENANT_ID ?? "default"
+    const sellerOperatorId = env.TENANT_ID ?? "default"
     const embeddings = buildEmbeddingProvider(env)
     const indexer = buildTypesenseIndexer(env, embeddings)
     let reindexedProductIds = 0

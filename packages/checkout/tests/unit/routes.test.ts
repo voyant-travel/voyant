@@ -262,7 +262,7 @@ describe("createCheckoutRoutes", () => {
     // In-memory fake of the drizzle chain the idempotencyKey middleware
     // uses. Predicates are ignored — this test exercises a single
     // (scope, key) pair, so "first stored row" is the matched row.
-    // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+    // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain -- owner: checkout; existing suppression is intentional pending typed cleanup.
     const storedRows: any[] = []
     const dbFake = {
       select: () => ({
@@ -271,7 +271,7 @@ describe("createCheckoutRoutes", () => {
         }),
       }),
       insert: () => ({
-        // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain
+        // biome-ignore lint/suspicious/noExplicitAny: structural fake of drizzle's chain -- owner: checkout; existing suppression is intentional pending typed cleanup.
         values: (value: any) => ({
           onConflictDoNothing: async () => {
             storedRows.push(value)

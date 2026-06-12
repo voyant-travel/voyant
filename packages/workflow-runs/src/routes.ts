@@ -87,7 +87,7 @@ export function mountWorkflowRunsAdminRoutes(
     if (!parsed.success) {
       return c.json({ error: "invalid_query", detail: parsed.error.issues }, 400)
     }
-    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
+    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) {
       console.error("[workflow-runs] c.var.db is undefined — middleware ordering issue?")
@@ -109,7 +109,7 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.get("/v1/admin/workflow-runs/:id", async (c) => {
-    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
+    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
     try {
@@ -189,7 +189,7 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.post("/v1/admin/workflow-runs/:id/rerun", async (c) => {
-    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
+    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
     if (!opts.runners) {
@@ -269,7 +269,7 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.post("/v1/admin/workflow-runs/:id/resume", async (c) => {
-    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
+    // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
     if (!opts.runners) {

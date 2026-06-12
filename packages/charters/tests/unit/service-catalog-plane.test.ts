@@ -31,7 +31,7 @@ const sampleRow = {
   externalRefs: {},
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-04-01"),
-  // biome-ignore lint/suspicious/noExplicitAny: test fixture
+  // biome-ignore lint/suspicious/noExplicitAny: test fixture -- owner: charters; existing suppression is intentional pending typed cleanup.
 } as any
 
 describe("charterProductRowToProjection", () => {

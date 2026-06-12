@@ -9,14 +9,28 @@ function mockFetch(response: {
   json?: () => Promise<unknown>
   text?: () => Promise<string>
 }): typeof fetch {
-  return vi.fn(async () => {
+  return vi.fn<typeof globalThis.fetch>(async () => {
     return new Response(
       typeof response.json === "function" ? JSON.stringify(await response.json()) : "",
       {
         status: response.status ?? (response.ok ? 200 : 400),
       },
     )
-  }) as unknown as typeof fetch
+  })
+}
+
+function firstFetchCall(
+  fetchSpy: ReturnType<typeof vi.fn<typeof globalThis.fetch>>,
+): Parameters<typeof globalThis.fetch> {
+  const call = fetchSpy.mock.calls[0]
+  expect(call).toBeDefined()
+  return call!
+}
+
+function firstFetchInit(fetchSpy: ReturnType<typeof vi.fn<typeof globalThis.fetch>>): RequestInit {
+  const init = firstFetchCall(fetchSpy)[1]
+  expect(init).toBeDefined()
+  return init!
 }
 
 describe("createOpenAIEmbeddingProvider", () => {
@@ -64,7 +78,7 @@ describe("createOpenAIEmbeddingProvider", () => {
   })
 
   it("returns an empty array for an empty input without hitting the API", async () => {
-    const fetchSpy = vi.fn() as unknown as typeof fetch
+    const fetchSpy = vi.fn<typeof globalThis.fetch>()
     const provider = createOpenAIEmbeddingProvider({ apiKey: "sk-test", fetchImpl: fetchSpy })
     const vectors = await provider.embed([])
     expect(vectors).toEqual([])
@@ -95,9 +109,9 @@ describe("createOpenAIEmbeddingProvider", () => {
   })
 
   it("respects a custom baseUrl (Azure / proxy / OpenRouter)", async () => {
-    const fetchSpy = vi.fn(async () => {
+    const fetchSpy = vi.fn<typeof globalThis.fetch>(async () => {
       return new Response(JSON.stringify({ data: [] }), { status: 200 })
-    }) as unknown as typeof fetch
+    })
 
     const provider = createOpenAIEmbeddingProvider({
       apiKey: "sk-test",
@@ -105,23 +119,21 @@ describe("createOpenAIEmbeddingProvider", () => {
       fetchImpl: fetchSpy,
     })
     await provider.embed(["x"])
-    // biome-ignore lint/suspicious/noExplicitAny: vi.fn return type
-    const calledWith = (fetchSpy as any).mock.calls[0]?.[0]
+    const [calledWith] = firstFetchCall(fetchSpy)
     // Trailing slash stripped; path appended.
     expect(calledWith).toBe("https://my-proxy.example.com/openai/v1/embeddings")
   })
 
   it("sends the api key as a Bearer header", async () => {
-    const fetchSpy = vi.fn(async () => {
+    const fetchSpy = vi.fn<typeof globalThis.fetch>(async () => {
       return new Response(JSON.stringify({ data: [] }), { status: 200 })
-    }) as unknown as typeof fetch
+    })
     const provider = createOpenAIEmbeddingProvider({
       apiKey: "sk-test-12345",
       fetchImpl: fetchSpy,
     })
     await provider.embed(["x"])
-    // biome-ignore lint/suspicious/noExplicitAny: vi.fn return type
-    const init = (fetchSpy as any).mock.calls[0]?.[1] as RequestInit
+    const init = firstFetchInit(fetchSpy)
     const headers = init.headers as Record<string, string>
     expect(headers.Authorization).toBe("Bearer sk-test-12345")
   })
@@ -147,7 +159,7 @@ describe("embedBatched", () => {
 
   it("chunks oversized inputs into batches and concatenates the results", async () => {
     let callCount = 0
-    const fetchImpl = vi.fn(async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => {
       callCount++
       // Return one fake vector per input for whatever batch came in.
       return new Response(
@@ -159,7 +171,7 @@ describe("embedBatched", () => {
         }),
         { status: 200 },
       )
-    }) as unknown as typeof fetch
+    })
 
     const provider = createOpenAIEmbeddingProvider({
       apiKey: "sk-test",
@@ -179,7 +191,6 @@ describe("embedBatched", () => {
     const result = await embedBatched(tinyBatchProvider, ["a", "b", "c", "d"])
     // Two batches × 2 vectors each = 4 vectors total.
     expect(result).toHaveLength(4)
-    // biome-ignore lint/suspicious/noExplicitAny: vi.fn type
-    expect((fetchImpl as any).mock.calls.length).toBe(2)
+    expect(fetchImpl.mock.calls.length).toBe(2)
   })
 })

@@ -70,7 +70,8 @@ export interface AdminRoutePageModule {
  * rule rejects as `AdminRoutePageComponent` despite being safe to mount.
  */
 export function adminRoutePageModule<P>(component: React.ComponentType<P>): AdminRoutePageModule {
-  return { default: component as unknown as AdminRoutePageComponent }
+  const Component = component as React.ComponentType<AdminRoutePageProps>
+  return { default: Component }
 }
 
 /**

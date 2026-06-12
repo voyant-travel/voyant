@@ -247,7 +247,7 @@ export async function runCheckoutFinalize(
   // path still hydrates them.
   const seedResults =
     options.skipUntil !== undefined
-      ? { ...(options.seedResults ?? {}), __deps: deps as unknown as Record<string, unknown> }
+      ? { ...(options.seedResults ?? {}), __deps: deps }
       : options.seedResults
   await seeded.run({
     input,

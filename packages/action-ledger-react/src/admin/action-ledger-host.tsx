@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: action-ledger-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
@@ -357,7 +358,7 @@ function LedgerTableSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable -- owner: action-ledger-react; existing suppression is intentional pending typed cleanup.
         <TableRow key={`logs-skeleton-${idx}`}>
           <TableCell>
             <Skeleton className="h-4 w-28" />

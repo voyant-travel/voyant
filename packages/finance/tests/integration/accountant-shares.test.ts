@@ -19,7 +19,7 @@ const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const tokenOf = (url: string) => url.split("/").pop() ?? ""
 
 describe.skipIf(!DB_AVAILABLE)("accountant shares", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

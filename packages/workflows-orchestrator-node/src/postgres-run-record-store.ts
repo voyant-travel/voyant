@@ -153,7 +153,7 @@ function recordToValues(record: RunRecord) {
       completedAt: record.completedAt,
     }),
     input: normalizeJson(record.input),
-    runRecord: normalizeRequiredJson(record as unknown as Record<string, unknown>),
+    runRecord: normalizeRequiredJson({ ...record }),
     entryFile: null,
     replayOf: null,
     idempotencyKey: record.idempotencyKey ?? null,

@@ -105,7 +105,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       const offer = await promotionsService.createOffer(
         db,
         baseOffer({ scope: { kind: "global" } }),
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         { eventBus: bus as any },
       )
       expect(offer.id).toMatch(/^pofr_/)
@@ -128,7 +128,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       const offer = await promotionsService.createOffer(
         db,
         baseOffer({ scope: { kind: "products", productIds: [productAId, productBId] } }),
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         { eventBus: bus as any },
       )
 
@@ -227,7 +227,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
         db,
         offer.id,
         { description: "Updated description" },
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         { eventBus: bus as any },
       )
       expect(recorded).toHaveLength(0)
@@ -243,7 +243,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
         db,
         offer.id,
         { scope: { kind: "products", productIds: [productBId] } },
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         { eventBus: bus as any },
       )
       expect(recorded).toHaveLength(1)
@@ -267,7 +267,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
         db,
         offer.id,
         { scope: { kind: "products", productIds: [productBId] } },
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         { eventBus: bus as any },
       )
 
@@ -288,7 +288,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       const offer = await promotionsService.createOffer(db, baseOffer())
       const { bus, recorded } = makeEventBus()
       const archived = await promotionsService.archiveOffer(db, offer.id, {
-        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub -- owner: promotions; existing suppression is intentional pending typed cleanup.
         eventBus: bus as any,
       })
       expect(archived?.active).toBe(false)

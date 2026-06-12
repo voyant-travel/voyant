@@ -25,7 +25,7 @@ const sampleRow = {
   metadata: null,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-04-01"),
-  // biome-ignore lint/suspicious/noExplicitAny: test fixture
+  // biome-ignore lint/suspicious/noExplicitAny: test fixture -- owner: extras; existing suppression is intentional pending typed cleanup.
 } as any
 
 describe("productExtraRowToProjection", () => {

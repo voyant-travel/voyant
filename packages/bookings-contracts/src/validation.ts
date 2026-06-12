@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-contracts; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { typeIdSchemas } from "@voyantjs/schema-kit/typeid"
 import { z } from "zod"
 

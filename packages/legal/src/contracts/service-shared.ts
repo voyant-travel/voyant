@@ -200,6 +200,7 @@ export async function allocateContractNumber(
 ): Promise<{ number: string; sequence: number } | null> {
   return db.transaction(async (tx) => {
     const rows = await tx.execute(
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`SELECT * FROM ${contractNumberSeries}
           WHERE ${contractNumberSeries.id} = ${seriesId}
           FOR UPDATE`,
@@ -237,6 +238,7 @@ export async function allocateContractNumber(
       const existing = await tx
         .select({ id: contracts.id })
         .from(contracts)
+        // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         .where(sql`${contracts.contractNumber} = ${nextNumber}`)
         .limit(1)
 
@@ -249,6 +251,7 @@ export async function allocateContractNumber(
     await tx
       .update(contractNumberSeries)
       .set({ currentSequence: nextSequence, resetAt: nextResetAt, updatedAt: new Date() })
+      // agent-quality: raw-sql reviewed -- owner: legal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${contractNumberSeries.id} = ${seriesId}`)
 
     return {

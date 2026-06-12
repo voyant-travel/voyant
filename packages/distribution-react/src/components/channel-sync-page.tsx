@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: distribution-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"

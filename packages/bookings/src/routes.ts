@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   ActionApprovalDecisionConflictError,

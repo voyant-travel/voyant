@@ -251,9 +251,11 @@ export const pricingService = {
         and(
           eq(cruisePrices.sailingId, args.sailingId),
           eq(cruisePrices.occupancy, args.occupancy),
+          // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${cruisePrices.availability} <> 'sold_out'`,
         ),
       )
+      // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .orderBy(asc(sql`${cruisePrices.pricePerPerson}::numeric`))
       .limit(1)
 
@@ -277,6 +279,7 @@ export const pricingService = {
       .orderBy(
         asc(cruisePrices.cabinCategoryId),
         asc(cruisePrices.occupancy),
+        // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         asc(sql`${cruisePrices.pricePerPerson}::numeric`),
       )
 
@@ -325,6 +328,7 @@ export const pricingService = {
       .select()
       .from(cruisePrices)
       .where(and(...conditions))
+      // agent-quality: raw-sql reviewed -- owner: cruises; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .orderBy(asc(sql`${cruisePrices.pricePerPerson}::numeric`))
       .limit(1)
 

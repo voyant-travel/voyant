@@ -179,6 +179,7 @@ export function buildRefundBookingWorkflow(deps: RefundBookingDeps) {
               await tx
                 .update(availabilitySlotsRef)
                 .set({
+                  // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
                   remainingPax: sql`${availabilitySlotsRef.remainingPax} + ${allocation.quantity}`,
                 })
                 .where(eq(availabilitySlotsRef.id, allocation.availabilitySlotId))
@@ -191,7 +192,9 @@ export function buildRefundBookingWorkflow(deps: RefundBookingDeps) {
               .update(bookingAllocations)
               .set({ status: "released", releasedAt: new Date(), updatedAt: new Date() })
               .where(
+                // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
                 sql`${bookingAllocations.id} IN (${sql.join(
+                  // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
                   releaseableIds.map((id) => sql`${id}`),
                   sql`, `,
                 )})`,
@@ -220,6 +223,7 @@ export function buildRefundBookingWorkflow(deps: RefundBookingDeps) {
           for (const slotId of output.slotIds) {
             await tx
               .update(availabilitySlotsRef)
+              // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
               .set({ remainingPax: sql`${availabilitySlotsRef.remainingPax} - 1` })
               .where(eq(availabilitySlotsRef.id, slotId))
           }

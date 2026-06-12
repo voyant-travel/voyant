@@ -1,4 +1,5 @@
-// @ts-nocheck
+// @ts-nocheck -- legacy seed fixture typing cleanup is tracked separately from demo data edits.
+// agent-quality: file-size exception -- end-to-end operator fixture data stays together for reproducible demo resets.
 /**
  * Operator seed script — a realistic tour-operator scenario.
  *

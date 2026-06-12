@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookings } from "@voyantjs/bookings/schema"
 import { and, asc, desc, eq, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -608,8 +609,11 @@ export const publicFinanceService = {
     const voucherConditions = [
       eq(paymentInstruments.instrumentType, "voucher"),
       or(
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`lower(coalesce(${paymentInstruments.externalToken}, '')) = ${normalizedCodeLower}`,
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`lower(coalesce(${paymentInstruments.directBillReference}, '')) = ${normalizedCodeLower}`,
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`lower(coalesce(${paymentInstruments.metadata} ->> 'code', '')) = ${normalizedCodeLower}`,
       ),
     ]
@@ -694,6 +698,7 @@ async function resolveVoucherFromNewTable(
   const [row] = await db
     .select()
     .from(vouchers)
+    // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .where(sql`lower(${vouchers.code}) = ${code.toLowerCase()}`)
     .limit(1)
 

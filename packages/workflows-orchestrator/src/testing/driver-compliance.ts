@@ -20,6 +20,7 @@
 
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import type { DriverFactory, DriverFactoryDeps, ServiceResolver } from "@voyantjs/workflows/driver"
+// agent-quality: file-size exception -- Shared driver compliance suite intentionally keeps cross-driver behavioral cases together so all drivers run the same contract.
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
@@ -527,7 +528,7 @@ export function runDriverComplianceSuite(
             {
               id: `ef_${uniqueId("bad")}`,
               eventType: "evt.x",
-              where: { wat: "huh" } as unknown as never,
+              where: { wat: "huh" } as never,
               payloadHash: "h",
               targetWorkflowId: wfId,
             },

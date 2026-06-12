@@ -225,7 +225,7 @@ function LegBlock({
         <ul className="flex flex-col gap-1 border-t pt-2">
           {extras.map((x, i) => (
             <li
-              // biome-ignore lint/suspicious/noArrayIndexKey: positional list
+              // biome-ignore lint/suspicious/noArrayIndexKey: positional list -- owner: flights-react; existing suppression is intentional pending typed cleanup.
               key={i}
               className="flex items-center justify-between text-muted-foreground text-xs"
             >

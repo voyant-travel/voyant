@@ -19,6 +19,10 @@ export type S3Fetch = (
   text: () => Promise<string>
 }>
 
+function defaultS3Fetch(input: string, init: Parameters<S3Fetch>[1]): ReturnType<S3Fetch> {
+  return globalThis.fetch(input, { ...init, body: init.body as BodyInit | undefined })
+}
+
 /**
  * Options for {@link createS3Provider}.
  */
@@ -69,7 +73,7 @@ export function createS3Provider(options: S3ProviderOptions): StorageProvider {
       ? `https://s3.${options.region}.amazonaws.com`
       : `https://${options.bucket}.s3.${options.region}.amazonaws.com`)
   const publicBaseUrl = options.publicBaseUrl ?? ""
-  const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as S3Fetch | undefined)
+  const fetchImpl = options.fetch ?? defaultS3Fetch
   const credentials: SigV4Credentials = {
     accessKeyId: options.accessKeyId,
     secretAccessKey: options.secretAccessKey,

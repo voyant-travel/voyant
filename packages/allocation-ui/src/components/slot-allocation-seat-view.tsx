@@ -340,7 +340,7 @@ function SpecGrid({
         let seatColumn = 0
         return (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional within the bus layout.
+            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional within the bus layout. -- owner: allocation-ui; existing suppression is intentional pending typed cleanup.
             key={`spec-row-${rowIndex}`}
             className="grid items-stretch gap-2"
             style={{ gridTemplateColumns: `repeat(${row.cells.length}, minmax(4.25rem, 1fr))` }}
@@ -353,7 +353,7 @@ function SpecGrid({
                 if (!seat) {
                   return (
                     <SpacerCell
-                      // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row.
+                      // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row. -- owner: allocation-ui; existing suppression is intentional pending typed cleanup.
                       key={`spec-${rowIndex}-${cellIndex}`}
                       kind="void"
                       rowNumber={rowNumber}
@@ -381,7 +381,7 @@ function SpecGrid({
               }
               return (
                 <SpacerCell
-                  // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row.
+                  // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row. -- owner: allocation-ui; existing suppression is intentional pending typed cleanup.
                   key={`spec-${rowIndex}-${cellIndex}`}
                   kind={cell}
                   rowNumber={rowNumber}

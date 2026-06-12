@@ -41,7 +41,7 @@ interface DepsHolder {
   [DEPS_KEY]?: ChannelPushDeps
 }
 
-const globalRef = globalThis as unknown as DepsHolder
+const globalRef = globalThis as typeof globalThis & DepsHolder
 
 /** Wire the channel-push pipeline at process start. Idempotent. */
 export function setChannelPushDeps(deps: ChannelPushDeps): void {

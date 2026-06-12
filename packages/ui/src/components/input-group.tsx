@@ -51,7 +51,7 @@ function InputGroupAddon({
   }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: This addon is a click-to-focus affordance for the adjacent input.
+    // biome-ignore lint/a11y/noStaticElementInteractions: This addon is a click-to-focus affordance for the adjacent input. -- owner: ui; existing suppression is intentional pending typed cleanup.
     <div
       data-slot="input-group-addon"
       data-align={align}

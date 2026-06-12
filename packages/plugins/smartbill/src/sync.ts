@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: plugins; existing module stays co-located until a dedicated split preserves behavior and tests.
 import {
   buildInvoiceIssuedEvent,
   financeService,

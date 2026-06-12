@@ -418,6 +418,7 @@ async function defaultLoadProductPricing(
   // biome-ignore lint/suspicious/noExplicitAny: #1141 keeps cross-package product lookup driver-agnostic
   const dbAny = db as any
   const result = await dbAny.execute(
+    // agent-quality: raw-sql reviewed -- owner: pricing; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`SELECT sell_amount_cents, sell_currency FROM products WHERE id = ${productId} LIMIT 1`,
   )
   // postgres-js returns rows as an array-like; node-postgres returns `{ rows: [...] }`.

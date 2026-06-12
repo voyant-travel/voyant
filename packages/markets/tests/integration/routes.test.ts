@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: markets; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -16,7 +17,7 @@ function nextSeq() {
 
 describe.skipIf(!DB_AVAILABLE)("Markets routes (integration)", () => {
   let app: Hono
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: markets; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

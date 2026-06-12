@@ -31,10 +31,10 @@ export function InvoicesTableSkeleton({ rows = 8 }: { rows?: number }) {
         </TableHeader>
         <TableBody>
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
             <TableRow key={rowIndex}>
               {Array.from({ length: 6 }).map((__, columnIndex) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
                 <TableCell key={columnIndex}>
                   <Skeleton className={`h-4 ${INVOICE_WIDTHS[columnIndex] ?? "w-1/2"}`} />
                 </TableCell>

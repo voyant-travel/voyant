@@ -7,7 +7,7 @@ function fakeBus(emitImpl?: (...args: unknown[]) => Promise<void>) {
   return {
     emit: vi.fn(emitImpl ?? (async () => {})),
     subscribe: vi.fn(() => ({ unsubscribe() {} })),
-  } as unknown as EventBus & { emit: ReturnType<typeof vi.fn> }
+  } as EventBus & { emit: ReturnType<typeof vi.fn> }
 }
 
 describe("requestScopedEventBus", () => {

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: i18n; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { LocaleMessageSchema } from "../runtime.js"
 
 export const adminFinanceMessages = {

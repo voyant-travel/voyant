@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: storefront; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { createEventBus } from "@voyantjs/core"
 import { customerSignals } from "@voyantjs/crm/schema"

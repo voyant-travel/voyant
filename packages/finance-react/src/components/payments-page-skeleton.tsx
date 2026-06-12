@@ -32,10 +32,10 @@ export function PaymentsTableSkeleton({ rows = 8 }: { rows?: number }) {
         </TableHeader>
         <TableBody>
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
             <TableRow key={rowIndex}>
               {Array.from({ length: 7 }).map((__, columnIndex) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
                 <TableCell key={columnIndex}>
                   <Skeleton className={`h-4 ${PAYMENT_WIDTHS[columnIndex] ?? "w-1/2"}`} />
                 </TableCell>

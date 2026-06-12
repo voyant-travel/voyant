@@ -69,6 +69,7 @@ async function clearPrimaryForType(
     eq(personDocuments.isPrimary, true),
   ]
   if (exceptDocumentId) {
+    // agent-quality: raw-sql reviewed -- owner: crm; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     conditions.push(sql`${personDocuments.id} <> ${exceptDocumentId}`)
   }
   await db

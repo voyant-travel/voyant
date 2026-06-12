@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- Operator seed script keeps the end-to-end demo world fixture in one deterministic transaction until seed domains are split.
 import crypto from "node:crypto"
 import path from "node:path"
 import process from "node:process"
@@ -464,7 +465,7 @@ async function main() {
     }
 
     await db.transaction(async (tx) => {
-      const transactionCtx = { ...ctx, db: tx as unknown as Database }
+      const transactionCtx = { ...ctx, db: tx as Database }
 
       const customerSeeds = await seedCustomers(transactionCtx, plan)
       const supplierSeeds = await seedSuppliers(transactionCtx, plan)

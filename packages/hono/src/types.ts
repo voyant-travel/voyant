@@ -12,6 +12,7 @@ import type {
 import type { SelectApikey } from "@voyantjs/db/schema/iam"
 import { dbClientDispose } from "@voyantjs/db/transaction-capability"
 import type { KVStore } from "@voyantjs/utils/cache"
+import type { DriverFactory } from "@voyantjs/workflows/driver"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -58,6 +59,10 @@ export type VoyantVariables = CoreVoyantVariables & {
   link?: LinkService
   /** Shared cross-module query runtime, when the app wires one in. */
   query?: VoyantQueryRuntime
+  /** Optional workflow driver surfaced to HTTP routes after lazy app bootstrap. */
+  workflowDriver?: import("@voyantjs/workflows/driver").WorkflowDriver
+  /** Per-request db metrics counter populated by the metrics middleware. */
+  __voyantDbMetrics?: import("./middleware/metrics.js").RequestDbMetrics
 }
 
 /**
@@ -319,7 +324,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
       capabilityKey?: string
     }>
   }
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: reason: Hono sub-apps need to accept host-specific binding and variable generics.
   additionalRoutes?: (app: Hono<any>) => void
 }
 
@@ -357,7 +362,7 @@ export interface VoyantWorkflowsConfig<TBindings = unknown> {
    * lazily with `c.env` once bindings are available, then invoked
    * with `{ services, logger }` to produce the driver.
    */
-  driver: (bindings: TBindings) => WorkflowDriverFactoryShape
+  driver: (bindings: TBindings) => DriverFactory
   /**
    * Environment the manifest registers under. Defaults to `"development"`.
    * Workflow filters are environment-scoped (production manifests don't
@@ -377,5 +382,3 @@ export interface VoyantWorkflowsConfig<TBindings = unknown> {
  * The SDK package's concrete `DriverFactory` satisfies this via TS
  * structural compat (architecture doc §21.19).
  */
-// biome-ignore lint/suspicious/noExplicitAny: factory generics vary across driver implementations
-type WorkflowDriverFactoryShape = (deps: { services: any; logger: any; now?: () => number }) => any

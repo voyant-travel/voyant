@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { CrmUiMessages } from "./messages.js"
 
 export const crmUiEn = {

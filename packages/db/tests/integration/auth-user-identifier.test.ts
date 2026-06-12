@@ -33,7 +33,7 @@ if (TEST_DATABASE_URL) {
 }
 
 describe.skipIf(!DB_AVAILABLE)("auth.user email-or-phone constraints", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: db; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

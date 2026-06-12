@@ -65,6 +65,33 @@ function breakerFor(apiUrl: string): CircuitBreaker {
   return breaker
 }
 
+function createGlobalNetopiaFetch(): NetopiaFetch | undefined {
+  if (typeof globalThis.fetch !== "function") return undefined
+  return (input, init) => globalThis.fetch(input, init)
+}
+
+function headersForPluginFetch(headers: HeadersInit | undefined): Record<string, string> {
+  if (!headers) return {}
+  if (headers instanceof Headers || Array.isArray(headers)) {
+    return Object.fromEntries(new Headers(headers).entries())
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(headers)) out[key] = String(value)
+  return out
+}
+
+function asResilientFetch(fetchImpl: NetopiaFetch): typeof fetch {
+  return async (input, init = {}) => {
+    const response = await fetchImpl(input instanceof Request ? input.url : String(input), {
+      method: init.method ?? "GET",
+      headers: headersForPluginFetch(init.headers),
+      ...(typeof init.body === "string" ? { body: init.body } : {}),
+    })
+    if (response instanceof Response) return response
+    return new Response(await response.text(), { status: response.status })
+  }
+}
+
 export function resolveNetopiaRuntimeOptions(
   bindings: Record<string, unknown> | undefined,
   options: NetopiaRuntimeOptions = {},
@@ -146,7 +173,7 @@ function resolveMode(raw: string | undefined): NetopiaMode {
 
 export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClientApi {
   const apiUrl = options.apiUrl.replace(/\/$/, "")
-  const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as NetopiaFetch | undefined)
+  const fetchImpl = options.fetch ?? createGlobalNetopiaFetch()
   const breaker = options.resilience?.breaker ?? breakerFor(apiUrl)
   // Payments get a longer per-attempt ceiling than the 10s default used for
   // non-payment upstreams; no stricter timeout existed before this.
@@ -181,7 +208,7 @@ export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClien
         // surfaces 5xx responses so the rich error mapping below keeps the
         // upstream status + body (the breaker still records the failure).
         retry: { retryOn: () => false },
-        fetchImpl: fetchImpl as unknown as typeof fetch,
+        fetchImpl: asResilientFetch(fetchImpl),
       },
     )
 

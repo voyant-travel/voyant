@@ -26,9 +26,7 @@ import { recordPromotionRedemptionsForBooking } from "../../src/service-booking-
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
-const db: PostgresJsDatabase = DB_AVAILABLE
-  ? createTestDb()
-  : (null as unknown as PostgresJsDatabase)
+const db: PostgresJsDatabase = DB_AVAILABLE ? createTestDb() : (undefined as never)
 
 let bookingSeq = 0
 function makeBookingId(): string {

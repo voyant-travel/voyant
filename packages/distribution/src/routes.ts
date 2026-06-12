@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: distribution; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import {
   insertContactPointForEntitySchema,

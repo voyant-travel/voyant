@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: action-ledger; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { afterEach, describe, expect, test, vi } from "vitest"
 

@@ -1,6 +1,28 @@
 import { describe, expect, it } from "vitest"
 import worker, { type Env, WorkflowRunDO } from "./worker.js"
 
+function testBinding<T>(value: object = {}): T {
+  return value as T
+}
+
+function unusedDurableObjectNamespace(): DurableObjectNamespace {
+  return testBinding<DurableObjectNamespace>()
+}
+
+function unusedR2Bucket(): R2Bucket {
+  return testBinding<R2Bucket>()
+}
+
+function unusedKvNamespace(): KVNamespace {
+  return testBinding<KVNamespace>()
+}
+
+function testFetcher(): Fetcher {
+  return testBinding<Fetcher>({
+    fetch: async () => new Response(),
+  })
+}
+
 describe("worker entry", () => {
   it("exports a default with a fetch handler", () => {
     expect(worker).toBeDefined()
@@ -34,16 +56,14 @@ describe("worker entry", () => {
         return new Map(this._map)
       },
     }
-    const state = { storage } as unknown as DurableObjectState
+    const state = testBinding<DurableObjectState>({ storage })
     // WORKFLOWS service binding is never called for a 404 path; a stub is fine.
     const env = {
-      WORKFLOW_RUN_DO: null as unknown as DurableObjectNamespace,
-      WORKFLOWS: {
-        fetch: async () => new Response(),
-      } as unknown as Fetcher,
-      NODE_STEP_POOL: null as unknown as DurableObjectNamespace,
-      BUNDLE_R2: null as unknown as R2Bucket,
-      BUNDLE_HASHES: null as unknown as KVNamespace,
+      WORKFLOW_RUN_DO: unusedDurableObjectNamespace(),
+      WORKFLOWS: testFetcher(),
+      NODE_STEP_POOL: unusedDurableObjectNamespace(),
+      BUNDLE_R2: unusedR2Bucket(),
+      BUNDLE_HASHES: unusedKvNamespace(),
     } satisfies Env
 
     const instance = new WorkflowRunDO(state, env)
@@ -64,19 +84,17 @@ describe("worker entry", () => {
         })
       },
     }
-    const fakeNS = {
-      idFromName: (name: string) => name,
-      get: () => fakeStub,
-    } as unknown as DurableObjectNamespace
+    const fakeNS = testBinding<DurableObjectNamespace>({
+      idFromName: (name: string) => testBinding<DurableObjectId>({ name }),
+      get: () => testBinding<DurableObjectStub>(fakeStub),
+    })
 
     const env = {
       WORKFLOW_RUN_DO: fakeNS,
-      WORKFLOWS: {
-        fetch: async () => new Response(),
-      } as unknown as Fetcher,
-      NODE_STEP_POOL: null as unknown as DurableObjectNamespace,
-      BUNDLE_R2: null as unknown as R2Bucket,
-      BUNDLE_HASHES: null as unknown as KVNamespace,
+      WORKFLOWS: testFetcher(),
+      NODE_STEP_POOL: unusedDurableObjectNamespace(),
+      BUNDLE_R2: unusedR2Bucket(),
+      BUNDLE_HASHES: unusedKvNamespace(),
       VOYANT_API_TOKENS: "test-token",
     } satisfies Env
 

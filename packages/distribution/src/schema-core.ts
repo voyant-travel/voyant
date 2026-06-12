@@ -254,6 +254,7 @@ export const channelBookingLinks = pgTable(
     index("idx_channel_booking_links_push_status").on(table.pushStatus, table.lastPushAt),
     index("idx_channel_booking_links_booking_item")
       .on(table.bookingItemId)
+      // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.bookingItemId} IS NOT NULL`),
     /**
      * Per §7.1: the subscriber's `INSERT ... ON CONFLICT DO NOTHING`
@@ -264,6 +265,7 @@ export const channelBookingLinks = pgTable(
     uniqueIndex("uniq_channel_booking_links_per_item").on(
       table.channelId,
       table.bookingId,
+      // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`COALESCE(${table.bookingItemId}, '')`,
     ),
   ],

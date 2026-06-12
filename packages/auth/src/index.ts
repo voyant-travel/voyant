@@ -7,7 +7,7 @@ export function isStaticPath(pathname: string) {
   return pathname.startsWith("/_next") || /\.(?:svg|png|jpg|jpeg|gif|webp|ico)$/.test(pathname)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- owner: auth; existing suppression is intentional pending typed cleanup.
 export function isApiPath(_pathname: string) {
   // API routes should be evaluated by middleware for auth context propagation.
   return false

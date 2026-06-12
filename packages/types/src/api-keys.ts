@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: types; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
 export const API_KEY_ACTIONS = ["read", "write", "delete", "trigger", "relay", "search"] as const

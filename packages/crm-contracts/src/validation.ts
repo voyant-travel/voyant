@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm-contracts; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { kmsEnvelopeSchema } from "@voyantjs/schema-kit/kms"
 import { z } from "zod"
 

@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest"
 
 import { fetchOverlaysForEntities } from "./overlay-service.js"
 
+function drizzleStub(methods: Partial<Record<keyof AnyDrizzleDb, unknown>>): AnyDrizzleDb {
+  return methods as never
+}
+
 /**
  * Minimal mock for the `db.select({...}).from(...).where(...)` chain the
  * batched overlay fetch issues. Every `select` call is counted so tests can
@@ -10,7 +14,7 @@ import { fetchOverlaysForEntities } from "./overlay-service.js"
  */
 function mockDb(rows: ReadonlyArray<Record<string, unknown>>) {
   let selectCalls = 0
-  const db = {
+  const db = drizzleStub({
     select: () => {
       selectCalls++
       return {
@@ -19,8 +23,8 @@ function mockDb(rows: ReadonlyArray<Record<string, unknown>>) {
         }),
       }
     },
-  }
-  return { db: db as unknown as AnyDrizzleDb, selectCount: () => selectCalls }
+  })
+  return { db, selectCount: () => selectCalls }
 }
 
 const overlayRow = (entityId: string, fieldPath: string, value: unknown) => ({

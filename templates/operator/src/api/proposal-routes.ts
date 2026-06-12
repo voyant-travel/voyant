@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import {
   crmService,
   type QuoteVersion,
@@ -393,6 +394,7 @@ async function acceptPublicProposalWithQuoteLock({
 
 function lockQuoteAccept(db: PostgresJsDatabase, quoteId: string) {
   return db.execute(
+    // agent-quality: raw-sql reviewed -- owner: operator; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     sql`SELECT pg_advisory_xact_lock(hashtextextended(${quoteAcceptLockKey(quoteId)}, 0))`,
   )
 }

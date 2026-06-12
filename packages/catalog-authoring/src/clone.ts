@@ -169,6 +169,7 @@ export async function cloneProduct(
 
   const result = await db.transaction(async (tx) => {
     if (key) {
+      // agent-quality: raw-sql reviewed -- owner: catalog-authoring; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`)
       const [prev] = await tx
         .select({ productId: productAuthoringRequests.productId })

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
 import { bookingsService, canTransitionBooking, transitionBooking } from "@voyantjs/bookings"
 import { bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"

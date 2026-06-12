@@ -40,13 +40,7 @@ interface BundleLocation {
   hash: string
 }
 
-interface JournalSlice {
-  stepResults: Record<string, unknown>
-  waitpointsResolved: Record<string, unknown>
-  compensationsRun: Record<string, unknown>
-  metadataState: Record<string, unknown>
-  streamsCompleted: Record<string, unknown>
-}
+type JournalSlice = ExecuteWorkflowStepRequest["journal"]
 
 interface StepDispatchPayload {
   runId: string
@@ -279,10 +273,7 @@ async function handleStep(payload: StepDispatchPayload): Promise<StepJournalEntr
     workflowId: payload.workflowId,
     workflowVersion: payload.workflowVersion,
     input: payload.input,
-    // The JournalSlice type in @voyantjs/workflows is a superset of our
-    // structural interface; cast is safe because executeWorkflowStep
-    // only reads standard fields.
-    journal: journalSlice as unknown as ExecuteWorkflowStepRequest["journal"],
+    journal: journalSlice,
     invocationCount: 1,
     environment: {
       run: {

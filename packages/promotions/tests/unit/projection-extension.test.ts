@@ -174,7 +174,7 @@ describe("createProductPromotionsProjectionExtension — short-circuit on no bas
     const extension = createProductPromotionsProjectionExtension({
       loadOriginalPrice: async () => ({ amountCents: null, currency: null }),
     })
-    // biome-ignore lint/suspicious/noExplicitAny: minimal stub — the extension short-circuits before touching db
+    // biome-ignore lint/suspicious/noExplicitAny: minimal stub — the extension short-circuits before touching db -- owner: promotions; existing suppression is intentional pending typed cleanup.
     const result = await extension.project({} as any, "prod_x", SLICE)
     expect(result.get("hasOffer")).toBe(false)
     expect(result.get("originalPriceFromAmountCents")).toBeNull()
@@ -184,7 +184,7 @@ describe("createProductPromotionsProjectionExtension — short-circuit on no bas
     const extension = createProductPromotionsProjectionExtension({
       loadOriginalPrice: async () => ({ amountCents: 10000, currency: null }),
     })
-    // biome-ignore lint/suspicious/noExplicitAny: minimal stub — the extension short-circuits before touching db
+    // biome-ignore lint/suspicious/noExplicitAny: minimal stub — the extension short-circuits before touching db -- owner: promotions; existing suppression is intentional pending typed cleanup.
     const result = await extension.project({} as any, "prod_x", SLICE)
     expect(result.get("hasOffer")).toBe(false)
   })

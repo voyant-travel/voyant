@@ -98,7 +98,7 @@ export function FlightBookingPage({
 
   const priceMutation = useFlightOfferPrice()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-price once on mount per offer pair
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-price once on mount per offer pair -- owner: flights-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     let cancelled = false
     const repriceLeg = async (

@@ -150,7 +150,7 @@ export function CatalogVerticalHost({
   // inline literals), not their identity. `search` is already stable (router).
   const lockedFacetsKey = JSON.stringify(lockedFacets ?? null)
   const lockedRangesKey = JSON.stringify(lockedRanges ?? null)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on serialized locked filters, not their object identity
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on serialized locked filters, not their object identity -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
   const effectiveSearch = useMemo<CatalogSearchParams>(
     () =>
       lockedFacets || lockedRanges

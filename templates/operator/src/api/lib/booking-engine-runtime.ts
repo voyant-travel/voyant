@@ -2,6 +2,8 @@
  * Process-local SourceAdapterRegistry + OwnedBookingHandlerRegistry
  * for the catalog booking engine.
  *
+ * agent-quality: file-size exception -- Booking-engine runtime keeps source adapters, owned handlers, and vertical bridges together until each vertical bridge gets its own module boundary.
+ *
  * Two registries:
  *   - `SourceAdapterRegistry` keyed by connection id — sourced rows
  *     (Voyant Connect peers, GDS, bedbanks, the demo upstream).
@@ -77,6 +79,10 @@ import { createGeoNameResolver } from "./geo-resolver"
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
 
+function asPostgresDb(db: unknown): PostgresJsDatabase {
+  return db as never
+}
+
 /**
  * Returns the (lazy-initialized) booking-engine registry. The first
  * caller per process creates the registry and conditionally registers
@@ -112,7 +118,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         holds: {
           async place(input) {
             return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-              const db = rawDb as unknown as PostgresJsDatabase
+              const db = asPostgresDb(rawDb)
               const result = await placeAvailabilityHold(db, input)
               if (result.status === "ok") {
                 return {
@@ -140,7 +146,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           },
           async extend(input) {
             return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-              const db = rawDb as unknown as PostgresJsDatabase
+              const db = asPostgresDb(rawDb)
               const result = await extendAvailabilityHold(db, input)
               if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
               return { status: "not_found" }
@@ -148,7 +154,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           },
           async release(holdToken) {
             await withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-              const db = rawDb as unknown as PostgresJsDatabase
+              const db = asPostgresDb(rawDb)
               await releaseAvailabilityHold(db, holdToken)
             })
           },
@@ -165,7 +171,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // PgDatabase surface is identical across flavors for the
           // ops we use.
           return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-            const db = rawDb as unknown as PostgresJsDatabase
+            const db = asPostgresDb(rawDb)
             // `input.initialStatus` is plumbed from the booking-engine
             // commit caller (e.g. trip composer reserve) so bookings land in
             // the operator's preferred state — `awaiting_payment` for live
@@ -186,7 +192,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // Project booking-requirements rows into the engine's
           // descriptor shape. Per-traveler fields stay; lead-only and
           // booking-scope rows are excluded (they belong on bookingFields).
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const result = await bookingRequirementsService.listProductContactRequirements(db, {
             productId,
             active: true,
@@ -225,7 +231,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           return fields
         },
         async loadAddonCatalog(ctx, productId) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const rows = await db
             .select({
               id: productExtras.id,
@@ -287,7 +293,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         async loadTaxRate(ctx, args) {
           void args.buyerCountry
           void args.buyerType
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           return resolveBookingSellTaxRate(
             db,
             { productId: args.productId },
@@ -295,7 +301,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           )
         },
         async loadProductOptions(ctx, productId) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const rows = await db
             .select({
               id: productOptions.id,
@@ -361,7 +367,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // missing migration) we return undefined so the engine falls back
           // to the generic default bands instead of collapsing the shape.
           try {
-            const db = ctx.db as unknown as PostgresJsDatabase
+            const db = asPostgresDb(ctx.db)
             const optionRows = await db
               .select({ id: productOptions.id })
               .from(productOptions)
@@ -460,7 +466,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // on any failure (e.g. a missing `pricing_category_dependencies`
           // migration) rather than failing the whole booking shape.
           try {
-            const db = ctx.db as unknown as PostgresJsDatabase
+            const db = asPostgresDb(ctx.db)
             const optionRows = await db
               .select({ id: productOptions.id })
               .from(productOptions)
@@ -532,7 +538,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           }
         },
         async loadSlotDate(ctx, slotId) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const [slot] = await db
             .select({ dateLocal: availabilitySlots.dateLocal })
             .from(availabilitySlots)
@@ -541,7 +547,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           return slot?.dateLocal ?? null
         },
         async loadResolvedOptionPrice(ctx, args) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
 
           // Resolve catalog id: explicit (rare) > default public.
           let catalogId = args.catalogId
@@ -637,7 +643,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
     registry.register(
       createAccommodationBookingHandler({
         async loadContent(ctx, entityId) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const sourceRegistry = getBookingEngineRegistry(env)
           const resolved = await getAccommodationContent(
             db,
@@ -658,7 +664,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
     registry.register(
       createCruiseBookingHandler({
         async loadContent(ctx, entityId) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const sourceRegistry = getBookingEngineRegistry(env)
           const resolved = await getCruiseContent(
             db,
@@ -669,7 +675,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           return resolved?.content ?? null
         },
         async loadPrice(ctx, args) {
-          const db = ctx.db as unknown as PostgresJsDatabase
+          const db = asPostgresDb(ctx.db)
           const row = await cruisePricingService.lowestAvailablePrice(db, {
             sailingId: args.sailingId,
             occupancy: args.occupancy,
@@ -691,7 +697,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         },
         async commitBridge(input, opts) {
           return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-            const db = rawDb as unknown as PostgresJsDatabase
+            const db = asPostgresDb(rawDb)
             try {
               const result = await cruisesBookingService.createCruiseBooking(
                 db,

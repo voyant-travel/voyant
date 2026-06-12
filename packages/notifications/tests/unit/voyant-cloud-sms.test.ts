@@ -6,7 +6,7 @@ function makeFakeClient(smsResponse: Record<string, unknown>) {
   const sendMessage = vi.fn(async () => smsResponse)
   return {
     sendMessage,
-    client: { sms: { sendMessage } } as unknown as Parameters<
+    client: { sms: { sendMessage } } as Parameters<
       typeof createVoyantCloudSmsProvider
     >[0]["client"],
   }

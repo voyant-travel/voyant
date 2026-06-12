@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- Self-host server keeps HTTP routes, SSE streams, static dashboard serving, and runtime dependency wiring together until the public server module can be split deliberately.
 import { readFile, stat } from "node:fs/promises"
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { extname, join, resolve as resolvePath } from "node:path"
@@ -31,6 +32,11 @@ import {
 } from "./snapshot-run-store.js"
 import { createStoreStream, type StoreEvent, type StoreStream } from "./store-stream.js"
 import { createFsWakeupStore } from "./wakeup-store.js"
+
+type WorkflowRegistryModule = Pick<
+  typeof import("@voyantjs/workflows"),
+  "__resetRegistry" | "__listRegisteredWorkflows"
+>
 
 export interface ServeDeps {
   store: SnapshotRunStore
@@ -107,6 +113,23 @@ export function createChunkBus(): ChunkBus {
       subs.add(fn)
       return () => subs.delete(fn)
     },
+  }
+}
+
+function closeAllConnections(server: Server): void {
+  if ("closeAllConnections" in server && typeof server.closeAllConnections === "function") {
+    server.closeAllConnections()
+  }
+}
+
+function unrefTimer(timer: ReturnType<typeof setInterval>): void {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
+    timer.unref()
   }
 }
 
@@ -666,7 +689,7 @@ export async function startServer(
       new Promise<void>((resolve, reject) => {
         deps.scheduler?.stop()
         storeStream?.stop()
-        ;(server as unknown as { closeAllConnections?: () => void }).closeAllConnections?.()
+        closeAllConnections(server)
         server.close((err) => {
           if (err) {
             reject(err)
@@ -716,7 +739,7 @@ export function handleSseStream(
       // Ignore write errors on closed sockets.
     }
   }, 25_000)
-  ;(ping as unknown as { unref?: () => void }).unref?.()
+  unrefTimer(ping)
 
   res.on("close", () => {
     clearInterval(ping)
@@ -803,7 +826,7 @@ export function handleRunSseStream(
       // Ignore write errors on closed sockets.
     }
   }, 25_000)
-  ;(ping as unknown as { unref?: () => void }).unref?.()
+  unrefTimer(ping)
 
   res.on("close", () => {
     closed = true
@@ -875,17 +898,7 @@ export async function createNodeSelfHostDeps(
   const pg = databaseUrl ? createPostgresConnection({ databaseUrl }) : undefined
   const store =
     opts.store ?? (pg ? createPostgresSnapshotRunStore({ db: pg.db }) : createFsSnapshotRunStore())
-  const wfMod = (await import("@voyantjs/workflows")) as unknown as {
-    __resetRegistry: () => void
-    __listRegisteredWorkflows: () => Array<{
-      id: string
-      config: {
-        description?: string
-        schedule?: unknown
-        timeout?: unknown
-      }
-    }>
-  }
+  const wfMod: WorkflowRegistryModule = await import("@voyantjs/workflows")
   wfMod.__resetRegistry()
 
   const entryAbs = resolvePath(process.cwd(), opts.entryFile)

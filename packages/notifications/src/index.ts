@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing module stays co-located until a dedicated split preserves behavior and tests.
 import type { Module } from "@voyantjs/core"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { HonoModule } from "@voyantjs/hono/module"

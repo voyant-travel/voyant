@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance-react; existing module stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { queryOptions } from "@tanstack/react-query"

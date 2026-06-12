@@ -19,7 +19,7 @@ function mockDb(responses: ReadonlyArray<unknown>) {
       return response
     },
   }
-  return { db: db as unknown as PostgresJsDatabase, executeCount: () => calls }
+  return { db: db as PostgresJsDatabase, executeCount: () => calls }
 }
 
 const resource = (id: string, kind: string, capacity: number, slotId = "slot_1") => ({

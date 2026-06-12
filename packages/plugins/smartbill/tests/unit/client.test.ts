@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: plugins; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
@@ -396,10 +397,10 @@ describe("createSmartbillClient — basic auth encoding", () => {
 describe("createSmartbillClient — fetch handling", () => {
   it("throws when no fetch implementation is available", async () => {
     const originalFetch = globalThis.fetch
-    // biome-ignore lint/suspicious/noExplicitAny: stubbing global fetch
+    // biome-ignore lint/suspicious/noExplicitAny: stubbing global fetch -- owner: plugins; existing suppression is intentional pending typed cleanup.
     ;(globalThis as any).fetch = undefined
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: simulating missing fetch
+      // biome-ignore lint/suspicious/noExplicitAny: simulating missing fetch -- owner: plugins; existing suppression is intentional pending typed cleanup.
       const client = createSmartbillClient({ ...baseOptions, fetch: undefined as any })
       await expect(client.cancelInvoice("X", "A", "1")).rejects.toThrow(
         /requires a fetch implementation/,

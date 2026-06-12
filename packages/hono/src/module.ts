@@ -10,13 +10,13 @@ export interface HonoModule {
    *
    * @deprecated Prefer `adminRoutes` or `publicRoutes`.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   routes?: Hono<any>
   /** Staff-facing routes — mounted at `/v1/admin/{module.name}`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   adminRoutes?: Hono<any>
   /** Customer/partner/supplier-facing routes — mounted at `/v1/public/{module.name}`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   publicRoutes?: Hono<any>
   /**
    * Optional override for the public mount path relative to `/v1/public`.
@@ -30,13 +30,13 @@ export interface HonoModule {
 export interface HonoExtension {
   extension: Extension
   /** @deprecated Prefer `adminRoutes` or `publicRoutes`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   routes?: Hono<any>
   /** Staff-facing routes — mounted at `/v1/admin/{extension.module}`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   adminRoutes?: Hono<any>
   /** Customer/partner/supplier-facing routes — mounted at `/v1/public/{extension.module}`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   publicRoutes?: Hono<any>
   /**
    * Optional override for the public mount path relative to `/v1/public`.

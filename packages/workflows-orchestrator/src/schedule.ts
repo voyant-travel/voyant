@@ -40,6 +40,17 @@ export interface SchedulerHandle {
   sourceCount: () => number
 }
 
+function unrefTimer(timer: unknown): void {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
+    timer.unref()
+  }
+}
+
 interface SourceState {
   source: ScheduleSource
   scheduleId: string
@@ -161,7 +172,7 @@ export function createScheduler(deps: SchedulerDeps): SchedulerHandle {
       timer = setInt(() => {
         doTick().catch(() => {})
       }, tickMs)
-      ;(timer as unknown as { unref?: () => void }).unref?.()
+      unrefTimer(timer)
     },
     stop() {
       if (!timer) return

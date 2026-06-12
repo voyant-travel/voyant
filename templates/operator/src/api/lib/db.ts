@@ -8,7 +8,7 @@ import { Pool as NodePgPool } from "pg"
  * connection string points at localhost, swap the WS driver for
  * `pg.Pool` + `drizzle-orm/node-postgres`. Drizzle's runtime API
  * (queries, transactions) is identical across the two flavors, so we
- * cast through `unknown` to keep the `NeonDatabase` annotation that
+ * keep the `NeonDatabase` annotation that
  * downstream call sites depend on.
  */
 function isLocalConnection(connectionString: string): boolean {
@@ -27,7 +27,7 @@ function openDb(connectionString: string): {
   if (isLocalConnection(connectionString)) {
     const pool = new NodePgPool({ connectionString })
     return {
-      db: drizzleNodePg(pool) as unknown as NeonDatabase,
+      db: drizzleNodePg(pool) as never,
       dispose: () => pool.end().catch(() => {}),
     }
   }
@@ -136,7 +136,7 @@ export function httpDbFromEnvForApp(
     db = createDbClient(
       url,
       replicas.length > 0 ? { adapter: "edge", replicas } : { adapter: "edge" },
-    ) as unknown as NeonDatabase
+    ) as never
     httpDbCache.set(cacheKey, db)
   }
   return db

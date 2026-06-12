@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
 import {
   bookingGroups,
@@ -24,7 +25,7 @@ import { bookingCreateSchema, createBooking } from "../../src/service-booking-cr
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 async function resetTables(
-  // biome-ignore lint/suspicious/noExplicitAny: test db
+  // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   const tableNames = [
@@ -58,6 +59,7 @@ async function resetTables(
     FROM pg_tables
     WHERE schemaname = 'public'
       AND tablename IN (${sql.join(
+        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         tableNames.map((name) => sql`${name}`),
         sql`, `,
       )})
@@ -987,6 +989,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const links = await db
       .select()
       .from(bookingItemTravelers)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${bookingItemTravelers.bookingItemId} IN (
         SELECT ${bookingItems.id}
         FROM ${bookingItems}

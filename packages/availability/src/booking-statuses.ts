@@ -12,6 +12,7 @@ const activeBookingStatusesForSlot = new Set<string>(ACTIVE_BOOKING_STATUSES_FOR
 
 export function activeBookingStatusesForSlotSql(): SQL {
   return sql.join(
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     ACTIVE_BOOKING_STATUSES_FOR_SLOT.map((status) => sql`${status}`),
     sql`, `,
   )

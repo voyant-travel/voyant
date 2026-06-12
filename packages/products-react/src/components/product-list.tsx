@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: products-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { formatMessage } from "@voyantjs/i18n"
@@ -494,7 +495,7 @@ function ProductTableSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable -- owner: products-react; existing suppression is intentional pending typed cleanup.
         <TableRow key={`skeleton-${idx}`}>
           <TableCell>
             <Skeleton className="h-4 w-48" />

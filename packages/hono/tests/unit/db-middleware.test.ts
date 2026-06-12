@@ -3,14 +3,18 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { db } from "../../src/middleware/db.js"
-import type { VoyantDb } from "../../src/types.js"
+import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 function fakeDb(supportsTransactions?: boolean): VoyantDb {
   const handle: Record<PropertyKey, unknown> = {}
   if (typeof supportsTransactions === "boolean") {
     handle[VOYANT_DB_SUPPORTS_TRANSACTIONS] = supportsTransactions
   }
-  return handle as unknown as VoyantDb
+  return handle as VoyantDb
+}
+
+function dbFactoryForTest(factory: () => VoyantDb): DbFactory<VoyantBindings> {
+  return () => factory()
 }
 
 function buildApp(opts: Parameters<typeof db>[1] | undefined, factory: () => VoyantDb) {
@@ -18,8 +22,7 @@ function buildApp(opts: Parameters<typeof db>[1] | undefined, factory: () => Voy
   // Surface the thrown middleware error in the response body so tests can
   // assert on it (matches the createApp + handleApiError shape in prod).
   app.onError((err, c) => c.json({ error: err.message }, 500))
-  // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-  app.use("*", db(factory as any, opts))
+  app.use("*", db(dbFactoryForTest(factory), opts))
   app.get("/", (c) => c.json({ db: typeof c.get("db") }))
   return app
 }

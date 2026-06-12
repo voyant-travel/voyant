@@ -42,7 +42,7 @@ export function FlightOfferDetail({
       <section className="flex flex-col gap-5">
         {offer.itineraries.map((itin, i) => (
           <FlightItinerary
-            // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return)
+            // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.
             key={i}
             itinerary={itin}
             label={
@@ -61,7 +61,7 @@ export function FlightOfferDetail({
         </h4>
         <div className="overflow-hidden rounded-lg border">
           {offer.fareBreakdowns.map((b, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable per-breakdown row
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable per-breakdown row -- owner: flights-react; existing suppression is intentional pending typed cleanup.
             <FareRow key={i} breakdown={b} i18n={i18n} />
           ))}
           <Separator />

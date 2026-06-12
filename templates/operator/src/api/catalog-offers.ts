@@ -1,6 +1,8 @@
 /**
  * Live package-offers route for the operator template.
  *
+ * agent-quality: file-size exception -- Live package-offer routes keep search, detail, and pricing adapter normalization together until the route is split by provider surface.
+ *
  *   POST /v1/admin/catalog/package-offers
  *
  * Sourced packages (TUI) are synced into the catalog as a priced *summary*
@@ -425,10 +427,9 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
       ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
     })
     try {
-      const summary = (await client.cruises.getOnConnection(
-        decoded.connectionId,
-        decoded.externalId,
-      )) as unknown as Record<string, unknown>
+      const summary =
+        asRecord(await client.cruises.getOnConnection(decoded.connectionId, decoded.externalId)) ??
+        {}
       return c.json({
         fromAmountMinor: asNum(summary.priceFromAmountMinor),
         currency: asStr(summary.priceFromCurrency),
@@ -461,10 +462,11 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
     })
     let rows: Record<string, unknown>[] = []
     try {
-      rows = (await client.cruises.listSailingPricing(
+      const pricing = await client.cruises.listSailingPricing(
         decoded.connectionId,
         parsed.data.sailingRef,
-      )) as unknown as Record<string, unknown>[]
+      )
+      rows = pricing.map((row) => asRecord(row) ?? {})
     } catch {
       return c.json({ cabins: [], currency: null, retryable: true }, 200)
     }
@@ -777,10 +779,11 @@ async function fetchLiveOffers(
 }
 
 // ── Accommodation detail mapping (Connect getOnConnection → render shape) ───
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined
+  return isRecord(value) ? value : undefined
 }
 function asStr(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null

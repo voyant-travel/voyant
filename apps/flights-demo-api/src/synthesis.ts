@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: flights-demo-api; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Pure synthesis helpers for the demo flight service. Generates
  * deterministic `FlightOffer`s, `FlightOrder`s, ancillary catalogs, and

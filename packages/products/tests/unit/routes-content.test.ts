@@ -94,7 +94,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     // because getProductContent is mocked.
     const stubDb = {} as never
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: stub db variable
+      // biome-ignore lint/suspicious/noExplicitAny: stub db variable -- owner: products; existing suppression is intentional pending typed cleanup.
       ;(c as any).set("db", stubDb)
       await next()
     })
@@ -210,7 +210,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     })
     const stubDb = {} as never
     app.use("*", async (c, next) => {
-      // biome-ignore lint/suspicious/noExplicitAny: stub db variable
+      // biome-ignore lint/suspicious/noExplicitAny: stub db variable -- owner: products; existing suppression is intentional pending typed cleanup.
       ;(c as any).set("db", stubDb)
       await next()
     })

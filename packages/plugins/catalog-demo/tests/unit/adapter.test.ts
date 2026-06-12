@@ -17,7 +17,7 @@ interface FetchCall {
 
 function makeFetchStub(handler: (call: FetchCall) => unknown) {
   const calls: FetchCall[] = []
-  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetchImpl: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const call: FetchCall = { url: String(input), init: init ?? {} }
     calls.push(call)
     const body = handler(call)
@@ -25,7 +25,7 @@ function makeFetchStub(handler: (call: FetchCall) => unknown) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
-  }) as unknown as typeof fetch
+  }
   return { fetchImpl, calls }
 }
 

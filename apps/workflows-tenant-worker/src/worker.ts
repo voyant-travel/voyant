@@ -25,13 +25,12 @@
 // `./bundle.mjs` before `wrangler deploy`. voyant-cloud's deploy
 // pipeline handles that substitution; for local experimentation you
 // can symlink or copy your own `voyant workflows build` output.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error — bundle.mjs is staged at deploy time, may not exist in source.
 import "./bundle.mjs"
 
-import { createHmacVerifier } from "@voyantjs/workflows/auth"
+import { createHmacSigner, createHmacVerifier } from "@voyantjs/workflows/auth"
 import { createStepHandler, type StepRunner } from "@voyantjs/workflows/handler"
 import {
+  type ContainerNamespaceLike,
   createCfContainerStepRunner,
   createR2Presigner,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
@@ -53,6 +52,8 @@ export interface Env {
   R2_BUCKET: string
   /** Shared secret with the orchestrator for the dispatch HMAC header. */
   VOYANT_DISPATCH_SECRET: string
+  /** Shared secret with the Node step container for step dispatch HMAC. */
+  VOYANT_WORKFLOW_STEP_AUTH_SECRET: string
 }
 
 // Per-isolate state. The handler + runners stay alive across
@@ -60,6 +61,10 @@ export interface Env {
 // in-memory buckets and the container namespace addressing survive
 // between dispatches.
 let handler: ((req: Request) => Promise<Response>) | undefined
+
+function containerNamespace(namespace: unknown): ContainerNamespaceLike {
+  return namespace as never
+}
 
 async function buildHandler(env: Env): Promise<(req: Request) => Promise<Response>> {
   const presign = createR2Presigner({
@@ -70,9 +75,8 @@ async function buildHandler(env: Env): Promise<(req: Request) => Promise<Respons
   })
 
   const nodeStepRunner: StepRunner = createCfContainerStepRunner({
-    namespace: env.NODE_STEP_POOL as unknown as Parameters<
-      typeof createCfContainerStepRunner
-    >[0]["namespace"],
+    namespace: containerNamespace(env.NODE_STEP_POOL),
+    sign: await createHmacSigner(env.VOYANT_WORKFLOW_STEP_AUTH_SECRET),
     resolveBundle: async ({ projectId, workflowVersion }) => {
       const key = `${projectId}/${workflowVersion}/container.mjs`
       const url = await presign({ key, expiresIn: 300 })

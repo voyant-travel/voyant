@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -318,7 +319,7 @@ export function CruiseDetailPage({
         <div className="grid h-[340px] grid-cols-4 grid-rows-2 gap-2 sm:h-[440px]">
           <div className="col-span-2 row-span-2 animate-pulse rounded-xl bg-muted/40" />
           {Array.from({ length: 4 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
             <div key={i} className="animate-pulse rounded-lg bg-muted/30" />
           ))}
         </div>
@@ -457,7 +458,7 @@ export function CruiseDetailPage({
                         {isActive && pricingLoading ? (
                           <div className="divide-y">
                             {Array.from({ length: 4 }).map((_, i) => (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+                              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
                               <div key={i} className="flex items-center justify-between px-3 py-3">
                                 <div className="h-4 w-40 animate-pulse rounded bg-muted/40" />
                                 <div className="h-7 w-24 animate-pulse rounded bg-muted/30" />

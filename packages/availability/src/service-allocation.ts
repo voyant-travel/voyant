@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: availability; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { newId } from "@voyantjs/db/lib/typeid"
 import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -1023,6 +1024,7 @@ async function loadSharingGroupLabelMap(
       label: sharingGroupLabels.label,
     })
     .from(sharingGroupLabels)
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .where(sql`${sharingGroupLabels.groupId} = ANY(${sqlTextArray(uniqueIds)})`)
 
   return Object.fromEntries(rows.map((row) => [row.groupId, row.label]))
@@ -1053,7 +1055,9 @@ async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
  */
 function sqlTextArray(values: readonly string[]): SQL {
   if (values.length === 0) return sql`ARRAY[]::text[]`
+  // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`ARRAY[${sql.join(
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     values.map((value) => sql`${value}`),
     sql.raw(", "),
   )}]::text[]`

@@ -92,7 +92,7 @@ export type SeedResultsValidation =
 const SEED_RESULTS_MAX_ENTRIES = 256
 const SEED_RESULTS_MAX_STEP_ID_LENGTH = 200
 const SEED_RESULTS_MAX_SERIALIZED_CHARS = 1_000_000
-// biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control chars is the point
+// biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control chars is the point -- owner: workflows-orchestrator; existing suppression is intentional pending typed cleanup.
 const CONTROL_CHARS = /[\x00-\x1f\x7f]/
 
 /**

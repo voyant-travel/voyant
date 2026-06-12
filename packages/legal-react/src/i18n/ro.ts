@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { LegalUiMessages } from "./messages.js"
 
 export const legalUiRo = {

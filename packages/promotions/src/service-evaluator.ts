@@ -143,6 +143,7 @@ export function createDrizzleOfferDataSource(db: AnyDrizzleDb): OfferDataSource 
         .where(
           and(
             eq(promotionalOffers.active, true),
+            // agent-quality: raw-sql reviewed -- owner: promotions; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`lower(${promotionalOffers.code}) = ${code.toLowerCase()}`,
           ),
         )

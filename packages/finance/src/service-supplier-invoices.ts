@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
@@ -472,7 +473,9 @@ export const supplierInvoicesService = {
     if (query.supplierId) conditions.push(eq(supplierInvoices.supplierId, query.supplierId))
     if (query.status) conditions.push(eq(supplierInvoices.status, query.status))
     if (query.currency) conditions.push(eq(supplierInvoices.currency, query.currency))
+    // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     if (query.dueDateFrom) conditions.push(sql`${supplierInvoices.dueDate} >= ${query.dueDateFrom}`)
+    // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     if (query.dueDateTo) conditions.push(sql`${supplierInvoices.dueDate} <= ${query.dueDateTo}`)
     if (query.search) {
       const term = `%${query.search}%`

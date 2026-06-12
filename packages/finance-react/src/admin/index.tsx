@@ -33,8 +33,12 @@ import * as React from "react"
 // engine) out of the workspace-chrome chunk that evaluates this factory.
 import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
 import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
+import type { BookingInvoicesWidgetProps } from "./booking-invoices-widget.js"
+import type { BookingPaymentPolicyWidgetProps } from "./booking-payment-policy-widget.js"
+import type { BookingPendingPaymentSessionsWidgetProps } from "./booking-pending-payment-sessions-widget.js"
 import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
 import { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
+import type { SupplierPaymentPolicyWidgetProps } from "./supplier-payment-policy-widget.js"
 
 /** The host runtime as the package's query-option client (`fetchWithValidation`). */
 function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
@@ -47,42 +51,47 @@ function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
  * behind them) must not load with workspace chrome — each widget chunk
  * fetches when its slot actually renders on a detail page.
  */
-function lazyWidget(
-  load: () => Promise<{ default: ComponentType<Record<string, unknown>> }>,
+function lazyWidget<TProps extends object>(
+  load: () => Promise<{ default: ComponentType<TProps> }>,
 ): ComponentType<Record<string, unknown>> {
   const Lazy = React.lazy(load)
   return function LazyFinanceAdminWidget(props: Record<string, unknown>) {
     return (
       <React.Suspense fallback={null}>
-        <Lazy {...props} />
+        <Lazy {...(props as TProps)} />
       </React.Suspense>
     )
   }
 }
 
-const LazyBookingInvoicesWidget = lazyWidget(() =>
-  import("./booking-invoices-widget.js").then((module) => ({
-    default: module.BookingInvoicesWidget as unknown as ComponentType<Record<string, unknown>>,
-  })),
+const LazyBookingInvoicesWidget = lazyWidget<BookingInvoicesWidgetProps>(() =>
+  import("./booking-invoices-widget.js").then(
+    (module): { default: ComponentType<BookingInvoicesWidgetProps> } => ({
+      default: module.BookingInvoicesWidget,
+    }),
+  ),
 )
-const LazyBookingPendingPaymentSessionsWidget = lazyWidget(() =>
-  import("./booking-pending-payment-sessions-widget.js").then((module) => ({
-    default: module.BookingPendingPaymentSessionsWidget as unknown as ComponentType<
-      Record<string, unknown>
-    >,
-  })),
+const LazyBookingPendingPaymentSessionsWidget =
+  lazyWidget<BookingPendingPaymentSessionsWidgetProps>(() =>
+    import("./booking-pending-payment-sessions-widget.js").then(
+      (module): { default: ComponentType<BookingPendingPaymentSessionsWidgetProps> } => ({
+        default: module.BookingPendingPaymentSessionsWidget,
+      }),
+    ),
+  )
+const LazyBookingPaymentPolicyWidget = lazyWidget<BookingPaymentPolicyWidgetProps>(() =>
+  import("./booking-payment-policy-widget.js").then(
+    (module): { default: ComponentType<BookingPaymentPolicyWidgetProps> } => ({
+      default: module.BookingPaymentPolicyWidget,
+    }),
+  ),
 )
-const LazyBookingPaymentPolicyWidget = lazyWidget(() =>
-  import("./booking-payment-policy-widget.js").then((module) => ({
-    default: module.BookingPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
-  })),
-)
-const LazySupplierPaymentPolicyWidget = lazyWidget(() =>
-  import("./supplier-payment-policy-widget.js").then((module) => ({
-    default: module.SupplierPaymentPolicyWidget as unknown as ComponentType<
-      Record<string, unknown>
-    >,
-  })),
+const LazySupplierPaymentPolicyWidget = lazyWidget<SupplierPaymentPolicyWidgetProps>(() =>
+  import("./supplier-payment-policy-widget.js").then(
+    (module): { default: ComponentType<SupplierPaymentPolicyWidgetProps> } => ({
+      default: module.SupplierPaymentPolicyWidget,
+    }),
+  ),
 )
 
 /**

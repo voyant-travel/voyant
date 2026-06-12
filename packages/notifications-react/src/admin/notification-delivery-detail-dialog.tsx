@@ -124,7 +124,7 @@ export function NotificationDeliveryDetailDialog({
                 {delivery.htmlBody ? (
                   <div
                     className="prose prose-sm max-w-none rounded-md border bg-background px-4 py-4 dark:prose-invert"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Notification HTML body is stored template output rendered for preview.
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Notification HTML body is stored template output rendered for preview. -- owner: notifications-react; existing suppression is intentional pending typed cleanup.
                     dangerouslySetInnerHTML={{ __html: delivery.htmlBody }}
                   />
                 ) : (

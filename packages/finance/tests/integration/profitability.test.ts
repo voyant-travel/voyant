@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Per-departure / per-product profitability read model (RFC §8):
  *  - revenue = issued customer invoices, split across a booking's departures by
@@ -25,7 +26,7 @@ const next = () => {
 }
 
 async function seedSupplierCost(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
   opts: {
     currency: string
@@ -75,7 +76,7 @@ async function seedSupplierCost(
 }
 
 describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

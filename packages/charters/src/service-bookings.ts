@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: charters; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookingsService } from "@voyantjs/bookings"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

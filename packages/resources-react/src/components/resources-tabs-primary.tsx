@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: resources-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table"
 import { formatMessage } from "@voyantjs/i18n"
 import { Badge, Button, ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"

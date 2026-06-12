@@ -133,7 +133,6 @@ function QuickViewBody({ product, locale }: { product: ProductRecord; locale: st
     <div className="flex flex-col gap-5">
       {cover ? (
         <div className="overflow-hidden rounded-md border bg-muted">
-          {/* biome-ignore lint/performance/noImgElement: lightweight preview */}
           <img src={cover.url} alt={product.name} className="aspect-video w-full object-cover" />
         </div>
       ) : (

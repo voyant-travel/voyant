@@ -58,6 +58,8 @@ hosted adapter:
 - `BUNDLE_R2` bucket holding `container.mjs`
 - `BUNDLE_HASHES` KV namespace with deploy-time SHA-256 values
 - `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` secrets for presigning
+- `VOYANT_WORKFLOW_STEP_AUTH_SECRET`, shared with the Node step
+  container, for signing `/step` dispatches
 
 If those bindings/secrets are omitted, node-runtime steps will fail with
 `NODE_RUNTIME_UNAVAILABLE` while edge steps continue to work.

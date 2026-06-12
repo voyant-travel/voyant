@@ -29,7 +29,7 @@ const enSlice: IndexerSlice = {
 const itSlice: IndexerSlice = { ...enSlice, locale: "it-IT" }
 
 describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: products; existing suppression is intentional pending typed cleanup.
   let db: any
   let productId: string
 
@@ -143,6 +143,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () =>
 
     productId = "prod_taxo_test"
     await db.execute(
+      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`INSERT INTO products (id, name) VALUES (${productId}, 'Mountain Hiking Tour')`,
     )
 

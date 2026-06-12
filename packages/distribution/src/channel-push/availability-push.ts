@@ -77,8 +77,10 @@ export async function resolveAllotmentTargetsForSlot(
         eq(channelInventoryAllotments.active, true),
         eq(channels.status, "active"),
         input.optionId
-          ? sql`(${channelInventoryAllotments.optionId} IS NULL OR ${channelInventoryAllotments.optionId} = ${input.optionId})`
-          : sql`${channelInventoryAllotments.optionId} IS NULL`,
+          ? // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            sql`(${channelInventoryAllotments.optionId} IS NULL OR ${channelInventoryAllotments.optionId} = ${input.optionId})`
+          : // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            sql`${channelInventoryAllotments.optionId} IS NULL`,
       ),
     )) as Array<{ channelId: string }>
 

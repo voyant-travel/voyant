@@ -60,7 +60,13 @@ function coerceBookingConfirmed(envelope: EventEnvelope<unknown>): BookingConfir
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
   if (typeof maybe.bookingId !== "string") return null
-  return maybe as unknown as BookingConfirmedPayload
+  return {
+    bookingId: maybe.bookingId,
+    ...(typeof maybe.bookingNumber === "string" ? { bookingNumber: maybe.bookingNumber } : {}),
+    ...(typeof maybe.actorId === "string" || maybe.actorId === null
+      ? { actorId: maybe.actorId }
+      : {}),
+  }
 }
 
 function coerceSlotChanged(
@@ -70,7 +76,19 @@ function coerceSlotChanged(
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
   if (typeof maybe.slotId !== "string" || typeof maybe.productId !== "string") return null
-  return maybe as unknown as AvailabilitySlotChangedPayload
+  if (typeof maybe.optionId !== "string" && maybe.optionId !== null) return null
+  if (!(maybe.startsAt instanceof Date) && typeof maybe.startsAt !== "string") return null
+  if (typeof maybe.remainingPax !== "number" && maybe.remainingPax !== null) return null
+  if (typeof maybe.unlimited !== "boolean" || typeof maybe.source !== "string") return null
+  return {
+    slotId: maybe.slotId,
+    productId: maybe.productId,
+    optionId: maybe.optionId,
+    startsAt: maybe.startsAt,
+    remainingPax: maybe.remainingPax,
+    unlimited: maybe.unlimited,
+    source: maybe.source,
+  }
 }
 
 function coerceContentChanged(
@@ -80,7 +98,10 @@ function coerceContentChanged(
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
   if (typeof maybe.id !== "string") return null
-  return maybe as unknown as ProductContentChangedPayload
+  return {
+    id: maybe.id,
+    ...(typeof maybe.axis === "string" ? { axis: maybe.axis } : {}),
+  }
 }
 
 export interface ChannelPushSubscribersOptions {

@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from "vitest"
 import { requireAuth } from "../../src/middleware/auth.js"
 import { db } from "../../src/middleware/db.js"
 import { acquireRequestDb } from "../../src/middleware/request-db.js"
-import type { DisposableDb, VoyantDb } from "../../src/types.js"
+import type { DbFactory, DisposableDb, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 function fakeDisposable(): DisposableDb & { disposeSpy: ReturnType<typeof vi.fn> } {
   const disposeSpy = vi.fn(async () => {})
   return {
-    db: {} as unknown as VoyantDb,
+    db: {} as VoyantDb,
     dispose: disposeSpy,
     disposeSpy,
   }
@@ -20,6 +20,10 @@ function stubContext(env: Record<string, unknown> = {}) {
     req: { raw: new Request("http://test.local/") },
     env: env as never,
   }
+}
+
+function dbFactoryForTest(factory: () => VoyantDb | DisposableDb): DbFactory<VoyantBindings> {
+  return () => factory()
 }
 
 describe("acquireRequestDb — per-request client sharing", () => {
@@ -95,13 +99,13 @@ describe("auth + db middleware — single shared client per request", () => {
   it("an authenticated (auth.resolve) request opens exactly one client", async () => {
     const handle = fakeDisposable()
     const factory = vi.fn(() => handle)
+    const dbFactory = dbFactoryForTest(factory)
     const seen: VoyantDb[] = []
 
     const app = new Hono()
     app.use(
       "*",
-      // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-      requireAuth(factory as any, {
+      requireAuth(dbFactory, {
         auth: {
           resolve: async ({ db: resolveDb }) => {
             seen.push(resolveDb)
@@ -110,8 +114,7 @@ describe("auth + db middleware — single shared client per request", () => {
         },
       }),
     )
-    // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-    app.use("*", db(factory as any))
+    app.use("*", db(dbFactory))
     let disposedBeforeHandlerFinished = false
     app.get("/v1/admin/things", async (c) => {
       seen.push(c.get("db") as VoyantDb)

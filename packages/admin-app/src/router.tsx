@@ -63,7 +63,7 @@ export function createAdminRouter<TRouteTree extends AnyRoute>({
     // DehydratedState's recursive `unknown` slots. Runtime payload is
     // JSON-safe; the official @tanstack/react-router-with-query helper does
     // the same erasure.
-    dehydrate: () => ({ queryClient: dehydrate(queryClient) as unknown as object }),
+    dehydrate: () => ({ queryClient: dehydrate(queryClient) as object }),
     hydrate: (state: { queryClient: object }) => {
       hydrate(queryClient, state.queryClient as DehydratedState)
     },

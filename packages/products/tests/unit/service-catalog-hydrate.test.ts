@@ -22,9 +22,9 @@ function createStubDb(): PostgresJsDatabase {
   for (const method of methods) {
     builder[method] = () => builder
   }
-  // biome-ignore lint/suspicious/noThenProperty: the stub must be thenable to mimic drizzle's awaitable query builder
+  // biome-ignore lint/suspicious/noThenProperty: reason: the stub must be thenable to mimic drizzle's awaitable query builder.
   builder.then = (resolve: (value: unknown[]) => unknown) => Promise.resolve([]).then(resolve)
-  return builder as unknown as PostgresJsDatabase
+  return builder as PostgresJsDatabase
 }
 
 const LONG_DESCRIPTION = "d".repeat(800)

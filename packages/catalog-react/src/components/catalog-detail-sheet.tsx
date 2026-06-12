@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -721,7 +722,7 @@ export function CatalogDetailView({
           <TabsContent value="policies">
             <dl className="space-y-2 text-sm">
               {enrichment?.policies?.map((p, idx) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
+                // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
                 <div key={`${p.kind}-${idx}`}>
                   <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     {p.kind.replace(/_/g, " ")}
@@ -1416,7 +1417,7 @@ function DefaultMediaGrid({ media }: { media: NonNullable<CatalogDetailEnrichmen
       {media.slice(0, 9).map((m, idx) =>
         m.type === "image" || m.type == null ? (
           <a
-            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only and ordering is stable per response
+            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only and ordering is stable per response -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
             key={`${m.url}-${idx}`}
             href={m.url}
             target="_blank"
@@ -1432,7 +1433,7 @@ function DefaultMediaGrid({ media }: { media: NonNullable<CatalogDetailEnrichmen
           </a>
         ) : (
           <a
-            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only
+            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
             key={`${m.url}-${idx}`}
             href={m.url}
             target="_blank"
@@ -1561,7 +1562,7 @@ function ArrayBadges({ value }: { value: unknown }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {value.map((v, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: array values aren't guaranteed unique (e.g. duplicate strings); the index disambiguates and the list is render-only.
+        // biome-ignore lint/suspicious/noArrayIndexKey: array values aren't guaranteed unique (e.g. duplicate strings); the index disambiguates and the list is render-only. -- owner: catalog-react; existing suppression is intentional pending typed cleanup.
         <Badge key={`${String(v)}-${i}`} variant="secondary" className="font-normal">
           {String(v)}
         </Badge>

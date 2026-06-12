@@ -29,9 +29,7 @@ import {
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
-const db: PostgresJsDatabase = DB_AVAILABLE
-  ? createTestDb()
-  : (null as unknown as PostgresJsDatabase)
+const db: PostgresJsDatabase = DB_AVAILABLE ? createTestDb() : (undefined as never)
 
 interface RecordedEvent {
   topic: string
@@ -115,8 +113,7 @@ describe.skipIf(!DB_AVAILABLE)("runPromotionBoundaryScheduler", () => {
     const { bus, recorded } = makeEventBus()
 
     const result = await runPromotionBoundaryScheduler(
-      // biome-ignore lint/suspicious/noExplicitAny: narrow test stub of EventBus — only `emit` is exercised
-      { db, eventBus: bus as any },
+      { db, eventBus: bus as never },
       { now: () => tickAt },
     )
     expect(result.emitted).toBe(2)

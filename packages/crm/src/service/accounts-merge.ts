@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import {
   identityAddresses,
   identityContactPoints,

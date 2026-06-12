@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: customer-portal; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import {
   bookingDocuments,
   bookingFulfillments,

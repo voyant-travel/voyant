@@ -16,7 +16,7 @@ function nextBookingNumber() {
 describe.skipIf(!DB_AVAILABLE)(
   "createTravelerWithTravelDetails enforces per-resource capacity",
   () => {
-    // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: bookings; existing suppression is intentional pending typed cleanup.
     let db: any
 
     beforeAll(async () => {

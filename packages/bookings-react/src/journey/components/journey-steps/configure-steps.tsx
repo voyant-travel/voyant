@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
@@ -404,7 +405,7 @@ function ProductOptionFields({
           const selected = option.id === selectedId
           return (
             <div key={option.id} className="space-y-2">
-              {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control  -- owner: bookings-react; existing suppression is intentional pending typed cleanup. */}
               <label
                 className={
                   "flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors " +

@@ -61,7 +61,7 @@ describe("createNotificationsHonoModule — autoConfirmAndDispatch", () => {
   it("subscribes to booking.confirmed and forwards to confirmAndDispatchBooking when enabled", async () => {
     const eventBus = createEventBus()
     const container = createContainer()
-    const db = { fake: true } as unknown as PostgresJsDatabase
+    const db = { fake: true } as PostgresJsDatabase
 
     const dispatchSpy = vi
       .spyOn(bookingDocumentNotificationsService, "confirmAndDispatchBooking")

@@ -10,7 +10,7 @@ import { dualCreateBooking } from "../../src/service-bookings-dual-create.js"
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
 async function resetTables(
-  // biome-ignore lint/suspicious/noExplicitAny: test db
+  // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: finance; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   const tableNames = [
@@ -37,6 +37,7 @@ async function resetTables(
   const existing = (await db.execute<{ tablename: string }>(sql`
     SELECT tablename FROM pg_tables
     WHERE schemaname = 'public' AND tablename IN (${sql.join(
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       tableNames.map((n) => sql`${n}`),
       sql`, `,
     )})

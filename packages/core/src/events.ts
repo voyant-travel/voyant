@@ -279,13 +279,11 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     return { inline, deferrable }
   }
 
-  function ensureEventId<TMetadata extends EventMetadata | undefined>(
-    metadata: TMetadata,
-  ): TMetadata {
+  function ensureEventId(metadata: EventMetadata | undefined): EventMetadata | undefined {
     if (metadata && typeof metadata.eventId === "string" && metadata.eventId.length > 0) {
       return metadata
     }
-    return { ...(metadata ?? {}), eventId: generateEventId() } as unknown as TMetadata
+    return { ...(metadata ?? {}), eventId: generateEventId() }
   }
 
   return {
@@ -306,7 +304,7 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
         // key on a stable event id — stamp one when the caller didn't.
         ...(() => {
           const withId = ensureEventId(metadata)
-          return withId === undefined ? {} : { metadata: withId }
+          return withId === undefined ? {} : { metadata: withId as TMetadata }
         })(),
       }
 

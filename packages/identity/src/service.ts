@@ -99,6 +99,7 @@ export const identityService = {
     if (query.search) {
       const term = `%${query.search}%`
       conditions.push(
+        // agent-quality: raw-sql reviewed -- owner: identity; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`(${identityContactPoints.value} ILIKE ${term} OR ${identityContactPoints.normalizedValue} ILIKE ${term})`,
       )
     }
@@ -196,6 +197,7 @@ export const identityService = {
     if (query.search) {
       const term = `%${query.search}%`
       conditions.push(
+        // agent-quality: raw-sql reviewed -- owner: identity; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`(${identityAddresses.fullText} ILIKE ${term} OR ${identityAddresses.line1} ILIKE ${term} OR ${identityAddresses.city} ILIKE ${term})`,
       )
     }

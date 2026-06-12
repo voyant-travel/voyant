@@ -39,6 +39,17 @@ export interface WakeupPoller<TStored extends WakeupPollerStoredRun> {
   syncStoredRun: (stored: TStored) => Promise<void>
 }
 
+function unrefTimer(timer: unknown): void {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
+    timer.unref()
+  }
+}
+
 export function createWakeupPoller<TStored extends WakeupPollerStoredRun>(
   deps: WakeupPollerDeps<TStored>,
 ): WakeupPoller<TStored> {
@@ -116,7 +127,7 @@ export function createWakeupPoller<TStored extends WakeupPollerStoredRun>(
       timer = setIntervalImpl(() => {
         void poll().catch(() => {})
       }, intervalMs)
-      ;(timer as unknown as { unref?: () => void }).unref?.()
+      unrefTimer(timer)
     },
     stop() {
       if (!timer) return

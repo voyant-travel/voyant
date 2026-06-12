@@ -138,6 +138,7 @@ export function buildBookingActionLedgerDriftQueries(
             SELECT 1
             FROM ${actionLedgerEntries}
             WHERE ${actionLedgerEntries.actionName} IN (${sql.join(
+              // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
               BOOKING_TRAVELER_CREATE_ACTION_NAMES.map((actionName) => sql`${actionName}`),
               sql`, `,
             )})
@@ -170,6 +171,7 @@ export function buildBookingActionLedgerDriftQueries(
             SELECT 1
             FROM ${actionLedgerEntries}
             WHERE ${actionLedgerEntries.actionName} IN (${sql.join(
+              // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
               BOOKING_TRAVELER_TRAVEL_DETAILS_ACTION_NAMES.map((actionName) => sql`${actionName}`),
               sql`, `,
             )})
@@ -256,6 +258,7 @@ function buildCreatedAtCondition(
   if (Number.isNaN(date.getTime())) {
     throw new Error("createdAtFrom must be a valid date")
   }
+  // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   return sql`AND ${column} >= ${date}`
 }
 

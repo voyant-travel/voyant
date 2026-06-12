@@ -35,7 +35,7 @@ function SummaryCard() {
     <Card>
       <CardContent className="grid grid-cols-2 gap-6 py-6 sm:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="flex flex-col gap-1.5">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-5 w-28" />
@@ -52,7 +52,7 @@ function TabsBar() {
   return (
     <div className="flex h-9 w-fit items-center gap-1 rounded-lg bg-muted p-[3px]">
       {widths.map((w, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+        // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
         <Skeleton key={i} className={`h-7 rounded-md ${w}`} />
       ))}
     </div>
@@ -69,7 +69,7 @@ function ListCard({ titleWidth, rows }: { titleWidth: string; rows: number }) {
       <CardContent className="space-y-2">
         {Array.from({ length: rows }).map((_, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
             key={i}
             className="flex items-center justify-between rounded-md border px-3 py-3"
           >

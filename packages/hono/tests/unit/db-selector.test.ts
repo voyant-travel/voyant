@@ -4,18 +4,18 @@ import { describe, expect, it, vi } from "vitest"
 
 import { createPathDbSelector } from "../../src/lib/db-selector.js"
 import { db } from "../../src/middleware/db.js"
-import type { DbFactory, VoyantDb } from "../../src/types.js"
+import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 function fakeDb(supportsTransactions: boolean): VoyantDb {
   const handle: Record<PropertyKey, unknown> = {
     [VOYANT_DB_SUPPORTS_TRANSACTIONS]: supportsTransactions,
   }
-  return handle as unknown as VoyantDb
+  return handle as VoyantDb
 }
 
 describe("createPathDbSelector", () => {
-  const defaultFactory = (() => fakeDb(false)) as DbFactory
-  const transactionalFactory = (() => fakeDb(true)) as DbFactory
+  const defaultFactory: DbFactory = () => fakeDb(false)
+  const transactionalFactory: DbFactory = () => fakeDb(true)
   const selector = createPathDbSelector({
     defaultFactory,
     transactionalFactory,
@@ -43,17 +43,16 @@ describe("createPathDbSelector", () => {
 
 describe("db middleware with a selector", () => {
   function buildApp(opts: { requiresTransactionalDb: string[] }) {
-    const defaultFactory = vi.fn(() => fakeDb(false))
-    const transactionalFactory = vi.fn(() => fakeDb(true))
+    const defaultFactory = vi.fn<DbFactory>(() => fakeDb(false))
+    const transactionalFactory = vi.fn<DbFactory>(() => fakeDb(true))
     const selector = createPathDbSelector({
-      defaultFactory: defaultFactory as unknown as DbFactory,
-      transactionalFactory: transactionalFactory as unknown as DbFactory,
+      defaultFactory,
+      transactionalFactory,
       transactionalPrefixes: ["/v1/admin/bookings"],
     })
-    const app = new Hono()
+    const app = new Hono<{ Bindings: VoyantBindings }>()
     app.onError((err, c) => c.json({ error: err.message }, 500))
-    // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-    app.use("*", db(selector as any, opts))
+    app.use("*", db(selector, opts))
     app.get("/v1/admin/bookings/list", (c) => c.json({ ok: true }))
     app.get("/v1/public/products", (c) => c.json({ ok: true }))
     return { app, defaultFactory, transactionalFactory }
@@ -87,16 +86,15 @@ describe("db middleware with a selector", () => {
   })
 
   it("still throws when a transactional surface resolves a non-capable client", async () => {
-    const incapable = vi.fn(() => fakeDb(false))
+    const incapable = vi.fn<DbFactory>(() => fakeDb(false))
     const selector = createPathDbSelector({
-      defaultFactory: incapable as unknown as DbFactory,
-      transactionalFactory: incapable as unknown as DbFactory,
+      defaultFactory: incapable,
+      transactionalFactory: incapable,
       transactionalPrefixes: ["/v1/admin/bookings"],
     })
-    const app = new Hono()
+    const app = new Hono<{ Bindings: VoyantBindings }>()
     app.onError((err, c) => c.json({ error: err.message }, 500))
-    // biome-ignore lint/suspicious/noExplicitAny: simplified bindings for the test
-    app.use("*", db(selector as any, { requiresTransactionalDb: ["bookings"] }))
+    app.use("*", db(selector, { requiresTransactionalDb: ["bookings"] }))
     app.get("/v1/admin/bookings/list", (c) => c.json({ ok: true }))
 
     const res = await app.request("/v1/admin/bookings/list")

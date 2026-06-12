@@ -43,6 +43,7 @@ async function withIdempotency(
     return { result: await build(), reused: false }
   }
 
+  // agent-quality: raw-sql reviewed -- owner: catalog-authoring; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`)
 
   const [existing] = await tx

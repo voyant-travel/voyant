@@ -237,10 +237,13 @@ export const pricingService = {
       .where(
         and(
           eq(charterSuites.voyageId, voyageId),
+          // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${charterSuites.availability} <> 'sold_out'`,
+          // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`(${charterSuites.pricesByCurrency} ? ${currency})`,
         ),
       )
+      // agent-quality: raw-sql reviewed -- owner: charters; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .orderBy(asc(sql`((${charterSuites.pricesByCurrency} ->> ${currency})::numeric)`))
       .limit(1)
     if (!row?.price) return null

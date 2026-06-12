@@ -26,7 +26,7 @@ const enSlice: IndexerSlice = {
 const itSlice: IndexerSlice = { ...enSlice, locale: "it-IT" }
 
 describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client -- owner: products; existing suppression is intentional pending typed cleanup.
   let db: any
   let productId: string
 
@@ -125,6 +125,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
     )
 
     productId = "prod_dest_test"
+    // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     await db.execute(sql`INSERT INTO products (id, name) VALUES (${productId}, 'Italy Loop Tour')`)
 
     // Destinations include hierarchy plus cruise-specific port/waterway geography.
@@ -215,6 +216,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
   })
 
   it("returns empty arrays when the product has no destination links", async () => {
+    // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     await db.execute(sql`DELETE FROM product_destinations WHERE product_id = ${productId}`)
     const ext = createProductDestinationsProjectionExtension()
     const projection = await ext.project(db, productId, enSlice)

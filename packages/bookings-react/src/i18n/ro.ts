@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: bookings-react; existing locale dictionary stays co-located until a dedicated split preserves behavior and tests.
 import type { BookingsUiMessages } from "./messages.js"
 
 export const bookingsUiRo = {

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Native Typesense IndexerAdapter — the v1 default for catalog-plane search.
  *

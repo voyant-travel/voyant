@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { appendActionLedgerMutation } from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm"
@@ -515,6 +516,7 @@ export async function convertProformaToInvoice(
   const result = await db
     .transaction(async (tx) => {
       const guardKey = `finance:invoice:convert:${proforma.bookingId}`
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${guardKey}, 0))`)
 
       const [lockedProforma] = await tx

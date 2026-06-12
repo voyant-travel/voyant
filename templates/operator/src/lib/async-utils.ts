@@ -40,7 +40,7 @@ export function useEffectAsync(
   effect: () => Promise<undefined | (() => void)>,
   deps: DependencyList,
 ): void {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps is the explicit contract of this helper hook
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deps is the explicit contract of this helper hook -- owner: operator; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     let cleanup: (() => void) | undefined
     let cancelled = false

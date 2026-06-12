@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: operator; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Default mapping from a `BookingDraftV1` (+ live quote pricing +
  * resolved entity summary + operator / acceptance context) to the

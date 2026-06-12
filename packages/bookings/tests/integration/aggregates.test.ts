@@ -30,7 +30,7 @@ function isoDateInDays(days: number) {
 }
 
 describe.skipIf(!DB_AVAILABLE)("getBookingAggregates dashboard fields", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: bookings; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

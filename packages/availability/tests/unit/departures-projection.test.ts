@@ -124,7 +124,7 @@ describe("aggregateDepartures (kernel)", () => {
 })
 
 describe("createProductDeparturesProjectionExtension", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle stub -- owner: availability; existing suppression is intentional pending typed cleanup.
   const dbStub: any = {}
 
   it("short-circuits to empty for products with bookingMode='open'", async () => {
@@ -156,7 +156,7 @@ describe("createProductDeparturesProjectionExtension", () => {
       loadBookingMode: async () => null,
     })
     // Stub a DB that returns no slots so the path runs without errors.
-    // biome-ignore lint/suspicious/noExplicitAny: chained drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: chained drizzle stub -- owner: availability; existing suppression is intentional pending typed cleanup.
     const localDb: any = {
       select() {
         return {
@@ -177,7 +177,7 @@ describe("createProductDeparturesProjectionExtension", () => {
   })
 
   it("returns aggregated fields for a scheduled product", async () => {
-    // biome-ignore lint/suspicious/noExplicitAny: chained drizzle stub
+    // biome-ignore lint/suspicious/noExplicitAny: chained drizzle stub -- owner: availability; existing suppression is intentional pending typed cleanup.
     const dbWithSlots: any = {
       select() {
         return {

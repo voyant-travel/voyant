@@ -41,7 +41,7 @@ export function OrganizationDetailSkeleton() {
             </CardHeader>
             <CardContent className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: crm-react; existing suppression is intentional pending typed cleanup.
                 <div key={i} className="flex items-start gap-3">
                   <Skeleton className="mt-0.5 h-4 w-4" />
                   <div className="flex-1 space-y-1.5">
@@ -64,7 +64,7 @@ export function OrganizationDetailSkeleton() {
 
           <div className="flex flex-col gap-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: crm-react; existing suppression is intentional pending typed cleanup.
               <Card key={i}>
                 <CardContent className="flex items-center gap-3 py-3">
                   <Skeleton className="h-9 w-9 rounded-full" />

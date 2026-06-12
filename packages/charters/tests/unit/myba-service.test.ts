@@ -46,7 +46,7 @@ function fakeDb(initial: BookingCharterDetail | null) {
         },
       }
     },
-  } as unknown as Parameters<typeof mybaService.generateContract>[0]
+  } as Parameters<typeof mybaService.generateContract>[0]
   return { db, peek: () => row }
 }
 

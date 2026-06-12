@@ -302,7 +302,7 @@ function CrmLeadPicker({
   const personQuery = usePerson(selectedPersonId, { enabled: Boolean(selectedPersonId) })
   const appliedPersonId = useRef<string | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry from apply()->setDraft re-renders
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry from apply()->setDraft re-renders -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     const person = personQuery.data
     if (!person || appliedPersonId.current === person.id) return
@@ -321,7 +321,7 @@ function CrmLeadPicker({
   const orgQuery = useOrganization(selectedOrgId, { enabled: Boolean(selectedOrgId) })
   const appliedOrgId = useRef<string | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     const org = orgQuery.data
     if (!org || appliedOrgId.current === org.id) return
@@ -349,7 +349,7 @@ function CrmLeadPicker({
   })
   const appliedAddressKey = useRef<string | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved address; the ref guards re-entry
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved address; the ref guards re-entry -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
   useEffect(() => {
     const addr = addressQuery.data?.data?.[0]
     if (!addressEntityId || !addr) return

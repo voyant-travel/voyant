@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: plugins; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import type { Plugin } from "@voyantjs/core"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { retrySmartbillInvoiceArtifact } from "../../src/artifacts.js"

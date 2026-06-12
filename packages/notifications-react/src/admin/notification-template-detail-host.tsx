@@ -264,7 +264,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                 {template.htmlTemplate ? (
                   <div
                     className="prose prose-sm max-w-none rounded-md border bg-background px-4 py-4 dark:prose-invert"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Notification template HTML is rendered for preview.
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Notification template HTML is rendered for preview. -- owner: notifications-react; existing suppression is intentional pending typed cleanup.
                     dangerouslySetInnerHTML={{ __html: template.htmlTemplate }}
                   />
                 ) : (
@@ -321,7 +321,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                       {renderedPreview?.html ? (
                         <div
                           className="prose prose-sm max-w-none rounded-md border bg-background px-4 py-4 dark:prose-invert"
-                          // biome-ignore lint/security/noDangerouslySetInnerHtml: Rendered preview HTML is generated server-side for preview.
+                          // biome-ignore lint/security/noDangerouslySetInnerHtml: Rendered preview HTML is generated server-side for preview. -- owner: notifications-react; existing suppression is intentional pending typed cleanup.
                           dangerouslySetInnerHTML={{ __html: renderedPreview.html }}
                         />
                       ) : (

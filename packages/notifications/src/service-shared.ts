@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type { bookingPaymentSchedules } from "@voyantjs/finance"
 import { and, desc, eq } from "drizzle-orm"

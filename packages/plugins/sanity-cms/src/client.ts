@@ -55,6 +55,33 @@ function surfacingRetry(
   }
 }
 
+function createGlobalSanityFetch(): SanityFetch | undefined {
+  if (typeof globalThis.fetch !== "function") return undefined
+  return (input, init) => globalThis.fetch(input, init)
+}
+
+function headersForPluginFetch(headers: HeadersInit | undefined): Record<string, string> {
+  if (!headers) return {}
+  if (headers instanceof Headers || Array.isArray(headers)) {
+    return Object.fromEntries(new Headers(headers).entries())
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(headers)) out[key] = String(value)
+  return out
+}
+
+function asResilientFetch(fetchImpl: SanityFetch): typeof fetch {
+  return async (input, init = {}) => {
+    const response = await fetchImpl(input instanceof Request ? input.url : String(input), {
+      method: init.method ?? "GET",
+      headers: headersForPluginFetch(init.headers),
+      ...(typeof init.body === "string" ? { body: init.body } : {}),
+    })
+    if (response instanceof Response) return response
+    return new Response(await response.text(), { status: response.status })
+  }
+}
+
 /**
  * Options for {@link createSanityClient}.
  */
@@ -123,7 +150,7 @@ export function createSanityClient(options: SanityClientOptions): SanityClient {
   const voyantIdField = options.voyantIdField ?? "voyantId"
   const apiHost = options.apiHost ?? "api.sanity.io"
   const baseUrl = `https://${options.projectId}.${apiHost}/v${apiVersion}/data`
-  const fetchImpl = options.fetch ?? (globalThis.fetch as unknown as SanityFetch | undefined)
+  const fetchImpl = options.fetch ?? createGlobalSanityFetch()
   const resilience = options.resilience ?? {}
   // One breaker per upstream Sanity project — the client is a per-worker
   // singleton, so a per-instance breaker has the right scope.
@@ -159,7 +186,7 @@ export function createSanityClient(options: SanityClientOptions): SanityClient {
       // _id / voyantId), so POST mutations retry alongside GET queries.
       retryNonIdempotent: true,
       retry: surfacingRetry(maxAttempts, retryTuning),
-      fetchImpl: fetchImpl as unknown as typeof fetch,
+      fetchImpl: asResilientFetch(fetchImpl),
     })
     let text = ""
     let json: unknown = null

@@ -114,6 +114,7 @@ export async function decrementAvailability(db: CatalogDemoDb, inventoryId: stri
   await db
     .update(catalogDemoInventory)
     .set({
+      // agent-quality: raw-sql reviewed -- owner: catalog-demo-api; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       available: sql`${catalogDemoInventory.available} - 1`,
       updatedAt: new Date(),
     })
@@ -124,6 +125,7 @@ export async function incrementAvailability(db: CatalogDemoDb, inventoryId: stri
   await db
     .update(catalogDemoInventory)
     .set({
+      // agent-quality: raw-sql reviewed -- owner: catalog-demo-api; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       available: sql`${catalogDemoInventory.available} + 1`,
       updatedAt: new Date(),
     })

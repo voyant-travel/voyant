@@ -76,18 +76,14 @@ describe("resilientFetch", () => {
 
   it("times out a hung attempt", async () => {
     const fetchImpl = vi.fn(
-      (_input: unknown, init?: RequestInit) =>
+      (_input: string | URL | Request, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
           init?.signal?.addEventListener("abort", () => reject(init.signal?.reason))
         }),
     )
 
     await expect(
-      resilientFetch(
-        "https://api.example/slow",
-        { method: "POST" },
-        { fetchImpl: fetchImpl as unknown as typeof fetch, timeoutMs: 20 },
-      ),
+      resilientFetch("https://api.example/slow", { method: "POST" }, { fetchImpl, timeoutMs: 20 }),
     ).rejects.toThrow(/timed out after 20ms/)
   })
 

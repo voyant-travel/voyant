@@ -92,6 +92,7 @@ export const costCategoriesService = {
     const rows = await db
       .select({ id: costCategories.id, name: costCategories.name })
       .from(costCategories)
+      // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${costCategories.id} = any(${ids})`)
     return new Map(rows.map((r) => [r.id, r.name]))
   },

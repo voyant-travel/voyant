@@ -178,7 +178,7 @@ function waitpointEndpoint(
 
 /** Extract pendingWaitpoints off the embedded runRecord, if any. */
 export function pendingWaitpoints(run: StoredRun): PendingWaitpoint[] {
-  const rec = (run as unknown as { runRecord?: { pendingWaitpoints?: PendingWaitpoint[] } })
+  const rec = (run as StoredRun & { runRecord?: { pendingWaitpoints?: PendingWaitpoint[] } })
     .runRecord
   return rec?.pendingWaitpoints ?? []
 }

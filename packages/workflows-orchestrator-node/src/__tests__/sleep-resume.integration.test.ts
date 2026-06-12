@@ -86,6 +86,7 @@ describeIfDb("Mode 2 sleep-resume", () => {
     const initial = await driver.admin?.getRun?.(run.id)
     expect(initial?.status).toBe("waiting")
     const wakeupRowsResult = await connection.db.execute(
+      // agent-quality: raw-sql reviewed -- owner: workflows-orchestrator-node; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`SELECT run_id, wake_at FROM voyant_wakeups WHERE run_id = ${run.id}`,
     )
     const wakeupRowsCount =

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: notifications; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookings } from "@voyantjs/bookings/schema"
 import { invoices, paymentSessions } from "@voyantjs/finance"
 import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"

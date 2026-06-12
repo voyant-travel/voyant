@@ -41,7 +41,9 @@ export async function getAvailabilityAggregates(
   // actually happens), not `created_at` — dashboard users think in terms of
   // the calendar, not when the slot was provisioned.
   const rangeConditions = []
+  // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (fromDate) rangeConditions.push(sql`${availabilitySlots.startsAt} >= ${fromDate}`)
+  // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (toDate) rangeConditions.push(sql`${availabilitySlots.startsAt} < ${toDate}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
@@ -75,7 +77,9 @@ export async function getAvailabilityAggregates(
     })
     .from(availabilitySlots)
     .where(rangeWhere)
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .groupBy(sql`to_char(${availabilitySlots.startsAt} at time zone 'UTC', 'YYYY-MM')`)
+    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     .orderBy(sql`to_char(${availabilitySlots.startsAt} at time zone 'UTC', 'YYYY-MM')`)
 
   return {

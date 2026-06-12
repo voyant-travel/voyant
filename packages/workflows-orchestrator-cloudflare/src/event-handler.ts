@@ -21,6 +21,57 @@ import type { DurableObjectNamespaceLike } from "./worker.js"
 
 const ALLOWED_ENVS = new Set(["production", "preview", "development"])
 
+function deserializeWorkflowManifest(manifest: Record<string, unknown>): WorkflowManifest {
+  const {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows,
+    eventFilters,
+    bindings,
+    environments,
+  } = manifest
+
+  if (
+    schemaVersion !== 1 ||
+    typeof projectId !== "string" ||
+    typeof versionId !== "string" ||
+    typeof builtAt !== "number" ||
+    typeof builderVersion !== "string" ||
+    !isStringArray(capabilities) ||
+    !Array.isArray(workflows) ||
+    !Array.isArray(eventFilters) ||
+    !isRecord(bindings) ||
+    !isRecord(environments)
+  ) {
+    throw new Error("stored workflow manifest has an invalid shape")
+  }
+
+  return {
+    schemaVersion,
+    projectId,
+    versionId,
+    builtAt,
+    builderVersion,
+    capabilities,
+    workflows: workflows as WorkflowManifest["workflows"],
+    eventFilters: eventFilters as WorkflowManifest["eventFilters"],
+    bindings: bindings as WorkflowManifest["bindings"],
+    environments: environments as WorkflowManifest["environments"],
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
+}
+
 export interface EventHandlerDeps<Id = unknown> {
   /** KV-backed manifest store (read-only path here). */
   manifestStore: CfManifestStore
@@ -87,7 +138,7 @@ export async function handleIngestEvent<Id>(
       message: `No manifest is registered for environment "${body.environment}".`,
     })
   }
-  const manifest = manifestEnvelope.manifest as unknown as WorkflowManifest
+  const manifest = deserializeWorkflowManifest(manifestEnvelope.manifest)
 
   // Event id derivation — use the caller-stamped one when present, fall
   // back to a content-derived id so external callers without a forwarder

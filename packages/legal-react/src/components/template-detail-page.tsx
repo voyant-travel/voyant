@@ -285,7 +285,7 @@ function TemplateBodyPreview({ body }: { body: string }) {
   return (
     <div
       className="prose prose-sm max-h-[70vh] max-w-none overflow-auto rounded-md border bg-muted/30 p-4 [&_.variable-node]:inline-flex [&_.variable-node]:items-center [&_.variable-node]:rounded-md [&_.variable-node]:border [&_.variable-node]:border-emerald-500/30 [&_.variable-node]:bg-emerald-500/10 [&_.variable-node]:px-1.5 [&_.variable-node]:py-0.5 [&_.variable-node]:font-mono [&_.variable-node]:text-xs [&_.variable-node]:text-emerald-200"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: Template body is trusted admin-authored HTML rendered for preview.
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Template body is trusted admin-authored HTML rendered for preview. -- owner: legal-react; existing suppression is intentional pending typed cleanup.
       dangerouslySetInnerHTML={{ __html: body }}
     />
   )

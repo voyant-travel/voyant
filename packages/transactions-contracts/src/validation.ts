@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: transactions-contracts; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import { z } from "zod"
 
 const paginationSchema = z.object({

@@ -81,7 +81,7 @@ function fakeDb(seedBooking: FakeBooking) {
     },
   })
 
-  // biome-ignore lint/suspicious/noExplicitAny: structural fake for tests
+  // biome-ignore lint/suspicious/noExplicitAny: structural fake for tests -- owner: bookings; existing suppression is intentional pending typed cleanup.
   const transaction = async (fn: (tx: any) => Promise<unknown>) => fn({ select, update, insert })
 
   return {
@@ -91,7 +91,7 @@ function fakeDb(seedBooking: FakeBooking) {
       update,
       insert,
       transaction,
-      // biome-ignore lint/suspicious/noExplicitAny: tests cast as any
+      // biome-ignore lint/suspicious/noExplicitAny: tests cast as any -- owner: bookings; existing suppression is intentional pending typed cleanup.
     } as any,
   }
 }

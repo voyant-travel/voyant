@@ -52,6 +52,10 @@ const personPostManyToMany = defineLink(
 
 const LINK_TABLE_NAMES = [personProductOneToMany.tableName, personPostManyToMany.tableName]
 
+function queryRows<T>(rows: unknown): T[] {
+  return Array.isArray(rows) ? (rows as T[]) : []
+}
+
 async function dropLinkTables(db: PostgresJsDatabase): Promise<void> {
   for (const name of LINK_TABLE_NAMES) {
     await db.execute(sql.raw(`DROP TABLE IF EXISTS "${name}"`))
@@ -81,9 +85,12 @@ describe.skipIf(!DB_AVAILABLE)("link service integration", () => {
     it("creates both pivot tables", async () => {
       const found: string[] = []
       for (const name of LINK_TABLE_NAMES) {
-        const rows = (await db.execute(
-          sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = ${name}`,
-        )) as unknown as Array<{ tablename: string }>
+        // agent-quality: raw-sql reviewed -- table name is bound as a value parameter.
+        const rows = queryRows<{ tablename: string }>(
+          await db.execute(
+            sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = ${name}`,
+          ),
+        )
         if (rows[0]) found.push(rows[0].tablename)
       }
       expect(found.sort()).toEqual([...LINK_TABLE_NAMES].sort())
@@ -96,9 +103,12 @@ describe.skipIf(!DB_AVAILABLE)("link service integration", () => {
     })
 
     it("creates the expected columns", async () => {
-      const rows = (await db.execute(
-        sql`SELECT column_name FROM information_schema.columns WHERE table_name = ${personProductOneToMany.tableName} ORDER BY column_name`,
-      )) as unknown as Array<{ column_name: string }>
+      // agent-quality: raw-sql reviewed -- table name is bound as a value parameter.
+      const rows = queryRows<{ column_name: string }>(
+        await db.execute(
+          sql`SELECT column_name FROM information_schema.columns WHERE table_name = ${personProductOneToMany.tableName} ORDER BY column_name`,
+        ),
+      )
       const cols = rows.map((r) => r.column_name).sort()
       expect(cols).toEqual(
         [
@@ -280,11 +290,13 @@ describe.skipIf(!DB_AVAILABLE)("link service integration", () => {
       expect(rows).toHaveLength(0)
 
       // But the physical row still exists.
-      const dbRows = (await db.execute(
-        sql.raw(
-          `SELECT * FROM "${personProductOneToMany.tableName}" WHERE "deleted_at" IS NOT NULL`,
+      const dbRows = queryRows<unknown>(
+        await db.execute(
+          sql.raw(
+            `SELECT * FROM "${personProductOneToMany.tableName}" WHERE "deleted_at" IS NOT NULL`,
+          ),
         ),
-      )) as unknown as unknown[]
+      )
       expect(dbRows.length).toBe(1)
     })
 
@@ -302,9 +314,9 @@ describe.skipIf(!DB_AVAILABLE)("link service integration", () => {
       await svc.create(personProductOneToMany.tableName, "pers_a", "prod_1")
       await svc.delete(personProductOneToMany.tableName, "pers_a", "prod_1")
 
-      const dbRows = (await db.execute(
-        sql.raw(`SELECT * FROM "${personProductOneToMany.tableName}"`),
-      )) as unknown as unknown[]
+      const dbRows = queryRows<unknown>(
+        await db.execute(sql.raw(`SELECT * FROM "${personProductOneToMany.tableName}"`)),
+      )
       expect(dbRows.length).toBe(0)
     })
   })

@@ -72,8 +72,8 @@ export function DataTable<TData, TValue>({
     () => ({
       id: "__select__",
       header: ({ table }) => (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation.
-        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added.
+        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation. -- owner: ui; existing suppression is intentional pending typed cleanup.
+        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added. -- owner: ui; existing suppression is intentional pending typed cleanup.
         <span onClick={(event) => event.stopPropagation()}>
           <Checkbox
             aria-label="Select all rows on page"
@@ -84,8 +84,8 @@ export function DataTable<TData, TValue>({
         </span>
       ),
       cell: ({ row }) => (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation.
-        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added.
+        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation. -- owner: ui; existing suppression is intentional pending typed cleanup.
+        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added. -- owner: ui; existing suppression is intentional pending typed cleanup.
         <span onClick={(event) => event.stopPropagation()}>
           <Checkbox
             aria-label="Select row"

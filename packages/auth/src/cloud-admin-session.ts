@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: auth; existing module stays co-located until a dedicated split preserves behavior and tests.
 import type { getDb } from "@voyantjs/db"
 import {
   apikeyTable,

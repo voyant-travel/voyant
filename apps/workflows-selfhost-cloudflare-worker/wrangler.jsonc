@@ -47,6 +47,9 @@
       "id": "replace-me-after-wrangler-kv-namespace-create"
     }
   ],
+  // Secrets are set separately with `wrangler secret put`, including
+  // R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, VOYANT_API_TOKENS, and
+  // VOYANT_WORKFLOW_STEP_AUTH_SECRET when container support is enabled.
   "vars": {
     "R2_ACCOUNT_ID": "replace-with-your-cf-account-id",
     "R2_BUCKET": "voyant-bundles"

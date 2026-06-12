@@ -28,7 +28,7 @@ function getIsolatedTransactionsTestDbUrl(url: string | undefined) {
 }
 
 async function cleanupTransactionsTestData(
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: transactions; existing suppression is intentional pending typed cleanup.
   db: any,
 ) {
   await db.execute(sql`
@@ -41,7 +41,7 @@ async function cleanupTransactionsTestData(
 }
 
 describe.skipIf(!DB_AVAILABLE)("Transactions storefront promotional offers", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: test db typing -- owner: transactions; existing suppression is intentional pending typed cleanup.
   let db: any
 
   beforeAll(async () => {

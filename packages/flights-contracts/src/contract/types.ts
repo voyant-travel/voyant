@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: flights-contracts; existing module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * Flight contract types — shapes mirror voyant-cloud's `connect-flight-contract`
  * so adapters are portable across Voyant Cloud and Voyant Catalog deployments.

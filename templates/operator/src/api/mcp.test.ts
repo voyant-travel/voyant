@@ -4,7 +4,13 @@ import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 import { mountCatalogMcpRoutes } from "./mcp"
 
-const testEnv = { TENANT_ID: "tenant_test" } as unknown as CloudflareBindings
+function testBindings(
+  bindings: Partial<CloudflareBindings> & { TENANT_ID?: string },
+): CloudflareBindings {
+  return bindings as never
+}
+
+const testEnv = testBindings({ TENANT_ID: "tenant_test" })
 
 describe("operator MCP routes", () => {
   it("does not expose travel-composer mutation tools on the public surface", async () => {
