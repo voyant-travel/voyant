@@ -55,14 +55,24 @@ describe("createCatalogAdminExtension", () => {
     })
   })
 
-  it("does not attach components to contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; every catalog host
-    // takes route params/search as props, so host route files stay the
-    // binding layer until the RFC §4.2 code-based route assembly lands.
+  it("attaches a lazy page loader (and no eager component) to every contribution", () => {
+    // Route implementations are package-owned (packaged-admin RFC §4.8):
+    // each contribution carries a lazy `page` module loader the host binder
+    // wraps into a code-based route, keeping every page in its own chunk.
+    // No contribution attaches an eager `component` — that would pin the
+    // page into the chunk that evaluates the extension factory.
     const extension = createCatalogAdminExtension()
     for (const route of extension.routes ?? []) {
+      expect(typeof route.page).toBe("function")
       expect(route.component).toBeUndefined()
     }
+  })
+
+  it("resolves page loaders to modules default-exporting a page component", async () => {
+    const extension = createCatalogAdminExtension()
+    const detail = extension.routes?.find((route) => route.id === "catalog-cruises-detail")
+    const pageModule = await detail?.page?.()
+    expect(typeof pageModule?.default).toBe("function")
   })
 })
 

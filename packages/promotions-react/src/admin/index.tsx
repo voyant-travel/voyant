@@ -1,11 +1,10 @@
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
+  adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
 } from "@voyantjs/admin"
-
-import { loadPromotionsPage, PromotionsPage } from "../promotions-page.js"
 
 export { PromotionDialog, type PromotionDialogProps } from "../promotion-dialog.js"
 export {
@@ -30,9 +29,11 @@ export interface CreatePromotionsAdminExtensionOptions {
 
 /**
  * The promotions admin contribution — nav entry plus the full route
- * implementation (page component, loader, SSR mode), per the packaged-admin
- * RFC Phase 2 (`@voyantjs/<domain>-ui/admin` convention). Hosts register the
- * extension for navigation and mount the route fields on their router.
+ * implementation (lazy page module, loader, SSR mode), per the packaged-admin
+ * RFC §4.2/§4.8. Hosts register the extension for navigation and bind the
+ * route through their code-assembled admin route tree; the page stays
+ * code-split because the contribution carries a lazy `page` loader, not a
+ * static component reference.
  */
 export function createPromotionsAdminExtension(
   options: CreatePromotionsAdminExtensionOptions = {},
@@ -54,12 +55,21 @@ export function createPromotionsAdminExtension(
         path,
         title: promotions,
         ssr: "data-only",
-        component: PromotionsPage,
-        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
-          loadPromotionsPage(queryClient, {
+        page: () =>
+          import("../promotions-page.js").then((module) =>
+            adminRoutePageModule(module.PromotionsPage),
+          ),
+        // Dynamic import on purpose: the loader helper lives in the page
+        // module, and a static import here would pin that module into the
+        // host's workspace-chrome chunk, defeating the route's code-split.
+        // The loader and the page resolve the same chunk, fetched once.
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { loadPromotionsPage } = await import("../promotions-page.js")
+          return loadPromotionsPage(queryClient, {
             baseUrl: runtime.baseUrl,
             fetcher: runtime.fetcher,
-          }),
+          })
+        },
       },
     ],
   })

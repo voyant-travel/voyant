@@ -56,13 +56,27 @@ describe("createNotificationsAdminExtension", () => {
     expect(rulesDetail?.title).toBe("Reguli reminder")
   })
 
-  it("does not attach components to route contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; the notifications
-    // detail hosts take the record id as a prop, so host route files stay
-    // the binding layer until the RFC §4.2 code-based route assembly lands.
+  it("carries lazy pages only (no loader, no SSR override, no eager component)", () => {
+    // RFC §4.8 endgame: contributions ship the implementation, hosts bind
+    // them into their code-assembled route tree. The notifications pages
+    // fetch client-side with component-local filter state, so contributions
+    // carry a lazy `page` module loader and nothing else.
+    const extension = createNotificationsAdminExtension()
+    const routes = extension.routes ?? []
+    expect(routes).toHaveLength(8)
+    for (const route of routes) {
+      expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      expect(route.loader).toBeUndefined()
+      expect(route.ssr).toBeUndefined()
+    }
+  })
+
+  it("resolves every lazy page to a module with a default component", async () => {
     const extension = createNotificationsAdminExtension()
     for (const route of extension.routes ?? []) {
-      expect(route.component).toBeUndefined()
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
     }
   })
 

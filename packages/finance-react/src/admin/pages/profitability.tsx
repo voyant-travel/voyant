@@ -1,0 +1,46 @@
+"use client"
+
+import { useAdminBreadcrumbs } from "@voyantjs/admin"
+
+import {
+  type ProfitabilityExportFilters,
+  ProfitabilityPage,
+} from "../../components/profitability-page.js"
+import { useVoyantFinanceContext } from "../../provider.js"
+
+function exportUrl(
+  baseUrl: string,
+  kind: "departures" | "products",
+  filters: ProfitabilityExportFilters,
+): string {
+  const params = new URLSearchParams()
+  if (filters.from) params.set("from", filters.from)
+  if (filters.to) params.set("to", filters.to)
+  const qs = params.toString()
+  return `${baseUrl}/v1/admin/finance/reports/profitability/${kind}/export${qs ? `?${qs}` : ""}`
+}
+
+/**
+ * Packaged route page for the profitability report (route contribution
+ * `finance-profitability`). CSV export links resolve their API origin from
+ * the shared finance provider context (`useVoyantFinanceContext`) — the same
+ * `baseUrl` every data hook in this package reads — so the page needs no
+ * app-supplied URL prop. Exports open in a new tab (browser-only; guarded
+ * for SSR render passes).
+ */
+export default function FinanceProfitabilityRoutePage() {
+  useAdminBreadcrumbs([{ label: "Profitability" }])
+  const { baseUrl } = useVoyantFinanceContext()
+
+  const openExport = (kind: "departures" | "products", filters: ProfitabilityExportFilters) => {
+    if (typeof window === "undefined") return
+    window.open(exportUrl(baseUrl, kind, filters), "_blank", "noopener,noreferrer")
+  }
+
+  return (
+    <ProfitabilityPage
+      onExportDepartures={(filters) => openExport("departures", filters)}
+      onExportProducts={(filters) => openExport("products", filters)}
+    />
+  )
+}

@@ -1,3 +1,9 @@
+export type {
+  AdminExtensionRouteLoaderArgs,
+  AdminExtensionRouteOptions,
+  AdminExtensionRouteRuntime,
+} from "./extension-routes.js"
+export { adminExtensionRouteOptions, attachAdminExtensionRoutes } from "./extension-routes.js"
 export type { AdminRootErrorBoundaryProps, AdminRootHeadOptions } from "./root.js"
 export { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "./root.js"
 export type { AdminRouterContext, CreateAdminRouterOptions } from "./router.js"

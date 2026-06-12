@@ -1,10 +1,34 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
 // Type-only: binds the bookings-ui `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, `organization.detail`, ...) into this
 // program — the contract detail page's reference cells navigate through
 // those shared keys, and `booking.detail`'s shape carries bookings-ui's own
 // tab union, so re-declaring it here could not stay shape-identical.
 import type {} from "@voyantjs/bookings-react/admin"
+
+import {
+  defaultFetcher,
+  type FetchWithValidationOptions,
+  getLegalContractAttachmentsQueryOptions,
+  getLegalContractNumberSeriesQueryOptions,
+  getLegalContractQueryOptions,
+  getLegalContractSignaturesQueryOptions,
+  getLegalContractsQueryOptions,
+  getLegalContractTemplateQueryOptions,
+  getLegalContractTemplatesQueryOptions,
+  getLegalContractTemplateVersionsQueryOptions,
+  getLegalPoliciesQueryOptions,
+  getLegalPolicyAcceptancesQueryOptions,
+  getLegalPolicyAssignmentsQueryOptions,
+  getLegalPolicyQueryOptions,
+  getLegalPolicyVersionsQueryOptions,
+} from "../index.js"
 
 /**
  * Semantic destinations the legal admin surfaces navigate to
@@ -57,6 +81,15 @@ export { TemplateDialog } from "./template-dialog.js"
 export { TemplateVersionDialog } from "./template-version-dialog.js"
 export { TemplatesHost } from "./templates-host.js"
 
+/**
+ * Bind the host-supplied route runtime to the legal data-client shape the
+ * query-option factories take. Hosts that don't inject a fetcher (no SSR
+ * cookie forwarding) fall back to the package's `defaultFetcher`.
+ */
+function toLegalClient(runtime: AdminRouteRuntime): FetchWithValidationOptions {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
+
 export interface CreateLegalAdminExtensionOptions {
   /** Mount path of the legal pages inside the admin workspace. Default `/legal`. */
   basePath?: string
@@ -79,20 +112,17 @@ export interface CreateLegalAdminExtensionOptions {
  * so contributing nav entries here would duplicate them. If the base nav
  * ever drops the legal group, this extension is where the entries move.
  *
- * ROUTES: contributions are metadata only — the legal pages keep their
- * filter state component-local, so there are no URL search contracts. The
- * PAGES are package-owned: {@link ContractsHost}, {@link PoliciesHost},
- * {@link TemplatesHost} and {@link NumberSeriesHost} are zero-prop;
- * {@link ContractDetailHost}, {@link PolicyDetailHost} and
- * {@link TemplateDetailHost} bind the operator-grade detail pages to their
- * data wiring and resolve every cross-route link through the semantic
- * destinations declared above. `component:` is intentionally NOT attached
- * to these contributions yet: the contribution contract renders zero-prop
- * pages (route components read params via the router, per RFC §4.2), while
- * the detail hosts take the record id as a prop. Host route files stay the
- * thin binding layer (`Route.useParams()` → host props) until the §4.2
- * code-based route assembly gives packaged pages a router-agnostic way to
- * read route state.
+ * ROUTES: full implementations (packaged-admin RFC §4.8 endgame) — each
+ * contribution carries the lazy `page` module loader, the data loader and
+ * the per-route SSR mode, so hosts bind them through their code-assembled
+ * admin route tree with no per-route files. List pages
+ * ({@link ContractsHost}, {@link TemplatesHost}, {@link PoliciesHost},
+ * {@link NumberSeriesHost}) are zero-prop; the detail contributions resolve
+ * wrapper pages (`./pages/*`) that bind the matched `$id` param onto
+ * {@link ContractDetailHost}, {@link TemplateDetailHost} and
+ * {@link PolicyDetailHost}. Pages stay code-split because every `page` is a
+ * dynamic import of the specific host module, never a static reference from
+ * this factory.
  *
  * WIDGETS: none today. The legal-owned `BookingContractCard` ships from the
  * package root, but no operator surface currently mounts it through a
@@ -117,36 +147,132 @@ export function createLegalAdminExtension(
         id: "legal-contracts-index",
         path: `${basePath}/contracts`,
         title: contracts,
+        ssr: "data-only",
+        page: () =>
+          import("./contracts-host.js").then((module) =>
+            adminRoutePageModule(module.ContractsHost),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getLegalContractsQueryOptions(toLegalClient(runtime), {
+              search: "",
+              scope: "all",
+              status: "all",
+              limit: 25,
+              offset: 0,
+            }),
+          ),
       },
       {
         id: "legal-contracts-detail",
         path: `${basePath}/contracts/$id`,
         title: contracts,
+        ssr: "data-only",
+        page: () => import("./pages/contract-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = toLegalClient(runtime)
+
+          await queryClient.ensureQueryData(getLegalContractQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(
+            getLegalContractSignaturesQueryOptions(client, { contractId: id }),
+          )
+          void queryClient.prefetchQuery(
+            getLegalContractAttachmentsQueryOptions(client, { contractId: id }),
+          )
+        },
       },
       {
         id: "legal-templates-index",
         path: `${basePath}/templates`,
         title: contractTemplates,
+        ssr: "data-only",
+        page: () =>
+          import("./templates-host.js").then((module) =>
+            adminRoutePageModule(module.TemplatesHost),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getLegalContractTemplatesQueryOptions(toLegalClient(runtime), {
+              search: "",
+              scope: "all",
+            }),
+          ),
       },
       {
         id: "legal-templates-detail",
         path: `${basePath}/templates/$id`,
         title: contractTemplates,
+        ssr: "data-only",
+        page: () => import("./pages/template-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = toLegalClient(runtime)
+
+          await queryClient.ensureQueryData(getLegalContractTemplateQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(
+            getLegalContractTemplateVersionsQueryOptions(client, { templateId: id }),
+          )
+        },
       },
       {
         id: "legal-policies-index",
         path: `${basePath}/policies`,
         title: policies,
+        ssr: "data-only",
+        page: () =>
+          import("./policies-host.js").then((module) => adminRoutePageModule(module.PoliciesHost)),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getLegalPoliciesQueryOptions(toLegalClient(runtime), {
+              search: "",
+              kind: "all",
+              limit: 25,
+              offset: 0,
+            }),
+          ),
       },
       {
         id: "legal-policies-detail",
         path: `${basePath}/policies/$id`,
         title: policies,
+        ssr: "data-only",
+        page: () => import("./pages/policy-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = toLegalClient(runtime)
+
+          await queryClient.ensureQueryData(getLegalPolicyQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(
+            getLegalPolicyVersionsQueryOptions(client, { policyId: id }),
+          )
+          void queryClient.prefetchQuery(
+            getLegalPolicyAssignmentsQueryOptions(client, { policyId: id }),
+          )
+          void queryClient.prefetchQuery(
+            getLegalPolicyAcceptancesQueryOptions(client, { limit: 50, offset: 0 }),
+          )
+        },
       },
       {
         id: "legal-number-series",
         path: `${basePath}/number-series`,
         title: numberSeries,
+        ssr: "data-only",
+        page: () =>
+          import("./number-series-host.js").then((module) =>
+            adminRoutePageModule(module.NumberSeriesHost),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getLegalContractNumberSeriesQueryOptions(toLegalClient(runtime)),
+          ),
       },
     ],
   })

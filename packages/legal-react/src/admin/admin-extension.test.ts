@@ -51,13 +51,26 @@ describe("createLegalAdminExtension", () => {
     expect(policiesDetail?.title).toBe("Politici")
   })
 
-  it("does not attach components to route contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; the legal detail
-    // hosts take the record id as a prop, so host route files stay the
-    // binding layer until the RFC §4.2 code-based route assembly lands.
+  it("carries full route implementations (lazy page + loader + data-only SSR)", () => {
+    // RFC §4.8 endgame: contributions ship the implementation, hosts bind
+    // them into their code-assembled route tree. Pages are lazy module
+    // loaders (never eager `component` references) so they stay code-split.
+    const extension = createLegalAdminExtension()
+    const routes = extension.routes ?? []
+    expect(routes).toHaveLength(7)
+    for (const route of routes) {
+      expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      expect(typeof route.loader).toBe("function")
+      expect(route.ssr).toBe("data-only")
+    }
+  })
+
+  it("resolves every lazy page to a module with a default component", async () => {
     const extension = createLegalAdminExtension()
     for (const route of extension.routes ?? []) {
-      expect(route.component).toBeUndefined()
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
     }
   })
 

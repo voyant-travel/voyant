@@ -50,14 +50,35 @@ describe("createAvailabilityAdminExtension", () => {
     }
   })
 
-  it("does not attach components to contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; the detail hosts
-    // take the record id as a prop, so host route files stay the binding
-    // layer until the RFC §4.2 code-based route assembly lands.
+  it("carries lazy page loaders instead of eager components", async () => {
+    // The full route implementation lives on the contribution (RFC §4.8):
+    // `page` resolves the page module lazily so it stays code-split; no
+    // eager `component` reference pins it into the workspace-chrome chunk.
     const extension = createAvailabilityAdminExtension()
     for (const route of extension.routes ?? []) {
       expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
     }
+  })
+
+  it("attaches data loaders and pending skeletons to every route", () => {
+    const extension = createAvailabilityAdminExtension()
+    expect(extension.routes).toHaveLength(4)
+    for (const route of extension.routes ?? []) {
+      expect(typeof route.loader).toBe("function")
+      expect(typeof route.pendingComponent).toBe("function")
+    }
+  })
+
+  it("marks the index route data-only for SSR and leaves the detail routes default", () => {
+    const extension = createAvailabilityAdminExtension()
+    const ssrById = new Map(extension.routes?.map((route) => [route.id, route.ssr]))
+    expect(ssrById.get("availability-index")).toBe("data-only")
+    expect(ssrById.get("availability-slot-detail")).toBeUndefined()
+    expect(ssrById.get("availability-rule-detail")).toBeUndefined()
+    expect(ssrById.get("availability-start-time-detail")).toBeUndefined()
   })
 })
 

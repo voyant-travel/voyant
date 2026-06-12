@@ -1,4 +1,21 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+
+import {
+  defaultFetcher,
+  getSupplierNotesQueryOptions,
+  getSupplierQueryOptions,
+  getSupplierServiceRatesQueryOptions,
+  getSupplierServicesQueryOptions,
+  getSuppliersQueryOptions,
+} from "../index.js"
+import { SupplierDetailSkeleton } from "./supplier-detail-skeleton.js"
+import { SuppliersListSkeleton } from "./suppliers-list-skeleton.js"
 
 /**
  * Semantic destinations the suppliers admin surfaces navigate to
@@ -53,20 +70,21 @@ export interface CreateSuppliersAdminExtensionOptions {
  * If the base nav ever drops the suppliers item, this extension is where the
  * entry moves.
  *
- * ROUTES: contributions are metadata only — the supplier pages carry no URL
- * search state (the list keeps its filters local). The PAGES are
- * package-owned: {@link SuppliersHost} (zero-prop, attachable directly as a
- * route `component:`) and {@link SupplierDetailHost} bind the canonical
- * supplier pages to their data wiring (the shared suppliers provider
- * context) and resolve every cross-route link through the semantic
- * destinations declared above — no app RPC client, no host route tree.
- *
- * `component:` is intentionally NOT attached to these contributions yet:
- * the contribution contract renders zero-prop pages (route components read
- * params via the router, per RFC §4.2), and {@link SupplierDetailHost}
- * takes the supplier id as a prop. Host route files stay the thin binding
- * layer (`Route.useParams()` → host props) until the §4.2 code-based route
- * assembly gives packaged pages a router-agnostic way to read route state.
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
+ * host-supplied {@link AdminRouteLoaderContext} (QueryClient + runtime +
+ * params), per-route SSR mode, and pending skeletons. Hosts bind them into
+ * their code-assembled admin route tree; no per-route host files needed.
+ * The pages stay code-split because each contribution's `page` dynamically
+ * imports the specific host/page module — never the admin barrel — so the
+ * heavy page chunks load on navigation, not with workspace chrome.
+ * {@link SuppliersHost} mounts as a zero-prop page; the detail page reads
+ * the supplier id from {@link AdminRoutePageProps} via the default-exported
+ * wrapper in `./pages/`. The list carries no URL search state (filters stay
+ * local), so no `validateSearch` contracts. The pages bind to their data
+ * wiring (the shared suppliers provider context) and resolve every
+ * cross-route link through the semantic destinations declared above — no
+ * app RPC client, no host route tree.
  *
  * WIDGETS: none contributed, but {@link SupplierDetailHost} exposes the
  * `supplier.details.payment-policy` slot ({@link
@@ -87,12 +105,48 @@ export function createSuppliersAdminExtension(
         id: "suppliers-index",
         path: basePath,
         title: suppliers,
+        ssr: "data-only",
+        page: () =>
+          import("./suppliers-host.js").then((module) =>
+            adminRoutePageModule(module.SuppliersHost),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(getSuppliersQueryOptions(loaderClient(runtime))),
+        pendingComponent: SuppliersListSkeleton,
       },
       {
         id: "suppliers-detail",
         path: `${basePath}/$id`,
         title: suppliers,
+        page: () => import("./pages/supplier-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = loaderClient(runtime)
+          const servicesData = await queryClient.ensureQueryData(
+            getSupplierServicesQueryOptions(client, id),
+          )
+
+          await Promise.all([
+            queryClient.ensureQueryData(getSupplierQueryOptions(client, id)),
+            queryClient.ensureQueryData(getSupplierNotesQueryOptions(client, id)),
+            ...servicesData.data.map((service) =>
+              queryClient.ensureQueryData(
+                getSupplierServiceRatesQueryOptions(client, id, service.id),
+              ),
+            ),
+          ])
+        },
+        pendingComponent: SupplierDetailSkeleton,
       },
     ],
   })
+}
+
+/**
+ * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to
+ * the required-fetcher client contract the supplier query options take.
+ */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }

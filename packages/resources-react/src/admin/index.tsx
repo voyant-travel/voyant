@@ -1,4 +1,24 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+
+import { ResourceAllocationDetailSkeleton } from "../components/resource-allocation-detail-page.js"
+import { ResourceAssignmentDetailSkeleton } from "../components/resource-assignment-detail-page.js"
+import {
+  ensureResourceAllocationDetailPageData,
+  ensureResourceAssignmentDetailPageData,
+  ensureResourceDetailPageData,
+  ensureResourcePoolDetailPageData,
+} from "../components/resource-detail-data.js"
+import { ResourceDetailSkeleton } from "../components/resource-detail-page.js"
+import { ResourcePoolDetailSkeleton } from "../components/resource-pool-detail-page.js"
+import { defaultFetcher } from "../index.js"
+import { ensureResourcesPageData } from "./resources-page-data.js"
+import { ResourcesPageSkeleton } from "./resources-page-skeleton.js"
 
 /**
  * Semantic destinations the resources admin surfaces navigate to
@@ -76,20 +96,20 @@ export interface CreateResourcesAdminExtensionOptions {
  * If the base nav ever drops the resources item, this extension is where
  * the entry moves.
  *
- * ROUTES: contributions are metadata only — the resources pages carry no
- * URL search state (the dashboard keeps its tab/filter state local). The
- * PAGES are package-owned: {@link ResourcesHost} (zero-prop, attachable
- * directly as a route `component:`) plus the four detail hosts bind the
- * canonical pages to their data wiring (the shared resources provider
- * context) and resolve every cross-route link through the semantic
- * destinations declared above — no app RPC client, no host route tree.
- *
- * `component:` is intentionally NOT attached to these contributions yet:
- * the contribution contract renders zero-prop pages (route components read
- * params via the router, per RFC §4.2), and the detail hosts take the
- * entity id as a prop. Host route files stay the thin binding layer
- * (`Route.useParams()` → host props) until the §4.2 code-based route
- * assembly gives packaged pages a router-agnostic way to read route state.
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
+ * host-supplied {@link AdminRouteLoaderContext} (QueryClient + runtime +
+ * params), per-route SSR mode, and pending skeletons. Hosts bind them into
+ * their code-assembled admin route tree; no per-route host files needed.
+ * The pages stay code-split because each contribution's `page` dynamically
+ * imports the specific host/page module — never the admin barrel — so the
+ * heavy page chunks load on navigation, not with workspace chrome.
+ * {@link ResourcesHost} (the tab dashboard) mounts as a zero-prop page; the
+ * four detail hosts read their entity id from `AdminRoutePageProps` via the
+ * default-exported wrappers in `./pages/`. The dashboard keeps its
+ * tab/filter state local, so there are no URL search contracts, and every
+ * cross-route link resolves through the semantic destinations declared
+ * above — no app RPC client, no host route tree.
  *
  * WIDGETS: none contributed and no slots exposed yet.
  */
@@ -106,27 +126,79 @@ export function createResourcesAdminExtension(
         id: "resources-index",
         path: basePath,
         title: resources,
+        ssr: "data-only",
+        page: () =>
+          import("./resources-host.js").then((module) =>
+            adminRoutePageModule(module.ResourcesHost),
+          ),
+        // Awaits only the default tab's query and fires the rest as
+        // background prefetches (same filters as the page's hooks, so the
+        // cache seeds line up).
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          ensureResourcesPageData(queryClient, loaderClient(runtime)),
+        pendingComponent: ResourcesPageSkeleton,
       },
       {
         id: "resources-detail",
         path: `${basePath}/$id`,
         title: resources,
+        ssr: "data-only",
+        page: () => import("./pages/resource-detail-page.js"),
+        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          return ensureResourceDetailPageData(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: ResourceDetailSkeleton,
       },
       {
         id: "resources-pool-detail",
         path: `${basePath}/pools/$id`,
         title: resources,
+        ssr: "data-only",
+        page: () => import("./pages/resource-pool-detail-page.js"),
+        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          return ensureResourcePoolDetailPageData(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: ResourcePoolDetailSkeleton,
       },
       {
         id: "resources-assignment-detail",
         path: `${basePath}/assignments/$id`,
         title: resources,
+        ssr: "data-only",
+        page: () => import("./pages/resource-assignment-detail-page.js"),
+        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          return ensureResourceAssignmentDetailPageData(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: ResourceAssignmentDetailSkeleton,
       },
       {
         id: "resources-allocation-detail",
         path: `${basePath}/allocations/$id`,
         title: resources,
+        ssr: "data-only",
+        page: () => import("./pages/resource-allocation-detail-page.js"),
+        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          return ensureResourceAllocationDetailPageData(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: ResourceAllocationDetailSkeleton,
       },
     ],
   })
+}
+
+/**
+ * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to
+ * the required-fetcher client contract the resources loaders take — SSR
+ * loaders run with the host runtime's cookie-forwarding fetcher.
+ */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }

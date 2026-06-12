@@ -1,6 +1,8 @@
 import {
   type AdminExtension,
+  type AdminRouteLoaderContext,
   type AdminWidgetContribution,
+  adminRoutePageModule,
   defineAdminExtension,
 } from "@voyantjs/admin"
 // Importing the slot id also binds the bookings-ui `AdminDestinations`
@@ -14,16 +16,43 @@ import {
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
 } from "@voyantjs/bookings-react/admin"
+import { defaultFetcher } from "@voyantjs/react"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
 // peer-depends on `@voyantjs/suppliers-react/ui`.
 import { supplierDetailPaymentPolicySlot } from "@voyantjs/suppliers-react/admin"
 import type { ComponentType } from "react"
 
+// Skeletons are deliberately the ONLY page-adjacent statics this factory
+// touches: they ship from their own light modules, so attaching them as
+// `pendingComponent` doesn't pull the heavy page chunks into the factory.
+import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
+import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
+// Query options live in the package data root — static imports here stay in
+// the data layer and never reference the page components.
+import {
+  getAllPaymentsQueryOptions,
+  getDepartureProfitabilityQueryOptions,
+  getInvoiceCreditNotesQueryOptions,
+  getInvoiceLineItemsQueryOptions,
+  getInvoiceNotesQueryOptions,
+  getInvoiceNumberSeriesQueryOptions,
+  getInvoicePaymentsQueryOptions,
+  getInvoiceQueryOptions,
+  getInvoicesQueryOptions,
+  getPaymentQueryOptions,
+} from "../index.js"
 import { BookingInvoicesWidget } from "./booking-invoices-widget.js"
 import { BookingPaymentPolicyWidget } from "./booking-payment-policy-widget.js"
 import { BookingPendingPaymentSessionsWidget } from "./booking-pending-payment-sessions-widget.js"
+import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
+import { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
 import { SupplierPaymentPolicyWidget } from "./supplier-payment-policy-widget.js"
+
+/** The host runtime as the package's query-option client (`fetchWithValidation`). */
+function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
 
 /**
  * Semantic destinations the finance admin surfaces navigate to
@@ -101,19 +130,18 @@ export interface CreateFinanceAdminExtensionOptions {
  * If the base nav ever drops the finance group, this extension is where the
  * entries move.
  *
- * ROUTES: contributions are metadata only — the finance pages carry no URL
- * search state. The PAGES are package-owned: {@link InvoiceDetailHost} and
- * {@link PaymentDetailHost} bind the operator-grade detail pages to their
- * data wiring (the shared finance provider context) and resolve every
- * cross-route link through the semantic destinations declared above; the
- * list pages (`InvoicesPage`, `PaymentsPage`, `SupplierInvoicesPage`,
- * `InvoiceNumberSeriesPage`, `ProfitabilityPage`) ship from the package
- * root. `component:` is intentionally NOT attached to these contributions
- * yet: the contribution contract renders zero-prop pages (route components
- * read params via the router, per RFC §4.2), while both detail hosts take
- * the record id as a prop. Host route files stay the thin binding layer
- * (`Route.useParams()` → host props) until the §4.2 code-based route
- * assembly gives packaged pages a router-agnostic way to read route state.
+ * ROUTES: six of the eight contributions carry the FULL route implementation
+ * (packaged-admin RFC §4.8 endgame) — a lazy `page` module loader, a data
+ * loader fed by the host runtime (`baseUrl` + cookie-forwarding fetcher),
+ * `ssr: "data-only"`, and the pending skeleton where the operator route had
+ * one — so the host needs no per-route files for them. Pages stay
+ * code-split: this factory never references a page component statically;
+ * each `page:` dynamically imports its specific module (never a barrel), and
+ * param-taking pages read the matched `$id` off `AdminRoutePageProps` and
+ * bind it onto {@link InvoiceDetailHost} / {@link PaymentDetailHost}.
+ * Cross-route links resolve through the semantic destinations declared
+ * above. The two supplier-invoices contributions remain metadata-only — see
+ * their inline notes.
  *
  * WIDGETS: the cycle-resolution piece (RFC §4.7). The booking detail page
  * needs the finance-owned invoices card, but this package peer-depends on
@@ -148,32 +176,94 @@ export function createFinanceAdminExtension(
         id: "finance-invoices-index",
         path: `${basePath}/invoices`,
         title: invoices,
+        ssr: "data-only",
+        page: () => import("./pages/invoices-index.js"),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(getInvoicesQueryOptions(runtimeClient(runtime))),
+        pendingComponent: InvoicesPageSkeleton,
       },
       {
         id: "finance-invoices-detail",
         path: `${basePath}/invoices/$id`,
         title: invoices,
+        ssr: "data-only",
+        page: () => import("./pages/invoice-detail.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = runtimeClient(runtime)
+
+          await queryClient.ensureQueryData(getInvoiceQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(getInvoiceLineItemsQueryOptions(client, id))
+          void queryClient.prefetchQuery(getInvoicePaymentsQueryOptions(client, id))
+          void queryClient.prefetchQuery(getInvoiceCreditNotesQueryOptions(client, id))
+          void queryClient.prefetchQuery(getInvoiceNotesQueryOptions(client, id))
+        },
+        pendingComponent: InvoiceDetailSkeleton,
       },
       {
         id: "finance-invoice-number-series",
         path: `${basePath}/invoice-number-series`,
         title: invoiceNumberSeries,
+        ssr: "data-only",
+        // `InvoiceNumberSeriesPage` takes an all-optional props bag, which
+        // TypeScript's weak-type rule rejects as a route page component
+        // despite being safe to mount — hence `adminRoutePageModule`.
+        page: () =>
+          import("../components/invoice-number-series-page.js").then((module) =>
+            adminRoutePageModule(module.InvoiceNumberSeriesPage),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getInvoiceNumberSeriesQueryOptions(runtimeClient(runtime), {
+              limit: 100,
+              offset: 0,
+            }),
+          ),
       },
       {
         id: "finance-payments-index",
         path: `${basePath}/payments`,
         title: payments,
+        ssr: "data-only",
+        page: () => import("./pages/payments-index.js"),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(getAllPaymentsQueryOptions(runtimeClient(runtime))),
+        pendingComponent: PaymentsPageSkeleton,
       },
       {
         id: "finance-payments-detail",
         path: `${basePath}/payments/$id`,
         title: payments,
+        ssr: "data-only",
+        page: () => import("./pages/payment-detail.js"),
+        loader: ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          return queryClient.ensureQueryData(getPaymentQueryOptions(runtimeClient(runtime), id))
+        },
+        pendingComponent: PaymentDetailSkeleton,
       },
+      /**
+       * Metadata-only on purpose: the operator's supplier-invoices pages
+       * carry app-owned wiring (file uploads to the app's `/v1/uploads`,
+       * inline supplier creation, cross-domain target search), so they
+       * remain host-route-file-bound until the package API can carry that
+       * wiring.
+       */
       {
         id: "finance-supplier-invoices-index",
         path: `${basePath}/supplier-invoices`,
         title: supplierInvoices,
       },
+      /**
+       * Metadata-only on purpose: the operator's supplier-invoices pages
+       * carry app-owned wiring (file uploads to the app's `/v1/uploads`,
+       * inline supplier creation, cross-domain target search), so they
+       * remain host-route-file-bound until the package API can carry that
+       * wiring.
+       */
       {
         id: "finance-supplier-invoices-detail",
         path: `${basePath}/supplier-invoices/$id`,
@@ -183,6 +273,12 @@ export function createFinanceAdminExtension(
         id: "finance-profitability",
         path: `${basePath}/profitability`,
         title: profitability,
+        ssr: "data-only",
+        page: () => import("./pages/profitability.js"),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getDepartureProfitabilityQueryOptions(runtimeClient(runtime)),
+          ),
       },
     ],
     widgets: [

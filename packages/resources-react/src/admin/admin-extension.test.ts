@@ -54,13 +54,33 @@ describe("createResourcesAdminExtension", () => {
     }
   })
 
-  it("does not attach components to contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; the detail hosts
-    // take the entity id as a prop, so host route files stay the binding
-    // layer until the RFC §4.2 code-based route assembly lands.
+  it("carries lazy page loaders instead of eager components", async () => {
+    // The full route implementation lives on the contribution (RFC §4.8):
+    // `page` resolves the page module lazily so it stays code-split; no
+    // eager `component` reference pins it into the workspace-chrome chunk.
     const extension = createResourcesAdminExtension()
     for (const route of extension.routes ?? []) {
       expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
+    }
+  })
+
+  it("attaches data loaders and pending skeletons to every route", () => {
+    const extension = createResourcesAdminExtension()
+    expect(extension.routes).toHaveLength(5)
+    for (const route of extension.routes ?? []) {
+      expect(typeof route.loader).toBe("function")
+      expect(typeof route.pendingComponent).toBe("function")
+    }
+  })
+
+  it("marks every route data-only for SSR (loaders prefetch, pages render client-side)", () => {
+    const extension = createResourcesAdminExtension()
+    expect(extension.routes).toHaveLength(5)
+    for (const route of extension.routes ?? []) {
+      expect(route.ssr).toBe("data-only")
     }
   })
 })
