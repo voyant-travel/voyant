@@ -1,26 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+"use client"
+
+import { useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin/option-resource-templates-panel"
-import { getProductQueryOptions } from "@voyantjs/products-react"
 import {
-  getChannelsQueryOptions,
-  getPricingCategoriesQueryOptions,
-  getProductChannelMappingsQueryOptions,
-  getProductMediaQueryOptions,
-  getProductOptionsQueryOptions,
-  getProductRulesQueryOptions,
-  getProductSlotsQueryOptions,
   type ProductDetailBreadcrumb,
   ProductDetailHostProvider,
   type ProductDetailHostValue,
-  ProductDetailPage,
-  ProductDetailSkeleton,
+  ProductDetailPage as ProductDetailPageBody,
 } from "@voyantjs/products-react/components/product-detail"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 // App-specific storage upload (cookie-auth, browser-side file upload). The page
 // turns this result into a media record via the injected `api`.
@@ -53,30 +44,15 @@ const renderOptionExtras = (productId: string, optionId: string) => (
   <OptionResourceTemplatesPanel productId={productId} optionId={optionId} />
 )
 
-// Critical path only: await the product itself so the header has data and the
-// loader unblocks after one round-trip. Everything else is a background
-// prefetch — the page's `useQuery` calls light up as data arrives.
-export const Route = createFileRoute("/_workspace/products/$id")({
-  ssr: "data-only",
-  loader: async ({ context, params }) => {
-    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
-
-    await context.queryClient.ensureQueryData(getProductQueryOptions(client, params.id))
-
-    void context.queryClient.prefetchQuery(getProductOptionsQueryOptions(client, params.id))
-    void context.queryClient.prefetchQuery(getProductSlotsQueryOptions(api, params.id))
-    void context.queryClient.prefetchQuery(getProductRulesQueryOptions(api, params.id))
-    void context.queryClient.prefetchQuery(getChannelsQueryOptions(api))
-    void context.queryClient.prefetchQuery(getProductChannelMappingsQueryOptions(api, params.id))
-    void context.queryClient.prefetchQuery(getProductMediaQueryOptions(api, params.id))
-    void context.queryClient.prefetchQuery(getPricingCategoriesQueryOptions(client))
-  },
-  pendingComponent: ProductDetailSkeleton,
-  component: ProductDetailRoute,
-})
-
-function ProductDetailRoute() {
-  const { id } = Route.useParams()
+/**
+ * Operator substitution for the packaged products-detail page (the
+ * `detailPageComponent` seam on `createProductsAdminExtension`). The
+ * package cannot compose these app-owned seams itself: the
+ * availability-react option resource templates panel (a dependency cycle —
+ * availability-react depends on products-react), the app's `/api/v1/uploads`
+ * storage route, and the product-pre-selected new-booking deep link.
+ */
+export function ProductDetailPage({ id }: { id: string }) {
   const messages = useAdminMessages()
   const { resolvedLocale } = useLocale()
   const navigate = useNavigate()
@@ -110,7 +86,7 @@ function ProductDetailRoute() {
 
   return (
     <ProductDetailHostProvider value={host}>
-      <ProductDetailPage id={id} />
+      <ProductDetailPageBody id={id} />
     </ProductDetailHostProvider>
   )
 }

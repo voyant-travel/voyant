@@ -38,6 +38,18 @@ function extension(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// action-ledger
+// ---------------------------------------------------------------------------
+
+const actionLedgerExtension = extension("action-ledger")
+
+export const ActionLedgerIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/action-ledger",
+  ...adminExtensionRouteOptions(actionLedgerExtension, "action-ledger-index", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // availability
 // ---------------------------------------------------------------------------
 
@@ -342,6 +354,30 @@ export const NotificationsSettingsRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// products
+// ---------------------------------------------------------------------------
+
+const productsExtension = extension("products")
+
+export const ProductsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products",
+  ...adminExtensionRouteOptions(productsExtension, "products-index", runtime),
+})
+
+export const ProductsCategoriesRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products/categories",
+  ...adminExtensionRouteOptions(productsExtension, "products-categories", runtime),
+})
+
+export const ProductsDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products/$id",
+  ...adminExtensionRouteOptions(productsExtension, "products-detail", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // promotions
 // ---------------------------------------------------------------------------
 
@@ -408,10 +444,29 @@ export const SuppliersDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// travel-composer
+// ---------------------------------------------------------------------------
+
+const travelComposerExtension = extension("travel-composer")
+
+export const TravelComposerIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/trips",
+  ...adminExtensionRouteOptions(travelComposerExtension, "travel-composer-index", runtime),
+})
+
+export const TravelComposerDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/trips/$id",
+  ...adminExtensionRouteOptions(travelComposerExtension, "travel-composer-detail", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // tree + typed-link maps
 // ---------------------------------------------------------------------------
 
 export const adminExtensionRoutes = [
+  ActionLedgerIndexRoute,
   AvailabilityIndexRoute,
   AvailabilitySlotDetailRoute,
   AvailabilityRuleDetailRoute,
@@ -453,6 +508,9 @@ export const adminExtensionRoutes = [
   NotificationsReminderRunsRoute,
   NotificationsPreviewRoute,
   NotificationsSettingsRoute,
+  ProductsIndexRoute,
+  ProductsCategoriesRoute,
+  ProductsDetailRoute,
   PromotionsIndexRoute,
   ResourcesIndexRoute,
   ResourcesDetailRoute,
@@ -461,9 +519,12 @@ export const adminExtensionRoutes = [
   ResourcesAllocationDetailRoute,
   SuppliersIndexRoute,
   SuppliersDetailRoute,
+  TravelComposerIndexRoute,
+  TravelComposerDetailRoute,
 ]
 
 export interface AdminExtensionRoutesByFullPath {
+  "/action-ledger": typeof ActionLedgerIndexRoute
   "/availability": typeof AvailabilityIndexRoute
   "/availability/$id": typeof AvailabilitySlotDetailRoute
   "/availability/rules/$id": typeof AvailabilityRuleDetailRoute
@@ -505,6 +566,9 @@ export interface AdminExtensionRoutesByFullPath {
   "/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/notifications/preview": typeof NotificationsPreviewRoute
   "/notifications/settings": typeof NotificationsSettingsRoute
+  "/products": typeof ProductsIndexRoute
+  "/products/categories": typeof ProductsCategoriesRoute
+  "/products/$id": typeof ProductsDetailRoute
   "/promotions": typeof PromotionsIndexRoute
   "/resources": typeof ResourcesIndexRoute
   "/resources/$id": typeof ResourcesDetailRoute
@@ -513,9 +577,12 @@ export interface AdminExtensionRoutesByFullPath {
   "/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
+  "/trips": typeof TravelComposerIndexRoute
+  "/trips/$id": typeof TravelComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesByTo {
+  "/action-ledger": typeof ActionLedgerIndexRoute
   "/availability": typeof AvailabilityIndexRoute
   "/availability/$id": typeof AvailabilitySlotDetailRoute
   "/availability/rules/$id": typeof AvailabilityRuleDetailRoute
@@ -557,6 +624,9 @@ export interface AdminExtensionRoutesByTo {
   "/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/notifications/preview": typeof NotificationsPreviewRoute
   "/notifications/settings": typeof NotificationsSettingsRoute
+  "/products": typeof ProductsIndexRoute
+  "/products/categories": typeof ProductsCategoriesRoute
+  "/products/$id": typeof ProductsDetailRoute
   "/promotions": typeof PromotionsIndexRoute
   "/resources": typeof ResourcesIndexRoute
   "/resources/$id": typeof ResourcesDetailRoute
@@ -565,9 +635,12 @@ export interface AdminExtensionRoutesByTo {
   "/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
+  "/trips": typeof TravelComposerIndexRoute
+  "/trips/$id": typeof TravelComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesById {
+  "/_workspace/action-ledger": typeof ActionLedgerIndexRoute
   "/_workspace/availability": typeof AvailabilityIndexRoute
   "/_workspace/availability/$id": typeof AvailabilitySlotDetailRoute
   "/_workspace/availability/rules/$id": typeof AvailabilityRuleDetailRoute
@@ -609,6 +682,9 @@ export interface AdminExtensionRoutesById {
   "/_workspace/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/_workspace/notifications/preview": typeof NotificationsPreviewRoute
   "/_workspace/notifications/settings": typeof NotificationsSettingsRoute
+  "/_workspace/products": typeof ProductsIndexRoute
+  "/_workspace/products/categories": typeof ProductsCategoriesRoute
+  "/_workspace/products/$id": typeof ProductsDetailRoute
   "/_workspace/promotions": typeof PromotionsIndexRoute
   "/_workspace/resources": typeof ResourcesIndexRoute
   "/_workspace/resources/$id": typeof ResourcesDetailRoute
@@ -617,4 +693,6 @@ export interface AdminExtensionRoutesById {
   "/_workspace/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/_workspace/suppliers": typeof SuppliersIndexRoute
   "/_workspace/suppliers/$id": typeof SuppliersDetailRoute
+  "/_workspace/trips": typeof TravelComposerIndexRoute
+  "/_workspace/trips/$id": typeof TravelComposerDetailRoute
 }

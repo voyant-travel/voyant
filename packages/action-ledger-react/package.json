@@ -1,45 +1,37 @@
 {
-  "name": "@voyantjs/travel-composer-react",
-  "version": "0.105.6",
+  "name": "@voyantjs/action-ledger-react",
+  "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
-    "directory": "packages/travel-composer-react"
+    "directory": "packages/action-ledger-react"
   },
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./provider": "./src/provider.tsx",
-    "./hooks": "./src/hooks/index.ts",
-    "./client": "./src/client.ts",
-    "./query-keys": "./src/query-keys.ts",
     "./admin": "./src/admin/index.tsx"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/ tests/",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/crm-react": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/flights": "workspace:^",
-    "@voyantjs/flights-react": "workspace:^",
-    "@voyantjs/travel-composer": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zod": "^4.0.0"
+    "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
     "@voyantjs/admin": {
@@ -48,55 +40,38 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/catalog": {
-      "optional": true
-    },
-    "@voyantjs/catalog-react": {
-      "optional": true
-    },
     "@voyantjs/crm-react": {
       "optional": true
     },
-    "@voyantjs/finance": {
-      "optional": true
-    },
-    "@voyantjs/flights": {
-      "optional": true
-    },
-    "@voyantjs/flights-react": {
+    "@voyantjs/products-react": {
       "optional": true
     },
     "@voyantjs/ui": {
       "optional": true
     }
   },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/react": "workspace:^"
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/crm-react": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/flights": "workspace:^",
-    "@voyantjs/flights-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/travel-composer": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2",
-    "zod": "^4.3.6"
-  },
-  "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^"
+    "vitest": "^4.1.2"
   },
   "files": [
     "dist"
@@ -113,21 +88,6 @@
         "types": "./dist/provider.d.ts",
         "import": "./dist/provider.js",
         "default": "./dist/provider.js"
-      },
-      "./hooks": {
-        "types": "./dist/hooks/index.d.ts",
-        "import": "./dist/hooks/index.js",
-        "default": "./dist/hooks/index.js"
-      },
-      "./client": {
-        "types": "./dist/client.d.ts",
-        "import": "./dist/client.js",
-        "default": "./dist/client.js"
-      },
-      "./query-keys": {
-        "types": "./dist/query-keys.d.ts",
-        "import": "./dist/query-keys.js",
-        "default": "./dist/query-keys.js"
       },
       "./admin": {
         "types": "./dist/admin/index.d.ts",

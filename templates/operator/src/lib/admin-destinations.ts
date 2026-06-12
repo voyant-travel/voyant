@@ -26,13 +26,16 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  * genuinely custom resolvers: search-param construction (`booking.detail`,
  * `bookingJourney.start`, `catalog.detail`), multi-route targets
  * (`catalog.browse` spans the five surface routes), and host-owned pages the
- * packages don't contribute (`booking.create`, `product.detail`,
- * `legal.home`).
+ * packages don't contribute (`booking.create`, `legal.home`).
  *
  * Hrefs must match what the routes' typed `navigate` calls produced before
  * the contract existed — paths embed encoded params, search params keep the
  * journey schema's key order, and `undefined` values are omitted (key
  * presence is meaningful to the journey).
+ *
+ * `product.detail` moved to the generated map when the products domain
+ * became package-delivered (`@voyantjs/products-react/admin` annotates the
+ * `/products/$id` contribution with it).
  */
 export const operatorAdminDestinations = {
   ...generatedAdminDestinations,
@@ -59,7 +62,6 @@ export const operatorAdminDestinations = {
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
   "legal.home": () => "/legal",
-  "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
 } satisfies AdminDestinationResolvers
 
 /**

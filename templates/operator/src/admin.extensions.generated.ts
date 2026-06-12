@@ -2,8 +2,10 @@
 // Recreate after changing the modules list in voyant.config.*:
 //   voyant admin generate
 
+import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/admin"
 import { createCrmAdminExtension } from "@voyantjs/crm-react/admin"
 import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
+import { createProductsAdminExtension } from "@voyantjs/products-react/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-react/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
@@ -12,6 +14,7 @@ import { createAvailabilityAdminExtension } from "@voyantjs/availability-react/a
 import { createResourcesAdminExtension } from "@voyantjs/resources-react/admin"
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
+import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -19,8 +22,10 @@ import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
  * registering the result.
  */
 export const generatedAdminExtensionFactories = {
+  actionLedger: createActionLedgerAdminExtension,
   crm: createCrmAdminExtension,
   suppliers: createSuppliersAdminExtension,
+  products: createProductsAdminExtension,
   promotions: createPromotionsAdminExtension,
   catalog: createCatalogAdminExtension,
   bookings: createBookingsAdminExtension,
@@ -29,4 +34,5 @@ export const generatedAdminExtensionFactories = {
   resources: createResourcesAdminExtension,
   notifications: createNotificationsAdminExtension,
   legal: createLegalAdminExtension,
+  travelComposer: createTravelComposerAdminExtension,
 } as const

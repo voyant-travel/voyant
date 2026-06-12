@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query"
 import type {
   ActionLedgerEntryDetailResponse,
   ActionLedgerEntryResponse,
-  ActionLedgerGetResponse,
 } from "@voyantjs/action-ledger"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { Badge } from "@voyantjs/ui/components/badge"
 import {
   Sheet,
@@ -17,9 +17,9 @@ import {
 import { Eye, KeyRound, ScrollText, ShieldCheck } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { queryKeys } from "@/lib/query-keys"
+import { useVoyantActionLedgerContext } from "../provider.js"
+import { getActionLedgerEntry } from "./admin-api.js"
+import { actionLedgerQueryKeys } from "./query-keys.js"
 
 type EntrySheetMessages = ReturnType<typeof useAdminMessages>["actionLedgerPage"]["entrySheet"]
 
@@ -60,9 +60,10 @@ export function ActionLedgerEntrySheet({
   locale: string
 }) {
   const t = useAdminMessages().actionLedgerPage.entrySheet
+  const client = useVoyantActionLedgerContext()
   const entryDetailQuery = useQuery({
-    queryKey: queryKeys.actionLedger.entry(entryId ?? ""),
-    queryFn: () => getActionLedgerEntry(entryId ?? ""),
+    queryKey: actionLedgerQueryKeys.entry(entryId ?? ""),
+    queryFn: () => getActionLedgerEntry(client, entryId ?? ""),
     enabled: open && Boolean(entryId),
   })
   const entry = entryDetailQuery.data?.data ?? null
@@ -517,10 +518,6 @@ function DetailField({
       </div>
     </div>
   )
-}
-
-async function getActionLedgerEntry(id: string): Promise<ActionLedgerGetResponse> {
-  return api.get<ActionLedgerGetResponse>(`/v1/admin/action-ledger/entries/${id}`)
 }
 
 function formatDateTime(value: string, locale: string) {

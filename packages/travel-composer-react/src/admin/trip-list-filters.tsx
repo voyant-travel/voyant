@@ -1,5 +1,6 @@
 "use client"
 
+import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
 import type { TripEnvelopeStatus } from "@voyantjs/travel-composer"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
@@ -19,7 +20,6 @@ import {
 } from "@voyantjs/ui/components/select"
 import { ListFilter } from "lucide-react"
 import * as React from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
 
 export const TRIP_STATUS_ALL = "__all__"
 export type TripStatusFilter = TripEnvelopeStatus | typeof TRIP_STATUS_ALL
