@@ -1,5 +1,4 @@
-// agent-quality: file-size exception -- owner: availability; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { and, eq, inArray, type SQL, sql } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -18,66 +17,34 @@ import {
 } from "./schema.js"
 import {
   type AllocationMutationOptions,
-  AllocationServiceError,
   getSlotAllocationManifest,
   recordAllocationAudit,
   type SlotAllocationManifest,
 } from "./service-allocation.js"
+import { AllocationServiceError } from "./service-allocation-errors.js"
+import { executeRows, sqlTextArray } from "./service-allocation-sql.js"
 import {
-  type allocationAutomationSchema,
-  type SeatLayoutCell,
-  type SeatLayoutSpec,
-  seatLayoutSpecSchema,
-  type upsertResourceTemplateSchema,
-} from "./validation.js"
+  type AutoMaterializeRow,
+  materializeVehicleSeatGroup,
+  renderNamePattern,
+} from "./service-allocation-vehicle-materialization.js"
+import type { allocationAutomationSchema } from "./validation.js"
 
-/**
- * Emit `ARRAY[$1, $2, …]::text[]` so Postgres doesn't try to cast a
- * tuple to `text[]`. See `sqlTextArray` in service-allocation.ts and
- * issue #952.
- */
-function sqlTextArray(values: readonly string[]): SQL {
-  if (values.length === 0) return sql`ARRAY[]::text[]`
-  // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-  return sql`ARRAY[${sql.join(
-    // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-    values.map((value) => sql`${value}`),
-    sql.raw(", "),
-  )}]::text[]`
-}
-
-export type UpsertResourceTemplateInput = z.infer<typeof upsertResourceTemplateSchema>
 export type AllocationAutomationInput = z.infer<typeof allocationAutomationSchema>
-
-interface SqlExecutor {
-  execute(query: SQL): Promise<unknown>
-}
-
-export interface ResourceTemplate {
-  id: string
-  productOptionId: string
-  kind: string
-  refType: string | null
-  refId: string | null
-  capacity: number
-  namePattern: string
-  layout: string | null
-  defaultCount: number | null
-  flags: Record<string, unknown>
-  createdAt: string
-  updatedAt: string
-}
-
-export interface ProductOptionResourceTemplates {
-  id: string
-  name: string
-  code: string | null
-  description: string | null
-  status: string
-  isDefault: boolean
-  sortOrder: number
-  templates: ResourceTemplate[]
-}
+export type {
+  ProductOptionResourceTemplates,
+  ResourceTemplate,
+  UpsertResourceTemplateInput,
+} from "./service-allocation-templates.js"
+export {
+  deleteProductOptionResourceTemplate,
+  listProductOptionResourceTemplates,
+  upsertProductOptionResourceTemplate,
+} from "./service-allocation-templates.js"
+export {
+  parseLayoutSpecFromFlags,
+  positionFromCells,
+} from "./service-allocation-vehicle-materialization.js"
 
 export interface AllocationAutomationResult {
   kind: string
@@ -85,167 +52,6 @@ export interface AllocationAutomationResult {
   skipped?: number
   created?: number
   resources?: AllocationResource[]
-}
-
-export async function listProductOptionResourceTemplates(
-  db: PostgresJsDatabase,
-  productId: string,
-): Promise<ProductOptionResourceTemplates[]> {
-  const optionRows = await executeRows<ProductOptionRow>(
-    db,
-    sql`
-      SELECT id, name, code, description, status, is_default, sort_order
-      FROM product_options
-      WHERE product_id = ${productId}
-      ORDER BY sort_order, created_at
-    `,
-  )
-
-  if (optionRows.length === 0) return []
-
-  const optionIds = optionRows.map((row) => row.id)
-  const templateRows = await executeRows<ResourceTemplateRow>(
-    db,
-    sql`
-      SELECT id, product_option_id, kind, ref_type, ref_id, capacity, name_pattern, layout, default_count, flags, created_at, updated_at
-      FROM product_option_resource_templates
-      WHERE product_option_id = ANY(${sqlTextArray(optionIds)})
-      ORDER BY kind, created_at
-    `,
-  )
-
-  const byOption = new Map<string, ResourceTemplate[]>()
-  for (const row of templateRows) {
-    const list = byOption.get(row.product_option_id) ?? []
-    list.push(toResourceTemplate(row))
-    byOption.set(row.product_option_id, list)
-  }
-
-  return optionRows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    code: row.code,
-    description: row.description,
-    status: row.status,
-    isDefault: row.is_default,
-    sortOrder: row.sort_order,
-    templates: byOption.get(row.id) ?? [],
-  }))
-}
-
-export async function upsertProductOptionResourceTemplate(
-  db: PostgresJsDatabase,
-  productId: string,
-  productOptionId: string,
-  kind: string,
-  input: UpsertResourceTemplateInput,
-): Promise<ResourceTemplate> {
-  await assertProductOptionBelongsToProduct(db, productId, productOptionId)
-
-  const refId = input.refId ?? null
-  const values = {
-    refType: input.refType ?? null,
-    refId,
-    capacity: input.capacity,
-    namePattern: input.namePattern,
-    layout: input.layout ?? null,
-    defaultCount: input.defaultCount ?? null,
-    flags: input.flags ?? {},
-  }
-
-  // An option can hold several templates of the same kind, one per option_unit
-  // (see the widened unique index in migration 0053:
-  // (product_option_id, kind, coalesce(ref_id, ''))). Drizzle 0.45 can't express
-  // that coalesce in an onConflict target, so we resolve the row by (option,
-  // kind, refId) ourselves — coalescing so a null refId matches the ref-less
-  // template — then update it in place or insert a new one. The unique index
-  // still guards against a concurrent duplicate.
-  const [existing] = await db
-    .select({ id: productOptionResourceTemplates.id })
-    .from(productOptionResourceTemplates)
-    .where(
-      and(
-        eq(productOptionResourceTemplates.productOptionId, productOptionId),
-        eq(productOptionResourceTemplates.kind, kind),
-        // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`coalesce(${productOptionResourceTemplates.refId}, '') = ${refId ?? ""}`,
-      ),
-    )
-    .limit(1)
-
-  const [row] = existing
-    ? await db
-        .update(productOptionResourceTemplates)
-        .set({ ...values, updatedAt: new Date() })
-        .where(eq(productOptionResourceTemplates.id, existing.id))
-        .returning()
-    : await db
-        .insert(productOptionResourceTemplates)
-        .values({ productOptionId, kind, ...values })
-        .returning()
-
-  if (!row) throw new AllocationServiceError("Resource template upsert failed", 500)
-  return {
-    id: row.id,
-    productOptionId: row.productOptionId,
-    kind: row.kind,
-    refType: row.refType,
-    refId: row.refId,
-    capacity: row.capacity,
-    namePattern: row.namePattern,
-    layout: row.layout,
-    defaultCount: row.defaultCount,
-    flags: row.flags,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }
-}
-
-export async function deleteProductOptionResourceTemplate(
-  db: PostgresJsDatabase,
-  productId: string,
-  productOptionId: string,
-  kind: string,
-  refId?: string | null,
-) {
-  await assertProductOptionBelongsToProduct(db, productId, productOptionId)
-
-  // An option can hold several templates of the same kind (e.g. one "room"
-  // per option_unit), distinguished by ref_id. Match the specific row via
-  // coalesce so a null refId targets the ref-less template rather than wiping
-  // every row of that kind.
-  const [row] = await db
-    .delete(productOptionResourceTemplates)
-    .where(
-      and(
-        eq(productOptionResourceTemplates.productOptionId, productOptionId),
-        eq(productOptionResourceTemplates.kind, kind),
-        // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`coalesce(${productOptionResourceTemplates.refId}, '') = coalesce(${refId ?? null}, '')`,
-      ),
-    )
-    .returning({ id: productOptionResourceTemplates.id })
-
-  return row ? { productOptionId, kind } : null
-}
-
-async function assertProductOptionBelongsToProduct(
-  db: PostgresJsDatabase,
-  productId: string,
-  productOptionId: string,
-) {
-  const [row] = await executeRows<{ id: string }>(
-    db,
-    sql`
-      SELECT id
-      FROM product_options
-      WHERE id = ${productOptionId}
-        AND product_id = ${productId}
-      LIMIT 1
-    `,
-  )
-
-  if (!row) throw new AllocationServiceError("Product option not found for product", 404)
 }
 
 export async function autoMaterializeAllocationResources(
@@ -597,223 +403,6 @@ export async function materializeOpenSlotsFromTemplateDefaults(
   return { slots: slots.length, created }
 }
 
-async function materializeVehicleSeatGroup(
-  db: PostgresJsDatabase,
-  slotId: string,
-  group: AutoMaterializeRow,
-  startingSequence: number,
-): Promise<{ resources: AllocationResource[]; vehicleCount: number }> {
-  const layoutSpec = parseLayoutSpecFromFlags(group.flags)
-  if (layoutSpec) {
-    return materializeVehicleSeatGroupFromSpec(db, slotId, group, startingSequence, layoutSpec)
-  }
-
-  const layout = group.layout ?? "2-2"
-  const seatsPerRow = parseLayoutSeatsPerRow(layout)
-  const vehiclesNeeded = Math.max(1, Math.ceil(group.pax_count / Math.max(1, group.capacity)))
-  const resources: AllocationResource[] = []
-  let sequence = startingSequence
-
-  for (let vehicleIndex = 0; vehicleIndex < vehiclesNeeded; vehicleIndex++) {
-    sequence += 1
-    const [parent] = await db
-      .insert(allocationResources)
-      .values({
-        slotId,
-        kind: "vehicle",
-        refType: group.ref_type,
-        refId: group.ref_id,
-        label: renderNamePattern(group.name_pattern || "Vehicle {sequence}", {
-          sequence: String(sequence),
-          option: group.option_name ?? "",
-          index: String(vehicleIndex + 1),
-        }),
-        capacity: group.capacity,
-        flags: { ...(group.flags ?? {}), layout, templateOptionId: group.option_id },
-        sortOrder: sequence,
-      })
-      .returning()
-    if (!parent) continue
-    resources.push(parent)
-
-    const seatsPerRowTotal = seatsPerRow.reduce((sum, seats) => sum + seats, 0)
-    const totalRows = Math.ceil(group.capacity / seatsPerRowTotal)
-    let seatIndex = 0
-    for (let row = 1; row <= totalRows && seatIndex < group.capacity; row++) {
-      let column = 0
-      for (let groupIndex = 0; groupIndex < seatsPerRow.length; groupIndex++) {
-        const blockSize = seatsPerRow[groupIndex] ?? 0
-        for (let seatInGroup = 0; seatInGroup < blockSize; seatInGroup++) {
-          if (seatIndex >= group.capacity) break
-          column += 1
-          const columnName = columnLetter(column)
-          const position = seatPosition(groupIndex, seatInGroup, seatsPerRow)
-          const [seat] = await db
-            .insert(allocationResources)
-            .values({
-              slotId,
-              kind: "vehicle_seat",
-              refType: group.ref_type,
-              refId: group.ref_id,
-              label: renderNamePattern("Seat {row}{column}", {
-                sequence: String(seatIndex + 1),
-                row: String(row),
-                column: columnName,
-                seat: `${row}${columnName}`,
-              }),
-              capacity: 1,
-              flags: { row, column: columnName, position },
-              parentId: parent.id,
-              sortOrder: seatIndex,
-            })
-            .returning()
-          if (seat) resources.push(seat)
-          seatIndex += 1
-        }
-      }
-    }
-  }
-
-  return { resources, vehicleCount: vehiclesNeeded }
-}
-
-/**
- * Materialize using an explicit 2D layoutSpec. Each row's seat cells become
- * a vehicle_seat (skipping aisle/door/void). Window/aisle/middle is computed
- * from neighbouring cells, so a coach door in the middle row collapses to a
- * gap on the visual map (renderer side) without affecting seat numbering.
- */
-async function materializeVehicleSeatGroupFromSpec(
-  db: PostgresJsDatabase,
-  slotId: string,
-  group: AutoMaterializeRow,
-  startingSequence: number,
-  layoutSpec: SeatLayoutSpec,
-): Promise<{ resources: AllocationResource[]; vehicleCount: number }> {
-  const seatsPerVehicle = layoutSpec.rows.reduce(
-    (sum, row) => sum + row.cells.filter((cell) => cell === "seat").length,
-    0,
-  )
-  if (seatsPerVehicle === 0) return { resources: [], vehicleCount: 0 }
-
-  const vehiclesNeeded = Math.max(1, Math.ceil(group.pax_count / seatsPerVehicle))
-  const resources: AllocationResource[] = []
-  let sequence = startingSequence
-
-  for (let vehicleIndex = 0; vehicleIndex < vehiclesNeeded; vehicleIndex++) {
-    sequence += 1
-    const [parent] = await db
-      .insert(allocationResources)
-      .values({
-        slotId,
-        kind: "vehicle",
-        refType: group.ref_type,
-        refId: group.ref_id,
-        label: renderNamePattern(group.name_pattern || "Vehicle {sequence}", {
-          sequence: String(sequence),
-          option: group.option_name ?? "",
-          index: String(vehicleIndex + 1),
-        }),
-        capacity: seatsPerVehicle,
-        flags: {
-          ...(group.flags ?? {}),
-          layoutSpec,
-          templateOptionId: group.option_id,
-        },
-        sortOrder: sequence,
-      })
-      .returning()
-    if (!parent) continue
-    resources.push(parent)
-
-    let seatIndex = 0
-    for (let rowIndex = 0; rowIndex < layoutSpec.rows.length; rowIndex++) {
-      const rowCells = layoutSpec.rows[rowIndex]?.cells ?? []
-      const rowNumber = rowIndex + 1
-      let column = 0
-      for (let cellIndex = 0; cellIndex < rowCells.length; cellIndex++) {
-        const cell = rowCells[cellIndex]
-        if (cell !== "seat") continue
-        column += 1
-        const columnName = columnLetter(column)
-        const position = positionFromCells(rowCells, cellIndex)
-        const [seat] = await db
-          .insert(allocationResources)
-          .values({
-            slotId,
-            kind: "vehicle_seat",
-            refType: group.ref_type,
-            refId: group.ref_id,
-            label: renderNamePattern("Seat {row}{column}", {
-              sequence: String(seatIndex + 1),
-              row: String(rowNumber),
-              column: columnName,
-              seat: `${rowNumber}${columnName}`,
-            }),
-            capacity: 1,
-            flags: { row: rowNumber, column: columnName, position },
-            parentId: parent.id,
-            sortOrder: seatIndex,
-          })
-          .returning()
-        if (seat) resources.push(seat)
-        seatIndex += 1
-      }
-    }
-  }
-
-  return { resources, vehicleCount: vehiclesNeeded }
-}
-
-export function parseLayoutSpecFromFlags(
-  flags: Record<string, unknown> | null,
-): SeatLayoutSpec | null {
-  const raw = flags?.layoutSpec
-  if (!raw) return null
-  const parsed = seatLayoutSpecSchema.safeParse(raw)
-  return parsed.success ? parsed.data : null
-}
-
-/**
- * Derive window/aisle/middle from a seat's neighbours in the same row.
- *
- *   - Touching an aisle or door cell → "aisle" (the seat is on the aisle side)
- *   - Touching the row boundary or a void cell → "window"
- *   - Surrounded by other seats → "middle"
- *
- * Aisle takes precedence so the "window" tag is reserved for actual outer
- * seats; a 2-1 row's lone middle seat ends up "aisle" on both sides.
- */
-export function positionFromCells(
-  cells: ReadonlyArray<SeatLayoutCell>,
-  index: number,
-): "window" | "aisle" | "middle" {
-  const prev = index > 0 ? cells[index - 1] : undefined
-  const next = index < cells.length - 1 ? cells[index + 1] : undefined
-  if (prev === "aisle" || prev === "door") return "aisle"
-  if (next === "aisle" || next === "door") return "aisle"
-  if (prev === undefined || prev === "void") return "window"
-  if (next === undefined || next === "void") return "window"
-  return "middle"
-}
-
-function toResourceTemplate(row: ResourceTemplateRow): ResourceTemplate {
-  return {
-    id: row.id,
-    productOptionId: row.product_option_id,
-    kind: row.kind,
-    refType: row.ref_type,
-    refId: row.ref_id,
-    capacity: row.capacity,
-    namePattern: row.name_pattern,
-    layout: row.layout,
-    defaultCount: row.default_count ?? null,
-    flags: row.flags ?? {},
-    createdAt: new Date(row.created_at).toISOString(),
-    updatedAt: new Date(row.updated_at).toISOString(),
-  }
-}
-
 function toAllocatorTravelers(manifest: SlotAllocationManifest, kind: string): AllocatorTraveler[] {
   const travelers: AllocatorTraveler[] = []
   for (const booking of manifest.bookings) {
@@ -854,98 +443,4 @@ function toAllocatorResource(resource: AllocationResource): AllocatorResource {
         ? resource.flags.position
         : undefined,
   }
-}
-
-function parseLayoutSeatsPerRow(layout: string): number[] {
-  const parts = layout
-    .split("-")
-    .map((part) => Number.parseInt(part.trim(), 10))
-    .filter((part) => Number.isFinite(part) && part > 0)
-  return parts.length > 0 ? parts : [2, 2]
-}
-
-function columnLetter(value: number): string {
-  let result = ""
-  let n = value
-  while (n > 0) {
-    const remainder = (n - 1) % 26
-    result = String.fromCharCode(65 + remainder) + result
-    n = Math.floor((n - 1) / 26)
-  }
-  return result
-}
-
-function seatPosition(
-  groupIndex: number,
-  seatInGroup: number,
-  groups: number[],
-): "window" | "aisle" | "middle" {
-  const isFirstGroup = groupIndex === 0
-  const isLastGroup = groupIndex === groups.length - 1
-  const blockSize = groups[groupIndex] ?? 0
-  const isFirstSeat = seatInGroup === 0
-  const isLastSeat = seatInGroup === blockSize - 1
-  if (isFirstGroup && isFirstSeat) return "window"
-  if (isLastGroup && isLastSeat) return "window"
-  if ((isFirstGroup && isLastSeat) || (isLastGroup && isFirstSeat)) return "aisle"
-  if (!isFirstGroup && !isLastGroup && (isFirstSeat || isLastSeat)) return "aisle"
-  return "middle"
-}
-
-function renderNamePattern(pattern: string, vars: Record<string, string>): string {
-  return pattern.replace(/\{(\w+)\}/g, (_, key: string) => vars[key] ?? "")
-}
-
-async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
-  const result = await db.execute(query)
-  if (Array.isArray(result)) return result as T[]
-  // node-postgres / neon-serverless drivers return `{ rows, rowCount, ... }`
-  // instead of a bare array — unwrap so this wrapper is driver-agnostic.
-  if (
-    result &&
-    typeof result === "object" &&
-    "rows" in result &&
-    Array.isArray((result as { rows: unknown }).rows)
-  ) {
-    return (result as { rows: T[] }).rows
-  }
-  return []
-}
-
-interface ProductOptionRow {
-  id: string
-  name: string
-  code: string | null
-  description: string | null
-  status: string
-  is_default: boolean
-  sort_order: number
-}
-
-interface ResourceTemplateRow {
-  id: string
-  product_option_id: string
-  kind: string
-  ref_type: string | null
-  ref_id: string | null
-  capacity: number
-  name_pattern: string
-  layout: string | null
-  default_count: number | null
-  flags: Record<string, unknown>
-  created_at: string | Date
-  updated_at: string | Date
-}
-
-interface AutoMaterializeRow {
-  option_id: string
-  pax_count: number
-  capacity: number
-  name_pattern: string
-  ref_type: string | null
-  ref_id: string | null
-  layout: string | null
-  flags: Record<string, unknown> | null
-  option_name: string | null
-  sort_order: number | null
 }
