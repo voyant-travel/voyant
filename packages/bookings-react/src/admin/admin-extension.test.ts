@@ -20,12 +20,18 @@ describe("createBookingsAdminExtension", () => {
     expect(extension.navigation).toBeUndefined()
   })
 
-  it("describes the list and detail routes with unique ids and paths", () => {
+  it("describes the booking-flow routes with unique ids and paths", () => {
     const extension = createBookingsAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(2)
-    expect(new Set(routes.map((route) => route.id)).size).toBe(2)
-    expect(routes.map((route) => route.path)).toEqual(["/bookings", "/bookings/$id"])
+    expect(routes).toHaveLength(5)
+    expect(new Set(routes.map((route) => route.id)).size).toBe(5)
+    expect(routes.map((route) => route.path)).toEqual([
+      "/bookings",
+      "/bookings/$id",
+      "/bookings/new",
+      "/bookings/compose",
+      "/catalog/journey/$entityModule/$entityId",
+    ])
   })
 
   it("honors basePath and labels", () => {
@@ -38,6 +44,13 @@ describe("createBookingsAdminExtension", () => {
     expect(index?.title).toBe("Rezervări")
     const detail = extension.routes?.find((route) => route.id === "bookings-detail")
     expect(detail?.path).toBe("/reservations/$id")
+    const create = extension.routes?.find((route) => route.id === "bookings-new")
+    expect(create?.path).toBe("/reservations/new")
+    const compose = extension.routes?.find((route) => route.id === "bookings-compose")
+    expect(compose?.path).toBe("/reservations/compose")
+    // The journey mounts on the catalog plane, independent of basePath.
+    const journey = extension.routes?.find((route) => route.id === "bookings-journey")
+    expect(journey?.path).toBe("/catalog/journey/$entityModule/$entityId")
   })
 
   it("carries the packaged search contracts", () => {
@@ -49,26 +62,52 @@ describe("createBookingsAdminExtension", () => {
     })
     const detail = extension.routes?.find((route) => route.id === "bookings-detail")
     expect(detail?.validateSearch?.({ tab: "finance" })).toMatchObject({ tab: "finance" })
+    const create = extension.routes?.find((route) => route.id === "bookings-new")
+    expect(create?.validateSearch?.({ productId: "prod_1", slotId: "slot_1" })).toMatchObject({
+      productId: "prod_1",
+      slotId: "slot_1",
+    })
+    const journey = extension.routes?.find((route) => route.id === "bookings-journey")
+    expect(journey?.validateSearch?.({ sourceKind: "owned", departureId: "as_1" })).toMatchObject({
+      sourceKind: "owned",
+      departureId: "as_1",
+    })
+    // The journey's provenance is required — key presence is meaningful.
+    expect(() => journey?.validateSearch?.({})).toThrow()
+  })
+
+  it("binds the route-backed booking.create destination on the new-booking route", () => {
+    const extension = createBookingsAdminExtension()
+    const create = extension.routes?.find((route) => route.id === "bookings-new")
+    expect(create?.destination).toBe("booking.create")
+    // The journey route stays unbound: `bookingJourney.start` constructs
+    // search params, which is beyond pure path interpolation.
+    const journey = extension.routes?.find((route) => route.id === "bookings-journey")
+    expect(journey?.destination).toBeUndefined()
   })
 
   it("carries full route implementations as lazy pages (RFC §4.8)", () => {
     // Contributions ship the route IMPLEMENTATION: a lazy `page` module
     // loader (never an eager `component` — the host binder code-splits the
-    // page into its own chunk), a loader that prefetches through the
-    // host-supplied runtime, and the per-route SSR mode.
+    // page into its own chunk) and, for the data-backed list/detail pages,
+    // a loader that prefetches through the host-supplied runtime plus the
+    // per-route SSR mode.
     const extension = createBookingsAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(2)
+    expect(routes).toHaveLength(5)
     for (const route of routes) {
       expect(route.component).toBeUndefined()
       expect(typeof route.page).toBe("function")
-      expect(typeof route.loader).toBe("function")
-      expect(route.ssr).toBe("data-only")
-      expect(typeof route.pendingComponent).toBe("function")
+    }
+    for (const id of ["bookings-index", "bookings-detail"]) {
+      const route = routes.find((candidate) => candidate.id === id)
+      expect(typeof route?.loader).toBe("function")
+      expect(route?.ssr).toBe("data-only")
+      expect(typeof route?.pendingComponent).toBe("function")
     }
   })
 
-  it("resolves both page loaders to modules with a default component", async () => {
+  it("resolves every page loader to a module with a default component", async () => {
     const extension = createBookingsAdminExtension()
     for (const route of extension.routes ?? []) {
       const module = await route.page?.()

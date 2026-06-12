@@ -106,12 +106,16 @@ function ComposeTripButton() {
 // operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
 // an entry here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route implementations + search
-// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the
-// host assembles them into its code-based route tree — no route files. The
-// app composes two seams through factory options: the "Compose trip" header
-// action on the list, and the detail-page substitution (the operator wraps
-// the packaged BookingDetailHost with the checkout/finance payment dialogs,
-// which the package cannot import without a dependency cycle).
+// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema /
+// bookingNewSearchSchema / bookingJourneySearchSchema) for the whole booking
+// flow — list, detail, the /bookings/new product picker, the
+// /bookings/compose composer alias, and the unified booking journey at
+// /catalog/journey/$entityModule/$entityId — and the host assembles them
+// into its code-based route tree, no route files. The app composes two seams
+// through factory options: the "Compose trip" header action on the list, and
+// the detail-page substitution (the operator wraps the packaged
+// BookingDetailHost with the checkout/finance payment dialogs, which the
+// package cannot import without a dependency cycle).
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.bookings({
     labels: { bookings: messages.bookings },

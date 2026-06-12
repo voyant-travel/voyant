@@ -26,8 +26,8 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  * genuinely custom resolvers: search-param construction (`booking.detail`,
  * `bookingJourney.start`, `catalog.detail`), multi-route targets
  * (`catalog.browse` spans the five surface routes), and host-owned pages the
- * packages don't contribute (`booking.create`, `product.detail`,
- * `legal.home`).
+ * packages don't contribute (`trip.create` — the trips composer is still an
+ * app-custom route — plus `product.detail` and `legal.home`).
  *
  * Hrefs must match what the routes' typed `navigate` calls produced before
  * the contract existed — paths embed encoded params, search params keep the
@@ -36,7 +36,6 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  */
 export const operatorAdminDestinations = {
   ...generatedAdminDestinations,
-  "booking.create": () => "/bookings/new",
   "booking.detail": ({ bookingId, tab }) =>
     `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,
   "bookingJourney.start": ({ entityModule, entityId, ...search }) =>
@@ -60,6 +59,9 @@ export const operatorAdminDestinations = {
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
   "legal.home": () => "/legal",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
+  // The packaged /bookings/compose alias forwards here; the trips composer
+  // is an app-custom route ("new" is its create pseudo-id).
+  "trip.create": () => "/trips/new",
 } satisfies AdminDestinationResolvers
 
 /**

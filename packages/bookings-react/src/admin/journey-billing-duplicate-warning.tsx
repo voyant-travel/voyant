@@ -6,21 +6,20 @@
  * a link to each. Helps operators avoid accidental duplicate bookings.
  */
 
-import { useNavigate } from "@tanstack/react-router"
-import { useBookings } from "@voyantjs/bookings-react"
-import type { BillingExtrasContext } from "@voyantjs/bookings-react/journey"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
+import { useBookings } from "../hooks/use-bookings.js"
+import type { BillingExtrasContext } from "../journey/index.js"
 
-export function BillingDuplicateWarning({
+export function JourneyBillingDuplicateWarning({
   buyerType,
   personId,
   organizationId,
   productId,
   departureSlotId,
 }: BillingExtrasContext): React.ReactElement | null {
-  const t = useAdminMessages().bookings.detail.bookingJourney
-  const navigate = useNavigate()
+  const t = useOperatorAdminMessages().bookings.detail.bookingJourney
+  const navigate = useAdminNavigate()
 
   const leadId = buyerType === "B2B" ? organizationId : personId
   // Only a scheduled departure (slot) gives a precise duplicate match.
@@ -45,7 +44,7 @@ export function BillingDuplicateWarning({
             <button
               type="button"
               className="font-medium underline underline-offset-2 hover:opacity-80"
-              onClick={() => navigate({ to: "/bookings/$id", params: { id: booking.id } })}
+              onClick={() => navigate("booking.detail", { bookingId: booking.id })}
             >
               {booking.bookingNumber}
             </button>

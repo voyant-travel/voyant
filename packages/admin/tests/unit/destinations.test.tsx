@@ -20,7 +20,7 @@ function asResolvers(resolvers: LooseResolvers): AdminDestinationResolvers {
 }
 
 type LooseHrefResolver = (key: string, params: unknown) => string
-type LooseNavigator = (key: string, params: unknown) => void
+type LooseNavigator = (key: string, params: unknown, options?: { replace?: boolean }) => void
 
 function HrefProbe({ destination, params }: { destination: string; params: unknown }) {
   const resolveHref = useAdminHref() as LooseHrefResolver
@@ -28,11 +28,19 @@ function HrefProbe({ destination, params }: { destination: string; params: unkno
   return <a href={resolveHref(destination, params)}>destination link</a>
 }
 
-function NavigateProbe({ destination, params }: { destination: string; params: unknown }) {
+function NavigateProbe({
+  destination,
+  params,
+  options,
+}: {
+  destination: string
+  params: unknown
+  options?: { replace?: boolean }
+}) {
   const navigateTo = useAdminNavigate() as LooseNavigator
 
   return (
-    <button type="button" onClick={() => navigateTo(destination, params)}>
+    <button type="button" onClick={() => navigateTo(destination, params, options)}>
       go
     </button>
   )
@@ -123,7 +131,31 @@ describe("admin navigation destinations", () => {
     fireEvent.click(screen.getByRole("button"))
 
     expect(navigate).toHaveBeenCalledTimes(1)
-    expect(navigate).toHaveBeenCalledWith("/products/prod_7")
+    expect(navigate).toHaveBeenCalledWith("/products/prod_7", undefined)
+  })
+
+  it("forwards replace navigation options to the injected navigate", () => {
+    const navigate = vi.fn()
+
+    render(
+      <AdminNavigationProvider
+        resolvers={asResolvers({
+          "product.detail": ({ productId }: { productId: string }) => `/products/${productId}`,
+        })}
+        navigate={navigate}
+      >
+        <NavigateProbe
+          destination="product.detail"
+          params={{ productId: "prod_7" }}
+          options={{ replace: true }}
+        />
+      </AdminNavigationProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button"))
+
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate).toHaveBeenCalledWith("/products/prod_7", { replace: true })
   })
 
   it("warns and no-ops navigation for an unresolvable destination", () => {

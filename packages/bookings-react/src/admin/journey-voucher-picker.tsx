@@ -1,13 +1,13 @@
 "use client"
 
 /**
- * Operator voucher picker — an async combobox over the admin vouchers list.
+ * Admin voucher picker — an async combobox over the admin vouchers list.
  * Staff search by code and pick a voucher (the full remaining balance is
  * redeemed); they never need to know the exact code, unlike storefront
- * customers. Wired into the journey via `renderVoucherPicker`.
+ * customers. Wired into `<BookingJourneyHost />` via `renderVoucherPicker`.
  */
 
-import type { VoucherPickerProps } from "@voyantjs/bookings-react/journey"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { useVouchers, type VoucherRecord } from "@voyantjs/finance-react"
 import {
   Combobox,
@@ -21,7 +21,7 @@ import {
 import { Label } from "@voyantjs/ui/components/label"
 import { useEffect, useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
+import type { VoucherPickerProps } from "../journey/index.js"
 
 function formatMoney(cents: number, currency: string): string {
   try {
@@ -35,8 +35,8 @@ function voucherLabel(voucher: VoucherRecord): string {
   return `${voucher.code} · ${formatMoney(voucher.remainingAmountCents, voucher.currency)}`
 }
 
-export function OperatorVoucherPicker({ value, onApply }: VoucherPickerProps): React.ReactElement {
-  const t = useAdminMessages().bookings.detail.bookingJourney
+export function JourneyVoucherPicker({ value, onApply }: VoucherPickerProps): React.ReactElement {
+  const t = useOperatorAdminMessages().bookings.detail.bookingJourney
   const [inputValue, setInputValue] = useState("")
   const [search, setSearch] = useState("")
 
