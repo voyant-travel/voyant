@@ -1,5 +1,16 @@
 # @voyantjs/availability-react
 
+## 0.116.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.116.0
+- @voyantjs/products-react@0.119.0
+- @voyantjs/ui@0.106.1
+- @voyantjs/bookings-react@0.119.0
+- @voyantjs/extras-react@0.119.0
+- @voyantjs/allocation-ui@0.117.0
+
 ## 0.115.0
 
 ### Patch Changes

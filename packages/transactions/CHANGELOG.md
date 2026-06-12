@@ -1,5 +1,14 @@
 # @voyantjs/transactions
 
+## 0.105.6
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+- Updated dependencies [b0f1e21]
+  - @voyantjs/hono@0.109.0
+  - @voyantjs/utils@0.105.0
+
 ## 0.105.5
 
 ### Patch Changes

@@ -1,5 +1,0 @@
----
-"@voyantjs/plugin-smartbill": patch
----
-
-SmartBill client calls now go through `resilientFetch` (RFC #1687 Phase 3.3): 10s per-attempt timeout, capped jittered retries (3 attempts on network errors/timeouts/429/5xx) for idempotent operations only — GETs, PDF downloads, cancel/restore/delete — and a per-client circuit breaker that fails fast with `CircuitOpenError` after repeated upstream failures. Document-creating calls (`createInvoice`, `createProforma`, `convertEstimateToInvoice`, `reverseInvoice`) never retry because SmartBill has no idempotency keys — a duplicate invoice is worse than a failed sync the outbox redelivers. Behavior change: calls against a hung upstream now fail after ~10s per attempt instead of hanging for the platform ceiling. The final failing response is still surfaced to `SmartbillApiError` mapping (status + body preserved), and the SmartBill-specific 403 rate-limit circuit is unchanged. Tune via the new `resilience` client/plugin option (`timeoutMs`, `retry`, `breaker`).

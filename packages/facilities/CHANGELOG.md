@@ -1,5 +1,13 @@
 # @voyantjs/facilities
 
+## 0.107.10
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/hono@0.109.0
+  - @voyantjs/identity@0.119.0
+
 ## 0.107.9
 
 ### Patch Changes

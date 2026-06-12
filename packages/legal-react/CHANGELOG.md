@@ -1,5 +1,20 @@
 # @voyantjs/legal-react
 
+## 0.119.0
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/utils@0.105.0
+  - @voyantjs/legal@0.119.0
+  - @voyantjs/crm-react@0.119.0
+  - @voyantjs/products-react@0.119.0
+  - @voyantjs/ui@0.106.1
+  - @voyantjs/bookings-react@0.119.0
+  - @voyantjs/distribution-react@0.109.5
+  - @voyantjs/markets-react@0.107.4
+  - @voyantjs/suppliers-react@0.111.5
+
 ## 0.118.0
 
 ### Patch Changes

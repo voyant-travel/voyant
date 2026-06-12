@@ -1,5 +1,15 @@
 # @voyantjs/crm-react
 
+## 0.119.0
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyantjs/utils@0.105.0
+  - @voyantjs/crm@0.119.0
+  - @voyantjs/ui@0.106.1
+  - @voyantjs/identity-react@0.119.0
+
 ## 0.118.0
 
 ### Patch Changes
