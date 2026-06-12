@@ -1,5 +1,15 @@
 # @voyantjs/external-refs-react
 
+## 0.114.0
+
+### Patch Changes
+
+- @voyantjs/bookings-react@0.114.0
+- @voyantjs/products-react@0.114.0
+- @voyantjs/crm-react@0.114.0
+- @voyantjs/external-refs@0.114.0
+- @voyantjs/suppliers-react@0.110.1
+
 ## 0.113.0
 
 ### Patch Changes
