@@ -1,5 +1,14 @@
 # @voyantjs/extras-react
 
+## 0.112.0
+
+### Patch Changes
+
+- Updated dependencies [279f97c]
+  - @voyantjs/catalog-react@0.110.0
+  - @voyantjs/products-react@0.112.0
+  - @voyantjs/extras@0.112.0
+
 ## 0.111.0
 
 ### Patch Changes
