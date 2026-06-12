@@ -1,4 +1,5 @@
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { createHmacSigner } from "@voyantjs/workflows/auth"
 import type { DurableObjectStorageLike } from "@voyantjs/workflows-orchestrator-cloudflare"
 import { beforeEach, describe, expect, it } from "vitest"
 import {
@@ -173,6 +174,7 @@ describe("createCloudOrchestrator", () => {
       stepId?: string
     } = {}
     let capturedAuth: string | null = null
+    const sign = await createHmacSigner("step-secret")
     const stepRunner = {
       idFromName(name: string) {
         return name
@@ -182,17 +184,21 @@ describe("createCloudOrchestrator", () => {
           async fetch(request: Request): Promise<Response> {
             capturedAuth = request.headers.get("x-voyant-step-auth")
             capturedBody = (await request.json()) as typeof capturedBody
-            return new Response(
-              JSON.stringify({
-                attempt: 1,
-                status: "ok",
-                output: "from-container",
-                startedAt: 10,
-                finishedAt: 20,
-                runtime: "node",
-              }),
-              { status: 200, headers: { "content-type": "application/json" } },
-            )
+            const body = JSON.stringify({
+              attempt: 1,
+              status: "ok",
+              output: "from-container",
+              startedAt: 10,
+              finishedAt: 20,
+              runtime: "node",
+            })
+            return new Response(body, {
+              status: 200,
+              headers: {
+                "content-type": "application/json",
+                "x-voyant-step-response-auth": await sign(body),
+              },
+            })
           },
         }
       },
