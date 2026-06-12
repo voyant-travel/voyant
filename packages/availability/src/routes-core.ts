@@ -1,3 +1,7 @@
+import {
+  aggregateSnapshotKey,
+  readThroughAggregateSnapshot,
+} from "@voyantjs/db/aggregate-snapshots"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import { Hono } from "hono"
 import {
@@ -35,12 +39,31 @@ const batchUpdateAvailabilityCloseoutSchema = createBatchUpdateSchema(
   updateAvailabilityCloseoutSchema,
 )
 
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
+
+/** Server-side snapshot TTL — see readThroughAggregateSnapshot (#1629). */
+const DASHBOARD_AGGREGATES_TTL_SECONDS = 60
+
+function cacheDashboardAggregates(c: {
+  header: (name: string, value: string, options?: { append?: boolean }) => void
+}) {
+  c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
+  c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
+}
+
 export const availabilityCoreRoutes = new Hono<Env>()
+  // GET /aggregates — dashboard KPIs, served from a read-through TTL
+  // snapshot (#1629).
   .get("/aggregates", async (c) => {
     const query = await parseQuery(c, availabilityAggregatesQuerySchema)
-    return c.json({
-      data: await availabilityService.getAvailabilityAggregates(c.get("db"), query),
+    cacheDashboardAggregates(c)
+    const snapshot = await readThroughAggregateSnapshot(c.get("db"), {
+      key: aggregateSnapshotKey("availability", "aggregates", query),
+      ttlSeconds: DASHBOARD_AGGREGATES_TTL_SECONDS,
+      compute: () => availabilityService.getAvailabilityAggregates(c.get("db"), query),
     })
+    return c.json({ data: snapshot.data })
   })
   .get("/overview", async (c) => {
     const query = await parseQuery(c, availabilityOverviewQuerySchema)

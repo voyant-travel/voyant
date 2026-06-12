@@ -1,5 +1,5 @@
 import type { Module, ModuleContainer } from "@voyantjs/core"
-import { parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { NotificationProvider } from "@voyantjs/notifications"
 import { createNotificationService } from "@voyantjs/notifications"
@@ -58,6 +58,9 @@ export type CheckoutRouteRuntime = {
 export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.checkout.runtime"
 
 function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: CheckoutRoutesOptions) {
+  // Pin the middleware to this module's Env so Hono doesn't intersect the
+  // middleware's default VoyantBindings into the handlers' `c.env` type.
+  const collectionIdempotency = () => idempotencyKey<Env["Bindings"], Env["Variables"]>()
   function getRuntime(
     bindings: Record<string, unknown>,
     resolveFromContainer?: (key: string) => CheckoutRouteRuntime | undefined,
@@ -68,80 +71,85 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
     )
   }
 
-  return app
-    .post("/bookings/:bookingId/collection-plan", async (c) => {
-      try {
-        const plan = await previewCheckoutCollection(
-          c.get("db"),
-          c.req.param("bookingId"),
-          await parseOptionalJsonBody(c, previewCheckoutCollectionSchema),
-          options.policy,
-        )
+  return (
+    app
+      // Mostly a read, but `ensureDefaultPaymentPlan` can materialize a
+      // default payment plan — so it gets the same opt-in idempotency as
+      // the other collection mutations.
+      .post("/bookings/:bookingId/collection-plan", collectionIdempotency(), async (c) => {
+        try {
+          const plan = await previewCheckoutCollection(
+            c.get("db"),
+            c.req.param("bookingId"),
+            await parseOptionalJsonBody(c, previewCheckoutCollectionSchema),
+            options.policy,
+          )
 
-        if (!plan) {
-          return c.json({ error: "Booking not found" }, 404)
+          if (!plan) {
+            return c.json({ error: "Booking not found" }, 404)
+          }
+
+          return c.json({ data: plan })
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to preview checkout collection"
+          return c.json({ error: message }, 400)
         }
+      })
+      .post("/bookings/:bookingId/initiate-collection", collectionIdempotency(), async (c) => {
+        try {
+          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
+          const dispatcher = createNotificationService(runtime.providers)
+          const result = await initiateCheckoutCollection(
+            c.get("db"),
+            c.req.param("bookingId"),
+            await parseJsonBody(c, initiateCheckoutCollectionSchema),
+            options.policy,
+            dispatcher,
+            runtime,
+          )
 
-        return c.json({ data: plan })
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to preview checkout collection"
-        return c.json({ error: message }, 400)
-      }
-    })
-    .post("/bookings/:bookingId/initiate-collection", async (c) => {
-      try {
-        const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const result = await initiateCheckoutCollection(
-          c.get("db"),
-          c.req.param("bookingId"),
-          await parseJsonBody(c, initiateCheckoutCollectionSchema),
-          options.policy,
-          dispatcher,
-          runtime,
-        )
+          if (!result) {
+            return c.json({ error: "Booking not found" }, 404)
+          }
 
-        if (!result) {
-          return c.json({ error: "Booking not found" }, 404)
+          return c.json({ data: result }, 201)
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to initiate checkout collection"
+          if (message.includes("Booking not found")) {
+            return c.json({ error: message }, 404)
+          }
+          return c.json({ error: message }, 409)
         }
+      })
+      .post("/collections/bootstrap", collectionIdempotency(), async (c) => {
+        try {
+          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
+          const dispatcher = createNotificationService(runtime.providers)
+          const result = await bootstrapCheckoutCollection(
+            c.get("db"),
+            await parseJsonBody(c, bootstrapCheckoutCollectionSchema),
+            options.policy,
+            dispatcher,
+            runtime,
+          )
 
-        return c.json({ data: result }, 201)
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to initiate checkout collection"
-        if (message.includes("Booking not found")) {
-          return c.json({ error: message }, 404)
-        }
-        return c.json({ error: message }, 409)
-      }
-    })
-    .post("/collections/bootstrap", async (c) => {
-      try {
-        const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const result = await bootstrapCheckoutCollection(
-          c.get("db"),
-          await parseJsonBody(c, bootstrapCheckoutCollectionSchema),
-          options.policy,
-          dispatcher,
-          runtime,
-        )
+          if (!result) {
+            return c.json({ error: "Booking session not found" }, 404)
+          }
 
-        if (!result) {
-          return c.json({ error: "Booking session not found" }, 404)
+          return c.json({ data: result }, 201)
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to bootstrap checkout collection"
+          if (message.includes("Booking not found")) {
+            return c.json({ error: message }, 404)
+          }
+          return c.json({ error: message }, 409)
         }
-
-        return c.json({ data: result }, 201)
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to bootstrap checkout collection"
-        if (message.includes("Booking not found")) {
-          return c.json({ error: message }, 404)
-        }
-        return c.json({ error: message }, 409)
-      }
-    })
+      })
+  )
 }
 
 export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {

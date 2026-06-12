@@ -114,6 +114,11 @@ export const app = createApp<CloudflareBindings>({
   workflows: {
     driver: createOperatorWorkflowDriver,
   },
+  // Durable event delivery (RFC voyant#1687 Phase 2.1): emits persist to
+  // the event_outbox table before subscribers run; failed deliveries are
+  // retried by the */2min drain cron in entry.ts. Requires migration
+  // 0062 (event_outbox).
+  outbox: true,
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",

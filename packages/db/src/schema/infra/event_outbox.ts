@@ -1,0 +1,69 @@
+import { sql } from "drizzle-orm"
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+
+import { typeId } from "../../lib/index.js"
+
+/**
+ * Transactional outbox for domain events (RFC voyant#1687 Phase 2.1).
+ *
+ * An emitted event becomes a durable row BEFORE its subscribers run, so
+ * a Worker dying mid-delivery no longer silently loses invoice syncs,
+ * channel pushes, or workflow triggers. Services that need write
+ * atomicity insert rows inside their own transaction (via
+ * `enqueueOutboxEvents(tx, ...)` from `@voyantjs/db/outbox`); the drain
+ * then delivers post-commit.
+ *
+ * Delivery semantics: **at-least-once**. A row is claimed with a
+ * visibility timeout (no separate "processing" status — a crashed
+ * claimer's row simply becomes due again), delivered to ALL subscribers,
+ * and either completed or rescheduled with exponential backoff until
+ * `max_attempts`, after which it dead-letters as `failed`. Subscribers
+ * must be idempotent — the workflow forwarder already dedups on
+ * `metadata.eventId`, and plugin subscribers key on external refs.
+ */
+export const eventOutboxTable = pgTable(
+  "event_outbox",
+  {
+    id: typeId("event_outbox"),
+
+    /**
+     * Stable envelope id (`metadata.eventId`). Unique — re-emitting the
+     * same event (request retry, redelivered webhook) captures once.
+     */
+    eventId: text("event_id").notNull(),
+    /** Event name (`<resource>.<pastTenseAction>`). */
+    name: text("name").notNull(),
+    /** Envelope `data` payload. */
+    payload: jsonb("payload"),
+    /** Envelope `metadata` (includes eventId, correlation ids, ...). */
+    metadata: jsonb("metadata"),
+
+    /** pending → delivered | failed (dead-lettered). */
+    status: text("status", { enum: ["pending", "delivered", "failed"] })
+      .notNull()
+      .default("pending"),
+    /** Delivery attempts so far (incremented at claim time). */
+    attempts: integer("attempts").notNull().default(0),
+    /** Dead-letter threshold. */
+    maxAttempts: integer("max_attempts").notNull().default(8),
+    /**
+     * When the row is next due. Doubles as the visibility timeout while
+     * a claim is in flight and as the backoff schedule after a failure.
+     */
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    lastError: text("last_error"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("event_outbox_event_id_uniq").on(table.eventId),
+    // The drain's working set: due pending rows only. Partial keeps the
+    // index tiny once delivered/failed rows accumulate.
+    index("event_outbox_due_idx").on(table.nextAttemptAt).where(sql`${table.status} = 'pending'`),
+    index("event_outbox_created_idx").on(table.createdAt),
+  ],
+).enableRLS()
+
+export type EventOutboxRow = typeof eventOutboxTable.$inferSelect
+export type InsertEventOutboxRow = typeof eventOutboxTable.$inferInsert

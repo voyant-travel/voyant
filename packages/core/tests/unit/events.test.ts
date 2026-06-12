@@ -58,11 +58,14 @@ describe("createEventBus", () => {
       expect.objectContaining({
         name: "invoice.settled",
         data: { id: "inv_1" },
-        metadata: {
+        // emit stamps a stable eventId when the caller didn't supply one
+        // (outbox dedup + workflow-forwarder idempotency key on it).
+        metadata: expect.objectContaining({
           category: "domain",
           source: "service",
           correlationId: "corr_123",
-        },
+          eventId: expect.stringMatching(/^evt_/),
+        }),
       }),
     )
   })
@@ -220,5 +223,129 @@ describe("createEventBus", () => {
       expect(errorSpy).toHaveBeenCalled()
       errorSpy.mockRestore()
     })
+  })
+})
+
+describe("durable emit via EmitOptions.store (transactional outbox)", () => {
+  function fakeStore() {
+    return {
+      insert: vi.fn(async () => ({ id: "evob_1" })),
+      complete: vi.fn(async () => {}),
+      fail: vi.fn(async () => {}),
+    }
+  }
+
+  it("persists the envelope before handlers run and completes on success", async () => {
+    const bus = createEventBus()
+    const store = fakeStore()
+    const order: string[] = []
+    store.insert.mockImplementation(async () => {
+      order.push("insert")
+      return { id: "evob_1" }
+    })
+    bus.subscribe("x", () => {
+      order.push("handler")
+    })
+
+    await bus.emit("x", { a: 1 }, undefined, { store })
+
+    expect(order).toEqual(["insert", "handler"])
+    expect(store.complete).toHaveBeenCalledWith("evob_1")
+    expect(store.fail).not.toHaveBeenCalled()
+    const envelope = store.insert.mock.calls[0]?.[0] as { metadata?: { eventId?: string } }
+    expect(envelope?.metadata?.eventId).toMatch(/^evt_/)
+  })
+
+  it("fails the row when a handler throws (and still runs siblings)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const bus = createEventBus()
+    const store = fakeStore()
+    const good = vi.fn()
+    bus.subscribe("x", () => {
+      throw new Error("boom")
+    })
+    bus.subscribe("x", good)
+
+    await bus.emit("x", {}, undefined, { store })
+
+    expect(good).toHaveBeenCalledOnce()
+    expect(store.complete).not.toHaveBeenCalled()
+    expect(store.fail).toHaveBeenCalledWith("evob_1", expect.stringContaining("boom"))
+    errorSpy.mockRestore()
+  })
+
+  it("skips delivery entirely for duplicate eventIds (insert returns null)", async () => {
+    const bus = createEventBus()
+    const store = fakeStore()
+    store.insert.mockResolvedValue(null)
+    const handler = vi.fn()
+    bus.subscribe("x", handler)
+
+    await bus.emit("x", {}, { eventId: "evt_dup" }, { store })
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(store.complete).not.toHaveBeenCalled()
+  })
+
+  it("persists even when there are no subscribers (drain delivers later)", async () => {
+    const bus = createEventBus()
+    const store = fakeStore()
+
+    await bus.emit("ghost.event", { id: 1 }, undefined, { store })
+
+    expect(store.insert).toHaveBeenCalledOnce()
+    expect(store.complete).toHaveBeenCalledWith("evob_1")
+  })
+
+  it("with a scheduler, settles the row only after deferred handlers finish", async () => {
+    const bus = createEventBus()
+    const store = fakeStore()
+    const scheduled: Promise<unknown>[] = []
+    let deferredDone = false
+    bus.subscribe("x", async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      deferredDone = true
+    })
+
+    await bus.emit("x", {}, undefined, { store, schedule: (p) => scheduled.push(p) })
+
+    expect(store.complete).not.toHaveBeenCalled()
+    await Promise.all(scheduled)
+    expect(deferredDone).toBe(true)
+    expect(store.complete).toHaveBeenCalledWith("evob_1")
+  })
+})
+
+describe("deliver — redelivery with failure reporting", () => {
+  it("reports attempted/failed counts across all handlers", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const bus = createEventBus()
+    bus.subscribe("x", () => {})
+    bus.subscribe(
+      "x",
+      () => {
+        throw new Error("nope")
+      },
+      { inline: true },
+    )
+
+    const result = await bus.deliver?.({
+      name: "x",
+      data: {},
+      emittedAt: new Date().toISOString(),
+    })
+
+    expect(result).toEqual({ attempted: 2, failed: 1, errors: ["nope"] })
+    errorSpy.mockRestore()
+  })
+
+  it("returns a zero result for envelopes with no subscribers", async () => {
+    const bus = createEventBus()
+    const result = await bus.deliver?.({
+      name: "ghost",
+      data: {},
+      emittedAt: new Date().toISOString(),
+    })
+    expect(result).toEqual({ attempted: 0, failed: 0, errors: [] })
   })
 })

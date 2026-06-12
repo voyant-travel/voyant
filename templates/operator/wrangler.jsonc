@@ -78,7 +78,11 @@
       // Promotions boundary scheduler (per promotions-architecture.md
       // §9.2) — every 5 minutes; emits/dispatches `promotion.changed`
       // for offers crossing valid_from / valid_until since the last tick.
-      "*/5 * * * *"
+      "*/5 * * * *",
+      // Event-outbox drain (RFC #1687 Phase 2.1) — redelivers failed or
+      // interrupted event deliveries with backoff; the happy path
+      // completes at emit time, so this sweep is small.
+      "*/2 * * * *"
     ]
   }
 }

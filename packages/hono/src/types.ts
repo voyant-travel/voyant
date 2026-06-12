@@ -242,6 +242,18 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * and falls back to the `env.CACHE` KV binding (Voyant Cloud
    * namespaced workers have no `caches.default`).
    */
+  /**
+   * Transactional outbox (RFC #1687 Phase 2.1). When `true`, request
+   * emits persist the envelope to the `event_outbox` table BEFORE any
+   * subscriber runs (durable, at-least-once with retry/dead-letter via
+   * `drainOutbox` from `@voyantjs/db/outbox`). Requires the
+   * `event_outbox` migration. Deployments should run a periodic drain
+   * (cron) for redelivery of failed/interrupted deliveries:
+   * `drainOutbox(db, app.eventBus)`. Services needing write atomicity
+   * insert rows inside their own transaction via
+   * `insertOutboxEvents(tx, ...)`. Default off.
+   */
+  outbox?: boolean
   publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**
    * Workflow runtime configuration. When set, `createApp()` collects

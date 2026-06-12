@@ -104,6 +104,50 @@ export interface EmitOptions {
    * omitted, all handlers complete before `emit()` resolves.
    */
   schedule?: (pending: Promise<unknown>) => void
+  /**
+   * Transactional-outbox store for this emit. When present, the
+   * envelope is persisted BEFORE any handler runs; after all handlers
+   * settle the row is completed (every handler succeeded) or failed
+   * (at least one error/timeout — the store schedules the retry).
+   * A `null` return from `insert` means the event was already captured
+   * (duplicate `metadata.eventId`) and delivery is skipped entirely.
+   */
+  store?: OutboxEventStore
+}
+
+/**
+ * Minimal persistence contract the event bus needs for durable emits.
+ * `@voyantjs/db/outbox` provides the Postgres implementation; the bus
+ * itself stays storage-agnostic.
+ */
+export interface OutboxEventStore {
+  /**
+   * Persist the envelope before delivery. Returns the stored record id,
+   * or `null` when an event with the same `metadata.eventId` already
+   * exists (the original capture owns delivery).
+   */
+  insert(envelope: EventEnvelope): Promise<{ id: string } | null>
+  /** Every handler succeeded — mark delivered. */
+  complete(id: string): Promise<void>
+  /**
+   * At least one handler failed or timed out. The store owns retry
+   * scheduling (backoff) and dead-lettering.
+   */
+  fail(id: string, error: string): Promise<void>
+}
+
+/** Outcome of delivering one envelope to all its subscribers. */
+export interface DeliveryResult {
+  /** Handlers invoked. */
+  attempted: number
+  /** Handlers that threw or timed out. */
+  failed: number
+  errors: string[]
+}
+
+/** Stable, unique event id for envelope metadata / outbox dedup. */
+export function generateEventId(): string {
+  return `evt_${crypto.randomUUID()}`
 }
 
 export interface EventBusOptions {
@@ -132,6 +176,16 @@ export interface EventBus {
     handler: EventHandler<TData, TMetadata>,
     options?: SubscribeOptions,
   ): Subscription
+
+  /**
+   * Deliver an existing envelope to ALL its subscribers (inline and
+   * deferrable alike), reporting per-handler failures instead of only
+   * logging them. Used by outbox drains for redelivery — it does NOT
+   * persist anything. Optional so third-party bus implementations
+   * remain assignable; drains fall back to `emit` (fire-and-forget,
+   * counted as success) when absent.
+   */
+  deliver?(envelope: EventEnvelope): Promise<DeliveryResult>
 }
 
 const DEFAULT_HANDLER_TIMEOUT_MS = 15_000
@@ -159,12 +213,20 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
   const handlers = new Map<string, Map<EventHandler, RegisteredHandler>>()
   const timeoutMs = options.handlerTimeoutMs ?? DEFAULT_HANDLER_TIMEOUT_MS
 
-  /** Runs one handler; never rejects. */
-  async function runHandler(event: string, handler: EventHandler, envelope: EventEnvelope) {
+  /**
+   * Runs one handler; never rejects. Returns the error message when the
+   * handler threw or timed out, `null` on success. Errors are always
+   * logged here so non-durable emits keep today's observability.
+   */
+  async function runHandler(
+    event: string,
+    handler: EventHandler,
+    envelope: EventEnvelope,
+  ): Promise<string | null> {
     try {
       if (timeoutMs === false) {
         await handler(envelope)
-        return
+        return null
       }
       let timer: ReturnType<typeof setTimeout> | null = null
       const timedOut = new Promise<"timeout">((resolve) => {
@@ -177,15 +239,53 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
         ])
         if (result === "timeout") {
           // The handler keeps running detached — we just stop waiting.
-          console.error(`[events] subscriber for "${event}" exceeded ${timeoutMs}ms; not awaited`)
+          // Counted as a failure for durable delivery: the retry relies
+          // on subscriber idempotency.
+          const message = `subscriber for "${event}" exceeded ${timeoutMs}ms; not awaited`
+          console.error(`[events] ${message}`)
+          return message
         }
+        return null
       } finally {
         if (timer !== null) clearTimeout(timer)
       }
     } catch (err) {
       // Subscribers are fire-and-forget — log and continue.
       console.error(`[events] subscriber error for "${event}":`, err)
+      return err instanceof Error ? err.message : String(err)
     }
+  }
+
+  /** Runs a batch in parallel; resolves with the error messages. */
+  function runBatch(
+    event: string,
+    batch: EventHandler[],
+    envelope: EventEnvelope,
+  ): Promise<string[]> {
+    return Promise.all(batch.map((h) => runHandler(event, h, envelope))).then((results) =>
+      results.filter((r): r is string => r !== null),
+    )
+  }
+
+  function partition(event: string): { inline: EventHandler[]; deferrable: EventHandler[] } {
+    const inline: EventHandler[] = []
+    const deferrable: EventHandler[] = []
+    const registered = handlers.get(event)
+    if (registered) {
+      for (const [handler, meta] of registered) {
+        ;(meta.inline ? inline : deferrable).push(handler)
+      }
+    }
+    return { inline, deferrable }
+  }
+
+  function ensureEventId<TMetadata extends EventMetadata | undefined>(
+    metadata: TMetadata,
+  ): TMetadata {
+    if (metadata && typeof metadata.eventId === "string" && metadata.eventId.length > 0) {
+      return metadata
+    }
+    return { ...(metadata ?? {}), eventId: generateEventId() } as unknown as TMetadata
   }
 
   return {
@@ -195,33 +295,73 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
       metadata?: TMetadata,
       emitOptions?: EmitOptions,
     ) {
+      const store = emitOptions?.store
       const registered = handlers.get(event)
-      if (!registered || registered.size === 0) return
+      if (!store && (!registered || registered.size === 0)) return
       const envelope: EventEnvelope<TData, TMetadata> = {
         name: event,
         data,
         emittedAt: new Date().toISOString(),
-        ...(metadata === undefined ? {} : { metadata }),
+        // Durable capture and downstream dedup (workflow forwarder) both
+        // key on a stable event id — stamp one when the caller didn't.
+        ...(() => {
+          const withId = ensureEventId(metadata)
+          return withId === undefined ? {} : { metadata: withId }
+        })(),
       }
 
-      const inline: EventHandler[] = []
-      const deferrable: EventHandler[] = []
-      for (const [handler, meta] of registered) {
-        ;(meta.inline ? inline : deferrable).push(handler)
-      }
+      const { inline, deferrable } = partition(event)
+      const run = (batch: EventHandler[]) => runBatch(event, batch, envelope as EventEnvelope)
 
-      const run = (batch: EventHandler[]) =>
-        Promise.all(batch.map((h) => runHandler(event, h, envelope as EventEnvelope))).then(
-          () => undefined,
-        )
-
-      if (emitOptions?.schedule && deferrable.length > 0) {
-        emitOptions.schedule(run(deferrable))
-        if (inline.length > 0) await run(inline)
+      if (!store) {
+        if (emitOptions?.schedule && deferrable.length > 0) {
+          emitOptions.schedule(run(deferrable))
+          if (inline.length > 0) await run(inline)
+          return
+        }
+        await run([...inline, ...deferrable])
         return
       }
 
-      await run([...inline, ...deferrable])
+      // ---- Durable (outbox) path ----
+      // Persist BEFORE any handler runs: a crash mid-delivery leaves a
+      // pending row the drain redelivers, instead of a lost event.
+      const record = await store.insert(envelope as EventEnvelope)
+      if (record === null) {
+        // Duplicate eventId — already captured; the original owns delivery.
+        return
+      }
+
+      const settle = async (errors: string[]) => {
+        try {
+          if (errors.length === 0) await store.complete(record.id)
+          else await store.fail(record.id, errors.join("; "))
+        } catch (err) {
+          // Best-effort bookkeeping: a failed `complete` leaves the row
+          // pending and the drain redelivers (at-least-once, idempotent
+          // subscribers). Never surface to the emitter.
+          console.error(`[events] outbox bookkeeping failed for "${event}":`, err)
+        }
+      }
+
+      if (emitOptions.schedule && deferrable.length > 0) {
+        const inlineErrors = inline.length > 0 ? await run(inline) : []
+        emitOptions.schedule(
+          run(deferrable).then((deferredErrors) => settle([...inlineErrors, ...deferredErrors])),
+        )
+        return
+      }
+
+      const errors = await run([...inline, ...deferrable])
+      await settle(errors)
+    },
+
+    async deliver(envelope: EventEnvelope): Promise<DeliveryResult> {
+      const { inline, deferrable } = partition(envelope.name)
+      const all = [...inline, ...deferrable]
+      if (all.length === 0) return { attempted: 0, failed: 0, errors: [] }
+      const errors = await runBatch(envelope.name, all, envelope)
+      return { attempted: all.length, failed: errors.length, errors }
     },
     subscribe<TData, TMetadata extends EventMetadata | undefined = EventMetadata | undefined>(
       event: string,

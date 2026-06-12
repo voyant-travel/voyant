@@ -23,6 +23,7 @@ export const PREFIXES = {
   domains: "dom",
   email_domain_records: "emdr",
   idempotency_keys: "ikey",
+  event_outbox: "evob",
   action_ledger_entries: "alge",
   action_ledger_outbox: "algo",
   action_ledger_payloads: "algp",

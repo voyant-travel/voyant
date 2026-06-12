@@ -22,6 +22,10 @@ import {
 } from "@voyantjs/action-ledger"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
+  aggregateSnapshotKey,
+  readThroughAggregateSnapshot,
+} from "@voyantjs/db/aggregate-snapshots"
+import {
   ForbiddenApiError,
   handleApiError,
   idempotencyKey,
@@ -285,7 +289,10 @@ export interface BookingActionApprovalDecisionResponse {
   }
 }
 
-const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
+
+/** Server-side snapshot TTL — see readThroughAggregateSnapshot (#1629). */
+const DASHBOARD_AGGREGATES_TTL_SECONDS = 60
 
 function cacheDashboardAggregates(c: Context<Env>) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
@@ -1395,11 +1402,18 @@ export const bookingRoutes = new Hono<Env>()
     return c.json({ data: snapshot })
   })
 
-  // 1b. GET /aggregates — Pre-aggregated dashboard metrics
+  // 1b. GET /aggregates — Pre-aggregated dashboard metrics. Served from a
+  // read-through TTL snapshot so a warm dashboard load is one indexed read
+  // instead of the full aggregate fan-out (#1629).
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, bookingAggregatesQuerySchema)
     cacheDashboardAggregates(c)
-    return c.json({ data: await bookingsService.getBookingAggregates(c.get("db"), query) })
+    const snapshot = await readThroughAggregateSnapshot(c.get("db"), {
+      key: aggregateSnapshotKey("bookings", "aggregates", query),
+      ttlSeconds: DASHBOARD_AGGREGATES_TTL_SECONDS,
+      compute: () => bookingsService.getBookingAggregates(c.get("db"), query),
+    })
+    return c.json({ data: snapshot.data })
   })
 
   // 1b. GET /overview — Internal/admin booking overview lookup

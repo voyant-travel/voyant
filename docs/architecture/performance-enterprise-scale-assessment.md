@@ -200,6 +200,14 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > batched product overlay resolution, grouped capacity counts), 1.5 partially (windowed
 > single-roundtrip `listAndCount`; keyset ADOPTION deferred — cursor contracts need a
 > coordinated client change). 1.6 (Smart Placement) still blocked on the platform question.
+> **Phase 2 on `perf/phase-2`:** 2.1 transactional outbox SHIPPED (durable emit + event_outbox +
+> visibility-timeout drain + dead-letter + operator */2min cron; migration 0062); 2.3 read
+> replicas (DATABASE_URL_REPLICAS on the http client); 2.4 read-through TTL aggregate snapshots
+> (warm dashboard ~29 queries → 5 PK reads); 2.5 booking hardening (snapshots resolved pre-tx,
+> batched inserts in the locked section, checkout idempotency + Netopia callback dedup).
+> 2.2 (Typesense/KV storefront read models) is the dedicated follow-up PR. Note: drizzle
+> snapshot-chain poisoning by timestamp-named migration files was diagnosed and fixed (stale
+> 20260609 snapshot removed, chain re-parented) — future `drizzle-kit generate` runs are clean.
 
 ### Phase 0 — Stop the bleeding (days; no architecture changes)
 

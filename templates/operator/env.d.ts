@@ -19,6 +19,24 @@ interface CloudflareBindings {
   BETTER_AUTH_SECRET: string
   DATABASE_URL: string
   /**
+   * Optional comma-separated connection strings of same-region Neon read
+   * replicas, used by the DEFAULT (neon-http) data plane only — reads
+   * round-robin across replicas while writes (and `db.$primary`) go to the
+   * primary. The transactional WebSocket client always talks to the primary
+   * and is unaffected.
+   *
+   * Read-your-writes caveat: Neon replicas are eventually consistent
+   * (typically milliseconds of lag), so a request that writes and then
+   * reads the same data via the http client may read a slightly stale
+   * replica. Surfaces that need strict read-your-writes should read via
+   * `db.$primary` or live on the transactional client.
+   *
+   * Entries are trimmed; empty entries and entries equal to DATABASE_URL
+   * are ignored. Ignored entirely when DATABASE_URL points at localhost
+   * (the local pg.Pool fallback has no replica support).
+   */
+  DATABASE_URL_REPLICAS?: string
+  /**
    * Operational escape hatch for the split data plane: set to "1" to
    * serve EVERY request with the transaction-capable WebSocket client
    * (pre-Phase-1 behavior) — e.g. if a transactional surface was missed

@@ -1,3 +1,7 @@
+import {
+  aggregateSnapshotKey,
+  readThroughAggregateSnapshot,
+} from "@voyantjs/db/aggregate-snapshots"
 import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
 import {
   insertAddressForEntitySchema,
@@ -35,7 +39,10 @@ type Env = {
   }
 }
 
-const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
+
+/** Server-side snapshot TTL — see readThroughAggregateSnapshot (#1629). */
+const DASHBOARD_AGGREGATES_TTL_SECONDS = 60
 
 function cacheDashboardAggregates(c: {
   header: (name: string, value: string, options?: { append?: boolean }) => void
@@ -55,11 +62,17 @@ export const supplierRoutes = new Hono<Env>()
   // Dashboard aggregates
   // ========================================================================
 
-  // GET /aggregates — dashboard KPIs (before /:id so the matcher doesn't swallow it)
+  // GET /aggregates — dashboard KPIs (before /:id so the matcher doesn't
+  // swallow it). Served from a read-through TTL snapshot (#1629).
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, supplierAggregatesQuerySchema)
     cacheDashboardAggregates(c)
-    return c.json({ data: await suppliersService.getSupplierAggregates(c.get("db"), query) })
+    const snapshot = await readThroughAggregateSnapshot(c.get("db"), {
+      key: aggregateSnapshotKey("suppliers", "aggregates", query),
+      ttlSeconds: DASHBOARD_AGGREGATES_TTL_SECONDS,
+      compute: () => suppliersService.getSupplierAggregates(c.get("db"), query),
+    })
+    return c.json({ data: snapshot.data })
   })
 
   // ========================================================================

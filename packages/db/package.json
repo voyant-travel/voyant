@@ -10,6 +10,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./aggregate-snapshots": "./src/aggregate-snapshots.ts",
     "./operators": "./src/operators.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/typeid": "./src/lib/typeid.ts",
@@ -24,10 +25,12 @@
     "./transaction": "./src/transaction.ts",
     "./crud": "./src/crud.ts",
     "./links": "./src/links.ts",
+    "./outbox": "./src/outbox.ts",
     "./queries": "./src/queries/index.ts",
     "./runtime": "./src/runtime/index.ts",
     "./schema": "./src/schema/index.ts",
     "./schema/00_ensure_schemas": "./src/schema/00_ensure_schemas.ts",
+    "./schema/aggregate-snapshots": "./src/schema/aggregate-snapshots.ts",
     "./schema/iam": "./src/schema/iam/index.ts",
     "./schema/iam/apikey": "./src/schema/iam/apikey.ts",
     "./schema/iam/auth": "./src/schema/iam/auth.ts",
@@ -38,6 +41,7 @@
     "./schema/iam/user_profiles": "./src/schema/iam/user_profiles.ts",
     "./schema/iam/*": "./src/schema/iam/*.ts",
     "./schema/infra": "./src/schema/infra/index.ts",
+    "./schema/infra/event_outbox": "./src/schema/infra/event_outbox.ts",
     "./schema/infra/domains": "./src/schema/infra/domains.ts",
     "./schema/infra/email_domain_records": "./src/schema/infra/email_domain_records.ts",
     "./schema/infra/idempotency_keys": "./src/schema/infra/idempotency_keys.ts",
@@ -62,6 +66,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./aggregate-snapshots": {
+        "types": "./dist/aggregate-snapshots.d.ts",
+        "import": "./dist/aggregate-snapshots.js",
+        "default": "./dist/aggregate-snapshots.js"
       },
       "./operators": {
         "types": "./dist/operators.d.ts",
@@ -138,6 +147,11 @@
         "import": "./dist/links.js",
         "default": "./dist/links.js"
       },
+      "./outbox": {
+        "types": "./dist/outbox.d.ts",
+        "import": "./dist/outbox.js",
+        "default": "./dist/outbox.js"
+      },
       "./queries": {
         "types": "./dist/queries/index.d.ts",
         "import": "./dist/queries/index.js",
@@ -157,6 +171,11 @@
         "types": "./dist/schema/00_ensure_schemas.d.ts",
         "import": "./dist/schema/00_ensure_schemas.js",
         "default": "./dist/schema/00_ensure_schemas.js"
+      },
+      "./schema/aggregate-snapshots": {
+        "types": "./dist/schema/aggregate-snapshots.d.ts",
+        "import": "./dist/schema/aggregate-snapshots.js",
+        "default": "./dist/schema/aggregate-snapshots.js"
       },
       "./schema/iam": {
         "types": "./dist/schema/iam/index.d.ts",
@@ -207,6 +226,11 @@
         "types": "./dist/schema/infra/index.d.ts",
         "import": "./dist/schema/infra/index.js",
         "default": "./dist/schema/infra/index.js"
+      },
+      "./schema/infra/event_outbox": {
+        "types": "./dist/schema/infra/event_outbox.d.ts",
+        "import": "./dist/schema/infra/event_outbox.js",
+        "default": "./dist/schema/infra/event_outbox.js"
       },
       "./schema/infra/domains": {
         "types": "./dist/schema/infra/domains.d.ts",
