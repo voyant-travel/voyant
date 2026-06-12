@@ -1,5 +1,11 @@
 # @voyantjs/distribution-react
 
+## 0.109.4
+
+### Patch Changes
+
+- @voyantjs/distribution@0.109.4
+
 ## 0.109.3
 
 ### Patch Changes

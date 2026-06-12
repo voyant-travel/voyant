@@ -1,5 +1,14 @@
 # @voyantjs/admin-app
 
+## 0.9.0
+
+### Patch Changes
+
+- @voyantjs/products-react@0.118.0
+- @voyantjs/finance-react@0.118.0
+- @voyantjs/pricing-react@0.118.0
+- @voyantjs/distribution-react@0.109.4
+
 ## 0.8.0
 
 ### Patch Changes
