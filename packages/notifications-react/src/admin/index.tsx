@@ -105,6 +105,10 @@ export function createNotificationsAdminExtension(
         id: "notifications-templates-index",
         path: `${basePath}/templates`,
         title: templates,
+        // Route-backed destination (RFC §4.7 endgame): the key resolves by
+        // pure path interpolation of this route, so the host's resolver is
+        // generated (`voyant admin generate --destinations`).
+        destination: "notificationTemplate.list",
         page: () =>
           import("./notification-templates-host.js").then((module) =>
             adminRoutePageModule(module.NotificationTemplatesHost),
@@ -114,12 +118,15 @@ export function createNotificationsAdminExtension(
         id: "notifications-templates-detail",
         path: `${basePath}/templates/$id`,
         title: templates,
+        destination: "notificationTemplate.detail",
+        destinationParams: { id: "templateId" },
         page: () => import("./pages/notification-template-detail-page.js"),
       },
       {
         id: "notifications-reminder-rules-index",
         path: `${basePath}/reminder-rules`,
         title: reminderRules,
+        destination: "notificationReminderRule.list",
         page: () =>
           import("./notification-reminder-rules-host.js").then((module) =>
             adminRoutePageModule(module.NotificationReminderRulesHost),
@@ -129,6 +136,8 @@ export function createNotificationsAdminExtension(
         id: "notifications-reminder-rules-detail",
         path: `${basePath}/reminder-rules/$id`,
         title: reminderRules,
+        destination: "notificationReminderRule.detail",
+        destinationParams: { id: "ruleId" },
         page: () => import("./pages/notification-reminder-rule-detail-page.js"),
       },
       {
