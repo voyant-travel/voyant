@@ -3,7 +3,11 @@ import { marketsHonoModule } from "@voyantjs/markets"
 import { pricingHonoModule } from "@voyantjs/pricing"
 import { promotionsHonoModule } from "@voyantjs/promotions"
 import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
-import { sellabilityHonoModule } from "@voyantjs/sellability"
+import {
+  createSellabilityHonoModule,
+  type SellabilityRoutesOptions,
+  sellabilityHonoModule,
+} from "@voyantjs/sellability"
 
 export const commerceRuntimeModuleNames = [
   "pricing",
@@ -14,6 +18,10 @@ export const commerceRuntimeModuleNames = [
 
 export type CommerceRuntimeModuleName = (typeof commerceRuntimeModuleNames)[number]
 
+export interface CommerceHonoModulesOptions {
+  sellability?: SellabilityRoutesOptions
+}
+
 /**
  * Runtime consolidation for the Commerce Module.
  *
@@ -21,8 +29,13 @@ export type CommerceRuntimeModuleName = (typeof commerceRuntimeModuleNames)[numb
  * declare one Commerce manifest entry. The old packages remain schema owners
  * until explicit schema-move issues migrate their tables.
  */
-export function createCommerceHonoModules(): HonoModule[] {
-  return [pricingHonoModule, marketsHonoModule, sellabilityHonoModule, promotionsHonoModule]
+export function createCommerceHonoModules(options: CommerceHonoModulesOptions = {}): HonoModule[] {
+  return [
+    pricingHonoModule,
+    marketsHonoModule,
+    options.sellability ? createSellabilityHonoModule(options.sellability) : sellabilityHonoModule,
+    promotionsHonoModule,
+  ]
 }
 
 export const createCommerceStorefrontOfferResolvers = createPromotionsStorefrontResolvers

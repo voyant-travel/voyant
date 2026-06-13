@@ -45,10 +45,15 @@ import {
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
 import { resourcesHonoModule } from "@voyantjs/resources"
+import type { SellabilityOfferWriter } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
-import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
+import {
+  transactionsBookingExtension,
+  transactionsHonoModule,
+  transactionsService,
+} from "@voyantjs/transactions"
 import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -72,6 +77,12 @@ import {
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
 import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+
+const legacyTransactionsOfferWriter: SellabilityOfferWriter = {
+  createOfferBundle: (db, input) => transactionsService.createOfferBundle(db, input),
+  updateOfferMetadata: (db, offerId, metadata) =>
+    transactionsService.updateOffer(db, offerId, { metadata }),
+}
 
 /**
  * The operator deployment's capability container. Every template-specific
@@ -182,7 +193,10 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
         },
       }),
-    "@voyantjs/commerce": () => createCommerceHonoModules(),
+    "@voyantjs/commerce": () =>
+      createCommerceHonoModules({
+        sellability: { offerWriter: legacyTransactionsOfferWriter },
+      }),
     "@voyantjs/transactions": () => transactionsHonoModule,
     "@voyantjs/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,

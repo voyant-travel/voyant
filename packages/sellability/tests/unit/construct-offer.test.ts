@@ -1,6 +1,7 @@
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { transactionsService } from "../../../transactions/src/service.js"
-import { sellabilityService } from "../../src/service.js"
+import type { SellabilityOfferBundleInput, SellabilityOfferWriter } from "../../src/index.js"
+import { createSellabilityService } from "../../src/service.js"
 
 function createMockDb() {
   const returning = vi.fn().mockResolvedValue([{ id: "sell_snap_1" }])
@@ -25,8 +26,31 @@ describe("sellabilityService.constructOffer", () => {
 
   it("resolves a candidate and materializes a normalized offer bundle", async () => {
     const { db, insert, values, returning } = createMockDb()
+    const createOfferBundle = vi.fn(
+      async (_db: PostgresJsDatabase, _input: SellabilityOfferBundleInput) => ({
+        offer: { id: "offer_1", offerNumber: "OFF-1" },
+        travelers: [],
+        contactAssignments: [],
+        items: [],
+        itemTravelers: [],
+      }),
+    )
+    const updateOfferMetadata = vi.fn(async () => ({
+      id: "offer_1",
+      metadata: {
+        sellability: {
+          snapshotId: "sell_snap_1",
+        },
+      },
+    }))
+    const service = createSellabilityService({
+      offerWriter: {
+        createOfferBundle,
+        updateOfferMetadata,
+      } satisfies SellabilityOfferWriter,
+    })
 
-    vi.spyOn(sellabilityService, "resolve").mockResolvedValue({
+    vi.spyOn(service, "resolve").mockResolvedValue({
       data: [
         {
           product: { id: "prod_1", name: "City Escape" },
@@ -129,23 +153,7 @@ describe("sellabilityService.constructOffer", () => {
       meta: { total: 1 },
     })
 
-    const createOfferBundle = vi.spyOn(transactionsService, "createOfferBundle").mockResolvedValue({
-      offer: { id: "offer_1", offerNumber: "OFF-1" } as never,
-      travelers: [] as never[],
-      contactAssignments: [] as never[],
-      items: [] as never[],
-      itemTravelers: [] as never[],
-    })
-    const updateOffer = vi.spyOn(transactionsService, "updateOffer").mockResolvedValue({
-      id: "offer_1",
-      metadata: {
-        sellability: {
-          snapshotId: "sell_snap_1",
-        },
-      },
-    } as never)
-
-    const result = await sellabilityService.constructOffer(db, {
+    const result = await service.constructOffer(db, {
       query: {
         productId: "prod_1",
         optionId: "opt_1",
@@ -203,7 +211,7 @@ describe("sellabilityService.constructOffer", () => {
     expect(insert).toHaveBeenCalledTimes(2)
     expect(values).toHaveBeenCalledTimes(2)
     expect(returning).toHaveBeenCalledTimes(1)
-    expect(updateOffer).toHaveBeenCalledTimes(1)
+    expect(updateOfferMetadata).toHaveBeenCalledTimes(1)
 
     const payload = createOfferBundle.mock.calls[0]?.[1]
     expect(payload).toBeTruthy()
@@ -270,14 +278,22 @@ describe("sellabilityService.constructOffer", () => {
 
   it("returns null when no sellable candidate matches the requested slot", async () => {
     const { db } = createMockDb()
+    const createOfferBundle = vi.fn(
+      async (_db: PostgresJsDatabase, _input: SellabilityOfferBundleInput) => null,
+    )
+    const service = createSellabilityService({
+      offerWriter: {
+        createOfferBundle,
+        updateOfferMetadata: vi.fn(),
+      } satisfies SellabilityOfferWriter,
+    })
 
-    vi.spyOn(sellabilityService, "resolve").mockResolvedValue({
+    vi.spyOn(service, "resolve").mockResolvedValue({
       data: [],
       meta: { total: 0 },
     })
-    const createOfferBundle = vi.spyOn(transactionsService, "createOfferBundle")
 
-    const result = await sellabilityService.constructOffer(db, {
+    const result = await service.constructOffer(db, {
       query: {
         slotId: "missing_slot",
         requestedUnits: [],
