@@ -37,6 +37,9 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 - React packages use `-react`, for example `@voyantjs/crm-react`.
   They own hooks, clients, providers, view-model helpers, and reusable module
   components.
+- Shared physical-place UI should use `@voyantjs/places-react` and place-first
+  names such as `PlaceCombobox` / `PlaceBadge`. `@voyantjs/facilities-react`
+  remains a compatibility import while `facilityId` public fields migrate.
 - Do not create new `*-ui` packages. If a historical `*-ui` package exists,
   fold it into the corresponding `*-react` package as part of v1 cleanup.
 - Surface packages such as `admin` and `storefront` own page assembly and should

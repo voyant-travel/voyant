@@ -10,7 +10,7 @@
  *
  * Each function is independently invokable from `seed.ts`; callers pass a
  * Drizzle client plus a context object with the seller-operator id and any
- * upstream supplier / facility ids the seeded rows should attach to. The
+ * upstream supplier / place ids the seeded rows should attach to. The
  * functions return arrays of inserted entity ids so the caller can wire
  * follow-up data (sailings, voyages, rate plans, etc.) if desired.
  *
@@ -33,7 +33,7 @@ export interface CatalogSeedContext {
   sellerOperatorId: string
   /** Existing supplier ids to attach as line/operator references. May be empty. */
   supplierIds: string[]
-  /** Existing facility ids the seed can borrow as embark/disembark/property anchors. May be empty. */
+  /** Existing compatibility place ids the seed can borrow as embark/disembark/property anchors. May be empty. */
   facilityIds: string[]
 }
 
@@ -502,15 +502,13 @@ export async function seedCharters(db: Db, ctx: CatalogSeedContext): Promise<str
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Seeds 2 properties (one London hotel, one Paris boutique) and 8 room types
- * spread across them. The function inserts owning facility rows inline if
- * `ctx.facilityIds` doesn't already contain enough hotel-kind facilities to
- * borrow, since `properties.facility_id` is a non-null FK.
+ * Seeds 2 accommodation resale locations (one London hotel, one Paris boutique)
+ * and 8 room types spread across them. The function inserts shared place rows
+ * inline so accommodation content has stable location anchors.
  */
 export async function seedAccommodationRooms(db: Db, ctx: CatalogSeedContext): Promise<string[]> {
-  // Always seed two dedicated facilities for the accommodations demo so the
-  // properties have stable, accommodations-tagged anchors regardless of what
-  // ctx.facilityIds contains.
+  // Always seed two dedicated place rows for the accommodations demo so the
+  // compatibility property rows have stable, accommodations-tagged anchors.
   const facilityLondonId = newId("facilities")
   const facilityParisId = newId("facilities")
 

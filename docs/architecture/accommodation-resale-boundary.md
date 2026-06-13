@@ -78,9 +78,11 @@ implementation scenarios:
   small-scale/specialized operations owned by a tour operator or DMC.
 - `flights` is a supplier-integration and sourced-inventory surface. Voyant is
   not an airline or flight-operator system.
-- `facilities` and `ground` support DMC and tour-operator operations:
-  attractions, hubs, restaurants, airports, meeting points, vehicles, drivers,
-  pickup points, dispatch, and transfers.
+- `places` and `ground` support DMC and tour-operator operations:
+  attractions, hubs, restaurants, airports, ports, stations, meeting points,
+  vehicles, drivers, pickup points, dispatch, and transfers. Current
+  `@voyantjs/facilities` imports and `facilityId` fields are compatibility
+  surfaces for the v1 package move.
 - `distribution`, `suppliers`, and `external-refs` are cross-cutting support for
   channels, supplier relationships, and external-system mappings. They are not
   implementation scenarios by themselves.
@@ -101,6 +103,7 @@ Use accommodation terms when the surface is about resale or trip composition:
 - stay component
 - accommodation booking line
 - sourced accommodation
+- accommodation location
 
 Use hotel-operations terms only for legacy or explicitly out-of-scope material:
 
@@ -111,6 +114,12 @@ Use hotel-operations terms only for legacy or explicitly out-of-scope material:
 - folio
 - PMS
 - property operations
+- facility operations
+
+Use `Place` for shared physical places in active product language. Treat
+`Facility` as a compatibility/table-era name until `@voyantjs/places` fully
+replaces the old package imports. Do not rename hotel/PMS/property operations
+to places.
 
 Avoid using `hospitality` as a first-party module family name in new active
 surfaces. If a reusable accommodation resale contract survives the de-scoping

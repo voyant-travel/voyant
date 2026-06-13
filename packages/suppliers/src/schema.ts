@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { facilities } from "@voyantjs/facilities/schema"
 import { relations } from "drizzle-orm"
 import {
   boolean,
@@ -66,9 +65,7 @@ export const suppliers = pgTable(
     defaultCurrency: text("default_currency"),
     paymentTermsDays: integer("payment_terms_days"),
     reservationTimeoutMinutes: integer("reservation_timeout_minutes"),
-    primaryFacilityId: typeIdRef("primary_facility_id").references(() => facilities.id, {
-      onDelete: "set null",
-    }),
+    primaryFacilityId: typeIdRef("primary_facility_id"),
 
     /**
      * Customer-facing payment policy override. When set, sourced
@@ -141,7 +138,7 @@ export const supplierServices = pgTable(
       .references(() => suppliers.id, { onDelete: "cascade" }),
 
     serviceType: serviceTypeEnum("service_type").notNull(),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     name: text("name").notNull(),
     description: text("description"),
     duration: text("duration"),
@@ -274,10 +271,6 @@ export type NewSupplierContract = typeof supplierContracts.$inferInsert
 // ---------- relations ----------
 
 export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
-  primaryFacility: one(facilities, {
-    fields: [suppliers.primaryFacilityId],
-    references: [facilities.id],
-  }),
   directoryProjection: one(supplierDirectoryProjections, {
     fields: [suppliers.id],
     references: [supplierDirectoryProjections.supplierId],
@@ -300,10 +293,6 @@ export const supplierDirectoryProjectionsRelations = relations(
 
 export const supplierServicesRelations = relations(supplierServices, ({ one, many }) => ({
   supplier: one(suppliers, { fields: [supplierServices.supplierId], references: [suppliers.id] }),
-  facility: one(facilities, {
-    fields: [supplierServices.facilityId],
-    references: [facilities.id],
-  }),
   rates: many(supplierRates),
 }))
 

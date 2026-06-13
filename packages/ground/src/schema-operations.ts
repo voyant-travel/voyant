@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
@@ -24,7 +23,7 @@ export const groundExecutionEvents = pgTable(
       .references(() => groundDispatches.id, { onDelete: "cascade" }),
     eventType: groundExecutionEventTypeEnum("event_type").notNull().default("note"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     addressId: typeIdRef("address_id").references(() => identityAddresses.id, {
       onDelete: "set null",
     }),
@@ -40,6 +39,11 @@ export const groundExecutionEvents = pgTable(
     ),
     index("idx_ground_execution_events_type_occurred_created").on(
       table.eventType,
+      table.occurredAt,
+      table.createdAt,
+    ),
+    index("idx_ground_execution_events_facility_occurred_created").on(
+      table.facilityId,
       table.occurredAt,
       table.createdAt,
     ),
@@ -96,7 +100,7 @@ export const groundDispatchLegs = pgTable(
       .references(() => groundDispatches.id, { onDelete: "cascade" }),
     sequence: integer("sequence").notNull().default(0),
     legType: groundDispatchLegTypeEnum("leg_type").notNull().default("pickup"),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     addressId: typeIdRef("address_id").references(() => identityAddresses.id, {
       onDelete: "set null",
     }),
@@ -110,6 +114,7 @@ export const groundDispatchLegs = pgTable(
   (table) => [
     index("idx_ground_dispatch_legs_dispatch_sequence").on(table.dispatchId, table.sequence),
     index("idx_ground_dispatch_legs_type_sequence").on(table.legType, table.sequence),
+    index("idx_ground_dispatch_legs_facility_sequence").on(table.facilityId, table.sequence),
   ],
 )
 
@@ -146,7 +151,7 @@ export const groundDriverShifts = pgTable(
     operatorId: typeIdRef("operator_id").references(() => groundOperators.id, {
       onDelete: "set null",
     }),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     status: groundDriverShiftStatusEnum("status").notNull().default("scheduled"),
@@ -205,7 +210,7 @@ export const groundDispatchCheckpoints = pgTable(
     status: groundCheckpointStatusEnum("status").notNull().default("pending"),
     plannedAt: timestamp("planned_at", { withTimezone: true }),
     actualAt: timestamp("actual_at", { withTimezone: true }),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     addressId: typeIdRef("address_id").references(() => identityAddresses.id, {
       onDelete: "set null",
     }),
@@ -217,6 +222,7 @@ export const groundDispatchCheckpoints = pgTable(
   (table) => [
     index("idx_ground_dispatch_checkpoints_dispatch_sequence").on(table.dispatchId, table.sequence),
     index("idx_ground_dispatch_checkpoints_status_sequence").on(table.status, table.sequence),
+    index("idx_ground_dispatch_checkpoints_facility_sequence").on(table.facilityId, table.sequence),
   ],
 )
 

@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { properties } from "@voyantjs/facilities/schema"
 import {
   boolean,
   index,
@@ -21,9 +20,7 @@ export const roomTypes = pgTable(
   "room_types",
   {
     id: typeId("room_types"),
-    propertyId: typeIdRef("property_id")
-      .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+    propertyId: typeIdRef("property_id").notNull(),
     supplierId: text("supplier_id"),
     code: text("code"),
     name: text("name").notNull(),
@@ -93,9 +90,7 @@ export const mealPlans = pgTable(
   "meal_plans",
   {
     id: typeId("meal_plans"),
-    propertyId: typeIdRef("property_id")
-      .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+    propertyId: typeIdRef("property_id").notNull(),
     code: text("code").notNull(),
     name: text("name").notNull(),
     description: text("description"),
@@ -120,9 +115,7 @@ export const ratePlans = pgTable(
   "rate_plans",
   {
     id: typeId("rate_plans"),
-    propertyId: typeIdRef("property_id")
-      .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+    propertyId: typeIdRef("property_id").notNull(),
     code: text("code").notNull(),
     name: text("name").notNull(),
     description: text("description"),

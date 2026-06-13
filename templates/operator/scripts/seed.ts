@@ -4,7 +4,7 @@
  * Operator seed script — a realistic tour-operator scenario.
  *
  * Seeds: 1 auth org, 5 staff users, a populated CRM (2 orgs, 30 people,
- * 1 sales pipeline with quotes/quote versions), 4 facilities, 6 suppliers,
+ * 1 sales pipeline with quotes/quote versions), 4 shared places, 6 suppliers,
  * 6 products with availability, 6 bookings across lifecycle states with
  * matching finance docs, a cancellation policy, and a customer contract.
  *
@@ -285,7 +285,7 @@ async function reset() {
     "supplier_contracts",
     "supplier_directory_projections",
     "suppliers",
-    // Facilities
+    // Shared place compatibility tables
     "facility_features",
     "facility_operation_schedules",
     "facility_address_projections",
@@ -718,7 +718,7 @@ async function seedMarketsAndFinanceSetup() {
   })
 }
 
-// ---------- 3. Facilities ----------
+// ---------- 3. Shared places ----------
 
 const FACILITIES = {
   hotelThames: newId("facilities"),
@@ -728,7 +728,7 @@ const FACILITIES = {
 } as const
 
 async function seedFacilities() {
-  console.log("→ seeding facilities…")
+  console.log("→ seeding shared places…")
   await db.insert(facilities).values([
     {
       id: FACILITIES.hotelThames,

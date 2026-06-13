@@ -1,4 +1,3 @@
-import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { relations } from "drizzle-orm"
 
@@ -14,8 +13,7 @@ import {
 } from "./schema-operations.js"
 import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators.js"
 
-export const groundOperatorsRelations = relations(groundOperators, ({ one, many }) => ({
-  facility: one(facilities, { fields: [groundOperators.facilityId], references: [facilities.id] }),
+export const groundOperatorsRelations = relations(groundOperators, ({ many }) => ({
   vehicles: many(groundVehicles),
   drivers: many(groundDrivers),
 }))
@@ -37,14 +35,6 @@ export const groundDriversRelations = relations(groundDrivers, ({ one }) => ({
 export const groundTransferPreferencesRelations = relations(
   groundTransferPreferences,
   ({ one, many }) => ({
-    pickupFacility: one(facilities, {
-      fields: [groundTransferPreferences.pickupFacilityId],
-      references: [facilities.id],
-    }),
-    dropoffFacility: one(facilities, {
-      fields: [groundTransferPreferences.dropoffFacilityId],
-      references: [facilities.id],
-    }),
     pickupAddress: one(identityAddresses, {
       fields: [groundTransferPreferences.pickupAddressId],
       references: [identityAddresses.id],
@@ -87,10 +77,6 @@ export const groundExecutionEventsRelations = relations(groundExecutionEvents, (
     fields: [groundExecutionEvents.dispatchId],
     references: [groundDispatches.id],
   }),
-  facility: one(facilities, {
-    fields: [groundExecutionEvents.facilityId],
-    references: [facilities.id],
-  }),
   address: one(identityAddresses, {
     fields: [groundExecutionEvents.addressId],
     references: [identityAddresses.id],
@@ -124,10 +110,6 @@ export const groundDispatchLegsRelations = relations(groundDispatchLegs, ({ one 
     fields: [groundDispatchLegs.dispatchId],
     references: [groundDispatches.id],
   }),
-  facility: one(facilities, {
-    fields: [groundDispatchLegs.facilityId],
-    references: [facilities.id],
-  }),
   address: one(identityAddresses, {
     fields: [groundDispatchLegs.addressId],
     references: [identityAddresses.id],
@@ -150,10 +132,6 @@ export const groundDriverShiftsRelations = relations(groundDriverShifts, ({ one 
     fields: [groundDriverShifts.operatorId],
     references: [groundOperators.id],
   }),
-  facility: one(facilities, {
-    fields: [groundDriverShifts.facilityId],
-    references: [facilities.id],
-  }),
 }))
 
 export const groundServiceIncidentsRelations = relations(groundServiceIncidents, ({ one }) => ({
@@ -169,10 +147,6 @@ export const groundDispatchCheckpointsRelations = relations(
     dispatch: one(groundDispatches, {
       fields: [groundDispatchCheckpoints.dispatchId],
       references: [groundDispatches.id],
-    }),
-    facility: one(facilities, {
-      fields: [groundDispatchCheckpoints.facilityId],
-      references: [facilities.id],
     }),
     address: one(identityAddresses, {
       fields: [groundDispatchCheckpoints.addressId],

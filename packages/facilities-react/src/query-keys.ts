@@ -79,3 +79,8 @@ export const facilitiesQueryKeys = {
     [...facilitiesQueryKeys.propertyGroupMembers(), filters] as const,
   propertyGroupMember: (id: string) => [...facilitiesQueryKeys.propertyGroupMembers(), id] as const,
 }
+
+export type PlacesListFilters = FacilitiesListFilters
+export type PlaceFeaturesListFilters = FacilityFeaturesListFilters
+export type PlaceOperationSchedulesListFilters = FacilityOperationSchedulesListFilters
+export const placesQueryKeys = facilitiesQueryKeys

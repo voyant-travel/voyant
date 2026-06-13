@@ -138,9 +138,10 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 | **Driver**            | A crew member assigned to Vehicles and Dispatches.                                               | *operator, chauffeur*         |
 | **Resource**          | A finite assignable asset (guide, equipment, room, driver, vehicle) with a type and availability. | *asset, person-resource*     |
 | **Resource Pool**     | A named collection of interchangeable Resources (e.g. "French-speaking guides – Cairo").         | *team, group*                 |
-| **Accommodation Facility** | A Facility used as a lodging, meeting, pickup, dining, attraction, or operational location in an OTA, tour-operator, or DMC workflow. | *property ops*          |
+| **Place**             | A shared physical place used by OTA, tour-operator, DMC, and MICE workflows: meeting points, pickup/dropoff places, airports, stations, ports, attractions, restaurants, supplier bases, venues, and accommodation locations. | *facility as product term, generic location* |
 | **Rooming List**      | Traveler-to-room grouping or assignment data for a Booking.                                      | *hotel room management*       |
-| **Facility**          | The shared base venue concept — Properties, transfer hubs, attractions, restaurants, airports all specialize Facility. | *location, place* |
+| **Legacy Facility**   | The compatibility/table-era name for Place rows and `facilityId` fields. Keep public imports working during the v1 package move, but use Place / `@voyantjs/places` for new domain language. | *first-party facility operations* |
+| **Accommodation Location** | A Place used to locate lodging content or a Stay Component for resale/trip composition. It is not a hotel/PMS/property-operations record. | *property ops, hotel operations* |
 
 ## Money
 
@@ -220,7 +221,7 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 - A **Booking Origin** records whether a Booking came from an accepted Quote Version, Trip snapshot, Catalog price/availability response, provider/source order ref, or legacy transaction id.
 - A **Booking** is the first-party durable commitment record; do not require a generic first-party Order to create one.
 - A **Booking** holds **Allocations** against **Slots** (or Pickups, or Resources); each Allocation belongs to exactly one Booking Item.
-- Accommodation may be sold as **Sourced Inventory** or as a component of a **Product**, but hotel/property operations are not a first-party implementation scenario.
+- Accommodation may be sold as **Sourced Inventory** or as a component of a **Product**, and may reference a **Place** for where the stay happens, but hotel/property operations are not a first-party implementation scenario.
 - A **Booking Item** produces zero or more **Fulfillments**; each Fulfillment is delivered over exactly one channel.
 - An **Invoice** targets a Booking, Program, Organization, Supplier/Channel relationship, Schedule line, or explicit legacy/provider reference. It does not require a generic first-party Order.
 - A **Payment Schedule** belongs to a Booking; each schedule line resolves via a **Payment Session** to one or more **Payments**.
@@ -264,7 +265,8 @@ These terms are used loosely in conversation. Pick the canonical form below; tre
 
 - **Customer / client / buyer** — none are first-class entities. The canonical CRM record is **Person** (with optional **Organization**). On a Booking, the buyer is captured as `personId` + `organizationId` snapshot fields. Avoid "customer" / "client" except in UI copy facing the operator's own staff.
 - **Tour / experience** — usually collapse to **Product**. **Trip** and **package** are overloaded: use **Product** for an operator-sold offering, **Operated Group Departure** for a fixed-capacity product instance, and **Trip Envelope** for a customer-facing aggregate of multiple component commitments.
-- **Accommodation vs. hotel operations** — accommodation is valid as catalog inventory, sourced resale, or trip composition. Hotel/property operations are not a first-party Voyant implementation scenario.
+- **Place vs. legacy Facility** — use **Place** for shared physical places in new code and docs. `Facility` and `facilityId` remain compatibility names for current tables, routes, and public consumers.
+- **Accommodation vs. hotel operations** — accommodation is valid as catalog inventory, sourced resale, trip composition, or as a Place reference. Hotel/property operations are not a first-party Voyant implementation scenario.
 - **Quote vs. Opportunity** — the canonical sales pursuit is **Quote**. Opportunity is the old generic CRM name and should not appear in new public package surfaces.
 - **Quote Version vs. Legacy Offer** — both look like "a price proposal". **Quote Version** is the travel-native proposal revision or alternative that freezes a Trip Envelope snapshot and can be accepted into reserve. **Legacy Offer** is the transactions-package primitive for pre-v1 compatibility flows. They are not synonyms.
 - **Legacy Order / Provider Order Ref vs. Booking** — **Legacy Order** is a transactions compatibility primitive, and **Provider Order Ref** is an upstream identifier. **Booking** is the first-party durable commitment and operational record. Do not recreate a generic first-party Order when Booking origin/provenance or provider refs carry the needed meaning.
