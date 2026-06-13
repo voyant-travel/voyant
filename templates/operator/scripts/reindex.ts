@@ -24,14 +24,15 @@
 import { roomTypes } from "@voyantjs/accommodations/schema"
 import { createRoomTypeDocumentBuilder } from "@voyantjs/accommodations/service-catalog-plane"
 import {
+  createGeminiEmbeddingProvider,
   createIndexerService,
   createTypesenseIndexer,
   type DocumentBuilder,
+  type EmbeddingProvider,
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
 } from "@voyantjs/catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterProducts } from "@voyantjs/charters/schema"
 import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog-plane"
 import { cruises } from "@voyantjs/cruises/schema"

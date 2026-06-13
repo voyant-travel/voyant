@@ -29,7 +29,6 @@
   "dependencies": {
     "@voyantjs/core": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/catalog-mcp": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",

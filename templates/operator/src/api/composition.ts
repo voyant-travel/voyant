@@ -20,9 +20,12 @@ import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
-import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import {
+  createCatalogSearchHonoModule,
+  type EmbeddingProvider,
+  executeSemanticSearch,
+} from "@voyantjs/catalog"
 import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
-import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
 import {
   createCommerceHonoModules,

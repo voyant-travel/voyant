@@ -1,6 +1,5 @@
-import { createMcpToolRegistry } from "@voyantjs/catalog-mcp"
 import { describe, expect, it } from "vitest"
-
+import { createMcpToolRegistry } from "../src/mcp-registry.js"
 import { createTripTool, priceTripTool, type TravelComposerMcpServices } from "../src/mcp-tools.js"
 import type { Trip } from "../src/service.js"
 
@@ -42,7 +41,6 @@ function makeRegistry(services?: Partial<TravelComposerMcpServices>) {
       actor: "staff",
       tenantId: "default",
       defaultScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
-      catalog: {},
       travelComposer: services,
     } as never,
   })

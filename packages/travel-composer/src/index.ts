@@ -58,6 +58,23 @@ export function createTravelComposerHonoModule(options: TravelComposerHonoModule
   return honoModule
 }
 
+export type {
+  McpToolContent,
+  McpToolContext,
+  McpToolDefinition,
+  McpToolErrorCode,
+  McpToolHandler,
+  McpToolResult,
+} from "./mcp-contract.js"
+export { McpToolError } from "./mcp-contract.js"
+export {
+  type CreateMcpToolRegistryOptions,
+  createMcpToolRegistry,
+  enforceAudienceAuthorization,
+  type McpToolListEntry,
+  type McpToolRegistry,
+  requireService,
+} from "./mcp-registry.js"
 export {
   type CreateTripArgs,
   createTripTool,

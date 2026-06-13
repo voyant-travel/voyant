@@ -78,12 +78,12 @@ Voyant already has many of the required primitives:
 - **Pre-booking holds** through `booking_drafts` plus `availability_holds` for
   owned product slots. The operator template ships a scheduled draft reaper
   that releases expired holds and deletes abandoned drafts.
-- **Catalog RAG** in `@voyantjs/catalog-rag` for embedding providers,
+- **Catalog semantic search** in `@voyantjs/catalog` for embedding providers,
   semantic/hybrid search orchestration, model-version helpers, and
   cross-audience federated search.
-- **Catalog MCP** in `@voyantjs/catalog-mcp` for AI-safe catalog tools:
-  `search_catalog`, `get_entity`, `suggest_alternatives`,
-  `check_availability`, and `get_quote`.
+- **Catalog HTTP APIs** for AI-safe catalog access. Agent runtimes define local
+  tool wrappers over `/v1/admin/catalog/search`, `/v1/public/catalog/search`,
+  and drill-down APIs instead of depending on a first-party catalog MCP package.
 - **Flights vertical** in `@voyantjs/flights` for live-API flight contracts,
   multi-connection fan-out, itinerary fingerprinting, booking snapshots, and
   reference-data provider contracts. Public/admin route mounting remains a
@@ -558,8 +558,8 @@ Framework-owned:
 
 - public contracts for experience sessions and trips
 - React hooks for composer state
-- MCP/tool definitions for composer operations, layered above
-  `@voyantjs/catalog-mcp`
+- local tool definitions for composer operations, layered above catalog HTTP
+  APIs when catalog search is needed
 - workflow helpers
 - default policy implementation
 - source-installed UI blocks for chat, itinerary cards, alternative selection,

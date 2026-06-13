@@ -13,10 +13,10 @@
  *      ones get skipped on vector queries and re-embedded by the
  *      `bulkReindex(forceReembed: true)` job.
  *
- * See `docs/architecture/catalog-rag-architecture.md` §8.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
-import type { IndexerCapabilities } from "@voyantjs/catalog"
+import type { IndexerCapabilities } from "../indexer/contract.js"
 
 import type { EmbeddingProviderCapabilities } from "./contract.js"
 

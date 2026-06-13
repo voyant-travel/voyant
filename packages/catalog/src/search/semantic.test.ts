@@ -1,12 +1,11 @@
+import { describe, expect, it, vi } from "vitest"
+import type { EmbeddingProvider } from "../embeddings/contract.js"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
   IndexerSlice,
   SearchRequest,
-} from "@voyantjs/catalog"
-import { describe, expect, it, vi } from "vitest"
-
-import type { EmbeddingProvider } from "../embeddings/contract.js"
+} from "../indexer/contract.js"
 import { executeBYOVectorSearch, executeSemanticSearch } from "./semantic.js"
 
 function makeAdapter(capabilities: Partial<IndexerCapabilities> = {}): IndexerAdapter & {

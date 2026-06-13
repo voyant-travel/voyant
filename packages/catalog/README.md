@@ -2,7 +2,10 @@
 
 Catalog plane foundation for Voyant. The shared cross-cutting infrastructure that vertical modules — `products`, `cruises`, `accommodations`, `charters`, `extras` — adopt to participate in a normalized discovery / overlay / snapshot / search surface.
 
-This is **Phase 1** of the catalog plane. Phase 2 (semantic search, embeddings, AI agent access via MCP) ships in `@voyantjs/catalog-rag`. Phase 3 (the flights vertical, the swappable `ReferenceDataProvider`) ships in `@voyantjs/flights`.
+This package owns the catalog plane foundation plus semantic search primitives:
+embedding providers, model compatibility helpers, hybrid/semantic search, and
+cross-audience federation. Agent runtimes wrap the catalog HTTP APIs directly;
+MCP packaging is application-owned.
 
 See [`docs/architecture/catalog-architecture.md`](../../docs/architecture/catalog-architecture.md) for the full design.
 
@@ -132,8 +135,11 @@ projection. Deployments provide the indexer and optional semantic executor per
 request:
 
 ```typescript
-import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
-import { executeSemanticSearch, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+import {
+  createCatalogSearchHonoModule,
+  executeSemanticSearch,
+  type EmbeddingProvider,
+} from "@voyantjs/catalog"
 
 export const catalogSearchModule = createCatalogSearchHonoModule({
   resolveRuntime: (c) => buildCatalogSearchRuntime(c),

@@ -1,19 +1,11 @@
 /**
- * MCP tool registry — register tool definitions, dispatch by name with
- * args validation + context injection.
- *
- * The registry is transport-agnostic. Templates wire `dispatchTool` into
- * their MCP transport's `CallTool` handler — typically the
- * `@modelcontextprotocol/sdk` server, but anything that follows the MCP
- * tool-call shape works.
- *
- * See `docs/architecture/catalog-rag-architecture.md` §3.
+ * Transport-agnostic registry for trip-composer agent tools.
  */
 
 import type { z } from "zod"
 
-import type { McpToolContext, McpToolDefinition, McpToolResult } from "./contract.js"
-import { McpToolError } from "./contract.js"
+import type { McpToolContext, McpToolDefinition, McpToolResult } from "./mcp-contract.js"
+import { McpToolError } from "./mcp-contract.js"
 
 export interface McpToolRegistry {
   /** The context used for all tool dispatches in this registry. */
@@ -25,7 +17,7 @@ export interface McpToolRegistry {
   /** Dispatch a tool call by name. Validates args with the tool's zod schema. */
   dispatchTool(name: string, args: unknown): Promise<McpToolResult>
   /** Look up a registered tool. Returns `undefined` if not registered. */
-  // biome-ignore lint/suspicious/noExplicitAny: registry is heterogeneous over args -- owner: catalog-mcp; existing suppression is intentional pending typed cleanup.
+  // biome-ignore lint/suspicious/noExplicitAny: registry is heterogeneous over args -- owner: travel-composer; existing suppression is intentional pending typed cleanup.
   get(name: string): McpToolDefinition<any, McpToolResult> | undefined
 }
 
@@ -45,7 +37,7 @@ export interface CreateMcpToolRegistryOptions {
 }
 
 export function createMcpToolRegistry(options: CreateMcpToolRegistryOptions): McpToolRegistry {
-  // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool args -- owner: catalog-mcp; existing suppression is intentional pending typed cleanup.
+  // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool args -- owner: travel-composer; existing suppression is intentional pending typed cleanup.
   const tools = new Map<string, McpToolDefinition<any, McpToolResult>>()
 
   return {
@@ -110,14 +102,14 @@ function errorResult(message: string, code: string, meta?: Record<string, unknow
 }
 
 /**
- * Helper for tools to assert that a required catalog service was injected
+ * Helper for tools to assert that a required service was injected
  * into the context. Throws `MISSING_SERVICE` if not, which the dispatcher
  * translates into a structured error.
  */
 export function requireService<T>(service: T | undefined, name: string): T {
   if (!service) {
     throw new McpToolError(
-      `MCP tool requires the "${name}" service to be wired into the context, but it was not provided. Configure the registry's catalog services or omit tools that depend on it.`,
+      `MCP tool requires the "${name}" service to be wired into the context, but it was not provided. Configure the registry services or omit tools that depend on it.`,
       "MISSING_SERVICE",
       { service: name },
     )

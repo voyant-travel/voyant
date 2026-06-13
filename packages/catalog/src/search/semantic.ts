@@ -11,12 +11,16 @@
  * `query_embedding` directly — `executeSemanticSearch` honors a
  * caller-supplied vector and skips the embed call.
  *
- * See `docs/architecture/catalog-rag-architecture.md` §3 + §6.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
-import type { IndexerAdapter, IndexerSlice, SearchRequest, SearchResults } from "@voyantjs/catalog"
-
 import type { EmbeddingProvider } from "../embeddings/contract.js"
+import type {
+  IndexerAdapter,
+  IndexerSlice,
+  SearchRequest,
+  SearchResults,
+} from "../indexer/contract.js"
 
 export interface SemanticSearchOptions {
   /** Adapter to query. */
