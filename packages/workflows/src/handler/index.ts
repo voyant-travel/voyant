@@ -28,7 +28,11 @@ export type { StepJournalEntry } from "../runtime/journal.js"
 export type { ExecuteWorkflowStepRequest, ExecuteWorkflowStepResponse, StepRunner }
 export { executeWorkflowStep }
 
-import { PROTOCOL_VERSION, type ProtocolVersion } from "../protocol/index.js"
+import {
+  PROTOCOL_VERSION,
+  type ProtocolVersion,
+  type WorkflowActivationMetadata,
+} from "../protocol/index.js"
 import type { RateLimiter } from "../rate-limit/index.js"
 import type { RuntimeEnvironment } from "../runtime/ctx.js"
 import type { JournalSlice, StepJournalEntry } from "../runtime/journal.js"
@@ -104,6 +108,7 @@ export interface WorkflowStepRequest {
     tags: string[]
     startedAt: number
   }
+  activation?: WorkflowActivationMetadata
 }
 
 /** The JSON response body the tenant returns. */
@@ -115,6 +120,12 @@ export interface StepHandlerError {
   message: string
   details?: unknown
 }
+
+export {
+  type BuildResumeStepRequestInput,
+  type BuildResumeStepRequestResult,
+  buildResumeStepRequest,
+} from "./resume.js"
 
 /** Build an HTTP fetch-style handler. */
 export function createStepHandler(deps: StepHandlerDeps = {}): (req: Request) => Promise<Response> {
@@ -371,6 +382,9 @@ function parseRequest(
       deadline: r.deadline,
       tenantMeta: r.tenantMeta as WorkflowStepRequest["tenantMeta"],
       runMeta: r.runMeta as WorkflowStepRequest["runMeta"],
+      activation: isObjectRecord(r.activation)
+        ? (r.activation as WorkflowActivationMetadata)
+        : undefined,
     },
   }
 }
@@ -392,4 +406,8 @@ function errorBody(error: string, message: string, details?: unknown): StepHandl
 
 function errMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }

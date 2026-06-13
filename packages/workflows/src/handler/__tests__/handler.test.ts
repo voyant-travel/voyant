@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest"
+import { snapshotWorkflowWaitpoint } from "../../protocol/index.js"
 import { emptyJournal } from "../../runtime/journal.js"
 import type { RunTrigger } from "../../types.js"
 import { __resetRegistry, workflow } from "../../workflow.js"
-import { createStepHandler, handleStepRequest, type WorkflowStepRequest } from "../index.js"
+import {
+  buildResumeStepRequest,
+  createStepHandler,
+  handleStepRequest,
+  type WorkflowStepRequest,
+} from "../index.js"
 
 beforeEach(() => {
   __resetRegistry()
@@ -231,6 +237,92 @@ describe("createStepHandler (fetch adapter)", () => {
     expect(body.output).toEqual({ total: 15 })
     // Step "a" was already in the journal, so its side effect ran 0 additional times.
     expect(sideEffect).toBe(0)
+  })
+
+  it("continues a Cloud-managed resume activation from a persisted waitpoint", async () => {
+    let beforeWaitExecutions = 0
+    let afterWaitExecutions = 0
+    workflow<void, { greeting: string; after: number }>({
+      id: "wf",
+      async run(_i, ctx) {
+        await ctx.step("before-wait", () => {
+          beforeWaitExecutions += 1
+          return "ready"
+        })
+        const event = await ctx.waitForEvent<{ name: string }>("greet", { timeout: "1h" })
+        const after = await ctx.step("after-wait", () => {
+          afterWaitExecutions += 1
+          return 7
+        })
+        return { greeting: `hello ${event!.name}`, after }
+      },
+    })
+
+    const first = await handleStepRequest(mkRequest())
+    expect(first.status).toBe(200)
+    expect(first.body.status).toBe("waiting")
+    if (first.body.status !== "waiting") throw new Error("expected waiting")
+    expect(beforeWaitExecutions).toBe(1)
+    expect(afterWaitExecutions).toBe(0)
+
+    const pending = first.body.waitpoints[0]!
+    const storedWaitpoint = snapshotWorkflowWaitpoint(pending, 1_700_000_000_000)
+    const built = buildResumeStepRequest({
+      ...mkRequest({
+        journal: first.body.journal,
+        invocationCount: 2,
+      }),
+      pendingWaitpoints: [storedWaitpoint],
+      waitpointKey: storedWaitpoint.key,
+      resumePayload: { name: "ada" },
+      resolvedAt: 1_700_000_001_000,
+      workflowReleaseId: "rel_123",
+      bundle: { key: "bundles/workflow.mjs", hash: "sha256:abc123" },
+      freshness: { dispatchedAt: 1_700_000_000_900, attempt: 1 },
+    })
+
+    expect(built.ok).toBe(true)
+    if (!built.ok) throw new Error(built.message)
+    expect(built.waitpoint).toMatchObject({
+      id: pending.clientWaitpointId,
+      key: `EVENT:${pending.clientWaitpointId}`,
+      kind: "EVENT",
+      eventName: "greet",
+      timeoutMs: 3_600_000,
+    })
+    expect(built.request.activation).toMatchObject({
+      kind: "resume",
+      workflowReleaseId: "rel_123",
+      waitpoint: built.waitpoint,
+    })
+
+    const resumed = await handleStepRequest(built.request)
+    expect(resumed.status).toBe(200)
+    expect(resumed.body.status).toBe("completed")
+    if (resumed.body.status !== "completed") throw new Error("expected completed")
+    expect(resumed.body.output).toEqual({ greeting: "hello ada", after: 7 })
+    expect(beforeWaitExecutions).toBe(1)
+    expect(afterWaitExecutions).toBe(1)
+  })
+
+  it("rejects a resume activation when the selected waitpoint is not pending", () => {
+    const built = buildResumeStepRequest({
+      ...mkRequest(),
+      pendingWaitpoints: [
+        {
+          clientWaitpointId: "event:greet:1",
+          kind: "EVENT",
+          meta: { eventType: "greet" },
+        },
+      ],
+      waitpointId: "event:other:1",
+      resumePayload: { name: "ada" },
+    })
+
+    expect(built).toMatchObject({
+      ok: false,
+      code: "waitpoint_not_found",
+    })
   })
 
   it("threads a custom now() into step durations", async () => {

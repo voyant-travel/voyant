@@ -5,6 +5,8 @@
 // (test harness, adapters, dashboards) can build and inspect wire
 // payloads without reaching into runtime internals.
 
+import type { JournalSlice, WaitpointResolutionEntry } from "../runtime/journal.js"
+
 export type ProtocolVersion = 1
 export const PROTOCOL_VERSION: ProtocolVersion = 1
 
@@ -101,6 +103,33 @@ export interface WorkflowManifestBundle {
   hashAlgorithm?: "sha256" | "sha512" | (string & {})
 }
 
+export interface WorkflowBundleReference {
+  key?: string
+  url?: string
+  signedUrl?: string
+  hash?: string
+  hashAlgorithm?: "sha256" | "sha512" | (string & {})
+  sizeBytes?: number
+}
+
+export interface WorkflowPayloadReference {
+  location: PayloadLocation
+  key?: string
+  url?: string
+  hash?: string
+  hashAlgorithm?: "sha256" | "sha512" | (string & {})
+  sizeBytes?: number
+  contentType?: string
+}
+
+export interface WorkflowJournalReference {
+  location: PayloadLocation
+  key?: string
+  url?: string
+  hash?: string
+  hashAlgorithm?: "sha256" | "sha512" | (string & {})
+}
+
 export interface WorkflowManifestDiagnostic {
   code: string
   severity: "info" | "warning" | "error"
@@ -155,6 +184,195 @@ export interface EventFilterManifestEntry {
   payloadHash: string
   /** Workflow id this filter triggers. */
   targetWorkflowId: string
+}
+
+export interface WorkflowWaitpointSource {
+  clientWaitpointId: string
+  kind: WaitpointKind
+  meta: Record<string, unknown>
+  timeoutMs?: number
+}
+
+export interface WorkflowWaitpointSnapshot {
+  /** Framework-stable waitpoint id, usually the runtime client waitpoint id. */
+  id: string
+  /** Stable key Cloud can store and later address without re-deriving metadata. */
+  key: string
+  kind: WaitpointKind
+  eventName?: string
+  signalName?: string
+  tokenId?: string
+  expiresAt?: number
+  timeoutMs?: number
+  metadata: Record<string, unknown>
+}
+
+export type WorkflowWaitpointResumeTarget = WorkflowWaitpointSource | WorkflowWaitpointSnapshot
+
+export interface WorkflowActivationFreshness {
+  dispatchedAt: number
+  expiresAt?: number
+  attempt?: number
+  leaseId?: string
+}
+
+export type WorkflowActivationMetadata =
+  | {
+      kind: "initial"
+      workflowReleaseId?: string
+      releaseId?: string
+      bundle?: WorkflowBundleReference
+      freshness?: WorkflowActivationFreshness
+    }
+  | WorkflowResumeActivationMetadata
+
+export interface WorkflowResumeActivationMetadata {
+  kind: "resume"
+  workflowReleaseId?: string
+  releaseId?: string
+  bundle?: WorkflowBundleReference
+  journalRef?: WorkflowJournalReference
+  waitpoint: WorkflowWaitpointSnapshot
+  resumePayloadRef?: WorkflowPayloadReference
+  freshness?: WorkflowActivationFreshness
+}
+
+export interface ApplyWorkflowResumeInput {
+  journal: JournalSlice
+  waitpoints: readonly WorkflowWaitpointResumeTarget[]
+  waitpointId?: string
+  waitpointKey?: string
+  parkedAt?: number
+  payload?: unknown
+  payloadRef?: WorkflowPayloadReference
+  resolvedAt?: number
+  matchedEventId?: string
+  source?: WaitpointResolutionEntry["source"]
+}
+
+export type ApplyWorkflowResumeResult =
+  | {
+      ok: true
+      journal: JournalSlice
+      waitpoint: WorkflowWaitpointSnapshot
+      resolution: WaitpointResolutionEntry
+    }
+  | {
+      ok: false
+      code: "missing_waitpoint_selector" | "waitpoint_not_found"
+      message: string
+    }
+
+export function workflowWaitpointKey(waitpoint: WorkflowWaitpointResumeTarget): string {
+  if (isWorkflowWaitpointSnapshot(waitpoint)) return waitpoint.key
+  return `${waitpoint.kind}:${waitpoint.clientWaitpointId}`
+}
+
+export function snapshotWorkflowWaitpoint(
+  waitpoint: WorkflowWaitpointResumeTarget,
+  parkedAt = Date.now(),
+): WorkflowWaitpointSnapshot {
+  const metadata = {
+    ...(isWorkflowWaitpointSnapshot(waitpoint) ? waitpoint.metadata : waitpoint.meta),
+  }
+  const timeoutMs = waitpoint.timeoutMs
+  const wakeAt = typeof metadata.wakeAt === "number" ? metadata.wakeAt : undefined
+  const expiresAt = isWorkflowWaitpointSnapshot(waitpoint)
+    ? waitpoint.expiresAt
+    : (wakeAt ??
+      (typeof timeoutMs === "number" && timeoutMs > 0 ? parkedAt + timeoutMs : undefined))
+
+  const snapshot: WorkflowWaitpointSnapshot = {
+    id: workflowWaitpointId(waitpoint),
+    key: workflowWaitpointKey(waitpoint),
+    kind: waitpoint.kind,
+    metadata,
+  }
+  if (typeof timeoutMs === "number") snapshot.timeoutMs = timeoutMs
+  if (typeof expiresAt === "number") snapshot.expiresAt = expiresAt
+  if (waitpoint.kind === "EVENT") {
+    const eventName = isWorkflowWaitpointSnapshot(waitpoint)
+      ? waitpoint.eventName
+      : typeof metadata.eventType === "string"
+        ? metadata.eventType
+        : undefined
+    if (eventName) snapshot.eventName = eventName
+  }
+  if (waitpoint.kind === "SIGNAL") {
+    const signalName = isWorkflowWaitpointSnapshot(waitpoint)
+      ? waitpoint.signalName
+      : typeof metadata.signalName === "string"
+        ? metadata.signalName
+        : undefined
+    if (signalName) snapshot.signalName = signalName
+  }
+  if (waitpoint.kind === "MANUAL") {
+    const tokenId = isWorkflowWaitpointSnapshot(waitpoint)
+      ? waitpoint.tokenId
+      : typeof metadata.tokenId === "string"
+        ? metadata.tokenId
+        : undefined
+    if (tokenId) snapshot.tokenId = tokenId
+  }
+  return snapshot
+}
+
+export function applyWorkflowResumeToJournal(
+  input: ApplyWorkflowResumeInput,
+): ApplyWorkflowResumeResult {
+  if (!input.waitpointId && !input.waitpointKey) {
+    return {
+      ok: false,
+      code: "missing_waitpoint_selector",
+      message: "resume requires waitpointId or waitpointKey",
+    }
+  }
+
+  const matched = input.waitpoints.find((waitpoint) => {
+    if (input.waitpointId && workflowWaitpointId(waitpoint) === input.waitpointId) return true
+    return (
+      input.waitpointKey !== undefined && workflowWaitpointKey(waitpoint) === input.waitpointKey
+    )
+  })
+
+  if (!matched) {
+    const selector = input.waitpointId
+      ? `waitpointId=${input.waitpointId}`
+      : `waitpointKey=${input.waitpointKey}`
+    return {
+      ok: false,
+      code: "waitpoint_not_found",
+      message: `no pending waitpoint matches ${selector}`,
+    }
+  }
+
+  const journal = structuredClone(input.journal) as JournalSlice
+  const resolution: WaitpointResolutionEntry = {
+    kind: matched.kind,
+    resolvedAt: input.resolvedAt ?? Date.now(),
+    source: input.source ?? "live",
+  }
+  if ("payload" in input) resolution.payload = input.payload
+  if (input.payloadRef) resolution.payloadRef = input.payloadRef
+  if (input.matchedEventId) resolution.matchedEventId = input.matchedEventId
+  journal.waitpointsResolved[workflowWaitpointId(matched)] = resolution
+
+  return {
+    ok: true,
+    journal,
+    waitpoint: snapshotWorkflowWaitpoint(matched, input.parkedAt ?? resolution.resolvedAt),
+    resolution,
+  }
+}
+
+function workflowWaitpointId(waitpoint: WorkflowWaitpointResumeTarget): string {
+  return isWorkflowWaitpointSnapshot(waitpoint) ? waitpoint.id : waitpoint.clientWaitpointId
+}
+
+function isWorkflowWaitpointSnapshot(
+  waitpoint: WorkflowWaitpointResumeTarget,
+): waitpoint is WorkflowWaitpointSnapshot {
+  return "id" in waitpoint
 }
 
 // WebSocket stream events — full union in docs/runtime-protocol.md §6.2.
