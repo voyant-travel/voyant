@@ -51,6 +51,7 @@
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
@@ -58,7 +59,6 @@
     "@voyantjs/legal-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -75,6 +75,9 @@
       "optional": true
     },
     "@voyantjs/catalog-react": {
+      "optional": true
+    },
+    "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/relationships-react": {
@@ -96,9 +99,6 @@
       "optional": true
     },
     "@voyantjs/products-react": {
-      "optional": true
-    },
-    "@voyantjs/suppliers-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -128,6 +128,7 @@
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
@@ -136,7 +137,6 @@
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",

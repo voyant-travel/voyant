@@ -74,6 +74,8 @@ describe("operator runtime composition", () => {
       ["@voyantjs/sellability", "@voyantjs/commerce"],
       ["@voyantjs/promotions", "@voyantjs/commerce"],
       ["@voyantjs/availability", "@voyantjs/operations/availability"],
+      ["@voyantjs/external-refs", "@voyantjs/distribution/external-refs"],
+      ["@voyantjs/suppliers", "@voyantjs/distribution/suppliers"],
       ["@voyantjs/resources", "@voyantjs/operations/resources"],
     ])
     const schemaModules = (voyantConfig.modules ?? []).map(entryName)

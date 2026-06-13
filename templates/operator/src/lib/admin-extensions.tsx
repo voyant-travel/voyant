@@ -145,7 +145,7 @@ function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
 }
 
 // App-owned header action on the package-delivered bookings list: composing
-// a trip is an operator concept (the travel-composer pages are app-custom),
+// a trip is an operator concept (the trip-composer pages are app-custom),
 // so the button rides in through the extension factory's
 // `indexHeaderActions` option instead of a host route file.
 function ComposeTripButton() {
@@ -324,7 +324,7 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the list keeps its filters local), and the pages are the packaged hosts
-// from @voyantjs/suppliers-react/admin — the route files under
+// from @voyantjs/distribution-react/suppliers/admin — the route files under
 // src/routes/_workspace/suppliers/* only bind route params onto them. The
 // detail page's customer-payment-policy card arrives via finance-ui's widget
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔
@@ -381,14 +381,14 @@ function createProductsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Travel composer is package-delivered (packaged-admin RFC Phase 2): nav AND
-// the route implementations come from @voyantjs/travel-composer-react/admin —
+// Trip composer is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementations come from @voyantjs/trip-composer-react/admin —
 // the Trips group (spliced after Bookings via `insertAfter`, with All trips /
 // New trip sub-items), the trips list, and the detail page whose Edit mode
 // lazy-mounts the packaged trip composer. The app only supplies the localized
 // labels and the icon.
-function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.travelComposer({
+function createTripComposerExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.tripComposer({
     labels: {
       trips: messages.trips,
       allTrips: messages.allTrips,
@@ -466,7 +466,7 @@ export function createOperatorAdminExtensions(
     createResourcesExtension(messages),
     createNotificationsExtension(messages),
     createPromotionsExtension(messages),
-    createTravelComposerExtension(messages),
+    createTripComposerExtension(messages),
     createActionLedgerExtension(messages),
   )
 }

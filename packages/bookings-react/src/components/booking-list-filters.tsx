@@ -1,5 +1,7 @@
 "use client"
 
+import type { Supplier } from "@voyantjs/distribution-react/suppliers"
+import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
 import type { AvailabilitySlotRecord } from "@voyantjs/operations-react/availability"
 import { useSlots } from "@voyantjs/operations-react/availability"
 import type {
@@ -10,8 +12,6 @@ import type {
 import { useProductCategories, useProductOptions, useProducts } from "@voyantjs/products-react"
 import type { OrganizationRecord, PersonRecord } from "@voyantjs/relationships-react"
 import { useOrganizations, usePeople } from "@voyantjs/relationships-react"
-import type { Supplier } from "@voyantjs/suppliers-react"
-import { useSuppliers } from "@voyantjs/suppliers-react"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"

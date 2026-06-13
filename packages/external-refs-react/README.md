@@ -1,5 +1,10 @@
 # @voyantjs/external-refs-react
 
+Compatibility facade. External refs React implementation now lives under
+`@voyantjs/distribution-react/external-refs`; keep this package only for
+existing imports until the v1 public-name policy removes or formally deprecates
+it.
+
 The external-refs client tier: headless data hooks/clients plus the styled UI
 components (formerly `@voyantjs/external-refs-ui`).
 
@@ -19,6 +24,8 @@ import { ExternalRefsUiMessagesProvider } from "@voyantjs/external-refs-react/ui
 import { externalRefsUiEn } from "@voyantjs/external-refs-react/i18n/en"
 import { externalRefsUiRo } from "@voyantjs/external-refs-react/i18n/ro"
 ```
+
+New first-party code should import from `@voyantjs/distribution-react/external-refs`.
 
 Importable React UI components for Voyant external-refs. Bundler-consumed (Vite, Next.js, webpack, etc.).
 

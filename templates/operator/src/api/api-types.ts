@@ -4,8 +4,9 @@ import type { BookingRoutes } from "@voyantjs/bookings/routes"
 import type { MarketsRoutes } from "@voyantjs/commerce/markets/routes"
 import type { PricingRoutes } from "@voyantjs/commerce/pricing/routes"
 import type { SellabilityRoutes } from "@voyantjs/commerce/sellability/routes"
+import type { ExternalRefsRoutes } from "@voyantjs/distribution/external-refs/routes"
 import type { DistributionRoutes } from "@voyantjs/distribution/routes"
-import type { ExternalRefsRoutes } from "@voyantjs/external-refs/routes"
+import type { SupplierRoutes } from "@voyantjs/distribution/suppliers/routes"
 import type { FinanceRoutes } from "@voyantjs/finance/routes"
 import type { IdentityRoutes } from "@voyantjs/identity/routes"
 import type { ProductRoutes } from "@voyantjs/inventory/routes"
@@ -13,7 +14,6 @@ import type { AvailabilityRoutes } from "@voyantjs/operations/availability/route
 import type { ResourcesRoutes } from "@voyantjs/operations/resources/routes"
 import type { QuotesRoutes } from "@voyantjs/quotes/routes"
 import type { RelationshipsRoutes } from "@voyantjs/relationships/routes"
-import type { SupplierRoutes } from "@voyantjs/suppliers/routes"
 import type { Hono } from "hono"
 
 /**

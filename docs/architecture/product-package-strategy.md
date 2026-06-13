@@ -448,8 +448,8 @@ Candidate packages:
 
 Adjacent packages to integrate through an explicit Interface, not fold blindly:
 
-- `@voyantjs/travel-composer`
-- `@voyantjs/travel-composer-react`
+- `@voyantjs/trip-composer`
+- `@voyantjs/trip-composer-react`
 
 Adjacent legacy packages to decouple and retire through a dedicated ADR:
 
@@ -653,8 +653,8 @@ ADR acceptance checklist:
 
 Candidate packages:
 
-- `@voyantjs/travel-composer`
-- `@voyantjs/travel-composer-react`
+- `@voyantjs/trip-composer`
+- `@voyantjs/trip-composer-react`
 
 Problem:
 
@@ -669,7 +669,7 @@ of that workspace. But the workspace and the quote pursuit are different
 concerns: staff or automation may compose, reprice, and reserve before or after a
 Quote Version exists.
 
-Renaming `travel-composer` to `offers` would make the vocabulary worse. ADR-0004
+Renaming Trip Composer to `offers` would make the vocabulary worse. ADR-0004
 preserves `transactions` Offer as a separate primitive, and vertical/source
 packages already use offer nouns for live supplier responses such as flight
 offers. The composer output should become a Quote Version snapshot, booking
@@ -677,15 +677,14 @@ draft, reservation, or checkout flow, not another generic Offer.
 
 Solution:
 
-Rename the current `@voyantjs/travel-composer` and
-`@voyantjs/travel-composer-react` packages to `@voyantjs/trip-composer` and
-`@voyantjs/trip-composer-react` in the v1 package move. Keep the composer as a
-distinct standalone workspace Module, not a `quotes` subpath. `trip-composer` is
-more precise because the Module owns the Trip Envelope workspace, and it avoids
-the vocabulary collision that `offers` would create. Let Quotes
-reference frozen composer snapshots through a narrow Interface; let Catalog
-provide source/search/price-availability Interfaces; let Bookings and Finance
-own final commitment and collection records.
+The public package names are `@voyantjs/trip-composer` and
+`@voyantjs/trip-composer-react`. Keep the composer as a distinct standalone
+workspace Module, not a `quotes` subpath. `trip-composer` is precise because the
+Module owns the Trip Envelope workspace, and it avoids the vocabulary collision
+that `offers` would create. Let Quotes reference frozen composer snapshots
+through a narrow Interface; let Catalog provide source/search/price-availability
+Interfaces; let Bookings and Finance own final commitment and collection
+records.
 
 Required cleanup:
 
@@ -695,9 +694,9 @@ Required cleanup:
   snapshot, reserve, start checkout.
 - Keep manual and dynamic composition in the same workspace if they converge on
   the same Trip Envelope semantics.
-- Remove `travel-composer` public package names before v1. Temporary aliases are
-  acceptable only inside the migration branch if they keep intermediate commits
-  verifiable.
+- Remove any old `travel-composer` public package names before v1. Temporary
+  aliases are acceptable only inside the migration branch if they keep
+  intermediate commits verifiable.
 
 Proposal-to-reserve trace:
 
@@ -829,8 +828,13 @@ one workflow.
 Solution:
 
 Fold supplier runtime and external reference runtime into Distribution in the v1
-package move. Keep Supplier and Channel distinct inside the Distribution domain:
-Supplier is procurement/source/delivery-side, while Channel is outbound resale or
+package move. Current v1 owner paths are
+`@voyantjs/distribution/suppliers` and
+`@voyantjs/distribution/external-refs`; the old `@voyantjs/suppliers` and
+`@voyantjs/external-refs` package names are compatibility facades until the v1
+public-name policy removes or deprecates them. Keep Supplier and Channel
+distinct inside the Distribution domain: Supplier is
+procurement/source/delivery-side, while Channel is outbound resale or
 distribution-side. The shared Module should own external identity, mappings,
 source/operator links, adapter-facing references, channel push, allotments, and
 reconciliation.
@@ -852,10 +856,14 @@ procurement language into an outbound-only Distribution meaning.
 Required cleanup:
 
 - Keep `@voyantjs/suppliers-contracts` separate unless ADR-0002 changes.
-- Move schema ownership only through the migration contract below; do not strand
-  supplier tables behind a deleted package name.
-- Replace broad `external-refs-react` imports with Distribution React surfaces
-  or narrow extension points.
+- Move schema/template manifest ownership only through the migration contract
+  below; do not strand supplier or external-ref tables behind deleted package
+  names. During the owner-path phase, legacy schema package entries may re-export
+  Distribution-owned schema files for manifest parity.
+- Replace broad `external-refs-react` and `suppliers-react` imports in
+  first-party runtime/template code with Distribution React owner paths or
+  narrow extension points. Reusable packages may keep compatibility imports when
+  retargeting would introduce UI peer cycles.
 - Keep supplier costing and invoices in Finance; Distribution can reference
   them but should not own ledger state.
 - Update `UBIQUITOUS_LANGUAGE.md` so Distribution clearly covers supplier-side
@@ -1144,10 +1152,9 @@ blockers are removed; once it passes, wire it into the normal architecture lane.
    durable concern into Quotes, Commerce, Trip Composer, Bookings, Finance,
    Legal, Relationships, Distribution, or vertical adapters as described in
    §5.4.
-11. Rename `@voyantjs/travel-composer` and
-   `@voyantjs/travel-composer-react` to standalone `@voyantjs/trip-composer`
-   and `@voyantjs/trip-composer-react`; do not expose the composer as a
-   `quotes` subpath and do not rename it to `offers`.
+11. Keep standalone `@voyantjs/trip-composer` and
+   `@voyantjs/trip-composer-react` as the public v1 package names; do not expose
+   the composer as a `quotes` subpath and do not rename it to `offers`.
 12. Fold suppliers and external-refs into distribution as the external
    counterparty/integration Module, while preserving Supplier and Channel as
    distinct roles.
@@ -1189,10 +1196,9 @@ Critical path:
   Distribution supplier/external-ref migration, admin/storefront package
   rationalization, and contract-package rename/compatibility planning.
 - Deferred if time-boxed: optional MICE can wait unless v1 explicitly ships MICE
-  support; `trip-composer` rename can wait only if no public v1 package exposes
-  the old `travel-composer` name. Do not ship half-moved public packages: either
-  finish the target move or keep the old package with an explicit legacy/deferred
-  status.
+  support; no public v1 package should expose the old `travel-composer` name. Do
+  not ship half-moved public packages: either finish the target move or keep the
+  old package with an explicit legacy/deferred status.
 
 ### 8.1 Execution Tracking
 
@@ -1212,7 +1218,7 @@ Schema and package moves:
 - [#1799: legal: replace order terms and transaction refs with target-linked legal records](https://github.com/voyantjs/voyant/issues/1799)
 - [#1800: distribution: fold suppliers and external refs into Distribution](https://github.com/voyantjs/voyant/issues/1800)
 - [#1801: operations: consolidate availability, resources, allocation, ground, and places](https://github.com/voyantjs/voyant/issues/1801)
-- [#1802: trip-composer: rename travel-composer and own reservation plans](https://github.com/voyantjs/voyant/issues/1802)
+- [#1802: trip-composer: rename Travel Composer and own reservation plans](https://github.com/voyantjs/voyant/issues/1802)
 
 Existing package-scope issues that now fit this strategy:
 
@@ -1267,7 +1273,7 @@ sketches/tests, schema moves, and test-parity gates are complete.
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |
 | Catalog Item | Use canonical Catalog Item terminology in docs and product language while preserving the actual Catalog Projection Interface where that is the supported code contract. | Do not invent a `CatalogEntry` compatibility alias; reconcile docs/comments and any stray `CatalogItem` identifiers with `CatalogProjection` intentionally. |
-| Trip Composer | Rename `travel-composer` to standalone `trip-composer`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Migrate package names, route prefixes, admin extension ids, tests, and template manifests as part of the v1 package move. |
+| Trip Composer | Use standalone `trip-composer`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Keep package names, route prefixes, admin extension ids, tests, and template manifests on the Trip Composer vocabulary. |
 | Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`. Keep `transactions-contracts` only as temporary legacy contracts if external consumers still need them. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
 
 ## 10. Current Package Disposition
@@ -1306,7 +1312,7 @@ stay unchanged.
 | --- | --- | --- |
 | `@voyantjs/relationships`, `@voyantjs/relationships-react`, `@voyantjs/quotes`, `@voyantjs/quotes-react` | Keep as the split Relationships and Quotes runtime surfaces for v1. | ADR-0004 moves supported proposal language to Quote. Customer/account records belong to Relationships; quote pursuit belongs to Quotes. |
 | `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trip Composer, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
-| `@voyantjs/travel-composer`, `@voyantjs/travel-composer-react` | Rename to `@voyantjs/trip-composer` / `@voyantjs/trip-composer-react` in the v1 package move. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
+| `@voyantjs/trip-composer`, `@voyantjs/trip-composer-react` | Keep as the standalone Trip Composer packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | `@voyantjs/booking-requirements`, `@voyantjs/booking-requirements-react` | Temporary compatibility shims for `@voyantjs/bookings/requirements*` and `@voyantjs/bookings-react/requirements*`. | Requirements define what must be collected to commit a booking; keep the booking requirements domain term. |
 | `@voyantjs/checkout`, `@voyantjs/checkout-react` | Fold into `finance`. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. |
@@ -1330,9 +1336,9 @@ stay unchanged.
 | --- | --- | --- |
 | `@voyantjs/finance`, `@voyantjs/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, vouchers, settlement, and profitability. |
 | `@voyantjs/legal`, `@voyantjs/legal-react` | Keep separate. | Legal documents, contracts, terms, templates, signatures, and legal workflows cut across quotes, bookings, Distribution, and finance. |
-| `@voyantjs/suppliers`, `@voyantjs/suppliers-react` | Fold into `distribution` in the v1 package move. | Supplier remains a distinct role/entity inside Distribution; it should not be flattened into Channel. |
+| `@voyantjs/suppliers`, `@voyantjs/suppliers-react` | Compatibility facades over `@voyantjs/distribution/suppliers` and `@voyantjs/distribution-react/suppliers` after the v1 owner-path move. | Supplier remains a distinct role/entity inside Distribution; it should not be flattened into Channel. |
 | `@voyantjs/distribution`, `@voyantjs/distribution-react` | Keep as the proposed Distribution Module name and absorb supplier/external-ref scope if the broader commercial-network definition is accepted. | Distribution owns supplier-side and channel-side commercial network concerns: Suppliers, Channels, mappings, allotments, channel push, source/operator links, reconciliation, and integration-facing references. |
-| `@voyantjs/external-refs`, `@voyantjs/external-refs-react` | Fold into `distribution` in the v1 package move. | External refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |
+| `@voyantjs/external-refs`, `@voyantjs/external-refs-react` | Compatibility facades over `@voyantjs/distribution/external-refs` and `@voyantjs/distribution-react/external-refs` after the v1 owner-path move. | External refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |
 
 ### 10.6 Admin And Surface Packages
 

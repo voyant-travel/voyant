@@ -4,7 +4,7 @@
 
 import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/admin"
 import { createRelationshipsAdminExtension } from "@voyantjs/relationships-react/admin"
-import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
+import { createSuppliersAdminExtension } from "@voyantjs/distribution-react/suppliers/admin"
 import { createProductsAdminExtension } from "@voyantjs/inventory-react/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/commerce-react/promotions/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
@@ -16,7 +16,7 @@ import { createResourcesAdminExtension } from "@voyantjs/operations-react/resour
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
 import { createFlightsAdminExtension } from "@voyantjs/flights-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
-import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-react/admin"
+import { createTripComposerAdminExtension } from "@voyantjs/trip-composer-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -38,5 +38,5 @@ export const generatedAdminExtensionFactories = {
   notifications: createNotificationsAdminExtension,
   flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,
-  travelComposer: createTravelComposerAdminExtension,
+  tripComposer: createTripComposerAdminExtension,
 } as const

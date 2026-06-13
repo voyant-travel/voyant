@@ -1,5 +1,9 @@
 # @voyantjs/suppliers-react
 
+Compatibility facade. Supplier React implementation now lives under
+`@voyantjs/distribution-react/suppliers`; keep this package only for existing
+imports until the v1 public-name policy removes or formally deprecates it.
+
 The suppliers client tier: headless data hooks/clients plus the styled UI
 primitives and page-level compositions (formerly `@voyantjs/suppliers-ui`).
 
@@ -34,6 +38,8 @@ function SuppliersList() {
   return <>{data?.data.map((supplier) => <div key={supplier.id}>{supplier.name}</div>)}</>
 }
 ```
+
+New first-party code should import from `@voyantjs/distribution-react/suppliers`.
 
 ## UI components
 

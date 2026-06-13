@@ -651,21 +651,21 @@ export const SuppliersDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
-// travel-composer
+// trip-composer
 // ---------------------------------------------------------------------------
 
-const travelComposerExtension = extension("travel-composer")
+const tripComposerExtension = extension("trip-composer")
 
-export const TravelComposerIndexRoute = createRoute({
+export const TripComposerIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/trips",
-  ...adminExtensionRouteOptions(travelComposerExtension, "travel-composer-index", runtime),
+  ...adminExtensionRouteOptions(tripComposerExtension, "trip-composer-index", runtime),
 })
 
-export const TravelComposerDetailRoute = createRoute({
+export const TripComposerDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/trips/$id",
-  ...adminExtensionRouteOptions(travelComposerExtension, "travel-composer-detail", runtime),
+  ...adminExtensionRouteOptions(tripComposerExtension, "trip-composer-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -741,8 +741,8 @@ export const adminExtensionRoutes = [
   ResourcesAllocationDetailRoute,
   SuppliersIndexRoute,
   SuppliersDetailRoute,
-  TravelComposerIndexRoute,
-  TravelComposerDetailRoute,
+  TripComposerIndexRoute,
+  TripComposerDetailRoute,
 ]
 
 export interface AdminExtensionRoutesByFullPath {
@@ -824,8 +824,8 @@ export interface AdminExtensionRoutesByFullPath {
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
-  "/trips": typeof TravelComposerIndexRoute
-  "/trips/$id": typeof TravelComposerDetailRoute
+  "/trips": typeof TripComposerIndexRoute
+  "/trips/$id": typeof TripComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesByTo {
@@ -906,8 +906,8 @@ export interface AdminExtensionRoutesByTo {
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
-  "/trips": typeof TravelComposerIndexRoute
-  "/trips/$id": typeof TravelComposerDetailRoute
+  "/trips": typeof TripComposerIndexRoute
+  "/trips/$id": typeof TripComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesById {
@@ -989,6 +989,6 @@ export interface AdminExtensionRoutesById {
   "/_workspace/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/_workspace/suppliers": typeof SuppliersIndexRoute
   "/_workspace/suppliers/$id": typeof SuppliersDetailRoute
-  "/_workspace/trips": typeof TravelComposerIndexRoute
-  "/_workspace/trips/$id": typeof TravelComposerDetailRoute
+  "/_workspace/trips": typeof TripComposerIndexRoute
+  "/_workspace/trips/$id": typeof TripComposerDetailRoute
 }

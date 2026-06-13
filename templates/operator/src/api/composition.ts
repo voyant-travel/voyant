@@ -32,7 +32,8 @@ import {
 } from "@voyantjs/commerce"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
-import { externalRefsHonoModule } from "@voyantjs/external-refs"
+import { externalRefsHonoModule } from "@voyantjs/distribution/external-refs"
+import { suppliersHonoModule } from "@voyantjs/distribution/suppliers"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import type {
   CheckoutNotificationDelivery,
@@ -56,8 +57,7 @@ import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
-import { suppliersHonoModule } from "@voyantjs/suppliers"
-import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
+import { createTripComposerHonoModule } from "@voyantjs/trip-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
@@ -79,7 +79,7 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
-import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
 
 type NotificationDeliveryLike = {
   id: string
@@ -139,7 +139,7 @@ export interface OperatorCapabilities {
   relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   buildCatalogContext: typeof buildCatalogContext
-  createTravelComposerRoutesOptions: typeof createOperatorTravelComposerRoutesOptions
+  createTripComposerRoutesOptions: typeof createOperatorTripComposerRoutesOptions
   /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
 }
@@ -163,7 +163,7 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     buildCatalogContext,
-    createTravelComposerRoutesOptions: createOperatorTravelComposerRoutesOptions,
+    createTripComposerRoutesOptions: createOperatorTripComposerRoutesOptions,
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
   }
 }
@@ -180,13 +180,13 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/quotes",
     "@voyantjs/operations/availability",
     "@voyantjs/identity",
-    "@voyantjs/external-refs",
+    "@voyantjs/distribution/external-refs",
     "@voyantjs/bookings/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
     "@voyantjs/operations/resources",
     "@voyantjs/distribution",
-    "@voyantjs/suppliers",
+    "@voyantjs/distribution/suppliers",
     "@voyantjs/inventory",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
@@ -197,7 +197,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/storefront",
     "@voyantjs/customer-portal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/travel-composer",
+    "@voyantjs/trip-composer",
   ],
   extensions: [
     "@voyantjs/bookings/booking-supplier-extension",
@@ -217,7 +217,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/quotes": () => createQuotesHonoModule(),
     "@voyantjs/operations/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
-    "@voyantjs/external-refs": () => externalRefsHonoModule,
+    "@voyantjs/distribution/external-refs": () => externalRefsHonoModule,
     "@voyantjs/bookings/extras": () => bookingsExtrasHonoModule,
     "@voyantjs/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
@@ -228,7 +228,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/commerce": () => createCommerceHonoModules(),
     "@voyantjs/operations/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
-    "@voyantjs/suppliers": () => suppliersHonoModule,
+    "@voyantjs/distribution/suppliers": () => suppliersHonoModule,
     "@voyantjs/inventory": () => inventoryHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
@@ -387,9 +387,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveProviders: capabilities.resolveNotificationProviders,
         email: { subject: "Your verification code" },
       }),
-    "@voyantjs/travel-composer": ({ capabilities }) =>
-      createTravelComposerHonoModule({
-        ...capabilities.createTravelComposerRoutesOptions(),
+    "@voyantjs/trip-composer": ({ capabilities }) =>
+      createTripComposerHonoModule({
+        ...capabilities.createTripComposerRoutesOptions(),
         publicRoutes: true,
       }),
   },

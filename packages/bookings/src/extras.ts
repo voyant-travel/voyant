@@ -2,15 +2,16 @@
  * Bookings-owned extras facade.
  *
  * Booking extra lines, participant selections, and slot manifests are
- * booking-facing state. The legacy extras package remains a temporary schema
- * and route compatibility shim until the shared table graph can be split
- * without migration churn.
+ * booking-facing state. Their runtime routes and services live here; the
+ * legacy extras package remains the temporary table/schema location until the
+ * shared product-extra FK graph can be split without migration churn.
  */
 
-import { extrasHonoModule, extrasService } from "@voyantjs/extras"
+import type { Module } from "@voyantjs/core"
+import type { HonoModule } from "@voyantjs/hono/module"
 
-export type { ExtrasRoutes as BookingsExtrasRoutes } from "@voyantjs/extras/routes"
-export { extrasRoutes as bookingsExtrasRoutes } from "@voyantjs/extras/routes"
+import { bookingsExtrasRoutes } from "./extras/routes.js"
+
 export type {
   BookingExtra,
   ExtraParticipantSelection,
@@ -47,6 +48,18 @@ export {
   type ResolverScope,
 } from "@voyantjs/extras/service-catalog-plane"
 export {
+  insertOptionExtraConfigSchema,
+  insertProductExtraSchema,
+  optionExtraConfigCoreSchema,
+  optionExtraConfigListQuerySchema,
+  productExtraCoreSchema,
+  productExtraListQuerySchema,
+  updateOptionExtraConfigSchema,
+  updateProductExtraSchema,
+} from "@voyantjs/extras/validation"
+export type { BookingsExtrasRoutes } from "./extras/routes.js"
+export { bookingsExtrasService } from "./extras/service.js"
+export {
   bookingExtraCoreSchema,
   bookingExtraListQuerySchema,
   bookingExtraStatusSchema,
@@ -61,22 +74,18 @@ export {
   slotExtraSelectionBulkSchema,
   slotExtraSelectionPatchSchema,
   updateBookingExtraSchema,
-} from "@voyantjs/extras/validation"
-
-export const bookingsExtrasService = {
-  listBookingExtras: extrasService.listBookingExtras,
-  getBookingExtraById: extrasService.getBookingExtraById,
-  createBookingExtra: extrasService.createBookingExtra,
-  updateBookingExtra: extrasService.updateBookingExtra,
-  deleteBookingExtra: extrasService.deleteBookingExtra,
-  getSlotExtraManifest: extrasService.getSlotExtraManifest,
-  setSlotExtraSelection: extrasService.setSlotExtraSelection,
-  bulkSetSlotExtraSelections: extrasService.bulkSetSlotExtraSelections,
-  bulkUpdateSlotExtraCollections: extrasService.bulkUpdateSlotExtraCollections,
-}
+} from "./extras/validation.js"
+export { bookingsExtrasRoutes }
 
 /**
  * Compatibility Hono module for the existing `/v1/extras` URL surface.
  * New package imports should resolve it through `@voyantjs/bookings/extras`.
  */
-export const bookingsExtrasHonoModule = extrasHonoModule
+export const bookingsExtrasModule: Module = {
+  name: "extras",
+}
+
+export const bookingsExtrasHonoModule: HonoModule = {
+  module: bookingsExtrasModule,
+  routes: bookingsExtrasRoutes,
+}
