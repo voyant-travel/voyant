@@ -1,23 +1,19 @@
-// agent-quality: file-size exception -- createApp centralizes middleware ordering, module/plugin expansion, and workflow runtime bootstrap; split only with a dedicated app-factory refactor.
 import {
   createContainer,
   createEventBus,
   createQueryRunner,
-  type EventEnvelope,
   type EventFilterDescriptor,
-  type Module,
-  type ModuleContainer,
   type WorkflowDescriptor,
 } from "@voyantjs/core"
 import { createOutboxEventStore } from "@voyantjs/db/outbox"
 import type { WorkflowDriver } from "@voyantjs/workflows/driver"
-import {
-  type BuildManifestArgs,
-  buildManifest,
-  type EventFilterRuntimeEntry,
-} from "@voyantjs/workflows/events"
 import { Hono } from "hono"
 
+import {
+  containerToServiceResolver,
+  makeFrameworkLogger,
+  wireWorkflowRuntime,
+} from "./app-workflows.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
@@ -80,13 +76,6 @@ function buildRateLimitPolicy<TBindings extends VoyantBindings>(
     ...defaults,
     store: resolveConfiguredRateLimitStore(config, env) ?? resolveRateLimitStore({ env }),
   }
-}
-
-type ManifestWorkflowDescriptor = BuildManifestArgs["workflows"][number]
-
-function toManifestWorkflowDescriptor(wf: WorkflowDescriptor): ManifestWorkflowDescriptor {
-  const candidate = wf as WorkflowDescriptor & Partial<Pick<ManifestWorkflowDescriptor, "config">>
-  return candidate.config ? { id: wf.id, config: candidate.config } : { id: wf.id }
 }
 
 /**
@@ -547,153 +536,4 @@ export function createApp<TBindings extends VoyantBindings>(
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented
-}
-
-// ---- Internals ----
-
-interface WireWorkflowRuntimeArgs {
-  modules: ReadonlyArray<Module>
-  collectedWorkflows: ReadonlyArray<WorkflowDescriptor>
-  collectedFilters: ReadonlyArray<EventFilterDescriptor>
-  driver: WorkflowDriver
-  environment: "production" | "preview" | "development"
-  projectId: string
-  eventBus: {
-    subscribe(event: string, handler: (e: EventEnvelope) => Promise<void> | void): unknown
-  }
-}
-
-/**
- * Build the manifest, register it with the driver, and install a single
- * EventBus subscriber per unique eventType seen across the manifest's
- * filters — that subscriber forwards into `driver.ingestEvent(...)`.
- *
- * The forwarder stamps `metadata.eventId` with a fresh content-derived
- * id when missing, so the framework's idempotency derivation
- * (`${filterId}:${eventId}`) gives stable run-dedup across retries.
- *
- * Failure modes are fail-closed: a manifest registration that throws
- * rejects the bootstrap promise, and the next request sees a 503 with
- * the registration error in the body.
- */
-async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promise<void> {
-  // The descriptors collected from modules + plugins use core's structural
-  // types (`{ id, eventType }` only — see `EventFilterDescriptor` in core);
-  // the manifest builder needs the runtime shape with `.manifest` populated.
-  // Validate before casting so a contract-violating plugin fails loudly here
-  // instead of crashing on `entry.manifest.id` deep inside the sort.
-  const filterEntries: EventFilterRuntimeEntry[] = []
-  for (const entry of args.collectedFilters) {
-    const candidate = entry as Partial<EventFilterRuntimeEntry>
-    if (!candidate.manifest || typeof candidate.manifest.id !== "string") {
-      throw new Error(
-        `[voyant] event filter "${entry.id}" (event "${entry.eventType}") is missing the runtime ` +
-          `\`manifest\` field. Filters must be produced via \`trigger.on(eventName, { ... })\` from ` +
-          `@voyantjs/workflows — the public EventFilterDescriptor is the structural minimum, but ` +
-          `createApp() needs the manifest payload to register with the driver.`,
-      )
-    }
-    filterEntries.push(candidate as EventFilterRuntimeEntry)
-  }
-
-  const manifest = await buildManifest({
-    projectId: args.projectId,
-    environment: args.environment,
-    workflows: args.collectedWorkflows.map(toManifestWorkflowDescriptor),
-    eventFilters: filterEntries,
-  })
-
-  await args.driver.registerManifest({
-    environment: args.environment,
-    manifest,
-  })
-
-  // Install one EventBus subscriber per unique eventType. Each subscriber
-  // forwards the envelope through `driver.ingestEvent(...)`, which
-  // routes through the same predicate/mapper machinery the HTTP
-  // ingest path uses (see architecture doc §15).
-  const eventTypes = new Set(filterEntries.map((f) => f.eventType))
-  for (const eventType of eventTypes) {
-    args.eventBus.subscribe(eventType, async (envelope: EventEnvelope) => {
-      const stamped = ensureMetadataEventId(envelope)
-      try {
-        await args.driver.ingestEvent({
-          environment: args.environment,
-          envelope: stamped,
-        })
-      } catch (err) {
-        // Subscribers are observers per the EventBus contract — a misbehaving
-        // driver / network glitch must not break the emitter. The driver's
-        // own error reporting (logger calls + counter increments) surfaces
-        // the failure for ops; we swallow here to preserve the bus contract.
-        const message = err instanceof Error ? err.message : String(err)
-        console.error(`[voyant] workflow forwarder for "${eventType}" failed: ${message}`)
-      }
-    })
-  }
-}
-
-/**
- * Adapt the framework's `ModuleContainer` (which has `register`) to a
- * read-only `ServiceResolver` view (`resolve` + `has` only). This is
- * what driver factories receive in their `services` dep.
- */
-function containerToServiceResolver(container: ModuleContainer): {
-  resolve<T>(name: string): T
-  has(name: string): boolean
-} {
-  return {
-    resolve<T>(name: string): T {
-      return container.resolve<T>(name)
-    },
-    has(name: string): boolean {
-      return container.has(name)
-    },
-  }
-}
-
-/**
- * Adapt the framework's optional `LoggerProvider` to the structural
- * `DriverLogger` shape `(level, msg, data?) => void`. When no logger
- * is configured, the adapter routes through `console`.
- */
-function makeFrameworkLogger(
-  loggerProvider: VoyantAppConfig["logger"] | undefined,
-): (level: "debug" | "info" | "warn" | "error", msg: string, data?: object) => void {
-  void loggerProvider
-  return (level, msg, data) => {
-    const fn =
-      level === "error"
-        ? console.error
-        : level === "warn"
-          ? console.warn
-          : level === "debug"
-            ? console.debug
-            : console.log
-    if (data !== undefined) fn(`[voyant] ${msg}`, data)
-    else fn(`[voyant] ${msg}`)
-  }
-}
-
-function ensureMetadataEventId(envelope: EventEnvelope): EventEnvelope {
-  const metadata = envelope.metadata
-  if (
-    metadata !== undefined &&
-    metadata !== null &&
-    typeof metadata === "object" &&
-    typeof (metadata as { eventId?: unknown }).eventId === "string" &&
-    ((metadata as { eventId: string }).eventId.length ?? 0) > 0
-  ) {
-    return envelope
-  }
-  const eventId = `evt_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_000_000)
-    .toString(36)
-    .padStart(4, "0")}`
-  return {
-    ...envelope,
-    metadata: {
-      ...(metadata ?? {}),
-      eventId,
-    },
-  } as EventEnvelope
 }

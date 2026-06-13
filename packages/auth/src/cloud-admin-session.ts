@@ -1,7 +1,5 @@
-// agent-quality: file-size exception -- owner: auth; existing module stays co-located until a dedicated split preserves behavior and tests.
 import type { getDb } from "@voyantjs/db"
 import {
-  apikeyTable,
   authAccount,
   authUser,
   cloudAuthSessionLinks,
@@ -11,7 +9,11 @@ import { createAuthEndpoint } from "better-auth/api"
 import { setSessionCookie } from "better-auth/cookies"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { and, eq } from "drizzle-orm"
-
+import {
+  markCloudAuthSessionRevalidated,
+  markCloudAuthUserRevalidated,
+  revokeCloudAuthUserAccess,
+} from "./cloud-admin-session-revalidation-store.js"
 import {
   type CloudAdminAssertion,
   type CloudAdminAuthExchangeConfig,
@@ -512,95 +514,6 @@ async function upsertVoyantCloudSessionLink(
     revokedAt: null,
     updatedAt: now,
   })
-}
-
-async function markCloudAuthSessionRevalidated(
-  db: ReturnType<typeof getDb>,
-  input: {
-    sessionId: string
-    userId: string
-    now: Date
-    revalidateAfterSeconds: number
-  },
-): Promise<void> {
-  const revalidateAfter = new Date(input.now.getTime() + input.revalidateAfterSeconds * 1000)
-  await Promise.all([
-    db
-      .update(cloudAuthSessionLinks)
-      .set({
-        lastRevalidatedAt: input.now,
-        revalidateAfter,
-        revokedAt: null,
-        updatedAt: input.now,
-      })
-      .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
-    db
-      .update(cloudAuthUserLinks)
-      .set({
-        lastRevalidatedAt: input.now,
-        revokedAt: null,
-        updatedAt: input.now,
-      })
-      .where(eq(cloudAuthUserLinks.userId, input.userId)),
-  ])
-}
-
-async function revokeCloudAuthUserAccess(
-  db: ReturnType<typeof getDb>,
-  input: {
-    sessionId?: string
-    userId: string
-    now: Date
-  },
-): Promise<void> {
-  const updates: Array<Promise<unknown>> = [
-    db
-      .update(cloudAuthUserLinks)
-      .set({
-        revokedAt: input.now,
-        lastRevalidatedAt: input.now,
-        updatedAt: input.now,
-      })
-      .where(eq(cloudAuthUserLinks.userId, input.userId)),
-    db
-      .update(apikeyTable)
-      .set({
-        enabled: false,
-        updatedAt: input.now,
-      })
-      .where(eq(apikeyTable.referenceId, input.userId)),
-  ]
-
-  if (input.sessionId) {
-    updates.push(
-      db
-        .update(cloudAuthSessionLinks)
-        .set({
-          revokedAt: input.now,
-          updatedAt: input.now,
-        })
-        .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
-    )
-  }
-
-  await Promise.all(updates)
-}
-
-async function markCloudAuthUserRevalidated(
-  db: ReturnType<typeof getDb>,
-  input: {
-    userId: string
-    now: Date
-  },
-): Promise<void> {
-  await db
-    .update(cloudAuthUserLinks)
-    .set({
-      lastRevalidatedAt: input.now,
-      revokedAt: null,
-      updatedAt: input.now,
-    })
-    .where(eq(cloudAuthUserLinks.userId, input.userId))
 }
 
 function cloudAssertionDisplayName(assertion: CloudAdminAssertion): string {
