@@ -1,9 +1,9 @@
 // agent-quality: file-size exception -- owner: pricing; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { availabilitySlots } from "@voyantjs/availability/schema"
+import type { IndexerSlice } from "@voyantjs/catalog"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
-import type { IndexerSlice } from "@voyantjs/products/service-catalog-plane"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { priceCatalogs } from "../../src/schema-catalogs.js"

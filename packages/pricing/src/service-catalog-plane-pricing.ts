@@ -7,9 +7,8 @@
  * Lives in `@voyantjs/pricing` because:
  *   - The data lives here (`option_price_rules`, `option_unit_price_rules`,
  *     `price_catalogs`).
- *   - `pricing` already depends on `products`; importing the
- *     `ProductProjectionExtension` contract type from products is the
- *     same direction. The reverse would create a circular dep.
+ *   - Product owns the document-builder implementation, while this package
+ *     exposes a structural extension that satisfies that builder contract.
  *
  * Wire via `createProductDocumentBuilder({ extensions: [pricingExtension] })`
  * after composing `productPricingCatalogPolicy` into the registry.
@@ -29,11 +28,8 @@
  * once its final departure starts unless a row-level fallback remains.
  */
 
+import type { IndexerSlice } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import type {
-  IndexerSlice,
-  ProductProjectionExtension,
-} from "@voyantjs/products/service-catalog-plane"
 import { sql } from "drizzle-orm"
 
 interface PricingProjectionOptions {
@@ -69,6 +65,15 @@ interface PricingAggregate {
 interface RatePlanPricing {
   roomPrices: number[]
   basePrices: number[]
+}
+
+export interface ProductProjectionExtension {
+  readonly name: string
+  project(
+    db: AnyDrizzleDb,
+    productId: string,
+    slice: IndexerSlice,
+  ): Promise<ReadonlyMap<string, unknown>>
 }
 
 const EMPTY_AGGREGATE: PricingAggregate = {
