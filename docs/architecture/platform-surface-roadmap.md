@@ -183,14 +183,13 @@ Partially resolved:
 - `@voyantjs/storefront` now also exposes product extensions and departure
   itinerary reads so storefront booking flows do not need app-local wrappers
   for those payloads
-- `@voyantjs/transactions` now exposes a shared
-  `createStorefrontPromotionalOffersResolver()` plus direct lookup helpers over
-  published offers with `storefrontPromotionalOffer` metadata, giving apps a
-  first-class way to plug native product/departure promo applicability into
-  the storefront contract without inventing their own resolver shape
-- offer create/update validation now recognizes `storefrontPromotionalOffer`
-  metadata explicitly, so storefront promo payloads no longer have to live as
-  completely unchecked blobs inside generic offer metadata
+- `@voyantjs/commerce/promotions` now exposes storefront promotional-offer
+  resolvers over Commerce-owned promotional offers, giving apps a first-class
+  way to plug native product/departure promo applicability into the storefront
+  contract without inventing their own resolver shape
+- promotion create/update validation now recognizes storefront presentation and
+  applicability metadata explicitly, so storefront promo payloads no longer
+  live as unchecked blobs inside generic offer metadata
 
 Still missing:
 
@@ -359,9 +358,9 @@ Now covered as a pluggable storefront contract:
 - `@voyantjs/storefront` can expose product/departure-applicable promotional
   offers and slug-based offer detail through injected resolvers, without
   forcing Voyant core to adopt a CMS-specific promo schema
-- `@voyantjs/transactions` now ships a shared resolver factory and metadata
-  schema for that contract, so apps can back storefront promotional offers
-  with native Voyant offers instead of custom resolver plumbing
+- `@voyantjs/commerce/promotions` now ships a shared resolver factory and
+  metadata schema for that contract, so apps can back storefront promotional
+  offers with native Commerce offers instead of custom resolver plumbing
 
 ### Product brochure workflow
 
@@ -486,10 +485,10 @@ Completed in source:
 
 Completed in source:
 
-- transactions now expose a native storefront promotional-offer resolver on top
-  of published offers, and shared offer validation/editorial UI now support
-  typed `storefrontPromotionalOffer` metadata instead of leaving storefront
-  promo payloads as unchecked blobs
+- Commerce promotions now expose a native storefront promotional-offer resolver
+  on top of promotional offers, and shared validation/editorial UI now support
+  typed storefront presentation and applicability metadata instead of leaving
+  storefront promo payloads as unchecked blobs
 - products now expose a lightweight destination taxonomy with translations and
   product links, and the public catalog can filter/list products by
   destination id or slug

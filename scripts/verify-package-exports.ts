@@ -277,21 +277,6 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/transactions",
-    entry: "packages/transactions/dist/index.js",
-    requiredExports: [
-      "transactionsService",
-      "createStorefrontPromotionalOffersResolver",
-      "getStorefrontPromotionalOfferBySlug",
-      "listStorefrontPromotionalOffers",
-      "offerMetadataSchema",
-      "storefrontOfferEnvelopeSchema",
-      "storefrontOfferDiscountTypeSchema",
-      "storefrontOfferMetadataSchema",
-      "storefrontPromotionalOfferSchema",
-    ],
-  },
-  {
     packageName: "@voyantjs/utils/template-renderer",
     entry: "packages/utils/dist/template-renderer.js",
     requiredExports: ["renderMustacheTemplate", "renderStringTemplate", "renderStructuredTemplate"],
