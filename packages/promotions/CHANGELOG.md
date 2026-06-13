@@ -1,5 +1,7 @@
 # @voyantjs/promotions
 
+## 0.111.7
+
 ## 0.111.6
 
 ### Patch Changes

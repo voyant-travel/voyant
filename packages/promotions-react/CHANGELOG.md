@@ -1,5 +1,12 @@
 # @voyantjs/promotions-react
 
+## 0.111.7
+
+### Patch Changes
+
+- 1595c69: Split oversized notification reminder services and promotions/notification React modules into focused internal files while preserving existing public exports and behavior.
+  - @voyantjs/promotions@0.111.7
+
 ## 0.111.6
 
 ### Patch Changes
