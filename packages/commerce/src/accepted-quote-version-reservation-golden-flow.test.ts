@@ -1,11 +1,12 @@
+import { describe, expect, it } from "vitest"
+
 import {
   type CommercialDecisionInput,
   type CommercialPriceAvailabilityAdapter,
   type CommercialSnapshotRepository,
   createCommercialDecisionEvaluator,
   recordCommercialSnapshot,
-} from "@voyantjs/commerce"
-import { describe, expect, it } from "vitest"
+} from "./index.js"
 
 type ModuleOwner = "Quotes" | "TripComposer" | "Commerce" | "Bookings" | "Finance" | "Legal"
 
@@ -365,7 +366,7 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
           "commercialSnapshotId" in input ? [input.commercialSnapshotId] : [],
         ),
         providerSourceRefs: plan.inputs.flatMap((input) =>
-          "providerHandles" in input
+          "providerHandles" in input && Array.isArray(input.providerHandles)
             ? input.providerHandles.map((handle) => handle.externalRef ?? handle.handle ?? null)
             : [],
         ),

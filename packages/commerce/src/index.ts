@@ -11,6 +11,12 @@ export {
   evaluateCommercialDecision,
   recordCommercialSnapshot,
 } from "./interface.js"
+export {
+  type CommerceRuntimeModuleName,
+  commerceRuntimeModuleNames,
+  createCommerceHonoModules,
+  createCommerceStorefrontOfferResolvers,
+} from "./runtime.js"
 export type {
   CommercialAdapterHandle,
   CommercialAdapterRegistrationKind,

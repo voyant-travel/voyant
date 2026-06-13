@@ -28,15 +28,6 @@
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import type {
-  StorefrontAppliedOffer,
-  StorefrontOfferApplyInput,
-  StorefrontOfferMutationResult,
-  StorefrontOfferRedeemInput,
-  StorefrontOfferResolvers,
-  StorefrontPromotionalOffer,
-  StorefrontRequestContext,
-} from "@voyantjs/storefront"
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"
@@ -46,6 +37,132 @@ import {
   evaluateOffersForProduct,
 } from "./service-evaluator.js"
 import type { PromotionalOfferScope } from "./validation.js"
+
+export interface StorefrontRequestContext {
+  db?: AnyDrizzleDb
+  eventBus?: unknown
+  env?: unknown
+  context?: unknown
+}
+
+export interface StorefrontPromotionalOffer {
+  id: string
+  name: string
+  slug: string | null
+  description: string | null
+  discountType: "percentage" | "fixed_amount"
+  discountValue: string
+  currency: string | null
+  applicableProductIds: string[]
+  applicableDepartureIds: string[]
+  validFrom: string | null
+  validTo: string | null
+  minTravelers: number | null
+  imageMobileUrl: string | null
+  imageDesktopUrl: string | null
+  stackable: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StorefrontOfferApplyInput {
+  productId: string
+  departureId?: string | null
+  bookingId?: string | null
+  sessionId?: string | null
+  locale?: string
+  pax: number
+  audience: "staff" | "customer" | "partner" | "supplier"
+  market: string
+  basePriceCents: number
+  currency: string
+}
+
+export interface StorefrontOfferRedeemInput extends StorefrontOfferApplyInput {
+  code: string
+}
+
+export interface StorefrontAppliedOffer {
+  offerId: string
+  offerName: string
+  discountAppliedCents: number
+  discountedPriceCents: number
+  currency: string
+  discountKind: "percentage" | "fixed_amount"
+  discountPercent: number | null
+  discountAmountCents: number | null
+  appliedCode: string | null
+  stackable: boolean
+}
+
+export interface StorefrontOfferMutationResult {
+  status: "applied" | "not_applicable" | "invalid" | "conflict"
+  reason:
+    | "offer_not_found"
+    | "offer_expired"
+    | "offer_not_yet_valid"
+    | "code_not_found"
+    | "code_required"
+    | "code_expired"
+    | "code_not_yet_valid"
+    | "scope"
+    | "min_pax"
+    | "eligibility"
+    | "currency"
+    | "no_discount"
+    | "booking_mismatch"
+    | "session_mismatch"
+    | "conflict"
+    | null
+  offer: StorefrontPromotionalOffer | null
+  target: {
+    bookingId: string | null
+    sessionId: string | null
+    productId: string
+    departureId: string | null
+  }
+  pricing: {
+    basePriceCents: number
+    currency: string
+    discountAppliedCents: number
+    discountedPriceCents: number
+  }
+  appliedOffers: StorefrontAppliedOffer[]
+  conflict: {
+    policy: "best_discount_wins" | "stackable_compose"
+    autoAppliedOfferIds: string[]
+    manualOfferId: string | null
+    selectedOfferIds: string[]
+    message: string
+  } | null
+}
+
+export interface StorefrontOfferResolvers {
+  listApplicableOffers?: (
+    input: {
+      productId: string
+      departureId?: string
+      locale?: string
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontPromotionalOffer[]> | StorefrontPromotionalOffer[]
+  getOfferBySlug?: (
+    input: {
+      slug: string
+      locale?: string
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontPromotionalOffer | null> | StorefrontPromotionalOffer | null
+  applyOffer?: (
+    input: {
+      slug: string
+      body: StorefrontOfferApplyInput
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
+  redeemOffer?: (
+    input: {
+      body: StorefrontOfferRedeemInput
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
+}
 
 export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
   return {

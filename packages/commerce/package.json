@@ -15,7 +15,12 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:^"
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/markets": "workspace:^",
+    "@voyantjs/pricing": "workspace:^",
+    "@voyantjs/promotions": "workspace:^",
+    "@voyantjs/sellability": "workspace:^"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:^",
