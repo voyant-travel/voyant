@@ -1,0 +1,234 @@
+import type {
+  CreateCreditNoteInput,
+  CreateCreditNoteLineItemInput,
+  CreateFinanceNoteInput,
+  FinanceServiceRuntime,
+  PostgresJsDatabase,
+  UpdateCreditNoteInput,
+} from "./service-shared.js"
+import {
+  appendActionLedgerMutation,
+  asc,
+  buildCreditNoteCreationActionLedgerInput,
+  buildCreditNoteLineItemCreateActionLedgerInput,
+  buildCreditNoteUpdateActionLedgerInput,
+  creditNoteLineItems,
+  creditNotes,
+  desc,
+  eq,
+  financeNotes,
+  invoices,
+  resolveCreditNoteUpdateData,
+  resolveFxMoneyBaseAmount,
+} from "./service-shared.js"
+
+export const financeInvoiceCreditNoteService = {
+  listCreditNotes(db: PostgresJsDatabase, invoiceId: string) {
+    return db
+      .select()
+      .from(creditNotes)
+      .where(eq(creditNotes.invoiceId, invoiceId))
+      .orderBy(desc(creditNotes.createdAt))
+  },
+
+  async createCreditNote(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
+
+    if (!invoice) {
+      return null
+    }
+
+    const creditNoteData = await resolveFxMoneyBaseAmount(db, data, {
+      ...runtime,
+      targetBaseCurrency: invoice.currency,
+      fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+      date: new Date(),
+    })
+
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(creditNotes)
+        .values({ ...creditNoteData, invoiceId })
+        .returning()
+
+      if (row && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildCreditNoteCreationActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              creditNote: row,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
+
+      return row
+    })
+  },
+
+  async updateCreditNote(
+    db: PostgresJsDatabase,
+    creditNoteId: string,
+    data: UpdateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const updateData = await resolveCreditNoteUpdateData(db, creditNoteId, data, runtime)
+    if (!updateData) return null
+
+    const updateCreditNoteRow = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .update(creditNotes)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(creditNotes.id, creditNoteId))
+        .returning()
+
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, creditNote: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const updated = await updateCreditNoteRow(tx)
+
+        if (updated) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteUpdateActionLedgerInput(
+              actionLedgerContext,
+              { ...updated, changes: updateData },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return result?.creditNote ?? null
+    }
+
+    return (await updateCreditNoteRow(db))?.creditNote ?? null
+  },
+
+  listCreditNoteLineItems(db: PostgresJsDatabase, creditNoteId: string) {
+    return db
+      .select()
+      .from(creditNoteLineItems)
+      .where(eq(creditNoteLineItems.creditNoteId, creditNoteId))
+      .orderBy(asc(creditNoteLineItems.sortOrder))
+  },
+
+  async createCreditNoteLineItem(
+    db: PostgresJsDatabase,
+    creditNoteId: string,
+    data: CreateCreditNoteLineItemInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createLineItem = async (writer: PostgresJsDatabase) => {
+      const [creditNote] = await writer
+        .select()
+        .from(creditNotes)
+        .where(eq(creditNotes.id, creditNoteId))
+        .limit(1)
+
+      if (!creditNote) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, creditNote.invoiceId))
+        .limit(1)
+
+      if (!invoice) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(creditNoteLineItems)
+        .values({ ...data, creditNoteId })
+        .returning()
+
+      return row ? { invoice, creditNote, lineItem: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const created = await createLineItem(tx)
+
+        if (created) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteLineItemCreateActionLedgerInput(actionLedgerContext, created, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return created
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await createLineItem(db))?.lineItem ?? null
+  },
+
+  listNotes(db: PostgresJsDatabase, invoiceId: string) {
+    return db
+      .select()
+      .from(financeNotes)
+      .where(eq(financeNotes.invoiceId, invoiceId))
+      .orderBy(financeNotes.createdAt)
+  },
+
+  async createNote(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    userId: string,
+    data: CreateFinanceNoteInput,
+  ) {
+    const [invoice] = await db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+
+    if (!invoice) {
+      return null
+    }
+
+    const [row] = await db
+      .insert(financeNotes)
+      .values({
+        invoiceId,
+        authorId: userId,
+        content: data.content,
+      })
+      .returning()
+
+    return row
+  },
+}

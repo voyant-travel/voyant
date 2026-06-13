@@ -1,0 +1,363 @@
+import type {
+  CreateInvoiceExternalRefInput,
+  CreateTaxClassInput,
+  CreateTaxPolicyProfileInput,
+  CreateTaxPolicyRuleInput,
+  CreateTaxRegimeInput,
+  PostgresJsDatabase,
+  TaxClassListQuery,
+  TaxPolicyProfileListQuery,
+  TaxPolicyRuleListQuery,
+  TaxRegimeListQuery,
+  UpdateTaxClassInput,
+  UpdateTaxPolicyProfileInput,
+  UpdateTaxPolicyRuleInput,
+  UpdateTaxRegimeInput,
+} from "./service-shared.js"
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  invoiceExternalRefs,
+  invoices,
+  paginate,
+  sql,
+  taxClasses,
+  taxPolicyProfiles,
+  taxPolicyRules,
+  taxRegimes,
+  toTimestamp,
+} from "./service-shared.js"
+
+export const financeReferenceDataService = {
+  async listTaxRegimes(db: PostgresJsDatabase, query: TaxRegimeListQuery) {
+    const conditions = []
+    if (query.code) conditions.push(eq(taxRegimes.code, query.code))
+    if (query.jurisdiction) conditions.push(eq(taxRegimes.jurisdiction, query.jurisdiction))
+    if (typeof query.active === "boolean") conditions.push(eq(taxRegimes.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxRegimes)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(desc(taxRegimes.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxRegimes).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxRegimeById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db.select().from(taxRegimes).where(eq(taxRegimes.id, id)).limit(1)
+    return row ?? null
+  },
+
+  async createTaxRegime(db: PostgresJsDatabase, data: CreateTaxRegimeInput) {
+    const [row] = await db
+      .insert(taxRegimes)
+      .values({
+        code: data.code,
+        name: data.name,
+        jurisdiction: data.jurisdiction ?? null,
+        ratePercent: data.ratePercent ?? null,
+        description: data.description ?? null,
+        legalReference: data.legalReference ?? null,
+        active: data.active,
+        metadata: data.metadata ?? null,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxRegime(db: PostgresJsDatabase, id: string, data: UpdateTaxRegimeInput) {
+    const [row] = await db
+      .update(taxRegimes)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxRegimes.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxRegime(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxRegimes)
+      .where(eq(taxRegimes.id, id))
+      .returning({ id: taxRegimes.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax classes
+  // ============================================================================
+
+  async listTaxClasses(db: PostgresJsDatabase, query: TaxClassListQuery) {
+    const conditions = []
+    if (query.code) conditions.push(eq(taxClasses.code, query.code))
+    if (typeof query.active === "boolean") conditions.push(eq(taxClasses.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxClasses)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(desc(taxClasses.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxClasses).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxClassById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db.select().from(taxClasses).where(eq(taxClasses.id, id)).limit(1)
+    return row ?? null
+  },
+
+  async createTaxClass(db: PostgresJsDatabase, data: CreateTaxClassInput) {
+    const [row] = await db
+      .insert(taxClasses)
+      .values({
+        code: data.code,
+        label: data.label,
+        description: data.description ?? null,
+        defaultRegimeId: data.defaultRegimeId ?? null,
+        lines: data.lines ?? null,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxClass(db: PostgresJsDatabase, id: string, data: UpdateTaxClassInput) {
+    const [row] = await db
+      .update(taxClasses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxClasses.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxClass(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxClasses)
+      .where(eq(taxClasses.id, id))
+      .returning({ id: taxClasses.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax policy profiles
+  // ============================================================================
+
+  async listTaxPolicyProfiles(db: PostgresJsDatabase, query: TaxPolicyProfileListQuery) {
+    const conditions = []
+    if (query.code) conditions.push(eq(taxPolicyProfiles.code, query.code))
+    if (query.jurisdiction) conditions.push(eq(taxPolicyProfiles.jurisdiction, query.jurisdiction))
+    if (typeof query.active === "boolean") {
+      conditions.push(eq(taxPolicyProfiles.active, query.active))
+    }
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxPolicyProfiles)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(desc(taxPolicyProfiles.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyProfiles).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxPolicyProfileById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, id))
+      .limit(1)
+    return row ?? null
+  },
+
+  async createTaxPolicyProfile(db: PostgresJsDatabase, data: CreateTaxPolicyProfileInput) {
+    const [row] = await db
+      .insert(taxPolicyProfiles)
+      .values({
+        code: data.code,
+        name: data.name,
+        jurisdiction: data.jurisdiction ?? null,
+        description: data.description ?? null,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxPolicyProfile(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateTaxPolicyProfileInput,
+  ) {
+    const [row] = await db
+      .update(taxPolicyProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxPolicyProfiles.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxPolicyProfile(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, id))
+      .returning({ id: taxPolicyProfiles.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax policy rules
+  // ============================================================================
+
+  async listTaxPolicyRules(db: PostgresJsDatabase, query: TaxPolicyRuleListQuery) {
+    const conditions = []
+    if (query.profileId) conditions.push(eq(taxPolicyRules.profileId, query.profileId))
+    if (query.side) conditions.push(eq(taxPolicyRules.side, query.side))
+    if (typeof query.active === "boolean") conditions.push(eq(taxPolicyRules.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxPolicyRules)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(asc(taxPolicyRules.priority), desc(taxPolicyRules.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyRules).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxPolicyRuleById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db.select().from(taxPolicyRules).where(eq(taxPolicyRules.id, id)).limit(1)
+    return row ?? null
+  },
+
+  async createTaxPolicyRule(db: PostgresJsDatabase, data: CreateTaxPolicyRuleInput) {
+    const [row] = await db
+      .insert(taxPolicyRules)
+      .values({
+        profileId: data.profileId,
+        side: data.side,
+        priority: data.priority,
+        name: data.name,
+        appliesTo: data.appliesTo,
+        condition: data.condition ?? null,
+        taxRegimeId: data.taxRegimeId,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxPolicyRule(db: PostgresJsDatabase, id: string, data: UpdateTaxPolicyRuleInput) {
+    const [row] = await db
+      .update(taxPolicyRules)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxPolicyRules.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxPolicyRule(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxPolicyRules)
+      .where(eq(taxPolicyRules.id, id))
+      .returning({ id: taxPolicyRules.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Invoice external refs (e-invoicing provider ids)
+  // ============================================================================
+
+  async listInvoiceExternalRefs(db: PostgresJsDatabase, invoiceId: string) {
+    return db
+      .select()
+      .from(invoiceExternalRefs)
+      .where(eq(invoiceExternalRefs.invoiceId, invoiceId))
+      .orderBy(desc(invoiceExternalRefs.createdAt))
+  },
+
+  /**
+   * Idempotent upsert on (invoiceId, provider). Used by e-invoicing plugins
+   * (SmartBill, e-Factura, Stripe) to register the external reference
+   * immediately after a successful provider call.
+   */
+  async registerInvoiceExternalRef(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreateInvoiceExternalRefInput,
+  ) {
+    const [invoice] = await db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+    if (!invoice) return null
+
+    const [existing] = await db
+      .select()
+      .from(invoiceExternalRefs)
+      .where(
+        and(
+          eq(invoiceExternalRefs.invoiceId, invoiceId),
+          eq(invoiceExternalRefs.provider, data.provider),
+        ),
+      )
+      .limit(1)
+
+    const values = {
+      externalId: data.externalId ?? null,
+      externalNumber: data.externalNumber ?? null,
+      externalUrl: data.externalUrl ?? null,
+      status: data.status ?? null,
+      metadata: data.metadata ?? null,
+      syncedAt: toTimestamp(data.syncedAt),
+      syncError: data.syncError ?? null,
+    }
+
+    if (existing) {
+      const [row] = await db
+        .update(invoiceExternalRefs)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(invoiceExternalRefs.id, existing.id))
+        .returning()
+      return row ?? null
+    }
+
+    const [row] = await db
+      .insert(invoiceExternalRefs)
+      .values({
+        invoiceId,
+        provider: data.provider,
+        ...values,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async deleteInvoiceExternalRef(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(invoiceExternalRefs)
+      .where(eq(invoiceExternalRefs.id, id))
+      .returning({ id: invoiceExternalRefs.id })
+    return row ?? null
+  },
+}
