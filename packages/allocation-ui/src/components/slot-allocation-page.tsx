@@ -1,9 +1,7 @@
-// agent-quality: file-size exception -- owner: allocation-ui; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
 import {
-  type AllocationManifestBooking,
   type AllocationManifestTraveler,
   getSlotQueryOptions,
   type SlotAllocationManifest,
@@ -14,50 +12,12 @@ import {
   useSlotAllocation,
   useVoyantAvailabilityContext,
 } from "@voyantjs/availability-react"
-import {
-  Badge,
-  Button,
-  cn,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@voyantjs/ui/components"
-import {
-  Accessibility,
-  AlertTriangle,
-  Armchair,
-  ArrowLeft,
-  Bed,
-  BookOpen,
-  Crown,
-  Plus,
-  Sparkles,
-  Users,
-  UtensilsCrossed,
-  Wand2,
-} from "lucide-react"
+import { Button, cn, Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components"
+import { Armchair, ArrowLeft, Bed, BookOpen, Plus, Sparkles, Users, Wand2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
+import { AddResourceDialog } from "./slot-allocation-add-resource-dialog.js"
 import {
   collectOccupants,
   defaultCapacityFor,
@@ -69,9 +29,9 @@ import {
   summarizeResourceCapacity,
   VEHICLE_SEAT_KIND,
 } from "./slot-allocation-model.js"
+import { CapacitySummaryBadges, PassengerListPanel } from "./slot-allocation-page-panels.js"
 import { ResourceColumnsView } from "./slot-allocation-resource-view.js"
 import { VehicleSeatsView } from "./slot-allocation-seat-view.js"
-import { paymentStatusChipClass, paymentStatusTooltip } from "./slot-allocation-shared.js"
 
 export interface SlotAllocationPageRenderContext {
   slotId: string
@@ -487,104 +447,22 @@ export function SlotAllocationPage({
           ) : null}
 
           {canManuallyAddResource ? (
-            <Dialog open={addingResource} onOpenChange={setAddingResource}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{messages.addResource}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={createResource}>
-                  <DialogBody className="grid gap-4">
-                    {(templates.data?.data ?? []).length > 0 ? (
-                      <div className="grid gap-1.5">
-                        <Label htmlFor="allocation-resource-option">
-                          {messages.resourceOption}
-                        </Label>
-                        <Select
-                          value={resourceOptionId ?? "__none__"}
-                          onValueChange={(value) => {
-                            const next = value === "__none__" ? null : value
-                            setResourceOptionId(next)
-                            // Default capacity from the option's matching template
-                            // when one exists. Operators can still override.
-                            if (next) {
-                              const option = (templates.data?.data ?? []).find((o) => o.id === next)
-                              const template = option?.templates.find((t) => t.kind === activeKind)
-                              if (template?.capacity) setResourceCapacity(template.capacity)
-                            }
-                          }}
-                        >
-                          <SelectTrigger id="allocation-resource-option" className="w-full">
-                            <SelectValue placeholder={messages.resourceOptionPlaceholder}>
-                              {(value) =>
-                                value === "__none__"
-                                  ? messages.resourceOptionNone
-                                  : ((templates.data?.data ?? []).find(
-                                      (option) => option.id === value,
-                                    )?.name ?? value)
-                              }
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">{messages.resourceOptionNone}</SelectItem>
-                            {(templates.data?.data ?? []).map((option) => (
-                              <SelectItem key={option.id} value={option.id}>
-                                {option.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : null}
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
-                      <Input
-                        id="allocation-resource-label"
-                        value={resourceLabel}
-                        onChange={(event) => setResourceLabel(event.target.value)}
-                        placeholder={
-                          activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)
-                        }
-                        autoFocus
-                      />
-                    </div>
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="allocation-resource-capacity">
-                        {messages.resourceCapacity}
-                      </Label>
-                      <Input
-                        id="allocation-resource-capacity"
-                        type="number"
-                        min={1}
-                        value={resourceCapacity}
-                        onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
-                      />
-                    </div>
-                    {projectedSummary?.status === "over" && projectedSummary.delta != null ? (
-                      <div
-                        className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
-                        role="status"
-                      >
-                        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                        {/* i18n-literal-ok numeric interpolation only */}
-                        <span>
-                          {messages.overCapacityWarning} {projectedSummary.resourceCapacity}/
-                          {projectedSummary.slotPax ?? "—"} ({messages.resourceCapacityOver}:{" "}
-                          {projectedSummary.delta})
-                        </span>
-                      </div>
-                    ) : null}
-                  </DialogBody>
-                  <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setAddingResource(false)}>
-                      {messages.cancel}
-                    </Button>
-                    <Button type="submit" disabled={resourceMutation.create.isPending}>
-                      {messages.createResource}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <AddResourceDialog
+              open={addingResource}
+              onOpenChange={setAddingResource}
+              onSubmit={createResource}
+              activeKind={activeKind}
+              resourceLabel={resourceLabel}
+              onResourceLabelChange={setResourceLabel}
+              resourceCapacity={resourceCapacity}
+              onResourceCapacityChange={setResourceCapacity}
+              resourceOptionId={resourceOptionId}
+              onResourceOptionIdChange={setResourceOptionId}
+              resourceOptions={templates.data?.data ?? []}
+              projectedSummary={projectedSummary}
+              createPending={resourceMutation.create.isPending}
+              messages={messages}
+            />
           ) : null}
 
           {isSeatMap ? (
@@ -625,183 +503,5 @@ export function SlotAllocationPage({
 
       {renderAfter?.(context)}
     </div>
-  )
-}
-
-function PassengerListPanel({
-  bookings,
-  sharingGroupLabels,
-  onBookingOpen,
-  renderTravelerActions,
-  messages,
-}: {
-  bookings: AllocationManifestBooking[]
-  sharingGroupLabels: Record<string, string>
-  onBookingOpen?: (bookingId: string) => void
-  renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
-  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>
-}) {
-  const travelerCount = bookings.reduce((sum, booking) => sum + booking.travelers.length, 0)
-  const hasActions = Boolean(renderTravelerActions)
-
-  return (
-    <section className="flex flex-col gap-3">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Users className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <div className="min-w-0">
-            <h2 className="font-semibold text-sm">{messages.exportPassengers}</h2>
-            <p className="text-xs text-muted-foreground">
-              {bookings.length} {messages.booking.toLowerCase()} · {travelerCount}{" "}
-              {messages.travelers.toLowerCase()}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {travelerCount === 0 ? (
-        <div className="rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          {messages.passengerListEmpty}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {bookings.map((booking) => (
-            <section key={booking.id} className="overflow-hidden rounded-md border">
-              <header className="flex flex-wrap items-center justify-between gap-2 bg-muted/40 px-3 py-2">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  {booking.bookingSequence > 0 ? (
-                    <span className="text-muted-foreground text-xs tabular-nums" aria-hidden="true">
-                      ({booking.bookingSequence})
-                    </span>
-                  ) : null}
-                  {onBookingOpen ? (
-                    <button
-                      type="button"
-                      onClick={() => onBookingOpen(booking.id)}
-                      className="truncate font-medium text-sm hover:underline"
-                    >
-                      {booking.bookingNumber}
-                    </button>
-                  ) : (
-                    <span className="truncate font-medium text-sm">{booking.bookingNumber}</span>
-                  )}
-                  <Badge variant="outline" className="text-[10px]">
-                    {booking.status}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={paymentStatusChipClass(booking.paymentStatus)}
-                    title={paymentStatusTooltip(booking.paymentStatus, messages)}
-                  >
-                    {messages.paymentStatusLabels[booking.paymentStatus]}
-                  </Badge>
-                </div>
-                <Badge variant="secondary" className="text-[10px]">
-                  {booking.travelers.length}/{booking.pax ?? booking.travelers.length}
-                </Badge>
-              </header>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{messages.travelers}</TableHead>
-                    <TableHead className="w-40">{messages.sharingGroup}</TableHead>
-                    <TableHead className="w-40">{messages.resources}</TableHead>
-                    {hasActions ? <TableHead className="w-12" /> : null}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {booking.travelers.map((traveler) => (
-                    <TableRow key={traveler.id}>
-                      <TableCell>
-                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                          {traveler.isLeadTraveler ? (
-                            <Crown
-                              className="size-3.5 shrink-0 text-amber-500"
-                              aria-label={messages.lead}
-                            />
-                          ) : null}
-                          <span className="truncate font-medium text-sm">{traveler.fullName}</span>
-                          {traveler.isPrimary ? (
-                            <Badge variant="outline" className="text-[10px]">
-                              {messages.lead}
-                            </Badge>
-                          ) : null}
-                          {traveler.travelerCategory ? (
-                            <Badge variant="secondary" className="text-[10px]">
-                              {traveler.travelerCategory}
-                            </Badge>
-                          ) : null}
-                          {traveler.hasAccessibilityNeeds ? (
-                            <Accessibility
-                              className="size-3.5 shrink-0 text-muted-foreground"
-                              aria-label={messages.accessibility}
-                            />
-                          ) : null}
-                          {traveler.hasDietaryRequirements ? (
-                            <UtensilsCrossed
-                              className="size-3.5 shrink-0 text-muted-foreground"
-                              aria-label={messages.dietary}
-                            />
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {traveler.sharingGroupId
-                          ? (sharingGroupLabels[traveler.sharingGroupId] ?? messages.sharingGroup)
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {[traveler.roomTypeId, traveler.bedPreference]
-                          .filter(Boolean)
-                          .join(" · ") || "—"}
-                      </TableCell>
-                      {hasActions ? (
-                        <TableCell className="text-right">
-                          {renderTravelerActions?.(traveler)}
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </section>
-          ))}
-        </div>
-      )}
-    </section>
-  )
-}
-
-function CapacitySummaryBadges({
-  summary,
-  messages,
-  kind,
-}: {
-  summary: ResourceCapacitySummary
-  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>
-  kind: string
-}) {
-  if (summary.resourceCount === 0 && summary.slotPax == null) return null
-
-  // i18n-literal-ok numeric layout with separator
-  const slotLabel =
-    summary.slotPax == null
-      ? messages.slotCapacityUnlimited
-      : `${summary.slotRemainingPax ?? 0} of ${summary.slotPax}`
-  const resourceLabel =
-    summary.slotPax == null
-      ? String(summary.resourceCapacity)
-      : `${summary.resourceCapacity} of ${summary.slotPax}`
-
-  return (
-    <span className="contents" data-kind={kind} title={kindLabel(kind, messages)}>
-      <Badge variant="outline" className="gap-1">
-        <Users className="size-3" aria-hidden="true" />
-        {messages.slotCapacityLabel}: {slotLabel}
-      </Badge>
-      <Badge variant="outline" className="gap-1">
-        {messages.resourceCapacityLabel}: {resourceLabel}
-      </Badge>
-    </span>
   )
 }
