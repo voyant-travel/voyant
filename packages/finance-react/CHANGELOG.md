@@ -1,5 +1,12 @@
 # @voyantjs/finance-react
 
+## 0.119.4
+
+### Patch Changes
+
+- 81ab5a7: Remove unused accountant portal widget declarations that blocked operator typechecking.
+  - @voyantjs/finance@0.119.4
+
 ## 0.119.3
 
 ### Patch Changes
