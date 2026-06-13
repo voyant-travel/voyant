@@ -67,6 +67,19 @@ authoring should prefer the Inventory entrypoints. Existing
 `products` / `products-react` imports remain supported until the physical table,
 route, and UI file move lands.
 
+Product graph compose/duplicate authoring now uses an Inventory owner path:
+
+```txt
+@voyantjs/inventory/authoring
+@voyantjs/inventory/authoring/schema
+@voyantjs/inventory/authoring/spec
+@voyantjs/inventory/authoring/extension
+```
+
+`@voyantjs/catalog-authoring` remains a compatibility package while schema
+manifests and existing hosts still name it. It should re-export Inventory
+authoring rather than own operated-product mutation logic.
+
 ## 3. Catalog Authoring Classification
 
 `catalog-authoring` is split by responsibility:
@@ -83,6 +96,11 @@ operated products is a compatibility surface. Do not add new operated authoring
 capabilities to `catalog-authoring`; add them to `inventory` or
 `inventory-react`, with `catalog-authoring` delegating only when compatibility
 requires it.
+
+The current `compose` and `duplicate` routes are Inventory-owned operated
+authoring. They keep the `/v1/admin/products` mount through the Inventory
+products compatibility module so existing clients do not see route churn during
+the v1 package restructure.
 
 ## 4. Schema Boundary
 
