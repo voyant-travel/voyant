@@ -116,7 +116,6 @@ This repository is the workspace that powers the framework, starters, runners, a
 | [`templates/*`](./templates) | First-party starter apps |
 | [`apps/workflows-*`](./apps) | Reference orchestrator/tenant/self-host workers and the local workflows dashboard |
 | [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
-| [`examples/*`](./examples) | Reference apps that consume Voyant surfaces (e.g. `nextjs-booking-portal`) |
 
 ### Monorepo commands
 
