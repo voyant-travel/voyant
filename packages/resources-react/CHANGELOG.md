@@ -1,5 +1,14 @@
 # @voyantjs/resources-react
 
+## 0.111.6
+
+### Patch Changes
+
+- 0b10029: Split oversized shared service, UI, locale, and reference-data modules into focused internal files while preserving the existing public exports and runtime behavior.
+- Updated dependencies [0b10029]
+  - @voyantjs/i18n@0.106.1
+  - @voyantjs/resources@0.111.6
+
 ## 0.111.5
 
 ### Patch Changes

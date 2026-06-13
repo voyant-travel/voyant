@@ -1,5 +1,13 @@
 # @voyantjs/checkout-react
 
+## 0.119.1
+
+### Patch Changes
+
+- Updated dependencies [0b10029]
+  - @voyantjs/checkout@0.119.1
+  - @voyantjs/i18n@0.106.1
+
 ## 0.119.0
 
 ### Patch Changes

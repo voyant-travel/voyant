@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator
 
+## 0.107.8
+
+### Patch Changes
+
+- bed090c: Give the exported driver compliance DATETIME wakeup assertion a CI-safe wait budget without changing the behavior under test.
+  - @voyantjs/workflows@0.107.8
+
 ## 0.107.7
 
 ### Patch Changes

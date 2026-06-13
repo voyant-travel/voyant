@@ -1,5 +1,13 @@
 # @voyantjs/plugin-smartbill
 
+## 0.119.2
+
+### Patch Changes
+
+- bed090c: Split oversized SmartBill plugin client, mock, sync, workflow, and unit test modules into focused internal files while preserving the existing public subpath exports and behavior.
+- Updated dependencies [0b10029]
+  - @voyantjs/utils@0.105.1
+
 ## 0.119.1
 
 ### Patch Changes
