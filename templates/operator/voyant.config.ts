@@ -17,8 +17,8 @@ export default defineVoyantConfig({
   // runtime mount list — route-only modules that own no tables (storefront,
   // customer-portal, checkout, public-document-delivery, octo) are deferred to
   // the Phase 5 runtime manifest; they do not affect schema resolution.
-  // `facilities` is migrated but mounted nowhere — it is pulled transitively
-  // via `suppliers`/`accommodations` requiresSchemas, so it needs no entry.
+  // `facilities`/target `places` is migrated but mounted nowhere — it is pulled
+  // transitively via `accommodations` requiresSchemas, so it needs no entry.
   modules: [
     "@voyantjs/action-ledger",
     "@voyantjs/crm",

@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { boolean, date, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
@@ -17,12 +16,8 @@ export const groundTransferPreferences = pgTable(
     id: typeId("ground_transfer_preferences"),
     bookingId: text("booking_id").notNull(),
     bookingItemId: text("booking_item_id"),
-    pickupFacilityId: typeIdRef("pickup_facility_id").references(() => facilities.id, {
-      onDelete: "set null",
-    }),
-    dropoffFacilityId: typeIdRef("dropoff_facility_id").references(() => facilities.id, {
-      onDelete: "set null",
-    }),
+    pickupFacilityId: typeIdRef("pickup_facility_id"),
+    dropoffFacilityId: typeIdRef("dropoff_facility_id"),
     pickupAddressId: typeIdRef("pickup_address_id").references(() => identityAddresses.id, {
       onDelete: "set null",
     }),
@@ -50,6 +45,14 @@ export const groundTransferPreferences = pgTable(
     index("idx_ground_transfer_preferences_booking_created").on(table.bookingId, table.createdAt),
     index("idx_ground_transfer_preferences_booking_item_created").on(
       table.bookingItemId,
+      table.createdAt,
+    ),
+    index("idx_ground_transfer_preferences_pickup_facility_created").on(
+      table.pickupFacilityId,
+      table.createdAt,
+    ),
+    index("idx_ground_transfer_preferences_dropoff_facility_created").on(
+      table.dropoffFacilityId,
       table.createdAt,
     ),
     index("idx_ground_transfer_preferences_service_level_created").on(

@@ -1,6 +1,5 @@
 import { bookingItems } from "@voyantjs/bookings/schema"
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { properties } from "@voyantjs/facilities/schema"
 import {
   date,
   index,
@@ -22,9 +21,7 @@ export const stayBookingItems = pgTable(
     bookingItemId: typeIdRef("booking_item_id")
       .notNull()
       .references(() => bookingItems.id, { onDelete: "cascade" }),
-    propertyId: typeIdRef("property_id")
-      .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+    propertyId: typeIdRef("property_id").notNull(),
     roomTypeId: typeIdRef("room_type_id")
       .notNull()
       .references(() => roomTypes.id, { onDelete: "cascade" }),

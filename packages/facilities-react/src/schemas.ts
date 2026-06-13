@@ -39,6 +39,7 @@ export const facilityRecordSchema = insertFacilitySchema.extend({
 })
 
 export type FacilityRecord = z.infer<typeof facilityRecordSchema>
+export type PlaceRecord = FacilityRecord
 
 export const facilityFeatureRecordSchema = insertFacilityFeatureSchema.extend({
   id: z.string(),
@@ -49,6 +50,7 @@ export const facilityFeatureRecordSchema = insertFacilityFeatureSchema.extend({
 })
 
 export type FacilityFeatureRecord = z.infer<typeof facilityFeatureRecordSchema>
+export type PlaceFeatureRecord = FacilityFeatureRecord
 
 export const facilityOperationScheduleRecordSchema = insertFacilityOperationScheduleSchema.extend({
   id: z.string(),
@@ -62,6 +64,7 @@ export const facilityOperationScheduleRecordSchema = insertFacilityOperationSche
 })
 
 export type FacilityOperationScheduleRecord = z.infer<typeof facilityOperationScheduleRecordSchema>
+export type PlaceOperationScheduleRecord = FacilityOperationScheduleRecord
 
 export const propertyRecordSchema = insertPropertySchema.extend({
   id: z.string(),

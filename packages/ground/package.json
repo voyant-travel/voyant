@@ -20,7 +20,6 @@
   "dependencies": {
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
-    "@voyantjs/facilities": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/identity": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -72,7 +71,6 @@
     "schema": "./schema",
     "requiresSchemas": [
       "@voyantjs/db",
-      "@voyantjs/facilities",
       "@voyantjs/identity"
     ]
   }

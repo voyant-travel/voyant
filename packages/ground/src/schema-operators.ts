@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { facilities } from "@voyantjs/facilities/schema"
 import {
   boolean,
   index,
@@ -18,7 +17,7 @@ export const groundOperators = pgTable(
   {
     id: typeId("ground_operators"),
     supplierId: text("supplier_id"),
-    facilityId: typeIdRef("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+    facilityId: typeIdRef("facility_id"),
     name: text("name").notNull(),
     code: text("code"),
     active: boolean("active").notNull().default(true),

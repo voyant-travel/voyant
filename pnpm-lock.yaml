@@ -2712,9 +2712,6 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/facilities':
-        specifier: workspace:^
-        version: link:../facilities
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -3415,6 +3412,71 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/places:
+    dependencies:
+      '@voyantjs/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyantjs/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyantjs/facilities':
+        specifier: workspace:^
+        version: link:../facilities
+      '@voyantjs/hono':
+        specifier: workspace:^
+        version: link:../hono
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/places-react:
+    dependencies:
+      '@voyantjs/facilities-react':
+        specifier: workspace:^
+        version: link:../facilities-react
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.100.11
+        version: 5.100.11(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/places':
+        specifier: workspace:^
+        version: link:../places
+      '@voyantjs/ui':
+        specifier: workspace:^
+        version: link:../ui
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/plugins/catalog-demo:
     dependencies:
@@ -4374,9 +4436,6 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/facilities':
-        specifier: workspace:^
-        version: link:../facilities
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono

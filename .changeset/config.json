@@ -30,6 +30,7 @@
     ["@voyantjs/legal", "@voyantjs/legal-react"],
     ["@voyantjs/markets", "@voyantjs/markets-react"],
     ["@voyantjs/notifications", "@voyantjs/notifications-react"],
+    ["@voyantjs/places", "@voyantjs/places-react"],
     ["@voyantjs/pricing", "@voyantjs/pricing-react"],
     ["@voyantjs/products", "@voyantjs/products-react"],
     ["@voyantjs/promotions", "@voyantjs/promotions-react"],

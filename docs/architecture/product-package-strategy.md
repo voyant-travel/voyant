@@ -339,6 +339,8 @@ Candidate packages:
 - `@voyantjs/ground-react`
 - `@voyantjs/facilities`
 - `@voyantjs/facilities-react`
+- `@voyantjs/places`
+- `@voyantjs/places-react`
 - future room-block / space-block execution slices
 
 MICE Program coordination belongs to the optional `mice` Module. Operations
@@ -359,8 +361,20 @@ availability, allocation resources, resources, places, and ground.
 
 Required cleanup:
 
-- Reframe `facilities` as shared places/locations, not property operations.
+- Canonicalize on `Place` and `@voyantjs/places` / `@voyantjs/places-react`.
+  Keep `@voyantjs/facilities`, `@voyantjs/facilities-react`, and `facilityId`
+  as compatibility surfaces while public consumers migrate.
+- Reframe `facilities` as shared places, not property operations.
 - Keep hotel/property operations out of first-party scope.
+- Keep shared place records in scope: meeting points, pickup/dropoff places,
+  airports, stations, ports, attractions, restaurants, supplier bases, venues,
+  and accommodation locations.
+- Treat current `properties`, `property_groups`, and
+  `property_group_members` as deprecated accommodation-resale compatibility
+  records. They should move to an accommodation resale owner or be removed
+  before v1 if they imply PMS/property operations.
+- Remove cross-package FK constraints into old Facilities/Places tables; use
+  loose ids and template-level links where a deployment wants stronger wiring.
 - Expose Room Resource Hold and Space Resource Hold execution through Operations
   Interfaces so MICE can coordinate Program-level blocks without owning
   low-level availability or resource truth.
@@ -1232,7 +1246,8 @@ stay unchanged.
 | `@voyantjs/allocation-ui` | Deprecated compatibility facade; the active UI lives in `@voyantjs/availability-react/allocation` until the later Operations React surface exists. | This is a UI slice over availability allocation resources, not a standalone Module, and must not move into Resources. |
 | `@voyantjs/resources`, `@voyantjs/resources-react` | Fold into `operations`. | Resources are operational assets and pools used by operated products and logistics. |
 | `@voyantjs/ground`, `@voyantjs/ground-react` | Fold into `operations`. | Ground is operational logistics: vehicles, drivers, dispatch, shifts, checkpoints. |
-| `@voyantjs/facilities`, `@voyantjs/facilities-react` | Reframe as places/locations under `operations`, or split generic places from accommodation/property remnants. | Physical places are useful; hotel/property operations are out of first-party scope. |
+| `@voyantjs/places`, `@voyantjs/places-react` | Target shared place packages under `operations`; current implementation is a compatibility facade over the old facilities runtime. | Physical places are useful; hotel/property operations are out of first-party scope. |
+| `@voyantjs/facilities`, `@voyantjs/facilities-react` | Compatibility package names during the v1 move. New code should import `@voyantjs/places` / `@voyantjs/places-react`; `facilityId` remains supported until public contracts can migrate. | Do not add new first-party property operations here. |
 | Future `@voyantjs/mice`, `@voyantjs/mice-react` | Create as an optional MICE/corporate group-business Module. | Program is the central entity. The Module owns Program lifecycle, requirements, agenda, delegates, rooming, and RFP/bid workflow while reusing Quotes, Operations, Bookings, Finance, Distribution, Relationships, and Legal. |
 
 ### 10.5 Finance, Legal, Distribution, And Counterparty Packages

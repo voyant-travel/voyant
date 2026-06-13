@@ -1,34 +1,45 @@
 # @voyantjs/facilities
 
-Facilities module for Voyant. Shared location and venue layer for DMC and
-tour-operator workflows: hubs, attractions, restaurants, airports, meeting
-points, accommodation locations, and other operational places.
+Compatibility package for the shared places module.
+
+New code should prefer `@voyantjs/places`. This package keeps existing
+`@voyantjs/facilities` imports, routes, table names, and `facilityId` fields
+working while the v1 package move lands.
+
+The retained capability is a shared physical-place layer for DMC,
+tour-operator, OTA, and MICE workflows: meeting points, pickup/dropoff places,
+ports, stations, hubs, attractions, restaurants, airports, supplier bases,
+venues, accommodation locations, and other operational places.
 
 ## Install
 
 ```bash
 pnpm add @voyantjs/facilities
+# preferred for new code
+pnpm add @voyantjs/places
 ```
 
 ## Usage
 
 ```typescript
-import { facilitiesModule } from "@voyantjs/facilities"
+import { placesModule } from "@voyantjs/places"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
-  modules: [facilitiesModule],
+  modules: [placesModule],
   // ...
 })
 ```
 
 ## Entities
 
-- **Facilities** (`fac`)
-- **Facility features** (`ffea`)
-- **Facility operations** (`fops`)
-- **Properties** (`prop`) + **property groups** (`pgrp`, `pgpm`) for
-  accommodation/location metadata, not hotel PMS operations
+- **Places** (`fac`, compatibility table name `facilities`)
+- **Place features** (`ffea`, compatibility table name `facility_features`)
+- **Place opening windows** (`fops`, compatibility table name
+  `facility_operation_schedules`)
+- **Properties** (`prop`) + **property groups** (`pgrp`, `pgpm`) are deprecated
+  accommodation-resale compatibility records. They are not a first-party hotel,
+  PMS, or property-operations surface and should move out before v1 if retained.
 
 ## Exports
 
