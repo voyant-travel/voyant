@@ -2,7 +2,7 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
-import { useDuplicateOptionPricingMutation } from "@voyantjs/pricing-react"
+import { useDuplicateOptionPricingMutation } from "@voyantjs/commerce-react/pricing"
 import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"

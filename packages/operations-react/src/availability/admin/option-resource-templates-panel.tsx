@@ -2,7 +2,7 @@
 
 import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { formatMessage } from "@voyantjs/i18n"
-import { useOptionUnits } from "@voyantjs/products-react"
+import { useOptionUnits } from "@voyantjs/inventory-react"
 import {
   Badge,
   Button,

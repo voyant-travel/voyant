@@ -47,7 +47,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/products": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },

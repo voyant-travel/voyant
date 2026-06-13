@@ -1,4 +1,4 @@
-import { priceCatalogs } from "@voyantjs/pricing/schema"
+import { priceCatalogs } from "@voyantjs/commerce/pricing/schema"
 import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type BuildProductGraphResult, buildProductGraph } from "./builder.js"

@@ -8,8 +8,8 @@ import {
   useAdminNavigate,
 } from "@voyantjs/admin"
 import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
+import { getProductsQueryOptions } from "@voyantjs/inventory-react"
 import { getSlotsQueryOptions } from "@voyantjs/operations-react/availability"
-import { getProductsQueryOptions } from "@voyantjs/products-react"
 
 import {
   type SupplierInvoiceAttachmentUpload,

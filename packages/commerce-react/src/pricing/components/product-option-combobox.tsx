@@ -2,7 +2,7 @@ import {
   type ProductOptionRecord,
   useProductOption,
   useProductOptions,
-} from "@voyantjs/products-react"
+} from "@voyantjs/inventory-react"
 import {
   Combobox,
   ComboboxCollection,

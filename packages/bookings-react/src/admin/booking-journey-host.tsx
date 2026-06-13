@@ -20,7 +20,7 @@ import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
 import type {} from "@voyantjs/catalog-react/admin"
 import type { CatalogDetailSurface } from "@voyantjs/catalog-react/ui"
 import { useAddresses } from "@voyantjs/identity-react"
-import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
+import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/inventory-react"
 import { useOrganization, usePerson } from "@voyantjs/relationships-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 

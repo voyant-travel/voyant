@@ -1,6 +1,6 @@
 import type { MarketRecord } from "@voyantjs/commerce-react/markets"
 import type { ChannelDetail } from "@voyantjs/distribution-react"
-import type { ProductOptionRecord, ProductRecord } from "@voyantjs/products-react"
+import type { ProductOptionRecord, ProductRecord } from "@voyantjs/inventory-react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -106,7 +106,7 @@ vi.mock("@voyantjs/commerce-react/markets", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/products-react", () => ({
+vi.mock("@voyantjs/inventory-react", () => ({
   useProducts: () => ({
     data: { data: [product] },
     isPending: false,

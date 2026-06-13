@@ -11,7 +11,7 @@ import {
   SlotExtrasManifestPanel,
   useExtrasUiMessagesOrDefault,
 } from "@voyantjs/bookings-react/extras"
-import { ProductQuickViewSheet } from "@voyantjs/products-react/ui"
+import { ProductQuickViewSheet } from "@voyantjs/inventory-react/ui"
 import { lazy, Suspense, useState } from "react"
 import { SlotAllocationPage } from "../allocation/index.js"
 import { AvailabilitySlotDialog } from "../components/availability-dialogs.js"
@@ -63,7 +63,7 @@ export interface AvailabilitySlotDetailHostProps {
  *     the Allocation tab (`@voyantjs/operations-react/availability/allocation`), the Extras manifest tab
  *     (`@voyantjs/bookings-react/extras`), the booking create/quick-view sheets
  *     (`@voyantjs/bookings-react/ui`, lazy) and the product quick-view sheet
- *     (`@voyantjs/products-react/ui`).
+ *     (`@voyantjs/inventory-react/ui`).
  *   - The slot edit dialog, submitting through the package mutation
  *     (`useAvailabilitySlotMutation`) instead of an app RPC client.
  *

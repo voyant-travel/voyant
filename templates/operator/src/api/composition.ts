@@ -25,7 +25,6 @@ import {
   type EmbeddingProvider,
   executeSemanticSearch,
 } from "@voyantjs/catalog"
-import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
@@ -43,6 +42,7 @@ import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
 import { identityHonoModule } from "@voyantjs/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyantjs/inventory"
+import { inventoryAuthoringExtension } from "@voyantjs/inventory/authoring/extension"
 import { createLegalHonoModule } from "@voyantjs/legal"
 import {
   createDefaultBookingDocumentAttachment,
@@ -203,7 +203,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/bookings/booking-supplier-extension",
     "@voyantjs/finance/bookings-create-extension",
     "@voyantjs/inventory/booking-extension",
-    "@voyantjs/catalog-authoring/extension",
+    "@voyantjs/inventory/authoring/extension",
     "@voyantjs/quotes/booking-extension",
     "@voyantjs/distribution/booking-extension",
   ],
@@ -397,7 +397,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
     "@voyantjs/finance/bookings-create-extension": () => bookingsCreateExtension,
     "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
-    "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
+    "@voyantjs/inventory/authoring/extension": () => inventoryAuthoringExtension,
     "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
     "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,
   },

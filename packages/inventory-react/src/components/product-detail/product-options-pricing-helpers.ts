@@ -1,4 +1,4 @@
-import type { PricingCategoryRecord } from "@voyantjs/pricing-react"
+import type { PricingCategoryRecord } from "@voyantjs/commerce-react/pricing"
 import type { useProductDetailMessages } from "./host.js"
 import type { OptionUnitData } from "./product-unit-dialog.js"
 

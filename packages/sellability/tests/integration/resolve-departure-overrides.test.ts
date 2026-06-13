@@ -1,13 +1,13 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
-import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import {
   departurePriceOverrides,
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
   pricingCategories,
-} from "@voyantjs/pricing/schema"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+} from "@voyantjs/commerce/pricing/schema"
+import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
+import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import { beforeEach, describe, expect, it } from "vitest"
 
 import { sellabilityService } from "../../src/service.js"

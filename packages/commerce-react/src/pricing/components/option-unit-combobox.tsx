@@ -1,4 +1,4 @@
-import { type OptionUnitRecord, useOptionUnit, useOptionUnits } from "@voyantjs/products-react"
+import { type OptionUnitRecord, useOptionUnit, useOptionUnits } from "@voyantjs/inventory-react"
 import {
   Combobox,
   ComboboxCollection,

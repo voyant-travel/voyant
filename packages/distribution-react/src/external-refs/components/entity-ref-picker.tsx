@@ -1,7 +1,7 @@
 "use client"
 
 import { BookingCombobox } from "@voyantjs/bookings-react/ui"
-import { ProductCombobox } from "@voyantjs/products-react/ui"
+import { ProductCombobox } from "@voyantjs/inventory-react/ui"
 import { OrganizationCombobox, PersonCombobox } from "@voyantjs/relationships-react/ui"
 import {
   Input,

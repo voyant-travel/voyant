@@ -1,5 +1,5 @@
-import { useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
-import { PricingCategoryCombobox } from "@voyantjs/pricing-react/components/pricing-category-combobox"
+import { useOptionUnitPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
+import { PricingCategoryCombobox } from "@voyantjs/commerce-react/pricing/components/pricing-category-combobox"
 import {
   Button,
   Input,

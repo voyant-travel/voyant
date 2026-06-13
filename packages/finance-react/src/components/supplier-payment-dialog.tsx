@@ -1,5 +1,5 @@
 import { BookingCombobox } from "@voyantjs/bookings-react/ui"
-import { SupplierCombobox } from "@voyantjs/suppliers-react/ui"
+import { SupplierCombobox } from "@voyantjs/distribution-react/suppliers/ui"
 import {
   Button,
   Dialog,

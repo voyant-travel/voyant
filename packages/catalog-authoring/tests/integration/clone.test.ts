@@ -1,4 +1,4 @@
-import { priceCatalogs } from "@voyantjs/pricing/schema"
+import { priceCatalogs } from "@voyantjs/commerce/pricing/schema"
 import { createTestDb, describeIfDb } from "@voyantjs/voyant-test-utils/db"
 import { beforeAll, expect, it } from "vitest"
 import { buildProductGraph } from "../../src/builder.js"

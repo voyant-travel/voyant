@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
+import { useOptionUnitPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
 import { Button } from "@voyantjs/ui/components"
 import { Plus, Trash2 } from "lucide-react"
 import { useState } from "react"

@@ -2,14 +2,14 @@
 "use client"
 
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
 import {
   type PricingCategoryRecord,
   useOptionPriceRuleMutation,
   useOptionUnitPriceRuleMutation,
   usePriceCatalogMutation,
   usePricingCategoryMutation,
-} from "@voyantjs/pricing-react"
+} from "@voyantjs/commerce-react/pricing"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"

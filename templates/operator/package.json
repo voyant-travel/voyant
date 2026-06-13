@@ -92,7 +92,6 @@
     "@voyantjs/plugin-smartbill": "workspace:^",
     "@voyantjs/pricing": "workspace:^",
     "@voyantjs/products": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/promotions": "workspace:^",
     "@voyantjs/quotes": "workspace:^",
     "@voyantjs/react": "workspace:^",

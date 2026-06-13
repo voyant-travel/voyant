@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: storefront; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
+
 import { productExtras } from "@voyantjs/bookings/extras"
 import {
   departurePriceOverrides,
@@ -19,7 +19,8 @@ import {
   productMedia,
   productOptions,
   products,
-} from "@voyantjs/products/schema"
+} from "@voyantjs/inventory/schema"
+import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations/availability/schema"
 import { customerSignals } from "@voyantjs/relationships/schema"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"

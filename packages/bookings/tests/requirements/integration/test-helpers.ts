@@ -6,7 +6,7 @@ import {
   productCapabilities,
   productOptions,
   products,
-} from "@voyantjs/products/schema"
+} from "@voyantjs/inventory/schema"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach } from "vitest"

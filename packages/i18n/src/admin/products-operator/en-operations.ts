@@ -116,7 +116,7 @@ export const operatorAdminProductsMessagesEnOperations = {
     overrideHint:
       "Override which itinerary this departure follows. Default tracks whichever itinerary is marked as default.",
   },
-  // days: removed — owned by `@voyantjs/products-react/ui`'s day-* primitives.
+  // days: removed — owned by `@voyantjs/inventory-react/ui`'s day-* primitives.
   services: {
     editTitle: "Edit Service",
     newTitle: "Add Service",
@@ -151,7 +151,7 @@ export const operatorAdminProductsMessagesEnOperations = {
     validationCountryCode: "Use 2-letter country code",
     create: "Add Service",
   },
-  // options: removed — owned by `@voyantjs/products-react/ui`'s option-* primitives.
+  // options: removed — owned by `@voyantjs/inventory-react/ui`'s option-* primitives.
   units: {
     editTitle: "Edit Unit",
     newTitle: "New Unit",
@@ -451,5 +451,5 @@ export const operatorAdminProductsMessagesEnOperations = {
       hidden: "Hidden",
     },
   },
-  // versions: removed — owned by `@voyantjs/products-react/ui`'s product-version-dialog.
+  // versions: removed — owned by `@voyantjs/inventory-react/ui`'s product-version-dialog.
 }

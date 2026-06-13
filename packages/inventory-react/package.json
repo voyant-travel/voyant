@@ -41,9 +41,8 @@
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/markets-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "react": "^19.0.0",
@@ -66,13 +65,10 @@
     "@voyantjs/finance-react": {
       "optional": true
     },
-    "@voyantjs/markets-react": {
+    "@voyantjs/commerce-react": {
       "optional": true
     },
-    "@voyantjs/pricing-react": {
-      "optional": true
-    },
-    "@voyantjs/suppliers-react": {
+    "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -104,10 +100,9 @@
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/markets-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",

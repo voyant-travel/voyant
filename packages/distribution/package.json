@@ -41,8 +41,8 @@
     "@voyantjs/suppliers-contracts": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/availability": "workspace:^",
-    "@voyantjs/products": "workspace:^",
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },

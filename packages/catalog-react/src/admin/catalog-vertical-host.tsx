@@ -1,9 +1,9 @@
 "use client"
 
 import { useAdminHref, useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
-import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
-import { useProductMutation } from "@voyantjs/products-react"
-import { useSuppliers } from "@voyantjs/suppliers-react"
+import { useMarketLocales, useMarkets } from "@voyantjs/commerce-react/markets"
+import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
+import { useProductMutation } from "@voyantjs/inventory-react"
 import {
   Select,
   SelectContent,

@@ -1,9 +1,4 @@
 import {
-  availabilityRules,
-  availabilitySlots,
-  availabilityStartTimes,
-} from "@voyantjs/operations/availability"
-import {
   departurePriceOverrides,
   dropoffPriceRules,
   extraPriceRules,
@@ -12,7 +7,12 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   pickupPriceRules,
-} from "@voyantjs/pricing/schema"
+} from "@voyantjs/commerce/pricing/schema"
+import {
+  availabilityRules,
+  availabilitySlots,
+  availabilityStartTimes,
+} from "@voyantjs/operations/availability"
 import { eq, inArray } from "drizzle-orm"
 import { type CloneContext, withoutSystemColumns } from "./clone-content.js"
 

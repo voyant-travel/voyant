@@ -55,7 +55,7 @@ export interface BookingDetailHostSlotContext {
   openInvoiceSheet: (invoiceId: string) => void
   /**
    * Opens the host app's "Generate payment link" flow (a dialog the app
-   * owns — `@voyantjs/checkout-react/ui` depends on this package, so the host
+   * owns — `@voyantjs/finance-react/checkout-ui` depends on this package, so the host
    * cannot import it without a cycle). Forwarded from
    * {@link BookingDetailHostProps.onGenerateLink}; `undefined` when the app
    * didn't wire one, in which case payment-link widgets hide the button.
@@ -102,7 +102,7 @@ export interface BookingDetailHostProps {
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
    * Opens the app's "Generate payment link" flow (a dialog owned by the
-   * host app — `@voyantjs/checkout-react/ui` depends on this package, so
+   * host app — `@voyantjs/finance-react/checkout-ui` depends on this package, so
    * importing it here would be a cycle). Forwarded to slot/widget
    * contributions via {@link BookingDetailHostSlotContext.onGenerateLink}.
    */

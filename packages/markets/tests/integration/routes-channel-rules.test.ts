@@ -138,7 +138,7 @@ describe.skipIf(!DB_AVAILABLE)("Markets routes (integration)", () => {
 
   /** Seed a product row directly into DB (cross-module, no routes) */
   async function seedProductDirect() {
-    const { products } = await import("@voyantjs/products/schema")
+    const { products } = await import("@voyantjs/inventory/schema")
     const [row] = await db
       .insert(products)
       .values({ name: `Product ${nextSeq()}`, sellCurrency: "USD" })

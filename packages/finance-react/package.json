@@ -40,8 +40,8 @@
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -61,10 +61,10 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
-    "@voyantjs/suppliers-react": {
+    "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -96,9 +96,9 @@
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",

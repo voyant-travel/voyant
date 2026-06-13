@@ -298,7 +298,7 @@ export interface CreateBookingsAdminExtensionOptions {
    * {@link BookingDetailHost}. The operator overrides this to compose the
    * app-owned payment/payment-link dialogs around the host — those dialogs
    * live app-side because `@voyantjs/finance-react/ui` and
-   * `@voyantjs/checkout-react/ui` depend on this package, so importing them
+   * `@voyantjs/finance-react/checkout-ui` depend on this package, so importing them
    * here would be a cycle.
    */
   detailPageComponent?: () => Promise<{

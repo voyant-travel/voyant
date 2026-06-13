@@ -33,7 +33,7 @@
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/products": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/voyant-test-utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "@voyantjs/workflows": "workspace:^",

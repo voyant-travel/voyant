@@ -38,9 +38,8 @@
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/legal": "workspace:^",
-    "@voyantjs/markets-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -60,13 +59,10 @@
     "@voyantjs/distribution-react": {
       "optional": true
     },
-    "@voyantjs/markets-react": {
+    "@voyantjs/commerce-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
-      "optional": true
-    },
-    "@voyantjs/suppliers-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -92,10 +88,9 @@
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/legal": "workspace:^",
-    "@voyantjs/markets-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
