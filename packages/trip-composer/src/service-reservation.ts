@@ -3,8 +3,14 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 
 import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"
-import type { NewTripEnvelope, TripComponent, TripEnvelope } from "./schema.js"
-import { tripComponents, tripEnvelopes } from "./schema.js"
+import type {
+  NewTripEnvelope,
+  TripComponent,
+  TripEnvelope,
+  TripReservationPlan,
+  TripReservationPlanComponentSnapshot,
+} from "./schema.js"
+import { tripComponents, tripEnvelopes, tripReservationPlans } from "./schema.js"
 import {
   aggregateComponentPricing,
   assertTripComponentCanBeReserved,
@@ -23,10 +29,10 @@ import {
 import { applyQuoteToComponent } from "./service-pricing.js"
 import { getTrip } from "./service-trips.js"
 import type {
-  ReleaseReservedComponentResult,
   ReserveComponentResult,
   ReserveTripDeps,
   ReserveTripResult,
+  SubmitTripReservationPlanComponent,
   Trip,
 } from "./service-types.js"
 import { TripComposerInvariantError } from "./service-types.js"
@@ -47,6 +53,7 @@ export async function reserveTrip(
     return {
       envelope: trip.envelope,
       components: trip.components,
+      reservationPlanId: null,
       reserved: trip.components
         .filter(isReservedTripComponent)
         .map((component) => ({ componentId: component.id, status: component.status })),
@@ -63,6 +70,7 @@ export async function reserveTrip(
     return {
       envelope: preflight.trip.envelope,
       components: preflight.trip.components,
+      reservationPlanId: null,
       reserved: [],
       failures: preflight.failures,
       compensations: [],
@@ -70,6 +78,9 @@ export async function reserveTrip(
     }
   }
   trip = preflight.trip
+
+  const planComponents = prepareReservationPlanComponents(trip.components)
+  const reservationPlan = await createReservationPlan(db, trip, input)
 
   await db
     .update(tripEnvelopes)
@@ -81,99 +92,91 @@ export async function reserveTrip(
     })
     .where(eq(tripEnvelopes.id, input.envelopeId))
 
-  const warnings = new Set<string>()
-  const failures: ReserveTripResult["failures"] = []
-  const reserved: Array<{
-    component: TripComponent
-    result: ReserveComponentResult
-  }> = []
+  const warnings = new Set(preflight.warnings)
   const componentsById = new Map(trip.components.map((component) => [component.id, component]))
 
-  for (const component of trip.components) {
-    if (component.status === "removed" || component.status === "cancelled") {
-      continue
+  if (planComponents.failures.length > 0) {
+    const failedResult = await failReservationPlanBeforeSubmission(
+      db,
+      input.envelopeId,
+      reservationPlan.id,
+      planComponents.failures,
+      warnings,
+      componentsById,
+    )
+    return { ...failedResult, reservationPlanId: reservationPlan.id }
+  }
+
+  const submitted = await deps.submitReservationPlan({
+    reservationPlan,
+    envelope: trip.envelope,
+    components: planComponents.components,
+    idempotencyKey: input.idempotencyKey ?? null,
+  })
+
+  for (const warning of submitted.warnings) warnings.add(warning)
+
+  for (const item of submitted.reserved) {
+    const component = componentsById.get(item.componentId)
+    if (!component) continue
+    const updated = await applyReserveResultToComponent(db, component, item.result)
+    componentsById.set(updated.id, updated)
+  }
+
+  for (const failure of submitted.failures) {
+    const component = componentsById.get(failure.componentId)
+    if (!component) continue
+    const failed = await applyReservationFailureToComponent(db, component, failure.reason)
+    componentsById.set(failed.id, failed)
+  }
+
+  await applyReservationPlanCompensations(db, componentsById, submitted.compensations)
+
+  if (submitted.status === "failed" || submitted.failures.length > 0) {
+    await updateReservationPlanResult(db, reservationPlan.id, {
+      status: "failed",
+      failures: submitted.failures,
+      compensations: submitted.compensations,
+      warnings: [...warnings],
+    })
+
+    const [failedEnvelope] = (await db
+      .update(tripEnvelopes)
+      .set({
+        status: "failed",
+        updatedAt: new Date(),
+      })
+      .where(eq(tripEnvelopes.id, input.envelopeId))
+      .returning()) as TripEnvelope[]
+
+    if (!failedEnvelope) {
+      throw new Error("reserveTrip: failed envelope update returned no rows")
     }
 
-    // Non-catalog-backed components (manual_placeholder, flight_placeholder,
-    // etc.) can either be reserved by a vertical hook (flights, insurance,
-    // transfer connectors) or held internally when no external reservation
-    // system exists.
-    if (!isCatalogBackedTripComponent(component)) {
-      try {
-        const result = await deps.reserveNonCatalogComponent?.({
-          envelope: trip.envelope,
-          component,
-        })
-        if (result) {
-          const updated = await applyReserveResultToComponent(db, component, result)
-          componentsById.set(updated.id, updated)
-          reserved.push({ component: updated, result })
-          for (const warning of result.warnings ?? []) warnings.add(warning)
-        } else {
-          const held = await holdNonCatalogComponent(db, component)
-          componentsById.set(held.id, held)
-          reserved.push({
-            component: held,
-            result: { status: "held", warnings: undefined },
-          })
-        }
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : "internal_hold_failed"
-        warnings.add(reason)
-        failures.push({ componentId: component.id, reason })
-      }
-      continue
-    }
+    const refreshed = await getTrip(db, input.envelopeId)
 
-    try {
-      assertTripComponentCanBeReserved(component)
-      const result = await deps.reserveCatalogComponent({ envelope: trip.envelope, component })
-      const updated = await applyReserveResultToComponent(db, component, result)
-      componentsById.set(updated.id, updated)
-      reserved.push({ component: updated, result })
-      for (const warning of result.warnings ?? []) warnings.add(warning)
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "reservation_failed"
-      warnings.add(reason)
-      failures.push({ componentId: component.id, reason })
-      const failed = await applyReservationFailureToComponent(db, component, reason)
-      componentsById.set(failed.id, failed)
-
-      const compensations = await compensateReservedComponents(db, reserved, deps)
-      for (const compensation of compensations) {
-        if (compensation.status !== "released") warnings.add(compensation.status)
-      }
-
-      const [failedEnvelope] = (await db
-        .update(tripEnvelopes)
-        .set({
-          status: "failed",
-          updatedAt: new Date(),
-        })
-        .where(eq(tripEnvelopes.id, input.envelopeId))
-        .returning()) as TripEnvelope[]
-
-      if (!failedEnvelope) {
-        throw new Error("reserveTrip: failed envelope update returned no rows")
-      }
-
-      const refreshed = await getTrip(db, input.envelopeId)
-
-      return {
-        envelope: failedEnvelope,
-        components: refreshed?.components ?? [...componentsById.values()],
-        reserved: reserved.map((item) => ({
-          componentId: item.component.id,
-          status: item.component.status as "held" | "booked",
-        })),
-        failures,
-        compensations,
-        warnings: [...warnings],
-      }
+    return {
+      envelope: failedEnvelope,
+      components: refreshed?.components ?? [...componentsById.values()],
+      reservationPlanId: reservationPlan.id,
+      reserved: submitted.reserved.map((item) => ({
+        componentId: item.componentId,
+        status: item.status,
+      })),
+      failures: submitted.failures,
+      compensations: submitted.compensations,
+      warnings: [...warnings],
     }
   }
 
-  const refs = commonEnvelopeRefs(reserved.map(({ result }) => result))
+  await updateReservationPlanResult(db, reservationPlan.id, {
+    status: "reserved",
+    failures: [],
+    compensations: [],
+    warnings: [...warnings],
+  })
+
+  const refs = commonEnvelopeRefs(submitted.reserved.map(({ result }) => result))
   const [envelope] = (await db
     .update(tripEnvelopes)
     .set({
@@ -194,13 +197,198 @@ export async function reserveTrip(
   return {
     envelope,
     components: refreshed?.components ?? [...componentsById.values()],
-    reserved: reserved.map((item) => ({
-      componentId: item.component.id,
-      status: item.component.status as "held" | "booked",
+    reservationPlanId: reservationPlan.id,
+    reserved: submitted.reserved.map((item) => ({
+      componentId: item.componentId,
+      status: item.status,
     })),
+    failures: [],
+    compensations: [],
+    warnings: [...warnings],
+  }
+}
+
+function prepareReservationPlanComponents(components: TripComponent[]): {
+  components: SubmitTripReservationPlanComponent[]
+  failures: ReserveTripResult["failures"]
+} {
+  const prepared: SubmitTripReservationPlanComponent[] = []
+  const failures: ReserveTripResult["failures"] = []
+
+  for (const component of activeReservationComponents(components)) {
+    if (isCatalogBackedTripComponent(component)) {
+      try {
+        assertTripComponentCanBeReserved(component)
+      } catch (error) {
+        failures.push({
+          componentId: component.id,
+          reason: error instanceof Error ? error.message : "reservation_not_allowed",
+        })
+        continue
+      }
+    }
+
+    prepared.push({
+      componentId: component.id,
+      reservationKind: isCatalogBackedTripComponent(component) ? "catalog_backed" : "non_catalog",
+      component,
+    })
+  }
+
+  return { components: prepared, failures }
+}
+
+async function createReservationPlan(
+  db: AnyDrizzleDb,
+  trip: Trip,
+  input: ReserveTripInput,
+): Promise<TripReservationPlan> {
+  const componentSnapshots = activeReservationComponents(trip.components).map(
+    reservationPlanComponentSnapshot,
+  )
+  const now = new Date()
+  const [plan] = (await db
+    .insert(tripReservationPlans)
+    .values({
+      envelopeId: trip.envelope.id,
+      status: "submitted",
+      idempotencyKey: input.idempotencyKey ?? null,
+      refreshScope: input.refreshScope ?? null,
+      componentCount: componentSnapshots.length,
+      components: componentSnapshots,
+      failures: [],
+      compensations: [],
+      warnings: [],
+      submittedAt: now,
+      updatedAt: now,
+    })
+    .returning()) as TripReservationPlan[]
+
+  if (!plan) {
+    throw new Error("createReservationPlan: insert returned no row")
+  }
+
+  return plan
+}
+
+function activeReservationComponents(components: TripComponent[]): TripComponent[] {
+  return components.filter(
+    (component) => component.status !== "removed" && component.status !== "cancelled",
+  )
+}
+
+function reservationPlanComponentSnapshot(
+  component: TripComponent,
+): TripReservationPlanComponentSnapshot {
+  return {
+    componentId: component.id,
+    sequence: component.sequence,
+    kind: component.kind,
+    status: component.status,
+    catalogBacked: isCatalogBackedTripComponent(component),
+    entityModule: component.entityModule,
+    entityId: component.entityId,
+    sourceKind: component.sourceKind,
+    sourceConnectionId: component.sourceConnectionId,
+    sourceRef: component.sourceRef,
+    bookingDraftId: component.bookingDraftId,
+    catalogQuoteId: component.catalogQuoteId,
+    currency: component.componentCurrency,
+    totalAmountCents: component.componentTotalAmountCents,
+    priceExpiresAt: component.priceExpiresAt?.toISOString() ?? null,
+    warningCodes: component.warningCodes,
+  }
+}
+
+async function failReservationPlanBeforeSubmission(
+  db: AnyDrizzleDb,
+  envelopeId: string,
+  reservationPlanId: string,
+  failures: ReserveTripResult["failures"],
+  warnings: Set<string>,
+  componentsById: Map<string, TripComponent>,
+): Promise<ReserveTripResult> {
+  for (const failure of failures) {
+    warnings.add(failure.reason)
+    const component = componentsById.get(failure.componentId)
+    if (!component) continue
+    const failed = await applyReservationFailureToComponent(db, component, failure.reason)
+    componentsById.set(failed.id, failed)
+  }
+
+  await updateReservationPlanResult(db, reservationPlanId, {
+    status: "failed",
     failures,
     compensations: [],
     warnings: [...warnings],
+  })
+
+  const [failedEnvelope] = (await db
+    .update(tripEnvelopes)
+    .set({ status: "failed", updatedAt: new Date() })
+    .where(eq(tripEnvelopes.id, envelopeId))
+    .returning()) as TripEnvelope[]
+
+  if (!failedEnvelope) {
+    throw new Error("reserveTrip: failed envelope update returned no rows")
+  }
+
+  const refreshed = await getTrip(db, envelopeId)
+  return {
+    envelope: failedEnvelope,
+    components: refreshed?.components ?? [...componentsById.values()],
+    reserved: [],
+    failures,
+    compensations: [],
+    warnings: [...warnings],
+  }
+}
+
+async function updateReservationPlanResult(
+  db: AnyDrizzleDb,
+  reservationPlanId: string,
+  result: {
+    status: "reserved" | "failed"
+    failures: ReserveTripResult["failures"]
+    compensations: ReserveTripResult["compensations"]
+    warnings: string[]
+  },
+): Promise<void> {
+  await db
+    .update(tripReservationPlans)
+    .set({
+      status: result.status,
+      failures: result.failures,
+      compensations: result.compensations,
+      warnings: result.warnings,
+      completedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(tripReservationPlans.id, reservationPlanId))
+}
+
+async function applyReservationPlanCompensations(
+  db: AnyDrizzleDb,
+  componentsById: Map<string, TripComponent>,
+  compensations: ReserveTripResult["compensations"],
+): Promise<void> {
+  for (const compensation of compensations) {
+    const component = componentsById.get(compensation.componentId)
+    if (!component) continue
+
+    if (compensation.status === "released") {
+      if (!isReservedTripComponent(component)) continue
+      const released = await markReservedComponentReleased(db, component)
+      componentsById.set(released.id, released)
+      continue
+    }
+
+    const updated = await markComponentForStaffRemediation(
+      db,
+      component,
+      compensation.reason ?? compensation.status,
+    )
+    componentsById.set(updated.id, updated)
   }
 }
 
@@ -348,44 +536,6 @@ function pricingChangeDetails(
   }
 }
 
-// Internal "reservation" for manual / placeholder components — no supplier
-// dispatch, no booking engine. We just flip status to `held` so the envelope
-// can move on to `reserved` and downstream totals/cancellation flows treat
-// the line item as locked in.
-async function holdNonCatalogComponent(
-  db: AnyDrizzleDb,
-  component: TripComponent,
-): Promise<TripComponent> {
-  if (component.status === "held" || component.status === "booked") {
-    return component
-  }
-  if (!isAllowedTripComponentStatusTransition(component.status, "held")) {
-    throw new TripComposerInvariantError(
-      `Trip component ${component.id} is ${component.status} and cannot be held`,
-    )
-  }
-  const [updated] = (await db
-    .update(tripComponents)
-    .set({ status: "held", updatedAt: new Date() })
-    .where(eq(tripComponents.id, component.id))
-    .returning()) as TripComponent[]
-
-  if (!updated) {
-    throw new Error(`holdNonCatalogComponent: update returned no row for ${component.id}`)
-  }
-
-  await createComponentEvent(db, {
-    envelopeId: updated.envelopeId,
-    componentId: updated.id,
-    eventType: statusToEventType(updated.status),
-    fromStatus: component.status,
-    toStatus: updated.status,
-    payload: { reason: "internal_hold" },
-  })
-
-  return updated
-}
-
 async function applyReserveResultToComponent(
   db: AnyDrizzleDb,
   component: TripComponent,
@@ -462,63 +612,6 @@ async function applyReservationFailureToComponent(
   })
 
   return updated
-}
-
-async function compensateReservedComponents(
-  db: AnyDrizzleDb,
-  reserved: Array<{ component: TripComponent; result: ReserveComponentResult }>,
-  deps: ReserveTripDeps,
-): Promise<ReserveTripResult["compensations"]> {
-  const compensations: ReserveTripResult["compensations"] = []
-
-  for (const item of [...reserved].reverse()) {
-    if (!deps.releaseCatalogComponent) {
-      await markComponentForStaffRemediation(db, item.component, "release_not_configured")
-      compensations.push({
-        componentId: item.component.id,
-        status: "release_not_configured",
-        reason: "release_not_configured",
-      })
-      continue
-    }
-
-    try {
-      const released = await deps.releaseCatalogComponent({
-        component: item.component,
-        reserveResult: item.result,
-      })
-      compensations.push(await compensationFromRelease(db, item.component, released))
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "release_failed"
-      await markComponentForStaffRemediation(db, item.component, reason)
-      compensations.push({
-        componentId: item.component.id,
-        status: "release_failed",
-        reason,
-      })
-    }
-  }
-
-  return compensations
-}
-
-async function compensationFromRelease(
-  db: AnyDrizzleDb,
-  component: TripComponent,
-  released: ReleaseReservedComponentResult,
-): Promise<ReserveTripResult["compensations"][number]> {
-  if (!released.released) {
-    const reason = released.reason ?? "release_failed"
-    await markComponentForStaffRemediation(db, component, reason)
-    return {
-      componentId: component.id,
-      status: "release_failed",
-      reason,
-    }
-  }
-
-  await markReservedComponentReleased(db, component)
-  return { componentId: component.id, status: "released" }
 }
 
 async function markReservedComponentReleased(

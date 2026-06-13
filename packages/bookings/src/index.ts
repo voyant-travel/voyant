@@ -33,6 +33,22 @@ export {
   shouldRevealBookingPii,
 } from "./pii-redaction.js"
 export * from "./requirements/index.js"
+export {
+  type BookingReservationPlanCompensation,
+  type BookingReservationPlanFailure,
+  type BookingReservationPlanLine,
+  type BookingReservationPlanLineContext,
+  type BookingReservationPlanLineKind,
+  type BookingReservationPlanLineResult,
+  type BookingReservationPlanOrigin,
+  type BookingReservationPlanReleaseResult,
+  type BookingReservationPlanStatus,
+  type SubmitBookingReservationPlanInput,
+  type SubmitBookingReservationPlanResult,
+  type SubmitBookingReservationPlanRuntime,
+  type SubmittedBookingReservationPlanLine,
+  submitBookingReservationPlan,
+} from "./reservation-plans.js"
 export type {
   BookingCancelledEvent,
   BookingConfirmedEvent,

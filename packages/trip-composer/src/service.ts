@@ -64,11 +64,15 @@ export type {
   StartCheckoutResult,
   StartCheckoutTarget,
   StartedTripComponentCheckout,
+  SubmitTripReservationPlanComponent,
+  SubmitTripReservationPlanInput,
+  SubmitTripReservationPlanResult,
   Trip,
   TripCancellationPreviewResult,
   TripCheckoutInput,
   TripCheckoutResult,
   TripListResult,
+  TripReservationPlanComponentKind,
 } from "./service-types.js"
 export { TripComposerInvariantError } from "./service-types.js"
 

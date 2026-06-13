@@ -111,6 +111,7 @@ describe("booking origins", () => {
       bookingId: "book_trip_1797",
       tripEnvelopeId: "trenv_1797",
       tripComponentId: "trcmp_1797",
+      reservationPlanId: "trpl_1797",
       catalogPriceResponseId: "cquo_1797",
       catalogSnapshotId: "bcsn_1797",
       providerSourceKind: "catalog",
@@ -123,6 +124,7 @@ describe("booking origins", () => {
     expect(input).toEqual({
       bookingId: "book_trip_1797",
       originSource: "catalog_price_availability",
+      reservationPlanId: "trpl_1797",
       catalogPriceResponseId: "cquo_1797",
       catalogSnapshotId: "bcsn_1797",
       providerSourceKind: "catalog",
@@ -131,7 +133,7 @@ describe("booking origins", () => {
       providerSourceRef: "departure_1797",
       providerOrderRef: "ord_provider_1797",
       metadata: {
-        source: "trip_composer.reserve_catalog_component",
+        source: "bookings.submit_reservation_plan",
         tripEnvelopeId: "trenv_1797",
         tripComponentId: "trcmp_1797",
         entityModule: "products",

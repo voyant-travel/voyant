@@ -131,6 +131,7 @@ export async function reserveCatalogComponent(
         bookingId: result.bookingId,
         tripEnvelopeId: input.envelope.id,
         tripComponentId: component.id,
+        reservationPlanId: input.reservationPlanId,
         catalogPriceResponseId: quoteId,
         catalogSnapshotId: result.snapshotId,
         providerSourceKind: component.sourceKind,
