@@ -6,8 +6,9 @@ Audience: anyone designing or implementing cross-vertical sellable inventory in 
 This document captures the architecture for how Voyant models sellable inventory across multiple verticals, and how that inventory is searched, merchandised, snapshotted at booking, and reconciled across mixed sources (owned, Voyant Connect, GDS, direct supplier APIs, bedbanks).
 
 It is the meta-contract that vertical modules and resale surfaces adopt:
-`packages/products` (tours / experiences, OCTO-aligned), `packages/cruises`
-(see [`cruises-module.md`](./cruises-module.md)), accommodation resale
+`packages/inventory` / compatibility `packages/products` (operated tours /
+experiences, OCTO-aligned), `packages/cruises` (see
+[`cruises-module.md`](./cruises-module.md)), accommodation resale
 surfaces (hotel/lodging catalog inventory, room options, board/rate choices,
 and stay booking lines), `packages/charters` (yacht charters, see
 [`charters-module.md`](./charters-module.md)), and `packages/extras` (booking
@@ -130,7 +131,8 @@ A fourth category exists for non-sellable infrastructure: **shared master entiti
 The existing vertical modules are:
 
 ```
-packages/products      operator-owned tours, experiences, multi-day itineraries (OCTO-aligned)
+packages/inventory     operator-owned tours, experiences, multi-day itineraries (OCTO-aligned)
+packages/products      compatibility entrypoint for the existing operated product implementation
                        — also the natural home for standalone excursions / day-trips
                          (a 1-day product, optionally linked from a longer parent product)
 packages/cruises       cruise root + departures + cabin_categories + itinerary_days
