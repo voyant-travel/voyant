@@ -1,5 +1,11 @@
 # @voyantjs/utils
 
+## 0.105.1
+
+### Patch Changes
+
+- 0b10029: Split oversized shared service, UI, locale, and reference-data modules into focused internal files while preserving the existing public exports and runtime behavior.
+
 ## 0.105.0
 
 ### Minor Changes

@@ -1,5 +1,7 @@
 # @voyantjs/resources
 
+## 0.111.6
+
 ## 0.111.5
 
 ### Patch Changes
