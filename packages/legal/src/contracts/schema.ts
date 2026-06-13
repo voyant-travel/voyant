@@ -13,6 +13,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
+import { legalTargetKindEnum } from "../targets/schema.js"
 
 // ---------- enums ----------
 
@@ -224,7 +225,12 @@ export const contracts = pgTable(
     channelId: typeIdRef("channel_id"),
 
     bookingId: typeIdRef("booking_id"),
-    orderId: typeIdRef("order_id"),
+    targetKind: legalTargetKindEnum("target_kind"),
+    targetId: typeIdRef("target_id"),
+    targetProvider: text("target_provider"),
+    targetSourceRef: text("target_source_ref"),
+    legacyTransactionOfferId: typeIdRef("legacy_transaction_offer_id"),
+    legacyTransactionOrderId: typeIdRef("legacy_transaction_order_id"),
 
     issuedAt: timestamp("issued_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
@@ -250,14 +256,17 @@ export const contracts = pgTable(
     index("idx_contracts_organization").on(table.organizationId),
     index("idx_contracts_supplier").on(table.supplierId),
     index("idx_contracts_booking").on(table.bookingId),
-    index("idx_contracts_order").on(table.orderId),
+    index("idx_contracts_target").on(table.targetKind, table.targetId),
+    index("idx_contracts_provider_source").on(table.targetProvider, table.targetSourceRef),
+    index("idx_contracts_legacy_transaction_offer").on(table.legacyTransactionOfferId),
+    index("idx_contracts_legacy_transaction_order").on(table.legacyTransactionOrderId),
     index("idx_contracts_scope_created").on(table.scope, table.createdAt),
     index("idx_contracts_status_created").on(table.status, table.createdAt),
     index("idx_contracts_person_created").on(table.personId, table.createdAt),
     index("idx_contracts_organization_created").on(table.organizationId, table.createdAt),
     index("idx_contracts_supplier_created").on(table.supplierId, table.createdAt),
     index("idx_contracts_booking_created").on(table.bookingId, table.createdAt),
-    index("idx_contracts_order_created").on(table.orderId, table.createdAt),
+    index("idx_contracts_target_created").on(table.targetKind, table.targetId, table.createdAt),
     index("idx_contracts_contract_number").on(table.contractNumber),
   ],
 )
@@ -278,6 +287,12 @@ export const contractSignatures = pgTable(
     signerEmail: text("signer_email"),
     signerRole: text("signer_role"),
     personId: typeIdRef("person_id").references(() => people.id, { onDelete: "set null" }),
+    targetKind: legalTargetKindEnum("target_kind"),
+    targetId: typeIdRef("target_id"),
+    targetProvider: text("target_provider"),
+    targetSourceRef: text("target_source_ref"),
+    legacyTransactionOfferId: typeIdRef("legacy_transaction_offer_id"),
+    legacyTransactionOrderId: typeIdRef("legacy_transaction_order_id"),
     method: contractSignatureMethodEnum("method").notNull().default("manual"),
     provider: text("provider"),
     externalReference: text("external_reference"),
@@ -292,6 +307,13 @@ export const contractSignatures = pgTable(
     index("idx_contract_signatures_contract").on(table.contractId),
     index("idx_contract_signatures_contract_signed").on(table.contractId, table.signedAt),
     index("idx_contract_signatures_person").on(table.personId),
+    index("idx_contract_signatures_target").on(table.targetKind, table.targetId),
+    index("idx_contract_signatures_provider_source").on(
+      table.targetProvider,
+      table.targetSourceRef,
+    ),
+    index("idx_contract_signatures_legacy_transaction_offer").on(table.legacyTransactionOfferId),
+    index("idx_contract_signatures_legacy_transaction_order").on(table.legacyTransactionOrderId),
     index("idx_contract_signatures_method").on(table.method),
   ],
 )
@@ -314,12 +336,25 @@ export const contractAttachments = pgTable(
     fileSize: integer("file_size"),
     storageKey: text("storage_key"),
     checksum: text("checksum"),
+    targetKind: legalTargetKindEnum("target_kind"),
+    targetId: typeIdRef("target_id"),
+    targetProvider: text("target_provider"),
+    targetSourceRef: text("target_source_ref"),
+    legacyTransactionOfferId: typeIdRef("legacy_transaction_offer_id"),
+    legacyTransactionOrderId: typeIdRef("legacy_transaction_order_id"),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("idx_contract_attachments_contract").on(table.contractId),
     index("idx_contract_attachments_contract_created").on(table.contractId, table.createdAt),
+    index("idx_contract_attachments_target").on(table.targetKind, table.targetId),
+    index("idx_contract_attachments_provider_source").on(
+      table.targetProvider,
+      table.targetSourceRef,
+    ),
+    index("idx_contract_attachments_legacy_transaction_offer").on(table.legacyTransactionOfferId),
+    index("idx_contract_attachments_legacy_transaction_order").on(table.legacyTransactionOrderId),
   ],
 )
 

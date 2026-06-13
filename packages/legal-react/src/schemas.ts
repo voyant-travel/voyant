@@ -16,7 +16,21 @@ import {
   policyRefundTypeSchema,
   policyVersionStatusSchema,
 } from "@voyantjs/legal/policies/validation"
+import {
+  legalTermAcceptanceStatusSchema,
+  legalTermTypeSchema,
+} from "@voyantjs/legal/terms/validation"
 import { z } from "zod"
+
+const legalTargetKindSchema = z.enum([
+  "booking",
+  "quote_version",
+  "program",
+  "product",
+  "inventory_item",
+  "supplier_channel_relationship",
+  "provider_source_ref",
+])
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
   z.object({
@@ -40,7 +54,12 @@ export const legalContractRecordSchema = insertContractSchema.extend({
   supplierId: z.string().nullable(),
   channelId: z.string().nullable(),
   bookingId: z.string().nullable(),
-  orderId: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+  targetSourceRef: z.string().nullable().optional(),
+  legacyTransactionOfferId: z.string().nullable().optional(),
+  legacyTransactionOrderId: z.string().nullable().optional(),
   personFirstName: z.string().nullable().optional(),
   personLastName: z.string().nullable().optional(),
   personEmail: z.string().nullable().optional(),
@@ -64,6 +83,12 @@ export const legalContractSignatureRecordSchema = insertContractSignatureSchema.
   signerEmail: z.string().nullable(),
   signerRole: z.string().nullable(),
   personId: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+  targetSourceRef: z.string().nullable().optional(),
+  legacyTransactionOfferId: z.string().nullable().optional(),
+  legacyTransactionOrderId: z.string().nullable().optional(),
   provider: z.string().nullable(),
   externalReference: z.string().nullable(),
   signatureData: z.string().nullable(),
@@ -83,6 +108,12 @@ export const legalContractAttachmentRecordSchema = insertContractAttachmentSchem
   fileSize: z.number().int().nullable(),
   storageKey: z.string().nullable(),
   checksum: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+  targetSourceRef: z.string().nullable().optional(),
+  legacyTransactionOfferId: z.string().nullable().optional(),
+  legacyTransactionOrderId: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   createdAt: z.string(),
 })
@@ -195,8 +226,12 @@ export const legalPolicyAcceptanceRecordSchema = z.object({
   policyVersionId: z.string(),
   personId: z.string().nullable(),
   bookingId: z.string().nullable(),
-  orderId: z.string().nullable().optional(),
-  offerId: z.string().nullable().optional(),
+  targetKind: legalTargetKindSchema.nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+  targetSourceRef: z.string().nullable().optional(),
+  legacyTransactionOfferId: z.string().nullable().optional(),
+  legacyTransactionOrderId: z.string().nullable().optional(),
   acceptedAt: z.string(),
   acceptedBy: z.string().nullable().optional(),
   method: policyAcceptanceMethodSchema,
@@ -207,6 +242,32 @@ export const legalPolicyAcceptanceRecordSchema = z.object({
 })
 
 export type LegalPolicyAcceptanceRecord = z.infer<typeof legalPolicyAcceptanceRecordSchema>
+
+export const legalTermRecordSchema = z.object({
+  id: z.string(),
+  contractId: z.string().nullable().optional(),
+  policyVersionId: z.string().nullable().optional(),
+  targetKind: legalTargetKindSchema.nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+  targetSourceRef: z.string().nullable().optional(),
+  legacyTransactionOfferId: z.string().nullable().optional(),
+  legacyTransactionOrderId: z.string().nullable().optional(),
+  termType: legalTermTypeSchema,
+  title: z.string(),
+  body: z.string(),
+  language: z.string().nullable().optional(),
+  required: z.boolean(),
+  sortOrder: z.number().int(),
+  acceptanceStatus: legalTermAcceptanceStatusSchema,
+  acceptedAt: z.string().nullable().optional(),
+  acceptedBy: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type LegalTermRecord = z.infer<typeof legalTermRecordSchema>
 
 export const legalContractListResponse = paginatedEnvelope(legalContractRecordSchema)
 export const legalContractSingleResponse = singleEnvelope(legalContractRecordSchema)
@@ -264,6 +325,8 @@ export const legalPolicyAssignmentSingleResponse = singleEnvelope(legalPolicyAss
 export const legalPolicyAcceptanceListResponse = singleEnvelope(
   z.array(legalPolicyAcceptanceRecordSchema),
 )
+export const legalTermListResponse = paginatedEnvelope(legalTermRecordSchema)
+export const legalTermSingleResponse = singleEnvelope(legalTermRecordSchema)
 
 // Resolved policy returned by GET /v1/admin/legal/policies/resolve
 export const resolvedPolicySchema = z.object({

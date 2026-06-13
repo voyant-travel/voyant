@@ -1,0 +1,86 @@
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { Hono } from "hono"
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { legalTermsAdminRoutes } from "../../src/terms/routes.js"
+
+const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
+
+const json = (body: Record<string, unknown>) => ({
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+})
+
+describe.skipIf(!DB_AVAILABLE)("Legal terms routes", () => {
+  let app: Hono
+  let db: PostgresJsDatabase
+
+  beforeAll(async () => {
+    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    db = createTestDb()
+    await cleanupTestDb(db)
+
+    app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    app.route("/", legalTermsAdminRoutes)
+  })
+
+  beforeEach(async () => {
+    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    await cleanupTestDb(db)
+  })
+
+  afterAll(async () => {
+    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    await closeTestDb()
+  })
+
+  it("creates and lists target-linked terms", async () => {
+    const created = await app.request("/", {
+      method: "POST",
+      ...json({
+        targetKind: "quote_version",
+        targetId: "qver_123",
+        termType: "terms_and_conditions",
+        title: "Proposal terms",
+        body: "Customer accepts the quote-version terms.",
+      }),
+    })
+
+    expect(created.status).toBe(201)
+    const createdBody = await created.json()
+    expect(createdBody.data.id).toMatch(/^ortm_/)
+    expect(createdBody.data.targetKind).toBe("quote_version")
+    expect(createdBody.data.targetId).toBe("qver_123")
+    expect(createdBody.data.legacyTransactionOrderId).toBeNull()
+
+    const listed = await app.request("/?targetKind=quote_version&targetId=qver_123")
+    expect(listed.status).toBe(200)
+    const listedBody = await listed.json()
+    expect(listedBody.total).toBe(1)
+    expect(listedBody.data[0].title).toBe("Proposal terms")
+  })
+
+  it("keeps migrated transaction ids under explicit compatibility fields", async () => {
+    const created = await app.request("/", {
+      method: "POST",
+      ...json({
+        legacyTransactionOrderId: "ord_legacy",
+        title: "Migrated order terms",
+        body: "Imported from order_terms.",
+      }),
+    })
+
+    expect(created.status).toBe(201)
+    const createdBody = await created.json()
+    expect(createdBody.data.legacyTransactionOrderId).toBe("ord_legacy")
+
+    const listed = await app.request("/?legacyTransactionOrderId=ord_legacy")
+    expect(listed.status).toBe(200)
+    const listedBody = await listed.json()
+    expect(listedBody.total).toBe(1)
+    expect(listedBody.data[0].id).toBe(createdBody.data.id)
+  })
+})
