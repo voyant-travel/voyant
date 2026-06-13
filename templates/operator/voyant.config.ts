@@ -30,7 +30,6 @@ export default defineVoyantConfig({
     "@voyantjs/catalog",
     "@voyantjs/bookings",
     "@voyantjs/finance",
-    "@voyantjs/transactions",
     "@voyantjs/availability",
     "@voyantjs/pricing",
     "@voyantjs/sellability",

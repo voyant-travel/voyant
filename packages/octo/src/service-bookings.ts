@@ -1,4 +1,8 @@
-import { bookingsService } from "@voyantjs/bookings"
+import {
+  type BookingOrigin,
+  bookingsService,
+  getBookingOriginByBookingId,
+} from "@voyantjs/bookings"
 import {
   bookingAllocations,
   bookingFulfillments,
@@ -9,7 +13,6 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { offers, orders } from "@voyantjs/transactions/schema"
 import { asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -19,58 +22,54 @@ import {
   pickBookingContact,
   toIsoString,
 } from "./service-shared.js"
-import { bookingTransactionDetailsRef } from "./transactions-ref.js"
+
+function readLegacyOriginId(origin: BookingOrigin | null, key: "offerId" | "orderId") {
+  if (!origin) return null
+  const direct =
+    key === "offerId" ? origin.legacyTransactionOfferId : origin.legacyTransactionOrderId
+  if (typeof direct === "string" && direct.length > 0) return direct
+  const fromJson = origin.legacyTransactionIds?.[key]
+  return typeof fromJson === "string" && fromJson.length > 0 ? fromJson : null
+}
 
 export async function getProjectedBookingById(db: PostgresJsDatabase, id: string) {
   const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
   if (!booking) return null
 
-  const [
-    participants,
-    items,
-    allocations,
-    fulfillments,
-    redemptions,
-    supplierStatuses,
-    transactionLink,
-  ] = await Promise.all([
-    db
-      .select()
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(asc(bookingTravelers.createdAt)),
-    db
-      .select()
-      .from(bookingItems)
-      .where(eq(bookingItems.bookingId, booking.id))
-      .orderBy(asc(bookingItems.createdAt)),
-    db
-      .select()
-      .from(bookingAllocations)
-      .where(eq(bookingAllocations.bookingId, booking.id))
-      .orderBy(asc(bookingAllocations.createdAt)),
-    db
-      .select()
-      .from(bookingFulfillments)
-      .where(eq(bookingFulfillments.bookingId, booking.id))
-      .orderBy(asc(bookingFulfillments.createdAt)),
-    db
-      .select()
-      .from(bookingRedemptionEvents)
-      .where(eq(bookingRedemptionEvents.bookingId, booking.id))
-      .orderBy(asc(bookingRedemptionEvents.redeemedAt), asc(bookingRedemptionEvents.createdAt)),
-    db
-      .select()
-      .from(bookingSupplierStatuses)
-      .where(eq(bookingSupplierStatuses.bookingId, booking.id))
-      .orderBy(asc(bookingSupplierStatuses.createdAt)),
-    db
-      .select()
-      .from(bookingTransactionDetailsRef)
-      .where(eq(bookingTransactionDetailsRef.bookingId, booking.id))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
-  ])
+  const [participants, items, allocations, fulfillments, redemptions, supplierStatuses, origin] =
+    await Promise.all([
+      db
+        .select()
+        .from(bookingTravelers)
+        .where(eq(bookingTravelers.bookingId, booking.id))
+        .orderBy(asc(bookingTravelers.createdAt)),
+      db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+        .orderBy(asc(bookingItems.createdAt)),
+      db
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingId, booking.id))
+        .orderBy(asc(bookingAllocations.createdAt)),
+      db
+        .select()
+        .from(bookingFulfillments)
+        .where(eq(bookingFulfillments.bookingId, booking.id))
+        .orderBy(asc(bookingFulfillments.createdAt)),
+      db
+        .select()
+        .from(bookingRedemptionEvents)
+        .where(eq(bookingRedemptionEvents.bookingId, booking.id))
+        .orderBy(asc(bookingRedemptionEvents.redeemedAt), asc(bookingRedemptionEvents.createdAt)),
+      db
+        .select()
+        .from(bookingSupplierStatuses)
+        .where(eq(bookingSupplierStatuses.bookingId, booking.id))
+        .orderBy(asc(bookingSupplierStatuses.createdAt)),
+      getBookingOriginByBookingId(db, booking.id),
+    ])
 
   const itemParticipants =
     items.length > 0
@@ -91,24 +90,9 @@ export async function getProjectedBookingById(db: PostgresJsDatabase, id: string
     allocations.find((allocation) => allocation.status === "held") ??
     allocations[0]
 
-  const [offer, order] = await Promise.all([
-    transactionLink?.offerId
-      ? db
-          .select({ id: offers.id, offerNumber: offers.offerNumber })
-          .from(offers)
-          .where(eq(offers.id, transactionLink.offerId))
-          .limit(1)
-          .then((rows) => rows[0] ?? null)
-      : Promise.resolve(null),
-    transactionLink?.orderId
-      ? db
-          .select({ id: orders.id, orderNumber: orders.orderNumber })
-          .from(orders)
-          .where(eq(orders.id, transactionLink.orderId))
-          .limit(1)
-          .then((rows) => rows[0] ?? null)
-      : Promise.resolve(null),
-  ])
+  const legacyOfferId = readLegacyOriginId(origin, "offerId")
+  const legacyOrderId = readLegacyOriginId(origin, "orderId")
+  const providerOrderRef = origin?.providerOrderRef ?? null
 
   return {
     id: booking.id,
@@ -160,10 +144,10 @@ export async function getProjectedBookingById(db: PostgresJsDatabase, id: string
     })),
     references: {
       resellerReference: booking.externalBookingRef,
-      offerId: offer?.id ?? transactionLink?.offerId ?? null,
-      offerNumber: offer?.offerNumber ?? null,
-      orderId: order?.id ?? transactionLink?.orderId ?? null,
-      orderNumber: order?.orderNumber ?? null,
+      offerId: legacyOfferId,
+      offerNumber: null,
+      orderId: providerOrderRef ?? legacyOrderId,
+      orderNumber: null,
       supplierReferences: supplierStatuses.map((status) => ({
         id: status.id,
         supplierServiceId: status.supplierServiceId,
@@ -186,6 +170,9 @@ export async function getProjectedBookingById(db: PostgresJsDatabase, id: string
       organizationId: booking.organizationId,
       sellCurrency: booking.sellCurrency,
       baseCurrency: booking.baseCurrency,
+      originSource: origin?.originSource ?? null,
+      providerSourceRef: origin?.providerSourceRef ?? null,
+      providerOrderRef,
     },
   }
 }

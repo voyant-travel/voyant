@@ -14,7 +14,6 @@ import type { QuotesRoutes } from "@voyantjs/quotes/routes"
 import type { RelationshipsRoutes } from "@voyantjs/relationships/routes"
 import type { ResourcesRoutes } from "@voyantjs/resources/routes"
 import type { SupplierRoutes } from "@voyantjs/suppliers/routes"
-import type { TransactionsRoutes } from "@voyantjs/transactions/routes"
 import type { Hono } from "hono"
 
 /**
@@ -35,7 +34,6 @@ type ApiRoutes = Hono & {
   "/v1/extras": BookingsExtrasRoutes
   "/v1/pricing": PricingRoutes
   "/v1/markets": MarketsRoutes
-  "/v1/transactions": TransactionsRoutes
   "/v1/resources": ResourcesRoutes
   "/v1/sellability": SellabilityRoutes
   "/v1/distribution": DistributionRoutes

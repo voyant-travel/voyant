@@ -56,23 +56,6 @@ export const legal_contract_bookings_booking = pgTable(
   ],
 )
 
-export const legal_contract_transactions_order = pgTable(
-  "legal_contract_transactions_order",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "transactions_order_id": text("transactions_order_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_transactions_order_pair_idx").on(t["legal_contract_id"], t["transactions_order_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_transactions_order_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_transactions_order_r_idx").on(t["transactions_order_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
 export const legal_contract_finance_invoice = pgTable(
   "legal_contract_finance_invoice",
   {

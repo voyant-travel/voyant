@@ -270,7 +270,6 @@ export {
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
   recordBookingRedemptionSchema,
-  reserveBookingFromTransactionSchema,
   reserveBookingSchema,
   sharingGroupsForSlotQuerySchema,
   startBookingSchema,

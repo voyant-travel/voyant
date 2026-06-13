@@ -41,7 +41,7 @@ row is keyed by `booking_id` and can point at accepted Quote Versions, Trip
 snapshots, reservation plans, Catalog price/availability responses, Catalog
 booking snapshots, provider/source order refs, and legacy migrated transaction
 ids. New booking flows should write this owner path instead of
-`booking_transaction_details`.
+the retired booking-to-transaction detail join.
 
 ## Action-ledger approvals
 
