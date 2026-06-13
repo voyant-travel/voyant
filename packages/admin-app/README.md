@@ -1,12 +1,12 @@
 # @voyantjs/admin-app
 
-Compatibility package for the admin app shell.
+First-party admin app composition package.
 
-The implementation now lives in `@voyantjs/admin/app/*` so the top-level
-`admin` package owns the packaged staff shell and extension surface. This
-package remains temporarily available for existing imports and re-exports the
-same root document, router defaults, auth-guarded workspace shell, route binder,
-and core extension helpers.
+The reusable shell implementation lives in `@voyantjs/admin/app/*` so the
+top-level `admin` package owns the packaged staff shell and extension surface.
+This package re-exports those shell helpers for compatibility and owns the
+domain-backed core extension bundle that imports first-party domain React
+packages.
 
 ## What it provides
 
@@ -28,6 +28,8 @@ and core extension helpers.
   contract: packaged pages resolve `AdminDestinations` keys to hrefs via
   `useAdminHref`/`useAdminNavigate`, and the shell routes them through the app
   router.
+- **`createAdminCoreExtension(options?)`** — dashboard, account, and settings
+  route contributions backed by first-party domain React packages.
 
 ## Usage
 
@@ -76,8 +78,8 @@ export const Route = createFileRoute("/_workspace")({
 What stays app-owned: the provider list (which domain modules are mounted),
 extension definitions, navigation icons, branding, and the auth client.
 
-Existing `@voyantjs/admin-app` imports continue to work through this package,
-but new first-party code should import from `@voyantjs/admin/app/*`.
+New first-party code should import shell helpers from `@voyantjs/admin/app/*`
+and the domain-backed core extension from `@voyantjs/admin-app/core-extension`.
 
 ## License
 

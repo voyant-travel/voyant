@@ -1234,7 +1234,7 @@ stay unchanged.
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
 | `@voyantjs/admin` | Keep as packaged staff shell and extension surface. | Admin is a surface/extension host, not a domain Module. App-shell exports live under `@voyantjs/admin/app/*`. |
-| `@voyantjs/admin-app` | Fold into `admin`; keep only as a temporary compatibility shim. | First-party callers should move to `@voyantjs/admin/app/*`. Remove the shim after the v1 compatibility window. |
+| `@voyantjs/admin-app` | Keep as the first-party admin composition package until the domain-backed core extension can be inverted. | It re-exports the shell helpers for compatibility and owns `core-extension`, because that bundle imports domain React packages that depend back on `@voyantjs/admin`. First-party shell imports should still move to `@voyantjs/admin/app/*`. |
 | `@voyantjs/admin-client`, `@voyantjs/admin-contracts` | Keep if the framework-neutral admin client contract remains useful. | This is a client/contract seam, not a domain seam. |
 | `@voyantjs/admin-react` | Keep separate only as the React Query adapter over `admin-client`; fold before v1 if no independent React SDK consumers are confirmed. | It is not part of the packaged shell/runtime surface moved into `admin`. |
 | `@voyantjs/storefront`, `@voyantjs/storefront-react` | Keep as the customer-facing runtime/surface concept. | Storefront composes public and authenticated customer flows; it should not own product, price, booking, or finance truth. |

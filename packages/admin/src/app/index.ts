@@ -1,13 +1,4 @@
 export type {
-  AdminCoreAccountOptions,
-  AdminCoreDashboardOptions,
-  AdminCoreSettingsExtraPage,
-  AdminCoreSettingsOptions,
-  AdminCoreSettingsPageId,
-  CreateAdminCoreExtensionOptions,
-} from "./core-extension/index.js"
-export { createAdminCoreExtension } from "./core-extension/index.js"
-export type {
   AdminExtensionChildRoutesOptions,
   AdminExtensionRouteLoaderArgs,
   AdminExtensionRouteOptions,

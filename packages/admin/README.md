@@ -38,12 +38,11 @@ function App() {
 | Entry | Description |
 | --- | --- |
 | `.` | Barrel re-exports |
-| `./app` | App-shell barrel: root shell, router defaults, workspace shell, route binders, and core extension |
+| `./app` | App-shell barrel: root shell, router defaults, workspace shell, and route binders |
 | `./app/root` | Root document shell, root head helper, and root error boundary |
 | `./app/router` | TanStack Router and QueryClient defaults for admin apps |
 | `./app/workspace` | Auth-guarded workspace shell and router-aware admin links |
 | `./app/extension-routes` | TanStack Router binding helpers for admin extension route contributions |
-| `./app/core-extension` | Built-in dashboard, account, and settings route contributions |
 | `./components/admin-nav-group` | Sidebar navigation group renderer |
 | `./components/admin-nav-link` | Navigation link adapter types and default anchor link |
 | `./components/admin-widget-slot` | Widget slot renderer for admin extension widgets |
@@ -87,9 +86,10 @@ Templates can merge those contributions into their base navigation with
 registry, compose it with `createAdminExtensionRegistry(...)`.
 
 The packaged app shell lives under `@voyantjs/admin/app/*`. First-party
-templates should import shell/router/core-extension helpers from those subpaths.
-`@voyantjs/admin-app` is retained as a temporary compatibility package that
-re-exports the same app shell surface.
+templates should import shell/router helpers from those subpaths. The
+domain-backed core extension remains in `@voyantjs/admin-app/core-extension`
+because it imports first-party domain React packages that depend on the admin
+extension surface.
 
 Render widgets from a template-owned registry with `AdminWidgetSlotRenderer`:
 

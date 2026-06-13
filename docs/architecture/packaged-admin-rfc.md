@@ -191,7 +191,10 @@ What is missing — the actual gap this RFC closes:
 
 `@voyantjs/admin` owns the packaged staff shell through app-oriented subpaths
 (`@voyantjs/admin/app/*`). During the package-boundary migration,
-`@voyantjs/admin-app` remains only as a compatibility shim over those exports.
+`@voyantjs/admin-app` re-exports those shell helpers for compatibility and owns
+the domain-backed core extension bundle; that bundle imports first-party domain
+React packages that depend back on the admin extension surface, so it must not
+sit in `@voyantjs/admin`.
 A future factory can still consolidate the host wiring:
 
 ```ts
@@ -648,9 +651,10 @@ Decided:
 Open:
 
 1. **Package shape:** resolved for the v1 cleanup direction by moving app-shell
-   exports into `@voyantjs/admin/app/*`; `@voyantjs/admin-app` is a temporary
-   compatibility shim. A later full `createAdminApp` factory can build on those
-   subpaths without re-splitting the package.
+   exports into `@voyantjs/admin/app/*`; `@voyantjs/admin-app` remains the
+   first-party composition package for the domain-backed core extension plus
+   compatibility re-exports. A later full `createAdminApp` factory can build on
+   those subpaths without re-splitting the package.
 2. **Typed links across packages:** how much route-path type safety do we
    accept losing in Phase 2 before the generated tree lands?
 3. **Auth route ownership:** the auth flows are framework-owned in §4.1 —

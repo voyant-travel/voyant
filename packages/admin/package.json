@@ -12,7 +12,6 @@
     "./app/router": "./src/app/router.tsx",
     "./app/workspace": "./src/app/workspace.tsx",
     "./app/extension-routes": "./src/app/extension-routes.tsx",
-    "./app/core-extension": "./src/app/core-extension/index.tsx",
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
     "./components/admin-page-head": "./src/components/admin-page-head.tsx",
@@ -51,33 +50,11 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
-    "@voyantjs/auth-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@voyantjs/auth-react": {
-      "optional": true
-    },
-    "@voyantjs/distribution-react": {
-      "optional": true
-    },
-    "@voyantjs/finance-react": {
-      "optional": true
-    },
-    "@voyantjs/pricing-react": {
-      "optional": true
-    },
-    "@voyantjs/products-react": {
-      "optional": true
-    }
   },
   "dependencies": {
     "@voyantjs/i18n": "workspace:^",
@@ -89,11 +66,6 @@
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/auth-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "jsdom": "^25.0.0",
@@ -143,11 +115,6 @@
         "types": "./dist/app/extension-routes.d.ts",
         "import": "./dist/app/extension-routes.js",
         "default": "./dist/app/extension-routes.js"
-      },
-      "./app/core-extension": {
-        "types": "./dist/app/core-extension/index.d.ts",
-        "import": "./dist/app/core-extension/index.js",
-        "default": "./dist/app/core-extension/index.js"
       },
       "./components/admin-nav-group": {
         "types": "./dist/components/admin-nav-group.d.ts",

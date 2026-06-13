@@ -675,21 +675,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
-      '@voyantjs/auth-react':
-        specifier: workspace:^
-        version: link:../auth-react
-      '@voyantjs/distribution-react':
-        specifier: workspace:^
-        version: link:../distribution-react
-      '@voyantjs/finance-react':
-        specifier: workspace:^
-        version: link:../finance-react
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../pricing-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -5110,6 +5095,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../../packages/admin
+      '@voyantjs/admin-app':
+        specifier: workspace:^
+        version: link:../../packages/admin-app
       '@voyantjs/allocation-ui':
         specifier: workspace:^
         version: link:../../packages/allocation-ui

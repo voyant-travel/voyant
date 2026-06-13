@@ -1,7 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { useOperatorAdminMessages } from "@voyantjs/admin/providers/operator-admin-messages"
 import { cn } from "@voyantjs/ui/lib/utils"
-
-import { useOperatorAdminMessages } from "../../providers/operator-admin-messages.js"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
