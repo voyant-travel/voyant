@@ -37,7 +37,7 @@ export const productItineraries = pgTable(
     index("idx_product_itineraries_product_default").on(table.productId, table.isDefault),
     uniqueIndex("uidx_product_itineraries_default")
       .on(table.productId)
-      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       .where(sql`${table.isDefault} = true`),
   ],
 )

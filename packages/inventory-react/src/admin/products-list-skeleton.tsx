@@ -54,12 +54,12 @@ export function ProductsListSkeleton() {
           <TableBody>
             {Array.from({ length: SKELETON_ROWS }).map((_, row) => (
               <TableRow
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
                 key={row}
               >
                 {COLUMN_WIDTHS.map((width, column) => (
                   <TableCell
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
                     key={column}
                   >
                     <Skeleton className={`h-4 ${width}`} />

@@ -1,6 +1,12 @@
 # @voyantjs/products
 
-Products module for Voyant. OCTO-aligned catalog with products, days, services, versions, and notes. Person/organization associations use link tables from the CRM module (no FK columns on products).
+Compatibility entrypoint for Voyant operated Product inventory.
+
+The implementation now lives under `@voyantjs/inventory`. Existing
+`@voyantjs/products` imports remain supported for v1 compatibility, including
+the schema manifest path used by templates that still name
+`@voyantjs/products/schema`. New operated-authoring code should import from
+`@voyantjs/inventory`.
 
 ## Install
 
@@ -11,11 +17,11 @@ pnpm add @voyantjs/products
 ## Usage
 
 ```typescript
-import { productsModule } from "@voyantjs/products"
+import { inventoryHonoModule } from "@voyantjs/inventory"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
-  modules: [productsModule],
+  modules: [inventoryHonoModule],
   // ...
 })
 ```
@@ -32,11 +38,11 @@ const app = createApp({
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export + `productLinkable` |
-| `./schema` | Drizzle tables |
-| `./validation` | Zod schemas |
-| `./routes` | Hono routes |
-| `./jobs` | Background jobs (PDF generation, etc.) |
+| `.` | Compatibility exports over `@voyantjs/inventory` |
+| `./schema` | Compatibility schema shim over `@voyantjs/inventory/schema` |
+| `./validation` | Compatibility validation shim |
+| `./routes` | Compatibility Hono route shim |
+| `./tasks` | Compatibility task shim |
 
 ## License
 

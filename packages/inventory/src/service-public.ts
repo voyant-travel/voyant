@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- owner: products; existing service module stays co-located until a dedicated split preserves behavior and tests.
+// agent-quality: file-size exception -- owner: inventory; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -314,7 +314,7 @@ export const publicProductsService = {
     const normalizedSlug = slug.trim().toLowerCase()
     const normalizedLanguageTag = normalizeLanguageTag(query.languageTag)
     const conditions = [
-      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`lower(${productTranslations.slug}) = ${normalizedSlug}`,
       eq(products.status, "active"),
       eq(products.activated, true),

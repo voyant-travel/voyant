@@ -98,7 +98,7 @@ export const mediaProductsService = {
     productId: string,
     query: ProductMediaListQuery,
   ) {
-    // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+    // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
     const conditions = [eq(productMedia.productId, productId), sql`${productMedia.dayId} is null`]
 
     if (query.mediaType) {
@@ -169,7 +169,7 @@ export const mediaProductsService = {
           and(
             eq(productMedia.productId, productId),
             eq(productMedia.isBrochure, true),
-            // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${productMedia.dayId} is null`,
           ),
         )
@@ -216,9 +216,9 @@ export const mediaProductsService = {
           and(
             eq(productMedia.productId, existing.productId),
             eq(productMedia.isBrochure, true),
-            // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${productMedia.dayId} is null`,
-            // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${productMedia.id} <> ${id}`,
           ),
         )
@@ -250,7 +250,7 @@ export const mediaProductsService = {
     if (dayId) {
       scopeConditions.push(eq(productMedia.dayId, dayId))
     } else {
-      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       scopeConditions.push(sql`${productMedia.dayId} is null`)
     }
 
@@ -293,7 +293,7 @@ export const mediaProductsService = {
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
           eq(productMedia.isBrochureCurrent, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -315,7 +315,7 @@ export const mediaProductsService = {
         and(
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -376,7 +376,7 @@ export const mediaProductsService = {
         and(
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -406,7 +406,7 @@ export const mediaProductsService = {
           eq(productMedia.id, brochureId),
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -423,7 +423,7 @@ export const mediaProductsService = {
         and(
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -446,7 +446,7 @@ export const mediaProductsService = {
           eq(productMedia.id, brochureId),
           eq(productMedia.productId, productId),
           eq(productMedia.isBrochure, true),
-          // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+          // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
           sql`${productMedia.dayId} is null`,
         ),
       )
@@ -466,7 +466,7 @@ export const mediaProductsService = {
           and(
             eq(productMedia.productId, productId),
             eq(productMedia.isBrochure, true),
-            // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${productMedia.dayId} is null`,
           ),
         )

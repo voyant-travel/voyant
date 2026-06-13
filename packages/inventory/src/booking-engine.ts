@@ -1,1 +1,1 @@
-export * from "@voyantjs/products/booking-engine"
+export * from "./booking-engine/index.js"

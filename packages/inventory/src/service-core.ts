@@ -126,7 +126,7 @@ export const coreProductsService = {
 
     if (query.categoryId) {
       conditions.push(
-        // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+        // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
         sql`exists (select 1 from ${productCategoryProducts}
           where ${productCategoryProducts.productId} = ${products.id}
           and ${productCategoryProducts.categoryId} = ${query.categoryId})`,
@@ -136,7 +136,7 @@ export const coreProductsService = {
     if (query.tag) {
       // Postgres jsonb `@>` containment: does the array include this string?
       // Mirrors the pattern used in @voyantjs/charters and @voyantjs/cruises.
-      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       conditions.push(sql`${products.tags} @> ${JSON.stringify([query.tag])}::jsonb`)
     }
 

@@ -63,7 +63,7 @@ function ProductDetailsSectionSkeleton() {
     <SectionShell titleWidth="w-36" action>
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="space-y-2">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-4 w-32" />
@@ -81,7 +81,7 @@ function ProductDeparturesSectionSkeleton() {
       <div className="flex flex-col gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
             key={i}
             className="flex items-center gap-4 rounded-md border px-4 py-3"
           >
@@ -115,7 +115,7 @@ function ProductItinerarySectionSkeleton() {
       <div className="flex flex-col gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
             key={i}
             className="flex items-center gap-3 rounded-lg border px-4 py-3"
           >
@@ -154,7 +154,7 @@ function ProductOptionsSectionSkeleton() {
             </div>
             {Array.from({ length: 3 }).map((_, i) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
                 key={i}
                 className="flex items-center gap-3 rounded-md border px-3 py-2"
               >
@@ -190,7 +190,7 @@ function ProductChannelsSectionSkeleton() {
       <div className="space-y-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
             key={i}
             className="flex items-center justify-between rounded-md border px-3 py-2"
           >
@@ -208,7 +208,7 @@ function ProductOrganizeSectionSkeleton() {
     <SectionShell titleWidth="w-20">
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
           <div key={i} className="space-y-2">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-4 w-2/3" />
@@ -225,7 +225,7 @@ function ProductMediaSectionSkeleton() {
     <SectionShell titleWidth="w-14" action>
       <div className="grid grid-cols-3 gap-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: products-react; existing suppression is intentional pending typed cleanup.
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
           <Skeleton key={i} className="aspect-square w-full rounded-md" />
         ))}
       </div>

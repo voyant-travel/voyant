@@ -1,25 +1,25 @@
 import type { EventBus, Extension } from "@voyantjs/core"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
-import {
-  appendProductMutationLedgerEntry,
-  emitProductContentChanged,
-  type ProductLedgerMutationAction,
-} from "@voyantjs/products"
-import { productStatusEnum, productVisibilityEnum } from "@voyantjs/products/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
+import {
+  appendProductMutationLedgerEntry,
+  type ProductLedgerMutationAction,
+} from "../action-ledger.js"
+import { emitProductContentChanged } from "../events.js"
+import { productStatusEnum, productVisibilityEnum } from "../schema.js"
 import { cloneProduct } from "./clone.js"
 import { composeProduct } from "./service.js"
 import { productGraphSpecSchema } from "./spec.js"
 
 /**
  * Inventory authoring rides on the `products` admin prefix as a HonoExtension, so
- * its routes land at `/v1/admin/products/...` without `packages/products`
- * depending on this package (which would cycle, since this package depends on
- * both products and pricing). Same mechanism as `bookingsSupplierExtension`.
+ * its routes land at `/v1/admin/products/...` while the implementation lives
+ * with the optional Inventory package. Same mechanism as
+ * `bookingsSupplierExtension`.
  *
  *   POST /v1/admin/products/{id}/duplicate — deep-clone a product graph (#1493)
  *   POST /v1/admin/products/compose        — build a new product graph from a spec (#1495)

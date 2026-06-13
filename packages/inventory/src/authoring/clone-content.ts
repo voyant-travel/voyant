@@ -1,6 +1,8 @@
 import { productOptionResourceTemplates } from "@voyantjs/availability"
-import { optionExtraConfigs, productExtras } from "@voyantjs/inventory/extras"
 import { pricingCategories, pricingCategoryDependencies } from "@voyantjs/pricing/schema"
+import { eq, inArray } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { optionExtraConfigs, productExtras } from "../extras.js"
 import {
   optionUnits,
   optionUnitTranslations,
@@ -23,9 +25,7 @@ import {
   productTicketSettings,
   productTranslations,
   productVisibilitySettings,
-} from "@voyantjs/products/schema"
-import { eq, inArray } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+} from "../schema.js"
 
 /** Shared, mutable state threaded across the clone copy phases (id remaps). */
 export interface CloneContext {
