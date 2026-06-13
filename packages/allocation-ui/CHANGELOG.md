@@ -1,5 +1,14 @@
 # @voyantjs/allocation-ui
 
+## 0.117.1
+
+### Patch Changes
+
+- 710b437: Split oversized availability and allocation modules into focused internal files
+  while preserving the existing public import paths.
+- Updated dependencies [710b437]
+  - @voyantjs/availability-react@0.116.3
+
 ## 0.117.0
 
 ### Patch Changes

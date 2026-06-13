@@ -1,5 +1,12 @@
 # @voyantjs/availability
 
+## 0.116.3
+
+### Patch Changes
+
+- 710b437: Split oversized availability and allocation modules into focused internal files
+  while preserving the existing public import paths.
+
 ## 0.116.2
 
 ### Patch Changes
