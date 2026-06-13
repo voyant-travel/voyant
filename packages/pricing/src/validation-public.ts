@@ -1,10 +1,9 @@
-import { availabilitySlotStatusSchema } from "@voyantjs/availability/validation"
 import {
   optionUnitTypeSchema,
   productBookingModeSchema,
   productCapacityModeSchema,
   productOptionStatusSchema,
-} from "@voyantjs/products/validation"
+} from "@voyantjs/products-contracts/validation"
 import { z } from "zod"
 
 import {
@@ -15,6 +14,8 @@ import {
 } from "./validation-shared.js"
 
 const isoDateSchema = z.string().date()
+
+const publicAvailabilitySlotStatusSchema = z.enum(["open", "closed", "sold_out", "cancelled"])
 
 export const publicProductPricingQuerySchema = z.object({
   catalogId: z.string().optional(),
@@ -27,7 +28,7 @@ export const publicAvailabilitySnapshotQuerySchema = z.object({
   optionId: z.string().optional(),
   dateFrom: isoDateSchema.optional(),
   dateTo: isoDateSchema.optional(),
-  status: availabilitySlotStatusSchema.optional(),
+  status: publicAvailabilitySlotStatusSchema.optional(),
   limit: z.coerce.number().int().min(1).max(200).default(100),
   offset: z.coerce.number().int().min(0).default(0),
 })
@@ -117,7 +118,7 @@ export const publicAvailabilitySlotSchema = z.object({
   startsAt: z.string(),
   endsAt: z.string().nullable(),
   timezone: z.string(),
-  status: availabilitySlotStatusSchema,
+  status: publicAvailabilitySlotStatusSchema,
   unlimited: z.boolean(),
   remainingPax: z.number().int().nullable(),
   remainingResources: z.number().int().nullable(),

@@ -1,12 +1,9 @@
 // agent-quality: file-size exception -- owner: pricing; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
-import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
   optionPriceRules,
-  optionStartTimeRules,
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
@@ -31,26 +28,129 @@ function normalizeDate(value: Date | string | null | undefined): string | null {
   return value instanceof Date ? value.toISOString() : value
 }
 
-async function ensurePublicProduct(db: PostgresJsDatabase, productId: string) {
-  const [product] = await db
-    .select({
-      id: products.id,
-      bookingMode: products.bookingMode,
-      capacityMode: products.capacityMode,
-      sellCurrency: products.sellCurrency,
-    })
-    .from(products)
-    .where(
-      and(
-        eq(products.id, productId),
-        eq(products.status, "active"),
-        eq(products.activated, true),
-        eq(products.visibility, "public"),
-      ),
-    )
-    .limit(1)
+function normalizeDateOnly(value: Date | string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
 
-  return product ?? null
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10)
+}
+
+async function executeRows(db: PostgresJsDatabase, query: SQL): Promise<unknown[]> {
+  // biome-ignore lint/suspicious/noExplicitAny: #1141 keeps cross-package SQL boundary reads driver-agnostic.
+  const result = await (db as any).execute(query)
+  return Array.isArray(result) ? result : (result?.rows ?? [])
+}
+
+function sqlList(values: readonly string[]): SQL {
+  return sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )
+}
+
+function andSql(conditions: SQL[]): SQL {
+  return sql.join(conditions, sql` AND `)
+}
+
+function readCount(row: unknown): number {
+  const value = (row as { count?: unknown } | undefined)?.count
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
+type PublicProductRow = {
+  id: string
+  booking_mode: string
+  capacity_mode: string
+  sell_currency: string
+}
+
+type PublicProductContext = {
+  id: string
+  bookingMode: string
+  capacityMode: string
+  sellCurrency: string
+}
+
+type PublicProductOptionRow = {
+  id: string
+  name: string
+  description: string | null
+  status: string
+  is_default: boolean
+}
+
+type PublicOptionUnitRow = {
+  id: string
+  option_id: string
+  name: string
+  unit_type: string
+  sort_order: number
+}
+
+type PublicStartTimeAdjustmentRow = {
+  id: string
+  option_price_rule_id: string
+  start_time_id: string
+  label: string | null
+  start_time_local: string
+  duration_minutes: number | null
+  rule_mode: string
+  adjustment_type: string | null
+  sell_adjustment_cents: number | null
+  adjustment_basis_points: number | null
+}
+
+type PublicAvailabilitySlotRow = {
+  id: string
+  option_id: string | null
+  date_local: Date | string
+  starts_at: Date | string
+  ends_at: Date | string | null
+  timezone: string
+  status: string
+  unlimited: boolean
+  remaining_pax: number | null
+  remaining_resources: number | null
+  past_cutoff: boolean
+  too_early: boolean
+  start_time_id: string | null
+  start_time_label: string | null
+  start_time_local: string | null
+  duration_minutes: number | null
+}
+
+async function ensurePublicProduct(
+  db: PostgresJsDatabase,
+  productId: string,
+): Promise<PublicProductContext | null> {
+  const rows = await executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: pricing; cross-module Product visibility check with parameter-bound id.
+    sql`
+      SELECT id, booking_mode, capacity_mode, sell_currency
+      FROM products
+      WHERE id = ${productId}
+        AND status::text = 'active'
+        AND activated = true
+        AND visibility::text = 'public'
+      LIMIT 1
+    `,
+  )
+  const product = rows[0] as PublicProductRow | undefined
+  return product
+    ? {
+        id: product.id,
+        bookingMode: product.booking_mode,
+        capacityMode: product.capacity_mode,
+        sellCurrency: product.sell_currency,
+      }
+    : null
 }
 
 async function resolvePublicCatalog(
@@ -100,13 +200,87 @@ async function resolveQueryDate(
   if (query.date) return query.date
   if (!query.departureId) return null
 
-  const [slot] = await db
-    .select({ dateLocal: availabilitySlots.dateLocal })
-    .from(availabilitySlots)
-    .where(eq(availabilitySlots.id, query.departureId))
-    .limit(1)
+  const rows = await executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: pricing; cross-module Availability date lookup by parameter-bound slot id.
+    sql`SELECT date_local FROM availability_slots WHERE id = ${query.departureId} LIMIT 1`,
+  )
+  const slot = rows[0] as { date_local?: Date | string | null } | undefined
 
-  return slot?.dateLocal ?? null
+  return normalizeDateOnly(slot?.date_local)
+}
+
+async function loadPublicProductOptions(
+  db: PostgresJsDatabase,
+  productId: string,
+  optionId?: string,
+): Promise<PublicProductOptionRow[]> {
+  const conditions = [sql`product_id = ${productId}`, sql`status::text = 'active'`]
+  if (optionId) {
+    conditions.push(sql`id = ${optionId}`)
+  }
+
+  return executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: pricing; cross-module Product option read with parameter-bound filters.
+    sql`
+      SELECT id, name, description, status::text AS status, is_default
+      FROM product_options
+      WHERE ${andSql(conditions)}
+      ORDER BY is_default DESC, sort_order ASC, name ASC
+    `,
+  ) as Promise<PublicProductOptionRow[]>
+}
+
+async function loadPublicOptionUnits(
+  db: PostgresJsDatabase,
+  optionIds: readonly string[],
+): Promise<PublicOptionUnitRow[]> {
+  if (optionIds.length === 0) return []
+
+  return executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: pricing; cross-module Product option-unit read with parameter-bound option ids.
+    sql`
+      SELECT id, option_id, name, unit_type::text AS unit_type, sort_order
+      FROM option_units
+      WHERE option_id IN (${sqlList(optionIds)})
+        AND is_hidden = false
+      ORDER BY sort_order ASC, name ASC
+    `,
+  ) as Promise<PublicOptionUnitRow[]>
+}
+
+async function loadPublicStartTimeAdjustments(
+  db: PostgresJsDatabase,
+  ruleIds: readonly string[],
+): Promise<PublicStartTimeAdjustmentRow[]> {
+  if (ruleIds.length === 0) return []
+
+  return executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: pricing; joins local pricing rules to cross-module Availability start-time labels by parameter-bound rule ids.
+    sql`
+      SELECT
+        rule.id,
+        rule.option_price_rule_id,
+        rule.start_time_id,
+        start_time.label,
+        start_time.start_time_local,
+        start_time.duration_minutes,
+        rule.rule_mode::text AS rule_mode,
+        rule.adjustment_type::text AS adjustment_type,
+        rule.sell_adjustment_cents,
+        rule.adjustment_basis_points
+      FROM option_start_time_rules rule
+      INNER JOIN availability_start_times start_time
+        ON start_time.id = rule.start_time_id
+      WHERE rule.option_price_rule_id IN (${sqlList(ruleIds)})
+        AND rule.active = true
+        AND start_time.active = true
+      ORDER BY start_time.sort_order ASC, start_time.start_time_local ASC
+    `,
+  ) as Promise<PublicStartTimeAdjustmentRow[]>
 }
 
 type PricingRuleRow = {
@@ -196,30 +370,7 @@ export const publicPricingService = {
       return null
     }
 
-    const optionConditions = [
-      eq(productOptions.productId, productId),
-      eq(productOptions.status, "active"),
-    ]
-
-    if (query.optionId) {
-      optionConditions.push(eq(productOptions.id, query.optionId))
-    }
-
-    const options = await db
-      .select({
-        id: productOptions.id,
-        name: productOptions.name,
-        description: productOptions.description,
-        status: productOptions.status,
-        isDefault: productOptions.isDefault,
-      })
-      .from(productOptions)
-      .where(and(...optionConditions))
-      .orderBy(
-        desc(productOptions.isDefault),
-        asc(productOptions.sortOrder),
-        asc(productOptions.name),
-      )
+    const options = await loadPublicProductOptions(db, productId, query.optionId)
 
     if (options.length === 0) {
       return {
@@ -243,18 +394,7 @@ export const publicPricingService = {
       : new Map()
 
     const [units, allRules] = await Promise.all([
-      db
-        .select({
-          id: optionUnits.id,
-          optionId: optionUnits.optionId,
-          name: optionUnits.name,
-          unitType: optionUnits.unitType,
-          isHidden: optionUnits.isHidden,
-          sortOrder: optionUnits.sortOrder,
-        })
-        .from(optionUnits)
-        .where(and(inArray(optionUnits.optionId, optionIds), eq(optionUnits.isHidden, false)))
-        .orderBy(asc(optionUnits.sortOrder), asc(optionUnits.name)),
+      loadPublicOptionUnits(db, optionIds),
       db
         .select({
           id: optionPriceRules.id,
@@ -308,37 +448,7 @@ export const publicPricingService = {
             )
             .orderBy(asc(optionUnitPriceRules.sortOrder), asc(optionUnitPriceRules.createdAt))
         : Promise.resolve([]),
-      ruleIds.length > 0
-        ? db
-            .select({
-              id: optionStartTimeRules.id,
-              optionPriceRuleId: optionStartTimeRules.optionPriceRuleId,
-              startTimeId: optionStartTimeRules.startTimeId,
-              label: availabilityStartTimes.label,
-              startTimeLocal: availabilityStartTimes.startTimeLocal,
-              durationMinutes: availabilityStartTimes.durationMinutes,
-              ruleMode: optionStartTimeRules.ruleMode,
-              adjustmentType: optionStartTimeRules.adjustmentType,
-              sellAdjustmentCents: optionStartTimeRules.sellAdjustmentCents,
-              adjustmentBasisPoints: optionStartTimeRules.adjustmentBasisPoints,
-            })
-            .from(optionStartTimeRules)
-            .innerJoin(
-              availabilityStartTimes,
-              eq(availabilityStartTimes.id, optionStartTimeRules.startTimeId),
-            )
-            .where(
-              and(
-                inArray(optionStartTimeRules.optionPriceRuleId, ruleIds),
-                eq(optionStartTimeRules.active, true),
-                eq(availabilityStartTimes.active, true),
-              ),
-            )
-            .orderBy(
-              asc(availabilityStartTimes.sortOrder),
-              asc(availabilityStartTimes.startTimeLocal),
-            )
-        : Promise.resolve([]),
+      loadPublicStartTimeAdjustments(db, ruleIds),
     ])
 
     const unitPriceIds = unitPrices.map((unitPrice) => unitPrice.id)
@@ -370,8 +480,8 @@ export const publicPricingService = {
           id: unit.id,
           unitId: unit.id,
           unitName: unit.name,
-          unitType: unit.unitType,
-          sortOrder: unit.sortOrder,
+          unitType: unit.unit_type,
+          sortOrder: unit.sort_order,
         },
       ]),
     )
@@ -395,9 +505,9 @@ export const publicPricingService = {
       Array<(typeof startTimeAdjustments)[number]>
     >()
     for (const adjustment of startTimeAdjustments) {
-      const existing = startTimeAdjustmentsByRule.get(adjustment.optionPriceRuleId) ?? []
+      const existing = startTimeAdjustmentsByRule.get(adjustment.option_price_rule_id) ?? []
       existing.push(adjustment)
-      startTimeAdjustmentsByRule.set(adjustment.optionPriceRuleId, existing)
+      startTimeAdjustmentsByRule.set(adjustment.option_price_rule_id, existing)
     }
 
     const rulesByOption = new Map<string, Array<(typeof rules)[number]>>()
@@ -418,7 +528,7 @@ export const publicPricingService = {
         name: option.name,
         description: option.description ?? null,
         status: option.status,
-        isDefault: option.isDefault,
+        isDefault: option.is_default,
         bookingMode: product.bookingMode,
         capacityMode: product.capacityMode,
         pricingRules: (rulesByOption.get(option.id) ?? []).map((rule) => ({
@@ -466,13 +576,13 @@ export const publicPricingService = {
           startTimeAdjustments: (startTimeAdjustmentsByRule.get(rule.id) ?? []).map(
             (adjustment) => ({
               id: adjustment.id,
-              startTimeId: adjustment.startTimeId,
+              startTimeId: adjustment.start_time_id,
               label: adjustment.label ?? null,
-              startTimeLocal: adjustment.startTimeLocal,
-              ruleMode: adjustment.ruleMode,
-              adjustmentType: adjustment.adjustmentType ?? null,
-              sellAdjustmentCents: adjustment.sellAdjustmentCents ?? null,
-              adjustmentBasisPoints: adjustment.adjustmentBasisPoints ?? null,
+              startTimeLocal: adjustment.start_time_local,
+              ruleMode: adjustment.rule_mode,
+              adjustmentType: adjustment.adjustment_type ?? null,
+              sellAdjustmentCents: adjustment.sell_adjustment_cents ?? null,
+              adjustmentBasisPoints: adjustment.adjustment_basis_points ?? null,
             }),
           ),
         })),
@@ -490,91 +600,91 @@ export const publicPricingService = {
       return null
     }
 
-    const conditions = [
-      eq(availabilitySlots.productId, productId),
-      ne(availabilitySlots.status, "cancelled"),
-    ]
+    const conditions = [sql`slot.product_id = ${productId}`, sql`slot.status::text <> 'cancelled'`]
 
     if (query.optionId) {
-      conditions.push(eq(availabilitySlots.optionId, query.optionId))
+      conditions.push(sql`slot.option_id = ${query.optionId}`)
     }
 
     if (query.dateFrom) {
-      conditions.push(gte(availabilitySlots.dateLocal, query.dateFrom))
+      conditions.push(sql`slot.date_local >= ${query.dateFrom}`)
     }
 
     if (query.dateTo) {
-      conditions.push(lte(availabilitySlots.dateLocal, query.dateTo))
+      conditions.push(sql`slot.date_local <= ${query.dateTo}`)
     }
 
     if (query.status) {
-      conditions.push(eq(availabilitySlots.status, query.status))
+      conditions.push(sql`slot.status::text = ${query.status}`)
     } else {
-      conditions.push(
-        or(eq(availabilitySlots.status, "open"), eq(availabilitySlots.status, "sold_out")) ??
-          sql`1 = 1`,
-      )
+      conditions.push(sql`slot.status::text IN ('open', 'sold_out')`)
     }
 
-    const where = and(...conditions)
+    const where = andSql(conditions)
 
     const [rows, countResult] = await Promise.all([
-      db
-        .select({
-          id: availabilitySlots.id,
-          optionId: availabilitySlots.optionId,
-          dateLocal: availabilitySlots.dateLocal,
-          startsAt: availabilitySlots.startsAt,
-          endsAt: availabilitySlots.endsAt,
-          timezone: availabilitySlots.timezone,
-          status: availabilitySlots.status,
-          unlimited: availabilitySlots.unlimited,
-          remainingPax: availabilitySlots.remainingPax,
-          remainingResources: availabilitySlots.remainingResources,
-          pastCutoff: availabilitySlots.pastCutoff,
-          tooEarly: availabilitySlots.tooEarly,
-          startTimeId: availabilityStartTimes.id,
-          startTimeLabel: availabilityStartTimes.label,
-          startTimeLocal: availabilityStartTimes.startTimeLocal,
-          durationMinutes: availabilityStartTimes.durationMinutes,
-        })
-        .from(availabilitySlots)
-        .leftJoin(
-          availabilityStartTimes,
-          eq(availabilityStartTimes.id, availabilitySlots.startTimeId),
-        )
-        .where(where)
-        .orderBy(asc(availabilitySlots.startsAt))
-        .limit(query.limit)
-        .offset(query.offset),
-      db.select({ count: sql<number>`count(*)::int` }).from(availabilitySlots).where(where),
+      executeRows(
+        db,
+        // agent-quality: raw-sql reviewed -- owner: pricing; cross-module Availability public snapshot read with parameter-bound filters.
+        sql`
+          SELECT
+            slot.id,
+            slot.option_id,
+            slot.date_local,
+            slot.starts_at,
+            slot.ends_at,
+            slot.timezone,
+            slot.status::text AS status,
+            slot.unlimited,
+            slot.remaining_pax,
+            slot.remaining_resources,
+            slot.past_cutoff,
+            slot.too_early,
+            start_time.id AS start_time_id,
+            start_time.label AS start_time_label,
+            start_time.start_time_local,
+            start_time.duration_minutes
+          FROM availability_slots slot
+          LEFT JOIN availability_start_times start_time
+            ON start_time.id = slot.start_time_id
+          WHERE ${where}
+          ORDER BY slot.starts_at ASC
+          LIMIT ${query.limit}
+          OFFSET ${query.offset}
+        `,
+      ) as Promise<PublicAvailabilitySlotRow[]>,
+      executeRows(
+        db,
+        // agent-quality: raw-sql reviewed -- owner: pricing; count query uses the same parameter-bound Availability filters as the page query.
+        sql`SELECT count(*)::int AS count FROM availability_slots slot WHERE ${where}`,
+      ),
     ])
 
     return {
       productId,
       slots: rows.map((row) => ({
         id: row.id,
-        optionId: row.optionId ?? null,
-        dateLocal: normalizeDate(row.dateLocal),
-        startsAt: normalizeDate(row.startsAt),
-        endsAt: normalizeDate(row.endsAt),
+        optionId: row.option_id ?? null,
+        dateLocal: normalizeDateOnly(row.date_local),
+        startsAt: normalizeDate(row.starts_at),
+        endsAt: normalizeDate(row.ends_at),
         timezone: row.timezone,
         status: row.status,
         unlimited: row.unlimited,
-        remainingPax: row.remainingPax ?? null,
-        remainingResources: row.remainingResources ?? null,
-        pastCutoff: row.pastCutoff,
-        tooEarly: row.tooEarly,
-        startTime: row.startTimeId
+        remainingPax: row.remaining_pax ?? null,
+        remainingResources: row.remaining_resources ?? null,
+        pastCutoff: row.past_cutoff,
+        tooEarly: row.too_early,
+        startTime: row.start_time_id
           ? {
-              id: row.startTimeId,
-              label: row.startTimeLabel ?? null,
-              startTimeLocal: row.startTimeLocal ?? "",
-              durationMinutes: row.durationMinutes ?? null,
+              id: row.start_time_id,
+              label: row.start_time_label ?? null,
+              startTimeLocal: row.start_time_local ?? "",
+              durationMinutes: row.duration_minutes ?? null,
             }
           : null,
       })),
-      total: countResult[0]?.count ?? 0,
+      total: readCount(countResult[0]),
       limit: query.limit,
       offset: query.offset,
     }
