@@ -447,8 +447,8 @@ That does not match the desired booking domain if bookings are traveler-first.
 
 ### Primary package scope
 
-- `packages/booking-requirements`
-- `packages/booking-requirements-react`
+- `packages/bookings/src/requirements`
+- `packages/bookings-react/src/requirements`
 - `packages/ui`
 - `apps/registry`
 

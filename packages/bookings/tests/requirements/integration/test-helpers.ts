@@ -1,12 +1,18 @@
 import { bookings } from "@voyantjs/bookings/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import {
+  optionUnits,
+  productCapabilities,
+  productOptions,
+  products,
+} from "@voyantjs/products/schema"
+import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach } from "vitest"
 
-import { bookingRequirementsRoutes } from "../../src/routes.js"
-import { publicBookingRequirementsRoutes } from "../../src/routes-public.js"
+import { bookingRequirementsRoutes } from "../../../src/requirements/routes.js"
+import { createPublicBookingRequirementsRoutes } from "../../../src/requirements/routes-public.js"
 
 export const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -44,7 +50,34 @@ export function createBookingRequirementsTestContext() {
       c.set("db" as never, db)
       await next()
     })
-    publicApp.route("/", publicBookingRequirementsRoutes)
+    publicApp.route(
+      "/",
+      createPublicBookingRequirementsRoutes({
+        resolveProductSnapshot: async (db, id) => {
+          const [product, capabilityRows] = await Promise.all([
+            db
+              .select()
+              .from(products)
+              .where(eq(products.id, id))
+              .limit(1)
+              .then((rows) => rows[0] ?? null),
+            db
+              .select({ capability: productCapabilities.capability })
+              .from(productCapabilities)
+              .where(
+                and(eq(productCapabilities.productId, id), eq(productCapabilities.enabled, true)),
+              ),
+          ])
+
+          if (!product) return null
+          return {
+            id: product.id,
+            bookingMode: product.bookingMode,
+            capabilities: capabilityRows.map((row) => row.capability),
+          }
+        },
+      }),
+    )
   })
 
   beforeEach(async () => {

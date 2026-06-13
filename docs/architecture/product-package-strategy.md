@@ -708,6 +708,18 @@ Required cleanup:
   Bookings. Otherwise the move makes Bookings depend on operated Inventory and
   breaks the retail-spine optionality goal.
 
+Implementation note (2026-06): booking requirements now live under the
+Bookings package family as `@voyantjs/bookings/requirements*` and
+`@voyantjs/bookings-react/requirements*`. The standalone
+`@voyantjs/booking-requirements` and `@voyantjs/booking-requirements-react`
+packages remain one-release compatibility shims. Root `@voyantjs/bookings`
+does not hard-depend on operated Products/Inventory for public transport
+requirement summaries; hosts that want product existence, booking mode, and
+capability lookup inject a requirements-only product snapshot resolver. The
+operator template injects its Products-backed resolver while preserving the
+existing `/v1/booking-requirements/*` and
+`/v1/public/booking-requirements/*` route paths.
+
 ### 5.7 Finance
 
 Candidate packages:
@@ -1234,8 +1246,8 @@ stay unchanged.
 | `@voyantjs/crm`, `@voyantjs/crm-react` | Replace with `relationships` plus `quotes` in the v1 package move. | ADR-0004 moves supported proposal language to Quote. Customer/account records should move toward Relationships; quote pursuit should move toward Quotes. Temporary facades are allowed only inside the migration branch, not as public v1 API. |
 | `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trip Composer, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
 | `@voyantjs/travel-composer`, `@voyantjs/travel-composer-react` | Rename to `@voyantjs/trip-composer` / `@voyantjs/trip-composer-react` in the v1 package move. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
-| `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, fulfillment, and commitment records belong here. |
-| `@voyantjs/booking-requirements`, `@voyantjs/booking-requirements-react` | Fold into `bookings`. | Requirements define what must be collected to commit a booking. |
+| `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
+| `@voyantjs/booking-requirements`, `@voyantjs/booking-requirements-react` | Temporary compatibility shims for `@voyantjs/bookings/requirements*` and `@voyantjs/bookings-react/requirements*`. | Requirements define what must be collected to commit a booking; keep the booking requirements domain term. |
 | `@voyantjs/checkout`, `@voyantjs/checkout-react` | Fold into `finance`. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. |
 
 ### 10.4 Operations Packages

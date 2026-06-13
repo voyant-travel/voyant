@@ -17,6 +17,17 @@
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
+    "./requirements": "./src/requirements/index.ts",
+    "./requirements/provider": "./src/requirements/provider.tsx",
+    "./requirements/hooks": "./src/requirements/hooks/index.ts",
+    "./requirements/client": "./src/requirements/client.ts",
+    "./requirements/query-keys": "./src/requirements/query-keys.ts",
+    "./requirements/ui": "./src/requirements/ui.ts",
+    "./requirements/styles.css": "./src/requirements/styles.css",
+    "./requirements/i18n": "./src/requirements/i18n/index.ts",
+    "./requirements/i18n/en": "./src/requirements/i18n/en.ts",
+    "./requirements/i18n/ro": "./src/requirements/i18n/ro.ts",
+    "./requirements/components/*": "./src/requirements/components/*.tsx",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
@@ -139,7 +150,8 @@
   },
   "files": [
     "dist",
-    "src/styles.css"
+    "src/styles.css",
+    "src/requirements/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -176,6 +188,59 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./requirements": {
+        "types": "./dist/requirements/index.d.ts",
+        "import": "./dist/requirements/index.js",
+        "default": "./dist/requirements/index.js"
+      },
+      "./requirements/provider": {
+        "types": "./dist/requirements/provider.d.ts",
+        "import": "./dist/requirements/provider.js",
+        "default": "./dist/requirements/provider.js"
+      },
+      "./requirements/hooks": {
+        "types": "./dist/requirements/hooks/index.d.ts",
+        "import": "./dist/requirements/hooks/index.js",
+        "default": "./dist/requirements/hooks/index.js"
+      },
+      "./requirements/client": {
+        "types": "./dist/requirements/client.d.ts",
+        "import": "./dist/requirements/client.js",
+        "default": "./dist/requirements/client.js"
+      },
+      "./requirements/query-keys": {
+        "types": "./dist/requirements/query-keys.d.ts",
+        "import": "./dist/requirements/query-keys.js",
+        "default": "./dist/requirements/query-keys.js"
+      },
+      "./requirements/ui": {
+        "types": "./dist/requirements/ui.d.ts",
+        "import": "./dist/requirements/ui.js",
+        "default": "./dist/requirements/ui.js"
+      },
+      "./requirements/styles.css": {
+        "default": "./src/requirements/styles.css"
+      },
+      "./requirements/i18n": {
+        "types": "./dist/requirements/i18n/index.d.ts",
+        "import": "./dist/requirements/i18n/index.js",
+        "default": "./dist/requirements/i18n/index.js"
+      },
+      "./requirements/i18n/en": {
+        "types": "./dist/requirements/i18n/en.d.ts",
+        "import": "./dist/requirements/i18n/en.js",
+        "default": "./dist/requirements/i18n/en.js"
+      },
+      "./requirements/i18n/ro": {
+        "types": "./dist/requirements/i18n/ro.d.ts",
+        "import": "./dist/requirements/i18n/ro.js",
+        "default": "./dist/requirements/i18n/ro.js"
+      },
+      "./requirements/components/*": {
+        "types": "./dist/requirements/components/*.d.ts",
+        "import": "./dist/requirements/components/*.js",
+        "default": "./dist/requirements/components/*.js"
       },
       "./i18n": {
         "types": "./dist/i18n/index.d.ts",

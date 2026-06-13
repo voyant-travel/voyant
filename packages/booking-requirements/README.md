@@ -1,34 +1,16 @@
 # @voyantjs/booking-requirements
 
-Booking requirements module for Voyant. Intake requirements, questions, and answers — the declarative layer that captures what data a product needs at booking time (dietary, passport, pickup, etc.).
+Compatibility shim for the booking requirements backend surfaces now owned by
+`@voyantjs/bookings`.
 
-## Install
+Use the new package subpaths:
 
-```bash
-pnpm add @voyantjs/booking-requirements
+```ts
+import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
+import { productContactRequirements } from "@voyantjs/bookings/requirements/schema"
 ```
 
-## Usage
+This package re-exports those surfaces for one release train so existing
+imports keep working. The operator template still mounts the existing
+`/v1/booking-requirements/*` and `/v1/public/booking-requirements/*` route paths.
 
-```typescript
-import { bookingRequirementsModule } from "@voyantjs/booking-requirements"
-import { createApp } from "@voyantjs/hono"
-
-const app = createApp({
-  modules: [bookingRequirementsModule],
-  // ...
-})
-```
-
-## Exports
-
-| Entry | Description |
-| --- | --- |
-| `.` | Module export |
-| `./schema` | Drizzle tables |
-| `./validation` | Zod schemas |
-| `./routes` | Hono routes |
-
-## License
-
-Apache-2.0

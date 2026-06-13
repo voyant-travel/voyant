@@ -340,7 +340,7 @@ Resolved upstream in source after `0.3.1`:
 - generic email/SMS verification challenge flow via
   `@voyantjs/storefront-verification`
 - transport requirements for passport/document rules via
-  `@voyantjs/booking-requirements`
+  `@voyantjs/bookings/requirements`
 
 App-owned for now:
 
@@ -436,7 +436,7 @@ Completed in the current source tree:
 - storefront product extensions and departure itinerary via
   `@voyantjs/storefront`
 - storefront verification via `@voyantjs/storefront-verification`
-- transport requirements via `@voyantjs/booking-requirements`
+- transport requirements via `@voyantjs/bookings/requirements`
 - booking-session state storage and repricing
 - public finance booking documents
 - checkout module formalization and admin reminder tracking

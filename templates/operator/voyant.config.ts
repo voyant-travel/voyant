@@ -37,7 +37,6 @@ export default defineVoyantConfig({
     "@voyantjs/resources",
     "@voyantjs/markets",
     "@voyantjs/notifications",
-    "@voyantjs/booking-requirements",
     "@voyantjs/external-refs",
     "@voyantjs/extras",
     // Flights: schema is migrated and the admin surface is package-delivered

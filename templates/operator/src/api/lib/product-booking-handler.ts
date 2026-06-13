@@ -4,7 +4,7 @@ import {
   placeAvailabilityHold,
   releaseAvailabilityHold,
 } from "@voyantjs/availability/service-holds"
-import { bookingRequirementsService } from "@voyantjs/booking-requirements"
+import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
 import type {
   AddonOffer,
   OwnedBookingHandlerRegistry,

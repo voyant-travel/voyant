@@ -241,8 +241,8 @@ export interface DraftLike {
 export interface BuildOwnedProductDraftShapeOptions {
   /**
    * Per-traveler field requirements pulled from
-   * `@voyantjs/booking-requirements` for this product. Caller-supplied
-   * so the products package doesn't depend on booking-requirements.
+   * `@voyantjs/bookings/requirements` for this product. Caller-supplied
+   * so the products package doesn't depend on booking requirements.
    */
   travelerFields?: ReadonlyArray<TravelerFieldRequirement>
   /**
@@ -357,11 +357,11 @@ export interface ResolvedTaxRate {
 /** Caller-supplied loaders for descriptor enrichment. Each is
  *  optional — when omitted the handler returns the default shape.
  *  Templates wire these to the modules they have on hand
- *  (booking-requirements, extras, finance). */
+ *  (booking requirements, extras, finance). */
 export interface OwnedProductsShapeLoaders {
   /**
    * Resolve per-traveler field requirements from
-   * @voyantjs/booking-requirements. Called per-quote so the descriptor
+   * @voyantjs/bookings/requirements. Called per-quote so the descriptor
    * reflects current configuration.
    */
   loadTravelerFields?: (

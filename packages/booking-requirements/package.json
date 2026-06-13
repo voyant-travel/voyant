@@ -19,19 +19,12 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/products": "workspace:^",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "@voyantjs/bookings": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "files": [
     "dist"
@@ -74,9 +67,6 @@
     "directory": "packages/booking-requirements"
   },
   "voyant": {
-    "schema": "./schema",
-    "requiresSchemas": [
-      "@voyantjs/db"
-    ]
+    "deprecated": "Use @voyantjs/bookings/requirements. This package is a compatibility shim for one release train."
   }
 }

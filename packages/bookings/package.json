@@ -7,6 +7,11 @@
     ".": "./src/index.ts",
     "./pii": "./src/pii.ts",
     "./schema": "./src/schema.ts",
+    "./requirements": "./src/requirements/index.ts",
+    "./requirements/schema": "./src/requirements/schema.ts",
+    "./requirements/validation": "./src/requirements/validation.ts",
+    "./requirements/routes": "./src/requirements/routes.ts",
+    "./requirements/public-routes": "./src/requirements/routes-public.ts",
     "./tasks": "./src/tasks/index.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
@@ -65,6 +70,31 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
         "default": "./dist/schema.js"
+      },
+      "./requirements": {
+        "types": "./dist/requirements/index.d.ts",
+        "import": "./dist/requirements/index.js",
+        "default": "./dist/requirements/index.js"
+      },
+      "./requirements/schema": {
+        "types": "./dist/requirements/schema.d.ts",
+        "import": "./dist/requirements/schema.js",
+        "default": "./dist/requirements/schema.js"
+      },
+      "./requirements/validation": {
+        "types": "./dist/requirements/validation.d.ts",
+        "import": "./dist/requirements/validation.js",
+        "default": "./dist/requirements/validation.js"
+      },
+      "./requirements/routes": {
+        "types": "./dist/requirements/routes.d.ts",
+        "import": "./dist/requirements/routes.js",
+        "default": "./dist/requirements/routes.js"
+      },
+      "./requirements/public-routes": {
+        "types": "./dist/requirements/routes-public.d.ts",
+        "import": "./dist/requirements/routes-public.js",
+        "default": "./dist/requirements/routes-public.js"
       },
       "./tasks": {
         "types": "./dist/tasks/index.d.ts",

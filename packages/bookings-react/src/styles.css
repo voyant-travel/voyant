@@ -9,3 +9,4 @@
  * variants on primitives) won't be compiled into the final bundle.
  */
 @source "./components/**/*.{ts,tsx}";
+@source "./requirements/components/**/*.{ts,tsx}";
