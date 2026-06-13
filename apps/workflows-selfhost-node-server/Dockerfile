@@ -34,10 +34,6 @@ COPY packages/workflows/package.json packages/workflows/package.json
 COPY packages/workflows/voyant-typescript-config.json packages/workflows/voyant-typescript-config.json
 COPY packages/workflows/src packages/workflows/src
 
-COPY packages/workflows-errors/package.json packages/workflows-errors/package.json
-COPY packages/workflows-errors/voyant-typescript-config.json packages/workflows-errors/voyant-typescript-config.json
-COPY packages/workflows-errors/src packages/workflows-errors/src
-
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 COPY packages/typescript-config/*.json packages/typescript-config/
 

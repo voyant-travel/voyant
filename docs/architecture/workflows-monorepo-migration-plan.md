@@ -1,6 +1,6 @@
 # Voyant Workflows Monorepo Migration Plan
 
-> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
+> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical. The initially imported workflow config, error, and bindings compatibility wrappers were also folded into `@voyantjs/workflows` subpaths and removed after the migration.
 
 This document defines the migration path for merging the current
 `voyant-workflows` repository into the main `voyant` monorepo.
@@ -79,9 +79,6 @@ orchestrator or local dashboard server.
 
 - `packages/workflows`
 - `packages/workflows-react`
-- `packages/workflows-config`
-- `packages/workflows-errors`
-- `packages/workflows-bindings`
 - `packages/workflows-orchestrator`
 - `packages/workflows-orchestrator-cloudflare`
 - `packages/workflows-orchestrator-node`
@@ -201,9 +198,6 @@ Promote these packages directly:
 
 - `packages/workflows`
 - `packages/workflows-react`
-- `packages/workflows-config`
-- `packages/workflows-errors`
-- `packages/workflows-bindings`
 - `packages/workflows-orchestrator`
 - `packages/workflows-orchestrator-cloudflare`
 - `packages/workflows-orchestrator-node`

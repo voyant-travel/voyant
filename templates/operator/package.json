@@ -164,7 +164,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "@voyantjs/cli": "^0.21.0",
+    "@voyantjs/cli": "^0.26.0",
     "@voyantjs/vite-config": "workspace:^",
     "dotenv": "^17.4.0",
     "drizzle-kit": "^0.31.10",

@@ -37,15 +37,15 @@ the managed Voyant Cloud execution model.
 
 These formerly separate package concepts now live under `@voyantjs/workflows`:
 
-| Old package | Canonical import |
+| Former package concept | Canonical import |
 | --- | --- |
-| `@voyantjs/workflows-errors` | `@voyantjs/workflows/errors` |
-| `@voyantjs/workflows-config` | `@voyantjs/workflows/config` |
-| `@voyantjs/workflows-bindings` | `@voyantjs/workflows/bindings` |
+| Workflow errors wrapper | `@voyantjs/workflows/errors` |
+| Workflow config wrapper | `@voyantjs/workflows/config` |
+| Workflow bindings wrapper | `@voyantjs/workflows/bindings` |
 
-`@voyantjs/workflow-runs-ui` is replaced by `@voyantjs/workflows-react/ui`. The old
-workspace package is private and exists only as a local compatibility wrapper
-while repo references migrate.
+The old workflow runs UI wrapper is replaced by `@voyantjs/workflows-react/ui`.
+The workspace compatibility packages have been removed; do not reintroduce
+them.
 
 ## `workflow-runs` Exception
 
@@ -61,6 +61,7 @@ one release with a migration note.
 
 ## Guardrail
 
-`pnpm verify:workflows-package-surface` checks the allowlist above. A new public
-`@voyantjs/workflow*` package should update this document and the checker in the
-same PR.
+`pnpm verify:workflows-package-surface` checks the allowlist above and rejects
+removed compatibility wrapper package names. A new public
+`@voyantjs/workflow*` package should update this document and the checker in
+the same PR.
