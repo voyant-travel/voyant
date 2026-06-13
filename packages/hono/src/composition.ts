@@ -32,7 +32,9 @@ export interface CompositionContext<TCapabilities> {
   options: Record<string, unknown>
 }
 
-export type ModuleFactory<TCapabilities> = (ctx: CompositionContext<TCapabilities>) => HonoModule
+export type ModuleFactory<TCapabilities> = (
+  ctx: CompositionContext<TCapabilities>,
+) => HonoModule | HonoModule[]
 export type ExtensionFactory<TCapabilities> = (
   ctx: CompositionContext<TCapabilities>,
 ) => HonoExtension
@@ -71,7 +73,7 @@ export function composeFromManifest<TCapabilities>(
   registry: CompositionRegistry<TCapabilities>,
   capabilities: TCapabilities,
 ): ComposedApp {
-  const modules = (manifest.modules ?? []).map((entry) => {
+  const modules = (manifest.modules ?? []).flatMap((entry) => {
     const { resolve, options } = normalizeEntry(entry)
     const factory = registry.modules[resolve]
     if (!factory) {

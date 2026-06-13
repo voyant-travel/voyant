@@ -31,7 +31,6 @@
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/products": "workspace:^",
-    "@voyantjs/storefront": "workspace:^",
     "@voyantjs/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",

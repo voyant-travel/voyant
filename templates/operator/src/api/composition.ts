@@ -24,6 +24,10 @@ import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
 import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
+import {
+  createCommerceHonoModules,
+  createCommerceStorefrontOfferResolvers,
+} from "@voyantjs/commerce"
 import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
@@ -34,18 +38,13 @@ import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
 import { identityHonoModule } from "@voyantjs/identity"
 import { createLegalHonoModule } from "@voyantjs/legal"
-import { marketsHonoModule } from "@voyantjs/markets"
 import {
   createDefaultBookingDocumentAttachment,
   createNotificationsHonoModule,
 } from "@voyantjs/notifications"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
-import { pricingHonoModule } from "@voyantjs/pricing"
 import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
-import { promotionsHonoModule } from "@voyantjs/promotions"
-import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
 import { resourcesHonoModule } from "@voyantjs/resources"
-import { sellabilityHonoModule } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
@@ -139,15 +138,12 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/external-refs",
     "@voyantjs/extras",
     "@voyantjs/bookings/requirements",
-    "@voyantjs/pricing",
-    "@voyantjs/markets",
+    "@voyantjs/commerce",
     "@voyantjs/transactions",
     "@voyantjs/resources",
-    "@voyantjs/sellability",
     "@voyantjs/distribution",
     "@voyantjs/suppliers",
     "@voyantjs/products",
-    "@voyantjs/promotions",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
     "@voyantjs/finance",
@@ -186,15 +182,12 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
         },
       }),
-    "@voyantjs/pricing": () => pricingHonoModule,
-    "@voyantjs/markets": () => marketsHonoModule,
+    "@voyantjs/commerce": () => createCommerceHonoModules(),
     "@voyantjs/transactions": () => transactionsHonoModule,
     "@voyantjs/resources": () => resourcesHonoModule,
-    "@voyantjs/sellability": () => sellabilityHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
     "@voyantjs/suppliers": () => suppliersHonoModule,
     "@voyantjs/products": () => productsHonoModule,
-    "@voyantjs/promotions": () => promotionsHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
         resolveRuntime: (c) => {
@@ -297,7 +290,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       }),
     "@voyantjs/storefront": ({ capabilities }) =>
       createStorefrontHonoModule({
-        offers: createPromotionsStorefrontResolvers(),
+        offers: createCommerceStorefrontOfferResolvers(),
         // Async booking-bootstrap intents (queued write pipeline, RFC
         // voyant#1687 §3.2) — the handler runs on the app bus with
         // outbox-grade retries; the */2min cron sweeps stale intents.

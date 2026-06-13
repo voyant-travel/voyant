@@ -1150,9 +1150,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/commerce':
-        specifier: workspace:^
-        version: link:../commerce
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
@@ -1673,6 +1670,21 @@ importers:
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
+      '@voyantjs/hono':
+        specifier: workspace:^
+        version: link:../hono
+      '@voyantjs/markets':
+        specifier: workspace:^
+        version: link:../markets
+      '@voyantjs/pricing':
+        specifier: workspace:^
+        version: link:../pricing
+      '@voyantjs/promotions':
+        specifier: workspace:^
+        version: link:../promotions
+      '@voyantjs/sellability':
+        specifier: workspace:^
+        version: link:../sellability
     devDependencies:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
@@ -3919,9 +3931,6 @@ importers:
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
-      '@voyantjs/storefront':
-        specifier: workspace:^
-        version: link:../storefront
       '@voyantjs/workflows':
         specifier: workspace:^
         version: link:../workflows
@@ -5265,6 +5274,9 @@ importers:
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../../packages/commerce
       '@voyantjs/connect-adapter':
         specifier: ^0.2.20
         version: 0.2.20(@voyantjs/catalog@packages+catalog)

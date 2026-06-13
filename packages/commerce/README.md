@@ -1,8 +1,9 @@
 # Commerce
 
-`@voyantjs/commerce` defines the narrow commercial decision Interface. It does
-not move pricing, markets, sellability, promotions, or FX internals behind this
-package yet.
+`@voyantjs/commerce` defines the narrow commercial decision Interface and the
+runtime wrapper for the commercial package cluster. Pricing, markets,
+sellability, and promotions still own their current schemas until explicit
+schema-move issues migrate those tables.
 
 The root call is:
 
@@ -22,11 +23,32 @@ The package intentionally exports one root surface:
 - `evaluateCommercialDecision(input, context)`
 - `createCommerceAdapterRegistry(...)`
 - `recordCommercialSnapshot(decision, target, repository)`
+- `createCommerceHonoModules()`
+- `createCommerceStorefrontOfferResolvers()`
 - decision, adapter, trace, pricing, promotion, FX, and snapshot types
 
 It does not expose `pricing`, `markets`, `sellability`, `promotions`, or `fx`
-subpaths as default v1 APIs. Those remain separate packages until a specific
-extension seam has a documented contract and real consumers.
+subpaths as default v1 APIs. The old package names remain compatibility and
+schema-owner packages until the v1 migration removes them.
+
+## Runtime Mounting
+
+Templates should declare one Commerce runtime entry and expand it through
+`createCommerceHonoModules()`:
+
+```ts
+const modules = createCommerceHonoModules()
+```
+
+The returned modules preserve the existing route prefixes:
+
+- `/v1/pricing` and `/v1/public/pricing`
+- `/v1/markets`
+- `/v1/sellability`
+- `/v1/admin/promotions`
+
+This keeps route compatibility while moving template runtime wiring to the
+Commerce Module.
 
 ## Input
 
