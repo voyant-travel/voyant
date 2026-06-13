@@ -1,0 +1,4 @@
+/* Tailwind v4 source-detection helper. */
+@source "./components/**/*.{ts,tsx}";
+
+@import "@voyantjs/products-react/styles.css";

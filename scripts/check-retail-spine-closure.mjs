@@ -60,6 +60,8 @@ const retailSpineRoots = [
 ]
 
 const forbiddenPackages = new Map([
+  ["@voyantjs/inventory", "operated Inventory authoring runtime"],
+  ["@voyantjs/inventory-react", "operated Inventory authoring UI"],
   ["@voyantjs/products", "operated Inventory authoring runtime"],
   ["@voyantjs/products-react", "operated Inventory authoring UI"],
   ["@voyantjs/availability", "operated Availability/Operations runtime"],

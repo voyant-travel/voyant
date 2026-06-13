@@ -97,3 +97,10 @@ CRM was the first module being moved into the old registry-backed shape:
 Future module candidates should add `-react` only when they justify reusable
 React runtime helpers or reusable module components. Not every Module needs a
 React package immediately.
+
+Inventory is one of those justified module React packages:
+`@voyantjs/inventory-react` is the operated product authoring UI target for
+Product structure, Product Versions, product-internal components, and owned
+publication lifecycle. `@voyantjs/products-react` remains a compatibility
+entrypoint until the v1 physical move is complete; new operated-authoring
+surfaces should be added under Inventory React.

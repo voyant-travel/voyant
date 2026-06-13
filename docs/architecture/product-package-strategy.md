@@ -13,6 +13,7 @@ Related:
 - [Storefront and public contract architecture](./storefront-architecture.md)
 - [Schema discipline](./schema-discipline.md)
 - [Accommodation resale boundary](./accommodation-resale-boundary.md)
+- [Inventory Interface](./inventory-interface.md)
 - [Frontend package strategy](../frontend-package-strategy.md)
 - [ADR-0002: Pure framework contracts ship as standalone packages](../adr/0002-contract-packages.md)
 - [ADR-0004: Quotes are the travel-native sales artifact](../adr/0004-quotes-as-travel-native-sales-artifact.md)
@@ -912,6 +913,10 @@ shape, not a root table, and Catalog is not a vertical Module. Move owned
 product authoring toward an optional `inventory` Module, with current
 `products` surfaces becoming Inventory subpaths/packages in the v1 move. Do not
 overload `catalog` or keep `products` as the long-term public Module name.
+The first implementation slice creates `@voyantjs/inventory` and
+`@voyantjs/inventory-react` as operated authoring entrypoints over the existing
+implementation; the remaining physical file/table move is tracked as follow-up
+work behind the documented Inventory Interface.
 
 `inventory` must remain an optional operated-inventory Module, not a default
 dependency of Catalog or reseller/OTA starter bundles. OTA/reseller deployments
@@ -1191,7 +1196,7 @@ stay unchanged.
 | --- | --- | --- |
 | `@voyantjs/catalog`, `@voyantjs/catalog-react` | Keep as the catalog projection/search/overlay/snapshot plane. | Catalog remains a contract/infrastructure plane, not a universal root table and not owned product authoring. |
 | `@voyantjs/catalog-authoring` | Move current package scope toward Inventory unless a real overlay/source-governance surface is split out. | The manifest depends on Products, Availability, Pricing, and Extras, so today's package looks like operated-inventory authoring. Keep a Catalog authoring package only for overlays, source governance, freshness, search projection metadata, or index governance. |
-| `@voyantjs/products`, `@voyantjs/products-react` | Move to optional `inventory` subpaths/packages in the v1 package move. | Products are operated inventory. They should not be mistaken for all sellable inventory, for the Catalog plane, or for a default OTA/reseller dependency. |
+| `@voyantjs/products`, `@voyantjs/products-react` | Compatibility entrypoints while operated authoring moves to optional `inventory` packages/subpaths in the v1 package move. | Products are operated inventory. New operated-authoring imports should prefer `@voyantjs/inventory` / `@voyantjs/inventory-react` where the moved surface exists. |
 | `@voyantjs/accommodations` | Keep as a vertical runtime for accommodation resale where the schema/booking semantics are real. | Do not revive hotel/property operations. Room-block work may be Operations/Program-facing while accommodation resale remains vertical. |
 | `@voyantjs/cruises`, `@voyantjs/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |
 | `@voyantjs/charters`, `@voyantjs/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
