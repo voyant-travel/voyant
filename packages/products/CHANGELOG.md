@@ -1,5 +1,12 @@
 # @voyantjs/products
 
+## 0.119.3
+
+### Patch Changes
+
+- Updated dependencies [bd74fb0]
+  - @voyantjs/catalog@0.117.2
+
 ## 0.119.2
 
 ### Patch Changes

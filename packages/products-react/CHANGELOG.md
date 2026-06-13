@@ -1,5 +1,17 @@
 # @voyantjs/products-react
 
+## 0.119.3
+
+### Patch Changes
+
+- e6d9a61: Split oversized product React detail, pricing, media, and locale source files into smaller internal modules without changing public exports.
+- Updated dependencies [bd74fb0]
+- Updated dependencies [b66b155]
+  - @voyantjs/catalog-react@0.117.2
+  - @voyantjs/finance-react@0.119.3
+  - @voyantjs/finance@0.119.3
+  - @voyantjs/products@0.119.3
+
 ## 0.119.2
 
 ### Patch Changes

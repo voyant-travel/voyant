@@ -1,5 +1,15 @@
 # @voyantjs/catalog-react
 
+## 0.117.2
+
+### Patch Changes
+
+- bd74fb0: Split oversized catalog React, booking route, and contract modules into focused internal files while preserving existing public exports and behavior.
+- Updated dependencies [e6d9a61]
+- Updated dependencies [bd74fb0]
+  - @voyantjs/products-react@0.119.3
+  - @voyantjs/catalog-contracts@0.107.1
+
 ## 0.117.1
 
 ### Patch Changes
