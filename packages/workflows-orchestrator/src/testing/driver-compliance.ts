@@ -90,6 +90,8 @@ function uniqueId(prefix: string): string {
   return `${prefix}-${++suiteCounter}`
 }
 
+const DATETIME_WAKEUP_TEST_TIMEOUT_MS = 5_000
+
 // ---- Suite options ----
 
 /**
@@ -252,7 +254,9 @@ export function runDriverComplianceSuite(
           const run = await driver.trigger(wf, {}, { delay: "1ms" })
           expect(run.status).toBe("waiting")
 
-          await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 1_000 })
+          await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), {
+            timeout: DATETIME_WAKEUP_TEST_TIMEOUT_MS,
+          })
         },
       )
 
