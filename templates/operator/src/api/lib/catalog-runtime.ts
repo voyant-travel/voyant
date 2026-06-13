@@ -31,24 +31,24 @@ import {
 } from "@voyantjs/cruises/service-catalog-plane"
 import { createCruiseCabinFacetProjectionExtension } from "@voyantjs/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { productCatalogPolicy } from "@voyantjs/inventory/catalog-policy"
+import { productDeparturesCatalogPolicy } from "@voyantjs/inventory/catalog-policy-departures"
+import { productDestinationsCatalogPolicy } from "@voyantjs/inventory/catalog-policy-destinations"
+import { productPricingCatalogPolicy } from "@voyantjs/inventory/catalog-policy-pricing"
+import { productPromotionsCatalogPolicy } from "@voyantjs/inventory/catalog-policy-promotions"
+import { productTaxonomyCatalogPolicy } from "@voyantjs/inventory/catalog-policy-taxonomy"
 import { extrasCatalogPolicy } from "@voyantjs/inventory/extras"
+import {
+  createProductDocumentBuilder,
+  createProductStorefrontCardProjectionExtension,
+} from "@voyantjs/inventory/service-catalog-plane"
+import { createProductDestinationsProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-destinations"
+import { createProductTaxonomyProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-taxonomy"
 import { marketLocales, markets } from "@voyantjs/markets"
 import {
   createProductPricingProjectionExtension,
   loadProductPriceFrom,
 } from "@voyantjs/pricing/service-catalog-plane-pricing"
-import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
-import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
-import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
-import { productPricingCatalogPolicy } from "@voyantjs/products/catalog-policy-pricing"
-import { productPromotionsCatalogPolicy } from "@voyantjs/products/catalog-policy-promotions"
-import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
-import {
-  createProductDocumentBuilder,
-  createProductStorefrontCardProjectionExtension,
-} from "@voyantjs/products/service-catalog-plane"
-import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
-import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
 import { createProductPromotionsProjectionExtension } from "@voyantjs/promotions/service-catalog-plane-promotions"
 import { asc, eq } from "drizzle-orm"
 

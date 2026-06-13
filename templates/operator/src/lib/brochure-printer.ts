@@ -1,11 +1,11 @@
-import { brochureBodyToHtml, type ProductBrochurePrinter } from "@voyantjs/products/tasks"
+import { brochureBodyToHtml, type ProductBrochurePrinter } from "@voyantjs/inventory/tasks"
 import { getCloudClient, type VoyantApiEnv } from "./voyant-cloud"
 
 /**
  * Default brochure printer for this template.
  *
  * Renders the product brochure HTML to PDF via Voyant Cloud's browser-rendering
- * API. To switch providers, replace the body of this function — `@voyantjs/products/tasks`
+ * API. To switch providers, replace the body of this function — `@voyantjs/inventory/tasks`
  * exports alternatives like `createCloudflareBrowserProductBrochurePrinter`
  * (direct Cloudflare API) and `createBasicPdfProductBrochurePrinter` (pdf-lib).
  */

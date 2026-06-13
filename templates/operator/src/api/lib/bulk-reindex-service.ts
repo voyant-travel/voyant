@@ -11,7 +11,7 @@
  */
 
 import { createIndexerService } from "@voyantjs/catalog"
-import { products } from "@voyantjs/products/schema"
+import { products } from "@voyantjs/inventory/schema"
 import type { BulkReindexProductsService } from "@voyantjs/promotions"
 
 import {

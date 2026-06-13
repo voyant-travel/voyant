@@ -735,6 +735,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:^
         version: link:../finance-react
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyantjs/pricing-react':
         specifier: workspace:^
         version: link:../pricing-react
@@ -5470,6 +5473,9 @@ importers:
       '@voyantjs/inventory':
         specifier: workspace:^
         version: link:../../packages/inventory
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../../packages/inventory-react
       '@voyantjs/legal':
         specifier: workspace:^
         version: link:../../packages/legal

@@ -59,6 +59,20 @@ import {
   identityNamedContacts,
 } from "@voyantjs/identity/schema"
 import {
+  bookingItemProductDetails,
+  bookingProductDetails,
+} from "@voyantjs/inventory/booking-extension"
+import {
+  optionUnits,
+  productDayServices,
+  productDays,
+  productItineraries,
+  productMedia,
+  productOptions,
+  products,
+  productVersions,
+} from "@voyantjs/inventory/schema"
+import {
   contracts,
   contractTemplates,
   contractTemplateVersions,
@@ -69,20 +83,6 @@ import {
 } from "@voyantjs/legal/schema"
 import { marketCurrencies, marketLocales, markets } from "@voyantjs/markets/schema"
 import { optionPriceRules, optionUnitPriceRules, priceCatalogs } from "@voyantjs/pricing/schema"
-import {
-  bookingItemProductDetails,
-  bookingProductDetails,
-} from "@voyantjs/products/booking-extension"
-import {
-  optionUnits,
-  productDayServices,
-  productDays,
-  productItineraries,
-  productMedia,
-  productOptions,
-  products,
-  productVersions,
-} from "@voyantjs/products/schema"
 import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
 import {
   pipelines,

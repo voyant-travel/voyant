@@ -1,5 +1,5 @@
 import { defineLink } from "@voyantjs/core"
-import { productLinkable } from "@voyantjs/products"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyantjs/inventory"
 import { organizationLinkable } from "@voyantjs/relationships"
 
 /**

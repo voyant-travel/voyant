@@ -27,6 +27,7 @@
     "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
@@ -44,6 +45,7 @@
     "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
@@ -105,6 +107,9 @@
       "optional": true
     },
     "@voyantjs/finance-react": {
+      "optional": true
+    },
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/pricing-react": {

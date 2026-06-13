@@ -364,7 +364,7 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
 // duplicate it. It's registered for the routes seam: the contributions carry
 // the package-owned route implementations (no search contracts — the pages
 // keep their filters local), and the list/categories pages are the packaged
-// hosts from @voyantjs/products-react/admin. The detail page is substituted
+// hosts from @voyantjs/inventory-react/admin. The detail page is substituted
 // through the factory's `detailPageComponent` seam: the operator wrapper
 // composes the app-owned pieces the package cannot import — the
 // availability-react option resource templates panel (availability-react

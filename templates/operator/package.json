@@ -85,6 +85,7 @@
     "@voyantjs/identity": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/legal": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
     "@voyantjs/markets": "workspace:^",

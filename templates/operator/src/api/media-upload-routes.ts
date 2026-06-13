@@ -3,7 +3,7 @@ import { parseJsonBody } from "@voyantjs/hono"
 import {
   createDefaultProductBrochureTemplate,
   generateAndStoreProductBrochure,
-} from "@voyantjs/products"
+} from "@voyantjs/inventory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"

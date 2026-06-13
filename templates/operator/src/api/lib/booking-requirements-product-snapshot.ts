@@ -1,4 +1,4 @@
-import { productCapabilities, products } from "@voyantjs/products/schema"
+import { productCapabilities, products } from "@voyantjs/inventory/schema"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

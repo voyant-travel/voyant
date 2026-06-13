@@ -6,7 +6,7 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyantjs/finance"
-import { products } from "@voyantjs/products"
+import { products } from "@voyantjs/inventory"
 import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
 import { suppliers } from "@voyantjs/suppliers"
 import { eq } from "drizzle-orm"

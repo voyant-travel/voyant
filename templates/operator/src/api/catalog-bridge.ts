@@ -57,7 +57,7 @@ import {
   createIndexerService,
 } from "@voyantjs/catalog"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
-import { buildProductSnapshotInput } from "@voyantjs/products/service-catalog-plane"
+import { buildProductSnapshotInput } from "@voyantjs/inventory/service-catalog-plane"
 import { recordPromotionRedemptionsForBooking } from "@voyantjs/promotions/service-booking-confirmed"
 import { and, eq, isNotNull } from "drizzle-orm"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"

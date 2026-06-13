@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { type BookingDraftV1, bookingDraftV1 } from "@voyantjs/catalog/booking-engine"
 import { useBookingQuote } from "@voyantjs/catalog-react/booking-engine"
-import type { ProductContent } from "@voyantjs/products/content-shape"
+import type { ProductContent } from "@voyantjs/inventory/content-shape"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { useEffect, useMemo, useState } from "react"
 
