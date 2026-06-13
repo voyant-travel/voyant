@@ -1,200 +1,40 @@
-// agent-quality: file-size exception -- owner: cruises; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookingGroupsService, bookingsService } from "@voyantjs/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type {
-  CruiseAdapter,
-  ExternalBookingTerms,
-  ExternalFareVariant,
-  ExternalPassengerComposition,
-  SourceRef,
-} from "./adapters/index.js"
+import type { SourceRef } from "./adapters/index.js"
 import {
-  type BookingCruiseDetail,
-  type BookingGroupCruiseDetail,
   bookingCruiseDetailsService,
   bookingGroupCruiseDetailsService,
 } from "./booking-extension.js"
+import {
+  assertPassengerCompositionMatchesPassengers,
+  generateCruiseBookingNumber,
+  passengerCompositionCount,
+  passengerCompositionMatches,
+  priceCentsFromString,
+  sourceRefMatches,
+} from "./service-booking-helpers.js"
+import type {
+  CreateCruiseBookingInput,
+  CreateCruiseBookingResult,
+  CreateCruisePartyBookingInput,
+  CreateCruisePartyBookingResult,
+  CreateExternalCruiseBookingInput,
+  CruisePartyCabinEntry,
+} from "./service-booking-types.js"
 import { composeQuote, pricingService, type Quote } from "./service-pricing.js"
 
-// ---------- shared shapes ----------
-
-export type CruiseBookingPassenger = {
-  firstName: string
-  lastName: string
-  email?: string | null
-  phone?: string | null
-  travelerCategory?: "adult" | "child" | "infant" | "senior" | "other" | null
-  preferredLanguage?: string | null
-  specialRequests?: string | null
-  personId?: string | null
-  isPrimary?: boolean
-  notes?: string | null
-}
-
-export type CruiseBookingContact = {
-  firstName: string
-  lastName: string
-  email?: string | null
-  phone?: string | null
-  language?: string | null
-  country?: string | null
-  region?: string | null
-  city?: string | null
-  address?: string | null
-  postalCode?: string | null
-}
-
-export type CruiseBookingMode = "inquiry" | "reserve"
-
-// ---------- single-cabin booking ----------
-
-export type CreateCruiseBookingInput = {
-  sailingId: string
-  cabinCategoryId: string
-  cabinId?: string | null
-  occupancy: number
-  fareCode?: string | null
-  fareVariant?: ExternalFareVariant | null
-  mode?: CruiseBookingMode
-  personId?: string | null
-  organizationId?: string | null
-  contact: CruiseBookingContact
-  passengers: CruiseBookingPassenger[]
-  notes?: string | null
-  /**
-   * Air-arrangement intent for this cruise. The cruise booking
-   * itself only carries the cabin line; the actual flight booking
-   * lives in the flights vertical (or with the customer when
-   * "independent"). Per booking-journey-architecture §7.
-   */
-  airArrangement?: "cruise_line" | "independent" | "none" | null
-  /** Optional pointer to a linked flight booking when the composer
-   *  ties cabin + flight lines together. */
-  linkedFlightBookingId?: string | null
-}
-
-export type CreateCruiseBookingResult = {
-  bookingId: string
-  bookingNumber: string
-  cruiseDetails: BookingCruiseDetail
-  quote: Quote
-}
-
-function generateCruiseBookingNumber(suffix?: string | number): string {
-  const ts = Date.now().toString(36).toUpperCase()
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase()
-  return suffix === undefined ? `CR-${ts}-${rand}` : `CR-${ts}-${rand}-${suffix}`
-}
-
-function priceCentsFromString(s: string): number {
-  // For passing to bookingsService which expects integer cents.
-  // Pricing service emits decimal strings already validated to ^-?\d+(\.\d{1,2})?$
-  const negative = s.startsWith("-")
-  const abs = negative ? s.slice(1) : s
-  const parts = abs.split(".")
-  const whole = parts[0] ?? "0"
-  const frac = parts[1] ?? ""
-  const fracPadded = `${frac}00`.slice(0, 2)
-  const cents = Number(whole) * 100 + Number(fracPadded)
-  return negative ? -cents : cents
-}
-
-function passengerCompositionFromPassengers(
-  passengers: CruiseBookingPassenger[],
-): ExternalPassengerComposition {
-  let adults = 0
-  let children = 0
-  let infants = 0
-  let seniors = 0
-  for (const passenger of passengers) {
-    if (passenger.travelerCategory === "child") children += 1
-    else if (passenger.travelerCategory === "infant") infants += 1
-    else if (passenger.travelerCategory === "senior") seniors += 1
-    else adults += 1
-  }
-  return { adults, children, infants, seniors }
-}
-
-function passengerCompositionCount(composition: ExternalPassengerComposition): number {
-  return (
-    composition.adults +
-    (composition.children ?? 0) +
-    (composition.infants ?? 0) +
-    (composition.seniors ?? 0)
-  )
-}
-
-function assertPassengerCompositionMatchesPassengers(
-  supplied: ExternalPassengerComposition | null | undefined,
-  passengers: CruiseBookingPassenger[],
-): ExternalPassengerComposition {
-  const inferred = passengerCompositionFromPassengers(passengers)
-  if (!supplied) return inferred
-
-  const expected = {
-    adults: supplied.adults,
-    children: supplied.children ?? 0,
-    infants: supplied.infants ?? 0,
-    seniors: supplied.seniors ?? 0,
-  }
-  const actual = {
-    adults: inferred.adults,
-    children: inferred.children ?? 0,
-    infants: inferred.infants ?? 0,
-    seniors: inferred.seniors ?? 0,
-  }
-  if (
-    expected.adults !== actual.adults ||
-    expected.children !== actual.children ||
-    expected.infants !== actual.infants ||
-    expected.seniors !== actual.seniors
-  ) {
-    throw new Error(
-      `passengerComposition does not match passengers: composition=${JSON.stringify(
-        expected,
-      )} passengers=${JSON.stringify(actual)}`,
-    )
-  }
-  if (supplied.childAges && supplied.childAges.length !== expected.children) {
-    throw new Error(
-      `passengerComposition.childAges length (${supplied.childAges.length}) must match children (${expected.children})`,
-    )
-  }
-  return supplied
-}
-
-function sourceRefKey(ref: SourceRef): string {
-  return JSON.stringify(sortValue(ref))
-}
-
-function sortValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortValue)
-  if (!value || typeof value !== "object") return value
-  const out: Record<string, unknown> = {}
-  for (const key of Object.keys(value).sort()) {
-    out[key] = sortValue((value as Record<string, unknown>)[key])
-  }
-  return out
-}
-
-function sourceRefMatches(candidate: SourceRef, requested: SourceRef): boolean {
-  if (sourceRefKey(candidate) === sourceRefKey(requested)) return true
-  const candidateIsLegacy = Object.keys(candidate).length === 1
-  const requestedIsLegacy = Object.keys(requested).length === 1
-  return (candidateIsLegacy || requestedIsLegacy) && candidate.externalId === requested.externalId
-}
-
-function passengerCompositionMatches(
-  candidate: ExternalPassengerComposition | null | undefined,
-  requested: ExternalPassengerComposition | null | undefined,
-): boolean {
-  if (!candidate || !requested) return true
-  return (
-    sourceRefKey({ externalId: "composition", ...candidate }) ===
-    sourceRefKey({ externalId: "composition", ...requested })
-  )
-}
+export type {
+  CreateCruiseBookingInput,
+  CreateCruiseBookingResult,
+  CreateCruisePartyBookingInput,
+  CreateCruisePartyBookingResult,
+  CreateExternalCruiseBookingInput,
+  CruiseBookingContact,
+  CruiseBookingMode,
+  CruiseBookingPassenger,
+  CruisePartyCabinEntry,
+} from "./service-booking-types.js"
 
 export const cruisesBookingService = {
   /**
@@ -692,50 +532,4 @@ export const cruisesBookingService = {
       }
     })
   },
-}
-
-export type CruisePartyCabinEntry = {
-  cabinCategoryId: string
-  cabinId?: string | null
-  occupancy: number
-  fareCode?: string | null
-  fareVariant?: ExternalFareVariant | null
-  passengers: CruiseBookingPassenger[]
-  notes?: string | null
-}
-
-export type CreateCruisePartyBookingInput = {
-  sailingId: string
-  cabins: CruisePartyCabinEntry[]
-  leadPersonId?: string | null
-  organizationId?: string | null
-  contact: CruiseBookingContact
-  mode?: CruiseBookingMode
-  label?: string
-  notes?: string | null
-}
-
-export type CreateCruisePartyBookingResult = {
-  groupId: string
-  primaryBookingId: string | null
-  groupDetails: BookingGroupCruiseDetail
-  cabins: CreateCruiseBookingResult[]
-}
-
-export type CreateExternalCruiseBookingInput = {
-  adapter: CruiseAdapter
-  sailingRef: SourceRef
-  cabinCategoryRef: SourceRef
-  cabinId?: string | null
-  occupancy: number
-  passengerComposition?: ExternalPassengerComposition | null
-  fareCode?: string | null
-  fareVariant?: ExternalFareVariant | null
-  mode?: CruiseBookingMode
-  personId?: string | null
-  organizationId?: string | null
-  contact: CruiseBookingContact
-  passengers: CruiseBookingPassenger[]
-  bookingTerms?: ExternalBookingTerms | null
-  notes?: string | null
 }
