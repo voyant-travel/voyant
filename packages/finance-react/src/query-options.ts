@@ -1,4 +1,3 @@
-// agent-quality: file-size exception -- owner: finance-react; existing module stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import { queryOptions } from "@tanstack/react-query"
@@ -18,40 +17,15 @@ import type { UseInvoicePaymentsOptions } from "./hooks/use-invoice-payments.js"
 import type { UseInvoicesOptions } from "./hooks/use-invoices.js"
 import type { UsePaymentOptions } from "./hooks/use-payment.js"
 import type { UsePaymentSessionsOptions } from "./hooks/use-payment-sessions.js"
-import type { UsePublicBookingDocumentsOptions } from "./hooks/use-public-booking-documents.js"
-import type { UsePublicBookingPaymentOptionsOptions } from "./hooks/use-public-booking-payment-options.js"
-import type { UsePublicBookingPaymentsOptions } from "./hooks/use-public-booking-payments.js"
-import type { UsePublicFinanceDocumentByReferenceOptions } from "./hooks/use-public-finance-document-by-reference.js"
-import type { UsePublicPaymentSessionOptions } from "./hooks/use-public-payment-session.js"
 import type { UseSupplierInvoiceOptions } from "./hooks/use-supplier-invoice.js"
 import type { UseSupplierInvoicesOptions } from "./hooks/use-supplier-invoices.js"
 import type { UseSupplierPaymentsOptions } from "./hooks/use-supplier-payments.js"
-import type { UseVoucherOptions } from "./hooks/use-voucher.js"
-import type { UseVouchersOptions } from "./hooks/use-vouchers.js"
+import { getInvoiceFxRate } from "./operations.js"
+import { financeQueryKeys } from "./query-keys.js"
 import {
-  getAdminBookingPayments,
-  getInvoiceFxRate,
-  getPublicBookingDocuments,
-  getPublicBookingPaymentOptions,
-  getPublicBookingPayments,
-  getPublicFinanceDocumentByReference,
-  getPublicPaymentSession,
-} from "./operations.js"
-import {
-  type FinanceDepartureProfitabilityFilters,
-  type FinanceProductProfitabilityFilters,
-  type FinanceTravelerProfitabilityFilters,
-  financeQueryKeys,
-} from "./query-keys.js"
-import {
-  accountantInvoicesResponse,
-  accountantSharesResponse,
-  accountantSummaryResponse,
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
-  costCategoriesResponse,
-  departureProfitabilityResponse,
   invoiceAttachmentsResponse,
   invoiceCreditNotesResponse,
   invoiceLineItemsResponse,
@@ -62,14 +36,10 @@ import {
   invoiceSingleResponse,
   paymentSessionListResponse,
   paymentSingleResponse,
-  productProfitabilityResponse,
   supplierInvoiceAttachmentsResponse,
   supplierInvoiceListResponse,
   supplierInvoiceSingleResponse,
   supplierPaymentListResponse,
-  travelerProfitabilityResponse,
-  voucherDetailResponse,
-  voucherListResponse,
 } from "./schemas.js"
 
 export function getBookingPaymentSchedulesQueryOptions(
@@ -500,285 +470,23 @@ export function getInvoiceAttachmentsQueryOptions(
   })
 }
 
-export function getPublicBookingPaymentOptionsQueryOptions(
-  client: FetchWithValidationOptions,
-  bookingId: string | null | undefined,
-  options: UsePublicBookingPaymentOptionsOptions = {},
-) {
-  const { enabled: _enabled = true, ...filters } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.publicBookingPaymentOptions(bookingId ?? "", filters),
-    queryFn: async () => {
-      if (!bookingId) {
-        throw new Error("getPublicBookingPaymentOptionsQueryOptions requires a bookingId")
-      }
-
-      return getPublicBookingPaymentOptions(client, bookingId, filters)
-    },
-  })
-}
-
-export function getPublicBookingDocumentsQueryOptions(
-  client: FetchWithValidationOptions,
-  bookingId: string | null | undefined,
-  options: UsePublicBookingDocumentsOptions = {},
-) {
-  const { enabled: _enabled = true } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.publicBookingDocuments(bookingId ?? ""),
-    queryFn: async () => {
-      if (!bookingId) {
-        throw new Error("getPublicBookingDocumentsQueryOptions requires a bookingId")
-      }
-
-      return getPublicBookingDocuments(client, bookingId)
-    },
-  })
-}
-
-export function getPublicFinanceDocumentByReferenceQueryOptions(
-  client: FetchWithValidationOptions,
-  reference: string | null | undefined,
-  options: UsePublicFinanceDocumentByReferenceOptions = {},
-) {
-  const { enabled: _enabled = true } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.publicFinanceDocumentLookup({ reference: reference ?? undefined }),
-    queryFn: async () => {
-      if (!reference) {
-        throw new Error("getPublicFinanceDocumentByReferenceQueryOptions requires a reference")
-      }
-
-      return getPublicFinanceDocumentByReference(client, { reference })
-    },
-  })
-}
-
-export function getPublicBookingPaymentsQueryOptions(
-  client: FetchWithValidationOptions,
-  bookingId: string | null | undefined,
-  options: UsePublicBookingPaymentsOptions = {},
-) {
-  const { enabled: _enabled = true } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.publicBookingPayments(bookingId ?? ""),
-    queryFn: async () => {
-      if (!bookingId) {
-        throw new Error("getPublicBookingPaymentsQueryOptions requires a bookingId")
-      }
-
-      return getPublicBookingPayments(client, bookingId)
-    },
-  })
-}
-
-export function getAdminBookingPaymentsQueryOptions(
-  client: FetchWithValidationOptions,
-  bookingId: string | null | undefined,
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.adminBookingPayments(bookingId ?? ""),
-    queryFn: async () => {
-      if (!bookingId) {
-        throw new Error("getAdminBookingPaymentsQueryOptions requires a bookingId")
-      }
-      return getAdminBookingPayments(client, bookingId)
-    },
-  })
-}
-
-export function getPublicPaymentSessionQueryOptions(
-  client: FetchWithValidationOptions,
-  sessionId: string | null | undefined,
-  options: UsePublicPaymentSessionOptions = {},
-) {
-  const { enabled: _enabled = true } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.publicPaymentSession(sessionId ?? ""),
-    queryFn: async () => {
-      if (!sessionId) {
-        throw new Error("getPublicPaymentSessionQueryOptions requires a sessionId")
-      }
-
-      return getPublicPaymentSession(client, sessionId)
-    },
-  })
-}
-
-export function getVouchersQueryOptions(
-  client: FetchWithValidationOptions,
-  options: UseVouchersOptions = {},
-) {
-  const { enabled: _enabled = true, ...filters } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.vouchersList(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (filters.status) params.set("status", filters.status)
-      if (filters.issuedToPersonId) params.set("issuedToPersonId", filters.issuedToPersonId)
-      if (filters.issuedToOrganizationId) {
-        params.set("issuedToOrganizationId", filters.issuedToOrganizationId)
-      }
-      if (filters.search) params.set("search", filters.search)
-      if (filters.hasBalance !== undefined) params.set("hasBalance", String(filters.hasBalance))
-      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
-      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
-      const qs = params.toString()
-
-      return fetchWithValidation(
-        `/v1/admin/finance/vouchers${qs ? `?${qs}` : ""}`,
-        voucherListResponse,
-        client,
-      )
-    },
-  })
-}
-
-export function getVoucherQueryOptions(
-  client: FetchWithValidationOptions,
-  id: string | null | undefined,
-  options: UseVoucherOptions = {},
-) {
-  const { enabled: _enabled = true } = options
-
-  return queryOptions({
-    queryKey: financeQueryKeys.voucher(id ?? ""),
-    queryFn: async () => {
-      if (!id) throw new Error("getVoucherQueryOptions requires an id")
-      return fetchWithValidation(`/v1/admin/finance/vouchers/${id}`, voucherDetailResponse, client)
-    },
-  })
-}
-
-export function getDepartureProfitabilityQueryOptions(
-  client: FetchWithValidationOptions,
-  filters: FinanceDepartureProfitabilityFilters = {},
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.departureProfitability(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (filters.from) params.set("from", filters.from)
-      if (filters.to) params.set("to", filters.to)
-      if (filters.productId) params.set("productId", filters.productId)
-      if (filters.departureId) params.set("departureId", filters.departureId)
-      if (filters.currency) params.set("currency", filters.currency)
-      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
-      const qs = params.toString()
-
-      return fetchWithValidation(
-        `/v1/admin/finance/reports/profitability/departures${qs ? `?${qs}` : ""}`,
-        departureProfitabilityResponse,
-        client,
-      )
-    },
-  })
-}
-
-export function getProductProfitabilityQueryOptions(
-  client: FetchWithValidationOptions,
-  filters: FinanceProductProfitabilityFilters = {},
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.productProfitability(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (filters.from) params.set("from", filters.from)
-      if (filters.to) params.set("to", filters.to)
-      if (filters.currency) params.set("currency", filters.currency)
-      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
-      const qs = params.toString()
-
-      return fetchWithValidation(
-        `/v1/admin/finance/reports/profitability/products${qs ? `?${qs}` : ""}`,
-        productProfitabilityResponse,
-        client,
-      )
-    },
-  })
-}
-
-export function getTravelerProfitabilityQueryOptions(
-  client: FetchWithValidationOptions,
-  filters: FinanceTravelerProfitabilityFilters,
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.travelerProfitability(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      params.set("departureId", filters.departureId)
-      params.set("currency", filters.currency)
-      return fetchWithValidation(
-        `/v1/admin/finance/reports/profitability/travelers?${params.toString()}`,
-        travelerProfitabilityResponse,
-        client,
-      )
-    },
-  })
-}
-
-export function getCostCategoriesQueryOptions(
-  client: FetchWithValidationOptions,
-  options: { includeArchived?: boolean } = {},
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.costCategories(),
-    queryFn: () =>
-      fetchWithValidation(
-        `/v1/admin/finance/cost-categories${options.includeArchived ? "?includeArchived=true" : ""}`,
-        costCategoriesResponse,
-        client,
-      ),
-  })
-}
-
-export function getAccountantSharesQueryOptions(client: FetchWithValidationOptions) {
-  return queryOptions({
-    queryKey: financeQueryKeys.accountantShares(),
-    queryFn: () =>
-      fetchWithValidation("/v1/admin/finance/accountant-shares", accountantSharesResponse, client),
-  })
-}
-
-/** Public portal — `client` is an unauthenticated fetcher; `token` is the credential. */
-export function getAccountantSummaryQueryOptions(
-  client: FetchWithValidationOptions,
-  token: string,
-  baseCurrency?: string,
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.accountantSummary(token, baseCurrency),
-    queryFn: () => {
-      const qs = baseCurrency ? `?baseCurrency=${encodeURIComponent(baseCurrency)}` : ""
-      return fetchWithValidation(
-        `/v1/public/finance/accountant/${encodeURIComponent(token)}/summary${qs}`,
-        accountantSummaryResponse,
-        client,
-      )
-    },
-  })
-}
-
-export function getAccountantInvoicesQueryOptions(
-  client: FetchWithValidationOptions,
-  token: string,
-) {
-  return queryOptions({
-    queryKey: financeQueryKeys.accountantInvoices(token),
-    queryFn: () =>
-      fetchWithValidation(
-        `/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices`,
-        accountantInvoicesResponse,
-        client,
-      ),
-  })
-}
+export {
+  getAccountantInvoicesQueryOptions,
+  getAccountantSharesQueryOptions,
+  getAccountantSummaryQueryOptions,
+  getAdminBookingPaymentsQueryOptions,
+  getCostCategoriesQueryOptions,
+  getDepartureProfitabilityQueryOptions,
+  getProductProfitabilityQueryOptions,
+  getPublicBookingDocumentsQueryOptions,
+  getPublicBookingPaymentOptionsQueryOptions,
+  getPublicBookingPaymentsQueryOptions,
+  getPublicFinanceDocumentByReferenceQueryOptions,
+  getPublicPaymentSessionQueryOptions,
+  getTravelerProfitabilityQueryOptions,
+  getVoucherQueryOptions,
+  getVouchersQueryOptions,
+} from "./query-options/public-reporting.js"
 
 export {
   getInvoiceActionLedgerQueryOptions,
