@@ -3,7 +3,7 @@ import {
   insertMarketLocaleSchema,
   insertMarketProductRuleSchema,
   insertMarketSchema,
-} from "@voyantjs/markets"
+} from "@voyantjs/commerce/markets"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

@@ -301,8 +301,8 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/pricing-react/components/pricing-categories-page").then((module) =>
-            adminRoutePageModule(module.PricingCategoriesPage),
+          import("@voyantjs/commerce-react/pricing/components/pricing-categories-page").then(
+            (module) => adminRoutePageModule(module.PricingCategoriesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
           const { getPricingCategoriesQueryOptions } = await import(
@@ -318,7 +318,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/pricing-react/components/price-catalogs-page").then((module) =>
+          import("@voyantjs/commerce-react/pricing/components/price-catalogs-page").then((module) =>
             adminRoutePageModule(module.PriceCatalogsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {

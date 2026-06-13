@@ -6,7 +6,7 @@ import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/
 import { createRelationshipsAdminExtension } from "@voyantjs/relationships-react/admin"
 import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
 import { createProductsAdminExtension } from "@voyantjs/products-react/admin"
-import { createPromotionsAdminExtension } from "@voyantjs/promotions-react/admin"
+import { createPromotionsAdminExtension } from "@voyantjs/commerce-react/promotions/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-react/admin"

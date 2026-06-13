@@ -346,7 +346,7 @@ function createResourcesExtension(messages: AdminExtensionNavMessages) {
 }
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
-// route implementation come from @voyantjs/promotions-react/admin. The app only
+// route implementation come from @voyantjs/commerce-react/promotions/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {

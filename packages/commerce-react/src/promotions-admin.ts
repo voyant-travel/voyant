@@ -1,1 +1,1 @@
-export * from "@voyantjs/promotions-react/admin"
+export * from "./promotions/admin/index.js"

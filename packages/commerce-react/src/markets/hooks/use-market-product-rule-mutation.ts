@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   insertMarketProductRuleSchema,
   updateMarketProductRuleSchema,
-} from "@voyantjs/markets"
+} from "@voyantjs/commerce/markets"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

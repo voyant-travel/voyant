@@ -1,9 +1,9 @@
-/* Tailwind v4 source-detection helper for the Commerce React facade. */
-@source "../node_modules/@voyantjs/markets-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/pricing-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/promotions-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/sellability-react/dist/**/*.{js,mjs}";
-
-@import "@voyantjs/markets-react/styles.css";
-@import "@voyantjs/pricing-react/styles.css";
-@import "@voyantjs/sellability-react/styles.css";
+/* Tailwind v4 source-detection helper for Commerce React components. */
+@source "./markets/components/**/*.{ts,tsx}";
+@source "./pricing/components/**/*.{ts,tsx}";
+@source "./promotions/**/*.{ts,tsx}";
+@source "./sellability/components/**/*.{ts,tsx}";
+@source "../dist/markets/components/**/*.{js,mjs}";
+@source "../dist/pricing/components/**/*.{js,mjs}";
+@source "../dist/promotions/**/*.{js,mjs}";
+@source "../dist/sellability/components/**/*.{js,mjs}";

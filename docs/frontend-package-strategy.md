@@ -108,3 +108,10 @@ Product structure, Product Versions, product-internal components, and owned
 publication lifecycle. `@voyantjs/products-react` remains a compatibility
 entrypoint until the v1 physical move is complete; new operated-authoring
 surfaces should be added under Inventory React.
+
+Commerce follows the same v1 owner-path rule: `@voyantjs/commerce-react` owns
+the reusable Markets, Pricing, Promotions, and Sellability React/admin source
+under Commerce subpaths. The old `@voyantjs/markets-react`,
+`@voyantjs/pricing-react`, `@voyantjs/promotions-react`, and
+`@voyantjs/sellability-react` package names remain compatibility facades over
+the Commerce React owner paths.
