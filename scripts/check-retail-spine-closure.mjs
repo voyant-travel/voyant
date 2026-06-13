@@ -108,13 +108,6 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/crm-react",
-    reason:
-      "booking admin components can attach relationship/quote surfaces when a host installs them",
-  },
-  {
-    from: "@voyantjs/bookings-react",
-    type: "peerDependencies",
     to: "@voyantjs/products-react",
     reason:
       "booking admin components can attach operated Inventory summaries when a host installs them",
