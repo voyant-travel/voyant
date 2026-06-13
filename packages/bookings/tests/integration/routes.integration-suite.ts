@@ -30,13 +30,13 @@ import {
   bookingDocuments,
   bookingFulfillments,
   bookingItems,
+  bookingOrigins,
   bookingPiiAccessLog,
   bookingStaffAssignments,
   bookingTravelers,
 } from "../../src/schema.js"
 import { bookingsService } from "../../src/service.js"
 import {
-  bookingTransactionDetailsRef,
   offerItemParticipantsRef,
   offerItemsRef,
   offerParticipantsRef,
@@ -74,6 +74,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     db = createTestDb()
     await cleanupTestDb(db)
     await ensureProductReferenceTables()
+    await ensureBookingOriginTables()
     await db.execute(sql`
       DO $$
       BEGIN
@@ -320,6 +321,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
     await cleanupTestDb(db)
     await ensureProductReferenceTables()
+    await ensureBookingOriginTables()
   })
 
   afterAll(async () => {
@@ -370,6 +372,42 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         start_date date,
         end_date date,
         pax integer
+      )
+    `)
+  }
+
+  async function ensureBookingOriginTables() {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS booking_origins (
+        booking_id text PRIMARY KEY NOT NULL REFERENCES bookings(id) ON DELETE cascade,
+        origin_source text DEFAULT 'manual' NOT NULL,
+        quote_version_id text,
+        trip_snapshot_id text,
+        reservation_plan_id text,
+        catalog_price_response_id text,
+        catalog_snapshot_id text,
+        provider_source_kind text,
+        provider_source_provider text,
+        provider_source_connection_id text,
+        provider_source_ref text,
+        provider_order_ref text,
+        legacy_transaction_offer_id text,
+        legacy_transaction_order_id text,
+        legacy_transaction_ids jsonb,
+        metadata jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        CONSTRAINT ck_booking_origins_source CHECK (
+          origin_source IN (
+            'manual',
+            'direct_b2c',
+            'accepted_quote_version',
+            'catalog_price_availability',
+            'catalog_snapshot',
+            'provider_source_order',
+            'legacy_transaction'
+          )
+        )
       )
     `)
   }
@@ -2473,12 +2511,15 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const itemsBody = await itemsRes.json()
       expect(itemsBody.data[0]?.sourceOfferId).toBe(offer.id)
 
-      const links = await db
+      const origins = await db
         .select()
-        .from(bookingTransactionDetailsRef)
-        .where(eq(bookingTransactionDetailsRef.bookingId, body.data.id))
-      expect(links[0]?.offerId).toBe(offer.id)
-      expect(links[0]?.orderId).toBeNull()
+        .from(bookingOrigins)
+        .where(eq(bookingOrigins.bookingId, body.data.id))
+      expect(origins[0]?.originSource).toBe("legacy_transaction")
+      expect(origins[0]?.providerSourceRef).toBe(offer.id)
+      expect(origins[0]?.legacyTransactionOfferId).toBe(offer.id)
+      expect(origins[0]?.legacyTransactionOrderId).toBeNull()
+      expect(origins[0]?.legacyTransactionIds).toMatchObject({ offerId: offer.id })
 
       const [updatedSlot] = await db
         .select()
@@ -2607,11 +2648,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const allocationsRes = await app.request(`/${body.data.id}/allocations`, { method: "GET" })
       expect((await allocationsRes.json()).data[0]?.status).toBe("held")
 
-      const links = await db
+      const origins = await db
         .select()
-        .from(bookingTransactionDetailsRef)
-        .where(eq(bookingTransactionDetailsRef.bookingId, body.data.id))
-      expect(links[0]?.orderId).toBe(order.id)
+        .from(bookingOrigins)
+        .where(eq(bookingOrigins.bookingId, body.data.id))
+      expect(origins[0]?.originSource).toBe("legacy_transaction")
+      expect(origins[0]?.providerSourceRef).toBe(order.id)
+      expect(origins[0]?.legacyTransactionOrderId).toBe(order.id)
+      expect(origins[0]?.legacyTransactionIds).toMatchObject({ orderId: order.id })
 
       const [updatedSlot] = await db
         .select()
@@ -2654,11 +2698,11 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(body.data.contactEmail).toBe("matei.order@example.com")
       expect(body.data.contactPhone).toBe("+40222333444")
 
-      const links = await db
+      const origins = await db
         .select()
-        .from(bookingTransactionDetailsRef)
-        .where(eq(bookingTransactionDetailsRef.bookingId, body.data.id))
-      expect(links[0]?.orderId).toBe(order.id)
+        .from(bookingOrigins)
+        .where(eq(bookingOrigins.bookingId, body.data.id))
+      expect(origins[0]?.legacyTransactionOrderId).toBe(order.id)
     })
 
     it("expires pending transaction orders with booking holds", async () => {
