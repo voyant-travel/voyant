@@ -659,6 +659,9 @@ accepted source, Trip Component committed refs for per-component provider
 handles, and Catalog/vertical snapshots for source-specific order ids. Do not
 recreate a generic Order record.
 
+The accepted Quote Version reservation proof is captured in
+[`accepted-quote-version-reservation-golden-flow.md`](./accepted-quote-version-reservation-golden-flow.md).
+
 ### 5.6 Bookings
 
 Candidate packages:

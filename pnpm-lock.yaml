@@ -1174,6 +1174,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
