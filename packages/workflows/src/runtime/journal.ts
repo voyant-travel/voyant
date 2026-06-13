@@ -3,7 +3,7 @@
 //
 // Wire shape defined in docs/runtime-protocol.md §2.1 (JournalSlice).
 
-import type { SerializedError } from "../protocol/index.js"
+import type { SerializedError, WorkflowPayloadReference } from "../protocol/index.js"
 import type { WaitpointKind } from "../types.js"
 
 export interface StepJournalEntry {
@@ -26,6 +26,7 @@ export interface WaitpointResolutionEntry {
   resolvedAt: number
   matchedEventId?: string
   payload?: unknown
+  payloadRef?: WorkflowPayloadReference
   source: "live" | "inbox" | "replay"
   /** Populated for RUN waitpoints when the child run ended in a failure state. */
   error?: SerializedError

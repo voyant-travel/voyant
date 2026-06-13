@@ -344,6 +344,22 @@ Multiple Node processes can run the same Mode 2 driver against the same Postgres
 
 **Resume contention.** A waitpoint injection mutates the `run_record` JSONB; the existing snapshot store handles this with read-modify-write via update guards. Crash mid-update is recoverable because journal events inside the JSONB are append-only and replay-safe.
 
+**Managed Cloud continuation.** Managed Cloud uses the same journal and
+waitpoint semantics, but owns the durable run store and dispatches hosted
+activations itself. When an activation parks, Cloud persists the returned
+`journal` plus each pending waitpoint as a `WorkflowWaitpointSnapshot`: stable
+id, stable key, kind, optional event/signal/token name, expiry, timeout, and
+framework metadata. A later resume dispatch must resolve one stored waitpoint
+into the journal before invoking the runner. The framework helper
+`buildResumeStepRequest(...)` in `@voyantjs/workflows/handler` performs that
+mutation and attaches `activation.kind = "resume"` metadata with release,
+bundle, journal reference, waitpoint, payload reference, and freshness fields.
+The runner still receives the normal `WorkflowStepRequest` shape, so it
+continues by replaying the workflow body against the prior journal: completed
+steps and resolved waitpoints are consumed from the journal, and only new work
+after the suspended point executes. Resume is therefore continuation, not a
+fresh run or a rerun from scratch.
+
 ### 7.4 Step execution
 
 For Mode 2, the driver wires `StepHandler` (`packages/workflows-orchestrator/src/types.ts:149`) directly to `handleStepRequest` from `@voyantjs/workflows/handler` — no HTTP, no dispatch namespace. The workflow body executes in the same process as the driver.
