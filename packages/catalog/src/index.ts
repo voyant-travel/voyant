@@ -86,6 +86,38 @@ export {
   type FieldDrift,
   maxDriftSeverity,
 } from "./drift/events.js"
+// Embeddings + semantic search live in Catalog. Agent runtimes can wrap the
+// HTTP APIs directly instead of depending on a separate catalog-MCP package.
+export {
+  chunkForBatch,
+  EMBEDDING_BATCH_TOO_LARGE,
+  EMBEDDING_INPUT_TOO_LONG,
+  EMBEDDING_PROVIDER_ERROR,
+  type EmbeddingProvider,
+  type EmbeddingProviderCapabilities,
+  EmbeddingProviderError,
+} from "./embeddings/contract.js"
+export {
+  createGeminiEmbeddingProvider,
+  GEMINI_MODELS,
+  type GeminiEmbeddingModel,
+  type GeminiEmbeddingProviderOptions,
+  type GeminiTaskType,
+} from "./embeddings/gemini.js"
+export {
+  type EmbeddingMigrationPlan,
+  isActiveEmbeddingModel,
+  planEmbeddingMigration,
+  stampEmbeddingModelId,
+  validateEmbeddingCompatibility,
+} from "./embeddings/model-registry.js"
+export {
+  createOpenAIEmbeddingProvider,
+  embedBatched,
+  OPENAI_MODELS,
+  type OpenAIEmbeddingModel,
+  type OpenAIEmbeddingProviderOptions,
+} from "./embeddings/openai.js"
 // Catalog event taxonomy + visibility-filtered payload helpers.
 export {
   type BookingCancelledPayload,
@@ -171,6 +203,11 @@ export {
   type SourcedEntryStatus,
 } from "./schema-sourced-entries.js"
 export {
+  type FederatedSearchOptions,
+  federateAudienceSearch,
+  mergeAndDedupe,
+} from "./search/federate.js"
+export {
   type LivePriceFn,
   type LivePriceResult,
   type RerankedHit,
@@ -190,6 +227,11 @@ export {
   createCatalogSearchRoutes,
   mountCatalogSearchRoutes,
 } from "./search/routes.js"
+export {
+  executeBYOVectorSearch,
+  executeSemanticSearch,
+  type SemanticSearchOptions,
+} from "./search/semantic.js"
 // Content-service primitives (sourced-content §3.4 / §3.5).
 export {
   applyJsonPointerOverlay,

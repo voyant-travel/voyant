@@ -6,7 +6,7 @@
  * Deployments swap in Voyage AI, local sentence-transformers, Cohere,
  * or any other engine by satisfying this contract.
  *
- * See `docs/architecture/catalog-rag-architecture.md` §6 for the design.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
 /**

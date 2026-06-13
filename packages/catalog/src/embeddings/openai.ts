@@ -10,7 +10,7 @@
  *   - `text-embedding-3-large` — 3072d, multilingual, higher quality.
  *   - `text-embedding-ada-002` — 1536d, legacy (kept for migration paths).
  *
- * See `docs/architecture/catalog-rag-architecture.md` §6 for the design.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
 import {

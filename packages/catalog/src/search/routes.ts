@@ -127,7 +127,7 @@ export interface CatalogSearchRuntime {
   indexer?: IndexerAdapter
   /**
    * Template-owned embedding provider. Kept intentionally unknown so
-   * `@voyantjs/catalog` does not depend on `@voyantjs/catalog-rag`.
+   * deployments can decide whether semantic search is enabled.
    */
   embeddings?: unknown
   defaultScope: {
@@ -153,7 +153,7 @@ export interface CatalogSearchRoutesOptions {
   resolveRuntime(c: Context): CatalogSearchRuntime
   /**
    * Optional semantic/hybrid executor. Templates that use
-   * `@voyantjs/catalog-rag` should pass `executeSemanticSearch` here.
+   * `@voyantjs/catalog/search/semantic` should pass `executeSemanticSearch` here.
    * Without this hook, the route delegates directly to `adapter.search`.
    */
   executeSearch?(input: CatalogSearchExecuteInput): Promise<SearchResults>

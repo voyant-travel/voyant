@@ -1369,44 +1369,6 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/catalog-mcp:
-    dependencies:
-      '@voyantjs/catalog':
-        specifier: workspace:^
-        version: link:../catalog
-      '@voyantjs/catalog-rag':
-        specifier: workspace:^
-        version: link:../catalog-rag
-      zod:
-        specifier: ^4.1.4
-        version: 4.3.6
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/catalog-rag:
-    dependencies:
-      '@voyantjs/catalog':
-        specifier: workspace:^
-        version: link:../catalog
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/catalog-react:
     dependencies:
       '@voyantjs/catalog-contracts':
@@ -4737,9 +4699,6 @@ importers:
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
-      '@voyantjs/catalog-mcp':
-        specifier: workspace:^
-        version: link:../catalog-mcp
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -5339,12 +5298,6 @@ importers:
       '@voyantjs/catalog-authoring':
         specifier: workspace:^
         version: link:../../packages/catalog-authoring
-      '@voyantjs/catalog-mcp':
-        specifier: workspace:^
-        version: link:../../packages/catalog-mcp
-      '@voyantjs/catalog-rag':
-        specifier: workspace:^
-        version: link:../../packages/catalog-rag
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../../packages/catalog-react

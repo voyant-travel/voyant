@@ -21,17 +21,17 @@
  * delegates to a single multi-collection adapter call instead of fanning
  * out client-side. Either way the API contract is the same to callers.
  *
- * See `docs/architecture/catalog-rag-architecture.md` §7.3.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
+import type { Visibility } from "../contract.js"
 import type {
   IndexerAdapter,
   IndexerSlice,
   SearchHit,
   SearchRequest,
   SearchResults,
-  Visibility,
-} from "@voyantjs/catalog"
+} from "../indexer/contract.js"
 
 export interface FederatedSearchOptions {
   adapter: IndexerAdapter

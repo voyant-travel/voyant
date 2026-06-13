@@ -176,7 +176,11 @@ No HSTS, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, CSP, or 
 
 ### M4 — MCP mutating tools callable by any actor
 **`templates/operator/src/api/mcp.ts:31-64`**
-`registerAllTools` co-mounts read-only catalog tools with state-mutating `createTripTool`/`reviseTripTool`/`priceTripTool`/`reserveTripTool` at both `/v1/admin/mcp/tools/:tool` and `/v1/public/mcp/tools/:tool`, with no per-tool authorization. Any valid token (including `customer`/`partner`/`supplier`) can invoke the mutation tools — contradicting catalog-mcp's "read-only, prompt-injection-safe" guarantee. **Fix:** gate mutating tools behind a per-tool staff/scope check; segregate read (public) from write (staff) tools; rate-limit dispatch.
+Historical note: the v1 package-structure branch retires the public catalog MCP
+surface and keeps only app-local admin trip-composer tools. Catalog-capable
+agents should call catalog HTTP APIs directly. If any runtime reintroduces
+public tool wrappers, it must preserve the same API auth, visibility,
+rate-limit, audit, and tenant controls.
 
 ### M5 — Cross-user idempotency replay can leak a session/capability token
 **`packages/hono/src/middleware/idempotency-key.ts:124,151-174`**

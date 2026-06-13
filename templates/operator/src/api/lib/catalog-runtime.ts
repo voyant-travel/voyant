@@ -10,8 +10,10 @@ import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-pol
 import { createProductDeparturesProjectionExtension } from "@voyantjs/availability/service-catalog-plane-departures"
 import {
   createFieldPolicyRegistry,
+  createGeminiEmbeddingProvider,
   createTypesenseIndexer,
   type DocumentBuilder,
+  type EmbeddingProvider,
   type FieldPolicyRegistry,
   type IndexerAdapter,
   type IndexerDocument,
@@ -21,7 +23,6 @@ import {
   type TypesenseSearchQuery,
   type TypesenseSearchResponse,
 } from "@voyantjs/catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { cruiseCabinFacetsCatalogPolicy } from "@voyantjs/cruises/catalog-policy-cabins"
 import {
@@ -167,7 +168,7 @@ export type CatalogRuntimeEnv = {
  *  - OpenAI: import `createOpenAIEmbeddingProvider` and read
  *    `OPENAI_API_KEY` instead.
  *  - Custom provider: return anything matching `EmbeddingProvider`
- *    from `@voyantjs/catalog-rag`.
+ *    from `@voyantjs/catalog`.
  *
  * Switching providers (or models) is a deliberate `bulkReindex` operation —
  * the catalog plane scopes vector queries to documents matching the active

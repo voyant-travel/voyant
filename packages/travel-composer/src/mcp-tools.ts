@@ -1,6 +1,6 @@
-import type { McpToolContext, McpToolDefinition, McpToolResult } from "@voyantjs/catalog-mcp"
-import { McpToolError } from "@voyantjs/catalog-mcp"
 import { z } from "zod"
+import type { McpToolContext, McpToolDefinition, McpToolResult } from "./mcp-contract.js"
+import { McpToolError } from "./mcp-contract.js"
 import type { TripComponent } from "./schema.js"
 import type { PriceTripResult, ReserveTripResult, Trip } from "./service.js"
 import {

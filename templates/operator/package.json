@@ -53,8 +53,6 @@
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
     "@voyantjs/catalog-authoring": "workspace:^",
-    "@voyantjs/catalog-mcp": "workspace:^",
-    "@voyantjs/catalog-rag": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/charters": "workspace:^",
     "@voyantjs/checkout": "workspace:^",

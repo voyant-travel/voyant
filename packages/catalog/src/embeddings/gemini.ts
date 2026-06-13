@@ -11,7 +11,7 @@
  *     output dimension via `outputDimensionality` to reduce storage cost.
  *   - `text-embedding-004` — 768d, multilingual, legacy stable.
  *
- * See `docs/architecture/catalog-rag-architecture.md` §6 for the design.
+ * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
 import {

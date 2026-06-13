@@ -16,6 +16,12 @@
     "./indexer/typesense": "./src/indexer/typesense.ts",
     "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
+    "./search/semantic": "./src/search/semantic.ts",
+    "./search/federate": "./src/search/federate.ts",
+    "./embeddings/contract": "./src/embeddings/contract.ts",
+    "./embeddings/openai": "./src/embeddings/openai.ts",
+    "./embeddings/gemini": "./src/embeddings/gemini.ts",
+    "./embeddings/model-registry": "./src/embeddings/model-registry.ts",
     "./drift/events": "./src/drift/events.ts",
     "./events/taxonomy": "./src/events/taxonomy.ts",
     "./adapter/contract": "./src/adapter/contract.ts",
@@ -111,6 +117,36 @@
         "types": "./dist/search/rerank.d.ts",
         "import": "./dist/search/rerank.js",
         "default": "./dist/search/rerank.js"
+      },
+      "./search/semantic": {
+        "types": "./dist/search/semantic.d.ts",
+        "import": "./dist/search/semantic.js",
+        "default": "./dist/search/semantic.js"
+      },
+      "./search/federate": {
+        "types": "./dist/search/federate.d.ts",
+        "import": "./dist/search/federate.js",
+        "default": "./dist/search/federate.js"
+      },
+      "./embeddings/contract": {
+        "types": "./dist/embeddings/contract.d.ts",
+        "import": "./dist/embeddings/contract.js",
+        "default": "./dist/embeddings/contract.js"
+      },
+      "./embeddings/openai": {
+        "types": "./dist/embeddings/openai.d.ts",
+        "import": "./dist/embeddings/openai.js",
+        "default": "./dist/embeddings/openai.js"
+      },
+      "./embeddings/gemini": {
+        "types": "./dist/embeddings/gemini.d.ts",
+        "import": "./dist/embeddings/gemini.js",
+        "default": "./dist/embeddings/gemini.js"
+      },
+      "./embeddings/model-registry": {
+        "types": "./dist/embeddings/model-registry.d.ts",
+        "import": "./dist/embeddings/model-registry.js",
+        "default": "./dist/embeddings/model-registry.js"
       },
       "./drift/events": {
         "types": "./dist/drift/events.d.ts",

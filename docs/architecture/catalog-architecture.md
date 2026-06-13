@@ -19,7 +19,13 @@ composition. Hotel/property operations are out of scope for first-party
 starters; see
 [`accommodation-resale-boundary.md`](./accommodation-resale-boundary.md).
 
-This document covers **Phase 1 — the foundation**. Phase 2 (semantic search, embeddings, AI agent access via MCP) is designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md). Phase 3 (the flights vertical and the swappable `ReferenceDataProvider`) is designed in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md). Phase 1 is complete and useful as keyword + hybrid-keyword search without either follow-up phase landing; Phases 2 and 3 are independent of each other (either can ship first), and both build on Phase 1's foundation without modifying it.
+This document covers the catalog foundation plus the catalog-owned semantic
+search primitives: embeddings, hybrid/semantic search orchestration, and
+cross-audience search helpers now live in `@voyantjs/catalog`. Agent runtimes
+wrap the catalog HTTP APIs directly; MCP packaging is an application/runtime
+concern, not a first-party catalog package. Phase 3 (the flights vertical and
+the swappable `ReferenceDataProvider`) is designed in
+[`catalog-flights-architecture.md`](./catalog-flights-architecture.md).
 
 ## 1. Why this exists
 
@@ -72,7 +78,7 @@ The two layers connect at two clean seams:
 - **Booking-time immutability.** A booking captures a frozen, self-contained view of what was sold — even if the upstream source mutates or disappears later.
 - **Source-extensibility through a public adapter contract.** Adding a new source — a GDS, a new direct API, a new bedbank, a wholesaler's own integration, a cruise line's direct feed, an operator's hand-rolled connector — is an adapter that emits into the catalog plane against a documented, stable contract. The contract is intended as a public extension point: any third party (Voyant Connect, a wholesaler's engineering team, an operator, a system integrator) can build an adapter and plug it in without changes to bookings, finance, CRM, or the catalog plane itself. No source is privileged; Voyant Connect is one adapter among many that satisfy the same contract.
 - **Near-real-time cross-deployment freshness via webhooks.** When Operator A's catalog mutates (price, availability, edits, bookings reducing inventory), Agency B reselling A's inventory learns within seconds — not via polling. The catalog plane defines the event taxonomy and visibility-filtered payloads (§5.8); Voyant's existing webhook subscription / delivery infrastructure handles transport. Same mechanism serves third-party CMS sync, partner storefront updates, and any other external consumer.
-- **A foundation that supports first-class semantic search and AI agent access in Phase 2.** Phase 1 ships keyword and hybrid-keyword search via the indexer; vector support flags on the `IndexerAdapter` capabilities reserve the seam for Phase 2 without contract churn. Phase 2 — designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — adds embeddings, the `EmbeddingProvider` contract, per-audience embedding pools with isolation guarantees, and the `@voyantjs/catalog-mcp` tool package. Phase 1 is complete and useful as keyword search without any of Phase 2 landing.
+- **A foundation that supports first-class semantic search and AI agent access.** Catalog ships keyword, hybrid, and semantic search through the `IndexerAdapter` contract and catalog-owned embedding/search helpers. Agents query `/v1/admin/catalog/search`, `/v1/public/catalog/search`, and drill-down APIs through ordinary credentials; runtimes may define local tool wrappers over those HTTP APIs, but Voyant does not ship a first-party catalog MCP package.
 - **Coordinated adoption across all existing verticals in Phase 1, with explicit per-vertical participation scope.** The catalog plane and adoption by each in-scope vertical or resale surface (`products`, `cruises`, accommodation resale, `charters`, `extras`) ship together. Each surface's intended-for-Phase-1 participation is fully live at release; there is no transitional period where intended scope is partially delivered. **`extras` is a deliberate bounded exception**: it adopts the snapshot and provenance shapes only, with full overlay / indexer participation explicitly deferred per §3.3.1. That is its intended Phase 1 scope, not a transitional gap. The architecture accepts varied participation depths across verticals; what it rules out is shipping with a surface's intended scope half-implemented.
 
 ### Non-goals (for v1)
@@ -172,11 +178,11 @@ packages/catalog       shared cross-cutting infrastructure:
                          consumed by the existing webhook delivery pipeline (§5.8)
 ```
 
-Phase 2 (RAG, see `catalog-rag-architecture.md`) lives in sibling packages:
-`packages/catalog-rag` carries embeddings and semantic/federated search, while
-`packages/catalog-mcp` carries transport-agnostic MCP tool definitions and the
-catalog tool registry. Phase 3 (Flights, see `catalog-flights-architecture.md`)
-lives as `packages/flights`. None of these modifies `packages/catalog`.
+Semantic search lives in `packages/catalog`: `src/embeddings` carries
+embedding providers and model compatibility helpers, while `src/search`
+carries reranking, semantic/hybrid orchestration, and cross-audience federation
+helpers. Phase 3 (Flights, see `catalog-flights-architecture.md`) lives as
+`packages/flights`.
 
 Vertical packages depend on `packages/catalog` for the contract types and the shared infrastructure interfaces. `packages/catalog` does not depend on any vertical module - it knows nothing about cruises, accommodation resale, or charters specifically.
 
@@ -608,7 +614,7 @@ This same denormalization powers the "preview as customer" admin feature. The ad
 
 - `supportsAdminDenormalization: boolean` — does this engine efficiently support documents with multiple weighted text fields? Typesense and Algolia both do natively; Postgres FTS does with care; engines without efficient multi-field weighted search may need to materialize a separate flat-text field that concatenates the cross-audience values, with reduced query expressiveness. The capability lets the catalog plane fail soft when a swap-in engine can't deliver the topology cleanly.
 
-**Keyword vs semantic on admin documents.** The cross-audience text denormalization above applies only to **keyword / free-text** matching. Admin **semantic search** is governed in Phase 2 (see [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) §7): the staff document carries a single embedding over staff-audience text only — vectors do not denormalize across audiences. Cross-audience semantic queries from staff actors are an explicit federated request against another audience's pool (`search_audiences: ["customer"]` etc.), not an automatic property of the staff embedding. This split keeps semantic similarity meaningful (one vector = one audience's meaning) while keeping admin keyword search powerful (one query covers SKU, marketing title, customer copy).
+**Keyword vs semantic on admin documents.** The cross-audience text denormalization above applies only to **keyword / free-text** matching. Admin **semantic search** carries a single embedding over staff-audience text only — vectors do not denormalize across audiences. Cross-audience semantic queries from staff actors are an explicit federated request against another audience's pool (`search_audiences: ["customer"]` etc.), not an automatic property of the staff embedding. This split keeps semantic similarity meaningful (one vector = one audience's meaning) while keeping admin keyword search powerful (one query covers SKU, marketing title, customer copy).
 
 ### 5.5. Drift events
 
@@ -800,29 +806,26 @@ The existing webhook system is responsible for:
 
 This division mirrors the rule from [`cross-module-indexing-and-projection-policy.md`](./cross-module-indexing-and-projection-policy.md): every projection / pipeline has one explicit owner, and shared infrastructure is consumed, not reinvented.
 
-### 5.9. Semantic search, embeddings, and AI agent access (RAG) — Phase 2
+### 5.9. Semantic Search, Embeddings, And AI Agent Access
 
-Semantic search, vector embeddings, AI agent access patterns, and the MCP tool
-package are designed in detail in
-[`catalog-rag-architecture.md`](./catalog-rag-architecture.md) and ship in
-**Phase 2** of the catalog plane.
+Semantic search is a catalog capability, not a sibling package. The
+`IndexerAdapter` contract surface (§5.4.2) declares vector support flags
+(`supportsVectorFields`, `supportsHybridSearch`, `vectorDimensions`,
+`maxVectorsPerDocument`, `supportsCrossAudienceFederation`) and the native
+Typesense integration (§5.4.1) can store embeddings without a parallel data
+plane.
 
-What stays in this Phase 1 doc:
+Catalog owns:
 
-- The `IndexerAdapter` contract surface (§5.4.2) declares vector support flags (`supportsVectorFields`, `supportsHybridSearch`, `vectorDimensions`, `maxVectorsPerDocument`, `supportsCrossAudienceFederation`). Phase 1 deployments leave them at `false` / `null`; Phase 2 deployments fill them in. Including the flags in the Phase 1 contract avoids contract churn when Phase 2 lands.
-- The native Typesense integration (§5.4.1) is selected partly for its native vector field support, so Phase 2 inherits a search engine that can store embeddings without a parallel data plane.
+- the `EmbeddingProvider` contract and current OpenAI / Gemini providers;
+- embedding model compatibility, stamping, and migration helpers;
+- semantic/hybrid/BYO-vector search orchestration;
+- per-audience embedding pool rules and cross-audience federation helpers.
 
-What lives in `catalog-rag-architecture.md` (Phase 2):
-
-- The architectural commitment that AI agents query via API / MCP, never direct DB.
-- The `EmbeddingProvider` contract and current OpenAI / Gemini providers.
-- Async embedding generation pipeline.
-- Per-audience embedding pools and isolation guarantees.
-- Embedding model versioning and re-embedding tooling.
-- The `/v1/{admin,public}/{vertical}/search?mode=semantic|hybrid|keyword` API mode parameter.
-- The separate `@voyantjs/catalog-mcp` package's tool definitions and registry.
-
-Phase 2 builds on top of Phase 1 without changing the field-policy contract, the overlay store, the snapshot graph, or the source-adapter contract. Phase 1 is complete and useful as keyword + hybrid-keyword search without any of Phase 2 landing.
+AI agents use the catalog HTTP APIs directly. Runtimes may expose local tool
+wrappers over those endpoints, but MCP transport/tool packaging is not a
+Voyant framework package and should not bypass API auth, visibility,
+rate-limit, audit, or tenant controls.
 
 ### 5.10. Source disconnection and data lifecycle
 
@@ -846,7 +849,7 @@ The distinction matters: most "the source is gone" events in production turn out
 | --- | --- |
 | Source projection rows | Soft-deleted; hard-deleted after retention window (default 30 days, configurable) |
 | Search index documents | Deleted across all `(locale, audience, market)` combinations |
-| **Embeddings** | **Removed alongside index documents** (they live in the same engine, see [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) §4) |
+| **Embeddings** | **Removed alongside index documents** because vectors live in the same search engine slice. |
 | Editorial overlays | Preserved for retention window (default 90 days, configurable), then GC if no reconnect — keeps marketing work recoverable on reseed |
 | Drift events history | Archived but kept — audit trail |
 | **Booking snapshots** | **Always preserved** — immutable audit truth, never touched regardless of retention windows |
@@ -1108,7 +1111,9 @@ The work has natural sequencing because vertical adoption depends on contract ty
 10. `packages/catalog/src/events/taxonomy.ts` — catalog event names + payload builders with field-policy-driven visibility filtering (§5.8). Emits via `@voyantjs/core/events`; reuses the existing webhook delivery pipeline.
 11. `packages/catalog/src/adapter/contract.ts` — the public source-adapter contract (§5.6).
 
-The `EmbeddingProvider` contract and embedding pipeline ship as part of Phase 2 (`packages/catalog-rag`); see [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) §6 and §11. The flight-vertical artifacts ship as part of Phase 3 (`packages/flights`); see [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) §7.
+The `EmbeddingProvider` contract and embedding pipeline ship in `packages/catalog`.
+The flight-vertical artifacts ship as part of Phase 3 (`packages/flights`); see
+[`catalog-flights-architecture.md`](./catalog-flights-architecture.md) §7.
 
 **Phase B — vertical adoption, in parallel where possible:**
 
@@ -1170,7 +1175,8 @@ These are explicit unresolved points. They are tracked here so future decisions 
 9. **Retention window defaults for source disconnect (§5.10).** Phase 1 ships conservative defaults (30 days for source projection rows, 90 days for editorial overlays). These are deployment-configurable but the right default is operator-pattern-dependent — DMCs with multi-year sales cycles may want much longer windows; high-churn agencies may want shorter. Revisit defaults once enough deployments have run a real disconnect cycle.
 10. **Forced parent archival on referent loss (§5.10.4).** Phase 1 leaves disconnected-referent handling to the operator (parents stay queryable with `referent_unavailable: true` markers). If a real operator workflow surfaces where automatic parent archival is the desired behavior (e.g. "if any referenced hotel is unavailable, hide the package"), add an opt-in policy field. Defer until the case appears.
 
-Phase 2 (RAG) and Phase 3 (Flights) carry their own open questions in their respective documents — see [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) §12 and [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) §8.
+Flight adoption carries its own open questions in
+[`catalog-flights-architecture.md`](./catalog-flights-architecture.md) §8.
 
 ## 11. Glossary
 
@@ -1198,10 +1204,10 @@ Phase 2 (RAG) and Phase 3 (Flights) carry their own glossaries in their respecti
 
 ## 12. Related documents
 
-### Phase 2 and Phase 3 (sibling architecture documents)
+### Related Architecture Documents
 
-- [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — **Phase 2.** Vector embeddings, the `EmbeddingProvider` contract, async embedding generation pipeline, per-audience embedding pools with isolation guarantees, AI agent access via API / MCP, embedding model versioning. Builds on Phase 1's IndexerAdapter contract, overlay store, and field-policy registry.
-- [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — **Phase 3.** Flights as a partial-adoption vertical: `FlightConnectorAdapter` contract borrowed from voyant-cloud, slice-based search, intent-driven booking, multi-connection fan-out with itinerary fingerprint dedupe, the swappable `ReferenceDataProvider` contract for global reference data. Independent of Phase 2 — either can ship first.
+- [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — superseded note for the retired `catalog-rag` / `catalog-mcp` package split.
+- [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — **Phase 3.** Flights as a partial-adoption vertical: `FlightConnectorAdapter` contract borrowed from voyant-cloud, slice-based search, intent-driven booking, multi-connection fan-out with itinerary fingerprint dedupe, the swappable `ReferenceDataProvider` contract for global reference data.
 - [`provider-catalog-contracts.md`](./provider-catalog-contracts.md) — provider capability declarations, promotion applicability/display contracts, and normalized availability projection semantics for source adapters and downstream SDK/UI consumers.
 
 ### Voyant-wide context
