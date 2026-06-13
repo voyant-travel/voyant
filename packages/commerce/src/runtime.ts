@@ -1,13 +1,13 @@
 import type { HonoModule } from "@voyantjs/hono/module"
-import { marketsHonoModule } from "@voyantjs/markets"
-import { pricingHonoModule } from "@voyantjs/pricing"
-import { promotionsHonoModule } from "@voyantjs/promotions"
-import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
+import { marketsHonoModule } from "./markets/index.js"
+import { pricingHonoModule } from "./pricing/index.js"
+import { promotionsHonoModule } from "./promotions/index.js"
+import { createPromotionsStorefrontResolvers } from "./promotions/service-storefront.js"
 import {
   createSellabilityHonoModule,
   type SellabilityRoutesOptions,
   sellabilityHonoModule,
-} from "@voyantjs/sellability"
+} from "./sellability/index.js"
 
 export const commerceRuntimeModuleNames = [
   "pricing",

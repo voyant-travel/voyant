@@ -30,6 +30,12 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
+import { marketCurrencies, marketLocales, markets } from "@voyantjs/commerce/markets/schema"
+import {
+  optionPriceRules,
+  optionUnitPriceRules,
+  priceCatalogs,
+} from "@voyantjs/commerce/pricing/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
@@ -81,8 +87,6 @@ import {
   policyRules,
   policyVersions,
 } from "@voyantjs/legal/schema"
-import { marketCurrencies, marketLocales, markets } from "@voyantjs/markets/schema"
-import { optionPriceRules, optionUnitPriceRules, priceCatalogs } from "@voyantjs/pricing/schema"
 import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
 import {
   pipelines,

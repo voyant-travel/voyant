@@ -4,7 +4,71 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./markets": "./src/markets/index.ts",
+    "./markets/routes": "./src/markets/routes.ts",
+    "./markets/schema": "./src/markets/schema.ts",
+    "./markets/service-core": "./src/markets/service-core.ts",
+    "./markets/service-rules": "./src/markets/service-rules.ts",
+    "./markets/service-shared": "./src/markets/service-shared.ts",
+    "./markets/service": "./src/markets/service.ts",
+    "./markets/validation": "./src/markets/validation.ts",
+    "./pricing/events": "./src/pricing/events.ts",
+    "./pricing": "./src/pricing/index.ts",
+    "./pricing/routes-core": "./src/pricing/routes-core.ts",
+    "./pricing/routes-public": "./src/pricing/routes-public.ts",
+    "./pricing/routes-rules": "./src/pricing/routes-rules.ts",
+    "./pricing/routes-shared": "./src/pricing/routes-shared.ts",
+    "./pricing/routes": "./src/pricing/routes.ts",
+    "./pricing/schema-catalogs": "./src/pricing/schema-catalogs.ts",
+    "./pricing/schema-categories": "./src/pricing/schema-categories.ts",
+    "./pricing/schema-departure-overrides": "./src/pricing/schema-departure-overrides.ts",
+    "./pricing/schema-option-rules": "./src/pricing/schema-option-rules.ts",
+    "./pricing/schema-policies": "./src/pricing/schema-policies.ts",
+    "./pricing/schema-relations": "./src/pricing/schema-relations.ts",
+    "./pricing/schema-shared": "./src/pricing/schema-shared.ts",
+    "./pricing/schema": "./src/pricing/schema.ts",
+    "./pricing/service-catalog-plane-pricing": "./src/pricing/service-catalog-plane-pricing.ts",
+    "./pricing/service-catalogs": "./src/pricing/service-catalogs.ts",
+    "./pricing/service-categories": "./src/pricing/service-categories.ts",
+    "./pricing/service-departure-overrides": "./src/pricing/service-departure-overrides.ts",
+    "./pricing/service-option-rules": "./src/pricing/service-option-rules.ts",
+    "./pricing/service-policies": "./src/pricing/service-policies.ts",
+    "./pricing/service-public": "./src/pricing/service-public.ts",
+    "./pricing/service-rule-resolver": "./src/pricing/service-rule-resolver.ts",
+    "./pricing/service-shared": "./src/pricing/service-shared.ts",
+    "./pricing/service-transfer-rules": "./src/pricing/service-transfer-rules.ts",
+    "./pricing/service": "./src/pricing/service.ts",
+    "./pricing/validation-public": "./src/pricing/validation-public.ts",
+    "./pricing/validation-shared": "./src/pricing/validation-shared.ts",
+    "./pricing/validation": "./src/pricing/validation.ts",
+    "./promotions/events": "./src/promotions/events.ts",
+    "./promotions": "./src/promotions/index.ts",
+    "./promotions/routes-shared": "./src/promotions/routes-shared.ts",
+    "./promotions/routes": "./src/promotions/routes.ts",
+    "./promotions/schema": "./src/promotions/schema.ts",
+    "./promotions/service-booking-confirmed": "./src/promotions/service-booking-confirmed.ts",
+    "./promotions/service-boundary-scheduler": "./src/promotions/service-boundary-scheduler.ts",
+    "./promotions/service-catalog-evaluator": "./src/promotions/service-catalog-evaluator.ts",
+    "./promotions/service-catalog-plane-promotions": "./src/promotions/service-catalog-plane-promotions.ts",
+    "./promotions/service-evaluator": "./src/promotions/service-evaluator.ts",
+    "./promotions/service-storefront": "./src/promotions/service-storefront.ts",
+    "./promotions/service": "./src/promotions/service.ts",
+    "./promotions/validation": "./src/promotions/validation.ts",
+    "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
+    "./promotions/workflow-runtime": "./src/promotions/workflow-runtime.ts",
+    "./sellability": "./src/sellability/index.ts",
+    "./sellability/routes": "./src/sellability/routes.ts",
+    "./sellability/schema": "./src/sellability/schema.ts",
+    "./sellability/service-construct-offer": "./src/sellability/service-construct-offer.ts",
+    "./sellability/service-records": "./src/sellability/service-records.ts",
+    "./sellability/service-resolve": "./src/sellability/service-resolve.ts",
+    "./sellability/service-shared": "./src/sellability/service-shared.ts",
+    "./sellability/service-snapshots": "./src/sellability/service-snapshots.ts",
+    "./sellability/service": "./src/sellability/service.ts",
+    "./sellability/validation": "./src/sellability/validation.ts",
+    "./pricing/public-routes": "./src/pricing/routes-public.ts",
+    "./pricing/public-validation": "./src/pricing/validation-public.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -15,12 +79,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/catalog": "workspace:^",
     "@voyantjs/core": "workspace:^",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/distribution": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/markets": "workspace:^",
-    "@voyantjs/pricing": "workspace:^",
-    "@voyantjs/promotions": "workspace:^",
-    "@voyantjs/sellability": "workspace:^"
+    "@voyantjs/products-contracts": "workspace:^",
+    "@voyantjs/workflows": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "rrule": "^2.8.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:^",
@@ -37,6 +106,326 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./markets": {
+        "types": "./dist/markets/index.d.ts",
+        "import": "./dist/markets/index.js",
+        "default": "./dist/markets/index.js"
+      },
+      "./markets/routes": {
+        "types": "./dist/markets/routes.d.ts",
+        "import": "./dist/markets/routes.js",
+        "default": "./dist/markets/routes.js"
+      },
+      "./markets/schema": {
+        "types": "./dist/markets/schema.d.ts",
+        "import": "./dist/markets/schema.js",
+        "default": "./dist/markets/schema.js"
+      },
+      "./markets/service-core": {
+        "types": "./dist/markets/service-core.d.ts",
+        "import": "./dist/markets/service-core.js",
+        "default": "./dist/markets/service-core.js"
+      },
+      "./markets/service-rules": {
+        "types": "./dist/markets/service-rules.d.ts",
+        "import": "./dist/markets/service-rules.js",
+        "default": "./dist/markets/service-rules.js"
+      },
+      "./markets/service-shared": {
+        "types": "./dist/markets/service-shared.d.ts",
+        "import": "./dist/markets/service-shared.js",
+        "default": "./dist/markets/service-shared.js"
+      },
+      "./markets/service": {
+        "types": "./dist/markets/service.d.ts",
+        "import": "./dist/markets/service.js",
+        "default": "./dist/markets/service.js"
+      },
+      "./markets/validation": {
+        "types": "./dist/markets/validation.d.ts",
+        "import": "./dist/markets/validation.js",
+        "default": "./dist/markets/validation.js"
+      },
+      "./pricing/events": {
+        "types": "./dist/pricing/events.d.ts",
+        "import": "./dist/pricing/events.js",
+        "default": "./dist/pricing/events.js"
+      },
+      "./pricing": {
+        "types": "./dist/pricing/index.d.ts",
+        "import": "./dist/pricing/index.js",
+        "default": "./dist/pricing/index.js"
+      },
+      "./pricing/routes-core": {
+        "types": "./dist/pricing/routes-core.d.ts",
+        "import": "./dist/pricing/routes-core.js",
+        "default": "./dist/pricing/routes-core.js"
+      },
+      "./pricing/routes-public": {
+        "types": "./dist/pricing/routes-public.d.ts",
+        "import": "./dist/pricing/routes-public.js",
+        "default": "./dist/pricing/routes-public.js"
+      },
+      "./pricing/routes-rules": {
+        "types": "./dist/pricing/routes-rules.d.ts",
+        "import": "./dist/pricing/routes-rules.js",
+        "default": "./dist/pricing/routes-rules.js"
+      },
+      "./pricing/routes-shared": {
+        "types": "./dist/pricing/routes-shared.d.ts",
+        "import": "./dist/pricing/routes-shared.js",
+        "default": "./dist/pricing/routes-shared.js"
+      },
+      "./pricing/routes": {
+        "types": "./dist/pricing/routes.d.ts",
+        "import": "./dist/pricing/routes.js",
+        "default": "./dist/pricing/routes.js"
+      },
+      "./pricing/schema-catalogs": {
+        "types": "./dist/pricing/schema-catalogs.d.ts",
+        "import": "./dist/pricing/schema-catalogs.js",
+        "default": "./dist/pricing/schema-catalogs.js"
+      },
+      "./pricing/schema-categories": {
+        "types": "./dist/pricing/schema-categories.d.ts",
+        "import": "./dist/pricing/schema-categories.js",
+        "default": "./dist/pricing/schema-categories.js"
+      },
+      "./pricing/schema-departure-overrides": {
+        "types": "./dist/pricing/schema-departure-overrides.d.ts",
+        "import": "./dist/pricing/schema-departure-overrides.js",
+        "default": "./dist/pricing/schema-departure-overrides.js"
+      },
+      "./pricing/schema-option-rules": {
+        "types": "./dist/pricing/schema-option-rules.d.ts",
+        "import": "./dist/pricing/schema-option-rules.js",
+        "default": "./dist/pricing/schema-option-rules.js"
+      },
+      "./pricing/schema-policies": {
+        "types": "./dist/pricing/schema-policies.d.ts",
+        "import": "./dist/pricing/schema-policies.js",
+        "default": "./dist/pricing/schema-policies.js"
+      },
+      "./pricing/schema-relations": {
+        "types": "./dist/pricing/schema-relations.d.ts",
+        "import": "./dist/pricing/schema-relations.js",
+        "default": "./dist/pricing/schema-relations.js"
+      },
+      "./pricing/schema-shared": {
+        "types": "./dist/pricing/schema-shared.d.ts",
+        "import": "./dist/pricing/schema-shared.js",
+        "default": "./dist/pricing/schema-shared.js"
+      },
+      "./pricing/schema": {
+        "types": "./dist/pricing/schema.d.ts",
+        "import": "./dist/pricing/schema.js",
+        "default": "./dist/pricing/schema.js"
+      },
+      "./pricing/service-catalog-plane-pricing": {
+        "types": "./dist/pricing/service-catalog-plane-pricing.d.ts",
+        "import": "./dist/pricing/service-catalog-plane-pricing.js",
+        "default": "./dist/pricing/service-catalog-plane-pricing.js"
+      },
+      "./pricing/service-catalogs": {
+        "types": "./dist/pricing/service-catalogs.d.ts",
+        "import": "./dist/pricing/service-catalogs.js",
+        "default": "./dist/pricing/service-catalogs.js"
+      },
+      "./pricing/service-categories": {
+        "types": "./dist/pricing/service-categories.d.ts",
+        "import": "./dist/pricing/service-categories.js",
+        "default": "./dist/pricing/service-categories.js"
+      },
+      "./pricing/service-departure-overrides": {
+        "types": "./dist/pricing/service-departure-overrides.d.ts",
+        "import": "./dist/pricing/service-departure-overrides.js",
+        "default": "./dist/pricing/service-departure-overrides.js"
+      },
+      "./pricing/service-option-rules": {
+        "types": "./dist/pricing/service-option-rules.d.ts",
+        "import": "./dist/pricing/service-option-rules.js",
+        "default": "./dist/pricing/service-option-rules.js"
+      },
+      "./pricing/service-policies": {
+        "types": "./dist/pricing/service-policies.d.ts",
+        "import": "./dist/pricing/service-policies.js",
+        "default": "./dist/pricing/service-policies.js"
+      },
+      "./pricing/service-public": {
+        "types": "./dist/pricing/service-public.d.ts",
+        "import": "./dist/pricing/service-public.js",
+        "default": "./dist/pricing/service-public.js"
+      },
+      "./pricing/service-rule-resolver": {
+        "types": "./dist/pricing/service-rule-resolver.d.ts",
+        "import": "./dist/pricing/service-rule-resolver.js",
+        "default": "./dist/pricing/service-rule-resolver.js"
+      },
+      "./pricing/service-shared": {
+        "types": "./dist/pricing/service-shared.d.ts",
+        "import": "./dist/pricing/service-shared.js",
+        "default": "./dist/pricing/service-shared.js"
+      },
+      "./pricing/service-transfer-rules": {
+        "types": "./dist/pricing/service-transfer-rules.d.ts",
+        "import": "./dist/pricing/service-transfer-rules.js",
+        "default": "./dist/pricing/service-transfer-rules.js"
+      },
+      "./pricing/service": {
+        "types": "./dist/pricing/service.d.ts",
+        "import": "./dist/pricing/service.js",
+        "default": "./dist/pricing/service.js"
+      },
+      "./pricing/validation-public": {
+        "types": "./dist/pricing/validation-public.d.ts",
+        "import": "./dist/pricing/validation-public.js",
+        "default": "./dist/pricing/validation-public.js"
+      },
+      "./pricing/validation-shared": {
+        "types": "./dist/pricing/validation-shared.d.ts",
+        "import": "./dist/pricing/validation-shared.js",
+        "default": "./dist/pricing/validation-shared.js"
+      },
+      "./pricing/validation": {
+        "types": "./dist/pricing/validation.d.ts",
+        "import": "./dist/pricing/validation.js",
+        "default": "./dist/pricing/validation.js"
+      },
+      "./promotions/events": {
+        "types": "./dist/promotions/events.d.ts",
+        "import": "./dist/promotions/events.js",
+        "default": "./dist/promotions/events.js"
+      },
+      "./promotions": {
+        "types": "./dist/promotions/index.d.ts",
+        "import": "./dist/promotions/index.js",
+        "default": "./dist/promotions/index.js"
+      },
+      "./promotions/routes-shared": {
+        "types": "./dist/promotions/routes-shared.d.ts",
+        "import": "./dist/promotions/routes-shared.js",
+        "default": "./dist/promotions/routes-shared.js"
+      },
+      "./promotions/routes": {
+        "types": "./dist/promotions/routes.d.ts",
+        "import": "./dist/promotions/routes.js",
+        "default": "./dist/promotions/routes.js"
+      },
+      "./promotions/schema": {
+        "types": "./dist/promotions/schema.d.ts",
+        "import": "./dist/promotions/schema.js",
+        "default": "./dist/promotions/schema.js"
+      },
+      "./promotions/service-booking-confirmed": {
+        "types": "./dist/promotions/service-booking-confirmed.d.ts",
+        "import": "./dist/promotions/service-booking-confirmed.js",
+        "default": "./dist/promotions/service-booking-confirmed.js"
+      },
+      "./promotions/service-boundary-scheduler": {
+        "types": "./dist/promotions/service-boundary-scheduler.d.ts",
+        "import": "./dist/promotions/service-boundary-scheduler.js",
+        "default": "./dist/promotions/service-boundary-scheduler.js"
+      },
+      "./promotions/service-catalog-evaluator": {
+        "types": "./dist/promotions/service-catalog-evaluator.d.ts",
+        "import": "./dist/promotions/service-catalog-evaluator.js",
+        "default": "./dist/promotions/service-catalog-evaluator.js"
+      },
+      "./promotions/service-catalog-plane-promotions": {
+        "types": "./dist/promotions/service-catalog-plane-promotions.d.ts",
+        "import": "./dist/promotions/service-catalog-plane-promotions.js",
+        "default": "./dist/promotions/service-catalog-plane-promotions.js"
+      },
+      "./promotions/service-evaluator": {
+        "types": "./dist/promotions/service-evaluator.d.ts",
+        "import": "./dist/promotions/service-evaluator.js",
+        "default": "./dist/promotions/service-evaluator.js"
+      },
+      "./promotions/service-storefront": {
+        "types": "./dist/promotions/service-storefront.d.ts",
+        "import": "./dist/promotions/service-storefront.js",
+        "default": "./dist/promotions/service-storefront.js"
+      },
+      "./promotions/service": {
+        "types": "./dist/promotions/service.d.ts",
+        "import": "./dist/promotions/service.js",
+        "default": "./dist/promotions/service.js"
+      },
+      "./promotions/validation": {
+        "types": "./dist/promotions/validation.d.ts",
+        "import": "./dist/promotions/validation.js",
+        "default": "./dist/promotions/validation.js"
+      },
+      "./promotions/workflow-bulk-reindex": {
+        "types": "./dist/promotions/workflow-bulk-reindex.d.ts",
+        "import": "./dist/promotions/workflow-bulk-reindex.js",
+        "default": "./dist/promotions/workflow-bulk-reindex.js"
+      },
+      "./promotions/workflow-runtime": {
+        "types": "./dist/promotions/workflow-runtime.d.ts",
+        "import": "./dist/promotions/workflow-runtime.js",
+        "default": "./dist/promotions/workflow-runtime.js"
+      },
+      "./sellability": {
+        "types": "./dist/sellability/index.d.ts",
+        "import": "./dist/sellability/index.js",
+        "default": "./dist/sellability/index.js"
+      },
+      "./sellability/routes": {
+        "types": "./dist/sellability/routes.d.ts",
+        "import": "./dist/sellability/routes.js",
+        "default": "./dist/sellability/routes.js"
+      },
+      "./sellability/schema": {
+        "types": "./dist/sellability/schema.d.ts",
+        "import": "./dist/sellability/schema.js",
+        "default": "./dist/sellability/schema.js"
+      },
+      "./sellability/service-construct-offer": {
+        "types": "./dist/sellability/service-construct-offer.d.ts",
+        "import": "./dist/sellability/service-construct-offer.js",
+        "default": "./dist/sellability/service-construct-offer.js"
+      },
+      "./sellability/service-records": {
+        "types": "./dist/sellability/service-records.d.ts",
+        "import": "./dist/sellability/service-records.js",
+        "default": "./dist/sellability/service-records.js"
+      },
+      "./sellability/service-resolve": {
+        "types": "./dist/sellability/service-resolve.d.ts",
+        "import": "./dist/sellability/service-resolve.js",
+        "default": "./dist/sellability/service-resolve.js"
+      },
+      "./sellability/service-shared": {
+        "types": "./dist/sellability/service-shared.d.ts",
+        "import": "./dist/sellability/service-shared.js",
+        "default": "./dist/sellability/service-shared.js"
+      },
+      "./sellability/service-snapshots": {
+        "types": "./dist/sellability/service-snapshots.d.ts",
+        "import": "./dist/sellability/service-snapshots.js",
+        "default": "./dist/sellability/service-snapshots.js"
+      },
+      "./sellability/service": {
+        "types": "./dist/sellability/service.d.ts",
+        "import": "./dist/sellability/service.js",
+        "default": "./dist/sellability/service.js"
+      },
+      "./sellability/validation": {
+        "types": "./dist/sellability/validation.d.ts",
+        "import": "./dist/sellability/validation.js",
+        "default": "./dist/sellability/validation.js"
+      },
+      "./pricing/public-routes": {
+        "types": "./dist/pricing/routes-public.d.ts",
+        "import": "./dist/pricing/routes-public.js",
+        "default": "./dist/pricing/routes-public.js"
+      },
+      "./pricing/public-validation": {
+        "types": "./dist/pricing/validation-public.d.ts",
+        "import": "./dist/pricing/validation-public.js",
+        "default": "./dist/pricing/validation-public.js"
       }
     },
     "main": "./dist/index.js",

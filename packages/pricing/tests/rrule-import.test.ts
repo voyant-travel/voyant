@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 describe("service-rule-resolver rrule import", () => {
   it("does not emit a default import from rrule when built", async () => {
     const source = await readFile(
-      new URL("../src/service-rule-resolver.ts", import.meta.url),
+      new URL("../../commerce/src/pricing/service-rule-resolver.ts", import.meta.url),
       "utf8",
     )
     const { outputText } = ts.transpileModule(source, {

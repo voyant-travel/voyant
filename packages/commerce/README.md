@@ -1,9 +1,9 @@
 # Commerce
 
-`@voyantjs/commerce` defines the narrow commercial decision Interface and the
-runtime wrapper for the commercial package cluster. Pricing, markets,
-sellability, and promotions still own their current schemas until explicit
-schema-move issues migrate those tables.
+`@voyantjs/commerce` defines the narrow commercial decision Interface and owns
+the quote-time markets, pricing, promotions, and sellability runtime sources.
+The old package names remain compatibility and schema-manifest shims until an
+explicit schema-move issue migrates those tables.
 
 The root call is:
 
@@ -17,7 +17,7 @@ price?
 
 ## Public Surface
 
-The package intentionally exports one root surface:
+The package intentionally exposes the Commerce Interface from the root:
 
 - `createCommercialDecisionEvaluator(...)`
 - `evaluateCommercialDecision(input, context)`
@@ -27,9 +27,17 @@ The package intentionally exports one root surface:
 - `createCommerceStorefrontOfferResolvers()`
 - decision, adapter, trace, pricing, promotion, FX, and snapshot types
 
-It does not expose `pricing`, `markets`, `sellability`, `promotions`, or `fx`
-subpaths as default v1 APIs. The old package names remain compatibility and
-schema-owner packages until the v1 migration removes them.
+Commerce also exposes owner-path subpaths for the consolidated implementation:
+
+- `@voyantjs/commerce/markets`
+- `@voyantjs/commerce/pricing`
+- `@voyantjs/commerce/promotions`
+- `@voyantjs/commerce/sellability`
+
+Prefer the Commerce Interface for quote-time evaluation. Use the subpaths for
+schema, route, service, and transitional compatibility surfaces that previously
+lived in `@voyantjs/markets`, `@voyantjs/pricing`, `@voyantjs/promotions`, and
+`@voyantjs/sellability`.
 
 React/admin consumers should prefer `@voyantjs/commerce-react` for Commerce-owned
 UI wiring. That package exposes facade entrypoints for pricing, markets,
