@@ -400,6 +400,22 @@ Solution:
 Create `@voyantjs/operations` and `@voyantjs/operations-react` with subpaths for
 availability, allocation resources, resources, places, and ground.
 
+Current implementation state:
+
+- `@voyantjs/operations/availability`, `@voyantjs/operations/resources`,
+  `@voyantjs/operations/ground`, and `@voyantjs/operations/places` own the
+  runtime source.
+- `@voyantjs/operations-react/availability`,
+  `@voyantjs/operations-react/availability/allocation`,
+  `@voyantjs/operations-react/resources`,
+  `@voyantjs/operations-react/ground`, and
+  `@voyantjs/operations-react/places` own the React source.
+- The old package names remain compatibility facades during the v1 owner-path
+  phase.
+- Operator runtime/admin imports use Operations owner paths, while schema
+  manifests keep `@voyantjs/availability` and `@voyantjs/resources` until a
+  dedicated schema-manifest move proves generated parity.
+
 Required cleanup:
 
 - Canonicalize on `Place` and `@voyantjs/places` / `@voyantjs/places-react`.
@@ -1305,12 +1321,13 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/availability`, `@voyantjs/availability-react` | Fold into `operations`. | Availability is operated execution truth: slots, rules, pickup points, holds, and operational availability state. |
-| `@voyantjs/allocation-ui` | Deprecated compatibility facade; the active UI lives in `@voyantjs/availability-react/allocation` until the later Operations React surface exists. | This is a UI slice over availability allocation resources, not a standalone Module, and must not move into Resources. |
-| `@voyantjs/resources`, `@voyantjs/resources-react` | Fold into `operations`. | Resources are operational assets and pools used by operated products and logistics. |
-| `@voyantjs/ground`, `@voyantjs/ground-react` | Fold into `operations`. | Ground is operational logistics: vehicles, drivers, dispatch, shifts, checkpoints. |
-| `@voyantjs/places`, `@voyantjs/places-react` | Target shared place packages under `operations`; current implementation is a compatibility facade over the old facilities runtime. | Physical places are useful; hotel/property operations are out of first-party scope. |
-| `@voyantjs/facilities`, `@voyantjs/facilities-react` | Compatibility package names during the v1 move. New code should import `@voyantjs/places` / `@voyantjs/places-react`; `facilityId` remains supported until public contracts can migrate. | Do not add new first-party property operations here. |
+| `@voyantjs/operations`, `@voyantjs/operations-react` | Target owner packages now present. | Runtime owner paths are `operations/availability`, `operations/resources`, `operations/ground`, and `operations/places`; React owner paths mirror them, including `operations-react/availability/allocation`. |
+| `@voyantjs/availability`, `@voyantjs/availability-react` | Compatibility facades during the v1 owner-path phase. | Availability is operated execution truth: slots, rules, pickup points, holds, and operational availability state. New code should import Operations owner paths. |
+| `@voyantjs/allocation-ui` | Deprecated compatibility facade for `@voyantjs/operations-react/availability/allocation`. | This is a UI slice over availability allocation resources, not a standalone Module, and must not move into Resources. |
+| `@voyantjs/resources`, `@voyantjs/resources-react` | Compatibility facades during the v1 owner-path phase. | Resources are operational assets and pools used by operated products and logistics. New code should import Operations owner paths. |
+| `@voyantjs/ground`, `@voyantjs/ground-react` | Compatibility facades during the v1 owner-path phase. | Ground is operational logistics: vehicles, drivers, dispatch, shifts, checkpoints. New code should import Operations owner paths. |
+| `@voyantjs/places`, `@voyantjs/places-react` | Compatibility facades to Operations Places owner paths. | Physical places are useful; hotel/property operations are out of first-party scope. |
+| `@voyantjs/facilities`, `@voyantjs/facilities-react` | Compatibility package names during the v1 move. New code should import Operations Places owner paths or `@voyantjs/places` compatibility names until final package removal. | Do not add new first-party property operations here. |
 | Future `@voyantjs/mice`, `@voyantjs/mice-react` | Create as an optional MICE/corporate group-business Module. | Program is the central entity. The Module owns Program lifecycle, requirements, agenda, delegates, rooming, and RFP/bid workflow while reusing Quotes, Operations, Bookings, Finance, Distribution, Relationships, and Legal. |
 
 ### 10.5 Finance, Legal, Distribution, And Counterparty Packages

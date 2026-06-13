@@ -48,7 +48,6 @@
     "@voyantjs/auth": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
     "@voyantjs/availability": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
@@ -72,8 +71,6 @@
     "@voyantjs/external-refs": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
-    "@voyantjs/facilities": "workspace:^",
-    "@voyantjs/facilities-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/flights": "workspace:^",
@@ -102,7 +99,6 @@
     "@voyantjs/relationships": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/resources": "workspace:^",
-    "@voyantjs/resources-react": "workspace:^",
     "@voyantjs/sellability": "workspace:^",
     "@voyantjs/storage": "workspace:^",
     "@voyantjs/storefront": "workspace:^",
@@ -148,7 +144,9 @@
     "typesense": "^3.0.6",
     "vaul": "^1.1.2",
     "zod": "^4.3.6",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.12",
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",

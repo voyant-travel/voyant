@@ -29,7 +29,7 @@ import { ProductsListSkeleton } from "./products-list-skeleton.js"
  * `product.detail` is also declared by `@voyantjs/bookings-react/admin` and
  * `@voyantjs/catalog-react/admin`; `booking.create` by
  * `@voyantjs/bookings-react/admin`; `availabilitySlot.detail` by
- * `@voyantjs/availability-react/admin` and others — interface merging
+ * `@voyantjs/operations-react/availability/admin` and others — interface merging
  * requires the member shapes to stay identical across packages.
  */
 declare module "@voyantjs/admin" {
@@ -74,7 +74,7 @@ export interface CreateProductsAdminExtensionOptions {
    * canonical `ProductDetailPage` with context-derived wiring. The operator
    * overrides this to compose app-owned seams the package cannot import:
    * the availability-react option resource templates panel
-   * (`@voyantjs/availability-react` depends on this package — a cycle), the
+   * (`@voyantjs/operations-react/availability` depends on this package — a cycle), the
    * app's upload route, and the product-pre-selected new-booking deep link.
    */
   detailPageComponent?: () => Promise<{

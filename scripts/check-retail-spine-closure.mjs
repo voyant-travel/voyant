@@ -67,6 +67,8 @@ const forbiddenPackages = new Map([
   ["@voyantjs/ground-react", "operated Operations UI"],
   ["@voyantjs/facilities", "operated Operations place/facility schema"],
   ["@voyantjs/facilities-react", "operated Operations place/facility UI"],
+  ["@voyantjs/operations", "operated Operations runtime"],
+  ["@voyantjs/operations-react", "operated Operations UI"],
   ["@voyantjs/allocation-ui", "operated Availability allocation UI"],
   ["@voyantjs/transactions", "retired runtime Transactions package"],
   ["@voyantjs/transactions-react", "retired runtime Transactions UI"],
@@ -110,9 +112,9 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/availability-react",
+    to: "@voyantjs/operations-react",
     reason:
-      "booking admin components can attach operated availability controls when a host installs them",
+      "booking admin components can attach operated Operations controls when a host installs them",
   },
   {
     from: "@voyantjs/bookings-react",
@@ -124,9 +126,9 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/finance-react",
     type: "peerDependencies",
-    to: "@voyantjs/availability-react",
+    to: "@voyantjs/operations-react",
     reason:
-      "finance admin components can attach operated availability context when a host installs it",
+      "finance admin components can attach operated Operations context when a host installs it",
   },
   {
     from: "@voyantjs/finance-react",

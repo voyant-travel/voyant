@@ -49,9 +49,9 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
@@ -59,13 +59,13 @@
     "@voyantjs/legal-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
@@ -74,10 +74,10 @@
     "@voyantjs/admin": {
       "optional": true
     },
-    "@voyantjs/availability-react": {
+    "@voyantjs/catalog-react": {
       "optional": true
     },
-    "@voyantjs/catalog-react": {
+    "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/relationships-react": {
@@ -101,9 +101,6 @@
     "@voyantjs/products-react": {
       "optional": true
     },
-    "@voyantjs/suppliers-react": {
-      "optional": true
-    },
     "@voyantjs/ui": {
       "optional": true
     },
@@ -111,6 +108,9 @@
       "optional": true
     },
     "react-hook-form": {
+      "optional": true
+    },
+    "@voyantjs/operations-react": {
       "optional": true
     }
   },
@@ -126,9 +126,9 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
@@ -137,7 +137,6 @@
     "@voyantjs/pricing-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
@@ -147,7 +146,8 @@
     "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "files": [
     "dist",

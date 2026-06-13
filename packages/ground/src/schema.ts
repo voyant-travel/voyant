@@ -1,5 +1,1 @@
-export * from "./schema-dispatch.js"
-export * from "./schema-operations.js"
-export * from "./schema-operators.js"
-export * from "./schema-relations.js"
-export * from "./schema-shared.js"
+export * from "@voyantjs/operations/ground/schema"

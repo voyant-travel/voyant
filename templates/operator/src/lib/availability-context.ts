@@ -1,4 +1,7 @@
-import { defaultFetcher, type VoyantAvailabilityContextValue } from "@voyantjs/availability-react"
+import {
+  defaultFetcher,
+  type VoyantAvailabilityContextValue,
+} from "@voyantjs/operations-react/availability"
 
 import { getApiUrl } from "./env"
 

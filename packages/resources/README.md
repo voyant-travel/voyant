@@ -1,17 +1,21 @@
 # @voyantjs/resources
 
-Resources module for Voyant. Assignable resources, pools, requirements, and assignments — the scheduling substrate for drivers, guides, rooms, vehicles, and equipment.
+Compatibility facade for Operations resources.
+
+New code should import `@voyantjs/operations/resources`. This package keeps
+existing `@voyantjs/resources` imports and schema metadata working while the v1
+package move lands.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/resources
+pnpm add @voyantjs/operations
 ```
 
 ## Usage
 
 ```typescript
-import { resourcesModule } from "@voyantjs/resources"
+import { resourcesModule } from "@voyantjs/operations/resources"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
@@ -24,7 +28,7 @@ const app = createApp({
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export |
+| `.` | Compatibility re-export of `@voyantjs/operations/resources` |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |

@@ -2,7 +2,7 @@ import {
   availabilityRules,
   availabilitySlots,
   availabilityStartTimes,
-} from "@voyantjs/availability"
+} from "@voyantjs/operations/availability"
 import {
   departurePriceOverrides,
   dropoffPriceRules,

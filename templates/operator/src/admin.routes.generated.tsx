@@ -60,25 +60,25 @@ const availabilityExtension = extension("availability")
 
 export const AvailabilityIndexRoute = createRoute({
   getParentRoute: workspace,
-  path: "/availability",
+  path: "/operations/availability",
   ...adminExtensionRouteOptions(availabilityExtension, "availability-index", runtime),
 })
 
 export const AvailabilitySlotDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/availability/$id",
+  path: "/operations/availability/$id",
   ...adminExtensionRouteOptions(availabilityExtension, "availability-slot-detail", runtime),
 })
 
 export const AvailabilityRuleDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/availability/rules/$id",
+  path: "/operations/availability/rules/$id",
   ...adminExtensionRouteOptions(availabilityExtension, "availability-rule-detail", runtime),
 })
 
 export const AvailabilityStartTimeDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/availability/start-times/$id",
+  path: "/operations/availability/start-times/$id",
   ...adminExtensionRouteOptions(availabilityExtension, "availability-start-time-detail", runtime),
 })
 
@@ -604,31 +604,31 @@ const resourcesExtension = extension("resources")
 
 export const ResourcesIndexRoute = createRoute({
   getParentRoute: workspace,
-  path: "/resources",
+  path: "/operations/resources",
   ...adminExtensionRouteOptions(resourcesExtension, "resources-index", runtime),
 })
 
 export const ResourcesDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/resources/$id",
+  path: "/operations/resources/$id",
   ...adminExtensionRouteOptions(resourcesExtension, "resources-detail", runtime),
 })
 
 export const ResourcesPoolDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/resources/pools/$id",
+  path: "/operations/resources/pools/$id",
   ...adminExtensionRouteOptions(resourcesExtension, "resources-pool-detail", runtime),
 })
 
 export const ResourcesAssignmentDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/resources/assignments/$id",
+  path: "/operations/resources/assignments/$id",
   ...adminExtensionRouteOptions(resourcesExtension, "resources-assignment-detail", runtime),
 })
 
 export const ResourcesAllocationDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/resources/allocations/$id",
+  path: "/operations/resources/allocations/$id",
   ...adminExtensionRouteOptions(resourcesExtension, "resources-allocation-detail", runtime),
 })
 
@@ -747,10 +747,10 @@ export const adminExtensionRoutes = [
 
 export interface AdminExtensionRoutesByFullPath {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/availability": typeof AvailabilityIndexRoute
-  "/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
+  "/operations/availability": typeof AvailabilityIndexRoute
+  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -817,11 +817,11 @@ export interface AdminExtensionRoutesByFullPath {
   "/products/categories": typeof ProductsCategoriesRoute
   "/products/$id": typeof ProductsDetailRoute
   "/promotions": typeof PromotionsIndexRoute
-  "/resources": typeof ResourcesIndexRoute
-  "/resources/$id": typeof ResourcesDetailRoute
-  "/resources/pools/$id": typeof ResourcesPoolDetailRoute
-  "/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
-  "/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/operations/resources": typeof ResourcesIndexRoute
+  "/operations/resources/$id": typeof ResourcesDetailRoute
+  "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
+  "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
+  "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
   "/trips": typeof TripComposerIndexRoute
@@ -830,10 +830,10 @@ export interface AdminExtensionRoutesByFullPath {
 
 export interface AdminExtensionRoutesByTo {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/availability": typeof AvailabilityIndexRoute
-  "/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
+  "/operations/availability": typeof AvailabilityIndexRoute
+  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -899,11 +899,11 @@ export interface AdminExtensionRoutesByTo {
   "/products/categories": typeof ProductsCategoriesRoute
   "/products/$id": typeof ProductsDetailRoute
   "/promotions": typeof PromotionsIndexRoute
-  "/resources": typeof ResourcesIndexRoute
-  "/resources/$id": typeof ResourcesDetailRoute
-  "/resources/pools/$id": typeof ResourcesPoolDetailRoute
-  "/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
-  "/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/operations/resources": typeof ResourcesIndexRoute
+  "/operations/resources/$id": typeof ResourcesDetailRoute
+  "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
+  "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
+  "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/suppliers": typeof SuppliersIndexRoute
   "/suppliers/$id": typeof SuppliersDetailRoute
   "/trips": typeof TripComposerIndexRoute
@@ -912,10 +912,10 @@ export interface AdminExtensionRoutesByTo {
 
 export interface AdminExtensionRoutesById {
   "/_workspace/action-ledger": typeof ActionLedgerIndexRoute
-  "/_workspace/availability": typeof AvailabilityIndexRoute
-  "/_workspace/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/_workspace/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/_workspace/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
+  "/_workspace/operations/availability": typeof AvailabilityIndexRoute
+  "/_workspace/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/_workspace/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/_workspace/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
   "/_workspace/bookings/new": typeof BookingsNewRoute
@@ -982,11 +982,11 @@ export interface AdminExtensionRoutesById {
   "/_workspace/products/categories": typeof ProductsCategoriesRoute
   "/_workspace/products/$id": typeof ProductsDetailRoute
   "/_workspace/promotions": typeof PromotionsIndexRoute
-  "/_workspace/resources": typeof ResourcesIndexRoute
-  "/_workspace/resources/$id": typeof ResourcesDetailRoute
-  "/_workspace/resources/pools/$id": typeof ResourcesPoolDetailRoute
-  "/_workspace/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
-  "/_workspace/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/_workspace/operations/resources": typeof ResourcesIndexRoute
+  "/_workspace/operations/resources/$id": typeof ResourcesDetailRoute
+  "/_workspace/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
+  "/_workspace/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
+  "/_workspace/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
   "/_workspace/suppliers": typeof SuppliersIndexRoute
   "/_workspace/suppliers/$id": typeof SuppliersDetailRoute
   "/_workspace/trips": typeof TripComposerIndexRoute

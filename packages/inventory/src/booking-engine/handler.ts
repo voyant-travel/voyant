@@ -456,7 +456,7 @@ export interface OwnedProductsShapeLoaders {
   /**
    * Look up the local date of a departure slot (`availability_slots`).
    * Caller-supplied so the Inventory package does not import
-   * `@voyantjs/availability`. Returns null when the slot is missing.
+   * `@voyantjs/operations/availability`. Returns null when the slot is missing.
    *
    * Used together with `loadResolvedOptionPrice` to convert a draft's
    * `departureSlotId` into a date the resolver can match against.
@@ -466,7 +466,7 @@ export interface OwnedProductsShapeLoaders {
 
 /**
  * Caller-supplied availability-hold bridge — keeps the products
- * package free of an `@voyantjs/availability` dependency. When
+ * package free of an `@voyantjs/operations/availability` dependency. When
  * wired, the handler's `placeHold/extendHold/releaseHold` route
  * through `availability_holds` (real inventory locks). When
  * omitted, the handler falls back to stamping no-ops.

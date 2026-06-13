@@ -141,11 +141,11 @@ client in from the calling component, or convert to hooks. (This is the fiddlies
 - `navigate({ to: "/products" })` → `host.navigate.toProducts()`
 - `navigate({ to: "/products/$id", params: { id } })` → `host.navigate.toProduct(id)`
 - `navigate({ to: "/bookings/$id", params: { id: "new" }, search: { productId } })` → `host.navigate.toNewBooking(productId)`
-- `navigate({ to: "/availability/$id", params: { id: slotId } })` → `host.navigate.toAvailability(slotId)`
+- `navigate({ to: "/operations/availability/$id", params: { id: slotId } })` → `host.navigate.toAvailability(slotId)`
 - `<Link to="/settings/channels">` in sections → either a host nav callback or render as a plain anchor/slot.
 
 ### 5.4 Availability panel slot
-`product-detail-page.tsx` imports `@/components/voyant/availability/option-resource-templates-panel`
+`product-detail-page.tsx` imports `@/components/voyant/operations/availability/option-resource-templates-panel`
 (operator availability component) and uses it inside `renderOptionDetails` alongside `PricingPanel`.
 Make the page accept a `renderOptionExtras?(productId, optionId)` slot prop (or similar); the operator
 passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is being moved into products-ui.
@@ -155,7 +155,7 @@ passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is
   (`/languages`) and `timezone-options.ts` (`/timezones`). **Not currently a dep.**
 - `@voyantjs/markets-react` — used by `product-market-rules-section.tsx`. **Not currently a dep.**
 - Confirm `@hookform/resolvers` is NOT needed (the moved `zod-resolver.ts` is hand-rolled — only needs `react-hook-form` + `zod`, both already deps).
-- products-ui already deps: `@voyantjs/i18n`, `@voyantjs/availability-react`, `@voyantjs/pricing-react`,
+- products-ui already deps: `@voyantjs/i18n`, `@voyantjs/operations-react/availability`, `@voyantjs/pricing-react`,
   `react-hook-form`, `zod`.
 
 ### 5.6 Wire products-ui exports
@@ -171,7 +171,7 @@ passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is
   - `messages: useAdminMessages().products`
   - `api: <operator api client>`
   - `locale: useLocale().resolvedLocale`
-  - `navigate: { toProducts: () => navigate({to:"/products"}), toProduct: (id)=>navigate({to:"/products/$id",params:{id}}), toNewBooking: (productId)=>navigate({to:"/bookings/$id",params:{id:"new"},search:{productId}}), toAvailability: (id)=>navigate({to:"/availability/$id",params:{id}}) }`
+  - `navigate: { toProducts: () => navigate({to:"/products"}), toProduct: (id)=>navigate({to:"/products/$id",params:{id}}), toNewBooking: (productId)=>navigate({to:"/bookings/$id",params:{id:"new"},search:{productId}}), toAvailability: (id)=>navigate({to:"/operations/availability/$id",params:{id}}) }`
   - `uploadMedia: <operator storage upload handler>` (see operator's `product-detail-itinerary-section` `uploadDayMediaToStorage`)
   - `setBreadcrumbs: <wire to useAdminBreadcrumbs or the admin-shell breadcrumb context>`
   - `renderOptionExtras: (productId, optionId) => <OptionResourceTemplatesPanel .../>`

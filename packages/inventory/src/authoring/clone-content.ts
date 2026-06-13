@@ -1,4 +1,4 @@
-import { productOptionResourceTemplates } from "@voyantjs/availability"
+import { productOptionResourceTemplates } from "@voyantjs/operations/availability"
 import { pricingCategories, pricingCategoryDependencies } from "@voyantjs/pricing/schema"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -63,7 +63,7 @@ export function withoutSystemColumns<T extends SystemColumns>(row: T) {
  * Copies the product's content graph: per-product settings, options + units
  * (with translations + resource templates), pricing categories (+ dependencies,
  * remapped), itineraries/days/services, media, and extras. Populates the id
- * remaps in {@link CloneContext} for the pricing/availability phase.
+ * remaps in {@link CloneContext} for the pricing/operations/availability phase.
  */
 export async function copyProductContent(ctx: CloneContext): Promise<void> {
   const { tx, sourceId, targetId } = ctx

@@ -27,7 +27,6 @@
  * configured public actors. Per booking-journey-architecture §10 Phase B.
  */
 
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   BookingEngineError,
   cancelEntity,
@@ -46,6 +45,7 @@ import {
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { getProductContent } from "@voyantjs/inventory/service-content"
+import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"

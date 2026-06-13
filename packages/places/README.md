@@ -2,9 +2,10 @@
 
 Shared physical places for OTA, tour-operator, DMC, and MICE workflows.
 
-`@voyantjs/places` is the forward package name for the existing facilities
-runtime. It keeps the current database tables and `facilityId` fields for
-compatibility, while new imports should use place vocabulary.
+`@voyantjs/places` is a compatibility package over
+`@voyantjs/operations/places`. It keeps the current database tables and
+`facilityId` fields for compatibility, while new owner imports should use
+Operations Places.
 
 ## Scope
 

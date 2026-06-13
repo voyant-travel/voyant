@@ -5,12 +5,6 @@ import {
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
 import { AuthUiMessagesProvider } from "@voyantjs/auth-react/i18n"
-import { AllocationUiMessagesProvider } from "@voyantjs/availability-react/allocation/i18n"
-// Provider subpath on purpose: the availability main barrel re-exports the
-// whole data layer (schemas pull `@voyantjs/availability` validation), and
-// this module evaluates with workspace chrome — the `/provider` entry is
-// the lean context-only module.
-import { VoyantAvailabilityProvider } from "@voyantjs/availability-react/provider"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/i18n"
 import { CatalogUiMessagesProvider } from "@voyantjs/catalog-react/i18n"
 import { CommerceUiMessagesProvider } from "@voyantjs/commerce-react/i18n"
@@ -19,8 +13,14 @@ import { FinanceUiMessagesProvider } from "@voyantjs/finance-react/i18n"
 import { ProductsUiMessagesProvider } from "@voyantjs/inventory-react/i18n"
 import { LegalUiMessagesProvider } from "@voyantjs/legal-react/i18n"
 import { NotificationsUiMessagesProvider } from "@voyantjs/notifications-react/i18n"
+import { AllocationUiMessagesProvider } from "@voyantjs/operations-react/availability/allocation/i18n"
+// Provider subpath on purpose: the availability main barrel re-exports the
+// whole data layer (schemas pull `@voyantjs/operations/availability` validation), and
+// this module evaluates with workspace chrome — the `/provider` entry is
+// the lean context-only module.
+import { VoyantAvailabilityProvider } from "@voyantjs/operations-react/availability/provider"
+import { ResourcesUiMessagesProvider } from "@voyantjs/operations-react/resources/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/relationships-react/i18n"
-import { ResourcesUiMessagesProvider } from "@voyantjs/resources-react/i18n"
 import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import type * as React from "react"
 import { getApiUrl } from "@/lib/env"

@@ -1,1 +1,1 @@
-export { FacilityCombobox as PlaceCombobox } from "@voyantjs/facilities-react/components/facility-combobox"
+export { PlaceCombobox } from "@voyantjs/operations-react/places/components/place-combobox"

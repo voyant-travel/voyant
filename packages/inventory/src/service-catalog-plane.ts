@@ -511,7 +511,7 @@ function pickTranslation<T extends { languageTag: string }>(
  *
  * Cross-package boundary: queries `availability_slots` by raw table name
  * via `sql` so the products module doesn't take a hard dependency on the
- * `@voyantjs/availability` schema.
+ * `@voyantjs/operations/availability` schema.
  */
 async function countAvailableDepartures(db: AnyDrizzleDb, productId: string): Promise<number> {
   try {

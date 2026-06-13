@@ -65,6 +65,7 @@
       "!packages/*-react/src/styles.css",
       "!packages/commerce-react/src/*/styles.css",
       "!packages/distribution-react/src/*/styles.css",
+      "!packages/operations-react/src/*/styles.css",
       "!templates/operator/src/components/ui",
       "!templates/operator/src/lib/async-utils.ts",
       "!templates/operator/src/styles.css"

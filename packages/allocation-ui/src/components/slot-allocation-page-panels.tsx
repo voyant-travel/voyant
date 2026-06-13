@@ -1,1 +1,1 @@
-export * from "@voyantjs/availability-react/allocation/components/slot-allocation-page-panels"
+export * from "@voyantjs/operations-react/availability/allocation/components/slot-allocation-page-panels"

@@ -102,7 +102,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteSlot = useMutation({
-    mutationFn: (slotId: string) => api.delete(`/v1/availability/slots/${slotId}`),
+    mutationFn: (slotId: string) => api.delete(`/v1/operations/availability/slots/${slotId}`),
     onSuccess: () => {
       void slotsQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -110,7 +110,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteRule = useMutation({
-    mutationFn: (ruleId: string) => api.delete(`/v1/availability/rules/${ruleId}`),
+    mutationFn: (ruleId: string) => api.delete(`/v1/operations/availability/rules/${ruleId}`),
     onSuccess: () => {
       void rulesQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })

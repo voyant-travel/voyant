@@ -1,4 +1,3 @@
-import type { AvailabilityRoutes } from "@voyantjs/availability/routes"
 import type { BookingsExtrasRoutes } from "@voyantjs/bookings/extras"
 import type { BookingRequirementsRoutes } from "@voyantjs/bookings/requirements/routes"
 import type { BookingRoutes } from "@voyantjs/bookings/routes"
@@ -11,9 +10,10 @@ import type { SupplierRoutes } from "@voyantjs/distribution/suppliers/routes"
 import type { FinanceRoutes } from "@voyantjs/finance/routes"
 import type { IdentityRoutes } from "@voyantjs/identity/routes"
 import type { ProductRoutes } from "@voyantjs/inventory/routes"
+import type { AvailabilityRoutes } from "@voyantjs/operations/availability/routes"
+import type { ResourcesRoutes } from "@voyantjs/operations/resources/routes"
 import type { QuotesRoutes } from "@voyantjs/quotes/routes"
 import type { RelationshipsRoutes } from "@voyantjs/relationships/routes"
-import type { ResourcesRoutes } from "@voyantjs/resources/routes"
 import type { Hono } from "hono"
 
 /**
