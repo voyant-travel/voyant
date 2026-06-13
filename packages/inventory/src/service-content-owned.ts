@@ -272,7 +272,7 @@ function pickDayHeroImage(
 
 /**
  * Map future availability_slots → ProductDeparture[]. Raw SQL keeps the
- * products module from depending on `@voyantjs/availability` (cross-
+ * products module from depending on `@voyantjs/operations/availability` (cross-
  * module schema coupling is avoided per the workspace's separation).
  */
 async function readOwnedProductDepartures(

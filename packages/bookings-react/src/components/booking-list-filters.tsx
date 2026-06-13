@@ -1,7 +1,7 @@
 "use client"
 
-import type { AvailabilitySlotRecord } from "@voyantjs/availability-react"
-import { useSlots } from "@voyantjs/availability-react"
+import type { AvailabilitySlotRecord } from "@voyantjs/operations-react/availability"
+import { useSlots } from "@voyantjs/operations-react/availability"
 import type {
   ProductCategoryRecord,
   ProductOptionRecord,

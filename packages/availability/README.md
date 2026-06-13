@@ -1,17 +1,21 @@
 # @voyantjs/availability
 
-Availability module for Voyant. Dated availability, slots, closeouts, and pickup capacity — the primary signal sellability consumes when resolving candidate offers.
+Compatibility facade for Operations availability.
+
+New code should import `@voyantjs/operations/availability`. This package keeps
+existing `@voyantjs/availability` imports and schema metadata working while the
+v1 package move lands.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/availability
+pnpm add @voyantjs/operations
 ```
 
 ## Usage
 
 ```typescript
-import { availabilityModule } from "@voyantjs/availability"
+import { availabilityModule } from "@voyantjs/operations/availability"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
@@ -24,11 +28,12 @@ const app = createApp({
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export |
+| `.` | Compatibility re-export of `@voyantjs/operations/availability` |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
 | `./rrule` | RFC 5545 recurrence-rule helpers |
+| `./service-holds` | Availability hold helpers |
 
 ## License
 

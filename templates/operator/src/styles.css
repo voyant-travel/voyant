@@ -12,7 +12,7 @@
 @source "../node_modules/@voyantjs/admin/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/auth-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/availability-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/operations-react/dist/availability/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/bookings-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/commerce-react/dist/**/*.{js,mjs}";
@@ -23,7 +23,7 @@
 @source "../node_modules/@voyantjs/legal-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/inventory-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/products-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/resources-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/operations-react/dist/resources/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/suppliers-react/dist/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
    runs from live source, not the package `dist/`. The dist scans above
@@ -32,7 +32,7 @@
 @source "../../../packages/admin/src/**/*.{ts,tsx}";
 @source "../../../packages/auth-react/src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
-@source "../../../packages/availability-react/src/**/*.{ts,tsx}";
+@source "../../../packages/operations-react/src/availability/**/*.{ts,tsx}";
 @source "../../../packages/bookings-react/src/**/*.{ts,tsx}";
 @source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
 @source "../../../packages/commerce-react/src/**/*.{ts,tsx}";
@@ -43,20 +43,20 @@
 @source "../../../packages/legal-react/src/**/*.{ts,tsx}";
 @source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
 @source "../../../packages/products-react/src/**/*.{ts,tsx}";
-@source "../../../packages/resources-react/src/**/*.{ts,tsx}";
+@source "../../../packages/operations-react/src/resources/**/*.{ts,tsx}";
 @source "../../../packages/suppliers-react/src/**/*.{ts,tsx}";
 
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
 @import "@voyantjs/auth-react/styles.css";
-@import "@voyantjs/availability-react/styles.css";
+@import "@voyantjs/operations-react/availability/styles.css";
 @import "@voyantjs/bookings-react/styles.css";
 @import "@voyantjs/commerce-react/styles.css";
 @import "@voyantjs/relationships-react/styles.css";
 @import "@voyantjs/finance-react/styles.css";
 @import "@voyantjs/legal-react/styles.css";
 @import "@voyantjs/inventory-react/styles.css";
-@import "@voyantjs/resources-react/styles.css";
+@import "@voyantjs/operations-react/resources/styles.css";
 @import "@voyantjs/suppliers-react/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
 /* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */

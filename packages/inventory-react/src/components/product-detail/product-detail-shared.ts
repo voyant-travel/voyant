@@ -79,7 +79,9 @@ export function getProductSlotsQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-slots", id],
     queryFn: () =>
-      api.get<{ data: DepartureSlot[] }>(`/v1/availability/slots?productId=${id}&limit=25`),
+      api.get<{ data: DepartureSlot[] }>(
+        `/v1/operations/availability/slots?productId=${id}&limit=25`,
+      ),
   })
 }
 
@@ -87,7 +89,9 @@ export function getProductRulesQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-rules", id],
     queryFn: () =>
-      api.get<{ data: AvailabilityRule[] }>(`/v1/availability/rules?productId=${id}&limit=50`),
+      api.get<{ data: AvailabilityRule[] }>(
+        `/v1/operations/availability/rules?productId=${id}&limit=50`,
+      ),
   })
 }
 

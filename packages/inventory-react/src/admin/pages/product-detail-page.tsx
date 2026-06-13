@@ -28,7 +28,7 @@ import { createProductDetailRestApi } from "../product-detail-api.js"
  *
  * Hosts that need app-owned composition (e.g. the operator's
  * availability-react option resource templates panel — a cycle from here,
- * since `@voyantjs/availability-react` depends on this package) substitute
+ * since `@voyantjs/operations-react/availability` depends on this package) substitute
  * their own implementation via the factory's `detailPageComponent` option.
  */
 export interface ProductDetailPageComponentProps {

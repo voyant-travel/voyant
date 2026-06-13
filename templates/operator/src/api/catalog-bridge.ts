@@ -88,7 +88,7 @@ interface BookingConfirmedEventPayload {
 }
 
 /**
- * Mirrors `AvailabilitySlotChangedEvent` from `@voyantjs/availability`.
+ * Mirrors `AvailabilitySlotChangedEvent` from `@voyantjs/operations/availability`.
  * Inlined here so the bridge doesn't need to import the availability
  * events module just for the type — the contract is stable enough that
  * a structural shape suffices and changes show up in review.

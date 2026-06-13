@@ -1,9 +1,3 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
-import {
-  extendAvailabilityHold,
-  placeAvailabilityHold,
-  releaseAvailabilityHold,
-} from "@voyantjs/availability/service-holds"
 import { productExtras } from "@voyantjs/bookings/extras"
 import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
 import type {
@@ -25,6 +19,12 @@ import {
 import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import { createProductsBookingHandler } from "@voyantjs/inventory/booking-engine"
 import { optionUnits, productOptions } from "@voyantjs/inventory/schema"
+import { availabilitySlots } from "@voyantjs/operations/availability/schema"
+import {
+  extendAvailabilityHold,
+  placeAvailabilityHold,
+  releaseAvailabilityHold,
+} from "@voyantjs/operations/availability/service-holds"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { resolveBookingTaxSettings } from "../settings"
 import { asPostgresDb } from "./booking-engine-db"

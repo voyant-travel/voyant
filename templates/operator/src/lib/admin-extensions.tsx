@@ -133,8 +133,8 @@ function createCoreExtension() {
 // so an entry here would duplicate it. It's registered for the routes seam:
 // the contributions carry the package-owned route metadata (no search
 // contracts — the pages keep their filters local), and the detail pages are
-// the packaged hosts from @voyantjs/availability-react/admin — the route files
-// under src/routes/_workspace/availability/* only bind route params onto
+// the packaged hosts from @voyantjs/operations-react/availability/admin — the route files
+// under src/routes/_workspace/operations/availability/* only bind route params onto
 // them. The index page stays an app-side wrapper: its bulk update/delete
 // handlers call the availability batch endpoints, which have no
 // availability-react client equivalent yet.
@@ -339,8 +339,8 @@ function createSuppliersExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the tab dashboard keeps its tab/filter state local), and the pages are the
-// packaged hosts from @voyantjs/resources-react/admin — the route files under
-// src/routes/_workspace/resources/* only bind route params onto them.
+// packaged hosts from @voyantjs/operations-react/resources/admin — the route files under
+// src/routes/_workspace/operations/resources/* only bind route params onto them.
 function createResourcesExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.resources({ labels: { resources: messages.resources } })
 }

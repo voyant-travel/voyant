@@ -1,5 +1,5 @@
-import { describeRRule } from "@voyantjs/availability/rrule"
 import { formatMessage } from "@voyantjs/i18n"
+import { describeRRule } from "@voyantjs/operations/availability/rrule"
 import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
 import { CalendarRange, DollarSign, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"

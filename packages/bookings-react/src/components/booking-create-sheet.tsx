@@ -3,19 +3,19 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  availabilityQueryKeys,
-  getSlotQueryOptions,
-  useSlots,
-  useSlotUnitAvailability,
-  useVoyantAvailabilityContext,
-} from "@voyantjs/availability-react"
-import {
   type PricingAssignmentUnit,
   resolveBookingDraft,
   resolveBookingExtraLines,
   travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
 import { useAddresses } from "@voyantjs/identity-react"
+import {
+  availabilityQueryKeys,
+  getSlotQueryOptions,
+  useSlots,
+  useSlotUnitAvailability,
+  useVoyantAvailabilityContext,
+} from "@voyantjs/operations-react/availability"
 import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/pricing-react"
 import { useProduct } from "@voyantjs/products-react"
 import { useOrganization, usePerson } from "@voyantjs/relationships-react"

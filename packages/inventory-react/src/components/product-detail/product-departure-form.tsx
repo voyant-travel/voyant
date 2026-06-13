@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
-import { useProductResourceTemplates } from "@voyantjs/availability-react"
+
 import { formatMessage } from "@voyantjs/i18n"
+import { useProductResourceTemplates } from "@voyantjs/operations-react/availability"
 import {
   Button,
   Input,
@@ -281,11 +282,14 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     }
 
     if (isEditing) {
-      await api.patch(`/v1/availability/slots/${slot.id}`, baseFields)
+      await api.patch(`/v1/operations/availability/slots/${slot.id}`, baseFields)
     } else {
       // New slots haven't been booked against yet, so seeding remainingPax
       // from initialPax is correct on create.
-      await api.post("/v1/availability/slots", { ...baseFields, remainingPax: initialPax })
+      await api.post("/v1/operations/availability/slots", {
+        ...baseFields,
+        remainingPax: initialPax,
+      })
     }
     onSuccess()
   }

@@ -1,1 +1,1 @@
-export { FacilityBadge as PlaceBadge } from "@voyantjs/facilities-react/components/facility-badge"
+export { PlaceBadge } from "@voyantjs/operations-react/places/components/place-badge"

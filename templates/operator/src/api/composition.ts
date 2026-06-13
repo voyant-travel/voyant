@@ -17,7 +17,6 @@
 
 // Singleton modules (no template-specific options).
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
-import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { bookingsExtrasHonoModule } from "@voyantjs/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
@@ -50,10 +49,11 @@ import {
   createNotificationsHonoModule,
   notificationsService,
 } from "@voyantjs/notifications"
+import { availabilityHonoModule } from "@voyantjs/operations/availability"
+import { resourcesHonoModule } from "@voyantjs/operations/resources"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
-import { resourcesHonoModule } from "@voyantjs/resources"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
@@ -178,13 +178,13 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/action-ledger",
     "@voyantjs/relationships",
     "@voyantjs/quotes",
-    "@voyantjs/availability",
+    "@voyantjs/operations/availability",
     "@voyantjs/identity",
     "@voyantjs/external-refs",
     "@voyantjs/bookings/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
-    "@voyantjs/resources",
+    "@voyantjs/operations/resources",
     "@voyantjs/distribution",
     "@voyantjs/suppliers",
     "@voyantjs/inventory",
@@ -215,7 +215,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/action-ledger": () => actionLedgerHonoModule,
     "@voyantjs/relationships": () => createRelationshipsHonoModule(),
     "@voyantjs/quotes": () => createQuotesHonoModule(),
-    "@voyantjs/availability": () => availabilityHonoModule,
+    "@voyantjs/operations/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
     "@voyantjs/external-refs": () => externalRefsHonoModule,
     "@voyantjs/bookings/extras": () => bookingsExtrasHonoModule,
@@ -226,7 +226,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         },
       }),
     "@voyantjs/commerce": () => createCommerceHonoModules(),
-    "@voyantjs/resources": () => resourcesHonoModule,
+    "@voyantjs/operations/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
     "@voyantjs/suppliers": () => suppliersHonoModule,
     "@voyantjs/inventory": () => inventoryHonoModule,

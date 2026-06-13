@@ -1,7 +1,10 @@
 # @voyantjs/ground
 
-Ground transport module for Voyant. Vehicles, drivers, transfer preferences,
-dispatch, and execution for DMC and tour-operator operational workflows.
+Compatibility facade for Operations ground logistics.
+
+New code should import `@voyantjs/operations/ground`. This package keeps
+existing `@voyantjs/ground` imports and schema metadata working while the v1
+package move lands.
 
 Ground supports transfers, pickups, dropoffs, dispatch, and local logistics for
 the target OTA, tour-operator, and DMC scenarios.
@@ -9,13 +12,13 @@ the target OTA, tour-operator, and DMC scenarios.
 ## Install
 
 ```bash
-pnpm add @voyantjs/ground
+pnpm add @voyantjs/operations
 ```
 
 ## Usage
 
 ```typescript
-import { groundModule } from "@voyantjs/ground"
+import { groundModule } from "@voyantjs/operations/ground"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
@@ -36,7 +39,7 @@ const app = createApp({
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export |
+| `.` | Compatibility re-export of `@voyantjs/operations/ground` |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |

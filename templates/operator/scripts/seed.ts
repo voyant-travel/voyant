@@ -16,11 +16,6 @@ import { readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
-  availabilityPickupPoints,
-  availabilitySlots,
-  availabilityStartTimes,
-} from "@voyantjs/availability/schema"
-import {
   bookingActivityLog,
   bookingDocuments,
   bookingItems,
@@ -39,11 +34,6 @@ import {
 import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
-import {
-  facilities,
-  facilityFeatures,
-  facilityOperationSchedules,
-} from "@voyantjs/facilities/schema"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -87,6 +77,16 @@ import {
   policyRules,
   policyVersions,
 } from "@voyantjs/legal/schema"
+import {
+  availabilityPickupPoints,
+  availabilitySlots,
+  availabilityStartTimes,
+} from "@voyantjs/operations/availability/schema"
+import {
+  facilities,
+  facilityFeatures,
+  facilityOperationSchedules,
+} from "@voyantjs/operations/places/schema"
 import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
 import {
   pipelines,

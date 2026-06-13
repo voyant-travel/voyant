@@ -7,7 +7,6 @@
  */
 
 import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-policy"
-import { createProductDeparturesProjectionExtension } from "@voyantjs/availability/service-catalog-plane-departures"
 import {
   createFieldPolicyRegistry,
   createGeminiEmbeddingProvider,
@@ -50,6 +49,7 @@ import {
 } from "@voyantjs/inventory/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-taxonomy"
+import { createProductDeparturesProjectionExtension } from "@voyantjs/operations/availability/service-catalog-plane-departures"
 import { asc, eq } from "drizzle-orm"
 
 export const CATALOG_VERTICALS = [

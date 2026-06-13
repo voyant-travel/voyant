@@ -49,7 +49,6 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
@@ -65,16 +64,14 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
       "optional": true
     },
     "@voyantjs/admin": {
-      "optional": true
-    },
-    "@voyantjs/availability-react": {
       "optional": true
     },
     "@voyantjs/catalog-react": {
@@ -112,6 +109,9 @@
     },
     "react-hook-form": {
       "optional": true
+    },
+    "@voyantjs/operations-react": {
+      "optional": true
     }
   },
   "dependencies": {
@@ -126,7 +126,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
@@ -147,7 +146,8 @@
     "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "files": [
     "dist",

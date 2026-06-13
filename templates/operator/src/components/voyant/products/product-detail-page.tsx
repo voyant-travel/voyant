@@ -2,13 +2,13 @@
 
 import { useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
-import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin/option-resource-templates-panel"
 import {
   type ProductDetailBreadcrumb,
   ProductDetailHostProvider,
   type ProductDetailHostValue,
   ProductDetailPage as ProductDetailPageBody,
 } from "@voyantjs/inventory-react/components/product-detail"
+import { OptionResourceTemplatesPanel } from "@voyantjs/operations-react/availability/admin/option-resource-templates-panel"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
@@ -66,7 +66,7 @@ export function ProductDetailPage({ id }: { id: string }) {
       toNewBooking: (productId) =>
         void navigate({ to: "/bookings/$id", params: { id: "new" }, search: { productId } }),
       toAvailability: (slotId) =>
-        void navigate({ to: "/availability/$id", params: { id: slotId } }),
+        void navigate({ to: "/operations/availability/$id", params: { id: slotId } }),
     }),
     [navigate],
   )

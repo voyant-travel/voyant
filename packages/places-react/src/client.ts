@@ -1,1 +1,1 @@
-export * from "@voyantjs/facilities-react/client"
+export * from "@voyantjs/operations-react/places/client"

@@ -1,1 +1,1 @@
-export * from "@voyantjs/availability-react/allocation/components/slot-allocation-model"
+export * from "@voyantjs/operations-react/availability/allocation/components/slot-allocation-model"
