@@ -53,6 +53,11 @@ export {
   type UpdateBookingGroupInput,
 } from "./service-groups.js"
 export {
+  getBookingOriginByBookingId,
+  type UpsertBookingOriginInput,
+  upsertBookingOrigin,
+} from "./service-origin.js"
+export {
   BOOKING_TRANSITIONS,
   type BookingStatus,
   type BookingStatusPatch,
@@ -160,6 +165,9 @@ export type {
   BookingItem,
   BookingItemTraveler,
   BookingNote,
+  BookingOrigin,
+  BookingOriginLegacyTransactionIds,
+  BookingOriginSource,
   BookingPiiAccessLog,
   BookingPriceOverride,
   BookingRedemptionEvent,
@@ -177,6 +185,7 @@ export type {
   NewBookingItem,
   NewBookingItemTraveler,
   NewBookingNote,
+  NewBookingOrigin,
   NewBookingPiiAccessLog,
   NewBookingRedemptionEvent,
   NewBookingSessionState,
@@ -196,6 +205,8 @@ export {
   bookingItems,
   bookingItemTravelers,
   bookingNotes,
+  bookingOriginSources,
+  bookingOrigins,
   bookingPiiAccessLog,
   bookingRedemptionEvents,
   bookingSessionStates,

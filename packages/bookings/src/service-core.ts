@@ -65,9 +65,13 @@ import {
   bookingTravelers,
 } from "./schema.js"
 import { cleanupGroupOnBookingCancelled } from "./service-groups.js"
+import {
+  getBookingOriginByBookingId,
+  getLegacyTransactionLinkFromBookingOrigin,
+  upsertBookingOrigin,
+} from "./service-origin.js"
 import { type BookingStatus, canTransitionBooking, transitionBooking } from "./state-machine.js"
 import {
-  bookingTransactionDetailsRef,
   offerItemParticipantsRef,
   offerItemsRef,
   offerParticipantsRef,
@@ -2060,23 +2064,17 @@ async function reserveBookingFromTransactionSource(
         }
       }
 
-      await tx
-        .insert(bookingTransactionDetailsRef)
-        .values({
-          bookingId: booking.id,
-          offerId: source.offerId,
-          orderId: source.orderId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: bookingTransactionDetailsRef.bookingId,
-          set: {
-            offerId: source.offerId,
-            orderId: source.orderId,
-            updatedAt: new Date(),
-          },
-        })
+      await upsertBookingOrigin(tx as PostgresJsDatabase, {
+        bookingId: booking.id,
+        originSource: "legacy_transaction",
+        providerSourceRef: source.sourceId,
+        legacyTransactionOfferId: source.offerId,
+        legacyTransactionOrderId: source.orderId,
+        metadata: {
+          legacySourceKind: source.kind,
+          sourceId: source.sourceId,
+        },
+      })
 
       await tx.insert(bookingActivityLog).values({
         bookingId: booking.id,
@@ -2115,18 +2113,13 @@ async function reserveBookingFromTransactionSource(
   }
 }
 
-async function getBookingTransactionLink(db: PostgresJsDatabase, bookingId: string) {
-  const [link] = await db
-    .select()
-    .from(bookingTransactionDetailsRef)
-    .where(eq(bookingTransactionDetailsRef.bookingId, bookingId))
-    .limit(1)
-
-  return link ?? null
+async function getLegacyTransactionLinkForBooking(db: PostgresJsDatabase, bookingId: string) {
+  const origin = await getBookingOriginByBookingId(db, bookingId)
+  return getLegacyTransactionLinkFromBookingOrigin(origin)
 }
 
 async function syncTransactionOnBookingConfirmed(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
+  const link = await getLegacyTransactionLinkForBooking(db, bookingId)
   if (!link) {
     return
   }
@@ -2158,7 +2151,7 @@ async function syncTransactionOnBookingConfirmed(db: PostgresJsDatabase, booking
 }
 
 async function syncTransactionOnBookingExpired(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
+  const link = await getLegacyTransactionLinkForBooking(db, bookingId)
   if (!link?.orderId) {
     return
   }
@@ -2175,7 +2168,7 @@ async function syncTransactionOnBookingExpired(db: PostgresJsDatabase, bookingId
 }
 
 async function syncTransactionOnBookingCancelled(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
+  const link = await getLegacyTransactionLinkForBooking(db, bookingId)
   if (!link?.orderId) {
     return
   }
@@ -2192,7 +2185,7 @@ async function syncTransactionOnBookingCancelled(db: PostgresJsDatabase, booking
 }
 
 async function syncTransactionOnBookingRedeemed(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
+  const link = await getLegacyTransactionLinkForBooking(db, bookingId)
   if (!link?.orderId) {
     return
   }
