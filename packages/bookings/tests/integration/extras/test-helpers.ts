@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { beforeAll, beforeEach, expect } from "vitest"
 
-import { extrasRoutes } from "../../src/routes.js"
+import { bookingsExtrasRoutes } from "../../../src/extras.js"
 
 export const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -32,7 +32,7 @@ export function createExtrasTestContext() {
       c.set("userId" as never, "test-user-id")
       await next()
     })
-    app.route("/", extrasRoutes)
+    app.route("/", bookingsExtrasRoutes)
   })
 
   beforeEach(async () => {
@@ -59,7 +59,7 @@ export function createExtrasTestContext() {
   }
 
   async function seedBooking() {
-    const { bookings } = await import("../../../bookings/src/schema.js")
+    const { bookings } = await import("@voyantjs/bookings/schema")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(bookings)
       .values({ bookingNumber: `BK-${nextSeq()}`, sellCurrency: "USD" })
@@ -91,7 +91,7 @@ export function createExtrasTestContext() {
     overrides: Record<string, unknown> = {},
   ) {
     const { bookingAllocations, bookingItems, bookingTravelers, bookings } = await import(
-      "../../../bookings/src/schema.js"
+      "@voyantjs/bookings/schema"
     )
     const bookingNumber = (overrides.bookingNumber as string | undefined) ?? `BK-${nextSeq()}`
     const [booking] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)

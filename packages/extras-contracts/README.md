@@ -2,13 +2,16 @@
 
 Pure extras content contracts for adapter implementers and external consumers
 that need to validate `extras/v1` rich content payloads without installing the
-full extras runtime package.
+runtime owner packages.
 
 Use this package for `EXTRAS_CONTENT_SCHEMA_VERSION`, `extraContentSchema`,
-`ExtraContent`, nested content types, and `validateExtraContent`. Use
-`@voyantjs/extras` when you also need Drizzle schema, routes, services, booking
-integration, catalog projection, or runtime content resolution (including the
-`mergeOverlaysIntoExtraContent` overlay composition).
+`ExtraContent`, nested content types, and `validateExtraContent`.
+
+ADR-0002 keeps this package separate because it is a real zod-only external
+payload seam. Use `@voyantjs/inventory/extras` for operated add-on authoring and
+catalog projection/content-cache helpers. Use `@voyantjs/bookings/extras` for
+booking extra lines, participant selections, slot manifests, and booked-state
+runtime behavior.
 
 ## Install
 
@@ -26,5 +29,5 @@ import {
 } from "@voyantjs/extras-contracts"
 ```
 
-Existing `@voyantjs/extras/content-shape` imports remain available for
-applications that already depend on the full runtime package.
+Existing `@voyantjs/extras/content-shape` imports remain available as migration
+compatibility for applications that already depend on the legacy runtime shim.

@@ -19,6 +19,7 @@
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
+import { bookingsExtrasHonoModule } from "@voyantjs/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
 import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
 import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
@@ -32,7 +33,6 @@ import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
-import { extrasHonoModule } from "@voyantjs/extras"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
@@ -136,7 +136,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/availability",
     "@voyantjs/identity",
     "@voyantjs/external-refs",
-    "@voyantjs/extras",
+    "@voyantjs/bookings/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
     "@voyantjs/transactions",
@@ -175,7 +175,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
     "@voyantjs/external-refs": () => externalRefsHonoModule,
-    "@voyantjs/extras": () => extrasHonoModule,
+    "@voyantjs/bookings/extras": () => bookingsExtrasHonoModule,
     "@voyantjs/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
         publicRoutes: {

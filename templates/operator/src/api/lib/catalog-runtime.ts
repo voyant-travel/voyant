@@ -30,7 +30,7 @@ import {
 } from "@voyantjs/cruises/service-catalog-plane"
 import { createCruiseCabinFacetProjectionExtension } from "@voyantjs/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
+import { extrasCatalogPolicy } from "@voyantjs/inventory/extras"
 import { marketLocales, markets } from "@voyantjs/markets"
 import {
   createProductPricingProjectionExtension,

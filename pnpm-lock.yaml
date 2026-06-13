@@ -1027,9 +1027,6 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
-      '@voyantjs/extras-react':
-        specifier: workspace:^
-        version: link:../extras-react
       '@voyantjs/products-react':
         specifier: workspace:^
         version: link:../products-react
@@ -1134,6 +1131,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
+      '@voyantjs/extras':
+        specifier: workspace:^
+        version: link:../extras
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -1324,6 +1324,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../inventory
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../pricing
@@ -2273,9 +2276,6 @@ importers:
       '@voyantjs/availability':
         specifier: workspace:^
         version: link:../availability
-      '@voyantjs/bookings':
-        specifier: workspace:^
-        version: link:../bookings
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
@@ -2955,6 +2955,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
+      '@voyantjs/extras':
+        specifier: workspace:^
+        version: link:../extras
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -2999,6 +3002,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyantjs/extras-react':
+        specifier: workspace:^
+        version: link:../extras-react
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
@@ -3675,12 +3681,12 @@ importers:
       '@voyantjs/availability':
         specifier: workspace:^
         version: link:../availability
-      '@voyantjs/extras':
-        specifier: workspace:^
-        version: link:../extras
       '@voyantjs/facilities':
         specifier: workspace:^
         version: link:../facilities
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../inventory
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
@@ -4277,9 +4283,6 @@ importers:
       '@voyantjs/crm':
         specifier: workspace:^
         version: link:../crm
-      '@voyantjs/extras':
-        specifier: workspace:^
-        version: link:../extras
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
@@ -5361,6 +5364,9 @@ importers:
       '@voyantjs/identity-react':
         specifier: workspace:^
         version: link:../../packages/identity-react
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../../packages/inventory
       '@voyantjs/legal':
         specifier: workspace:^
         version: link:../../packages/legal

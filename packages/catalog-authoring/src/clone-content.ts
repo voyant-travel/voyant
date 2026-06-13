@@ -1,5 +1,5 @@
 import { productOptionResourceTemplates } from "@voyantjs/availability"
-import { optionExtraConfigs, productExtras } from "@voyantjs/extras"
+import { optionExtraConfigs, productExtras } from "@voyantjs/inventory/extras"
 import { pricingCategories, pricingCategoryDependencies } from "@voyantjs/pricing/schema"
 import {
   optionUnits,

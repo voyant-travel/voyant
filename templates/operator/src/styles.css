@@ -16,6 +16,7 @@
 @source "../node_modules/@voyantjs/bookings-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/crm-react/dist/**/*.{js,mjs}";
+/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
 @source "../node_modules/@voyantjs/extras-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/finance-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
@@ -34,6 +35,7 @@
 @source "../../../packages/bookings-react/src/**/*.{ts,tsx}";
 @source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
 @source "../../../packages/crm-react/src/**/*.{ts,tsx}";
+/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
 @source "../../../packages/extras-react/src/**/*.{ts,tsx}";
 @source "../../../packages/finance-react/src/**/*.{ts,tsx}";
 @source "../../../packages/flights-react/src/**/*.{ts,tsx}";
@@ -54,6 +56,7 @@
 @import "@voyantjs/resources-react/styles.css";
 @import "@voyantjs/suppliers-react/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
+/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
 @import "@voyantjs/extras-react/styles.css";
 @import "@voyantjs/flights-react/styles.css";
 

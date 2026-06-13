@@ -7,8 +7,8 @@
  * MCP semantically.
  */
 
+import { getResolvedExtraById } from "@voyantjs/bookings/extras"
 import type { McpResolvedEntity, McpToolContext } from "@voyantjs/catalog-mcp"
-import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
 import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import type { Context } from "hono"
 

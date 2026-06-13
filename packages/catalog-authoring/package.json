@@ -23,6 +23,7 @@
     "@voyantjs/db": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/pricing": "workspace:^",
     "@voyantjs/products": "workspace:^",
     "drizzle-orm": "^0.45.2",

@@ -1,11 +1,11 @@
 import { availabilitySlotStatusSchema } from "@voyantjs/availability/validation"
+import { extraPricingModeSchema } from "@voyantjs/bookings/extras"
 import {
   publicBookingSessionAllocationSchema,
   publicBookingSessionRepriceSummarySchema,
   publicBookingSessionSchema,
   publicCreateBookingSessionSchema,
 } from "@voyantjs/bookings/public-validation"
-import { extraPricingModeSchema } from "@voyantjs/extras/validation"
 import { publicBookingPaymentScheduleSchema } from "@voyantjs/finance/public-validation"
 import { z } from "zod"
 

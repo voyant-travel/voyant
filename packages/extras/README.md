@@ -1,33 +1,24 @@
 # @voyantjs/extras
 
-Extras module for Voyant. Product extras and booking add-ons (optional line items layered on top of a booked product).
+Temporary compatibility shim for the v1 extras ownership migration.
 
-## Install
+New first-party code should import operated add-on authoring/configuration from
+`@voyantjs/inventory/extras`, and booking extra lines, participant selections,
+and slot manifests from `@voyantjs/bookings/extras`.
 
-```bash
-pnpm add @voyantjs/extras
-```
-
-## Usage
-
-```typescript
-import { extrasModule } from "@voyantjs/extras"
-import { createApp } from "@voyantjs/hono"
-
-const app = createApp({
-  modules: [extrasModule],
-  // ...
-})
-```
+The physical Drizzle schema still lives here while `product_extras`,
+`option_extra_configs`, `booking_extras`, and `extra_participant_selections`
+share one FK graph. Templates may keep this package as a schema-only migration
+entry until that table graph is split safely.
 
 ## Exports
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export |
-| `./schema` | Drizzle tables |
-| `./validation` | Zod schemas |
-| `./routes` | Hono routes |
+| `.` | Legacy module export; prefer `@voyantjs/bookings/extras` for runtime wiring |
+| `./schema` | Legacy Drizzle table location used by the migration shim |
+| `./validation` | Legacy Zod schema location |
+| `./routes` | Legacy `/v1/extras` routes re-exported by Bookings extras |
 
 ## License
 

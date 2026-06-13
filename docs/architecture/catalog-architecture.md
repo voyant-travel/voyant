@@ -144,8 +144,9 @@ accommodation resale   sourced or composed lodging inventory for OTAs, tour
                        accommodation-resale-boundary.md
 packages/charters      yacht-style products that don't fit the cruise schema:
                        per-suite flat pricing, MYBA contract, APA — see charters-module.md
-packages/extras        booking add-ons: optional line items layered on a booked product
-                       (not independently sellable; see §3.3.1 for adoption nuance)
+inventory/bookings extras
+                       booking add-ons: optional line items layered on a booked product
+                       (not independently sellable; see §3.3.1 for ownership/adoption nuance)
 ```
 
 Additional verticals / operational packages:
@@ -180,9 +181,14 @@ lives as `packages/flights`. None of these modifies `packages/catalog`.
 
 Vertical packages depend on `packages/catalog` for the contract types and the shared infrastructure interfaces. `packages/catalog` does not depend on any vertical module - it knows nothing about cruises, accommodation resale, or charters specifically.
 
-#### 3.3.1. Adoption nuance for `packages/extras`
+#### 3.3.1. Adoption nuance for extras
 
-`packages/extras` represents booking add-ons (optional line items on a booked parent), not independently-sellable inventory. It is a borderline case for the catalog contract:
+Extras represent booking add-ons (optional line items on a booked parent), not
+independently-sellable inventory. They are exposed through
+`@voyantjs/inventory/extras` for operated authoring/catalog projection and
+`@voyantjs/bookings/extras` for booking-time selections. The legacy
+`packages/extras` schema remains a temporary migration shim while the shared FK
+graph is split. Extras are a borderline case for the catalog contract:
 
 - It does need provenance (extras can be sourced from upstream alongside their parent product).
 - It does need snapshot capture (a refund needs to know the extra was a $50 spa credit, not just "a line item").
