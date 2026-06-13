@@ -11,4 +11,4 @@ export {
   useAllocationUiI18nOrDefault,
   useAllocationUiMessages,
   useAllocationUiMessagesOrDefault,
-} from "@voyantjs/availability-react/allocation/i18n"
+} from "./provider.js"

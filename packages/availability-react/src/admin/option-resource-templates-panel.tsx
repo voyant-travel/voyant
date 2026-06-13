@@ -1,7 +1,6 @@
 "use client"
 
 import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import { formatMessage } from "@voyantjs/i18n"
 import { useOptionUnits } from "@voyantjs/products-react"
 import {
@@ -37,6 +36,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { SeatMapBuilder } from "../allocation/index.js"
 import {
   type SeatLayoutSpec,
   useMaterializeOpenSlotsMutation,

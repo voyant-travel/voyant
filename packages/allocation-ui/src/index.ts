@@ -2,13 +2,11 @@ export {
   SEAT_MAP_PRESETS,
   SeatMapBuilder,
   type SeatMapBuilderProps,
-} from "./components/seat-map-builder.js"
-export {
   SlotAllocationPage,
   type SlotAllocationPageExtraTab,
   type SlotAllocationPageProps,
   type SlotAllocationPageRenderContext,
-} from "./components/slot-allocation-page.js"
+} from "@voyantjs/availability-react/allocation"
 export {
   type AllocationUiMessageOverrides,
   type AllocationUiMessages,
@@ -22,4 +20,4 @@ export {
   useAllocationUiI18nOrDefault,
   useAllocationUiMessages,
   useAllocationUiMessagesOrDefault,
-} from "./i18n/index.js"
+} from "@voyantjs/availability-react/allocation/i18n"
