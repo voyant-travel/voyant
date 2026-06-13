@@ -22,6 +22,7 @@
     "./public-validation": "./src/validation-public.ts",
     "./checkout-capability": "./src/checkout-capability.ts",
     "./pricing-assignment": "./src/pricing-assignment.ts",
+    "./extras": "./src/extras.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
@@ -38,6 +39,7 @@
     "@voyantjs/bookings-contracts": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
+    "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -144,6 +146,11 @@
         "types": "./dist/pricing-assignment.d.ts",
         "import": "./dist/pricing-assignment.js",
         "default": "./dist/pricing-assignment.js"
+      },
+      "./extras": {
+        "types": "./dist/extras.d.ts",
+        "import": "./dist/extras.js",
+        "default": "./dist/extras.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",

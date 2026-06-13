@@ -54,6 +54,7 @@
 @import "@voyantjs/resources-react/styles.css";
 @import "@voyantjs/suppliers-react/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
+/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
 @import "@voyantjs/extras-react/styles.css";
 @import "@voyantjs/flights-react/styles.css";
 

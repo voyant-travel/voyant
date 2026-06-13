@@ -237,6 +237,41 @@ block execution truth, Bookings owns commitments, Finance owns documents and
 ledger state, Distribution owns suppliers/channels/external refs, Relationships
 owns Person/Organization records, and Legal owns contracts.
 
+### 4.3 Extras Ownership
+
+`extras` stays the domain term, but it is no longer a standalone runtime Module
+target.
+
+Ownership rule:
+
+- `@voyantjs/inventory/extras` owns operated add-on authoring/configuration:
+  `product_extras`, `option_extra_configs`, authoring validation, catalog
+  policy/projection helpers, sourced-content cache helpers, and schema-doc /
+  reindex participation for product-attached add-ons.
+- `@voyantjs/bookings/extras` owns booking-time extra behavior:
+  `booking_extras`, `extra_participant_selections`, booking extra line schemas,
+  customer-safe booked state, and the slot extras manifest routes/services.
+- Slot extras manifests are Bookings-owned in the current code because they
+  display and mutate traveler selections against bookings, booking items, and
+  booking allocations. They do not currently create availability/resource
+  execution truth or holds. If an extra later changes resource capacity or
+  operational fulfillment truth, that execution state belongs behind the
+  Operations/Availability Interface and Bookings should read it rather than own
+  it.
+- Product booking-engine add-on catalog loading remains an injected boundary:
+  Products accepts an add-on catalog loader, while templates load booking-facing
+  extra data through `@voyantjs/bookings/extras`. This keeps Products from
+  depending on operated Inventory authoring and lets retail/OTA bundles use
+  Catalog Item snapshots plus Bookings without installing Inventory.
+- `@voyantjs/extras-contracts` remains separate under ADR-0002 because
+  `extras/v1` rich content is a real zod-only external payload seam for source
+  adapters. Runtime consolidation does not collapse that contract package.
+
+During the v1 migration branch, `@voyantjs/extras` and
+`@voyantjs/extras-react` may remain as temporary compatibility shims because
+the physical Drizzle tables still share one FK graph. First-party imports should
+move to the owner paths above.
+
 ## 5. Concrete Consolidation Candidates
 
 ### 5.1 Commerce
@@ -1226,7 +1261,7 @@ stay unchanged.
 | `@voyantjs/cruises`, `@voyantjs/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |
 | `@voyantjs/charters`, `@voyantjs/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
 | `@voyantjs/flights`, `@voyantjs/flights-react` | Keep as a vertical/source runtime package. | Flights are live-offer/source-adapter driven and intentionally do not behave like owned product inventory. |
-| `@voyantjs/extras`, `@voyantjs/extras-react` | Fold into product/booking flow under Inventory and Bookings subpaths as appropriate. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. |
+| `@voyantjs/extras`, `@voyantjs/extras-react` | Temporary compatibility shims. New imports use `@voyantjs/inventory/extras`, `@voyantjs/inventory-react/extras`, `@voyantjs/bookings/extras`, and `@voyantjs/bookings-react/extras`. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. Physical table movement is deferred until the shared FK graph can be split safely. |
 | `@voyantjs/octo` | Keep as an adapter/API compatibility package unless it grows into a first-class product seam. | OCTO should project from Bookings, booking origin/provenance, Catalog snapshots, and vertical/source refs after Transactions retirement. |
 
 ### 10.2 Commercial Runtime Packages

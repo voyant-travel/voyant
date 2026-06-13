@@ -1,7 +1,10 @@
 # @voyantjs/extras-react
 
-The extras client tier: headless data hooks/clients plus the styled UI
-components (formerly `@voyantjs/extras-ui`).
+Temporary compatibility shim for the v1 extras React migration.
+
+New first-party code should import operated add-on authoring UI/hooks from
+`@voyantjs/inventory-react/extras`, and booking-time extra selection or slot
+manifest UI/hooks from `@voyantjs/bookings-react/extras`.
 
 Headless consumers import from the root, `./hooks`, or `./client` — these
 pull no styling peers. Styled surfaces live under `./ui`, `./components/*`,
@@ -17,7 +20,7 @@ Importable React UI components for Voyant extras. Bundler-consumed (Vite, Next.j
 ### Install
 
 ```bash
-pnpm add @voyantjs/extras-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyantjs/bookings-react @voyantjs/inventory-react @voyantjs/ui @tanstack/react-query react react-dom
 ```
 
 `@voyantjs/ui` provides the design-system primitives; the data-layer hooks
@@ -31,9 +34,7 @@ Components render English by default. To localize them, wrap your UI in
 `ExtrasUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { ExtrasUiMessagesProvider } from "@voyantjs/extras-react/ui"
-import { extrasUiEn } from "@voyantjs/extras-react/i18n/en"
-import { extrasUiRo } from "@voyantjs/extras-react/i18n/ro"
+import { ExtrasUiMessagesProvider, extrasUiEn, extrasUiRo } from "@voyantjs/bookings-react/extras"
 ```
 
 English-only apps should import only `./i18n/en`. Bilingual apps can import

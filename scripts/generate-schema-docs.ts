@@ -6,6 +6,7 @@ import { getTableConfig } from "drizzle-orm/pg-core"
 import { getTableName, isTable } from "drizzle-orm/table"
 import * as accommodationsSchema from "../packages/accommodations/src/schema.ts"
 import * as availabilitySchema from "../packages/availability/src/schema.ts"
+import { bookingExtras, extraParticipantSelections } from "../packages/bookings/src/extras.ts"
 import * as bookingRequirementsSchema from "../packages/bookings/src/requirements/schema.ts"
 import * as bookingsTravelDetailsSchema from "../packages/bookings/src/schema/travel-details.ts"
 import * as bookingsCoreSchema from "../packages/bookings/src/schema-core.ts"
@@ -23,13 +24,17 @@ import * as distributionCoreSchema from "../packages/distribution/src/schema-cor
 import * as distributionFinanceSchema from "../packages/distribution/src/schema-finance.ts"
 import * as distributionInventorySchema from "../packages/distribution/src/schema-inventory.ts"
 import * as externalRefsSchema from "../packages/external-refs/src/schema.ts"
-import * as extrasSchema from "../packages/extras/src/schema.ts"
 import * as facilitiesSchema from "../packages/facilities/src/schema.ts"
 import * as financeSchema from "../packages/finance/src/schema.ts"
 import * as groundDispatchSchema from "../packages/ground/src/schema-dispatch.ts"
 import * as groundOperationsSchema from "../packages/ground/src/schema-operations.ts"
 import * as groundOperatorsSchema from "../packages/ground/src/schema-operators.ts"
 import * as identitySchema from "../packages/identity/src/schema.ts"
+import {
+  extrasSourcedContentTable,
+  optionExtraConfigs,
+  productExtras,
+} from "../packages/inventory/src/extras.ts"
 import * as legalContractsSchema from "../packages/legal/src/contracts/schema.ts"
 import * as legalPoliciesSchema from "../packages/legal/src/policies/schema.ts"
 import * as marketsSchema from "../packages/markets/src/schema.ts"
@@ -68,6 +73,17 @@ interface TableDoc {
   name: string
   note?: string
   markdown: string
+}
+
+const inventoryExtrasSchema = {
+  extrasSourcedContentTable,
+  optionExtraConfigs,
+  productExtras,
+}
+
+const bookingExtrasSchema = {
+  bookingExtras,
+  extraParticipantSelections,
 }
 
 const tableNotes = new Map<string, string>([
@@ -115,6 +131,7 @@ const sections: SectionDefinition[] = [
       productsTaxonomySchema,
       productsBookingExtensionSchema,
       facilitiesSchema,
+      inventoryExtrasSchema,
     ],
   },
   {
@@ -126,7 +143,6 @@ const sections: SectionDefinition[] = [
       pricingOptionRulesSchema,
       pricingPoliciesSchema,
       bookingRequirementsSchema,
-      extrasSchema,
     ],
   },
   {
@@ -136,6 +152,7 @@ const sections: SectionDefinition[] = [
       bookingsItemsSchema,
       bookingsOperationsSchema,
       bookingsTravelDetailsSchema,
+      bookingExtrasSchema,
     ],
   },
   {

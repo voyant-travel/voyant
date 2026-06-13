@@ -27,7 +27,8 @@
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
-    "./booking-engine": "./src/booking-engine.ts"
+    "./booking-engine": "./src/booking-engine.ts",
+    "./extras": "./src/extras.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -40,6 +41,7 @@
   "dependencies": {
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
+    "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/products": "workspace:^"
   },
@@ -173,6 +175,11 @@
         "types": "./dist/booking-engine.d.ts",
         "import": "./dist/booking-engine.js",
         "default": "./dist/booking-engine.js"
+      },
+      "./extras": {
+        "types": "./dist/extras.d.ts",
+        "import": "./dist/extras.js",
+        "default": "./dist/extras.js"
       }
     },
     "main": "./dist/index.js",

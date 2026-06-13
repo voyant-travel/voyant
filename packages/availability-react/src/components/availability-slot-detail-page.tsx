@@ -87,9 +87,9 @@ export interface AvailabilitySlotDetailPageProps {
    */
   renderAllocation?: (context: { slotId: string; productId: string | null }) => ReactNode
   /**
-   * Content for the Extras tab. Hosts that mount `@voyantjs/extras` can
+   * Content for the Extras tab. Hosts that mount `@voyantjs/bookings/extras` can
    * render a slot-level operations manifest here without making
-   * availability-ui depend on extras-ui.
+   * availability-ui depend on booking extras UI.
    */
   renderExtras?: (context: { slotId: string; productId: string | null }) => ReactNode
   extrasTabLabel?: ReactNode

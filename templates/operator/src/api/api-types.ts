@@ -1,9 +1,9 @@
 import type { AvailabilityRoutes } from "@voyantjs/availability/routes"
+import type { BookingsExtrasRoutes } from "@voyantjs/bookings/extras"
 import type { BookingRequirementsRoutes } from "@voyantjs/bookings/requirements/routes"
 import type { BookingRoutes } from "@voyantjs/bookings/routes"
 import type { DistributionRoutes } from "@voyantjs/distribution/routes"
 import type { ExternalRefsRoutes } from "@voyantjs/external-refs/routes"
-import type { ExtrasRoutes } from "@voyantjs/extras/routes"
 import type { FinanceRoutes } from "@voyantjs/finance/routes"
 import type { IdentityRoutes } from "@voyantjs/identity/routes"
 import type { MarketsRoutes } from "@voyantjs/markets/routes"
@@ -32,7 +32,7 @@ type ApiRoutes = Hono & {
   "/v1/identity": IdentityRoutes
   "/v1/external-refs": ExternalRefsRoutes
   "/v1/booking-requirements": BookingRequirementsRoutes
-  "/v1/extras": ExtrasRoutes
+  "/v1/extras": BookingsExtrasRoutes
   "/v1/pricing": PricingRoutes
   "/v1/markets": MarketsRoutes
   "/v1/transactions": TransactionsRoutes

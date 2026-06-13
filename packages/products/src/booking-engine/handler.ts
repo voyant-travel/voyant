@@ -246,8 +246,8 @@ export interface BuildOwnedProductDraftShapeOptions {
    */
   travelerFields?: ReadonlyArray<TravelerFieldRequirement>
   /**
-   * Add-on catalog projected from extras. Caller-supplied so
-   * products doesn't depend on `@voyantjs/extras`. When omitted,
+   * Add-on catalog projected from extras. Caller-supplied so products
+   * doesn't depend on the Inventory/Bookings extras owner facades. When omitted,
    * `showsAddons` is false.
    */
   addonCatalog?: ReadonlyArray<AddonOffer>
@@ -357,7 +357,7 @@ export interface ResolvedTaxRate {
 /** Caller-supplied loaders for descriptor enrichment. Each is
  *  optional — when omitted the handler returns the default shape.
  *  Templates wire these to the modules they have on hand
- *  (booking requirements, extras, finance). */
+ *  (booking requirements, Inventory/Bookings extras, finance). */
 export interface OwnedProductsShapeLoaders {
   /**
    * Resolve per-traveler field requirements from
@@ -372,7 +372,7 @@ export interface OwnedProductsShapeLoaders {
   /**
    * Resolve the addon catalog for the product (typically a projection
    * over `extras` + `option_extra_configs`). Caller-supplied to keep
-   * the products package free of an @voyantjs/extras dependency.
+   * the products package free of an extras-owner dependency.
    */
   loadAddonCatalog?: (
     ctx: OwnedHandlerContext,

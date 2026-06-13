@@ -1,8 +1,3 @@
-import {
-  type ProductExtraRecord,
-  useProductExtraMutation,
-  useProductExtras,
-} from "@voyantjs/extras-react"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   type ExtraPriceRuleRecord,
@@ -29,6 +24,11 @@ import {
 } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import {
+  type ProductExtraRecord,
+  useProductExtraMutation,
+  useProductExtras,
+} from "../../extras-compat.js"
 import { useProductDetailMessages } from "./host.js"
 import { getExtraPricingModeLabel, ProductExtraDialog } from "./product-extra-dialog.js"
 import { formatProductMoney } from "./product-options-pricing-helpers.js"

@@ -4,6 +4,7 @@ import {
   placeAvailabilityHold,
   releaseAvailabilityHold,
 } from "@voyantjs/availability/service-holds"
+import { productExtras } from "@voyantjs/bookings/extras"
 import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
 import type {
   AddonOffer,
@@ -12,7 +13,6 @@ import type {
   PaxBandSpec,
   TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
-import { productExtras } from "@voyantjs/extras/schema"
 import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import {
   extraPriceRules,

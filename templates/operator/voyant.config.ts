@@ -39,7 +39,6 @@ export default defineVoyantConfig({
     "@voyantjs/markets",
     "@voyantjs/notifications",
     "@voyantjs/external-refs",
-    "@voyantjs/extras",
     // Flights: schema is migrated and the admin surface is package-delivered
     // (@voyantjs/flights-react/admin); the API routes are still mounted
     // app-locally in src/api/flights.ts rather than as the package's Hono
@@ -56,11 +55,14 @@ export default defineVoyantConfig({
   //  - workflow-runs: only its admin routes are mounted, not a module
   //  - accommodations: FK-target schema, not mounted
   //  - charters / cruises: schema migrated ahead of route mounting
+  //  - extras: temporary schema shim while runtime imports move through
+  //    @voyantjs/inventory/extras and @voyantjs/bookings/extras
   additionalSchemas: [
     "@voyantjs/workflow-runs",
     "@voyantjs/accommodations",
     "@voyantjs/charters",
     "@voyantjs/cruises",
+    "@voyantjs/extras",
   ],
   // Template-local Drizzle schema(s) owned by no package: deployment glue plus
   // the generated cross-module link tables (folded into the migration history
