@@ -107,8 +107,6 @@
     "@voyantjs/storage": "workspace:^",
     "@voyantjs/storefront": "workspace:^",
     "@voyantjs/storefront-verification": "workspace:^",
-    "@voyantjs/suppliers": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/travel-composer": "workspace:^",
     "@voyantjs/travel-composer-react": "workspace:^",
     "@voyantjs/types": "workspace:^",
@@ -149,7 +147,8 @@
     "typesense": "^3.0.6",
     "vaul": "^1.1.2",
     "zod": "^4.3.6",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.12",
+    "@voyantjs/suppliers": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",

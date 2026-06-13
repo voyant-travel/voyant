@@ -1,7 +1,6 @@
+import { supplierRoutes } from "@voyantjs/distribution/suppliers/routes"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
-
-import { supplierRoutes } from "../../src/routes.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 

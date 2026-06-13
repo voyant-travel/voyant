@@ -1,7 +1,6 @@
+import { externalRefsRoutes } from "@voyantjs/distribution/external-refs/routes"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
-
-import { externalRefsRoutes } from "../../src/routes.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const json = (body: Record<string, unknown>) => ({

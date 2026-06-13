@@ -24,7 +24,7 @@
 @source "../node_modules/@voyantjs/inventory-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/products-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/resources-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/suppliers-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/distribution-react/dist/suppliers/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
    runs from live source, not the package `dist/`. The dist scans above
    only help published consumers and can lag behind src during local dev,
@@ -44,7 +44,7 @@
 @source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
 @source "../../../packages/products-react/src/**/*.{ts,tsx}";
 @source "../../../packages/resources-react/src/**/*.{ts,tsx}";
-@source "../../../packages/suppliers-react/src/**/*.{ts,tsx}";
+@source "../../../packages/distribution-react/src/suppliers/**/*.{ts,tsx}";
 
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
@@ -57,7 +57,7 @@
 @import "@voyantjs/legal-react/styles.css";
 @import "@voyantjs/inventory-react/styles.css";
 @import "@voyantjs/resources-react/styles.css";
-@import "@voyantjs/suppliers-react/styles.css";
+@import "@voyantjs/distribution-react/suppliers/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
 /* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
 @import "@voyantjs/extras-react/styles.css";

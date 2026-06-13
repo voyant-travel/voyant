@@ -33,7 +33,8 @@ import {
 } from "@voyantjs/commerce"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
-import { externalRefsHonoModule } from "@voyantjs/external-refs"
+import { externalRefsHonoModule } from "@voyantjs/distribution/external-refs"
+import { suppliersHonoModule } from "@voyantjs/distribution/suppliers"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import type {
   CheckoutNotificationDelivery,
@@ -56,7 +57,6 @@ import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/r
 import { resourcesHonoModule } from "@voyantjs/resources"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
-import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -180,13 +180,13 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/quotes",
     "@voyantjs/availability",
     "@voyantjs/identity",
-    "@voyantjs/external-refs",
+    "@voyantjs/distribution/external-refs",
     "@voyantjs/bookings/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
     "@voyantjs/resources",
     "@voyantjs/distribution",
-    "@voyantjs/suppliers",
+    "@voyantjs/distribution/suppliers",
     "@voyantjs/inventory",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
@@ -217,7 +217,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/quotes": () => createQuotesHonoModule(),
     "@voyantjs/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
-    "@voyantjs/external-refs": () => externalRefsHonoModule,
+    "@voyantjs/distribution/external-refs": () => externalRefsHonoModule,
     "@voyantjs/bookings/extras": () => bookingsExtrasHonoModule,
     "@voyantjs/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
@@ -228,7 +228,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/commerce": () => createCommerceHonoModules(),
     "@voyantjs/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
-    "@voyantjs/suppliers": () => suppliersHonoModule,
+    "@voyantjs/distribution/suppliers": () => suppliersHonoModule,
     "@voyantjs/inventory": () => inventoryHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({

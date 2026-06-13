@@ -1,6 +1,6 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { suppliers } from "@voyantjs/distribution/suppliers/schema"
 import { organizations, people } from "@voyantjs/relationships/schema"
-import { suppliers } from "@voyantjs/suppliers/schema"
 import { relations, sql } from "drizzle-orm"
 import {
   boolean,

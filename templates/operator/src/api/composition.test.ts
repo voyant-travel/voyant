@@ -73,6 +73,8 @@ describe("operator runtime composition", () => {
       ["@voyantjs/markets", "@voyantjs/commerce"],
       ["@voyantjs/sellability", "@voyantjs/commerce"],
       ["@voyantjs/promotions", "@voyantjs/commerce"],
+      ["@voyantjs/external-refs", "@voyantjs/distribution/external-refs"],
+      ["@voyantjs/suppliers", "@voyantjs/distribution/suppliers"],
     ])
     const schemaModules = (voyantConfig.modules ?? []).map(entryName)
     const migratedButNotMounted = schemaModules.filter(

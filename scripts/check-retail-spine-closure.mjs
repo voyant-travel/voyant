@@ -101,6 +101,13 @@ const optionalEdgeAllowlist = [
       "Commerce React owner-path components can attach operated Inventory pickers when a host installs them",
   },
   {
+    from: "@voyantjs/distribution-react",
+    type: "peerDependencies",
+    to: "@voyantjs/products-react",
+    reason:
+      "Distribution React external-reference owner-path components can attach operated Inventory pickers when a host installs them",
+  },
+  {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
     to: "@voyantjs/availability-react",

@@ -1,5 +1,9 @@
 # @voyantjs/suppliers
 
+Compatibility facade. Supplier runtime implementation now lives under
+`@voyantjs/distribution/suppliers`; keep this package only for existing imports
+until the v1 public-name policy removes or formally deprecates it.
+
 Suppliers module for Voyant. Models suppliers, their services, rate cards, and
 notes for OTA, tour-operator, and DMC workflows.
 
@@ -23,6 +27,8 @@ const app = createApp({
   // ...
 })
 ```
+
+New first-party code should import from `@voyantjs/distribution/suppliers`.
 
 ## Entities
 

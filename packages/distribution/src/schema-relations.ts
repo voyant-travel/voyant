@@ -1,4 +1,3 @@
-import { suppliers } from "@voyantjs/suppliers/schema"
 import { relations } from "drizzle-orm"
 import {
   channelReconciliationPolicies,
@@ -28,6 +27,7 @@ import {
   channelInventoryReleaseExecutions,
   channelInventoryReleaseRules,
 } from "./schema-inventory.js"
+import { suppliers } from "./suppliers/schema.js"
 
 export const channelsRelations = relations(channels, ({ many, one }) => ({
   contracts: many(channelContracts),

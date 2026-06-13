@@ -1,1 +1,1 @@
-export * from "@voyantjs/suppliers-contracts"
+export * from "@voyantjs/distribution/suppliers/validation"
