@@ -1,5 +1,4 @@
 // agent-quality: file-size exception -- owner: sellability; resolve remains a single pricing/sellability workflow after #1734 split the surrounding service operations.
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   channelInventoryAllotments,
   channelInventoryAllotmentTargets,
@@ -25,8 +24,7 @@ import {
   priceSchedules,
   pricingCategories,
 } from "@voyantjs/pricing/schema"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
-import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -41,27 +39,202 @@ import {
   toNumeric,
 } from "./service-shared.js"
 
-export async function resolve(db: PostgresJsDatabase, query: SellabilityResolveQuery) {
-  const optionConditions = [eq(products.status, "active"), eq(productOptions.status, "active")]
-  if (query.productId) optionConditions.push(eq(products.id, query.productId))
-  if (query.optionId) optionConditions.push(eq(productOptions.id, query.optionId))
+type ResolveOptionRow = {
+  productId: string
+  productName: string
+  productSellCurrency: string
+  optionId: string
+  optionName: string
+  optionCode: string | null
+  optionIsDefault: boolean
+  optionAvailableFrom: string | null
+  optionAvailableTo: string | null
+}
 
-  const optionRows = await db
-    .select({
-      productId: products.id,
-      productName: products.name,
-      productSellCurrency: products.sellCurrency,
-      optionId: productOptions.id,
-      optionName: productOptions.name,
-      optionCode: productOptions.code,
-      optionIsDefault: productOptions.isDefault,
-      optionAvailableFrom: productOptions.availableFrom,
-      optionAvailableTo: productOptions.availableTo,
-    })
-    .from(productOptions)
-    .innerJoin(products, eq(productOptions.productId, products.id))
-    .where(and(...optionConditions))
-    .orderBy(asc(products.name), asc(productOptions.sortOrder))
+type ResolveSlotRow = {
+  id: string
+  productId: string
+  optionId: string | null
+  startTimeId: string | null
+  dateLocal: string
+  startsAt: Date | string
+  timezone: string
+  unlimited: boolean
+  remainingPax: number | null
+  remainingPickups: number | null
+  pastCutoff: boolean
+  tooEarly: boolean
+}
+
+type ResolveUnitRow = {
+  id: string
+  name: string
+  unitType: string
+}
+
+async function executeRows(db: PostgresJsDatabase, query: SQL): Promise<unknown[]> {
+  // biome-ignore lint/suspicious/noExplicitAny: #1141 keeps cross-package SQL boundary reads driver-agnostic.
+  const result = await (db as any).execute(query)
+  return Array.isArray(result) ? result : (result?.rows ?? [])
+}
+
+function sqlList(values: readonly string[]): SQL {
+  return sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )
+}
+
+function andSql(conditions: SQL[]): SQL {
+  return sql.join(conditions, sql` AND `)
+}
+
+function normalizeDateOnly(value: Date | string | null | undefined): string | null {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10)
+}
+
+async function loadResolveOptions(
+  db: PostgresJsDatabase,
+  query: SellabilityResolveQuery,
+): Promise<ResolveOptionRow[]> {
+  const conditions = [sql`product.status::text = 'active'`, sql`option.status::text = 'active'`]
+  if (query.productId) conditions.push(sql`product.id = ${query.productId}`)
+  if (query.optionId) conditions.push(sql`option.id = ${query.optionId}`)
+
+  const rows = await executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: sellability; cross-module Product option read with parameter-bound filters.
+    sql`
+      SELECT
+        product.id AS product_id,
+        product.name AS product_name,
+        product.sell_currency AS product_sell_currency,
+        option.id AS option_id,
+        option.name AS option_name,
+        option.code AS option_code,
+        option.is_default AS option_is_default,
+        option.available_from AS option_available_from,
+        option.available_to AS option_available_to
+      FROM product_options option
+      INNER JOIN products product
+        ON option.product_id = product.id
+      WHERE ${andSql(conditions)}
+      ORDER BY product.name ASC, option.sort_order ASC
+    `,
+  )
+
+  return rows.map((row) => {
+    const value = row as {
+      product_id: string
+      product_name: string
+      product_sell_currency: string
+      option_id: string
+      option_name: string
+      option_code: string | null
+      option_is_default: boolean
+      option_available_from: Date | string | null
+      option_available_to: Date | string | null
+    }
+    return {
+      productId: value.product_id,
+      productName: value.product_name,
+      productSellCurrency: value.product_sell_currency,
+      optionId: value.option_id,
+      optionName: value.option_name,
+      optionCode: value.option_code,
+      optionIsDefault: value.option_is_default,
+      optionAvailableFrom: normalizeDateOnly(value.option_available_from),
+      optionAvailableTo: normalizeDateOnly(value.option_available_to),
+    }
+  })
+}
+
+async function loadResolveSlots(
+  db: PostgresJsDatabase,
+  optionIds: readonly string[],
+  query: SellabilityResolveQuery,
+): Promise<ResolveSlotRow[]> {
+  if (optionIds.length === 0) return []
+
+  const conditions = [
+    sql`slot.option_id IN (${sqlList(optionIds)})`,
+    sql`slot.status::text = 'open'`,
+  ]
+  if (query.slotId) conditions.push(sql`slot.id = ${query.slotId}`)
+  if (query.dateLocal) conditions.push(sql`slot.date_local = ${query.dateLocal}`)
+  if (query.startTimeId) conditions.push(sql`slot.start_time_id = ${query.startTimeId}`)
+
+  const rows = await executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: sellability; cross-module Availability slot read with parameter-bound filters.
+    sql`
+      SELECT
+        slot.id,
+        slot.product_id,
+        slot.option_id,
+        slot.start_time_id,
+        slot.date_local,
+        slot.starts_at,
+        slot.timezone,
+        slot.unlimited,
+        slot.remaining_pax,
+        slot.remaining_pickups,
+        slot.past_cutoff,
+        slot.too_early
+      FROM availability_slots slot
+      WHERE ${andSql(conditions)}
+      ORDER BY slot.starts_at ASC
+      LIMIT ${query.limit}
+    `,
+  )
+
+  return rows.map((row) => {
+    const value = row as {
+      id: string
+      product_id: string
+      option_id: string | null
+      start_time_id: string | null
+      date_local: Date | string
+      starts_at: Date | string
+      timezone: string
+      unlimited: boolean
+      remaining_pax: number | null
+      remaining_pickups: number | null
+      past_cutoff: boolean
+      too_early: boolean
+    }
+    return {
+      id: value.id,
+      productId: value.product_id,
+      optionId: value.option_id,
+      startTimeId: value.start_time_id,
+      dateLocal: normalizeDateOnly(value.date_local) ?? "",
+      startsAt: value.starts_at,
+      timezone: value.timezone,
+      unlimited: value.unlimited,
+      remainingPax: value.remaining_pax,
+      remainingPickups: value.remaining_pickups,
+      pastCutoff: value.past_cutoff,
+      tooEarly: value.too_early,
+    }
+  })
+}
+
+async function loadResolveUnits(db: PostgresJsDatabase): Promise<ResolveUnitRow[]> {
+  const rows = await executeRows(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: sellability; cross-module Product unit labels/types read for resolved price components.
+    sql`SELECT id, name, unit_type::text AS unit_type FROM option_units`,
+  )
+  return rows.map((row) => {
+    const value = row as { id: string; name: string; unit_type: string }
+    return { id: value.id, name: value.name, unitType: value.unit_type }
+  })
+}
+
+export async function resolve(db: PostgresJsDatabase, query: SellabilityResolveQuery) {
+  const optionRows = await loadResolveOptions(db, query)
 
   if (optionRows.length === 0) {
     return { data: [], meta: { total: 0 } }
@@ -70,33 +243,7 @@ export async function resolve(db: PostgresJsDatabase, query: SellabilityResolveQ
   const optionIds = optionRows.map((row) => row.optionId)
   const productIds = [...new Set(optionRows.map((row) => row.productId))]
 
-  const slotConditions = [
-    inArray(availabilitySlots.optionId, optionIds),
-    eq(availabilitySlots.status, "open"),
-  ]
-  if (query.slotId) slotConditions.push(eq(availabilitySlots.id, query.slotId))
-  if (query.dateLocal) slotConditions.push(eq(availabilitySlots.dateLocal, query.dateLocal))
-  if (query.startTimeId) slotConditions.push(eq(availabilitySlots.startTimeId, query.startTimeId))
-
-  const slots = await db
-    .select({
-      id: availabilitySlots.id,
-      productId: availabilitySlots.productId,
-      optionId: availabilitySlots.optionId,
-      startTimeId: availabilitySlots.startTimeId,
-      dateLocal: availabilitySlots.dateLocal,
-      startsAt: availabilitySlots.startsAt,
-      timezone: availabilitySlots.timezone,
-      unlimited: availabilitySlots.unlimited,
-      remainingPax: availabilitySlots.remainingPax,
-      remainingPickups: availabilitySlots.remainingPickups,
-      pastCutoff: availabilitySlots.pastCutoff,
-      tooEarly: availabilitySlots.tooEarly,
-    })
-    .from(availabilitySlots)
-    .where(and(...slotConditions))
-    .orderBy(asc(availabilitySlots.startsAt))
-    .limit(query.limit)
+  const slots = await loadResolveSlots(db, optionIds, query)
 
   const startTimeIds = [
     ...new Set(slots.flatMap((slot) => (slot.startTimeId ? [slot.startTimeId] : []))),
@@ -200,9 +347,7 @@ export async function resolve(db: PostgresJsDatabase, query: SellabilityResolveQ
         ),
       ),
     db.select().from(optionUnitTiers).where(eq(optionUnitTiers.active, true)),
-    db
-      .select({ id: optionUnits.id, name: optionUnits.name, unitType: optionUnits.unitType })
-      .from(optionUnits),
+    loadResolveUnits(db),
     db
       .select({ id: pricingCategories.id, name: pricingCategories.name })
       .from(pricingCategories)
