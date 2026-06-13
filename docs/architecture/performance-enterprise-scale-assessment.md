@@ -192,7 +192,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > routing with `dbTransactional`/`dbTransactionalPaths` + `DB_FORCE_TRANSACTIONAL` escape
 > hatch; transaction-reachability audit applied: catalog-authoring extension + bookings/crm/
 > finance/availability/legal/notifications/transactions surfaces, storefront covered via the
-> bookings public prefix, catalog booking-engine + travel-composer via template paths),
+> bookings public prefix, catalog booking-engine + trip-composer via template paths),
 > 1.2 (Better Auth cookieCache default-on + API-key KV cache), 1.3 (index migration 0061:
 > trigram GIN for ILIKE columns, finance partial indexes, rollup btrees; bookings/products
 > partial indexes N/A — no `deleted_at` on those tables; CRM `archived_at` is never queried —

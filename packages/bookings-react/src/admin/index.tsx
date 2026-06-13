@@ -62,7 +62,7 @@ declare module "@voyantjs/admin" {
     /**
      * The trip composer's "new trip" entry. Declared here because the
      * packaged `/bookings/compose` alias route forwards to it — the composer
-     * pages themselves live in the travel-composer area, whose admin entry
+     * pages themselves live in the trip-composer area, whose admin entry
      * may also declare this key (interface merging requires the member shape
      * to stay identical across packages).
      */

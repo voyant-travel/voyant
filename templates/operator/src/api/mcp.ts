@@ -12,13 +12,13 @@ import {
   priceTripTool,
   reserveTripTool,
   reviseTripTool,
-  type TravelComposerMcpServices,
-  travelComposerService,
-} from "@voyantjs/travel-composer"
+  type TripComposerMcpServices,
+  tripComposerService,
+} from "@voyantjs/trip-composer"
 import type { Context, Hono } from "hono"
 
 import { DEFAULT_SLICES } from "./lib/catalog-runtime"
-import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
 
 function registerAdminTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(createTripTool)
@@ -42,8 +42,8 @@ export function mountOperatorAgentToolRoutes(hono: Hono): void {
     const registry = createMcpToolRegistry({
       context: {
         ...buildToolContext(c),
-        travelComposer: createTravelComposerMcpServices(c),
-      } as McpToolContext & { travelComposer: TravelComposerMcpServices },
+        tripComposer: createTripComposerMcpServices(c),
+      } as McpToolContext & { tripComposer: TripComposerMcpServices },
     })
     registerAdminTools(registry)
     const result = await registry.dispatchTool(tool, body)
@@ -65,21 +65,21 @@ function buildToolContext(c: Context): McpToolContext {
   }
 }
 
-function createTravelComposerMcpServices(c: Context): TravelComposerMcpServices {
-  const options = createOperatorTravelComposerRoutesOptions()
+function createTripComposerMcpServices(c: Context): TripComposerMcpServices {
+  const options = createOperatorTripComposerRoutesOptions()
   return {
-    createTrip: (input) => travelComposerService.createTrip(c.var.db, input),
-    addComponent: (input) => travelComposerService.addComponent(c.var.db, input),
-    removeComponent: (componentId) => travelComposerService.removeComponent(c.var.db, componentId),
+    createTrip: (input) => tripComposerService.createTrip(c.var.db, input),
+    addComponent: (input) => tripComposerService.addComponent(c.var.db, input),
+    removeComponent: (componentId) => tripComposerService.removeComponent(c.var.db, componentId),
     priceTrip: (input) => {
       const deps = resolveDeps(c, options.priceTripDeps)
-      if (!deps) throw new Error("Travel composer price dependencies are not configured")
-      return travelComposerService.priceTrip(c.var.db, input, deps)
+      if (!deps) throw new Error("Trip composer price dependencies are not configured")
+      return tripComposerService.priceTrip(c.var.db, input, deps)
     },
     reserveTrip: (input) => {
       const deps = resolveDeps(c, options.reserveTripDeps)
-      if (!deps) throw new Error("Travel composer reserve dependencies are not configured")
-      return travelComposerService.reserveTrip(c.var.db, input, deps)
+      if (!deps) throw new Error("Trip composer reserve dependencies are not configured")
+      return tripComposerService.reserveTrip(c.var.db, input, deps)
     },
   }
 }
