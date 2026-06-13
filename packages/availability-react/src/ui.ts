@@ -1,4 +1,13 @@
 export {
+  SEAT_MAP_PRESETS,
+  SeatMapBuilder,
+  type SeatMapBuilderProps,
+  SlotAllocationPage,
+  type SlotAllocationPageExtraTab,
+  type SlotAllocationPageProps,
+  type SlotAllocationPageRenderContext,
+} from "./allocation/index.js"
+export {
   type AvailabilityColumnsMessages,
   availabilityCloseoutColumns,
   availabilityPickupPointColumns,

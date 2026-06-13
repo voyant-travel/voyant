@@ -9,3 +9,4 @@
  * skeleton layout utilities) won't be compiled into the final bundle.
  */
 @source "./components/**/*.{ts,tsx}";
+@source "./allocation/**/*.{ts,tsx}";

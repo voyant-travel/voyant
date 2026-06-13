@@ -25,8 +25,8 @@ export const travelerAllocationMapSchema = z.record(z.string(), z.string())
  *
  * Stored on the template's `flags.layoutSpec`. When present, the materializer
  * ignores the legacy `layout` string + `capacity` (capacity is derived from
- * the number of "seat" cells). The renderer in @voyantjs/allocation-ui mirrors
- * the same grid so the visual seat map matches what the operator drew.
+ * the number of "seat" cells). The availability React renderer mirrors the
+ * same grid so the visual seat map matches what the operator drew.
  */
 export const seatLayoutCellSchema = z.enum(["seat", "aisle", "door", "void"])
 export type SeatLayoutCell = z.infer<typeof seatLayoutCellSchema>

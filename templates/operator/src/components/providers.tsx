@@ -4,8 +4,8 @@ import {
   type AdminDomainMessagesProvider,
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
-import { AllocationUiMessagesProvider } from "@voyantjs/allocation-ui/i18n"
 import { AuthUiMessagesProvider } from "@voyantjs/auth-react/i18n"
+import { AllocationUiMessagesProvider } from "@voyantjs/availability-react/allocation/i18n"
 // Provider subpath on purpose: the availability main barrel re-exports the
 // whole data layer (schemas pull `@voyantjs/availability` validation), and
 // this module evaluates with workspace chrome — the `/provider` entry is

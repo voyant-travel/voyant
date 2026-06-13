@@ -45,7 +45,6 @@
     "@voyantjs/action-ledger-react": "workspace:^",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/admin-app": "workspace:^",
-    "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/auth": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
     "@voyantjs/availability": "workspace:^",

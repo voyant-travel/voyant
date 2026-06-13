@@ -330,8 +330,8 @@ Prerequisite cleanup:
 Candidate packages:
 
 - `@voyantjs/availability`
-- `@voyantjs/availability-react`
-- `@voyantjs/allocation-ui`
+- `@voyantjs/availability-react`, including `@voyantjs/availability-react/allocation`
+- `@voyantjs/allocation-ui` as a temporary compatibility facade
 - `@voyantjs/resources`
 - `@voyantjs/resources-react`
 - `@voyantjs/ground`
@@ -1221,7 +1221,7 @@ stay unchanged.
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
 | `@voyantjs/availability`, `@voyantjs/availability-react` | Fold into `operations`. | Availability is operated execution truth: slots, rules, pickup points, holds, and operational availability state. |
-| `@voyantjs/allocation-ui` | Fold into operations/availability React surface. | This is a UI slice over availability allocation resources, not a standalone Module. |
+| `@voyantjs/allocation-ui` | Deprecated compatibility facade; the active UI lives in `@voyantjs/availability-react/allocation` until the later Operations React surface exists. | This is a UI slice over availability allocation resources, not a standalone Module, and must not move into Resources. |
 | `@voyantjs/resources`, `@voyantjs/resources-react` | Fold into `operations`. | Resources are operational assets and pools used by operated products and logistics. |
 | `@voyantjs/ground`, `@voyantjs/ground-react` | Fold into `operations`. | Ground is operational logistics: vehicles, drivers, dispatch, shifts, checkpoints. |
 | `@voyantjs/facilities`, `@voyantjs/facilities-react` | Reframe as places/locations under `operations`, or split generic places from accommodation/property remnants. | Physical places are useful; hotel/property operations are out of first-party scope. |

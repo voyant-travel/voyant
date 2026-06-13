@@ -16,6 +16,10 @@
     "./client": "./src/client.ts",
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
+    "./allocation": "./src/allocation/index.ts",
+    "./allocation/i18n": "./src/allocation/i18n/index.ts",
+    "./allocation/components/slot-allocation-model": "./src/allocation/components/slot-allocation-model.ts",
+    "./allocation/components/*": "./src/allocation/components/*.tsx",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
     "./components/*": "./src/components/*.tsx",
@@ -35,7 +39,6 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.21.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/availability": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
@@ -53,9 +56,6 @@
       "optional": true
     },
     "@voyantjs/admin": {
-      "optional": true
-    },
-    "@voyantjs/allocation-ui": {
       "optional": true
     },
     "@voyantjs/bookings-react": {
@@ -90,7 +90,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/availability": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
@@ -144,6 +143,26 @@
         "types": "./dist/ui.d.ts",
         "import": "./dist/ui.js",
         "default": "./dist/ui.js"
+      },
+      "./allocation": {
+        "types": "./dist/allocation/index.d.ts",
+        "import": "./dist/allocation/index.js",
+        "default": "./dist/allocation/index.js"
+      },
+      "./allocation/i18n": {
+        "types": "./dist/allocation/i18n/index.d.ts",
+        "import": "./dist/allocation/i18n/index.js",
+        "default": "./dist/allocation/i18n/index.js"
+      },
+      "./allocation/components/slot-allocation-model": {
+        "types": "./dist/allocation/components/slot-allocation-model.d.ts",
+        "import": "./dist/allocation/components/slot-allocation-model.js",
+        "default": "./dist/allocation/components/slot-allocation-model.js"
+      },
+      "./allocation/components/*": {
+        "types": "./dist/allocation/components/*.d.ts",
+        "import": "./dist/allocation/components/*.js",
+        "default": "./dist/allocation/components/*.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

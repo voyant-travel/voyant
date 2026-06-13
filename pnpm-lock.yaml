@@ -1021,9 +1021,6 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyantjs/allocation-ui':
-        specifier: workspace:^
-        version: link:../allocation-ui
       '@voyantjs/availability':
         specifier: workspace:^
         version: link:../availability
@@ -5098,9 +5095,6 @@ importers:
       '@voyantjs/admin-app':
         specifier: workspace:^
         version: link:../../packages/admin-app
-      '@voyantjs/allocation-ui':
-        specifier: workspace:^
-        version: link:../../packages/allocation-ui
       '@voyantjs/auth':
         specifier: workspace:^
         version: link:../../packages/auth

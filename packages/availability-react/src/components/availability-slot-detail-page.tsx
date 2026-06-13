@@ -81,10 +81,9 @@ export interface AvailabilitySlotDetailPageProps {
   headerActions?: ReactNode
   /**
    * Content for the Allocation tab. Hosts mount their allocation
-   * manager here (e.g. `@voyantjs/allocation-ui`'s
-   * `SlotAllocationPage` in `embed` mode) so this package keeps no
-   * runtime dependency on the allocation UI. When omitted, the tab
-   * shows a stub message instead.
+   * manager here (for example, `SlotAllocationPage` from
+   * `@voyantjs/availability-react/allocation` in `embed` mode).
+   * When omitted, the tab shows a stub message instead.
    */
   renderAllocation?: (context: { slotId: string; productId: string | null }) => ReactNode
   /**

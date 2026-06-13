@@ -45,6 +45,8 @@ operator/admin apps.
 | Entry | Description |
 | --- | --- |
 | `./ui` | Barrel re-exports |
+| `./allocation` | Slot allocation page, seat-map builder, and allocation view helpers |
+| `./allocation/i18n` | Allocation UI message provider, defaults, and helpers |
 | `./i18n` | Availability UI message provider, defaults, and helpers |
 | `./components/*` | Availability UI components |
 | `./utils` | Small formatting helpers |
@@ -67,6 +69,21 @@ availability batch mutations injected through props:
 - `AvailabilitySectionHeader`
 - `AvailabilityUiMessagesProvider` and i18n helpers from `./i18n`
 - `formatLocalizedSelectionLabel`
+
+## Slot Allocation UI
+
+Slot allocation is part of the availability React surface. Import reusable
+allocation components from `@voyantjs/availability-react/allocation`:
+
+```tsx
+import { SlotAllocationPage } from "@voyantjs/availability-react/allocation"
+import { AllocationUiMessagesProvider } from "@voyantjs/availability-react/allocation/i18n"
+```
+
+`@voyantjs/allocation-ui` remains as a temporary compatibility facade for the
+same exports, but first-party consumers should use the availability-react
+subpaths directly. The package-level `@voyantjs/availability-react/styles.css`
+helper covers the allocation components.
 
 ### Usage
 

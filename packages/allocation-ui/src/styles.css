@@ -1,6 +1,3 @@
-/* Tailwind v4 source-detection helper.
- *
- * Templates that consume this package should `@import` this CSS so Tailwind
- * scans these component files for utility classes.
- */
-@source "./components/**/*.{ts,tsx}";
+@import "@voyantjs/availability-react/styles.css";
+@source "../../availability-react/dist/**/*.{js,mjs}";
+@source "../../availability-react/src/**/*.{ts,tsx}";

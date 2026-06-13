@@ -7,10 +7,10 @@ import {
   useAdminNavigate,
   useOperatorAdminMessages,
 } from "@voyantjs/admin"
-import { SlotAllocationPage } from "@voyantjs/allocation-ui"
 import { SlotExtrasManifestPanel, useExtrasUiMessagesOrDefault } from "@voyantjs/extras-react/ui"
 import { ProductQuickViewSheet } from "@voyantjs/products-react/ui"
 import { lazy, Suspense, useState } from "react"
+import { SlotAllocationPage } from "../allocation/index.js"
 import { AvailabilitySlotDialog } from "../components/availability-dialogs.js"
 import {
   AvailabilitySlotDetailPage,
@@ -57,7 +57,7 @@ export interface AvailabilitySlotDetailHostProps {
  *     `availabilitySlot.list`, `availabilityStartTime.detail`,
  *     `booking.detail`, `product.detail` — no host route tree import.
  *   - The cross-domain composition the operator route previously assembled:
- *     the Allocation tab (`@voyantjs/allocation-ui`), the Extras manifest tab
+ *     the Allocation tab (`@voyantjs/availability-react/allocation`), the Extras manifest tab
  *     (`@voyantjs/extras-react/ui`), the booking create/quick-view sheets
  *     (`@voyantjs/bookings-react/ui`, lazy) and the product quick-view sheet
  *     (`@voyantjs/products-react/ui`).
