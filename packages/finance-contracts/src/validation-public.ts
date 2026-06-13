@@ -159,7 +159,6 @@ export const publicPaymentSessionSchema = z
     targetId: z.string().nullable(),
     bookingId: z.string().nullable(),
     legacyOrderId: z.string().nullable().optional(),
-    orderId: z.string().nullable().optional(),
     invoiceId: z.string().nullable(),
     bookingPaymentScheduleId: z.string().nullable(),
     bookingGuaranteeId: z.string().nullable(),
@@ -189,8 +188,8 @@ export const publicPaymentSessionSchema = z
      */
     notes: z.string().nullable(),
   })
-  .transform(({ orderId, legacyOrderId, target, provenance, ...value }) => {
-    const resolvedLegacyOrderId = legacyOrderId ?? orderId ?? null
+  .transform(({ legacyOrderId, target, provenance, ...value }) => {
+    const resolvedLegacyOrderId = legacyOrderId ?? null
     return {
       ...value,
       legacyOrderId: resolvedLegacyOrderId,

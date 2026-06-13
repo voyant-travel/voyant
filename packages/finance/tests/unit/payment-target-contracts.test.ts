@@ -30,7 +30,7 @@ describe("payment target contracts", () => {
 
   it("keeps legacy order references behind legacyOrderId compatibility", () => {
     const parsed = insertPaymentSessionSchema.parse({
-      orderId: "ord_123",
+      legacyOrderId: "ord_123",
       currency: "EUR",
       amountCents: 12345,
     })
@@ -42,9 +42,18 @@ describe("payment target contracts", () => {
       targetId: "ord_123",
     })
 
-    expect(paymentSessionListQuerySchema.parse({ orderId: "ord_123" })).toMatchObject({
+    expect(paymentSessionListQuerySchema.parse({ legacyOrderId: "ord_123" })).toMatchObject({
       legacyOrderId: "ord_123",
     })
+
+    expect(() =>
+      insertPaymentSessionSchema.parse({
+        orderId: "ord_123",
+        currency: "EUR",
+        amountCents: 12345,
+      }),
+    ).toThrow()
+    expect(() => paymentSessionListQuerySchema.parse({ orderId: "ord_123" })).toThrow()
   })
 
   it("uses the same explicit target and legacy compatibility for authorizations", () => {
@@ -60,8 +69,9 @@ describe("payment target contracts", () => {
       provenance: { source: "operator" },
     })
 
-    expect(paymentAuthorizationListQuerySchema.parse({ orderId: "ord_123" })).toMatchObject({
+    expect(paymentAuthorizationListQuerySchema.parse({ legacyOrderId: "ord_123" })).toMatchObject({
       legacyOrderId: "ord_123",
     })
+    expect(() => paymentAuthorizationListQuerySchema.parse({ orderId: "ord_123" })).toThrow()
   })
 })

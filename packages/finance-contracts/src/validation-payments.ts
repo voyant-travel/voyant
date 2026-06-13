@@ -92,30 +92,14 @@ export const paymentProvenanceSchema = z.object({
   idempotencyKey: z.string().max(255).optional().nullable(),
 })
 
-type LegacyOrderCompatibleOutput<TShape extends z.ZodRawShape> = Omit<
-  z.output<z.ZodObject<TShape>>,
-  "legacyOrderId" | "orderId"
-> & {
-  legacyOrderId?: string | null
-}
+const noGenericOrderIdSchema = z.object({
+  orderId: z.never().optional(),
+})
 
 function withLegacyOrderCompatibility<TShape extends z.ZodRawShape>(schema: z.ZodObject<TShape>) {
-  const extended = schema.extend({
-    legacyOrderId: z.string().optional().nullable(),
-    orderId: z.string().optional().nullable(),
-  })
-
-  return extended.transform((input): LegacyOrderCompatibleOutput<TShape> => {
-    const { orderId, legacyOrderId, ...value } = input as z.output<typeof extended> & {
-      legacyOrderId?: string | null
-      orderId?: string | null
-    }
-    const resolvedLegacyOrderId = legacyOrderId !== undefined ? legacyOrderId : orderId
-    if (resolvedLegacyOrderId === undefined) {
-      return value as LegacyOrderCompatibleOutput<TShape>
-    }
-    return { ...value, legacyOrderId: resolvedLegacyOrderId } as LegacyOrderCompatibleOutput<TShape>
-  })
+  return schema
+    .extend({ legacyOrderId: z.string().optional().nullable() })
+    .and(noGenericOrderIdSchema)
 }
 
 const paymentSessionCoreSchema = z.object({

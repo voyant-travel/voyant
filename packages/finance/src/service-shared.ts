@@ -906,9 +906,7 @@ export function derivePaymentSessionTarget(
     }
   }
 
-  const legacyOrderId =
-    input.legacyOrderId ??
-    ("orderId" in input ? (input as { orderId?: string | null }).orderId : null)
+  const legacyOrderId = input.legacyOrderId ?? null
 
   if (input.targetType && input.targetType !== "other") {
     return {

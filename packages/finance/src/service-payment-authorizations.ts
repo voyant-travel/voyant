@@ -96,12 +96,11 @@ export const financePaymentAuthorizationService = {
     const targetColumns = derivePaymentAuthorizationTargetColumns(data)
     const {
       legacyOrderId,
-      orderId,
       target: _explicitTarget,
       provenance: _provenance,
       ...authorizationData
-    } = data as CreatePaymentAuthorizationInput & { orderId?: string | null }
-    const resolvedLegacyOrderId = legacyOrderId ?? orderId ?? null
+    } = data
+    const resolvedLegacyOrderId = legacyOrderId ?? null
     const createAuthorization = (writer: PostgresJsDatabase) =>
       writer
         .insert(paymentAuthorizations)
@@ -150,12 +149,11 @@ export const financePaymentAuthorizationService = {
     const targetColumns = derivePaymentAuthorizationTargetColumns(data)
     const {
       legacyOrderId,
-      orderId,
       target: _explicitTarget,
       provenance: _provenance,
       ...authorizationData
-    } = data as UpdatePaymentAuthorizationInput & { orderId?: string | null }
-    const resolvedLegacyOrderId = legacyOrderId !== undefined ? legacyOrderId : orderId
+    } = data
+    const resolvedLegacyOrderId = legacyOrderId
     const updateAuthorization = (writer: PostgresJsDatabase) =>
       writer
         .update(paymentAuthorizations)
