@@ -1,4 +1,3 @@
-// agent-quality: file-size exception -- owner: promotions-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 /**
@@ -44,31 +43,25 @@ import {
   type PromotionalOfferApplicationMode,
   type PromotionalOfferListStatus,
   type PromotionalOfferRecord,
-  type PromotionalOfferScope,
   type PromotionalOfferScopeKind,
   type PromotionsClientOptions,
   type PromotionsListQuery,
   usePromotionsList,
 } from "./index.js"
 import { PromotionDialog } from "./promotion-dialog.js"
-
-const DEFAULT_PAGE_SIZE = 25
-const ALL = "__all__"
-const TABLE_COLUMN_COUNT = 7
-
-const scopeKinds: PromotionalOfferScopeKind[] = [
-  "global",
-  "products",
-  "categories",
-  "destinations",
-  "markets",
-  "audiences",
-  "fare_codes",
-  "cabin_grades",
-]
-
-const applicationModes: PromotionalOfferApplicationMode[] = ["auto", "code"]
-const statusFilters: PromotionalOfferListStatus[] = ["active", "scheduled", "expired", "archived"]
+import {
+  ALL,
+  applicationModes,
+  DEFAULT_PAGE_SIZE,
+  getOfferStatus,
+  scopeKinds,
+  statusBadgeVariant,
+  statusFilters,
+  summarizeDiscount,
+  summarizeScope,
+  summarizeValidity,
+  TABLE_COLUMN_COUNT,
+} from "./promotions-page-utils.js"
 
 type DateRangeValue = {
   from: string | null
@@ -531,112 +524,4 @@ function PromotionRowSkeleton({ rows }: { rows: number }) {
       ))}
     </>
   )
-}
-
-function summarizeScope(scope: PromotionalOfferScope, messages: PromotionsUiMessages): string {
-  const summary = messages.promotionsPage.summaries
-  switch (scope.kind) {
-    case "global":
-      return summary.globalScope
-    case "products":
-      return formatMessage(summary.productsScope, {
-        count: scope.productIds.length,
-        noun:
-          scope.productIds.length === 1
-            ? summary.productNouns.singular
-            : summary.productNouns.plural,
-      })
-    case "categories":
-      return formatMessage(summary.categoriesScope, {
-        count: scope.categoryIds.length,
-        noun:
-          scope.categoryIds.length === 1
-            ? summary.categoryNouns.singular
-            : summary.categoryNouns.plural,
-      })
-    case "destinations":
-      return formatMessage(summary.destinationsScope, {
-        count: scope.destinationIds.length,
-        noun:
-          scope.destinationIds.length === 1
-            ? summary.destinationNouns.singular
-            : summary.destinationNouns.plural,
-      })
-    case "markets":
-      return formatMessage(summary.marketsScope, {
-        markets: scope.marketIds.join(", "),
-      })
-    case "audiences":
-      return formatMessage(summary.audiencesScope, {
-        audiences: scope.audiences
-          .map((audience) => messages.common.audienceLabels[audience])
-          .join(", "),
-      })
-    case "fare_codes":
-      return formatMessage(summary.fareCodesScope, {
-        fareCodes: scope.fareCodes.join(", "),
-      })
-    case "cabin_grades":
-      return formatMessage(summary.cabinGradesScope, {
-        cabinGradeCodes: scope.cabinGradeCodes.join(", "),
-      })
-  }
-}
-
-function summarizeDiscount(
-  offer: PromotionalOfferRecord,
-  messages: PromotionsUiMessages["promotionsPage"],
-): string {
-  if (offer.discountType === "percentage") {
-    return `${offer.discountPercent ?? messages.summaries.unknownPercentage}%`
-  }
-  const cents = offer.discountAmountCents ?? 0
-  const currency = offer.currency ?? ""
-  return `${(cents / 100).toFixed(2)} ${currency}`.trim()
-}
-
-function summarizeValidity(
-  from: string | null,
-  until: string | null,
-  messages: PromotionsUiMessages["promotionsPage"],
-): string {
-  if (from == null && until == null) return messages.summaries.anytime
-  const fmt = (iso: string) => iso.slice(0, 10)
-  if (from == null) {
-    return formatMessage(messages.summaries.until, {
-      date: fmt(until ?? ""),
-    })
-  }
-  if (until == null) {
-    return formatMessage(messages.summaries.from, {
-      date: fmt(from),
-    })
-  }
-  return formatMessage(messages.summaries.range, {
-    from: fmt(from),
-    until: fmt(until),
-  })
-}
-
-function getOfferStatus(offer: PromotionalOfferRecord): PromotionalOfferListStatus {
-  if (!offer.active) return "archived"
-  const now = Date.now()
-  if (offer.validFrom != null && new Date(offer.validFrom).getTime() > now) return "scheduled"
-  if (offer.validUntil != null && new Date(offer.validUntil).getTime() < now) return "expired"
-  return "active"
-}
-
-function statusBadgeVariant(
-  status: PromotionalOfferListStatus,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (status) {
-    case "active":
-      return "default"
-    case "scheduled":
-      return "secondary"
-    case "expired":
-      return "destructive"
-    case "archived":
-      return "outline"
-  }
 }
