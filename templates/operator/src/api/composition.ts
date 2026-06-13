@@ -31,7 +31,6 @@ import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyantjs/commerce"
-import type { SellabilityOfferWriter } from "@voyantjs/commerce/sellability"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
@@ -58,11 +57,6 @@ import { resourcesHonoModule } from "@voyantjs/resources"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
-import {
-  transactionsBookingExtension,
-  transactionsHonoModule,
-  transactionsService,
-} from "@voyantjs/transactions"
 import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -86,12 +80,6 @@ import {
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
 import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
-
-const legacyTransactionsOfferWriter: SellabilityOfferWriter = {
-  createOfferBundle: (db, input) => transactionsService.createOfferBundle(db, input),
-  updateOfferMetadata: (db, offerId, metadata) =>
-    transactionsService.updateOffer(db, offerId, { metadata }),
-}
 
 type NotificationDeliveryLike = {
   id: string
@@ -196,7 +184,6 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/bookings/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
-    "@voyantjs/transactions",
     "@voyantjs/resources",
     "@voyantjs/distribution",
     "@voyantjs/suppliers",
@@ -218,7 +205,6 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/inventory/booking-extension",
     "@voyantjs/catalog-authoring/extension",
     "@voyantjs/quotes/booking-extension",
-    "@voyantjs/transactions/booking-extension",
     "@voyantjs/distribution/booking-extension",
   ],
 } satisfies CompositionManifest
@@ -239,11 +225,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
         },
       }),
-    "@voyantjs/commerce": () =>
-      createCommerceHonoModules({
-        sellability: { offerWriter: legacyTransactionsOfferWriter },
-      }),
-    "@voyantjs/transactions": () => transactionsHonoModule,
+    "@voyantjs/commerce": () => createCommerceHonoModules(),
     "@voyantjs/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
     "@voyantjs/suppliers": () => suppliersHonoModule,
@@ -417,7 +399,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
     "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
     "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
-    "@voyantjs/transactions/booking-extension": () => transactionsBookingExtension,
     "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,
   },
 }

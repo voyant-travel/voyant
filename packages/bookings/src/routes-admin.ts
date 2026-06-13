@@ -86,7 +86,6 @@ import {
   overrideBookingStatusSchema,
   pricingPreviewSchema,
   recordBookingRedemptionSchema,
-  reserveBookingFromTransactionSchema,
   reserveBookingSchema,
   sharingGroupsForSlotQuerySchema,
   startBookingSchema,
@@ -1534,86 +1533,6 @@ export const bookingRoutes = new Hono<Env>()
       }
 
       return c.json({ data: row }, 201)
-    },
-  )
-
-  // 3b. POST /from-offer/:offerId/reserve — Reserve booking from transaction offer
-  .post(
-    "/from-offer/:offerId/reserve",
-    idempotencyKey({ scope: "POST /v1/admin/bookings/from-offer" }),
-    async (c) => {
-      const result = await bookingsService.reserveBookingFromOffer(
-        c.get("db"),
-        c.req.param("offerId"),
-        await parseJsonBody(c, reserveBookingFromTransactionSchema),
-        c.get("userId"),
-      )
-
-      if (result.status === "not_found") {
-        return c.json({ error: "Offer not found" }, 404)
-      }
-
-      if (result.status === "slot_not_found") {
-        return c.json({ error: "Availability slot not found" }, 404)
-      }
-
-      if (result.status === "insufficient_capacity") {
-        return c.json({ error: "Insufficient slot capacity" }, 409)
-      }
-
-      if (result.status === "slot_unavailable") {
-        return c.json({ error: "Availability slot is not bookable" }, 409)
-      }
-
-      if (result.status === "slot_product_mismatch" || result.status === "slot_option_mismatch") {
-        return c.json({ error: "Reservation item does not match availability slot" }, 409)
-      }
-
-      if ("booking" in result) {
-        return c.json({ data: result.booking }, 201)
-      }
-
-      return c.json({ error: "Unable to reserve booking from offer" }, 400)
-    },
-  )
-
-  // 3c. POST /from-order/:orderId/reserve — Reserve booking from transaction order
-  .post(
-    "/from-order/:orderId/reserve",
-    idempotencyKey({ scope: "POST /v1/admin/bookings/from-order" }),
-    async (c) => {
-      const result = await bookingsService.reserveBookingFromOrder(
-        c.get("db"),
-        c.req.param("orderId"),
-        await parseJsonBody(c, reserveBookingFromTransactionSchema),
-        c.get("userId"),
-      )
-
-      if (result.status === "not_found") {
-        return c.json({ error: "Order not found" }, 404)
-      }
-
-      if (result.status === "slot_not_found") {
-        return c.json({ error: "Availability slot not found" }, 404)
-      }
-
-      if (result.status === "insufficient_capacity") {
-        return c.json({ error: "Insufficient slot capacity" }, 409)
-      }
-
-      if (result.status === "slot_unavailable") {
-        return c.json({ error: "Availability slot is not bookable" }, 409)
-      }
-
-      if (result.status === "slot_product_mismatch" || result.status === "slot_option_mismatch") {
-        return c.json({ error: "Reservation item does not match availability slot" }, 409)
-      }
-
-      if ("booking" in result) {
-        return c.json({ data: result.booking }, 201)
-      }
-
-      return c.json({ error: "Unable to reserve booking from order" }, 400)
     },
   )
 

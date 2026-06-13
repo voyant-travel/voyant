@@ -117,8 +117,6 @@ import {
   supplierServices,
   suppliers,
 } from "@voyantjs/suppliers/schema"
-import { bookingTransactionDetails } from "@voyantjs/transactions/booking-extension"
-import { offers, orders } from "@voyantjs/transactions/schema"
 import { hashPassword } from "better-auth/crypto"
 import { asc, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"
@@ -241,7 +239,6 @@ async function reset() {
     "booking_item_product_details",
     "booking_product_details",
     "booking_crm_details",
-    "booking_transaction_details",
     "booking_distribution_details",
     "booking_traveler_travel_details",
     "booking_supplier_statuses",
@@ -252,9 +249,6 @@ async function reset() {
     "booking_items",
     "booking_travelers",
     "bookings",
-    // Transactions
-    "orders",
-    "offers",
     // Availability
     "availability_slot_pickups",
     "availability_slots",
@@ -2490,11 +2484,6 @@ async function seedBookingsAndFinance() {
       bookingId,
       productId: product.id,
     })
-    await db.insert(bookingTransactionDetails).values({
-      bookingId,
-      orderId: null,
-      offerId: null,
-    })
     await db.insert(bookingDistributionDetails).values({
       bookingId,
       channelId: null,
@@ -2744,36 +2733,6 @@ async function seedBookingsAndFinance() {
         method: "explicit_checkbox",
       })
     }
-  }
-
-  // Quick transactions sanity: 1 offer + 1 order referencing the first booking's customer
-  try {
-    await db.insert(offers).values({
-      id: newId("offers"),
-      status: "sent",
-      personId: people_ids[0]!,
-      organizationId: CRM_ORGS[0]!.id,
-      currency: "EUR",
-      subtotalAmountCents: 1650000,
-      taxAmountCents: 330000,
-      totalAmountCents: 1980000,
-      validUntil: yyyyMmDd(daysFromNow(30)),
-    })
-    await db.insert(orders).values({
-      id: newId("orders"),
-      status: "confirmed",
-      personId: people_ids[0]!,
-      organizationId: CRM_ORGS[0]!.id,
-      currency: "EUR",
-      subtotalAmountCents: 1650000,
-      taxAmountCents: 330000,
-      totalAmountCents: 1980000,
-    })
-  } catch (e) {
-    console.warn(
-      "  (skipping offers/orders stub — column mismatch):",
-      (e as Error).message.split("\n")[0],
-    )
   }
 }
 

@@ -257,6 +257,9 @@ importers:
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../../packages/finance
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../../packages/inventory
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../../packages/products
@@ -269,9 +272,6 @@ importers:
       '@voyantjs/suppliers':
         specifier: workspace:^
         version: link:../../packages/suppliers
-      '@voyantjs/transactions':
-        specifier: workspace:^
-        version: link:../../packages/transactions
       dotenv:
         specifier: ^17.4.0
         version: 17.4.0
@@ -3423,9 +3423,6 @@ importers:
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
-      '@voyantjs/transactions':
-        specifier: workspace:^
-        version: link:../transactions
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -5545,9 +5542,6 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:^
         version: link:../../packages/suppliers-react
-      '@voyantjs/transactions':
-        specifier: workspace:^
-        version: link:../../packages/transactions
       '@voyantjs/travel-composer':
         specifier: workspace:^
         version: link:../../packages/travel-composer

@@ -3,7 +3,6 @@ import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { octoRoutes } from "../../src/routes.js"
-import { bookingTransactionDetailsRef } from "../../src/transactions-ref.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -130,10 +129,10 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
 
   async function seedBookingProjectionData() {
     const { availabilitySlots } = await import("@voyantjs/availability/schema")
+    const { upsertBookingOrigin } = await import("@voyantjs/bookings")
     const { bookingFulfillments, bookingSupplierStatuses, bookings } = await import(
       "@voyantjs/bookings/schema"
     )
-    const { offers, orders } = await import("@voyantjs/transactions/schema")
 
     const [slot] = await db
       .insert(availabilitySlots)
@@ -170,35 +169,13 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
     const reserveBody = await reserveRes.json()
     const bookingId = reserveBody.data.id
 
-    const [offer] = await db
-      .insert(offers)
-      .values({
-        offerNumber: nextSeq("OFF"),
-        title: "Offer",
-        status: "converted",
-        currency: "EUR",
-        totalAmountCents: 2000,
-        costAmountCents: 1000,
-      })
-      .returning()
-
-    const [order] = await db
-      .insert(orders)
-      .values({
-        orderNumber: nextSeq("ORD"),
-        offerId: offer.id,
-        title: "Order",
-        status: "pending",
-        currency: "EUR",
-        totalAmountCents: 2000,
-        costAmountCents: 1000,
-      })
-      .returning()
-
-    await db.insert(bookingTransactionDetailsRef).values({
+    await upsertBookingOrigin(db, {
       bookingId,
-      offerId: offer.id,
-      orderId: order.id,
+      originSource: "provider_source_order",
+      providerSourceKind: "octo",
+      providerSourceProvider: "octo-demo",
+      providerSourceRef: "SRC-BOOK-42",
+      providerOrderRef: "SRC-ORD-42",
     })
 
     await db.insert(bookingSupplierStatuses).values({
@@ -268,8 +245,10 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
 
     const body = await res.json()
     expect(body.data.references.resellerReference).toBe("OTA-REF-42")
-    expect(body.data.references.offerNumber).toMatch(/^OFF-/)
-    expect(body.data.references.orderNumber).toMatch(/^ORD-/)
+    expect(body.data.references.offerId).toBeNull()
+    expect(body.data.references.offerNumber).toBeNull()
+    expect(body.data.references.orderId).toBe("SRC-ORD-42")
+    expect(body.data.references.orderNumber).toBeNull()
     expect(body.data.references.supplierReferences[0].supplierReference).toBe("SUP-77")
     expect(body.data.artifacts[0].qrCode).toBe("qr-value")
     expect(body.data.artifacts[0].voucherCode).toBe("VOUCH-99")

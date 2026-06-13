@@ -10,7 +10,6 @@ import {
   insertBookingAllocationSchema,
   insertBookingFulfillmentSchema,
   recordBookingRedemptionSchema,
-  reserveBookingFromTransactionSchema,
   reserveBookingSchema,
   updateBookingAllocationSchema,
   updateBookingFulfillmentSchema,
@@ -92,17 +91,6 @@ describe("Reservation schemas", () => {
   it("accepts partial booking allocation updates", () => {
     const result = updateBookingAllocationSchema.parse({ status: "confirmed" })
     expect(result.status).toBe("confirmed")
-  })
-
-  it("parses reserve-from-transaction payload with policy-resolved hold minutes", () => {
-    const result = reserveBookingFromTransactionSchema.parse({
-      bookingNumber: "BK-TXN-001",
-    })
-
-    expect(result.bookingNumber).toBe("BK-TXN-001")
-    expect(result.holdMinutes).toBeUndefined()
-    expect(result.sourceType).toBe("internal")
-    expect(result.includeParticipants).toBe(true)
   })
 })
 
