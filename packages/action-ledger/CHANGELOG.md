@@ -1,5 +1,11 @@
 # @voyantjs/action-ledger
 
+## 0.104.10
+
+### Patch Changes
+
+- a0f1a13: Split oversized action-ledger service and route test modules into focused internal files while preserving existing public service exports and behavior.
+
 ## 0.104.9
 
 ### Patch Changes
