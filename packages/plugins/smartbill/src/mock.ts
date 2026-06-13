@@ -1,4 +1,17 @@
-// agent-quality: file-size exception -- owner: plugins; existing module stays co-located until a dedicated split preserves behavior and tests.
+import { concat, importNodeHttp } from "./mock/node.js"
+import { createPlaceholderPdf } from "./mock/pdf.js"
+import type {
+  SmartbillMockDocument,
+  SmartbillMockDocumentKind,
+  SmartbillMockDocumentStatus,
+  SmartbillMockListenOptions,
+  SmartbillMockRequest,
+  SmartbillMockResponse,
+  SmartbillMockSeries,
+  SmartbillMockServer,
+  SmartbillMockServerOptions,
+  SmartbillMockTax,
+} from "./mock/types.js"
 import type {
   SmartbillEstimateInvoicesResponse,
   SmartbillFetch,
@@ -10,122 +23,19 @@ import type {
   SmartbillTaxesResponse,
 } from "./types.js"
 
-export type SmartbillMockDocumentKind = "invoice" | "estimate"
-
-export type SmartbillMockDocumentStatus =
-  | "issued"
-  | "cancelled"
-  | "deleted"
-  | "reversed"
-  | "restored"
-
-export interface SmartbillMockTax {
-  name: string
-  percentage: number
-  default?: boolean
-}
-
-export interface SmartbillMockSeries {
-  name: string
-  type: SmartbillMockDocumentKind
-  nextNumber: number
-}
-
-export interface SmartbillMockDocument {
-  kind: SmartbillMockDocumentKind
-  companyVatCode: string
-  seriesName: string
-  number: string
-  status: SmartbillMockDocumentStatus
-  body: SmartbillInvoiceBody
-  url: string
-  total: number
-  paidAmount: number
-  payments: SmartbillPaymentEntry[]
-  createdAt: string
-  convertedInvoices: SmartbillInvoiceResponse[]
-}
-
-export interface SmartbillMockServerOptions {
-  taxes?: SmartbillMockTax[]
-  series?: SmartbillMockSeries[]
-  now?: () => Date
-}
-
-export interface SmartbillMockListenOptions {
-  port?: number
-  hostname?: string
-}
-
-export interface SmartbillMockServerHandle {
-  apiUrl: string
-  close: () => Promise<void>
-}
-
-export interface SmartbillMockRequest {
-  method: string
-  url: string
-  body?: string
-}
-
-export interface SmartbillMockResponse {
-  status: number
-  headers: Record<string, string>
-  /**
-   * Serialised body. JSON endpoints emit a UTF-8 string; PDF endpoints
-   * emit raw bytes. The HTTP listener writes both as-is; the in-process
-   * `fetch` adapter exposes them through the matching Response method.
-   */
-  body: string | Uint8Array
-}
-
-export interface SmartbillMockServer {
-  fetch: SmartbillFetch
-  handleRequest: (request: SmartbillMockRequest) => Promise<SmartbillMockResponse>
-  listen: (options?: SmartbillMockListenOptions) => Promise<SmartbillMockServerHandle>
-  reset: () => void
-  listDocuments: () => SmartbillMockDocument[]
-  getDocument: (
-    kind: SmartbillMockDocumentKind,
-    companyVatCode: string,
-    seriesName: string,
-    number: string,
-  ) => SmartbillMockDocument | null
-  convertEstimateToInvoice: (args: {
-    companyVatCode: string
-    seriesName: string
-    number: string
-    invoiceSeriesName?: string
-  }) => SmartbillInvoiceResponse
-}
-
-interface SmartbillNodeRequest extends AsyncIterable<Uint8Array | string> {
-  method?: string
-  url?: string
-  headers: {
-    host?: string | string[]
-  }
-}
-
-interface SmartbillNodeResponse {
-  setHeader: (key: string, value: string) => void
-  statusCode: number
-  end: (body: string | Uint8Array) => void
-}
-
-interface SmartbillNodeServer {
-  listen: (port: number, hostname: string, callback: () => void) => void
-  once: (event: "error", handler: (error: Error) => void) => void
-  off: (event: "error", handler: (error: Error) => void) => void
-  address: () => string | { port: number } | null
-  close: (callback?: (error?: Error) => void) => void
-}
-
-interface SmartbillNodeHttp {
-  createServer: (
-    handler: (req: SmartbillNodeRequest, res: SmartbillNodeResponse) => void | Promise<void>,
-  ) => SmartbillNodeServer
-}
+export type {
+  SmartbillMockDocument,
+  SmartbillMockDocumentKind,
+  SmartbillMockDocumentStatus,
+  SmartbillMockListenOptions,
+  SmartbillMockRequest,
+  SmartbillMockResponse,
+  SmartbillMockSeries,
+  SmartbillMockServer,
+  SmartbillMockServerHandle,
+  SmartbillMockServerOptions,
+  SmartbillMockTax,
+} from "./mock/types.js"
 
 const defaultTaxes: SmartbillMockTax[] = [
   { name: "Normala", percentage: 19, default: true },
@@ -671,65 +581,4 @@ function cloneDocument(document: SmartbillMockDocument): SmartbillMockDocument {
 
 function roundMoney(value: number) {
   return Math.round(value * 100) / 100
-}
-
-function concat(chunks: Uint8Array[]) {
-  const length = chunks.reduce((total, chunk) => total + chunk.byteLength, 0)
-  const combined = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    combined.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return combined
-}
-
-async function importNodeHttp(): Promise<SmartbillNodeHttp> {
-  const specifier = "node:http"
-  return import(specifier) as Promise<SmartbillNodeHttp>
-}
-
-/**
- * Builds a small but well-formed single-page PDF that satisfies SDKs
- * expecting `application/pdf` bytes. The label is rendered on the page
- * so the file is recognisable when opened by hand.
- */
-function createPlaceholderPdf(label: string): Uint8Array {
-  const escapedLabel = label.replace(/[()\\]/g, (m) => `\\${m}`)
-  const stream = `BT /F1 18 Tf 72 720 Td (${escapedLabel}) Tj ET`
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-  ]
-  const encoder = new TextEncoder()
-  const parts: Uint8Array[] = []
-  parts.push(encoder.encode("%PDF-1.4\n%"))
-  // Binary marker: any four bytes >=128 satisfy PDF readers' "this file is binary" probe.
-  parts.push(new Uint8Array([0xe2, 0xe3, 0xcf, 0xd3, 0x0a]))
-  let length = parts.reduce((sum, p) => sum + p.byteLength, 0)
-  const offsets: number[] = []
-  for (let i = 0; i < objects.length; i++) {
-    offsets.push(length)
-    const chunk = encoder.encode(`${i + 1} 0 obj\n${objects[i]}\nendobj\n`)
-    parts.push(chunk)
-    length += chunk.byteLength
-  }
-  const xrefStart = length
-  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
-  for (const off of offsets) {
-    xref += `${String(off).padStart(10, "0")} 00000 n \n`
-  }
-  xref += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`
-  parts.push(encoder.encode(xref))
-  const total = parts.reduce((sum, p) => sum + p.byteLength, 0)
-  const out = new Uint8Array(total)
-  let offset = 0
-  for (const part of parts) {
-    out.set(part, offset)
-    offset += part.byteLength
-  }
-  return out
 }
