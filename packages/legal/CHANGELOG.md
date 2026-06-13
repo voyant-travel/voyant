@@ -1,5 +1,11 @@
 # @voyantjs/legal
 
+## 0.119.2
+
+### Patch Changes
+
+- b402bcd: Split oversized legal contract generation and dialog modules into smaller internal files while preserving existing public exports and behavior.
+
 ## 0.119.1
 
 ### Patch Changes
