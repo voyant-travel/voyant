@@ -11,7 +11,7 @@
  * covered by the integration tests in tests/integration/.
  */
 
-import type { IndexerSlice } from "@voyantjs/products/service-catalog-plane"
+import type { IndexerSlice } from "@voyantjs/catalog"
 import { describe, expect, it } from "vitest"
 
 import {
