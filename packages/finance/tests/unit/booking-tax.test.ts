@@ -86,26 +86,22 @@ describe("booking tax helpers", () => {
   it("serves the booking tax-preview route with the shared response shape", async () => {
     const resultQueue = [
       [{ id: "profile_1", code: "ro-b2c", active: true }],
-      [],
-      [],
       [{ condition: { always: true }, taxRegimeId: "regime_1" }],
       [{ code: "standard", name: "TVA Standard", ratePercent: 21 }],
     ]
     const takeResult = async () => resultQueue.shift() ?? []
-    let selectCount = 0
     function makeQuery() {
-      selectCount += 1
-      const resolveOnWhere = selectCount === 2 || selectCount === 3
       const chain = {
         from: () => chain,
         innerJoin: () => chain,
-        where: () => (resolveOnWhere ? takeResult() : chain),
+        where: () => chain,
         limit: takeResult,
         orderBy: takeResult,
       }
       return chain
     }
     const db = {
+      execute: vi.fn(async () => []),
       select: makeQuery,
     } as PostgresJsDatabase
 

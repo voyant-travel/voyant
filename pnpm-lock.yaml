@@ -2439,9 +2439,6 @@ importers:
       '@voyantjs/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -2460,9 +2457,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
       '@voyantjs/storage':
         specifier: workspace:^
         version: link:../storage
@@ -2482,6 +2476,12 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

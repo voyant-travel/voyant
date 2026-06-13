@@ -3,9 +3,7 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import { bookings } from "@voyantjs/bookings/schema"
-import { products } from "@voyantjs/products/schema"
 import { type AnyColumn, and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -24,6 +22,7 @@ import {
   buildSupplierInvoiceDeleteActionLedgerInput,
   buildSupplierInvoiceUpdateActionLedgerInput,
 } from "./service-action-ledger-supplier-invoices.js"
+import { executeBoundaryRows, normalizeDateOnly, sqlList } from "./service-boundary-sql.js"
 import type {
   insertSupplierInvoiceAttachmentSchema,
   insertSupplierInvoiceSchema,
@@ -426,21 +425,31 @@ async function resolveAllocationTargetLabels(
 
   const [slotRows, productRows, bookingRows] = await Promise.all([
     departureIds.length
-      ? db
-          .select({
-            id: availabilitySlots.id,
-            dateLocal: availabilitySlots.dateLocal,
-            productName: products.name,
-          })
-          .from(availabilitySlots)
-          .leftJoin(products, eq(availabilitySlots.productId, products.id))
-          .where(inArray(availabilitySlots.id, departureIds))
+      ? executeBoundaryRows<{
+          id: string
+          date_local: Date | string
+          product_name: string | null
+        }>(
+          db,
+          // agent-quality: raw-sql reviewed -- owner: finance; Availability/Product are read-only allocation label sources and ids are parameter-bound.
+          sql`
+            SELECT avs.id, avs.date_local, p.name AS product_name
+            FROM availability_slots avs
+            LEFT JOIN products p ON avs.product_id = p.id
+            WHERE avs.id IN (${sqlList(departureIds)})
+          `,
+        )
       : Promise.resolve([]),
     productIds.length
-      ? db
-          .select({ id: products.id, name: products.name })
-          .from(products)
-          .where(inArray(products.id, productIds))
+      ? executeBoundaryRows<{ id: string; name: string }>(
+          db,
+          // agent-quality: raw-sql reviewed -- owner: finance; Product is a read-only allocation label source and ids are parameter-bound.
+          sql`
+            SELECT id, name
+            FROM products
+            WHERE id IN (${sqlList(productIds)})
+          `,
+        )
       : Promise.resolve([]),
     bookingIds.length
       ? db
@@ -451,7 +460,8 @@ async function resolveAllocationTargetLabels(
   ])
 
   for (const s of slotRows) {
-    labels.set(s.id, s.productName ? `${s.productName} · ${s.dateLocal}` : s.dateLocal)
+    const dateLocal = normalizeDateOnly(s.date_local) ?? String(s.date_local)
+    labels.set(s.id, s.product_name ? `${s.product_name} · ${dateLocal}` : dateLocal)
   }
   for (const p of productRows) labels.set(p.id, p.name)
   for (const b of bookingRows) labels.set(b.id, b.bookingNumber)

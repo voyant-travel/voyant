@@ -26,14 +26,12 @@
   },
   "dependencies": {
     "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/availability": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/data-sdk": "^0.4.0",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/finance-contracts": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/storage": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -42,6 +40,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@voyantjs/availability": "workspace:^",
+    "@voyantjs/products": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
