@@ -1,5 +1,19 @@
 # @voyantjs/bookings-react
 
+## 0.119.2
+
+### Patch Changes
+
+- f1c05dc: Split oversized booking React, journey, traveler, and i18n surfaces into smaller internal modules without changing public exports.
+- Updated dependencies [e6d9a61]
+- Updated dependencies [bd74fb0]
+- Updated dependencies [b66b155]
+  - @voyantjs/products-react@0.119.3
+  - @voyantjs/catalog-react@0.117.2
+  - @voyantjs/catalog-contracts@0.107.1
+  - @voyantjs/finance-react@0.119.3
+  - @voyantjs/bookings@0.119.2
+
 ## 0.119.1
 
 ### Patch Changes

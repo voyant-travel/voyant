@@ -1,5 +1,16 @@
 # @voyantjs/finance-react
 
+## 0.119.3
+
+### Patch Changes
+
+- b66b155: Refactor oversized finance React schemas, query options, i18n, and admin surface components into smaller internal modules without changing public exports or user-facing workflows.
+- Updated dependencies [e6d9a61]
+- Updated dependencies [f1c05dc]
+  - @voyantjs/products-react@0.119.3
+  - @voyantjs/bookings-react@0.119.2
+  - @voyantjs/finance@0.119.3
+
 ## 0.119.2
 
 ### Patch Changes

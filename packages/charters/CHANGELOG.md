@@ -1,5 +1,17 @@
 # @voyantjs/charters
 
+## 0.117.2
+
+### Patch Changes
+
+- d4e3d54: Split oversized cruise route, service, booking, search, and catalog policy modules into smaller vertical slices while preserving the existing public exports and behavior.
+
+  Split oversized flights UI, charter booking, and accommodation content modules into smaller internal slices while preserving the existing public exports and behavior.
+
+- Updated dependencies [bd74fb0]
+  - @voyantjs/catalog@0.117.2
+  - @voyantjs/bookings@0.119.2
+
 ## 0.117.1
 
 ### Patch Changes
