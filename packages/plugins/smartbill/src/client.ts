@@ -1,10 +1,13 @@
+import { createCircuitBreaker, resilientFetch } from "@voyantjs/utils/resilience"
+
 import {
-  type CircuitBreaker,
-  CircuitOpenError,
-  createCircuitBreaker,
-  type RetryOptions,
-  resilientFetch,
-} from "@voyantjs/utils/resilience"
+  SmartbillApiError,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "./client/errors.js"
+import { asResilientFetch, createGlobalSmartbillFetch } from "./client/fetch.js"
+import { parseSmartbillRateLimit } from "./client/rate-limit.js"
+import { type SmartbillResilienceOptions, surfacingRetry } from "./client/resilience.js"
 
 import type {
   SmartbillEnvelope,
@@ -18,57 +21,7 @@ import type {
   SmartbillTaxesResponse,
 } from "./types.js"
 
-// agent-quality: file-size exception -- SmartBill's broad API client remains co-located until endpoint groups are split.
-/**
- * Outbound-HTTP resilience knobs for the SmartBill client. Every call goes
- * through `resilientFetch`, so a slow or down SmartBill fails fast instead
- * of burning the Worker request's CPU/subrequest budget. Retries only apply
- * to idempotent operations (GETs, PDF downloads, cancel/restore/delete);
- * document-creating calls (invoice/proforma create, conversion, reversal)
- * never retry because SmartBill has no idempotency keys.
- */
-export interface SmartbillResilienceOptions {
-  /** Per-attempt timeout. Default 10s. */
-  timeoutMs?: number
-  /**
-   * Retry tuning (attempts/backoff) for retry-eligible operations, or
-   * `false` to disable retries entirely. Defaults to 3 attempts on network
-   * errors/timeouts/429/5xx.
-   */
-  retry?: Pick<RetryOptions, "attempts" | "baseDelayMs" | "maxDelayMs"> | false
-  /**
-   * Override/share the circuit breaker. Defaults to one breaker per client
-   * instance (clients are per-worker singletons, i.e. one per upstream).
-   * Distinct from the SmartBill-specific rate-limit circuit (`rateLimit`),
-   * which reacts to SmartBill's 403 quota responses.
-   */
-  breaker?: CircuitBreaker
-}
-
-/**
- * Retry on network errors/timeouts/429/5xx, but surface the FINAL failing
- * response to the caller instead of throwing, so `buildApiError` keeps the
- * upstream status + body (including SmartBill's rate-limit envelope).
- */
-function surfacingRetry(
-  maxAttempts: number,
-  tuning?: { baseDelayMs?: number; maxDelayMs?: number },
-): RetryOptions {
-  let failedAttempts = 0
-  return {
-    baseDelayMs: tuning?.baseDelayMs,
-    maxDelayMs: tuning?.maxDelayMs,
-    attempts: maxAttempts,
-    retryOn: ({ response, error }) => {
-      failedAttempts += 1
-      if (failedAttempts >= maxAttempts) return false
-      if (error) return !(error instanceof CircuitOpenError)
-      const status = response?.status ?? 0
-      return status === 429 || status >= 500
-    },
-  }
-}
-
+export type { SmartbillResilienceOptions } from "./client/resilience.js"
 /**
  * Options for {@link createSmartbillClient}.
  */
@@ -168,151 +121,15 @@ export interface SmartbillClientApi {
   ): Promise<SmartbillEstimateInvoicesResponse>
 }
 
-export interface SmartbillApiErrorOptions {
-  operation: string
-  status?: number
-  body?: string
-  response?: unknown
-}
-
-export class SmartbillApiError extends Error {
-  readonly operation: string
-  readonly status?: number
-  readonly body?: string
-  readonly response?: unknown
-
-  constructor(message: string, options: SmartbillApiErrorOptions) {
-    super(message)
-    this.name = "SmartbillApiError"
-    this.operation = options.operation
-    this.status = options.status
-    this.body = options.body
-    this.response = options.response
-  }
-}
-
-export interface SmartbillRateLimitErrorOptions extends SmartbillApiErrorOptions {
-  retryAfterMs?: number
-  retryAfterAt?: Date
-  blockedAt?: Date
-}
-
-export class SmartbillRateLimitError extends SmartbillApiError {
-  readonly retryAfterMs?: number
-  readonly retryAfterAt?: Date
-  readonly blockedAt?: Date
-
-  constructor(message: string, options: SmartbillRateLimitErrorOptions) {
-    super(message, options)
-    this.name = "SmartbillRateLimitError"
-    this.retryAfterMs = options.retryAfterMs
-    this.retryAfterAt = options.retryAfterAt
-    this.blockedAt = options.blockedAt
-  }
-}
-
-export class SmartbillRateLimitCircuitOpenError extends SmartbillRateLimitError {
-  constructor(options: SmartbillRateLimitErrorOptions) {
-    super(
-      `SmartBill rate-limit circuit is open${
-        options.retryAfterMs !== undefined ? `; retry after ${options.retryAfterMs}ms` : ""
-      }`,
-      options,
-    )
-    this.name = "SmartbillRateLimitCircuitOpenError"
-  }
-}
-
-interface ParsedSmartbillRateLimit {
-  errorText: string
-  retryAfterMs?: number
-  retryAfterAt?: Date
-  blockedAt?: Date
-}
-
-const RATE_LIMIT_TEXT_PATTERN =
-  /limita\s+maxima\s+de\s+requesturi|vei\s+putea\s+executa\s+alte\s+requesturi/i
-const RATE_LIMIT_MINUTES_PATTERN = /dupa\s+(\d+)\s*min/i
-const RATE_LIMIT_DATE_PATTERN =
-  /(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})|(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/
+export type { SmartbillApiErrorOptions } from "./client/errors.js"
+export {
+  SmartbillApiError,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "./client/errors.js"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
-}
-
-function parseSmartbillDate(value: string) {
-  const match = RATE_LIMIT_DATE_PATTERN.exec(value)
-  if (!match) return undefined
-
-  // Treat SmartBill's date string as UTC. The original code used `new
-  // Date(y, m, d, ...)` which interprets components as the JS host's
-  // local time, so the same response decoded to different instants on a
-  // CI runner (UTC) vs. a developer machine (Europe/Bucharest, EEST).
-  // The retry-window math downstream is duration-based (`retryAfterAt -
-  // now`), so anchoring to UTC keeps the math deterministic and matches
-  // the existing test fixtures that assert UTC timestamps.
-  if (match[1]) {
-    const [, day, month, year, hour, minute, second] = match
-    return new Date(
-      Date.UTC(
-        Number(year),
-        Number(month) - 1,
-        Number(day),
-        Number(hour),
-        Number(minute),
-        Number(second),
-      ),
-    )
-  }
-
-  const [, , , , , , , year, month, day, hour, minute, second] = match
-  return new Date(
-    Date.UTC(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-      Number(hour),
-      Number(minute),
-      Number(second),
-    ),
-  )
-}
-
-function parseSmartbillRateLimit(
-  status: number,
-  parsed: unknown,
-  now: Date,
-): ParsedSmartbillRateLimit | null {
-  if (!isRecord(parsed)) return null
-
-  const errorText =
-    typeof parsed.errorText === "string"
-      ? parsed.errorText
-      : typeof parsed.message === "string"
-        ? parsed.message
-        : ""
-  if (status !== 403 && !RATE_LIMIT_TEXT_PATTERN.test(errorText)) return null
-  if (!RATE_LIMIT_TEXT_PATTERN.test(errorText)) return null
-
-  const minutesMatch = RATE_LIMIT_MINUTES_PATTERN.exec(errorText)
-  const blockedAt = parseSmartbillDate(errorText)
-  const minutes = minutesMatch?.[1] ? Number(minutesMatch[1]) : undefined
-  const retryAfterAt =
-    blockedAt && minutes !== undefined
-      ? new Date(blockedAt.getTime() + minutes * 60_000)
-      : typeof parsed.cooldown === "number" && parsed.cooldown > 0
-        ? new Date(now.getTime() + parsed.cooldown * 1000)
-        : undefined
-  const retryAfterMs = retryAfterAt
-    ? Math.max(0, retryAfterAt.getTime() - now.getTime())
-    : undefined
-
-  return {
-    errorText,
-    retryAfterMs,
-    retryAfterAt,
-    blockedAt,
-  }
 }
 
 export function createSmartbillClient(options: SmartbillClientOptions): SmartbillClientApi {
@@ -640,36 +457,5 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     listTaxes,
     listSeries,
     listEstimateInvoices,
-  }
-}
-
-function createGlobalSmartbillFetch(): SmartbillFetch | undefined {
-  if (typeof globalThis.fetch !== "function") return undefined
-  return (input, init) => globalThis.fetch(input, init)
-}
-
-function headersForPluginFetch(headers: HeadersInit | undefined): Record<string, string> {
-  if (!headers) return {}
-  if (headers instanceof Headers || Array.isArray(headers)) {
-    return Object.fromEntries(new Headers(headers).entries())
-  }
-  const out: Record<string, string> = {}
-  for (const [key, value] of Object.entries(headers)) out[key] = String(value)
-  return out
-}
-
-function asResilientFetch(fetchImpl: SmartbillFetch): typeof fetch {
-  return async (input, init = {}) => {
-    const response = await fetchImpl(input instanceof Request ? input.url : String(input), {
-      method: init.method ?? "GET",
-      headers: headersForPluginFetch(init.headers),
-      ...(typeof init.body === "string" ? { body: init.body } : {}),
-    })
-    if (response instanceof Response) return response
-    const contentType = response.headers?.get("content-type")
-    return new Response(await response.arrayBuffer(), {
-      status: response.status,
-      headers: contentType ? { "content-type": contentType } : undefined,
-    })
   }
 }

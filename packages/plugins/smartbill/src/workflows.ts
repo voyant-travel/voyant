@@ -1,207 +1,59 @@
-// agent-quality: file-size exception -- owner: plugins; existing module stays co-located until a dedicated split preserves behavior and tests.
-import {
-  type Invoice,
-  type InvoiceExternalRef,
-  invoiceExternalRefs,
-  invoices,
-} from "@voyantjs/finance"
-import { desc, eq } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import {
-  type SmartbillClientApi,
-  SmartbillRateLimitCircuitOpenError,
-  SmartbillRateLimitError,
-} from "./client.js"
-import type {
-  SmartbillEstimateInvoicesResponse,
-  SmartbillInvoiceResponse,
-  SmartbillPdfResponse,
-  SmartbillStatusResponse,
-} from "./types.js"
-import {
-  loadSmartbillCandidateRefs,
-  type SmartbillCandidateExternalRefRecorder,
-  type SmartbillCandidateInvoice,
-  type SmartbillWorkflowCandidateSource,
-} from "./workflow-candidates.js"
+import type { SmartbillClientApi } from "./client.js"
+import type { SmartbillEstimateInvoicesResponse } from "./types.js"
 import {
   discoverRemoteDocuments,
   paymentStatusToRemoteStatus,
 } from "./workflow-remote-discovery.js"
+import { loadSmartbillWorkflowRefs } from "./workflows/refs.js"
+import {
+  createSpacedSmartbillClient,
+  isSmartbillRateLimitError,
+} from "./workflows/spaced-client.js"
+import type {
+  SmartbillDriftFinding,
+  SmartbillDriftReconciler,
+  SmartbillDriftReconcilerOptions,
+  SmartbillDriftReconcilerResult,
+  SmartbillMissingLocalDriftFinding,
+  SmartbillProformaConversion,
+  SmartbillProformaConversionPoller,
+  SmartbillProformaConversionPollerOptions,
+  SmartbillProformaConversionPollerResult,
+  SmartbillReferenceParts,
+  SmartbillRemoteDocument,
+  SmartbillRemoteDocumentStatus,
+  SmartbillWorkflowDocumentType,
+  SmartbillWorkflowError,
+  SmartbillWorkflowExternalRef,
+  SmartbillWorkflowLogger,
+} from "./workflows/types.js"
 
 export type {
   SmartbillCandidateExternalRefRecorder,
   SmartbillCandidateExternalRefRecorderContext,
   SmartbillCandidateInvoice,
+  SmartbillDriftFinding,
+  SmartbillDriftFindingType,
+  SmartbillDriftReconciler,
+  SmartbillDriftReconcilerOptions,
+  SmartbillDriftReconcilerResult,
+  SmartbillKnownLocalDriftFinding,
+  SmartbillMissingLocalDriftFinding,
+  SmartbillProformaConversion,
+  SmartbillProformaConversionPoller,
+  SmartbillProformaConversionPollerOptions,
+  SmartbillProformaConversionPollerResult,
+  SmartbillReferenceParts,
+  SmartbillRemoteDocument,
+  SmartbillRemoteDocumentAccessors,
+  SmartbillRemoteDocumentStatus,
   SmartbillWorkflowCandidateSource,
-} from "./workflow-candidates.js"
-
-export type SmartbillWorkflowDocumentType = "invoice" | "proforma"
-
-export interface SmartbillWorkflowLogger {
-  info?: (message: string, meta?: unknown) => void
-  error?: (message: string, meta?: unknown) => void
-}
-
-export interface SmartbillWorkflowInvoice {
-  id: string
-  invoiceNumber: string
-  invoiceType: Invoice["invoiceType"]
-  status: Invoice["status"]
-  currency: string
-  totalCents: number
-  paidCents: number
-  balanceDueCents: number
-}
-
-export interface SmartbillWorkflowExternalRef {
-  id: string
-  invoiceId: string
-  provider: string
-  externalId: string | null
-  externalNumber: string | null
-  externalUrl: string | null
-  status: string | null
-  metadata: unknown
-  syncError: string | null
-  createdAt?: Date | null
-  updatedAt?: Date | null
-  invoice?: SmartbillWorkflowInvoice | null
-}
-
-export interface SmartbillReferenceParts {
-  companyVatCode: string
-  seriesName: string
-  number: string
-  documentType: SmartbillWorkflowDocumentType
-}
-
-export interface SmartbillProformaConversion {
-  proformaRef: SmartbillWorkflowExternalRef
-  invoice: SmartbillWorkflowInvoice | null
-  companyVatCode: string
-  proformaSeriesName: string
-  proformaNumber: string
-  invoiceSeriesName: string
-  invoiceNumber: string
-  invoiceUrl: string | null
-  response: SmartbillEstimateInvoicesResponse
-  smartbillInvoice: SmartbillInvoiceResponse
-}
-
-export interface SmartbillProformaConversionPollerOptions {
-  db?: PostgresJsDatabase
-  client: SmartbillClientApi
-  limit?: number
-  requestSpacingMs?: number
-  companyVatCode?: string
-  source?: SmartbillWorkflowCandidateSource
-  logger?: SmartbillWorkflowLogger
-  listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
-  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
-  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
-  onConverted: (
-    proformaRef: SmartbillWorkflowExternalRef,
-    conversion: SmartbillProformaConversion,
-  ) => void | Promise<void>
-  onError?: (error: SmartbillWorkflowError) => void | Promise<void>
-}
-
-export interface SmartbillWorkflowError {
-  ref?: SmartbillWorkflowExternalRef
-  error: unknown
-}
-
-export interface SmartbillProformaConversionPollerResult {
-  checked: number
-  converted: SmartbillProformaConversion[]
-  skipped: Array<{ ref: SmartbillWorkflowExternalRef; reason: string }>
-  errors: SmartbillWorkflowError[]
-}
-
-export type SmartbillRemoteDocumentStatus =
-  | "present"
-  | "issued"
-  | "paid"
-  | "unpaid"
-  | "partially_paid"
-  | "voided"
-  | "cancelled"
-  | "reversed"
-  | "deleted"
-  | "missing"
-
-export interface SmartbillRemoteDocument extends SmartbillReferenceParts {
-  status?: SmartbillRemoteDocumentStatus
-  metadata?: Record<string, unknown>
-  accessors?: SmartbillRemoteDocumentAccessors
-}
-
-export interface SmartbillRemoteDocumentAccessors {
-  viewPdf: () => Promise<SmartbillPdfResponse>
-  getPaymentStatus?: () => Promise<SmartbillStatusResponse>
-  listEstimateInvoices?: () => Promise<SmartbillEstimateInvoicesResponse>
-}
-
-export type SmartbillDriftFindingType = "missing_local" | "missing_remote" | "voided_remote"
-
-interface SmartbillDriftFindingBase {
-  document: SmartbillReferenceParts
-  error?: unknown
-}
-
-export interface SmartbillMissingLocalDriftFinding extends SmartbillDriftFindingBase {
-  type: "missing_local"
-  remote: SmartbillRemoteDocument
-}
-
-export interface SmartbillKnownLocalDriftFinding extends SmartbillDriftFindingBase {
-  type: "missing_remote" | "voided_remote"
-  ref?: SmartbillWorkflowExternalRef
-  invoice?: SmartbillWorkflowInvoice | null
-  remote?: SmartbillRemoteDocument | null
-}
-
-export type SmartbillDriftFinding =
-  | SmartbillMissingLocalDriftFinding
-  | SmartbillKnownLocalDriftFinding
-
-export interface SmartbillDriftReconcilerOptions {
-  db?: PostgresJsDatabase
-  client: SmartbillClientApi
-  limit?: number
-  requestSpacingMs?: number
-  companyVatCode?: string
-  logger?: SmartbillWorkflowLogger
-  discoverRemote?: boolean
-  source?: SmartbillWorkflowCandidateSource
-  listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
-  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
-  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
-  listRemoteDocuments?: (context: {
-    refs: SmartbillWorkflowExternalRef[]
-  }) => Promise<SmartbillRemoteDocument[]>
-  verifyRemoteDocument?: (context: {
-    ref: SmartbillWorkflowExternalRef
-    document: SmartbillReferenceParts
-  }) => Promise<SmartbillRemoteDocumentStatus | SmartbillRemoteDocument>
-  onFinding?: (finding: SmartbillDriftFinding) => void | Promise<void>
-  onMissingLocal?: (finding: SmartbillMissingLocalDriftFinding) => void | Promise<void>
-  onError?: (error: SmartbillWorkflowError) => void | Promise<void>
-}
-
-export interface SmartbillDriftReconcilerResult {
-  checked: number
-  findings: SmartbillDriftFinding[]
-  skipped: Array<{ ref: SmartbillWorkflowExternalRef; reason: string }>
-  errors: SmartbillWorkflowError[]
-}
-
-export type SmartbillProformaConversionPoller =
-  () => Promise<SmartbillProformaConversionPollerResult>
-
-export type SmartbillDriftReconciler = () => Promise<SmartbillDriftReconcilerResult>
+  SmartbillWorkflowDocumentType,
+  SmartbillWorkflowError,
+  SmartbillWorkflowExternalRef,
+  SmartbillWorkflowInvoice,
+  SmartbillWorkflowLogger,
+} from "./workflows/types.js"
 
 export function createSmartbillProformaConversionPoller(
   options: SmartbillProformaConversionPollerOptions,
@@ -378,72 +230,6 @@ function resolveDiscoveryCompanyVatCode(
   throw new Error("SmartBill remote discovery requires companyVatCode")
 }
 
-async function loadSmartbillWorkflowRefs(options: {
-  db?: PostgresJsDatabase
-  limit?: number
-  companyVatCode?: string
-  source?: SmartbillWorkflowCandidateSource
-  listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
-  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
-  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
-}) {
-  if (options.listCandidateInvoices || options.source === "invoices") {
-    return loadSmartbillCandidateRefs(options)
-  }
-  return loadSmartbillExternalRefs(options)
-}
-
-async function loadSmartbillExternalRefs(options: {
-  db?: PostgresJsDatabase
-  limit?: number
-  listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
-}) {
-  if (options.listExternalRefs) return options.listExternalRefs()
-  if (!options.db) throw new Error("SmartBill workflow requires db or listExternalRefs")
-
-  const rows = await options.db
-    .select({
-      ref: invoiceExternalRefs,
-      invoice: {
-        id: invoices.id,
-        invoiceNumber: invoices.invoiceNumber,
-        invoiceType: invoices.invoiceType,
-        status: invoices.status,
-        currency: invoices.currency,
-        totalCents: invoices.totalCents,
-        paidCents: invoices.paidCents,
-        balanceDueCents: invoices.balanceDueCents,
-      },
-    })
-    .from(invoiceExternalRefs)
-    .leftJoin(invoices, eq(invoiceExternalRefs.invoiceId, invoices.id))
-    .where(eq(invoiceExternalRefs.provider, "smartbill"))
-    .orderBy(desc(invoiceExternalRefs.createdAt))
-    .limit(options.limit ?? 500)
-
-  return rows.map((row) => toWorkflowExternalRef(row.ref, row.invoice))
-}
-
-function toWorkflowExternalRef(
-  ref: InvoiceExternalRef,
-  invoice: SmartbillWorkflowInvoice | null,
-): SmartbillWorkflowExternalRef {
-  return {
-    id: ref.id,
-    invoiceId: ref.invoiceId,
-    provider: ref.provider,
-    externalId: ref.externalId,
-    externalNumber: ref.externalNumber,
-    externalUrl: ref.externalUrl,
-    status: ref.status,
-    metadata: ref.metadata,
-    syncError: ref.syncError,
-    createdAt: ref.createdAt,
-    updatedAt: ref.updatedAt,
-    invoice,
-  }
-}
-
 function convertedInvoicesFromResponse(response: SmartbillEstimateInvoicesResponse) {
   if (Array.isArray(response.invoices) && response.invoices.length > 0) {
     return response.invoices.filter((invoice) => invoice.series && invoice.number)
@@ -479,74 +265,6 @@ async function defaultVerifyRemoteDocument(
     document.number,
   )
   return paymentStatusToRemoteStatus(status)
-}
-
-function createSpacedSmartbillClient(
-  client: SmartbillClientApi,
-  requestSpacingMs: number | undefined,
-): SmartbillClientApi {
-  const minIntervalMs =
-    typeof requestSpacingMs === "number" && Number.isFinite(requestSpacingMs)
-      ? Math.max(0, requestSpacingMs)
-      : 0
-  if (minIntervalMs === 0) return client
-
-  let lastRequestStartedAt: number | null = null
-  let pendingRequest = Promise.resolve()
-
-  const spaceRequest = async <Result>(request: () => Promise<Result>) => {
-    const run = pendingRequest.then(async () => {
-      if (lastRequestStartedAt !== null) {
-        const elapsedMs = Date.now() - lastRequestStartedAt
-        const delayMs = minIntervalMs - elapsedMs
-        if (delayMs > 0) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs))
-        }
-      }
-      lastRequestStartedAt = Date.now()
-      return request()
-    })
-    pendingRequest = run.then(
-      () => undefined,
-      () => undefined,
-    )
-    return run
-  }
-
-  return {
-    createInvoice: (body) => spaceRequest(() => client.createInvoice(body)),
-    createProforma: (body) => spaceRequest(() => client.createProforma(body)),
-    convertEstimateToInvoice: (companyVatCode, estimateSeriesName, estimateNumber, body) =>
-      spaceRequest(() =>
-        client.convertEstimateToInvoice(companyVatCode, estimateSeriesName, estimateNumber, body),
-      ),
-    cancelInvoice: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.cancelInvoice(companyVatCode, seriesName, number)),
-    restoreInvoice: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.restoreInvoice(companyVatCode, seriesName, number)),
-    deleteInvoice: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.deleteInvoice(companyVatCode, seriesName, number)),
-    reverseInvoice: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.reverseInvoice(companyVatCode, seriesName, number)),
-    viewInvoicePdf: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.viewInvoicePdf(companyVatCode, seriesName, number)),
-    viewPdf: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.viewPdf(companyVatCode, seriesName, number)),
-    viewEstimatePdf: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.viewEstimatePdf(companyVatCode, seriesName, number)),
-    getPaymentStatus: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.getPaymentStatus(companyVatCode, seriesName, number)),
-    listTaxes: () => spaceRequest(() => client.listTaxes()),
-    listSeries: () => spaceRequest(() => client.listSeries()),
-    listEstimateInvoices: (companyVatCode, seriesName, number) =>
-      spaceRequest(() => client.listEstimateInvoices(companyVatCode, seriesName, number)),
-  }
-}
-
-function isSmartbillRateLimitError(error: unknown) {
-  return (
-    error instanceof SmartbillRateLimitError || error instanceof SmartbillRateLimitCircuitOpenError
-  )
 }
 
 function resolveReferenceParts(
