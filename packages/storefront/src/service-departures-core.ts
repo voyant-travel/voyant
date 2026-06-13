@@ -1,31 +1,21 @@
-import type { SlotResourceAvailability } from "@voyantjs/availability"
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
-import { productItineraries, productLocations, products } from "@voyantjs/products/schema"
-import { and, asc, count, eq, gte, inArray, lte, ne } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import {
+  countStorefrontSlots,
+  listDefaultItineraryIdsByProductIds,
+  listMeetingPointsByProductIds,
+  listStorefrontSlots,
+  type StorefrontSlotResourceAvailability,
+  type StorefrontSlotRow,
+  type StorefrontSlotStatus,
+} from "./service-boundary-sql.js"
 
-export type SlotRow = {
-  id: string
-  productId: string
-  itineraryId: string | null
-  optionId: string | null
-  startTimeId: string | null
-  dateLocal: Date | string
-  startsAt: Date | string
-  endsAt: Date | string | null
-  timezone: string
-  status: "open" | "closed" | "sold_out" | "cancelled"
-  unlimited: boolean
-  initialPax: number | null
-  remainingPax: number | null
-  remainingResources: number | null
-  pastCutoff: boolean
-  tooEarly: boolean
-  nights: number | null
-  days: number | null
-  startTimeLabel: string | null
-  startTimeLocal: string | null
-  durationMinutes: number | null
+export type SlotResourceAvailability = StorefrontSlotResourceAvailability
+export type SlotRow = StorefrontSlotRow
+export type SlotStatus = StorefrontSlotStatus
+export {
+  countStorefrontSlots as countSlots,
+  listDefaultItineraryIdsByProductIds,
+  listMeetingPointsByProductIds,
+  listStorefrontSlots as listSlots,
 }
 
 export function normalizeIso(value: Date | string | null | undefined) {
@@ -51,194 +41,6 @@ export function normalizeLocalDate(value: Date | string | null | undefined) {
   }
 
   return String(value).slice(0, 10)
-}
-
-export async function listMeetingPointsByProductIds(db: PostgresJsDatabase, productIds: string[]) {
-  if (productIds.length === 0) {
-    return new Map<string, string>()
-  }
-
-  const rows = await db
-    .select({
-      productId: productLocations.productId,
-      title: productLocations.title,
-      locationType: productLocations.locationType,
-    })
-    .from(productLocations)
-    .where(inArray(productLocations.productId, productIds))
-    .orderBy(
-      productLocations.locationType,
-      asc(productLocations.sortOrder),
-      asc(productLocations.createdAt),
-    )
-
-  const byProduct = new Map<string, string>()
-  for (const row of rows) {
-    if (byProduct.has(row.productId)) {
-      continue
-    }
-
-    byProduct.set(row.productId, row.title)
-  }
-
-  return byProduct
-}
-
-export async function listDefaultItineraryIdsByProductIds(
-  db: PostgresJsDatabase,
-  productIds: string[],
-): Promise<Map<string, string>> {
-  if (productIds.length === 0) {
-    return new Map()
-  }
-
-  const rows = await db
-    .select({
-      productId: productItineraries.productId,
-      itineraryId: productItineraries.id,
-    })
-    .from(productItineraries)
-    .where(
-      and(
-        inArray(productItineraries.productId, productIds),
-        eq(productItineraries.isDefault, true),
-      ),
-    )
-    .orderBy(asc(productItineraries.sortOrder), asc(productItineraries.createdAt))
-
-  return new Map(rows.map((row) => [row.productId, row.itineraryId] as const))
-}
-
-export async function listSlots(
-  db: PostgresJsDatabase,
-  filters: {
-    productId?: string
-    slotId?: string
-    optionId?: string
-    status?: "open" | "closed" | "sold_out" | "cancelled"
-    dateFrom?: string
-    dateTo?: string
-    limit?: number
-    offset?: number
-    includeCancelled?: boolean
-  } = {},
-) {
-  const conditions = [
-    eq(products.status, "active"),
-    eq(products.activated, true),
-    eq(products.visibility, "public"),
-  ]
-
-  if (filters.productId) {
-    conditions.push(eq(availabilitySlots.productId, filters.productId))
-  }
-
-  if (filters.slotId) {
-    conditions.push(eq(availabilitySlots.id, filters.slotId))
-  }
-
-  if (filters.optionId) {
-    conditions.push(eq(availabilitySlots.optionId, filters.optionId))
-  }
-
-  if (filters.status) {
-    conditions.push(eq(availabilitySlots.status, filters.status))
-  } else if (!filters.includeCancelled) {
-    conditions.push(ne(availabilitySlots.status, "cancelled"))
-  }
-
-  if (filters.dateFrom) {
-    conditions.push(gte(availabilitySlots.dateLocal, filters.dateFrom))
-  }
-
-  if (filters.dateTo) {
-    conditions.push(lte(availabilitySlots.dateLocal, filters.dateTo))
-  }
-
-  return db
-    .select({
-      id: availabilitySlots.id,
-      productId: availabilitySlots.productId,
-      itineraryId: availabilitySlots.itineraryId,
-      optionId: availabilitySlots.optionId,
-      startTimeId: availabilitySlots.startTimeId,
-      dateLocal: availabilitySlots.dateLocal,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-      timezone: availabilitySlots.timezone,
-      status: availabilitySlots.status,
-      unlimited: availabilitySlots.unlimited,
-      initialPax: availabilitySlots.initialPax,
-      remainingPax: availabilitySlots.remainingPax,
-      remainingResources: availabilitySlots.remainingResources,
-      pastCutoff: availabilitySlots.pastCutoff,
-      tooEarly: availabilitySlots.tooEarly,
-      nights: availabilitySlots.nights,
-      days: availabilitySlots.days,
-      startTimeLabel: availabilityStartTimes.label,
-      startTimeLocal: availabilityStartTimes.startTimeLocal,
-      durationMinutes: availabilityStartTimes.durationMinutes,
-    })
-    .from(availabilitySlots)
-    .innerJoin(products, eq(products.id, availabilitySlots.productId))
-    .leftJoin(availabilityStartTimes, eq(availabilityStartTimes.id, availabilitySlots.startTimeId))
-    .where(and(...conditions))
-    .orderBy(asc(availabilitySlots.startsAt))
-    .limit(filters.limit ?? 100)
-    .offset(filters.offset ?? 0)
-}
-
-export async function countSlots(
-  db: PostgresJsDatabase,
-  filters: {
-    productId?: string
-    slotId?: string
-    optionId?: string
-    status?: "open" | "closed" | "sold_out" | "cancelled"
-    dateFrom?: string
-    dateTo?: string
-    includeCancelled?: boolean
-  } = {},
-) {
-  const conditions = [
-    eq(products.status, "active"),
-    eq(products.activated, true),
-    eq(products.visibility, "public"),
-  ]
-
-  if (filters.productId) {
-    conditions.push(eq(availabilitySlots.productId, filters.productId))
-  }
-
-  if (filters.slotId) {
-    conditions.push(eq(availabilitySlots.id, filters.slotId))
-  }
-
-  if (filters.optionId) {
-    conditions.push(eq(availabilitySlots.optionId, filters.optionId))
-  }
-
-  if (filters.status) {
-    conditions.push(eq(availabilitySlots.status, filters.status))
-  } else if (!filters.includeCancelled) {
-    conditions.push(ne(availabilitySlots.status, "cancelled"))
-  }
-
-  if (filters.dateFrom) {
-    conditions.push(gte(availabilitySlots.dateLocal, filters.dateFrom))
-  }
-
-  if (filters.dateTo) {
-    conditions.push(lte(availabilitySlots.dateLocal, filters.dateTo))
-  }
-
-  const [result] = await db
-    .select({ value: count() })
-    .from(availabilitySlots)
-    .innerJoin(products, eq(products.id, availabilitySlots.productId))
-    .where(and(...conditions))
-
-  return result?.value ?? 0
 }
 
 export function buildResourceManifest(resources: SlotResourceAvailability[]) {
