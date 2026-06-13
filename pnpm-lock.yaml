@@ -4345,9 +4345,6 @@ importers:
 
   packages/storefront:
     dependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -4366,9 +4363,6 @@ importers:
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../pricing
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
       '@voyantjs/relationships':
         specifier: workspace:^
         version: link:../relationships
@@ -4385,9 +4379,15 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

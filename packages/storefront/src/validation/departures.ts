@@ -1,4 +1,3 @@
-import { availabilitySlotStatusSchema } from "@voyantjs/availability/validation"
 import {
   publicBookingSessionAllocationSchema,
   publicBookingSessionRepriceSummarySchema,
@@ -24,6 +23,8 @@ export const storefrontDepartureStatusSchema = z.enum([
   "cancelled",
   "on_request",
 ])
+
+const persistedDepartureStatusSchema = z.enum(["open", "closed", "sold_out", "cancelled"])
 
 export const storefrontDepartureRoomOccupancySchema = z.object({
   adultsMin: z.number().int().min(0),
@@ -83,8 +84,7 @@ export const storefrontDepartureSchema = z.object({
 
 export const storefrontDepartureListQuerySchema = z.object({
   optionId: z.string().optional(),
-  // `z.lazy(() => …)` for cross-package init-cycle protection — see #501.
-  status: z.lazy(() => availabilitySlotStatusSchema).optional(),
+  status: persistedDepartureStatusSchema.optional(),
   dateFrom: z.string().date().optional(),
   dateTo: z.string().date().optional(),
   limit: z.coerce.number().int().min(1).max(250).default(100),
