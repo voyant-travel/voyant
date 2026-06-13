@@ -1,13 +1,21 @@
 import { requireActor } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-import { describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { beginWorkflowRun } from "../../src/recorder.js"
-import { mountWorkflowRunsAdminRoutes } from "../../src/routes.js"
+import {
+  mountWorkflowRunsAdminRoutes,
+  resolveWorkflowAdminSurface,
+  type WorkflowAdminSurface,
+} from "../../src/routes.js"
 import { type WorkflowRunner, WorkflowRunnerRegistry } from "../../src/runner.js"
 import { workflowRuns } from "../../src/schema.js"
 import { workflowRunsService } from "../../src/service.js"
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 describe("workflow-runs admin routes", () => {
   test("triggers a registered workflow by name and records an observable run", async () => {
@@ -173,6 +181,103 @@ describe("workflow-runs admin routes", () => {
       detail: "invoice provider unavailable",
     })
   })
+
+  test("rejects tenant-admin workflow actions in cloud and disabled surface modes", async () => {
+    for (const adminSurface of ["cloud", "disabled"] satisfies WorkflowAdminSurface[]) {
+      const registry = new WorkflowRunnerRegistry()
+      let calls = 0
+      registry.register(
+        makeRunner({
+          name: "sync-products",
+          async trigger() {
+            calls += 1
+            return { runId: "run_blocked" }
+          },
+        }),
+      )
+      const app = makeAuthorizedApp({ registry, actor: "staff", adminSurface })
+
+      const res = await app.request("/v1/admin/workflows/sync-products/runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ input: {} }),
+      })
+
+      expect(res.status).toBe(403)
+      expect((await res.json()) as { error: string; surface: WorkflowAdminSurface }).toMatchObject({
+        error: "workflow_admin_surface_restricted",
+        surface: adminSurface,
+      })
+      expect(calls).toBe(0)
+    }
+  })
+
+  test("defaults to cloud surface when managed Cloud workflow env is present", async () => {
+    vi.stubEnv("VOYANT_CLOUD_WORKFLOWS_URL", "https://api.voyant.test")
+    const registry = new WorkflowRunnerRegistry()
+    let calls = 0
+    registry.register(
+      makeRunner({
+        name: "sync-products",
+        async trigger() {
+          calls += 1
+          return { runId: "run_blocked" }
+        },
+      }),
+    )
+    const app = makeAuthorizedApp({ registry, actor: "staff" })
+
+    const res = await app.request("/v1/admin/workflows/sync-products/runs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ input: {} }),
+    })
+
+    expect(res.status).toBe(403)
+    expect((await res.json()) as { surface: WorkflowAdminSurface }).toMatchObject({
+      surface: "cloud",
+    })
+    expect(calls).toBe(0)
+  })
+
+  test("keeps workflow run reads available when cloud surface gates actions", async () => {
+    const db = createMemoryWorkflowRunsDb()
+    const registry = new WorkflowRunnerRegistry()
+    registry.register(
+      makeRunner({
+        name: "sync-products",
+        async trigger(input) {
+          const recorder = await beginWorkflowRun(db, {
+            workflowName: "sync-products",
+            trigger: "admin",
+            input: input as Record<string, unknown>,
+          })
+          await recorder.complete({ ok: true })
+          return { runId: recorder.runId }
+        },
+      }),
+    )
+    const tenantApp = makeAuthorizedApp({ registry, db, actor: "staff" })
+    await tenantApp.request("/v1/admin/workflows/sync-products/runs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ input: {} }),
+    })
+
+    const cloudApp = makeAuthorizedApp({ registry, db, actor: "staff", adminSurface: "cloud" })
+    const res = await cloudApp.request("/v1/admin/workflow-runs")
+
+    expect(res.status).toBe(200)
+    expect((await res.json()) as { total: number }).toMatchObject({ total: 1 })
+  })
+
+  test("resolves documented workflow admin surface values", () => {
+    expect(resolveWorkflowAdminSurface("tenant")).toBe("tenant")
+    expect(resolveWorkflowAdminSurface("cloud")).toBe("cloud")
+    expect(resolveWorkflowAdminSurface("disabled")).toBe("disabled")
+    expect(resolveWorkflowAdminSurface(undefined)).toBe("tenant")
+    expect(() => resolveWorkflowAdminSurface("public")).toThrow(/Invalid workflow admin surface/)
+  })
 })
 
 function makeRunner(input: Partial<WorkflowRunner> & { name: string }): WorkflowRunner {
@@ -198,6 +303,7 @@ function makeAuthorizedApp(options: {
   userId?: string
   callerType?: "api_key"
   scopes?: string[]
+  adminSurface?: WorkflowAdminSurface
 }) {
   const app = new Hono()
   app.use("*", async (c, next) => {
@@ -211,6 +317,7 @@ function makeAuthorizedApp(options: {
   app.use("/v1/admin/*", requireActor("staff"))
   mountWorkflowRunsAdminRoutes(app, {
     runners: options.registry,
+    adminSurface: options.adminSurface,
     resolveUserId(c) {
       return (c as { get(name: "userId"): string | undefined }).get("userId") ?? null
     },

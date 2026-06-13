@@ -47,15 +47,20 @@ export interface WorkflowManifest {
   versionId: string
   builtAt: number
   builderVersion: string
-  capabilities: string[]
+  capabilities: WorkflowReleaseCapabilities
   workflows: WorkflowManifestEntry[]
   eventFilters: EventFilterManifestEntry[]
+  diagnostics: WorkflowManifestDiagnostic[]
+  bundle?: WorkflowManifestBundle
   bindings: Record<string, { type: "d1" | "r2" | "kv" | "queue"; name: string }>
   environments: Record<string, { customDomain?: string }>
 }
 
 export interface WorkflowManifestEntry {
   id: string
+  displayName?: string
+  description?: string
+  capabilities: WorkflowDefinitionCapabilities
   version: string
   inputSchema?: unknown
   outputSchema?: unknown
@@ -65,6 +70,42 @@ export interface WorkflowManifestEntry {
   defaultRuntime: "edge" | "node"
   hasCompensation: boolean
   sourceLocation: { file: string; line: number }
+}
+
+export interface WorkflowReleaseCapabilities {
+  trigger: boolean
+  events: boolean
+  schedules: boolean
+  rerun: boolean
+  resume: boolean
+  cancel: boolean
+  humanApproval: boolean
+  stepRerun: boolean
+}
+
+export interface WorkflowDefinitionCapabilities {
+  canTrigger: boolean
+  canRerun: boolean
+  canResume: boolean
+  canCancel: boolean
+  hasSchedules: boolean
+  supportsEvents: boolean
+  supportsHumanApproval: boolean
+  supportsStepRerun: boolean
+}
+
+export interface WorkflowManifestBundle {
+  artifactName?: string
+  sizeBytes?: number
+  hash?: string
+  hashAlgorithm?: "sha256" | "sha512" | (string & {})
+}
+
+export interface WorkflowManifestDiagnostic {
+  code: string
+  severity: "info" | "warning" | "error"
+  message: string
+  sourceLocation?: { file: string; line?: number; column?: number }
 }
 
 export interface ManifestConcurrencyPolicy {

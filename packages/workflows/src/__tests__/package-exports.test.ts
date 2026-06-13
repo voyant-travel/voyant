@@ -24,6 +24,7 @@ const publicSubpaths = [
   "./protocol",
   "./handler",
   "./auth",
+  "./client",
   "./bindings",
   "./config",
   "./errors",

@@ -35,6 +35,7 @@ export type EnvironmentName = "production" | "preview" | "development"
 
 export type RunStatus =
   | "pending"
+  | "queued"
   | "running"
   | "waiting"
   | "completed"

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest"
+import { z } from "zod"
 
 import { __resetRegistry, workflow } from "../../index.js"
 import { trigger } from "../../trigger.js"
@@ -102,6 +103,9 @@ describe("buildManifest", () => {
   test("schedule declarations flow into workflow manifest entries", async () => {
     const wf = workflow({
       id: "scheduled-wf",
+      description: "Runs scheduled work.",
+      input: { type: "object", required: ["kind"] },
+      output: { type: "object", required: ["ok"] },
       schedule: [
         {
           cron: "0 * * * *",
@@ -126,6 +130,33 @@ describe("buildManifest", () => {
       eventFilters: [],
     })
 
+    expect(manifest.capabilities).toEqual({
+      trigger: true,
+      events: true,
+      schedules: true,
+      rerun: true,
+      resume: true,
+      cancel: true,
+      humanApproval: true,
+      stepRerun: false,
+    })
+    expect(manifest.workflows[0]).toMatchObject({
+      id: "scheduled-wf",
+      displayName: "Scheduled Wf",
+      description: "Runs scheduled work.",
+      capabilities: {
+        canTrigger: true,
+        canRerun: true,
+        canResume: false,
+        canCancel: true,
+        hasSchedules: true,
+        supportsEvents: false,
+        supportsHumanApproval: false,
+        supportsStepRerun: false,
+      },
+      inputSchema: { type: "object", required: ["kind"] },
+      outputSchema: { type: "object", required: ["ok"] },
+    })
     expect(manifest.workflows[0]?.schedules).toEqual([
       {
         cron: "0 * * * *",
@@ -166,6 +197,57 @@ describe("buildManifest", () => {
     expect(a.versionId).not.toBe(b.versionId)
   })
 
+  test("zod schemas are converted before manifest identity is hashed", async () => {
+    const bookingSchemaWorkflow = workflow({
+      id: "schema-wf",
+      input: z.object({ bookingId: z.string() }),
+      output: z.object({ ok: z.boolean() }),
+      async run() {},
+    })
+
+    const bookingManifest = await buildManifest({
+      environment: "production",
+      workflows: [bookingSchemaWorkflow],
+      eventFilters: [],
+    })
+
+    expect(bookingManifest.workflows[0]?.inputSchema).toEqual({
+      type: "object",
+      properties: {
+        bookingId: { type: "string" },
+      },
+      required: ["bookingId"],
+    })
+    expect(bookingManifest.workflows[0]?.outputSchema).toEqual({
+      type: "object",
+      properties: {
+        ok: { type: "boolean" },
+      },
+      required: ["ok"],
+    })
+
+    __resetRegistry()
+    const customerSchemaWorkflow = workflow({
+      id: "schema-wf",
+      input: z.object({ customerId: z.number() }),
+      async run() {},
+    })
+    const customerManifest = await buildManifest({
+      environment: "production",
+      workflows: [customerSchemaWorkflow],
+      eventFilters: [],
+    })
+
+    expect(customerManifest.workflows[0]?.inputSchema).toEqual({
+      type: "object",
+      properties: {
+        customerId: { type: "number" },
+      },
+      required: ["customerId"],
+    })
+    expect(customerManifest.versionId).not.toBe(bookingManifest.versionId)
+  })
+
   test("filter manifest entries flow through verbatim", async () => {
     const wf = workflow({ id: "passthrough-wf", async run() {} })
     trigger.on<{ kind: string }>("promotion.changed", {
@@ -187,5 +269,73 @@ describe("buildManifest", () => {
       where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
       input: { passthrough: true },
     })
+    expect(manifest.workflows[0]?.capabilities).toEqual({
+      canTrigger: true,
+      canRerun: true,
+      canResume: false,
+      canCancel: true,
+      hasSchedules: false,
+      supportsEvents: true,
+      supportsHumanApproval: false,
+      supportsStepRerun: false,
+    })
+  })
+
+  test("bundle metadata and diagnostics flow into the manifest identity", async () => {
+    const wf = workflow({ id: "diagnostic-wf", async run() {} })
+
+    const a = await buildManifest({
+      environment: "production",
+      workflows: [wf],
+      eventFilters: [],
+      bundle: {
+        artifactName: "workflows.js",
+        sizeBytes: 1234,
+        hash: "abc123",
+        hashAlgorithm: "sha256",
+      },
+      diagnostics: [
+        {
+          code: "unsupported_import",
+          severity: "warning",
+          message: "Optional import is not available in the hosted runner.",
+          sourceLocation: { file: "src/workflows.ts", line: 7 },
+        },
+      ],
+    })
+    const b = await buildManifest({
+      environment: "production",
+      workflows: [wf],
+      eventFilters: [],
+      bundle: {
+        artifactName: "workflows.js",
+        sizeBytes: 9999,
+        hash: "different",
+        hashAlgorithm: "sha256",
+      },
+      diagnostics: [
+        {
+          code: "unsupported_import",
+          severity: "error",
+          message: "Hosted runner cannot load this import.",
+        },
+      ],
+    })
+
+    expect(a.bundle).toEqual({
+      artifactName: "workflows.js",
+      sizeBytes: 1234,
+      hash: "abc123",
+      hashAlgorithm: "sha256",
+    })
+    expect(a.diagnostics).toEqual([
+      {
+        code: "unsupported_import",
+        severity: "warning",
+        message: "Optional import is not available in the hosted runner.",
+        sourceLocation: { file: "src/workflows.ts", line: 7 },
+      },
+    ])
+    expect(a.versionId).not.toBe(b.versionId)
   })
 })
