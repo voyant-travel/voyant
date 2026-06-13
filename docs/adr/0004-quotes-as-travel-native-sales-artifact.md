@@ -1,7 +1,7 @@
 # ADR-0004: Quotes are the travel-native sales artifact
 
 - **Status:** Accepted (2026-06-08)
-- **Relates to:** [#1541](https://github.com/voyantjs/voyant/issues/1541), [AI travel experience composition](../architecture/ai-travel-experience-composition.md), [travel composer implementation plan](../architecture/travel-composer-implementation-plan.md), [ADR-0005](./0005-retire-transactions-runtime.md)
+- **Relates to:** [#1541](https://github.com/voyantjs/voyant/issues/1541), [AI travel experience composition](../architecture/ai-travel-experience-composition.md), [trip composer implementation plan](../architecture/trip-composer-implementation-plan.md), [ADR-0005](./0005-retire-transactions-runtime.md)
 - **Builds on:** [ADR-0001](./0001-tenant-scoping.md) (deployment = tenancy boundary), [ADR-0002](./0002-contract-packages.md) (contract/runtime package split)
 
 ## Context
@@ -13,14 +13,14 @@ Voyant currently has several overlapping "priced proposal" concepts:
 - CRM **Quote** is a thin informational proposal attached to an Opportunity.
 - Transactions **Offer** is a richer priced proposal that can convert to an
   Order.
-- The travel composer **Trip / Package Envelope** carries itinerary content,
+- The trip composer **Trip / Package Envelope** carries itinerary content,
   travelers, manual services, component pricing, and reserve/checkout flow, but
   it is a live working object rather than a frozen proposal artifact.
 
 That language is backward for bespoke travel work. Travel consultants build and
 track quotes. A quote is not just an informational price estimate; it is the
 tracked pursuit, the sendable proposal, and the artifact the client accepts or
-declines. The travel composer already has the itinerary and reserve workflow;
+declines. The trip composer already has the itinerary and reserve workflow;
 the missing piece is a versioned proposal that freezes the Trip content the
 client saw.
 
@@ -77,7 +77,7 @@ retirement for v1.
 
 - The staff-facing language matches travel agency practice: agents track
   Quotes, send Quote Versions, and win or lose the Quote.
-- The proposal artifact reuses the travel composer instead of inventing a
+- The proposal artifact reuses the trip composer instead of inventing a
   parallel line model. A Version freezes a Trip snapshot rather than copying
   every itinerary concept into CRM.
 - Revisions and alternatives share one primitive: a candidate Quote Version.

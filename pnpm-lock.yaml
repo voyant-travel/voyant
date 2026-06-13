@@ -4689,7 +4689,7 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
-  packages/travel-composer:
+  packages/trip-composer:
     dependencies:
       '@voyantjs/catalog':
         specifier: workspace:^
@@ -4723,7 +4723,7 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/travel-composer-react:
+  packages/trip-composer-react:
     dependencies:
       '@voyantjs/i18n':
         specifier: workspace:^
@@ -4765,9 +4765,9 @@ importers:
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
-      '@voyantjs/travel-composer':
+      '@voyantjs/trip-composer':
         specifier: workspace:^
-        version: link:../travel-composer
+        version: link:../trip-composer
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -5458,12 +5458,12 @@ importers:
       '@voyantjs/suppliers':
         specifier: workspace:^
         version: link:../../packages/suppliers
-      '@voyantjs/travel-composer':
+      '@voyantjs/trip-composer':
         specifier: workspace:^
-        version: link:../../packages/travel-composer
-      '@voyantjs/travel-composer-react':
+        version: link:../../packages/trip-composer
+      '@voyantjs/trip-composer-react':
         specifier: workspace:^
-        version: link:../../packages/travel-composer-react
+        version: link:../../packages/trip-composer-react
       '@voyantjs/types':
         specifier: workspace:^
         version: link:../../packages/types

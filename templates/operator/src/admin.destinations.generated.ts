@@ -27,7 +27,7 @@ import type {} from "@voyantjs/inventory-react/admin"
 import type {} from "@voyantjs/commerce-react/promotions/admin"
 import type {} from "@voyantjs/resources-react/admin"
 import type {} from "@voyantjs/distribution-react/suppliers/admin"
-import type {} from "@voyantjs/travel-composer-react/admin"
+import type {} from "@voyantjs/trip-composer-react/admin"
 
 /** Resolvers for the route-backed subset of the declared destination keys. */
 export const generatedAdminDestinations = {

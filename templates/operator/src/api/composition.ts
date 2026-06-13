@@ -57,7 +57,7 @@ import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/r
 import { resourcesHonoModule } from "@voyantjs/resources"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
-import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
+import { createTripComposerHonoModule } from "@voyantjs/trip-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
@@ -79,7 +79,7 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
-import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
 
 type NotificationDeliveryLike = {
   id: string
@@ -139,7 +139,7 @@ export interface OperatorCapabilities {
   relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   buildCatalogContext: typeof buildCatalogContext
-  createTravelComposerRoutesOptions: typeof createOperatorTravelComposerRoutesOptions
+  createTripComposerRoutesOptions: typeof createOperatorTripComposerRoutesOptions
   /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
 }
@@ -163,7 +163,7 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     buildCatalogContext,
-    createTravelComposerRoutesOptions: createOperatorTravelComposerRoutesOptions,
+    createTripComposerRoutesOptions: createOperatorTripComposerRoutesOptions,
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
   }
 }
@@ -197,7 +197,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/storefront",
     "@voyantjs/customer-portal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/travel-composer",
+    "@voyantjs/trip-composer",
   ],
   extensions: [
     "@voyantjs/bookings/booking-supplier-extension",
@@ -387,9 +387,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveProviders: capabilities.resolveNotificationProviders,
         email: { subject: "Your verification code" },
       }),
-    "@voyantjs/travel-composer": ({ capabilities }) =>
-      createTravelComposerHonoModule({
-        ...capabilities.createTravelComposerRoutesOptions(),
+    "@voyantjs/trip-composer": ({ capabilities }) =>
+      createTripComposerHonoModule({
+        ...capabilities.createTripComposerRoutesOptions(),
         publicRoutes: true,
       }),
   },

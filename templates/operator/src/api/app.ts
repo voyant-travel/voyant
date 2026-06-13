@@ -43,7 +43,7 @@ import { mountOperatorProposalRoutes } from "./proposal-routes"
 import { mountOperatorQuoteVersionSnapshotRoutes } from "./quote-version-snapshot-routes"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
-import { travelComposerPaymentBundle } from "./travel-composer-runtime"
+import { tripComposerPaymentBundle } from "./trip-composer-runtime"
 
 /**
  * Process-wide registry of workflow runners. Bundles register their
@@ -95,10 +95,10 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/catalog/quote",
     "/v1/public/catalog/book",
     "/v1/public/catalog/holds",
-    // Travel composer reserves trips via injected bookings deps.
-    "/v1/admin/travel-composer",
-    "/v1/public/travel-composer",
-    "/v1/travel-composer",
+    // Trip composer reserves trips via injected bookings deps.
+    "/v1/admin/trip-composer",
+    "/v1/public/trip-composer",
+    "/v1/trip-composer",
   ],
   // Workflow runtime — Cloudflare edge composition. Per-run state lives
   // in the `WorkflowRunDO` Durable Object exported from `entry.ts`;
@@ -193,7 +193,7 @@ export const app = createApp<CloudflareBindings>({
       generateContractPdf: ({ env, db, eventBus, bookingId }) =>
         generateContractPdfForBooking(env, db, eventBus, bookingId),
     }),
-    travelComposerPaymentBundle,
+    tripComposerPaymentBundle,
     smartbillOperatorBundle,
     channelPushBundle,
     netopiaHonoBundle(),

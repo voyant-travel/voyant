@@ -9,11 +9,11 @@ import {
 } from "@voyantjs/quotes"
 import {
   type StartCheckoutResult,
-  TravelComposerInvariantError,
   type Trip,
+  TripComposerInvariantError,
   type TripSnapshot,
-  travelComposerService,
-} from "@voyantjs/travel-composer"
+  tripComposerService,
+} from "@voyantjs/trip-composer"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -26,7 +26,7 @@ import {
   type PublicOperatorProfile,
   toPublicOperatorSettings,
 } from "./settings"
-import { createReserveTripDeps, createStartCheckoutDeps } from "./travel-composer-runtime"
+import { createReserveTripDeps, createStartCheckoutDeps } from "./trip-composer-runtime"
 
 type OperatorProposalRouteEnv = {
   Bindings: Record<string, unknown>
@@ -275,7 +275,7 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
     if (error instanceof QuoteVersionConflictError) {
       return c.json({ error: error.message }, 409)
     }
-    if (error instanceof TravelComposerInvariantError) {
+    if (error instanceof TripComposerInvariantError) {
       return c.json({ error: error.message }, error.message.includes("was not found") ? 404 : 409)
     }
     throw error
@@ -325,7 +325,7 @@ async function acceptPublicProposalWithQuoteLock({
     }
   }
 
-  const snapshot = await travelComposerService.getTripSnapshotById(
+  const snapshot = await tripComposerService.getTripSnapshotById(
     db,
     proposal.quoteVersion.tripSnapshotId,
   )
@@ -348,7 +348,7 @@ async function acceptPublicProposalWithQuoteLock({
 
   assertSnapshotCanUsePublicAcceptReserve(snapshot)
 
-  const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
+  const liveTrip = await tripComposerService.getTrip(db, snapshot.envelopeId)
   if (!liveTrip) {
     return {
       kind: "response",
@@ -360,7 +360,7 @@ async function acceptPublicProposalWithQuoteLock({
   const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
     body.idempotencyKey ?? "default"
   }`
-  const reserved = await travelComposerService.reserveTrip(
+  const reserved = await tripComposerService.reserveTrip(
     db,
     {
       envelopeId: snapshot.envelopeId,
@@ -433,7 +433,7 @@ async function startAcceptedProposalCheckout(
   quoteVersionId: string,
 ): Promise<StartCheckoutResult | null> {
   try {
-    return await travelComposerService.startCheckout(
+    return await tripComposerService.startCheckout(
       operatorPostgresDb(c.get("db")),
       {
         envelopeId: snapshot.envelopeId,

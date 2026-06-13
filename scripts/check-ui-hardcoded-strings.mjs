@@ -258,7 +258,7 @@ async function collectOptInRoots() {
  * through the backlog. Remove entries as each file is translated.
  *
  * The list is dominated by surfaces that pre-date the i18n migration in the
- * operator template — settings dialogs, the travel composer, resource detail
+ * operator template — settings dialogs, the trip composer, resource detail
  * pages — and by `.ts` query helpers whose `queryFn: () => api.get<Type>(...)`
  * shape produces false positives from the JSX-text heuristic. Translate the
  * UI strings and rerun the scanner to confirm before removing an entry.
