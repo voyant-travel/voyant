@@ -103,5 +103,4 @@ Route-owning apps can wire deep links by controlling the selected run id:
 ```
 
 `@voyantjs/workflows-react/ui` is the public workflows-facing import path for
-these surfaces. Older `@voyantjs/workflows-react/ui` and `@voyantjs/workflow-runs-ui`
-imports should migrate here.
+these surfaces. Older workflow runs UI wrapper imports should migrate here.

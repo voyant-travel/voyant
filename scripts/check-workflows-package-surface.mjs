@@ -15,11 +15,11 @@ const allowedPublicPackages = new Set([
   "@voyantjs/workflows-react/ui",
 ])
 
-const deprecatedWrappers = new Set([
-  "@voyantjs/workflow-runs-ui",
-  "@voyantjs/workflows-bindings",
-  "@voyantjs/workflows-config",
-  "@voyantjs/workflows-errors",
+const removedWrapperNames = new Set([
+  ["@voyantjs", "workflow-runs-ui"].join("/"),
+  ...["bindings", "config", "errors"].map((suffix) =>
+    ["@voyantjs", `workflows-${suffix}`].join("/"),
+  ),
 ])
 
 function findPackageJsonFiles(dir) {
@@ -55,10 +55,11 @@ for (const packageJsonPath of packageJsonFiles.sort()) {
 
   const relativePath = path.relative(repoRoot, packageJsonPath)
 
-  if (deprecatedWrappers.has(pkg.name) && pkg.private !== true) {
+  if (removedWrapperNames.has(pkg.name)) {
     problems.push(
-      `${relativePath}: ${pkg.name} is a deprecated compatibility wrapper and must be private`,
+      `${relativePath}: ${pkg.name} is a removed compatibility wrapper; use the canonical workflows subpath instead`,
     )
+    continue
   }
 
   if (pkg.private === true) continue
