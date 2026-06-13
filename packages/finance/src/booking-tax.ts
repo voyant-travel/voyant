@@ -1,20 +1,14 @@
 import type { Extension } from "@voyantjs/core"
 import { ApiHttpError, parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
-import {
-  productDayServices,
-  productDays,
-  productItineraries,
-  productLocations,
-  products as productsTable,
-} from "@voyantjs/products/schema"
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 import { Hono as HonoApp } from "hono"
 import { z } from "zod"
 
 import { taxClasses, taxPolicyProfiles, taxPolicyRules, taxRegimes } from "./schema.js"
+import { executeBoundaryRows } from "./service-boundary-sql.js"
 
 export type ProductTaxFacts = {
   hasAccommodation: boolean
@@ -158,24 +152,30 @@ export async function loadProductTaxFacts(
   productId: string,
 ): Promise<ProductTaxFacts> {
   const [accommodationLocations, accommodationServices] = await Promise.all([
-    db
-      .select({ countryCode: productLocations.countryCode })
-      .from(productLocations)
-      .where(eq(productLocations.productId, productId)),
-    db
-      .select({ id: productDayServices.id, countryCode: productDayServices.countryCode })
-      .from(productDayServices)
-      .innerJoin(productDays, eq(productDayServices.dayId, productDays.id))
-      .innerJoin(productItineraries, eq(productDays.itineraryId, productItineraries.id))
-      .where(
-        and(
-          eq(productItineraries.productId, productId),
-          eq(productDayServices.serviceType, "accommodation"),
-        ),
-      ),
+    executeBoundaryRows<{ country_code: string | null }>(
+      db,
+      // agent-quality: raw-sql reviewed -- owner: finance; Product owns product_locations and product ids are parameter-bound through Drizzle.
+      sql`
+        SELECT country_code
+        FROM product_locations
+        WHERE product_id = ${productId}
+      `,
+    ),
+    executeBoundaryRows<{ id: string; country_code: string | null }>(
+      db,
+      // agent-quality: raw-sql reviewed -- owner: finance; Product itinerary tables are read-only tax fact inputs with parameter-bound product id.
+      sql`
+        SELECT pds.id, pds.country_code
+        FROM product_day_services pds
+        INNER JOIN product_days pd ON pds.day_id = pd.id
+        INNER JOIN product_itineraries pi ON pd.itinerary_id = pi.id
+        WHERE pi.product_id = ${productId}
+          AND pds.service_type::text = 'accommodation'
+      `,
+    ),
   ])
   const accommodationCountries = [...accommodationServices, ...accommodationLocations]
-    .map((entry) => entry.countryCode?.trim().toUpperCase())
+    .map((entry) => entry.country_code?.trim().toUpperCase())
     .filter((countryCode): countryCode is string => Boolean(countryCode))
 
   return {
@@ -267,12 +267,17 @@ async function resolveProductTaxClassRate(
   productId: string,
   priceMode: "inclusive" | "exclusive",
 ) {
-  const productRows = await db
-    .select({ taxClassId: productsTable.taxClassId })
-    .from(productsTable)
-    .where(eq(productsTable.id, productId))
-    .limit(1)
-  const taxClassId = productRows[0]?.taxClassId
+  const productRows = await executeBoundaryRows<{ tax_class_id: string | null }>(
+    db,
+    // agent-quality: raw-sql reviewed -- owner: finance; Product owns product tax-class assignment and product id is parameter-bound.
+    sql`
+      SELECT tax_class_id
+      FROM products
+      WHERE id = ${productId}
+      LIMIT 1
+    `,
+  )
+  const taxClassId = productRows[0]?.tax_class_id
   if (!taxClassId) return null
 
   const classRows = await db

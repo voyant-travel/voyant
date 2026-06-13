@@ -144,7 +144,7 @@ Flights opt in to a narrow slice of the cross-cutting infrastructure — and exp
 
 - **Search index projection (foundation §5.4).** Flights are not indexed in Typesense / Algolia / etc. Search goes through the flight orchestration layer's live fan-out, not through the catalog index. The reasons: pre-projection isn't tractable, indexed prices would be perpetually stale, and live multi-connection fan-out is what the contract is designed for.
 - **Editorial overlays (foundation §5.2).** No marketing rewrites a flight's title or description. There's nothing to overlay. The overlay store has no flight rows.
-- **Embeddings / RAG (Phase 2 — see [`catalog-rag-architecture.md`](./catalog-rag-architecture.md)).** Vector search over flights doesn't help any user. Customers know what airports and dates they want; they don't browse semantically. Flights' contribution to AI agents is the live `searchFlights` API, not embedded text. Phase 2 explicitly excludes flights.
+- **Embeddings / semantic search (see [`catalog-architecture.md`](./catalog-architecture.md)).** Vector search over flights doesn't help any user. Customers know what airports and dates they want; they don't browse semantically. Flights' contribution to AI agents is the live `searchFlights` API, not embedded text. Flights explicitly opt out of catalog embeddings.
 - **Pricing tiers (foundation §5.4.3).** Tier 1 indexed price summaries don't apply — flights have no indexed price summary. Tier 2 rerank is *built into* the multi-connection fan-out itself (the dedupe + cheapest-by-fingerprint sort is the rerank). Tier 3 date-bucketed cached pricing also doesn't fit; the `tier: "browse"` KV cache plays an analogous role at a different layer.
 - **Drift detection (foundation §5.5).** Drift detection compares cached source state against current source state. Flight data is live by definition; there's no cached state to drift against. The closest analog is the `tier: "booking"` cache-skipping mode that guarantees fresh prices before book.
 
@@ -246,6 +246,6 @@ Flight adapters (Hisky, Amadeus, Duffel, Sabre, Travelport NDC, an operator-buil
 ## 10. Related documents
 
 - [`catalog-architecture.md`](./catalog-architecture.md) — the Phase 1 foundation. Phase 3 flights depend on its snapshot graph, source adapter contract, webhook taxonomy, and disconnect lifecycle.
-- [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — the Phase 2 RAG layer. Flights opt out of embeddings; this document is referenced for the Phase 2 boundary.
+- [`catalog-architecture.md`](./catalog-architecture.md) — the catalog plane and semantic-search boundary. Flights opt out of embeddings.
 - voyant-cloud `docs/connect/flights-contract-refactor.md` — the upstream design of the flight connector contract that `packages/flights` adopts verbatim.
 - voyant-cloud `docs/data/product.md` — the design of Voyant Data, the **default** `ReferenceDataProvider` implementation. Operators may substitute their own implementation (in-deployment local table, static bundle, internal data lake, third-party service, GDS-bundled) and bypass Voyant Data entirely.

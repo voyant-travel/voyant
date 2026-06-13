@@ -1,12 +1,10 @@
 // agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type {
   DepartureProfitabilityQuery,
   ProductProfitabilityQuery,
   TravelerProfitabilityQuery,
 } from "@voyantjs/finance-contracts"
-import { products } from "@voyantjs/products/schema"
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -19,6 +17,7 @@ import {
   supplierInvoiceLines,
   supplierInvoices,
 } from "./schema.js"
+import { executeBoundaryRows, normalizeDateOnly, sqlList } from "./service-boundary-sql.js"
 
 /**
  * FX runtime for the profitability read model. Carries the operator FX settings
@@ -465,23 +464,29 @@ async function loadDepartureAccumulators(
   // departure — fills cost-only departures that have no booking-item snapshot.
   const departureIds = [...departures.keys()]
   if (departureIds.length > 0) {
-    const slotRows = await db
-      .select({
-        id: availabilitySlots.id,
-        dateLocal: availabilitySlots.dateLocal,
-        productId: availabilitySlots.productId,
-        productName: products.name,
-      })
-      .from(availabilitySlots)
-      .leftJoin(products, eq(availabilitySlots.productId, products.id))
-      .where(inArray(availabilitySlots.id, departureIds))
+    const slotRows = await executeBoundaryRows<{
+      id: string
+      date_local: Date | string
+      product_id: string | null
+      product_name: string | null
+    }>(
+      db,
+      // agent-quality: raw-sql reviewed -- owner: finance; Availability/Product are read-only profitability label sources and ids are parameter-bound.
+      sql`
+        SELECT avs.id, avs.date_local, avs.product_id, p.name AS product_name
+        FROM availability_slots avs
+        LEFT JOIN products p ON avs.product_id = p.id
+        WHERE avs.id IN (${sqlList(departureIds)})
+      `,
+    )
     for (const slot of slotRows) {
       const acc = departures.get(slot.id)
       if (!acc) continue
-      acc.departureLabel ??= slot.dateLocal
-      acc.departureDate ??= slot.dateLocal
-      acc.productId ??= slot.productId
-      acc.productName ??= slot.productName
+      const dateLocal = normalizeDateOnly(slot.date_local)
+      acc.departureLabel ??= dateLocal
+      acc.departureDate ??= dateLocal
+      acc.productId ??= slot.product_id
+      acc.productName ??= slot.product_name
     }
   }
 

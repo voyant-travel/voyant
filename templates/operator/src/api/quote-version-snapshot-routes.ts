@@ -1,10 +1,10 @@
+import { parseJsonBody, type VoyantDb } from "@voyantjs/hono"
 import {
-  crmService,
   type QuoteVersion,
   QuoteVersionConflictError,
   type QuoteVersionLine,
-} from "@voyantjs/crm"
-import { parseJsonBody, type VoyantDb } from "@voyantjs/hono"
+  quotesService,
+} from "@voyantjs/quotes"
 import {
   TravelComposerInvariantError,
   type TripSnapshot,
@@ -22,7 +22,7 @@ type OperatorQuoteVersionSnapshotRouteEnv = {
   }
 }
 
-type ApplyTripSnapshotPayload = Parameters<typeof crmService.applyTripSnapshotToQuoteVersion>[2]
+type ApplyTripSnapshotPayload = Parameters<typeof quotesService.applyTripSnapshotToQuoteVersion>[2]
 
 export type ApplyTripSnapshotToQuoteVersionResult = {
   snapshot: TripSnapshot
@@ -55,7 +55,7 @@ export async function handleFreezeQuoteVersionSnapshot(
   const body = await parseJsonBody(c, freezeQuoteVersionSnapshotBodySchema)
 
   try {
-    const quoteVersion = await crmService.getQuoteVersionById(db, quoteVersionId)
+    const quoteVersion = await quotesService.getQuoteVersionById(db, quoteVersionId)
     if (!quoteVersion) return c.json({ error: "Quote version not found" }, 404)
     if (quoteVersion.status !== "draft") {
       return c.json({ error: "Trip snapshots can only be applied to draft Quote Versions" }, 409)
@@ -66,7 +66,7 @@ export async function handleFreezeQuoteVersionSnapshot(
       envelopeId,
       createdBy: typeof userId === "string" ? userId : (body.createdBy ?? undefined),
     })
-    const applied = await crmService.applyTripSnapshotToQuoteVersion(
+    const applied = await quotesService.applyTripSnapshotToQuoteVersion(
       db,
       quoteVersionId,
       tripSnapshotToQuoteVersionApply(snapshot),

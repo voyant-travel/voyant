@@ -32,9 +32,11 @@
  */
 
 import {
+  createGeminiEmbeddingProvider,
   createIndexerService,
   createTypesenseIndexer,
   type DocumentBuilder,
+  type EmbeddingProvider,
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
@@ -44,7 +46,6 @@ import {
   type SyncSourcesSummary,
   syncSources,
 } from "@voyantjs/catalog/booking-engine"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import {
   type CatalogProjection,
   createVoyantConnectSourceAdapter,

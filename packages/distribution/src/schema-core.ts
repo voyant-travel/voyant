@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { products } from "@voyantjs/products/schema"
 import { suppliers } from "@voyantjs/suppliers/schema"
 import { sql } from "drizzle-orm"
 import {
@@ -128,7 +127,7 @@ export const channelCommissionRules = pgTable(
       .notNull()
       .references(() => channelContracts.id, { onDelete: "cascade" }),
     scope: channelCommissionScopeEnum("scope").notNull(),
-    productId: typeIdRef("product_id").references(() => products.id, { onDelete: "set null" }),
+    productId: typeIdRef("product_id"),
     externalRateId: text("external_rate_id"),
     externalCategoryId: text("external_category_id"),
     commissionType: channelCommissionTypeEnum("commission_type").notNull(),
@@ -153,9 +152,7 @@ export const channelProductMappings = pgTable(
     channelId: typeIdRef("channel_id")
       .notNull()
       .references(() => channels.id, { onDelete: "cascade" }),
-    productId: typeIdRef("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
+    productId: typeIdRef("product_id").notNull(),
     externalProductId: text("external_product_id"),
     externalRateId: text("external_rate_id"),
     externalCategoryId: text("external_category_id"),

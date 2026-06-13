@@ -1,4 +1,3 @@
-import { transactionsService } from "@voyantjs/transactions"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolve } from "./service-resolve.js"
 import {
@@ -16,11 +15,153 @@ import type { SellabilityConstructOfferInput } from "./validation.js"
 
 type SellabilityResolver = typeof resolve
 
+export interface SellabilityOfferBundleInput {
+  offer: {
+    offerNumber: string
+    title: string
+    status: "draft" | "published" | "sent" | "accepted" | "expired" | "withdrawn" | "converted"
+    personId: string | null
+    organizationId: string | null
+    quoteId: string | null
+    quoteVersionId: string | null
+    contactFirstName: string | null
+    contactLastName: string | null
+    contactEmail: string | null
+    contactPhone: string | null
+    contactPreferredLanguage: string | null
+    contactCountry: string | null
+    contactRegion: string | null
+    contactCity: string | null
+    contactAddressLine1: string | null
+    contactAddressLine2: string | null
+    contactPostalCode: string | null
+    marketId: string | null
+    sourceChannelId: string | null
+    currency: string
+    baseCurrency: string | null
+    fxRateSetId: string | null
+    subtotalAmountCents: number
+    taxAmountCents: number
+    feeAmountCents: number
+    totalAmountCents: number
+    costAmountCents: number
+    validFrom: string | null
+    validUntil: string | null
+    notes: string | null
+    metadata: Record<string, unknown>
+  }
+  travelers: Array<{
+    personId: string | null
+    participantType: "traveler" | "occupant" | "staff" | "other"
+    travelerCategory: "adult" | "child" | "infant" | "senior" | "other" | null
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    preferredLanguage: string | null
+    dateOfBirth: string | null
+    nationality: string | null
+    isPrimary: boolean
+    notes: string | null
+  }>
+  contactAssignments: Array<{
+    itemIndex?: number
+    role: "primary_contact" | "other"
+    personId: string | null
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    preferredLanguage: string | null
+    isPrimary: boolean
+    notes: string | null
+  }>
+  items: Array<{
+    title: string
+    description: string | null
+    itemType:
+      | "unit"
+      | "service"
+      | "extra"
+      | "fee"
+      | "tax"
+      | "discount"
+      | "adjustment"
+      | "accommodation"
+      | "transport"
+      | "other"
+    status: "draft" | "priced" | "confirmed" | "cancelled" | "fulfilled"
+    productId: string
+    optionId: string
+    unitId: string | null
+    slotId: string
+    serviceDate: string
+    startsAt: string | null
+    endsAt: string | null
+    quantity: number
+    sellCurrency: string
+    unitSellAmountCents: number
+    totalSellAmountCents: number
+    taxAmountCents: number | null
+    feeAmountCents: number | null
+    costCurrency: string
+    unitCostAmountCents: number
+    totalCostAmountCents: number
+    notes: string | null
+    metadata: Record<string, unknown>
+  }>
+  itemTravelers: Array<{
+    itemIndex: number
+    participantIndex: number
+    role: "traveler" | "occupant" | "primary_contact" | "beneficiary" | "service_assignee" | "other"
+    isPrimary: boolean
+  }>
+}
+
+export interface SellabilityOfferBundleResult {
+  offer: {
+    id: string
+    metadata?: unknown
+    [key: string]: unknown
+  }
+  travelers: unknown[]
+  contactAssignments: unknown[]
+  staffAssignments?: unknown[]
+  items: unknown[]
+  itemTravelers: unknown[]
+}
+
+export interface SellabilityOfferWriter {
+  createOfferBundle(
+    db: PostgresJsDatabase,
+    input: SellabilityOfferBundleInput,
+  ): Promise<SellabilityOfferBundleResult | null>
+  updateOfferMetadata(
+    db: PostgresJsDatabase,
+    offerId: string,
+    metadata: Record<string, unknown>,
+  ): Promise<unknown>
+}
+
+export class SellabilityOfferWriterNotConfiguredError extends Error {
+  constructor() {
+    super(
+      "sellabilityService.constructOffer requires a configured offer writer; install a Quote/Trip writer or a legacy Transactions adapter at the host boundary",
+    )
+    this.name = "SellabilityOfferWriterNotConfiguredError"
+  }
+}
+
 export async function constructOffer(
   db: PostgresJsDatabase,
   input: SellabilityConstructOfferInput,
   resolver: SellabilityResolver = resolve,
+  offerWriter?: SellabilityOfferWriter,
 ) {
+  if (!offerWriter) {
+    throw new SellabilityOfferWriterNotConfiguredError()
+  }
+
   const resolvedQuery: SellabilityResolveQuery = {
     ...input.query,
     limit: input.query.limit ?? 100,
@@ -220,7 +361,7 @@ export async function constructOffer(
   })
 
   const selectedCandidateIndex = resolved.data.findIndex((row) => row.slot.id === candidate.slot.id)
-  const created = await transactionsService.createOfferBundle(db, {
+  const created = await offerWriter.createOfferBundle(db, {
     offer: {
       offerNumber: input.offer.offerNumber ?? formatSequenceNumber("OFF"),
       title: input.offer.title ?? buildDefaultOfferTitle(candidate),
@@ -285,15 +426,20 @@ export async function constructOffer(
     expiresAt: input.offer.validUntil ?? null,
   })
 
-  await transactionsService.updateOffer(db, created.offer.id, {
-    metadata: {
-      ...(created.offer.metadata as Record<string, unknown> | null),
-      sellability: {
-        ...((created.offer.metadata as Record<string, unknown> | null)?.sellability as
-          | Record<string, unknown>
-          | undefined),
-        snapshotId: snapshot.id,
-      },
+  const existingMetadata =
+    created.offer.metadata && typeof created.offer.metadata === "object"
+      ? (created.offer.metadata as Record<string, unknown>)
+      : {}
+  const existingSellabilityMetadata =
+    existingMetadata.sellability && typeof existingMetadata.sellability === "object"
+      ? (existingMetadata.sellability as Record<string, unknown>)
+      : undefined
+
+  await offerWriter.updateOfferMetadata(db, created.offer.id, {
+    ...existingMetadata,
+    sellability: {
+      ...existingSellabilityMetadata,
+      snapshotId: snapshot.id,
     },
   })
 

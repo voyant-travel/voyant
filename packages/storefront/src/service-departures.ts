@@ -1,8 +1,11 @@
-import { getSlotsResourceAvailability, type SlotResourceAvailability } from "@voyantjs/availability"
-import { productDayServices, productDays, productMedia } from "@voyantjs/products/schema"
-import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  getStorefrontSlotsResourceAvailability,
+  listItineraryDayMedia,
+  listItineraryDayServices,
+  listItineraryDays,
+} from "./service-boundary-sql.js"
 import {
   buildAvailabilityState,
   buildResourceManifest,
@@ -12,6 +15,7 @@ import {
   listSlots,
   normalizeIso,
   normalizeLocalDate,
+  type SlotResourceAvailability,
   type SlotRow,
   summarizeProductAvailability,
   todayLocalDate,
@@ -83,7 +87,7 @@ export async function getStorefrontDeparture(db: PostgresJsDatabase, departureId
     await Promise.all([
       listMeetingPointsByProductIds(db, [slot.productId]),
       listDefaultItineraryIdsByProductIds(db, [slot.productId]),
-      getSlotsResourceAvailability(db, [slot.id]),
+      getStorefrontSlotsResourceAvailability(db, [slot.id]),
     ])
 
   return buildDeparture(
@@ -119,7 +123,7 @@ export async function listStorefrontProductDepartures(
     await Promise.all([
       listMeetingPointsByProductIds(db, [productId]),
       listDefaultItineraryIdsByProductIds(db, [productId]),
-      getSlotsResourceAvailability(
+      getStorefrontSlotsResourceAvailability(
         db,
         slots.map((slot) => slot.id),
       ),
@@ -260,16 +264,7 @@ export async function getStorefrontDepartureItinerary(
     return null
   }
 
-  const days = await db
-    .select({
-      id: productDays.id,
-      dayNumber: productDays.dayNumber,
-      title: productDays.title,
-      description: productDays.description,
-    })
-    .from(productDays)
-    .where(eq(productDays.itineraryId, itineraryId))
-    .orderBy(asc(productDays.dayNumber))
+  const days = await listItineraryDays(db, itineraryId)
 
   if (days.length === 0) {
     return null
@@ -277,32 +272,8 @@ export async function getStorefrontDepartureItinerary(
 
   const dayIds = days.map((day) => day.id)
   const [services, dayMedia] = await Promise.all([
-    db
-      .select({
-        id: productDayServices.id,
-        dayId: productDayServices.dayId,
-        name: productDayServices.name,
-        description: productDayServices.description,
-        sortOrder: productDayServices.sortOrder,
-      })
-      .from(productDayServices)
-      .where(inArray(productDayServices.dayId, dayIds))
-      .orderBy(asc(productDayServices.sortOrder), asc(productDayServices.createdAt)),
-    db
-      .select({
-        id: productMedia.id,
-        dayId: productMedia.dayId,
-        url: productMedia.url,
-        isCover: productMedia.isCover,
-        sortOrder: productMedia.sortOrder,
-      })
-      .from(productMedia)
-      .where(and(eq(productMedia.productId, input.productId), inArray(productMedia.dayId, dayIds)))
-      .orderBy(
-        desc(productMedia.isCover),
-        asc(productMedia.sortOrder),
-        asc(productMedia.createdAt),
-      ),
+    listItineraryDayServices(db, dayIds),
+    listItineraryDayMedia(db, { productId: input.productId, dayIds }),
   ])
 
   const servicesByDay = new Map<string, Array<(typeof services)[number]>>()

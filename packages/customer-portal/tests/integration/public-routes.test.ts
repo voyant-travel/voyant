@@ -8,9 +8,9 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { crmService, people } from "@voyantjs/crm"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { identityService } from "@voyantjs/identity/service"
+import { people, relationshipsService } from "@voyantjs/relationships"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -108,7 +108,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
   })
 
   async function seedLinkedCustomer() {
-    const person = await crmService.createPerson(db, {
+    const person = await relationshipsService.createPerson(db, {
       firstName: "Ana",
       lastName: "Popescu",
       preferredLanguage: "ro",
@@ -217,7 +217,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
   })
 
   it("distinguishes CRM-only phone contact matches from auth accounts", async () => {
-    await crmService.createPerson(db, {
+    await relationshipsService.createPerson(db, {
       firstName: "Mihai",
       lastName: "Ionescu",
       relation: "client",
@@ -263,7 +263,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
   })
 
   it("returns selectable customer candidates instead of auto-linking them", async () => {
-    await crmService.createPerson(db, {
+    await relationshipsService.createPerson(db, {
       firstName: "Ana",
       lastName: "Popescu",
       relation: "client",
@@ -284,7 +284,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
   })
 
   it("links an explicitly selected existing customer record", async () => {
-    const existing = await crmService.createPerson(db, {
+    const existing = await relationshipsService.createPerson(db, {
       firstName: "Ana",
       lastName: "Popescu",
       relation: "client",
@@ -376,7 +376,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       country: "FR",
     })
 
-    const updatedPerson = await crmService.getPersonById(db, person.id)
+    const updatedPerson = await relationshipsService.getPersonById(db, person.id)
     expect(updatedPerson?.firstName).toBe("Anamaria")
     expect(updatedPerson?.dateOfBirth).toBe("1991-06-20")
     expect(updatedPerson?.phone).toBe("+40999888777")
@@ -1048,7 +1048,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
 
     it("scopes deletes to the auth user's linked person", async () => {
       const linked = await seedLinkedCustomer()
-      const otherPerson = await crmService.createPerson(db, {
+      const otherPerson = await relationshipsService.createPerson(db, {
         firstName: "Stranger",
         lastName: "Person",
         tags: [],
@@ -1057,7 +1057,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       })
       if (!otherPerson) throw new Error("expected other person")
 
-      const otherDoc = await crmService.createPersonDocument(db, otherPerson.id, {
+      const otherDoc = await relationshipsService.createPersonDocument(db, otherPerson.id, {
         type: "passport",
         isPrimary: false,
       })
@@ -1068,7 +1068,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
 
       // Linked person's docs are unaffected.
       expect(linked.id).toBeTruthy()
-      const stillThere = await crmService.getPersonDocument(db, otherDoc.id)
+      const stillThere = await relationshipsService.getPersonDocument(db, otherDoc.id)
       expect(stillThere?.id).toBe(otherDoc.id)
     })
   })

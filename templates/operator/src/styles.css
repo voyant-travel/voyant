@@ -15,8 +15,7 @@
 @source "../node_modules/@voyantjs/availability-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/bookings-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/crm-react/dist/**/*.{js,mjs}";
-/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
+@source "../node_modules/@voyantjs/relationships-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/extras-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/finance-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
@@ -34,8 +33,7 @@
 @source "../../../packages/availability-react/src/**/*.{ts,tsx}";
 @source "../../../packages/bookings-react/src/**/*.{ts,tsx}";
 @source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
-@source "../../../packages/crm-react/src/**/*.{ts,tsx}";
-/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
+@source "../../../packages/relationships-react/src/**/*.{ts,tsx}";
 @source "../../../packages/extras-react/src/**/*.{ts,tsx}";
 @source "../../../packages/finance-react/src/**/*.{ts,tsx}";
 @source "../../../packages/flights-react/src/**/*.{ts,tsx}";
@@ -49,7 +47,7 @@
 @import "@voyantjs/auth-react/styles.css";
 @import "@voyantjs/availability-react/styles.css";
 @import "@voyantjs/bookings-react/styles.css";
-@import "@voyantjs/crm-react/styles.css";
+@import "@voyantjs/relationships-react/styles.css";
 @import "@voyantjs/finance-react/styles.css";
 @import "@voyantjs/legal-react/styles.css";
 @import "@voyantjs/products-react/styles.css";

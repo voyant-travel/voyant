@@ -188,14 +188,6 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/catalog-mcp/src/tools/get-entity.ts",
-    patterns: [/\bhospitality\b/i],
-  },
-  {
-    file: "packages/catalog-mcp/src/tools/tools.test.ts",
-    patterns: [/\bhospitality\b/i],
-  },
-  {
     file: "packages/catalog/README.md",
     patterns: [/\bhospitality\b/i],
   },

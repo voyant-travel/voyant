@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
+import { useAddresses } from "@voyantjs/identity-react"
 import {
   type OrganizationRecord,
   type PersonRecord,
@@ -8,8 +9,7 @@ import {
   useOrganizations,
   usePeople,
   usePerson,
-} from "@voyantjs/crm-react"
-import { useAddresses } from "@voyantjs/identity-react"
+} from "@voyantjs/relationships-react"
 import {
   Button,
   ButtonGroup,

@@ -1,9 +1,9 @@
-import { getSlotResourceAvailability } from "@voyantjs/availability"
 import { productExtras } from "@voyantjs/bookings/extras"
 import { sellabilityService } from "@voyantjs/sellability"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { getStorefrontSlotResourceAvailability } from "./service-boundary-sql.js"
 import {
   buildAvailabilityState,
   buildResourceManifest,
@@ -470,7 +470,7 @@ export async function previewStorefrontDeparturePrice(
   const total = offers.totalAfterDiscount
   const extrasTotal = withExtras.impacts.reduce((sum, extra) => sum + extra.total, 0)
   const basePrice = Number((subtotal - extrasTotal).toFixed(2))
-  const slotResources = await getSlotResourceAvailability(db, slot.id)
+  const slotResources = await getStorefrontSlotResourceAvailability(db, slot.id)
   const resourceManifest = buildResourceManifest(slotResources)
 
   return {

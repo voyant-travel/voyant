@@ -2,8 +2,8 @@
 
 import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { deriveTravelerRoleFromDob } from "@voyantjs/bookings-react/components/travelers-section"
-import { usePerson, usePersonRelationships } from "@voyantjs/crm-react"
-import { PersonCombobox, PersonForm } from "@voyantjs/crm-react/ui"
+import { usePerson, usePersonRelationships } from "@voyantjs/relationships-react"
+import { PersonCombobox, PersonForm } from "@voyantjs/relationships-react/ui"
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"

@@ -7,7 +7,7 @@ import {
   usePersonDocuments,
   usePersonMutation,
   usePersonTravelSnapshot,
-} from "@voyantjs/crm-react"
+} from "@voyantjs/relationships-react"
 import {
   Button,
   Dialog,

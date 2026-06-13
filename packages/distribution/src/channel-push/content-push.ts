@@ -18,12 +18,12 @@ import {
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
-import { products } from "@voyantjs/products/schema"
 import { and, asc, eq, sql } from "drizzle-orm"
 import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import { channelContentPushIntents, channelProductMappings, channels } from "../schema.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
 
+import { type ContentPushProduct, loadContentPushProduct } from "./boundary-sql.js"
 import { type ChannelPushDeps, defaultLogger, getChannelPushDepsOrThrow } from "./types.js"
 
 /** Stable string identifier for the content-push workflow. */
@@ -149,11 +149,7 @@ export async function processContentPushIntents(
   let skipped = 0
 
   for (const { intent, channel } of intents) {
-    const [product] = (await db
-      .select()
-      .from(products)
-      .where(eq(products.id, intent.productId))
-      .limit(1)) as Array<typeof products.$inferSelect>
+    const product = await loadContentPushProduct(db, intent.productId)
 
     if (!product) {
       await db.delete(channelContentPushIntents).where(eq(channelContentPushIntents.id, intent.id))
@@ -311,7 +307,7 @@ function rateLimitConfigForChannel(channel: typeof channels.$inferSelect): RateL
   }
 }
 
-function buildMinimalContent(product: typeof products.$inferSelect): Record<string, unknown> {
+function buildMinimalContent(product: ContentPushProduct): Record<string, unknown> {
   // v1 minimal shape — enough for the demo upstream to acknowledge.
   // Production wiring composes per-vertical content (itinerary, media,
   // options, …) per the doc's `GetContentResult`.

@@ -32,7 +32,7 @@ import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { mountCatalogMcpRoutes } from "./mcp"
+import { mountOperatorAgentToolRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
   createOperatorWorkflowDriver,
@@ -260,7 +260,7 @@ export const app = createApp<CloudflareBindings>({
 
     mountOperatorLazyAdditionalRoutes(hono)
 
-    mountCatalogMcpRoutes(hono)
+    mountOperatorAgentToolRoutes(hono)
     mountCatalogBookingRoutes(hono)
     mountCatalogCheckoutRoutes(hono)
     mountCatalogContentRoutes(hono)

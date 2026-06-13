@@ -12,10 +12,6 @@ import * as bookingsTravelDetailsSchema from "../packages/bookings/src/schema/tr
 import * as bookingsCoreSchema from "../packages/bookings/src/schema-core.ts"
 import * as bookingsItemsSchema from "../packages/bookings/src/schema-items.ts"
 import * as bookingsOperationsSchema from "../packages/bookings/src/schema-operations.ts"
-import * as crmBookingExtensionSchema from "../packages/crm/src/booking-extension.ts"
-import * as crmAccountsSchema from "../packages/crm/src/schema-accounts.ts"
-import * as crmActivitiesSchema from "../packages/crm/src/schema-activities.ts"
-import * as crmSalesSchema from "../packages/crm/src/schema-sales.ts"
 import * as dbApiKeySchema from "../packages/db/src/schema/iam/apikey.ts"
 import * as dbAuthSchema from "../packages/db/src/schema/iam/auth.ts"
 import * as dbUserProfilesSchema from "../packages/db/src/schema/iam/user_profiles.ts"
@@ -52,6 +48,11 @@ import * as productsCoreSchema from "../packages/products/src/schema-core.ts"
 import * as productsItinerarySchema from "../packages/products/src/schema-itinerary.ts"
 import * as productsSettingsSchema from "../packages/products/src/schema-settings.ts"
 import * as productsTaxonomySchema from "../packages/products/src/schema-taxonomy.ts"
+import * as quotesBookingExtensionSchema from "../packages/quotes/src/booking-extension.ts"
+import * as quotesSalesSchema from "../packages/quotes/src/schema-sales.ts"
+import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"
+import * as relationshipsActivitiesSchema from "../packages/relationships/src/schema-activities.ts"
+import * as relationshipsSignalsSchema from "../packages/relationships/src/schema-signals.ts"
 import * as resourcesSchema from "../packages/resources/src/schema.ts"
 import * as sellabilitySchema from "../packages/sellability/src/schema.ts"
 import * as storefrontVerificationSchema from "../packages/storefront-verification/src/schema.ts"
@@ -106,8 +107,16 @@ const sections: SectionDefinition[] = [
     modules: [dbDomainsSchema, dbEmailDomainRecordsSchema, dbWebhookSubscriptionsSchema],
   },
   {
-    title: "CRM",
-    modules: [crmAccountsSchema, crmSalesSchema, crmActivitiesSchema, crmBookingExtensionSchema],
+    title: "Relationships",
+    modules: [
+      relationshipsAccountsSchema,
+      relationshipsActivitiesSchema,
+      relationshipsSignalsSchema,
+    ],
+  },
+  {
+    title: "Quotes",
+    modules: [quotesSalesSchema, quotesBookingExtensionSchema],
   },
   {
     title: "Identity",

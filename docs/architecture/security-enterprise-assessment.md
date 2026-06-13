@@ -94,9 +94,9 @@ Actor guards are mounted on only two prefixes:
 app.use("/v1/admin/*",  requireActor("staff"))
 app.use("/v1/public/*", requireActor("customer", "partner", "supplier"))
 ```
-The legacy surface is mounted with no equivalent (`if (mod.routes) app.route(\`/v1/${mod.module.name}\`, mod.routes)`). The **only** place API-key scopes are enforced is inside `requireActor`, whose resource extractor matches only `^/v1/(?:admin|public)/...`. Most modules (crm, transactions, identity, finance, bookings, distribution, markets, sellability, resources, extras, octo, external-refs, ground, facilities) expose their **full admin CRUD** at `/v1/<module>`, and the operator admin UI actively calls these legacy paths.
+The legacy surface is mounted with no equivalent (`if (mod.routes) app.route(\`/v1/${mod.module.name}\`, mod.routes)`). The **only** place API-key scopes are enforced is inside `requireActor`, whose resource extractor matches only `^/v1/(?:admin|public)/...`. Most modules (relationships, quotes, transactions, identity, finance, bookings, distribution, markets, sellability, resources, extras, octo, external-refs, ground, facilities) expose their **full admin CRUD** at `/v1/<module>`, and the operator admin UI actively calls these legacy paths.
 
-**Impact:** A `voy_` API key scoped to e.g. `products:read` is enforced on `/v1/admin/products` but can hit `/v1/products`, `/v1/crm`, `/v1/finance`, etc. with **no scope check at all** — full read/write/delete across every module. Scoped API keys are effectively unenforceable. Latent second prong: any deployment resolving a non-staff session actor would reach staff CRUD here too (operator dodges this only because it forces every session to `staff`).
+**Impact:** A `voy_` API key scoped to e.g. `products:read` is enforced on `/v1/admin/products` but can hit `/v1/products`, `/v1/relationships`, `/v1/quotes`, `/v1/finance`, etc. with **no scope check at all** — full read/write/delete across every module. Scoped API keys are effectively unenforceable. Latent second prong: any deployment resolving a non-staff session actor would reach staff CRUD here too (operator dodges this only because it forces every session to `staff`).
 **Fix:** Mount an actor + scope guard on `/v1/*`, or drop the legacy mount.
 
 ### H2 — Stored XSS via uploads, reachable by any authenticated principal
@@ -176,7 +176,11 @@ No HSTS, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, CSP, or 
 
 ### M4 — MCP mutating tools callable by any actor
 **`templates/operator/src/api/mcp.ts:31-64`**
-`registerAllTools` co-mounts read-only catalog tools with state-mutating `createTripTool`/`reviseTripTool`/`priceTripTool`/`reserveTripTool` at both `/v1/admin/mcp/tools/:tool` and `/v1/public/mcp/tools/:tool`, with no per-tool authorization. Any valid token (including `customer`/`partner`/`supplier`) can invoke the mutation tools — contradicting catalog-mcp's "read-only, prompt-injection-safe" guarantee. **Fix:** gate mutating tools behind a per-tool staff/scope check; segregate read (public) from write (staff) tools; rate-limit dispatch.
+Historical note: the v1 package-structure branch retires the public catalog MCP
+surface and keeps only app-local admin trip-composer tools. Catalog-capable
+agents should call catalog HTTP APIs directly. If any runtime reintroduces
+public tool wrappers, it must preserve the same API auth, visibility,
+rate-limit, audit, and tenant controls.
 
 ### M5 — Cross-user idempotency replay can leak a session/capability token
 **`packages/hono/src/middleware/idempotency-key.ts:124,151-174`**
@@ -223,7 +227,7 @@ Session cookie cache defaults on with a 5-min TTL; cloud-mode membership re-chec
 `GET /overview?bookingId&email` is unthrottled (the POST path's limiter no-ops without the `RATE_LIMIT` KV binding, which the operator does not bind) — an attacker who knows a victim email can brute-force booking numbers to enumerate financials (email compare is constant-time, which helps). Separately, `useSecureCookies: process.env.NODE_ENV === "production"` is fragile on Workers where `NODE_ENV` may be undefined for non-Vite consumers. **Fix:** rate-limit `/overview`; make the KV binding mandatory; derive `Secure` from request scheme.
 
 ### L4 — CSV export does not neutralize formula-injection prefixes
-**`packages/crm/src/service/accounts-people.ts:494`**
+**`packages/relationships/src/service/accounts-people.ts:494`**
 Delimiter/CRLF quoting is correct, but values beginning with `= + - @ \t \r` are exported verbatim. A person named `=HYPERLINK(...)` or `=cmd|'/c calc'!A1` executes when an operator opens the export in Excel/Sheets. **Fix:** prefix such cells with a single quote before quoting; add a shared `toCsvCell` helper in `@voyantjs/utils`.
 
 ### L5 — `<500` thrown errors reflect raw messages/details to clients

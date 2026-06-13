@@ -35,8 +35,8 @@ export interface UpsertBookingTravelerTravelDetailInput {
 
 /**
  * Plaintext fields a booking-traveler can pre-fill from the
- * traveler's `crm.people` record on creation. Mirrors
- * `PersonTravelSnapshot` in `@voyantjs/crm` so the two stay in sync.
+ * traveler's Relationships person record on creation. Mirrors
+ * `PersonTravelSnapshot` in `@voyantjs/relationships` so the two stay in sync.
  */
 export interface BookingTravelerSnapshot {
   dateOfBirth?: string | null

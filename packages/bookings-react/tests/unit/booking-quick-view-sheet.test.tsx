@@ -32,7 +32,7 @@ vi.mock("../../src/index.js", () => ({
   useRevealTraveler: () => ({ data: null, isFetching: false, isError: false }),
 }))
 
-vi.mock("@voyantjs/crm-react", () => ({
+vi.mock("@voyantjs/relationships-react", () => ({
   useOrganization: () => ({ data: null }),
   usePerson: () => ({ data: null }),
 }))

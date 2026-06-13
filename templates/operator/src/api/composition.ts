@@ -21,15 +21,17 @@ import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { bookingsExtrasHonoModule } from "@voyantjs/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
-import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import {
+  createCatalogSearchHonoModule,
+  type EmbeddingProvider,
+  executeSemanticSearch,
+} from "@voyantjs/catalog"
 import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
-import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
 import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyantjs/commerce"
-import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
@@ -44,11 +46,18 @@ import {
 } from "@voyantjs/notifications"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
+import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
+import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { resourcesHonoModule } from "@voyantjs/resources"
+import type { SellabilityOfferWriter } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
-import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
+import {
+  transactionsBookingExtension,
+  transactionsHonoModule,
+  transactionsService,
+} from "@voyantjs/transactions"
 import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -73,6 +82,12 @@ import {
 } from "./payment-config"
 import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
 
+const legacyTransactionsOfferWriter: SellabilityOfferWriter = {
+  createOfferBundle: (db, input) => transactionsService.createOfferBundle(db, input),
+  updateOfferMetadata: (db, offerId, metadata) =>
+    transactionsService.updateOffer(db, offerId, { metadata }),
+}
+
 /**
  * The operator deployment's capability container. Every template-specific
  * resolver/service a module factory needs is gathered here so wiring lives in
@@ -92,7 +107,7 @@ export interface OperatorCapabilities {
   createBookingPiiService: typeof createOperatorBookingPiiService
   autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
   resolveBankTransferDetails: typeof resolveBankTransferDetails
-  crmService: typeof crmService
+  relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   buildCatalogContext: typeof buildCatalogContext
   createTravelComposerRoutesOptions: typeof createOperatorTravelComposerRoutesOptions
@@ -116,7 +131,7 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     createBookingPiiService: createOperatorBookingPiiService,
     autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
     resolveBankTransferDetails,
-    crmService,
+    relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     buildCatalogContext,
     createTravelComposerRoutesOptions: createOperatorTravelComposerRoutesOptions,
@@ -132,7 +147,8 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
 export const OPERATOR_RUNTIME_MANIFEST = {
   modules: [
     "@voyantjs/action-ledger",
-    "@voyantjs/crm",
+    "@voyantjs/relationships",
+    "@voyantjs/quotes",
     "@voyantjs/availability",
     "@voyantjs/identity",
     "@voyantjs/external-refs",
@@ -161,7 +177,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/finance/bookings-create-extension",
     "@voyantjs/products/booking-extension",
     "@voyantjs/catalog-authoring/extension",
-    "@voyantjs/crm/booking-extension",
+    "@voyantjs/quotes/booking-extension",
     "@voyantjs/transactions/booking-extension",
     "@voyantjs/distribution/booking-extension",
   ],
@@ -171,7 +187,8 @@ export const OPERATOR_RUNTIME_MANIFEST = {
 export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
   modules: {
     "@voyantjs/action-ledger": () => actionLedgerHonoModule,
-    "@voyantjs/crm": () => createCrmHonoModule(),
+    "@voyantjs/relationships": () => createRelationshipsHonoModule(),
+    "@voyantjs/quotes": () => createQuotesHonoModule(),
     "@voyantjs/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
     "@voyantjs/external-refs": () => externalRefsHonoModule,
@@ -182,7 +199,10 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
         },
       }),
-    "@voyantjs/commerce": () => createCommerceHonoModules(),
+    "@voyantjs/commerce": () =>
+      createCommerceHonoModules({
+        sellability: { offerWriter: legacyTransactionsOfferWriter },
+      }),
     "@voyantjs/transactions": () => transactionsHonoModule,
     "@voyantjs/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
@@ -209,26 +229,34 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/bookings": ({ capabilities }) =>
       createBookingsHonoModule({
         resolveTravelSnapshot: (db, personId, { kms }) =>
-          capabilities.crmService.loadPersonTravelSnapshot(db, personId, { kms }),
+          capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
         resolveBillingPerson: async (db, contact, ctx) => {
-          const person = await capabilities.crmService.upsertPersonFromContact(db, contact, {
-            source: ctx.source,
-            sourceRef: ctx.sourceRef,
-          })
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+            },
+          )
           return person?.id ?? null
         },
         resolveTravelerPerson: async (db, contact, ctx) => {
-          const person = await capabilities.crmService.upsertPersonFromContact(db, contact, {
-            source: ctx.source,
-            sourceRef: ctx.sourceRef,
-            requireContactPoint: true,
-          })
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+              requireContactPoint: true,
+            },
+          )
           return person?.id ?? null
         },
         resolveBillingPersonById: async (db, personId) =>
-          (await capabilities.crmService.getPersonById(db, personId)) != null,
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
         resolveBillingOrganizationById: async (db, organizationId) =>
-          (await capabilities.crmService.getOrganizationById(db, organizationId)) != null,
+          (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
         closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
       }),
     "@voyantjs/finance": ({ capabilities }) =>
@@ -326,7 +354,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/finance/bookings-create-extension": () => bookingsCreateExtension,
     "@voyantjs/products/booking-extension": () => productsBookingExtension,
     "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
-    "@voyantjs/crm/booking-extension": () => crmBookingExtension,
+    "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
     "@voyantjs/transactions/booking-extension": () => transactionsBookingExtension,
     "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,
   },

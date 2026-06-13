@@ -9,8 +9,7 @@
  *
  * Storefront-side documents are scoped per `(vertical, locale, audience,
  * market)`. Admin-side documents denormalize text fields across audiences for
- * keyword matching (see §5.4.4); admin embedding remains audience-scoped (see
- * §7 of `catalog-rag-architecture.md`).
+ * keyword matching (see §5.4.4); admin embedding remains audience-scoped.
  *
  * See `docs/architecture/catalog-architecture.md` §5.4 for the full design.
  */
@@ -37,13 +36,13 @@ export interface IndexerDocument {
   fields: Record<string, unknown>
   /**
    * Optional embedding(s) keyed by name. Phase 1 ships keyword + hybrid only;
-   * Phase 2 (catalog-rag) populates this for vector and hybrid retrieval.
+   * Semantic catalog indexing populates this for vector and hybrid retrieval.
    */
   embeddings?: Record<string, number[]>
   /**
    * Optional embedding model identifier. When present, the indexer scopes
    * vector queries to documents using a compatible model. See
-   * `catalog-rag-architecture.md` §8.
+   * the catalog semantic-search design.
    */
   embedding_model_id?: string
 }
@@ -152,7 +151,7 @@ export interface IndexerCapabilities {
   /**
    * Whether the engine can federate queries across multiple audience pools
    * (collections / shards) and deduplicate by entity ID. Used by the
-   * cross-audience semantic-search pattern (§5.9.9 in catalog-rag).
+   * cross-audience semantic-search pattern.
    */
   supportsCrossAudienceFederation: boolean
   /**

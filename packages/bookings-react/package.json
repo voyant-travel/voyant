@@ -52,7 +52,7 @@
     "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
@@ -80,7 +80,7 @@
     "@voyantjs/catalog-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
     "@voyantjs/extras-react": {
@@ -129,7 +129,7 @@
     "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",

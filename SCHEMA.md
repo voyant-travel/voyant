@@ -199,7 +199,7 @@ Constraints:
 | `last_delivery_at` (`lastDeliveryAt`) | timestamp with time zone • nullable |
 | `failure_count` (`failureCount`) | integer • not null • default 0 |
 
-## CRM
+## Relationships
 
 ### `activities`
 | Column | Type |
@@ -234,15 +234,6 @@ Constraints:
 | `person_id` (`personId`) | text • FK -> people.id • not null |
 | `is_primary` (`isPrimary`) | boolean • not null • default false |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `booking_crm_details`
-| Column | Type |
-|--------|------|
-| `booking_id` (`bookingId`) | text • PK • not null |
-| `quote_id` (`quoteId`) | text • nullable |
-| `quote_version_id` (`quoteVersionId`) | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `communication_log`
 | Column | Type |
@@ -285,6 +276,27 @@ Constraints:
 | `monetary_value_cents` (`monetaryValueCents`) | integer • nullable |
 | `currency_code` (`currencyCode`) | text • nullable |
 | `json_value` (`jsonValue`) | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `customer_signals`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `product_id` (`productId`) | text • nullable |
+| `option_unit_id` (`optionUnitId`) | text • nullable |
+| `kind` | customer_signal_kind • not null |
+| `source` | customer_signal_source • not null |
+| `status` | customer_signal_status • not null • default "new" |
+| `priority` | text • not null • default "normal" |
+| `notes` | text • nullable |
+| `tags` | jsonb • not null • default [] |
+| `assigned_to_user_id` (`assignedToUserId`) | text • nullable |
+| `follow_up_at` (`followUpAt`) | timestamp with time zone • nullable |
+| `resolved_booking_id` (`resolvedBookingId`) | text • nullable |
+| `source_submission_id` (`sourceSubmissionId`) | text • nullable |
+| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -405,6 +417,35 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `segment_members`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `segment_id` (`segmentId`) | text • FK -> segments.id • not null |
+| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `segments`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `conditions` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+## Quotes
+
+### `booking_crm_details`
+| Column | Type |
+|--------|------|
+| `booking_id` (`bookingId`) | text • PK • not null |
+| `quote_id` (`quoteId`) | text • nullable |
+| `quote_version_id` (`quoteVersionId`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
 ### `pipelines`
 | Column | Type |
 |--------|------|
@@ -421,7 +462,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `quote_id` (`quoteId`) | text • FK -> quotes.id • not null |
-| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `person_id` (`personId`) | text • not null |
 | `role` | participant_role • not null • default "other" |
 | `is_primary` (`isPrimary`) | boolean • not null • default false |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -485,8 +526,8 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `title` | text • not null |
-| `person_id` (`personId`) | text • FK -> people.id • nullable |
-| `organization_id` (`organizationId`) | text • FK -> organizations.id • nullable |
+| `person_id` (`personId`) | text • nullable |
+| `organization_id` (`organizationId`) | text • nullable |
 | `pipeline_id` (`pipelineId`) | text • FK -> pipelines.id • not null |
 | `stage_id` (`stageId`) | text • FK -> stages.id • not null |
 | `owner_id` (`ownerId`) | text • nullable |
@@ -503,24 +544,6 @@ Constraints:
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 | `stage_changed_at` (`stageChangedAt`) | timestamp with time zone • not null • default |
 | `closed_at` (`closedAt`) | timestamp with time zone • nullable |
-
-### `segment_members`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `segment_id` (`segmentId`) | text • FK -> segments.id • not null |
-| `person_id` (`personId`) | text • FK -> people.id • not null |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `segments`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `conditions` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `stages`
 | Column | Type |
@@ -2722,7 +2745,7 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `contract_id` (`contractId`) | text • FK -> channel_contracts.id • not null |
 | `scope` | channel_commission_scope • not null |
-| `product_id` (`productId`) | text • FK -> products.id • nullable |
+| `product_id` (`productId`) | text • nullable |
 | `external_rate_id` (`externalRateId`) | text • nullable |
 | `external_category_id` (`externalCategoryId`) | text • nullable |
 | `commission_type` (`commissionType`) | channel_commission_type • not null |
@@ -2770,8 +2793,8 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `allotment_id` (`allotmentId`) | text • FK -> channel_inventory_allotments.id • not null |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `slot_id` (`slotId`) | text • nullable |
+| `start_time_id` (`startTimeId`) | text • nullable |
 | `date_local` (`dateLocal`) | date • nullable |
 | `guaranteed_capacity` (`guaranteedCapacity`) | integer • nullable |
 | `max_capacity` (`maxCapacity`) | integer • nullable |
@@ -2787,9 +2810,9 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `channel_id` (`channelId`) | text • FK -> channels.id • not null |
 | `contract_id` (`contractId`) | text • FK -> channel_contracts.id • nullable |
-| `product_id` (`productId`) | text • FK -> products.id • not null |
-| `option_id` (`optionId`) | text • FK -> product_options.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `start_time_id` (`startTimeId`) | text • nullable |
 | `valid_from` (`validFrom`) | date • nullable |
 | `valid_to` (`validTo`) | date • nullable |
 | `guaranteed_capacity` (`guaranteedCapacity`) | integer • nullable |
@@ -2806,7 +2829,7 @@ Constraints:
 | `allotment_id` (`allotmentId`) | text • FK -> channel_inventory_allotments.id • not null |
 | `release_rule_id` (`releaseRuleId`) | text • FK -> channel_inventory_release_rules.id • nullable |
 | `target_id` (`targetId`) | text • FK -> channel_inventory_allotment_targets.id • nullable |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
+| `slot_id` (`slotId`) | text • nullable |
 | `action_taken` (`actionTaken`) | channel_release_execution_action • not null • default "released" |
 | `status` | channel_release_execution_status • not null • default "pending" |
 | `released_capacity` (`releasedCapacity`) | integer • nullable |
@@ -2834,7 +2857,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `channel_id` (`channelId`) | text • FK -> channels.id • not null |
-| `product_id` (`productId`) | text • FK -> products.id • not null |
+| `product_id` (`productId`) | text • not null |
 | `external_product_id` (`externalProductId`) | text • nullable |
 | `external_rate_id` (`externalRateId`) | text • nullable |
 | `external_category_id` (`externalCategoryId`) | text • nullable |

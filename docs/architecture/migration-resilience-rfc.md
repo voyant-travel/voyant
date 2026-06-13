@@ -86,7 +86,7 @@ places today, but only because someone remembered each time:
 | `bookingsSupplierExtension` | bookings | `bookingSupplierStatuses`, `bookingActivityLog` | ✓ | ✓ |
 | `bookingsCreateExtension` | finance | (uses finance tables) | ✓ | ✓ |
 | `productsBookingExtension` | products | `bookingProductDetails`, `bookingItemProductDetails` | ✓ | ✓ |
-| `crmBookingExtension` | crm | `bookingCrmDetails` | ✓ | ✓ |
+| `quotesBookingExtension` | quotes | `bookingQuoteDetails` | ✓ | ✓ |
 | `transactionsBookingExtension` | transactions | `bookingTransactionDetails` | ✓ | ✓ |
 | `distributionBookingExtension` | distribution | `bookingDistributionDetails` | ✓ | ✓ |
 
@@ -253,7 +253,8 @@ generated file**:
   // Run `voyant db generate` to refresh.
   export const schema = [
     "../../packages/db/src/schema/index.ts",
-    "../../packages/crm/src/schema.ts",
+    "../../packages/relationships/src/schema.ts",
+    "../../packages/quotes/src/schema.ts",
     // ...dependency-ordered, derived from the manifest...
   ]
   ```

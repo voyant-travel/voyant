@@ -30,29 +30,6 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { bookingCrmDetails } from "@voyantjs/crm/booking-extension"
-import {
-  activities,
-  activityLinks,
-  activityParticipants,
-  communicationLog,
-  customFieldDefinitions,
-  customFieldValues,
-  organizationNotes,
-  organizations,
-  people,
-  personNotes,
-  personPaymentMethods,
-  pipelines,
-  quoteParticipants,
-  quotes,
-  quoteVersionLines,
-  quoteVersions,
-  segmentMembers,
-  segments,
-  stages,
-} from "@voyantjs/crm/schema"
-
 import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
@@ -106,6 +83,30 @@ import {
   products,
   productVersions,
 } from "@voyantjs/products/schema"
+import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
+import {
+  pipelines,
+  quoteParticipants,
+  quotes,
+  quoteVersionLines,
+  quoteVersions,
+  stages,
+} from "@voyantjs/quotes/schema"
+import {
+  activities,
+  activityLinks,
+  activityParticipants,
+  communicationLog,
+  customFieldDefinitions,
+  customFieldValues,
+  organizationNotes,
+  organizations,
+  people,
+  personNotes,
+  personPaymentMethods,
+  segmentMembers,
+  segments,
+} from "@voyantjs/relationships/schema"
 import {
   supplierNotes,
   supplierRates,
@@ -2476,7 +2477,7 @@ async function seedBookingsAndFinance() {
     })
 
     // Extension details — populated on every booking
-    await db.insert(bookingCrmDetails).values({
+    await db.insert(bookingQuoteDetails).values({
       bookingId,
       quoteId: null,
       quoteVersionId: null,
