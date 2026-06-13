@@ -4146,9 +4146,6 @@ importers:
 
   packages/sellability:
     dependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -4167,9 +4164,6 @@ importers:
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../pricing
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
       '@voyantjs/transactions':
         specifier: workspace:^
         version: link:../transactions
@@ -4183,6 +4177,12 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
