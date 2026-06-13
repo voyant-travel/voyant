@@ -1001,17 +1001,18 @@ the domain "operated Inventory authoring" and avoid using unqualified Inventory
 for Operations availability/resource truth, Distribution allotments, or sourced
 Catalog inventory.
 
-`catalog-authoring` needs classification before any move. The current package
-manifest depends on availability, extras, pricing, and products, so the likely
-answer is that today's package is operated-inventory authoring and should move
-under Inventory, probably as `inventory-authoring`. Keep or recreate a narrow
-Catalog merchandising surface only for real Catalog overlay/source-governance
-authoring: editorial overlays, source governance, freshness controls, search
-projection metadata, and index governance. That surface may be named
-`catalog-merchandising`, `catalog-overlays`, or a narrowed `catalog-authoring`,
-but it must stay installable for OTA/reseller staff who curate sourced inventory
-without operated Inventory. If overlay authoring is not real yet, do not keep a
-separate public `catalog-authoring` name just for continuity.
+`catalog-authoring` is classified as operated-inventory authoring for the current
+compose/duplicate product-graph implementation. That implementation should live
+behind `@voyantjs/inventory/authoring`; `@voyantjs/catalog-authoring` may remain
+only as a compatibility package while existing schema manifests and hosts still
+name it. Keep or recreate a narrow Catalog merchandising surface only for real
+Catalog overlay/source-governance authoring: editorial overlays, source
+governance, freshness controls, search projection metadata, and index
+governance. That surface may be named `catalog-merchandising`,
+`catalog-overlays`, or a narrowed `catalog-authoring`, but it must stay
+installable for OTA/reseller staff who curate sourced inventory without operated
+Inventory. If overlay authoring is not real yet, do not keep a separate public
+`catalog-authoring` name just for continuity.
 
 Catalog AI access should also collapse into Catalog rather than survive as a
 separate first-party Module. Semantic/vector retrieval, compact agent result
@@ -1244,7 +1245,7 @@ sketches/tests, schema moves, and test-parity gates are complete.
 
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
-| Products / Inventory | Move owned product authoring from `products` toward optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Treat current `catalog-authoring` as likely Inventory authoring unless a real Catalog overlay/source-governance surface is split out; create the target Inventory Interface first; move schemas, docs, generated manifests, and templates only through explicit migration issues. |
+| Products / Inventory | Move owned product authoring from `products` toward optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Current compose/duplicate product graph authoring is Inventory-owned through `@voyantjs/inventory/authoring`; keep `@voyantjs/catalog-authoring` only as a compatibility package unless a real Catalog overlay/source-governance surface is split out. Move remaining product schemas, docs, generated manifests, and templates only through explicit migration issues. |
 | Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Build the Commerce Interface before moving callers. Stop Sellability from constructing Transactions Offers and migrate callers to commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. |
 | CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside the migration branch. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
@@ -1265,7 +1266,7 @@ stay unchanged.
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
 | `@voyantjs/catalog`, `@voyantjs/catalog-react` | Keep as the catalog projection/search/overlay/snapshot plane. | Catalog remains a contract/infrastructure plane, not a universal root table and not owned product authoring. |
-| `@voyantjs/catalog-authoring` | Move current package scope toward Inventory unless a real overlay/source-governance surface is split out. | The manifest depends on Products, Availability, Pricing, and Extras, so today's package looks like operated-inventory authoring. Keep a Catalog authoring package only for overlays, source governance, freshness, search projection metadata, or index governance. |
+| `@voyantjs/catalog-authoring` | Compatibility package over `@voyantjs/inventory/authoring` unless a real overlay/source-governance surface is split out. | The current compose/duplicate product graph authoring implementation is operated-inventory authoring. Keep a Catalog authoring package only for overlays, source governance, freshness, search projection metadata, or index governance. |
 | `@voyantjs/products`, `@voyantjs/products-react` | Compatibility entrypoints while operated authoring moves to optional `inventory` packages/subpaths in the v1 package move. | Products are operated inventory. New operated-authoring imports should prefer `@voyantjs/inventory` / `@voyantjs/inventory-react` where the moved surface exists. |
 | `@voyantjs/accommodations` | Keep as a vertical runtime for accommodation resale where the schema/booking semantics are real. | Do not revive hotel/property operations. Room-block work may be Operations/Program-facing while accommodation resale remains vertical. |
 | `@voyantjs/cruises`, `@voyantjs/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |

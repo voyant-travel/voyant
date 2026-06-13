@@ -28,7 +28,11 @@
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine.ts",
-    "./extras": "./src/extras.ts"
+    "./extras": "./src/extras.ts",
+    "./authoring": "./src/authoring.ts",
+    "./authoring/schema": "./src/authoring/schema.ts",
+    "./authoring/spec": "./src/authoring/spec.ts",
+    "./authoring/extension": "./src/authoring/extension.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -39,11 +43,16 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/availability": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/products": "workspace:^"
+    "@voyantjs/pricing": "workspace:^",
+    "@voyantjs/products": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:^",
@@ -180,6 +189,26 @@
         "types": "./dist/extras.d.ts",
         "import": "./dist/extras.js",
         "default": "./dist/extras.js"
+      },
+      "./authoring": {
+        "types": "./dist/authoring.d.ts",
+        "import": "./dist/authoring.js",
+        "default": "./dist/authoring.js"
+      },
+      "./authoring/schema": {
+        "types": "./dist/authoring/schema.d.ts",
+        "import": "./dist/authoring/schema.js",
+        "default": "./dist/authoring/schema.js"
+      },
+      "./authoring/spec": {
+        "types": "./dist/authoring/spec.d.ts",
+        "import": "./dist/authoring/spec.js",
+        "default": "./dist/authoring/spec.js"
+      },
+      "./authoring/extension": {
+        "types": "./dist/authoring/extension.d.ts",
+        "import": "./dist/authoring/extension.js",
+        "default": "./dist/authoring/extension.js"
       }
     },
     "main": "./dist/index.js",
