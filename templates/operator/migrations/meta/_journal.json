@@ -456,6 +456,13 @@
       "when": 1781271047535,
       "tag": "0063_write_intents",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1781369141741,
+      "tag": "0064_petite_meteorite",
+      "breakpoints": true
     }
   ]
 }

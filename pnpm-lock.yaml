@@ -1960,9 +1960,6 @@ importers:
 
   packages/distribution:
     dependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -1981,9 +1978,6 @@ importers:
       '@voyantjs/identity':
         specifier: workspace:^
         version: link:../identity
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
       '@voyantjs/suppliers':
         specifier: workspace:^
         version: link:../suppliers
@@ -2000,6 +1994,12 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

@@ -2745,7 +2745,7 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `contract_id` (`contractId`) | text • FK -> channel_contracts.id • not null |
 | `scope` | channel_commission_scope • not null |
-| `product_id` (`productId`) | text • FK -> products.id • nullable |
+| `product_id` (`productId`) | text • nullable |
 | `external_rate_id` (`externalRateId`) | text • nullable |
 | `external_category_id` (`externalCategoryId`) | text • nullable |
 | `commission_type` (`commissionType`) | channel_commission_type • not null |
@@ -2793,8 +2793,8 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `allotment_id` (`allotmentId`) | text • FK -> channel_inventory_allotments.id • not null |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `slot_id` (`slotId`) | text • nullable |
+| `start_time_id` (`startTimeId`) | text • nullable |
 | `date_local` (`dateLocal`) | date • nullable |
 | `guaranteed_capacity` (`guaranteedCapacity`) | integer • nullable |
 | `max_capacity` (`maxCapacity`) | integer • nullable |
@@ -2810,9 +2810,9 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `channel_id` (`channelId`) | text • FK -> channels.id • not null |
 | `contract_id` (`contractId`) | text • FK -> channel_contracts.id • nullable |
-| `product_id` (`productId`) | text • FK -> products.id • not null |
-| `option_id` (`optionId`) | text • FK -> product_options.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `start_time_id` (`startTimeId`) | text • nullable |
 | `valid_from` (`validFrom`) | date • nullable |
 | `valid_to` (`validTo`) | date • nullable |
 | `guaranteed_capacity` (`guaranteedCapacity`) | integer • nullable |
@@ -2829,7 +2829,7 @@ Constraints:
 | `allotment_id` (`allotmentId`) | text • FK -> channel_inventory_allotments.id • not null |
 | `release_rule_id` (`releaseRuleId`) | text • FK -> channel_inventory_release_rules.id • nullable |
 | `target_id` (`targetId`) | text • FK -> channel_inventory_allotment_targets.id • nullable |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
+| `slot_id` (`slotId`) | text • nullable |
 | `action_taken` (`actionTaken`) | channel_release_execution_action • not null • default "released" |
 | `status` | channel_release_execution_status • not null • default "pending" |
 | `released_capacity` (`releasedCapacity`) | integer • nullable |
@@ -2857,7 +2857,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `channel_id` (`channelId`) | text • FK -> channels.id • not null |
-| `product_id` (`productId`) | text • FK -> products.id • not null |
+| `product_id` (`productId`) | text • not null |
 | `external_product_id` (`externalProductId`) | text • nullable |
 | `external_rate_id` (`externalRateId`) | text • nullable |
 | `external_category_id` (`externalCategoryId`) | text • nullable |
