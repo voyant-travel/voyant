@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- owner: products-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
+// agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Button,

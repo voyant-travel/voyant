@@ -1,7 +1,10 @@
 # @voyantjs/products-react
 
-The products client tier: headless data hooks/clients plus the styled UI
-components and page-level compositions (formerly `@voyantjs/products-ui`).
+Compatibility entrypoint for the operated Product React runtime.
+
+The implementation now lives under `@voyantjs/inventory-react`. Existing
+`@voyantjs/products-react` imports remain supported for v1 compatibility. New
+operated-authoring UI code should import from `@voyantjs/inventory-react`.
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
@@ -10,18 +13,20 @@ heavier peers (`@voyantjs/ui`, `@voyantjs/catalog-react`,
 `@voyantjs/pricing-react/ui`, `@voyantjs/finance-react/ui`, and the other `*-react`
 module peers) are optional and only needed when you import those subpaths.
 
-React runtime package for Voyant products. Provides the shared products provider, typed fetch client, query keys, and TanStack Query hooks that power product-focused frontend experiences.
+React runtime package for Voyant operated inventory. Provides the shared
+products provider, typed fetch client, query keys, and TanStack Query hooks that
+power product-focused frontend experiences.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/products-react @voyantjs/products @tanstack/react-query react react-dom zod
+pnpm add @voyantjs/inventory-react @voyantjs/inventory @tanstack/react-query react react-dom zod
 ```
 
 ## Usage
 
 ```tsx
-import { VoyantProductsProvider, useProducts } from "@voyantjs/products-react"
+import { VoyantProductsProvider, useProducts } from "@voyantjs/inventory-react"
 
 function App() {
   return (
@@ -39,16 +44,19 @@ function ProductsList() {
 
 ## Relationship To The Registry
 
-`@voyantjs/products-react` is the runtime layer. Installable product UI blocks should come from the Voyant shadcn registry and depend on this package for hooks, client state, and provider wiring.
+`@voyantjs/inventory-react` is the runtime layer. Installable product UI blocks
+should depend on Inventory React for hooks, client state, and provider wiring.
 
 ## UI components
 
-Importable React UI components for Voyant products. Bundler-consumed (Vite, Next.js, webpack, etc.). Import them from `@voyantjs/products-react/ui` or the granular `@voyantjs/products-react/components/*` subpaths.
+Importable React UI components for Voyant products. Bundler-consumed (Vite,
+Next.js, webpack, etc.). Import them from `@voyantjs/inventory-react/ui` or the
+granular `@voyantjs/inventory-react/components/*` subpaths.
 
 ### Install
 
 ```bash
-pnpm add @voyantjs/products-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyantjs/inventory-react @voyantjs/ui @tanstack/react-query react react-dom
 ```
 
 `@voyantjs/ui` provides the design-system primitives; the root of this package provides the data-layer hooks.
@@ -76,9 +84,9 @@ Components render English by default. To localize them, wrap your UI in
 `ProductsUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { ProductsUiMessagesProvider } from "@voyantjs/products-react/ui"
-import { productsUiEn } from "@voyantjs/products-react/i18n/en"
-import { productsUiRo } from "@voyantjs/products-react/i18n/ro"
+import { ProductsUiMessagesProvider } from "@voyantjs/inventory-react/ui"
+import { productsUiEn } from "@voyantjs/inventory-react/i18n/en"
+import { productsUiRo } from "@voyantjs/inventory-react/i18n/ro"
 ```
 
 ## License

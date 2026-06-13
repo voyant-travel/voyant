@@ -1,4 +1,5 @@
 import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyantjs/pricing/schema"
+import { z } from "zod"
 import {
   optionUnitTypeEnum,
   productBookingModeEnum,
@@ -7,8 +8,7 @@ import {
   productStatusEnum,
   productVisibilityEnum,
   serviceTypeEnum,
-} from "@voyantjs/products/schema"
-import { z } from "zod"
+} from "../schema.js"
 
 /**
  * Normalized, transport-agnostic description of a bookable product graph.

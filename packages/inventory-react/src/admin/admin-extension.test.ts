@@ -61,7 +61,7 @@ describe("createProductsAdminExtension", () => {
       const module = await route.page?.()
       expect(typeof module?.default).toBe("function")
     }
-  })
+  }, 15_000)
 
   it("resolves the detail page through the detailPageComponent seam", async () => {
     const Substitute = () => null

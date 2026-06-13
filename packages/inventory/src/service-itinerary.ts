@@ -139,7 +139,7 @@ async function setDefaultItinerary(db: PostgresJsDatabase, productId: string, it
   await db
     .update(productItineraries)
     .set({
-      // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       isDefault: sql`${productItineraries.id} = ${itineraryId}`,
       updatedAt: new Date(),
     })
@@ -242,7 +242,7 @@ export const itineraryProductsService = {
         .where(
           and(
             eq(productItineraries.productId, itinerary.productId),
-            // agent-quality: raw-sql reviewed -- owner: products; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
             sql`${productItineraries.id} <> ${itineraryId}`,
           ),
         )

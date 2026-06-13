@@ -1,1 +1,1 @@
-export * from "@voyantjs/products/public-routes"
+export * from "./routes-public.js"

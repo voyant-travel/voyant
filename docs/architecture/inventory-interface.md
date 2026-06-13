@@ -60,12 +60,11 @@ The target package entrypoints are:
 @voyantjs/inventory-react/styles.css
 ```
 
-The first implementation slice exposes these entrypoints as Inventory-owned
-compatibility facades over the existing `products` / `products-react`
-implementation. New first-party code that is specifically installing operated
-authoring should prefer the Inventory entrypoints. Existing
-`products` / `products-react` imports remain supported until the physical table,
-route, and UI file move lands.
+The main Product authoring/runtime implementation now lives under these
+Inventory package paths. New first-party code that is specifically installing
+operated authoring should prefer the Inventory entrypoints. Existing
+`products` / `products-react` imports remain supported as compatibility shims
+over the Inventory implementation.
 
 Product graph compose/duplicate authoring now uses an Inventory owner path:
 
@@ -113,10 +112,13 @@ discipline:
 - Export linkable definitions for template-owned associations.
 - Define cross-module link tables at the template layer with `defineLink(...)`.
 
-The first Inventory package slice does not introduce new tables or migrations.
-It re-exports the existing operated product schema so generated schema manifests
-remain unchanged. The physical move must either preserve generated manifest
-parity or include the generated manifest/migration impact in the same PR.
+The current Inventory move does not introduce new tables or migrations. Product
+schema source has moved to `packages/inventory/src`, but the operator template
+still names `@voyantjs/products` in `voyant.config.ts`, and
+`@voyantjs/products/schema` remains a compatibility shim over
+`@voyantjs/inventory/schema`. This deliberately preserves the generated schema
+manifest entry (`packages/products/src/schema.ts`) until a later slice proves
+template manifest parity for switching the manifest specifier to Inventory.
 
 ## 5. Extras Boundary
 

@@ -1,1 +1,1 @@
-export * from "@voyantjs/products/public-validation"
+export * from "./validation-public.js"

@@ -1,1 +1,1 @@
-export * from "@voyantjs/products/tasks"
+export * from "./tasks/index.js"

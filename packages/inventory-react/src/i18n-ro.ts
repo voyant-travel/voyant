@@ -1,1 +1,1 @@
-export * from "@voyantjs/products-react/i18n/ro"
+export * from "./i18n/ro.js"

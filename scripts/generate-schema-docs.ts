@@ -30,11 +30,16 @@ import * as groundDispatchSchema from "../packages/ground/src/schema-dispatch.ts
 import * as groundOperationsSchema from "../packages/ground/src/schema-operations.ts"
 import * as groundOperatorsSchema from "../packages/ground/src/schema-operators.ts"
 import * as identitySchema from "../packages/identity/src/schema.ts"
+import * as productsBookingExtensionSchema from "../packages/inventory/src/booking-extension.ts"
 import {
   extrasSourcedContentTable,
   optionExtraConfigs,
   productExtras,
 } from "../packages/inventory/src/extras.ts"
+import * as productsCoreSchema from "../packages/inventory/src/schema-core.ts"
+import * as productsItinerarySchema from "../packages/inventory/src/schema-itinerary.ts"
+import * as productsSettingsSchema from "../packages/inventory/src/schema-settings.ts"
+import * as productsTaxonomySchema from "../packages/inventory/src/schema-taxonomy.ts"
 import * as legalContractsSchema from "../packages/legal/src/contracts/schema.ts"
 import * as legalPoliciesSchema from "../packages/legal/src/policies/schema.ts"
 import * as marketsSchema from "../packages/markets/src/schema.ts"
@@ -43,11 +48,6 @@ import * as pricingCatalogsSchema from "../packages/pricing/src/schema-catalogs.
 import * as pricingCategoriesSchema from "../packages/pricing/src/schema-categories.ts"
 import * as pricingOptionRulesSchema from "../packages/pricing/src/schema-option-rules.ts"
 import * as pricingPoliciesSchema from "../packages/pricing/src/schema-policies.ts"
-import * as productsBookingExtensionSchema from "../packages/products/src/booking-extension.ts"
-import * as productsCoreSchema from "../packages/products/src/schema-core.ts"
-import * as productsItinerarySchema from "../packages/products/src/schema-itinerary.ts"
-import * as productsSettingsSchema from "../packages/products/src/schema-settings.ts"
-import * as productsTaxonomySchema from "../packages/products/src/schema-taxonomy.ts"
 import * as quotesBookingExtensionSchema from "../packages/quotes/src/booking-extension.ts"
 import * as quotesSalesSchema from "../packages/quotes/src/schema-sales.ts"
 import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"

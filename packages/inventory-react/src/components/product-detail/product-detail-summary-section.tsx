@@ -137,7 +137,7 @@ export function ProductDetailsSection({
         looksLikeHtml(description) ? (
           <div
             className="border-b pb-4 text-sm leading-relaxed text-muted-foreground [&_a]:font-medium [&_a]:text-foreground [&_a]:underline [&_em]:italic [&_h2]:mt-4 [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-4 [&_h3]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-foreground [&_li]:mb-0.5 [&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_strong]:text-foreground [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-5"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored localized rich text from the products module -- owner: products-react; existing suppression is intentional pending typed cleanup.
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored localized rich text from the products module -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
             dangerouslySetInnerHTML={{ __html: description }}
           />
         ) : (

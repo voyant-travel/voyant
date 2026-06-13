@@ -1,5 +1,5 @@
 import { optionPriceRules, optionUnitPriceRules, optionUnitTiers } from "@voyantjs/pricing/schema"
-import { productsService } from "@voyantjs/products"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   optionUnits,
   productDayServices,
@@ -8,8 +8,8 @@ import {
   productOptions,
   productPaxPricingTiers,
   products,
-} from "@voyantjs/products/schema"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+} from "../schema.js"
+import { productsService } from "../service.js"
 import { AuthoringValidationError } from "./errors.js"
 import type { ProductGraphSpec } from "./spec.js"
 

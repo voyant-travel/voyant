@@ -72,15 +72,15 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i, /^## Hospitality$/],
   },
   {
-    file: "packages/products/src/draft-shape.ts",
+    file: "packages/inventory/src/draft-shape.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/products/src/booking-engine/handler.ts",
+    file: "packages/inventory/src/booking-engine/handler.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/products/src/service-catalog-plane.ts",
+    file: "packages/inventory/src/service-catalog-plane.ts",
     patterns: [/\bhospitality\b/i],
   },
   {

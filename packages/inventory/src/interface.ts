@@ -1,8 +1,9 @@
 import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
-import { productLinkable, productsBookingExtension, productsHonoModule } from "@voyantjs/products"
-import { publicProductRoutes } from "@voyantjs/products/public-routes"
-import { productRoutes } from "@voyantjs/products/routes"
+
+import { productsBookingExtension } from "./booking-extension.js"
+import { productRoutes } from "./routes.js"
+import { publicProductRoutes } from "./routes-public.js"
 
 export const inventoryProductLinkable: LinkableDefinition = {
   module: "inventory",
@@ -18,19 +19,36 @@ export const inventoryModule: Module = {
   },
 }
 
+export const inventoryProductCompatibilityLinkable: LinkableDefinition = {
+  module: "products",
+  entity: "product",
+  table: "products",
+  idPrefix: "prod",
+}
+
+const productsCompatibilityModule: Module = {
+  name: "products",
+  linkable: {
+    product: inventoryProductCompatibilityLinkable,
+  },
+}
+
 /**
- * Compatibility Hono module for the first Inventory slice.
+ * Compatibility Hono module for the Inventory-owned Product runtime.
  *
  * Routes intentionally keep the existing `products` mount name so deployed
- * `/v1/admin/products` and `/v1/public/products` clients do not break while
- * Inventory becomes the operated authoring package target.
+ * `/v1/admin/products` and `/v1/public/products` clients do not break.
  */
-export const inventoryHonoModule: HonoModule = productsHonoModule
+export const inventoryHonoModule: HonoModule = {
+  module: productsCompatibilityModule,
+  adminRoutes: productRoutes,
+  publicRoutes: publicProductRoutes,
+  routes: productRoutes,
+}
 
 export const inventoryProductRoutes = productRoutes
 export const publicInventoryProductRoutes = publicProductRoutes
 export const inventoryBookingExtension = productsBookingExtension
-export const inventoryProductCompatibilityLinkable = productLinkable
 
 export type InventoryAuthoringSurface =
   | "product-structure"

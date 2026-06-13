@@ -12,7 +12,7 @@
  *   - `getProductContent` + `buildProductDraftShape` for the journey
  *     wizard's step descriptor.
  *   - An injected `createBooking` function for the commit path
- *     — keeps `@voyantjs/products` from depending on
+ *     — keeps the Inventory-owned Product handler from depending on
  *     `@voyantjs/finance` (no workspace cycle).
  *
  * Phase A scope (deliberately narrow):
@@ -65,7 +65,7 @@ import {
 } from "./handler-support.js"
 
 // ─────────────────────────────────────────────────────────────────
-// Bridged commit path — caller-supplied so the products package
+// Bridged commit path — caller-supplied so the Inventory package
 // doesn't depend on @voyantjs/finance.
 // ─────────────────────────────────────────────────────────────────
 
@@ -242,7 +242,7 @@ export interface BuildOwnedProductDraftShapeOptions {
   /**
    * Per-traveler field requirements pulled from
    * `@voyantjs/bookings/requirements` for this product. Caller-supplied
-   * so the products package doesn't depend on booking requirements.
+   * so the Inventory package doesn't depend on booking requirements.
    */
   travelerFields?: ReadonlyArray<TravelerFieldRequirement>
   /**
@@ -372,7 +372,7 @@ export interface OwnedProductsShapeLoaders {
   /**
    * Resolve the addon catalog for the product (typically a projection
    * over `extras` + `option_extra_configs`). Caller-supplied to keep
-   * the products package free of an extras-owner dependency.
+   * the Inventory package free of an extras-owner dependency.
    */
   loadAddonCatalog?: (
     ctx: OwnedHandlerContext,
@@ -438,7 +438,7 @@ export interface OwnedProductsShapeLoaders {
    * Returns null when no rule applies or the resolver can't run; the
    * handler then falls back to `product.sellAmountCents × pax`.
    *
-   * Caller-supplied so `@voyantjs/products` does not import
+   * Caller-supplied so Inventory does not import
    * `@voyantjs/pricing` (the dependency direction is pricing →
    * products, not the reverse).
    */
@@ -455,7 +455,7 @@ export interface OwnedProductsShapeLoaders {
 
   /**
    * Look up the local date of a departure slot (`availability_slots`).
-   * Caller-supplied so the products package does not import
+   * Caller-supplied so the Inventory package does not import
    * `@voyantjs/availability`. Returns null when the slot is missing.
    *
    * Used together with `loadResolvedOptionPrice` to convert a draft's
@@ -494,7 +494,7 @@ export interface AvailabilityHoldBridge {
 export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeLoaders {
   /**
    * Caller-supplied bridge to `bookingsCreate`. Wired by the
-   * template at boot, since `@voyantjs/products` does not import
+   * template at boot, since Inventory does not import
    * `@voyantjs/finance`.
    */
   createBooking: BookingCreateBridge
