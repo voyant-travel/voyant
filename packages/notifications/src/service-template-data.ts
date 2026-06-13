@@ -16,6 +16,11 @@ function parseDate(value: unknown) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
 function dateDiffInDays(from: Date, to: Date) {
   const diff = to.getTime() - from.getTime()
   return Math.ceil(diff / (24 * 60 * 60 * 1000))
@@ -207,6 +212,10 @@ export function normalizeNotificationTemplateData(data: Record<string, unknown>)
   const invoice = enrichInvoice(data.invoice)
   const paymentSession = enrichPaymentSession(data.paymentSession)
   const paymentSchedule = enrichPaymentSchedule(data.paymentSchedule)
+  const bookingRecord = toRecord(booking)
+  const invoiceRecord = toRecord(invoice)
+  const paymentSessionRecord = toRecord(paymentSession)
+  const paymentScheduleRecord = toRecord(paymentSchedule)
   const suppliedPayment =
     data.payment && typeof data.payment === "object" && !Array.isArray(data.payment)
       ? (data.payment as Record<string, unknown>)
@@ -216,78 +225,56 @@ export function normalizeNotificationTemplateData(data: Record<string, unknown>)
     : []
   const items = Array.isArray(data.items) ? data.items.map((item) => enrichBookingItem(item)) : []
 
-  const derivedPayment =
-    paymentSchedule && typeof paymentSchedule === "object"
+  const derivedPayment = paymentScheduleRecord
+    ? {
+        amount: paymentScheduleRecord.amountDue ?? null,
+        currency:
+          paymentScheduleRecord.currency ??
+          invoiceRecord?.currency ??
+          paymentSessionRecord?.currency ??
+          bookingRecord?.currency ??
+          null,
+        dueDate: paymentScheduleRecord.dueDate ?? null,
+        daysLeft: paymentScheduleRecord.daysLeft ?? null,
+        reference: bookingRecord?.reference ?? invoiceRecord?.number ?? null,
+        method: paymentSessionRecord?.method ?? paymentSessionRecord?.provider ?? null,
+        link: paymentSessionRecord?.paymentUrl ?? null,
+        payMode: paymentScheduleRecord.type ?? null,
+        paidAmount:
+          invoiceRecord?.paidAmount ??
+          (paymentSessionRecord?.isPaid ? paymentSessionRecord.amount : null),
+        balanceDue: invoiceRecord?.balanceDueAmount ?? paymentScheduleRecord.amountDue ?? null,
+        isPaidInFull: (invoiceRecord?.balanceDueAmount as number | null) === 0,
+      }
+    : paymentSessionRecord
       ? {
-          amount: (paymentSchedule as Record<string, unknown>).amountDue ?? null,
-          currency:
-            (paymentSchedule as Record<string, unknown>).currency ??
-            (invoice as Record<string, unknown> | null)?.currency ??
-            (paymentSession as Record<string, unknown> | null)?.currency ??
-            (booking as Record<string, unknown> | null)?.currency ??
-            null,
-          dueDate: (paymentSchedule as Record<string, unknown>).dueDate ?? null,
-          daysLeft: (paymentSchedule as Record<string, unknown>).daysLeft ?? null,
-          reference:
-            (booking as Record<string, unknown> | null)?.reference ??
-            (invoice as Record<string, unknown> | null)?.number ??
-            null,
-          method:
-            (paymentSession as Record<string, unknown> | null)?.method ??
-            (paymentSession as Record<string, unknown> | null)?.provider ??
-            null,
-          link: (paymentSession as Record<string, unknown> | null)?.paymentUrl ?? null,
-          payMode: (paymentSchedule as Record<string, unknown>).type ?? null,
-          paidAmount:
-            (invoice as Record<string, unknown> | null)?.paidAmount ??
-            ((paymentSession as Record<string, unknown> | null)?.isPaid
-              ? (paymentSession as Record<string, unknown>).amount
-              : null),
-          balanceDue:
-            (invoice as Record<string, unknown> | null)?.balanceDueAmount ??
-            (paymentSchedule as Record<string, unknown>).amountDue ??
-            null,
-          isPaidInFull:
-            ((invoice as Record<string, unknown> | null)?.balanceDueAmount as number | null) === 0,
+          amount: paymentSessionRecord.amount ?? null,
+          currency: paymentSessionRecord.currency ?? null,
+          dueDate: null,
+          daysLeft: null,
+          reference: paymentSessionRecord.reference ?? null,
+          method: paymentSessionRecord.method ?? null,
+          link: paymentSessionRecord.paymentUrl ?? null,
+          payMode: null,
+          paidAmount: null,
+          balanceDue: invoiceRecord?.balanceDueAmount ?? null,
+          isPaidInFull: (invoiceRecord?.balanceDueAmount as number | null) === 0,
         }
-      : paymentSession && typeof paymentSession === "object"
+      : invoiceRecord
         ? {
-            amount: (paymentSession as Record<string, unknown>).amount ?? null,
-            currency: (paymentSession as Record<string, unknown>).currency ?? null,
-            dueDate: null,
+            amount: invoiceRecord.balanceDueAmount ?? null,
+            currency: invoiceRecord.currency ?? null,
+            dueDate: invoiceRecord.dueDate ?? null,
             daysLeft: null,
-            reference: (paymentSession as Record<string, unknown>).reference ?? null,
-            method: (paymentSession as Record<string, unknown>).method ?? null,
-            link: (paymentSession as Record<string, unknown>).paymentUrl ?? null,
+            reference: bookingRecord?.reference ?? invoiceRecord.number ?? null,
+            method: null,
+            link: null,
             payMode: null,
-            paidAmount: null,
-            balanceDue: (invoice as Record<string, unknown> | null)?.balanceDueAmount ?? null,
-            isPaidInFull:
-              ((invoice as Record<string, unknown> | null)?.balanceDueAmount as number | null) ===
-              0,
+            paidAmount: invoiceRecord.paidAmount ?? null,
+            balanceDue: invoiceRecord.balanceDueAmount ?? null,
+            isPaidInFull: (invoiceRecord.balanceDueAmount as number | null) === 0,
           }
-        : invoice && typeof invoice === "object"
-          ? {
-              amount: (invoice as Record<string, unknown>).balanceDueAmount ?? null,
-              currency: (invoice as Record<string, unknown>).currency ?? null,
-              dueDate: (invoice as Record<string, unknown>).dueDate ?? null,
-              daysLeft: null,
-              reference:
-                (booking as Record<string, unknown> | null)?.reference ??
-                (invoice as Record<string, unknown>).number ??
-                null,
-              method:
-                (paymentSession as Record<string, unknown> | null)?.method ??
-                (paymentSession as Record<string, unknown> | null)?.provider ??
-                null,
-              link: (paymentSession as Record<string, unknown> | null)?.paymentUrl ?? null,
-              payMode: null,
-              paidAmount: (invoice as Record<string, unknown>).paidAmount ?? null,
-              balanceDue: (invoice as Record<string, unknown>).balanceDueAmount ?? null,
-              isPaidInFull:
-                ((invoice as Record<string, unknown>).balanceDueAmount as number | null) === 0,
-            }
-          : null
+        : null
   const payment = derivedPayment
     ? {
         ...derivedPayment,
