@@ -1,5 +1,11 @@
 # @voyantjs/bookings-contracts
 
+## 0.104.3
+
+### Patch Changes
+
+- 658aa37: Refactor bookings backend validation, pricing assignment, route, service, and integration coverage modules into smaller compatibility-preserving entrypoints.
+
 ## 0.104.2
 
 ### Patch Changes
