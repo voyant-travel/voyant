@@ -149,7 +149,8 @@
       "@prisma/instrumentation>@opentelemetry/instrumentation": "0.204.0",
       "import-in-the-middle": "1.15.0",
       "require-in-the-middle": "7.5.2",
-      "axios": ">=1.16.0"
+      "axios": ">=1.16.0",
+      "next": "15.5.18"
     }
   },
   "lint-staged": {
