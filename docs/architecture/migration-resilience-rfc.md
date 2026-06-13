@@ -87,7 +87,7 @@ places today, but only because someone remembered each time:
 | `bookingsCreateExtension` | finance | (uses finance tables) | ✓ | ✓ |
 | `productsBookingExtension` | products | `bookingProductDetails`, `bookingItemProductDetails` | ✓ | ✓ |
 | `quotesBookingExtension` | quotes | `bookingQuoteDetails` | ✓ | ✓ |
-| `transactionsBookingExtension` | transactions | `bookingTransactionDetails` | ✓ | ✓ |
+| `bookingOrigins` | bookings | `bookingOrigins` | ✓ | ✓ |
 | `distributionBookingExtension` | distribution | `bookingDistributionDetails` | ✓ | ✓ |
 
 Six extensions, two lists, zero enforcement that they stay in sync.
