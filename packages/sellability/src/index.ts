@@ -1,10 +1,13 @@
 import type { Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
-import { sellabilityRoutes } from "./routes.js"
-import { sellabilityService } from "./service.js"
+import {
+  createSellabilityRoutes,
+  type SellabilityRoutesOptions,
+  sellabilityRoutes,
+} from "./routes.js"
 
-export type { SellabilityRoutes } from "./routes.js"
+export type { SellabilityRoutes, SellabilityRoutesOptions } from "./routes.js"
 
 export const sellabilityModule: Module = {
   name: "sellability",
@@ -13,6 +16,13 @@ export const sellabilityModule: Module = {
 export const sellabilityHonoModule: HonoModule = {
   module: sellabilityModule,
   routes: sellabilityRoutes,
+}
+
+export function createSellabilityHonoModule(options?: SellabilityRoutesOptions): HonoModule {
+  return {
+    module: sellabilityModule,
+    routes: createSellabilityRoutes(options),
+  }
 }
 
 export type {
@@ -48,6 +58,14 @@ export {
   sellabilitySnapshotStatusEnum,
   sellabilitySnapshots,
 } from "./schema.js"
+export type { SellabilityServiceOptions } from "./service.js"
+export { createSellabilityService, sellabilityService } from "./service.js"
+export {
+  type SellabilityOfferBundleInput,
+  type SellabilityOfferBundleResult,
+  type SellabilityOfferWriter,
+  SellabilityOfferWriterNotConfiguredError,
+} from "./service-construct-offer.js"
 export {
   insertOfferExpirationEventSchema,
   insertOfferRefreshRunSchema,
@@ -78,4 +96,3 @@ export {
   updateSellabilityPolicyResultSchema,
   updateSellabilityPolicySchema,
 } from "./validation.js"
-export { sellabilityService }

@@ -12,6 +12,7 @@ export {
   recordCommercialSnapshot,
 } from "./interface.js"
 export {
+  type CommerceHonoModulesOptions,
   type CommerceRuntimeModuleName,
   commerceRuntimeModuleNames,
   createCommerceHonoModules,
