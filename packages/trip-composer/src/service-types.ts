@@ -1,7 +1,7 @@
 import type { BookingDraftV1, QuoteResponseV1 } from "@voyantjs/catalog/booking-engine"
 
 import type { CatalogComponentBookingDraftOverrides } from "./catalog-component-adapter.js"
-import type { TripComponent, TripEnvelope } from "./schema.js"
+import type { TripComponent, TripEnvelope, TripReservationPlan } from "./schema.js"
 import type { PriceTripInput, StartTripCheckoutInput, TripComponentStatus } from "./validation.js"
 
 export interface Trip {
@@ -47,6 +47,7 @@ export interface PriceTripDeps {
 export interface ReserveComponentInput {
   envelope: TripEnvelope
   component: TripComponent
+  reservationPlanId?: string | null
 }
 
 export interface ReserveComponentResult {
@@ -81,6 +82,43 @@ export interface ReleaseReservedComponentResult {
   reason?: string
 }
 
+export type TripReservationPlanComponentKind = "catalog_backed" | "non_catalog"
+
+export interface SubmitTripReservationPlanComponent {
+  componentId: string
+  reservationKind: TripReservationPlanComponentKind
+  component: TripComponent
+}
+
+export interface SubmitTripReservationPlanInput {
+  reservationPlan: TripReservationPlan
+  envelope: TripEnvelope
+  components: SubmitTripReservationPlanComponent[]
+  idempotencyKey?: string | null
+}
+
+export interface SubmitTripReservationPlanResult {
+  reservationPlanId: string
+  status: "reserved" | "failed"
+  reserved: Array<{
+    componentId: string
+    status: "held" | "booked"
+    result: ReserveComponentResult
+  }>
+  failures: Array<{
+    componentId: string
+    reason: string
+    code?: string
+    details?: Record<string, unknown>
+  }>
+  compensations: Array<{
+    componentId: string
+    status: "released" | "release_failed" | "release_not_configured"
+    reason?: string
+  }>
+  warnings: string[]
+}
+
 export interface ReserveTripDeps {
   quoteCatalogComponentBeforeReserve?: (
     input: CatalogComponentQuoteInput,
@@ -88,18 +126,15 @@ export interface ReserveTripDeps {
   validateNonCatalogComponentBeforeReserve?: (
     input: ReserveComponentInput,
   ) => Promise<ReserveComponentPreflightResult | null | undefined>
-  reserveCatalogComponent: (input: ReserveComponentInput) => Promise<ReserveComponentResult>
-  reserveNonCatalogComponent?: (
-    input: ReserveComponentInput,
-  ) => Promise<ReserveComponentResult | null | undefined>
-  releaseCatalogComponent?: (
-    input: ReleaseReservedComponentInput,
-  ) => Promise<ReleaseReservedComponentResult>
+  submitReservationPlan: (
+    input: SubmitTripReservationPlanInput,
+  ) => Promise<SubmitTripReservationPlanResult>
 }
 
 export interface ReserveTripResult {
   envelope: TripEnvelope
   components: TripComponent[]
+  reservationPlanId?: string | null
   reserved: Array<{ componentId: string; status: "held" | "booked" }>
   failures: Array<{
     componentId: string

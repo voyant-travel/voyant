@@ -184,6 +184,7 @@ export const typeIdSchemas = {
   offerExpirationEvent: typeIdSchema("offer_expiration_events"),
   sellabilityExplanation: typeIdSchema("sellability_explanations"),
   tripSnapshot: typeIdSchema("trip_snapshots"),
+  tripReservationPlan: typeIdSchema("trip_reservation_plans"),
   productMedia: typeIdSchema("product_media"),
   productFeature: typeIdSchema("product_features"),
   productFaq: typeIdSchema("product_faqs"),

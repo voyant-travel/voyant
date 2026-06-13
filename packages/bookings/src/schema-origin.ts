@@ -54,6 +54,7 @@ export const bookingOrigins = pgTable(
     ),
     index("idx_booking_origins_quote_version").on(table.quoteVersionId),
     index("idx_booking_origins_trip_snapshot").on(table.tripSnapshotId),
+    index("idx_booking_origins_reservation_plan").on(table.reservationPlanId),
     index("idx_booking_origins_catalog_price_response").on(table.catalogPriceResponseId),
     index("idx_booking_origins_catalog_snapshot").on(table.catalogSnapshotId),
     index("idx_booking_origins_provider_order").on(table.providerOrderRef),

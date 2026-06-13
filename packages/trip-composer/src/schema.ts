@@ -46,6 +46,14 @@ export const tripComponentEventTypeEnum = pgEnum("trip_component_event_type", [
   "staff_remediation_required",
 ])
 
+export const tripReservationPlanStatusEnum = pgEnum("trip_reservation_plan_status", [
+  "pending",
+  "submitted",
+  "reserved",
+  "failed",
+  "cancelled",
+])
+
 export type TripEnvelopePricingSnapshot = {
   currency: string
   subtotalAmountCents: number
@@ -74,6 +82,38 @@ export type TripComponentTaxLineSnapshot = {
   jurisdiction?: string
   includedInPrice?: boolean
   source?: string
+}
+
+export type TripReservationPlanComponentSnapshot = {
+  componentId: string
+  sequence: number
+  kind: string
+  status: string
+  catalogBacked: boolean
+  entityModule: string | null
+  entityId: string | null
+  sourceKind: string | null
+  sourceConnectionId: string | null
+  sourceRef: string | null
+  bookingDraftId: string | null
+  catalogQuoteId: string | null
+  currency: string | null
+  totalAmountCents: number | null
+  priceExpiresAt: string | null
+  warningCodes: string[]
+}
+
+export type TripReservationPlanFailureSnapshot = {
+  componentId: string
+  reason: string
+  code?: string
+  details?: Record<string, unknown>
+}
+
+export type TripReservationPlanCompensationSnapshot = {
+  componentId: string
+  status: "released" | "release_failed" | "release_not_configured"
+  reason?: string
 }
 
 export type TripSnapshotProposalLine = {
@@ -276,10 +316,47 @@ export const tripSnapshots = pgTable(
   ],
 )
 
+export const tripReservationPlans = pgTable(
+  "trip_reservation_plans",
+  {
+    id: typeId("trip_reservation_plans"),
+    envelopeId: typeIdRef("envelope_id")
+      .notNull()
+      .references(() => tripEnvelopes.id, { onDelete: "restrict" }),
+    snapshotId: typeIdRef("snapshot_id").references(() => tripSnapshots.id, {
+      onDelete: "set null",
+    }),
+    status: tripReservationPlanStatusEnum("status").notNull().default("pending"),
+    idempotencyKey: text("idempotency_key"),
+    refreshScope: jsonb("refresh_scope").$type<Record<string, unknown> | null>(),
+    componentCount: integer("component_count").notNull().default(0),
+    components: jsonb("components")
+      .$type<TripReservationPlanComponentSnapshot[]>()
+      .notNull()
+      .default([]),
+    failures: jsonb("failures").$type<TripReservationPlanFailureSnapshot[]>().default([]),
+    compensations: jsonb("compensations")
+      .$type<TripReservationPlanCompensationSnapshot[]>()
+      .default([]),
+    warnings: jsonb("warnings").$type<string[]>().notNull().default([]),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_trip_reservation_plans_envelope_created").on(table.envelopeId, table.createdAt),
+    index("idx_trip_reservation_plans_snapshot").on(table.snapshotId),
+    index("idx_trip_reservation_plans_status_updated").on(table.status, table.updatedAt),
+    index("idx_trip_reservation_plans_idempotency").on(table.idempotencyKey),
+  ],
+)
+
 export const tripEnvelopeRelations = relations(tripEnvelopes, ({ many }) => ({
   components: many(tripComponents),
   events: many(tripComponentEvents),
   snapshots: many(tripSnapshots),
+  reservationPlans: many(tripReservationPlans),
 }))
 
 export const tripComponentRelations = relations(tripComponents, ({ one, many }) => ({
@@ -308,6 +385,17 @@ export const tripSnapshotRelations = relations(tripSnapshots, ({ one }) => ({
   }),
 }))
 
+export const tripReservationPlanRelations = relations(tripReservationPlans, ({ one }) => ({
+  envelope: one(tripEnvelopes, {
+    fields: [tripReservationPlans.envelopeId],
+    references: [tripEnvelopes.id],
+  }),
+  snapshot: one(tripSnapshots, {
+    fields: [tripReservationPlans.snapshotId],
+    references: [tripSnapshots.id],
+  }),
+}))
+
 export type TripEnvelope = typeof tripEnvelopes.$inferSelect
 export type NewTripEnvelope = typeof tripEnvelopes.$inferInsert
 export type TripComponent = typeof tripComponents.$inferSelect
@@ -316,3 +404,5 @@ export type TripComponentEvent = typeof tripComponentEvents.$inferSelect
 export type NewTripComponentEvent = typeof tripComponentEvents.$inferInsert
 export type TripSnapshot = typeof tripSnapshots.$inferSelect
 export type NewTripSnapshot = typeof tripSnapshots.$inferInsert
+export type TripReservationPlan = typeof tripReservationPlans.$inferSelect
+export type NewTripReservationPlan = typeof tripReservationPlans.$inferInsert

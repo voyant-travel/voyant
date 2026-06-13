@@ -1,9 +1,21 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { describe, expect, it } from "vitest"
-import type { NewTripComponentEvent, TripComponent, TripEnvelope } from "../src/schema.js"
-import { tripComponentEvents, tripComponents, tripEnvelopes } from "../src/schema.js"
+import { describe, expect, it, vi } from "vitest"
+import type {
+  NewTripComponentEvent,
+  NewTripReservationPlan,
+  TripComponent,
+  TripEnvelope,
+  TripReservationPlan,
+} from "../src/schema.js"
+import {
+  tripComponentEvents,
+  tripComponents,
+  tripEnvelopes,
+  tripReservationPlans,
+} from "../src/schema.js"
 import {
   assertTripComponentCanBeReserved,
+  type ReserveTripDeps,
   reserveResultToComponentPatch,
   shouldReplayReserve,
   TripComposerInvariantError,
@@ -109,13 +121,25 @@ function makeFakeDb(state: {
   envelope: TripEnvelope
   components: TripComponent[]
   events?: NewTripComponentEvent[]
+  reservationPlans?: TripReservationPlan[]
 }): AnyDrizzleDb {
   const events = state.events ?? []
+  const reservationPlans = state.reservationPlans ?? []
 
-  function applyUpdate(table: unknown, patch: Partial<TripEnvelope & TripComponent>) {
+  function applyUpdate(
+    table: unknown,
+    patch: Partial<TripEnvelope & TripComponent & TripReservationPlan>,
+  ) {
     if (table === tripEnvelopes) {
       Object.assign(state.envelope, patch)
       return state.envelope
+    }
+
+    if (table === tripReservationPlans) {
+      const plan = reservationPlans.at(-1)
+      if (!plan) return undefined
+      Object.assign(plan, patch)
+      return plan
     }
 
     if (table !== tripComponents) return undefined
@@ -157,10 +181,19 @@ function makeFakeDb(state: {
       }),
     }),
     insert: (table: unknown) => ({
-      values: (value: NewTripComponentEvent) => {
-        if (table === tripComponentEvents) events.push(value)
+      values: (value: NewTripComponentEvent | NewTripReservationPlan) => {
+        if (table === tripComponentEvents) events.push(value as NewTripComponentEvent)
+        if (table === tripReservationPlans) {
+          reservationPlans.push({
+            id: `trpl_${reservationPlans.length + 1}`,
+            snapshotId: null,
+            createdAt: new Date("2026-05-18T00:00:00.000Z"),
+            completedAt: null,
+            ...value,
+          } as TripReservationPlan)
+        }
         return {
-          returning: async () => [],
+          returning: async () => (table === tripReservationPlans ? [reservationPlans.at(-1)] : []),
         }
       },
     }),
@@ -241,31 +274,74 @@ describe("trip composer reservation helpers", () => {
       envelope: envelope(),
       components: [component({ id: "trcp_1" }), component({ id: "trcp_2", sequence: 1 })],
       events: [],
+      reservationPlans: [] as TripReservationPlan[],
     }
+    let submittedInputSnapshot: {
+      reservationPlanId: string
+      reservationPlanStatus: string
+      components: Array<{ componentId: string; reservationKind: string }>
+    } | null = null
+    const submitReservationPlan = vi.fn(
+      async (input: Parameters<ReserveTripDeps["submitReservationPlan"]>[0]) => {
+        submittedInputSnapshot = {
+          reservationPlanId: input.reservationPlan.id,
+          reservationPlanStatus: input.reservationPlan.status,
+          components: input.components.map((item) => ({
+            componentId: item.componentId,
+            reservationKind: item.reservationKind,
+          })),
+        }
+        return {
+          reservationPlanId: input.reservationPlan.id,
+          status: "reserved" as const,
+          reserved: input.components.map((item) => ({
+            componentId: item.componentId,
+            status: "held" as const,
+            result: {
+              status: "held" as const,
+              bookingId: `book_${item.componentId}`,
+              bookingGroupId: "bkgrp_123",
+              holdToken: `hold_${item.componentId}`,
+              holdExpiresAt: "2026-05-18T12:00:00.000Z",
+            },
+          })),
+          failures: [],
+          compensations: [],
+          warnings: [],
+        }
+      },
+    )
 
     const result = await tripComposerService.reserveTrip(
       makeFakeDb(state),
       { envelopeId: state.envelope.id, idempotencyKey: "attempt-1" },
-      {
-        reserveCatalogComponent: async ({ component: item }) => ({
-          status: "held",
-          bookingId: `book_${item.id}`,
-          bookingGroupId: "bkgrp_123",
-          holdToken: `hold_${item.id}`,
-          holdExpiresAt: "2026-05-18T12:00:00.000Z",
-        }),
-      },
+      { submitReservationPlan },
     )
 
     expect(result.envelope.status).toBe("reserved")
     expect(result.envelope.reserveIdempotencyKey).toBe("attempt-1")
     expect(result.envelope.bookingGroupId).toBe("bkgrp_123")
+    expect(result.reservationPlanId).toBe("trpl_1")
     expect(result.failures).toEqual([])
     expect(result.reserved).toEqual([
       { componentId: "trcp_1", status: "held" },
       { componentId: "trcp_2", status: "held" },
     ])
     expect(state.components.map((item) => item.bookingId)).toEqual(["book_trcp_1", "book_trcp_2"])
+    expect(submitReservationPlan).toHaveBeenCalledOnce()
+    expect(submittedInputSnapshot).toEqual({
+      reservationPlanId: "trpl_1",
+      reservationPlanStatus: "submitted",
+      components: [
+        { componentId: "trcp_1", reservationKind: "catalog_backed" },
+        { componentId: "trcp_2", reservationKind: "catalog_backed" },
+      ],
+    })
+    expect(state.reservationPlans[0]).toMatchObject({
+      id: "trpl_1",
+      status: "reserved",
+      componentCount: 2,
+    })
   })
 
   it("compensates earlier reserved components when a later reserve fails", async () => {
@@ -273,27 +349,46 @@ describe("trip composer reservation helpers", () => {
       envelope: envelope(),
       components: [component({ id: "trcp_1" }), component({ id: "trcp_2", sequence: 1 })],
       events: [],
+      reservationPlans: [] as TripReservationPlan[],
     }
 
     const result = await tripComposerService.reserveTrip(
       makeFakeDb(state),
       { envelopeId: state.envelope.id },
       {
-        reserveCatalogComponent: async ({ component: item }) => {
-          if (item.id === "trcp_2") throw new Error("supplier_hold_failed")
-          return {
-            status: "held",
-            bookingId: `book_${item.id}`,
-            holdToken: `hold_${item.id}`,
-          }
-        },
-        releaseCatalogComponent: async () => ({ released: true }),
+        submitReservationPlan: async (
+          input: Parameters<ReserveTripDeps["submitReservationPlan"]>[0],
+        ) => ({
+          reservationPlanId: input.reservationPlan.id,
+          status: "failed",
+          reserved: [
+            {
+              componentId: "trcp_1",
+              status: "held",
+              result: {
+                status: "held",
+                bookingId: "book_trcp_1",
+                holdToken: "hold_trcp_1",
+              },
+            },
+          ],
+          failures: [{ componentId: "trcp_2", reason: "supplier_hold_failed" }],
+          compensations: [{ componentId: "trcp_1", status: "released" }],
+          warnings: ["supplier_hold_failed"],
+        }),
       },
     )
 
     expect(result.envelope.status).toBe("failed")
+    expect(result.reservationPlanId).toBe("trpl_1")
     expect(result.failures).toEqual([{ componentId: "trcp_2", reason: "supplier_hold_failed" }])
     expect(result.compensations).toEqual([{ componentId: "trcp_1", status: "released" }])
     expect(state.components.map((item) => item.status)).toEqual(["cancelled", "failed"])
+    expect(state.reservationPlans[0]).toMatchObject({
+      id: "trpl_1",
+      status: "failed",
+      failures: [{ componentId: "trcp_2", reason: "supplier_hold_failed" }],
+      compensations: [{ componentId: "trcp_1", status: "released" }],
+    })
   })
 })

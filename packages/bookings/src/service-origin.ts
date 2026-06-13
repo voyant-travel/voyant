@@ -49,6 +49,7 @@ export interface CatalogReservationBookingOriginInput {
   bookingId: string
   tripEnvelopeId?: string | null
   tripComponentId?: string | null
+  reservationPlanId?: string | null
   catalogPriceResponseId?: string | null
   catalogSnapshotId?: string | null
   providerSourceKind?: string | null
@@ -141,6 +142,7 @@ export function toCatalogReservationBookingOriginInput(
   return {
     bookingId: input.bookingId,
     originSource: "catalog_price_availability",
+    reservationPlanId: nullable(input.reservationPlanId),
     catalogPriceResponseId: nullable(input.catalogPriceResponseId),
     catalogSnapshotId: nullable(input.catalogSnapshotId),
     providerSourceKind: nullable(input.providerSourceKind),
@@ -149,7 +151,7 @@ export function toCatalogReservationBookingOriginInput(
     providerSourceRef: nullable(input.providerSourceRef),
     providerOrderRef: nullable(input.providerOrderRef),
     metadata: {
-      source: "trip_composer.reserve_catalog_component",
+      source: "bookings.submit_reservation_plan",
       tripEnvelopeId: nullable(input.tripEnvelopeId),
       tripComponentId: nullable(input.tripComponentId),
       ...(input.metadata ?? {}),
