@@ -300,13 +300,19 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
       if (wakeAt === undefined) return
       const delayMs = Math.max(0, wakeAt - now())
       const timer = setTimeout(() => {
-        void resumeDueAlarms({ runId: record.id }, { store, handler, now }).then((resumed) => {
-          if (!resumed) return
-          if (isTerminal(resumed.status)) {
-            concurrency.releaseRun(resumed)
-          }
-          scheduleDelayedRun(resumed)
-        })
+        void resumeDueAlarms({ runId: record.id }, { store, handler, now }).then(
+          async (resumed) => {
+            if (!resumed) {
+              const latest = await store.get(record.id)
+              if (latest) scheduleDelayedRun(latest)
+              return
+            }
+            if (isTerminal(resumed.status)) {
+              concurrency.releaseRun(resumed)
+            }
+            scheduleDelayedRun(resumed)
+          },
+        )
       }, delayMs)
       ;(timer as { unref?: () => void }).unref?.()
     }

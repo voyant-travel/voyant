@@ -244,12 +244,12 @@ export function runDriverComplianceSuite(
           const wf = workflow<Record<string, never>, void>({
             id: uniqueId("compliance-delay-then-sleep"),
             async run(_, ctx) {
-              await ctx.sleep("1ms")
+              await ctx.sleep("10ms")
               completed()
             },
           })
 
-          const run = await driver.trigger(wf, {}, { delay: "1ms" })
+          const run = await driver.trigger(wf, {}, { delay: "10ms" })
           expect(run.status).toBe("waiting")
 
           await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 1_000 })
