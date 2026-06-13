@@ -94,6 +94,13 @@ const optionalEdgeAllowlist = [
       "sellability admin components can attach operated Inventory pickers when a host installs them",
   },
   {
+    from: "@voyantjs/commerce-react",
+    type: "peerDependencies",
+    to: "@voyantjs/products-react",
+    reason:
+      "Commerce React owner-path components can attach operated Inventory pickers when a host installs them",
+  },
+  {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
     to: "@voyantjs/availability-react",

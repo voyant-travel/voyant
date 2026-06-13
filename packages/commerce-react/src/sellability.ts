@@ -1,1 +1,1 @@
-export * from "@voyantjs/sellability-react"
+export * from "./sellability/index.js"

@@ -1,6 +1,1 @@
-export {
-  useVoyantReactContext as useVoyantPricingContext,
-  type VoyantReactContextValue as VoyantPricingContextValue,
-  VoyantReactProvider as VoyantPricingProvider,
-  type VoyantReactProviderProps as VoyantPricingProviderProps,
-} from "@voyantjs/react"
+export * from "@voyantjs/commerce-react/pricing/provider"

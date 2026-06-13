@@ -738,9 +738,6 @@ importers:
       '@voyantjs/inventory-react':
         specifier: workspace:^
         version: link:../inventory-react
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../pricing-react
       '@voyantjs/products-react':
         specifier: workspace:^
         version: link:../products-react
@@ -1687,13 +1684,16 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@voyantjs/react':
+        specifier: workspace:^
+        version: link:../react
+      '@voyantjs/utils':
+        specifier: workspace:^
+        version: link:../utils
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
-      '@tanstack/react-table':
-        specifier: ^8.21.3
-        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -1703,36 +1703,24 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
-      '@voyantjs/markets-react':
-        specifier: workspace:^
-        version: link:../markets-react
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../pricing-react
       '@voyantjs/products-react':
         specifier: workspace:^
         version: link:../products-react
-      '@voyantjs/promotions-react':
-        specifier: workspace:^
-        version: link:../promotions-react
-      '@voyantjs/react':
-        specifier: workspace:^
-        version: link:../react
-      '@voyantjs/sellability-react':
-        specifier: workspace:^
-        version: link:../sellability-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
-      '@voyantjs/utils':
-        specifier: workspace:^
-        version: link:../utils
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.4)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -3189,12 +3177,9 @@ importers:
 
   packages/markets-react:
     dependencies:
-      '@voyantjs/i18n':
+      '@voyantjs/commerce-react':
         specifier: workspace:^
-        version: link:../i18n
-      '@voyantjs/react':
-        specifier: workspace:^
-        version: link:../react
+        version: link:../commerce-react
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -3208,9 +3193,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/i18n':
+        specifier: workspace:^
+        version: link:../i18n
       '@voyantjs/markets':
         specifier: workspace:^
         version: link:../markets
+      '@voyantjs/react':
+        specifier: workspace:^
+        version: link:../react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3675,12 +3666,9 @@ importers:
 
   packages/pricing-react:
     dependencies:
-      '@voyantjs/i18n':
+      '@voyantjs/commerce-react':
         specifier: workspace:^
-        version: link:../i18n
-      '@voyantjs/react':
-        specifier: workspace:^
-        version: link:../react
+        version: link:../commerce-react
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -3694,12 +3682,18 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/i18n':
+        specifier: workspace:^
+        version: link:../i18n
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../pricing
       '@voyantjs/products-react':
         specifier: workspace:^
         version: link:../products-react
+      '@voyantjs/react':
+        specifier: workspace:^
+        version: link:../react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3947,9 +3941,9 @@ importers:
 
   packages/promotions-react:
     dependencies:
-      '@voyantjs/i18n':
+      '@voyantjs/commerce-react':
         specifier: workspace:^
-        version: link:../i18n
+        version: link:../commerce-react
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -3963,6 +3957,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyantjs/i18n':
+        specifier: workspace:^
+        version: link:../i18n
       '@voyantjs/promotions':
         specifier: workspace:^
         version: link:../promotions
@@ -4352,12 +4349,9 @@ importers:
 
   packages/sellability-react:
     dependencies:
-      '@voyantjs/i18n':
+      '@voyantjs/commerce-react':
         specifier: workspace:^
-        version: link:../i18n
-      '@voyantjs/react':
-        specifier: workspace:^
-        version: link:../react
+        version: link:../commerce-react
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -4374,12 +4368,18 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
+      '@voyantjs/i18n':
+        specifier: workspace:^
+        version: link:../i18n
       '@voyantjs/markets-react':
         specifier: workspace:^
         version: link:../markets-react
       '@voyantjs/products-react':
         specifier: workspace:^
         version: link:../products-react
+      '@voyantjs/react':
+        specifier: workspace:^
+        version: link:../react
       '@voyantjs/sellability':
         specifier: workspace:^
         version: link:../sellability
@@ -5512,9 +5512,6 @@ importers:
       '@voyantjs/markets':
         specifier: workspace:^
         version: link:../../packages/markets
-      '@voyantjs/markets-react':
-        specifier: workspace:^
-        version: link:../../packages/markets-react
       '@voyantjs/notifications':
         specifier: workspace:^
         version: link:../../packages/notifications
@@ -5536,9 +5533,6 @@ importers:
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../../packages/pricing
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../../packages/pricing-react
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../../packages/products
@@ -5548,9 +5542,6 @@ importers:
       '@voyantjs/promotions':
         specifier: workspace:^
         version: link:../../packages/promotions
-      '@voyantjs/promotions-react':
-        specifier: workspace:^
-        version: link:../../packages/promotions-react
       '@voyantjs/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes

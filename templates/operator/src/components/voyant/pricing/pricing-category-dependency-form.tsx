@@ -4,7 +4,7 @@ import {
   type CreatePricingCategoryDependencyInput,
   type PricingCategoryDependencyRecord,
   usePricingCategoryDependencyMutation,
-} from "@voyantjs/pricing-react"
+} from "@voyantjs/commerce-react/pricing"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"

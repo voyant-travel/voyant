@@ -1,25 +1,19 @@
-import {
-  type MarketsUiMessageOverrides,
-  MarketsUiMessagesProvider,
-} from "@voyantjs/markets-react/i18n"
-import {
-  type PricingUiMessageOverrides,
-  PricingUiMessagesProvider,
-} from "@voyantjs/pricing-react/i18n"
+import type { ReactNode } from "react"
+import { type MarketsUiMessageOverrides, MarketsUiMessagesProvider } from "./markets/i18n/index.js"
+import { type PricingUiMessageOverrides, PricingUiMessagesProvider } from "./pricing/i18n/index.js"
 import {
   type PromotionsUiMessageOverrides,
   PromotionsUiMessagesProvider,
-} from "@voyantjs/promotions-react/i18n"
+} from "./promotions/i18n/index.js"
 import {
   type SellabilityUiMessageOverrides,
   SellabilityUiMessagesProvider,
-} from "@voyantjs/sellability-react/i18n"
-import type { ReactNode } from "react"
+} from "./sellability/i18n/index.js"
 
-export * from "@voyantjs/markets-react/i18n"
-export * from "@voyantjs/pricing-react/i18n"
-export * from "@voyantjs/promotions-react/i18n"
-export * from "@voyantjs/sellability-react/i18n"
+export * from "./markets/i18n/index.js"
+export * from "./pricing/i18n/index.js"
+export * from "./promotions/i18n/index.js"
+export * from "./sellability/i18n/index.js"
 
 export interface CommerceUiMessageOverrides {
   markets?: MarketsUiMessageOverrides | null

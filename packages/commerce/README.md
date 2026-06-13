@@ -40,9 +40,18 @@ lived in `@voyantjs/markets`, `@voyantjs/pricing`, `@voyantjs/promotions`, and
 `@voyantjs/sellability`.
 
 React/admin consumers should prefer `@voyantjs/commerce-react` for Commerce-owned
-UI wiring. That package exposes facade entrypoints for pricing, markets,
-sellability, and promotions React surfaces while the old package names remain
-temporary compatibility packages.
+UI wiring. That package owns the reusable Markets, Pricing, Promotions, and
+Sellability React/admin source under owner-path subpaths:
+
+- `@voyantjs/commerce-react/markets`
+- `@voyantjs/commerce-react/pricing`
+- `@voyantjs/commerce-react/promotions`
+- `@voyantjs/commerce-react/promotions/admin`
+- `@voyantjs/commerce-react/sellability`
+
+The old `@voyantjs/markets-react`, `@voyantjs/pricing-react`,
+`@voyantjs/promotions-react`, and `@voyantjs/sellability-react` package names
+remain temporary compatibility facades over those Commerce React paths.
 
 ## Runtime Mounting
 

@@ -1,0 +1,103 @@
+import type { SellabilityUiMessages } from "./messages.js"
+
+export const sellabilityUiRo = {
+  common: {
+    loading: "Se incarca...",
+    cancel: "Anuleaza",
+    active: "Activ",
+    channelKindLabels: {
+      direct: "Direct",
+      affiliate: "Afiliat",
+      ota: "OTA",
+      reseller: "Revanzator",
+      marketplace: "Marketplace",
+      api_partner: "Partener API",
+      connect: "Connect",
+    },
+    channelStatusLabels: {
+      active: "Activ",
+      inactive: "Inactiv",
+      pending: "In asteptare",
+      archived: "Arhivat",
+    },
+    productStatusLabels: {
+      draft: "Ciorna",
+      active: "Activ",
+      archived: "Arhivat",
+    },
+    productBookingModeLabels: {
+      date: "Data",
+      date_time: "Data si ora",
+      open: "Deschis",
+      stay: "Sejur",
+      transfer: "Transfer",
+      itinerary: "Itinerar",
+      other: "Altul",
+    },
+    policyScopeLabels: {
+      global: "Global",
+      product: "Produs",
+      option: "Optiune",
+      market: "Piata",
+      channel: "Canal",
+    },
+    policyTypeLabels: {
+      capability: "Capabilitate",
+      occupancy: "Ocupare",
+      pickup: "Preluare",
+      question: "Intrebare",
+      allotment: "Alocare",
+      availability_window: "Fereastra de disponibilitate",
+      currency: "Moneda",
+      custom: "Personalizat",
+    },
+  },
+  channelCombobox: {
+    placeholder: "Selecteaza canal...",
+    empty: "Nu s-au gasit canale.",
+  },
+  marketCombobox: {
+    placeholder: "Cauta piete...",
+    empty: "Nu s-au gasit piete.",
+  },
+  productCombobox: {
+    placeholder: "Cauta produse...",
+    empty: "Nu s-au gasit produse.",
+  },
+  productOptionCombobox: {
+    placeholder: "Selecteaza optiunea produsului...",
+    empty: "Nu s-au gasit optiuni de produs.",
+    selectProductFirst: "Selecteaza mai intai un produs.",
+  },
+  policyDialog: {
+    titles: {
+      create: "Adauga Politica",
+      edit: "Editeaza Politica",
+    },
+    fields: {
+      name: "Nume",
+      scope: "Domeniu",
+      type: "Tip",
+      priority: "Prioritate",
+      product: "Produs",
+      option: "Optiune",
+      market: "Piata",
+      channel: "Canal",
+      conditionsJson: "Conditii (JSON)",
+      effectsJson: "Efecte (JSON)",
+      notes: "Note",
+      active: "Activ",
+    },
+    placeholders: {
+      name: "Blocheaza rezervarile fara capabilitate",
+    },
+    actions: {
+      create: "Adauga Politica",
+      save: "Salveaza Modificarile",
+    },
+    validation: {
+      nameRequired: "Numele este obligatoriu",
+      jsonObject: "Trebuie sa fie un obiect JSON",
+    },
+  },
+} satisfies SellabilityUiMessages

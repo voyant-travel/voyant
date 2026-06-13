@@ -1,4 +1,4 @@
-import { type PricingCategoryRecord, usePricingCategories } from "@voyantjs/pricing-react"
+import { type PricingCategoryRecord, usePricingCategories } from "@voyantjs/commerce-react/pricing"
 import {
   Combobox,
   ComboboxCollection,

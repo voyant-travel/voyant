@@ -1,1 +1,1 @@
-export * from "@voyantjs/pricing-react"
+export * from "./pricing/index.js"

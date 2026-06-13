@@ -8,7 +8,9 @@
     "directory": "packages/sellability-react"
   },
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/styles.css"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./provider": "./src/provider.tsx",
@@ -64,10 +66,10 @@
     }
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^"
+    "@voyantjs/commerce-react": "workspace:^"
   },
   "devDependencies": {
+    "@voyantjs/commerce-react": "workspace:^",
     "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
