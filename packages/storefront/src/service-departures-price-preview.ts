@@ -1,5 +1,5 @@
 import { productExtras } from "@voyantjs/bookings/extras"
-import { sellabilityService } from "@voyantjs/sellability"
+import { sellabilityService } from "@voyantjs/commerce/sellability"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

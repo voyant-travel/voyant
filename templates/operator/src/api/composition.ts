@@ -31,6 +31,7 @@ import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyantjs/commerce"
+import type { SellabilityOfferWriter } from "@voyantjs/commerce/sellability"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
@@ -49,7 +50,6 @@ import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { resourcesHonoModule } from "@voyantjs/resources"
-import type { SellabilityOfferWriter } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"

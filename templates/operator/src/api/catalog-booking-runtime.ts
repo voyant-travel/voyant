@@ -4,10 +4,10 @@ import {
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
 } from "@voyantjs/catalog/booking-engine"
+import { createCatalogPromotionEvaluator } from "@voyantjs/commerce/promotions/service-catalog-evaluator"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import { products } from "@voyantjs/inventory"
-import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
 import { suppliers } from "@voyantjs/suppliers"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

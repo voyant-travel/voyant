@@ -1641,24 +1641,39 @@ importers:
 
   packages/commerce:
     dependencies:
+      '@voyantjs/catalog':
+        specifier: workspace:^
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
+      '@voyantjs/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyantjs/distribution':
+        specifier: workspace:^
+        version: link:../distribution
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/markets':
+      '@voyantjs/products-contracts':
         specifier: workspace:^
-        version: link:../markets
-      '@voyantjs/pricing':
+        version: link:../products-contracts
+      '@voyantjs/workflows':
         specifier: workspace:^
-        version: link:../pricing
-      '@voyantjs/promotions':
-        specifier: workspace:^
-        version: link:../promotions
-      '@voyantjs/sellability':
-        specifier: workspace:^
-        version: link:../sellability
+        version: link:../workflows
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      rrule:
+        specifier: ^2.8.1
+        version: 2.8.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
@@ -3143,6 +3158,10 @@ importers:
 
   packages/markets:
     dependencies:
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
+    devDependencies:
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -3152,25 +3171,24 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
-      hono:
-        specifier: 4.12.25
-        version: 4.12.25
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/markets-react:
     dependencies:
@@ -3611,6 +3629,13 @@ importers:
 
   packages/pricing:
     dependencies:
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
+    devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3620,12 +3645,24 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
+      '@voyantjs/facilities':
+        specifier: workspace:^
+        version: link:../facilities
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../inventory
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -3635,28 +3672,12 @@ importers:
       rrule:
         specifier: ^2.8.1
         version: 2.8.1
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
-      '@voyantjs/facilities':
-        specifier: workspace:^
-        version: link:../facilities
-      '@voyantjs/inventory':
-        specifier: workspace:^
-        version: link:../inventory
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/pricing-react:
     dependencies:
@@ -3889,6 +3910,10 @@ importers:
 
   packages/promotions:
     dependencies:
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
+    devDependencies:
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3901,19 +3926,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/workflows':
-        specifier: workspace:^
-        version: link:../workflows
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
-      hono:
-        specifier: 4.12.25
-        version: 4.12.25
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
@@ -3923,9 +3935,21 @@ importers:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      '@voyantjs/workflows':
+        specifier: workspace:^
+        version: link:../workflows
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/promotions-react:
     dependencies:
@@ -4288,6 +4312,13 @@ importers:
 
   packages/sellability:
     dependencies:
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
+    devDependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -4306,28 +4337,24 @@ importers:
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../pricing
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
-      hono:
-        specifier: 4.12.25
-        version: 4.12.25
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/sellability-react:
     dependencies:
@@ -4407,6 +4434,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -4416,15 +4446,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/pricing':
-        specifier: workspace:^
-        version: link:../pricing
       '@voyantjs/relationships':
         specifier: workspace:^
         version: link:../relationships
-      '@voyantjs/sellability':
-        specifier: workspace:^
-        version: link:../sellability
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)

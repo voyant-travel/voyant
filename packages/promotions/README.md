@@ -1,10 +1,17 @@
 # @voyantjs/promotions
 
+Compatibility shim for the Commerce-owned promotions surface.
+
+The implementation now lives under `@voyantjs/commerce/promotions`. This
+package keeps the old import name and schema-manifest entry working during the
+v1 package transition.
+
 Promotional offers for Voyant — auto-applied catalog discounts (badges, strikethrough prices), code-redeemed discounts at checkout, and audience- / market-scoped blanket discounts. Resolves issue #497.
 
 PR1 ships the schema + admin CRUD only. Catalog plane wiring lands in PR3, booking-engine integration in PR4. See `docs/architecture/promotions-architecture.md` for the full design.
 
-Storefront runtimes can wire `createPromotionsStorefrontResolvers()` into
+Storefront runtimes can wire `createPromotionsStorefrontResolvers()` from
+`@voyantjs/commerce/promotions/service-storefront` into
 `@voyantjs/storefront` to expose:
 
 - `GET /v1/public/products/:productId/offers`
@@ -26,7 +33,7 @@ pnpm add @voyantjs/promotions
 ## Usage
 
 ```typescript
-import { promotionsModule } from "@voyantjs/promotions"
+import { promotionsModule } from "@voyantjs/commerce/promotions"
 import { createApp } from "@voyantjs/hono"
 
 const app = createApp({
@@ -39,7 +46,7 @@ const app = createApp({
 
 | Entry | Description |
 | --- | --- |
-| `.` | Module export (`promotionsModule`, `promotionsHonoModule`) |
+| `.` | Re-export of `@voyantjs/commerce/promotions` |
 | `./schema` | Drizzle tables (`promotionalOffers`, `promotionalOfferProducts`, `promotionalOfferRedemptions`) |
 | `./validation` | Zod schemas (insert / update / scope discriminator / conditions) |
 | `./routes` | Hono admin routes mounted at `/v1/admin/promotions/*` |

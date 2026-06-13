@@ -24,11 +24,11 @@
  */
 
 import { createIndexerService } from "@voyantjs/catalog"
-import { PROMOTION_CHANGED_EVENT } from "@voyantjs/promotions"
+import { PROMOTION_CHANGED_EVENT } from "@voyantjs/commerce/promotions"
 import {
   type BoundarySchedulerResult,
   runPromotionBoundaryScheduler,
-} from "@voyantjs/promotions/service-boundary-scheduler"
+} from "@voyantjs/commerce/promotions/service-boundary-scheduler"
 import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
 
 import {
