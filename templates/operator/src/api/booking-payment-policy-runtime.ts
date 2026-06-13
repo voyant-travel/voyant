@@ -3,7 +3,7 @@ import { bookingItems, bookingSupplierStatuses, bookings } from "@voyantjs/booki
 import { bookingCruiseDetails } from "@voyantjs/cruises/booking-extension"
 import { cruiseCabinCategories, cruiseSailings, cruises } from "@voyantjs/cruises/schema"
 import type { PaymentPolicy, PaymentPolicySource } from "@voyantjs/finance"
-import { productCategories, productCategoryProducts, products } from "@voyantjs/products/schema"
+import { productCategories, productCategoryProducts, products } from "@voyantjs/inventory/schema"
 import { supplierServices, suppliers } from "@voyantjs/suppliers/schema"
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

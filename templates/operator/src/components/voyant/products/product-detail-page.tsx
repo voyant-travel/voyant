@@ -8,7 +8,7 @@ import {
   ProductDetailHostProvider,
   type ProductDetailHostValue,
   ProductDetailPage as ProductDetailPageBody,
-} from "@voyantjs/products-react/components/product-detail"
+} from "@voyantjs/inventory-react/components/product-detail"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"

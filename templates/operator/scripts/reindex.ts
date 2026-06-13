@@ -38,7 +38,7 @@ import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog
 import { cruises } from "@voyantjs/cruises/schema"
 import { createDbClient } from "@voyantjs/db"
 import { createExtraDocumentBuilder, productExtras } from "@voyantjs/inventory/extras"
-import { products } from "@voyantjs/products/schema"
+import { products } from "@voyantjs/inventory/schema"
 import { config } from "dotenv"
 import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"

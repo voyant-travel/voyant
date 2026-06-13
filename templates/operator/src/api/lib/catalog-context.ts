@@ -10,7 +10,7 @@ import type {
   ResolverScope,
   Visibility,
 } from "@voyantjs/catalog"
-import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
+import { getResolvedProductById } from "@voyantjs/inventory/service-catalog-plane"
 import type { Context } from "hono"
 
 import { buildEmbeddingProvider, buildTypesenseIndexer, DEFAULT_SLICES } from "./catalog-runtime"

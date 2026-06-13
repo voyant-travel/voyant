@@ -128,6 +128,13 @@ const optionalEdgeAllowlist = [
     reason:
       "the packaged admin shell can mount operated Inventory extensions when a host installs them",
   },
+  {
+    from: "@voyantjs/admin-app",
+    type: "peerDependencies",
+    to: "@voyantjs/inventory-react",
+    reason:
+      "the packaged admin shell can mount operated Inventory owner-path extensions when a host installs them",
+  },
 ]
 
 const dependencyGroups = [

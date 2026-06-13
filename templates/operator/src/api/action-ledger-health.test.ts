@@ -2,7 +2,7 @@ import type { RunActionLedgerCanaryResult } from "@voyantjs/action-ledger/canary
 import type { CheckBookingActionLedgerDriftResult } from "@voyantjs/bookings/action-ledger-drift"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { CheckFinanceActionLedgerDriftResult } from "@voyantjs/finance/action-ledger-drift"
-import type { CheckProductActionLedgerDriftResult } from "@voyantjs/products/action-ledger-drift"
+import type { CheckProductActionLedgerDriftResult } from "@voyantjs/inventory/action-ledger-drift"
 import { describe, expect, it, vi } from "vitest"
 
 import { runOperatorActionLedgerHealthCheck } from "./action-ledger-health.js"

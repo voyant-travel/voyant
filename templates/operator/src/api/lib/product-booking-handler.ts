@@ -14,6 +14,8 @@ import type {
   TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
 import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
+import { createProductsBookingHandler } from "@voyantjs/inventory/booking-engine"
+import { optionUnits, productOptions } from "@voyantjs/inventory/schema"
 import {
   extraPriceRules,
   optionPriceRules,
@@ -23,8 +25,6 @@ import {
   pricingCategoryDependencies,
   resolveOptionPriceRulesForDate,
 } from "@voyantjs/pricing"
-import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
-import { optionUnits, productOptions } from "@voyantjs/products/schema"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { resolveBookingTaxSettings } from "../settings"
 import { asPostgresDb } from "./booking-engine-db"

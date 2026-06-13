@@ -983,6 +983,10 @@ The first implementation slice creates `@voyantjs/inventory` and
 `@voyantjs/inventory-react` as operated authoring entrypoints over the existing
 implementation; the remaining physical file/table move is tracked as follow-up
 work behind the documented Inventory Interface.
+During that transition, template runtime manifests and hand-written UI imports
+should move to `inventory` / `inventory-react` owner paths, while
+`voyant.config.ts` schema entries may stay on `products` until generated schema
+parity proves an explicit schema move.
 
 `inventory` must remain an optional operated-inventory Module, not a default
 dependency of Catalog or reseller/OTA starter bundles. OTA/reseller deployments

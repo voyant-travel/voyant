@@ -76,7 +76,7 @@ export const getOperatorDashboardProductsAggregates = createServerFn({ method: "
   .handler(async ({ context }) => {
     const env = await requireAuthenticatedOperatorRequest(context)
     return withDashboardDb(env, async (db) => {
-      const { productsService } = await import("@voyantjs/products")
+      const { productsService } = await import("@voyantjs/inventory")
       return productsService.getProductAggregates(db)
     })
   })

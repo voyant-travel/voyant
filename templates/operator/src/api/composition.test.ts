@@ -68,6 +68,7 @@ describe("operator runtime composition", () => {
     const APP_LOCAL_API_MODULES = new Set(["@voyantjs/flights"])
     const runtime = new Set(OPERATOR_RUNTIME_MANIFEST.modules)
     const runtimeAliases = new Map([
+      ["@voyantjs/products", "@voyantjs/inventory"],
       ["@voyantjs/pricing", "@voyantjs/commerce"],
       ["@voyantjs/markets", "@voyantjs/commerce"],
       ["@voyantjs/sellability", "@voyantjs/commerce"],

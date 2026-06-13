@@ -1,6 +1,6 @@
 import { defineLink } from "@voyantjs/core"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyantjs/inventory"
 import { policyLinkable } from "@voyantjs/legal"
-import { productLinkable } from "@voyantjs/products"
 
 /**
  * A policy can apply to many products (cancellation rules, payment schedule,

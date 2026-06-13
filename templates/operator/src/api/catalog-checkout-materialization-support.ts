@@ -577,7 +577,7 @@ export async function resolveLineItemTitle(
 
   if (snapshot.entity_module === "products") {
     try {
-      const { productsService } = await import("@voyantjs/products")
+      const { productsService } = await import("@voyantjs/inventory")
       const product = await productsService.getProductById(db, snapshot.entity_id)
       if (product?.name) return product.name
     } catch {

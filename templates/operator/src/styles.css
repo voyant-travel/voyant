@@ -21,6 +21,7 @@
 @source "../node_modules/@voyantjs/finance-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/legal-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/inventory-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/products-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/resources-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/suppliers-react/dist/**/*.{js,mjs}";
@@ -40,6 +41,7 @@
 @source "../../../packages/finance-react/src/**/*.{ts,tsx}";
 @source "../../../packages/flights-react/src/**/*.{ts,tsx}";
 @source "../../../packages/legal-react/src/**/*.{ts,tsx}";
+@source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
 @source "../../../packages/products-react/src/**/*.{ts,tsx}";
 @source "../../../packages/resources-react/src/**/*.{ts,tsx}";
 @source "../../../packages/suppliers-react/src/**/*.{ts,tsx}";
@@ -53,7 +55,7 @@
 @import "@voyantjs/relationships-react/styles.css";
 @import "@voyantjs/finance-react/styles.css";
 @import "@voyantjs/legal-react/styles.css";
-@import "@voyantjs/products-react/styles.css";
+@import "@voyantjs/inventory-react/styles.css";
 @import "@voyantjs/resources-react/styles.css";
 @import "@voyantjs/suppliers-react/styles.css";
 @import "@voyantjs/catalog-react/styles.css";

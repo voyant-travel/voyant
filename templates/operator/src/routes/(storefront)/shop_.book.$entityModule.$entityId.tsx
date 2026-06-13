@@ -3,7 +3,7 @@ import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyantjs/accommodations/content-shape"
 import type { BookingEntitySummary } from "@voyantjs/bookings-react/journey"
 import type { CruiseContent } from "@voyantjs/cruises/content-shape"
-import type { ProductContent } from "@voyantjs/products/content-shape"
+import type { ProductContent } from "@voyantjs/inventory/content-shape"
 import { useMemo } from "react"
 import { z } from "zod"
 

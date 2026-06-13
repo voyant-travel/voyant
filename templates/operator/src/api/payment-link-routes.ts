@@ -2,12 +2,12 @@
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import { financeService } from "@voyantjs/finance"
 import { invoices, paymentSessions } from "@voyantjs/finance/schema"
+import { productMedia, products } from "@voyantjs/inventory/schema"
 import {
   NETOPIA_RUNTIME_CONTAINER_KEY,
   netopiaService,
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
-import { productMedia, products } from "@voyantjs/products/schema"
 import { travelComposerService } from "@voyantjs/travel-composer"
 import { tripComponents, tripEnvelopes } from "@voyantjs/travel-composer/schema"
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"

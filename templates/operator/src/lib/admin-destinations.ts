@@ -42,7 +42,7 @@ import { generatedAdminDestinations } from "@/admin.destinations.generated"
  * presence is meaningful to the journey).
  *
  * `product.detail` moved to the generated map when the products domain
- * became package-delivered (`@voyantjs/products-react/admin` annotates the
+ * became package-delivered (`@voyantjs/inventory-react/admin` annotates the
  * `/products/$id` contribution with it).
  */
 export const operatorAdminDestinations = {

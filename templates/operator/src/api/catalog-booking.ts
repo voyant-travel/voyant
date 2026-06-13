@@ -45,7 +45,7 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { getProductContent } from "@voyantjs/products/service-content"
+import { getProductContent } from "@voyantjs/inventory/service-content"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -395,7 +395,7 @@ async function resolveSnapshotForAdmin(
   // Attempt 2: owned products row.
   if (!entity.title && snapshot.entity_module === "products") {
     try {
-      const { productsService } = await import("@voyantjs/products")
+      const { productsService } = await import("@voyantjs/inventory")
       const product = await productsService.getProductById(db, snapshot.entity_id)
       if (product) {
         entity.title = product.name

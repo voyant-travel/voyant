@@ -39,13 +39,13 @@ import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/fina
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
 import { identityHonoModule } from "@voyantjs/identity"
+import { inventoryBookingExtension, inventoryHonoModule } from "@voyantjs/inventory"
 import { createLegalHonoModule } from "@voyantjs/legal"
 import {
   createDefaultBookingDocumentAttachment,
   createNotificationsHonoModule,
 } from "@voyantjs/notifications"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
-import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { resourcesHonoModule } from "@voyantjs/resources"
@@ -159,7 +159,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/resources",
     "@voyantjs/distribution",
     "@voyantjs/suppliers",
-    "@voyantjs/products",
+    "@voyantjs/inventory",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
     "@voyantjs/finance",
@@ -175,7 +175,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
   extensions: [
     "@voyantjs/bookings/booking-supplier-extension",
     "@voyantjs/finance/bookings-create-extension",
-    "@voyantjs/products/booking-extension",
+    "@voyantjs/inventory/booking-extension",
     "@voyantjs/catalog-authoring/extension",
     "@voyantjs/quotes/booking-extension",
     "@voyantjs/transactions/booking-extension",
@@ -207,7 +207,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/resources": () => resourcesHonoModule,
     "@voyantjs/distribution": () => distributionHonoModule,
     "@voyantjs/suppliers": () => suppliersHonoModule,
-    "@voyantjs/products": () => productsHonoModule,
+    "@voyantjs/inventory": () => inventoryHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
         resolveRuntime: (c) => {
@@ -352,7 +352,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
   extensions: {
     "@voyantjs/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
     "@voyantjs/finance/bookings-create-extension": () => bookingsCreateExtension,
-    "@voyantjs/products/booking-extension": () => productsBookingExtension,
+    "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
     "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
     "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
     "@voyantjs/transactions/booking-extension": () => transactionsBookingExtension,
