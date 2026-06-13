@@ -3,13 +3,13 @@
 
 import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
+import { type ProductRecord, useProducts } from "@voyantjs/products-react"
 import {
   type OrganizationRecord,
   type PersonRecord,
   useOrganizations,
   usePeople,
-} from "@voyantjs/crm-react"
-import { type ProductRecord, useProducts } from "@voyantjs/products-react"
+} from "@voyantjs/relationships-react"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"

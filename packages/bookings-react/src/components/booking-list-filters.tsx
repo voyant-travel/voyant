@@ -2,14 +2,14 @@
 
 import type { AvailabilitySlotRecord } from "@voyantjs/availability-react"
 import { useSlots } from "@voyantjs/availability-react"
-import type { OrganizationRecord, PersonRecord } from "@voyantjs/crm-react"
-import { useOrganizations, usePeople } from "@voyantjs/crm-react"
 import type {
   ProductCategoryRecord,
   ProductOptionRecord,
   ProductRecord,
 } from "@voyantjs/products-react"
 import { useProductCategories, useProductOptions, useProducts } from "@voyantjs/products-react"
+import type { OrganizationRecord, PersonRecord } from "@voyantjs/relationships-react"
+import { useOrganizations, usePeople } from "@voyantjs/relationships-react"
 import type { Supplier } from "@voyantjs/suppliers-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"

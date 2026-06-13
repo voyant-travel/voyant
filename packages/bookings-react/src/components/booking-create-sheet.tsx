@@ -15,10 +15,10 @@ import {
   resolveBookingExtraLines,
   travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
-import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { useAddresses } from "@voyantjs/identity-react"
 import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/pricing-react"
 import { useProduct } from "@voyantjs/products-react"
+import { useOrganization, usePerson } from "@voyantjs/relationships-react"
 import {
   Button,
   Checkbox,

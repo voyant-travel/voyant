@@ -23,12 +23,12 @@ import type { AdminMessages } from "@/lib/admin-i18n"
  * - `dashboard.footer`
  * - `booking.details.header`
  * - `booking.details.after-summary`
- * - `booking.details.invoices-tab` (packaged: rendered by bookings-ui's
+ * - `booking.details.invoices-tab` (packaged: rendered by booking UI's
  *   `BookingDetailHost`; finance-ui contributes its invoices card here —
- *   the finance-ui ↔ bookings-ui cycle resolution)
- * - `person.details.bookings-tab` (packaged: rendered by crm-ui's
- *   `PersonDetailHost`; bookings-ui contributes its person-bookings card
- *   here — the crm-ui ↔ bookings-ui cycle resolution)
+ *   the finance-ui ↔ booking UI cycle resolution)
+ * - `person.details.bookings-tab` (packaged: rendered by relationships-ui's
+ *   `PersonDetailHost`; booking UI contributes its person-bookings card
+ *   here — the relationships-ui ↔ booking UI cycle resolution)
  * - `invoice.details.header`
  * - `invoice.details.after-summary`
  */
@@ -214,9 +214,9 @@ function createCatalogExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam (metadata for
 // the finance pages; the detail pages are the packaged hosts from
 // @voyantjs/finance-react/admin) AND for the widgets seam: it contributes the
-// finance-owned booking invoices card on bookings-ui's
-// `booking.details.invoices-tab` slot — the finance-ui ↔ bookings-ui cycle
-// resolution (finance-ui depends on bookings-ui, so the bookings host can't
+// finance-owned booking invoices card on booking UI's
+// `booking.details.invoices-tab` slot — the finance-ui ↔ booking UI cycle
+// resolution (finance-ui depends on booking UI, so the bookings host can't
 // import the card; the widget contribution travels the other way).
 function createFinanceExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.finance({
@@ -257,18 +257,18 @@ function createDistributionExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// CRM is package-delivered (packaged-admin RFC Phase 3): the extension
+// Relationships is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the People and Organizations items are part of
 // the BASE operator navigation (createOperatorAdminNavigation in
 // @voyantjs/admin), so entries here would duplicate them. It's registered
 // for the routes seam (metadata for the people/organization pages; the pages
-// are the packaged hosts from @voyantjs/crm-react/admin — the route files under
+// are the packaged hosts from @voyantjs/relationships-react/admin — the route files under
 // src/routes/_workspace/people/* and src/routes/_workspace/organizations/*
 // only bind route params onto them). The person detail page's Bookings tab
-// is the crm-ui ↔ bookings-ui cycle resolution: bookings-ui contributes its
-// PersonBookingsWidget on crm-ui's `person.details.bookings-tab` slot.
-function createCrmExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.crm({
+// is the relationships-ui ↔ booking UI cycle resolution: booking UI contributes its
+// PersonBookingsWidget on relationships-ui's `person.details.bookings-tab` slot.
+function createRelationshipsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.relationships({
     labels: {
       people: messages.people,
       organizations: messages.organizations,
@@ -457,7 +457,7 @@ export function createOperatorAdminExtensions(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createProductsExtension(messages),
-    createCrmExtension(messages),
+    createRelationshipsExtension(messages),
     createDistributionExtension(messages),
     createFinanceExtension(messages),
     createFlightsExtension(messages),

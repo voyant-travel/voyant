@@ -9,20 +9,20 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import {
-  type CreatePersonDocumentInput,
-  crmService,
-  type PersonDocument,
-  people,
-  personDocumentNumberPlaintextSchema,
-  personPiiBlobPlaintextSchema,
-  type UpdatePersonDocumentInput,
-} from "@voyantjs/crm"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { invoiceRenditions, invoices, payments } from "@voyantjs/finance/schema"
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
 import { contractAttachments, contracts } from "@voyantjs/legal/schema"
+import {
+  type CreatePersonDocumentInput,
+  type PersonDocument,
+  people,
+  personDocumentNumberPlaintextSchema,
+  personPiiBlobPlaintextSchema,
+  relationshipsService,
+  type UpdatePersonDocumentInput,
+} from "@voyantjs/relationships"
 import {
   decryptOptionalJsonEnvelope,
   encryptOptionalJsonEnvelope,
@@ -908,7 +908,7 @@ async function getLinkedPersonDocuments(
   if (!linked) {
     return []
   }
-  const rows = await crmService.listPersonDocuments(db, linked)
+  const rows = await relationshipsService.listPersonDocuments(db, linked)
   return Promise.all(rows.map((row) => projectPersonDocumentToWire(row, options)))
 }
 
@@ -932,7 +932,7 @@ async function ensureLinkedPerson(
   const fallbackLast =
     authProfile.lastName ?? (authProfile.name.split(" ").slice(1).join(" ").trim() || "")
 
-  const created = await crmService.createPerson(db, {
+  const created = await relationshipsService.createPerson(db, {
     firstName: fallbackFirst,
     lastName: fallbackLast,
     tags: [],
@@ -1080,7 +1080,7 @@ async function getCustomerRecord(db: PostgresJsDatabase, userId: string) {
   }
 
   const [person, addresses] = await Promise.all([
-    crmService.getPersonById(db, personId),
+    relationshipsService.getPersonById(db, personId),
     identityService.listAddressesForEntity(db, "person", personId),
   ])
   if (!person) {
@@ -1767,7 +1767,7 @@ export const publicCustomerPortalService = {
           )
         }
 
-        await crmService.updatePerson(db, customerRecordId, {
+        await relationshipsService.updatePerson(db, customerRecordId, {
           ...(input.firstName !== undefined ? { firstName: input.firstName ?? "" } : {}),
           ...(input.lastName !== undefined ? { lastName: input.lastName ?? "" } : {}),
           ...(nextCustomerRecord?.preferredLanguage !== undefined
@@ -1853,7 +1853,7 @@ export const publicCustomerPortalService = {
     }
 
     if (input.customerRecordId) {
-      const person = await crmService.getPersonById(db, input.customerRecordId)
+      const person = await relationshipsService.getPersonById(db, input.customerRecordId)
       if (!person) {
         return { error: "customer_record_not_found" }
       }
@@ -1866,7 +1866,7 @@ export const publicCustomerPortalService = {
         return { error: "customer_record_claimed" }
       }
 
-      const updated = await crmService.updatePerson(db, input.customerRecordId, {
+      const updated = await relationshipsService.updatePerson(db, input.customerRecordId, {
         source: linkedCustomerSource,
         sourceRef: userId,
         ...(input.firstName !== undefined ? { firstName: nextFirstName } : {}),
@@ -1926,7 +1926,7 @@ export const publicCustomerPortalService = {
       }
     }
 
-    const created = await crmService.createPerson(db, {
+    const created = await relationshipsService.createPerson(db, {
       firstName: nextFirstName,
       lastName: nextLastName || "Customer",
       preferredLanguage: input.customerRecord?.preferredLanguage ?? authProfile.locale ?? null,
@@ -2431,7 +2431,7 @@ export const publicCustomerPortalService = {
       payload.numberEncrypted = numberEncrypted
     }
 
-    const row = await crmService.createPersonDocument(db, personId, payload)
+    const row = await relationshipsService.createPersonDocument(db, personId, payload)
     return row ? projectPersonDocumentToWire(row, options) : null
   },
 
@@ -2455,7 +2455,7 @@ export const publicCustomerPortalService = {
     const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
     if (!linkedPersonId) return null
 
-    const existing = await crmService.getPersonDocument(db, documentId)
+    const existing = await relationshipsService.getPersonDocument(db, documentId)
     if (!existing || existing.personId !== linkedPersonId) return null
 
     const numberEncrypted =
@@ -2472,7 +2472,7 @@ export const publicCustomerPortalService = {
     if (input.notes !== undefined) update.notes = input.notes
     if (numberEncrypted !== undefined) update.numberEncrypted = numberEncrypted
 
-    const row = await crmService.updatePersonDocument(db, documentId, update)
+    const row = await relationshipsService.updatePersonDocument(db, documentId, update)
     return row ? projectPersonDocumentToWire(row, options) : null
   },
 
@@ -2480,10 +2480,10 @@ export const publicCustomerPortalService = {
     const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
     if (!linkedPersonId) return null
 
-    const existing = await crmService.getPersonDocument(db, documentId)
+    const existing = await relationshipsService.getPersonDocument(db, documentId)
     if (!existing || existing.personId !== linkedPersonId) return null
 
-    return crmService.deletePersonDocument(db, documentId)
+    return relationshipsService.deletePersonDocument(db, documentId)
   },
 
   async setPrimaryMyDocument(
@@ -2495,10 +2495,10 @@ export const publicCustomerPortalService = {
     const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
     if (!linkedPersonId) return null
 
-    const existing = await crmService.getPersonDocument(db, documentId)
+    const existing = await relationshipsService.getPersonDocument(db, documentId)
     if (!existing || existing.personId !== linkedPersonId) return null
 
-    const row = await crmService.setPrimaryPersonDocument(db, documentId)
+    const row = await relationshipsService.setPrimaryPersonDocument(db, documentId)
     return row ? projectPersonDocumentToWire(row, options) : null
   },
 }

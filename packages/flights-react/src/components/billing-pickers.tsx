@@ -1,6 +1,6 @@
 "use client"
 
-import { useOrganizations, usePeople } from "@voyantjs/crm-react"
+import { useOrganizations, usePeople } from "@voyantjs/relationships-react"
 import { Button } from "@voyantjs/ui/components/button"
 import {
   Command,
@@ -23,7 +23,7 @@ export interface BillingPersonPickerProps {
 }
 
 /**
- * Billing-step CRM person picker. It searches `/v1/crm/people`, prefers a
+ * Billing-step CRM person picker. It searches `/v1/relationships/people`, prefers a
  * billing/primary address, and maps the selected person into `BillingValue`.
  */
 export function BillingPersonPicker({ apply, onPersonSelected }: BillingPersonPickerProps) {
@@ -262,7 +262,7 @@ async function fetchPreferredAddress(
 ): Promise<IdentityAddressLite | null> {
   const path = entity === "person" ? "people" : "organizations"
   try {
-    const res = await fetch(`/v1/crm/${path}/${encodeURIComponent(id)}/addresses`, {
+    const res = await fetch(`/v1/relationships/${path}/${encodeURIComponent(id)}/addresses`, {
       headers: { accept: "application/json" },
     })
     if (!res.ok) return null

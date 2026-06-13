@@ -5,9 +5,9 @@ import {
   useOperatorAdminMessages as useAdminMessages,
   useAdminNavigate,
 } from "@voyantjs/admin"
-import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { formatMessage } from "@voyantjs/i18n"
+import { useOrganization, usePerson } from "@voyantjs/relationships-react"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"

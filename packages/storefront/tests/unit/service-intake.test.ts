@@ -8,8 +8,8 @@ const crmMocks = vi.hoisted(() => ({
   updateCustomerSignal: vi.fn(),
 }))
 
-vi.mock("@voyantjs/crm", () => ({
-  crmService: crmMocks,
+vi.mock("@voyantjs/relationships", () => ({
+  relationshipsService: crmMocks,
 }))
 
 import { subscribeStorefrontNewsletter } from "../../src/service-intake.js"

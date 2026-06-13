@@ -16,7 +16,7 @@ export interface UseSavedPaymentMethodsOptions {
 }
 
 /**
- * GET `/v1/crm/people/:personId/payment-methods` — list a person's saved
+ * GET `/v1/relationships/people/:personId/payment-methods` — list a person's saved
  * payment methods. Backed by the CRM `person_payment_methods` table.
  */
 export function useSavedPaymentMethods(
@@ -29,7 +29,7 @@ export function useSavedPaymentMethods(
     queryKey: flightsQueryKeys.savedPaymentMethods(personId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/crm/people/${encodeURIComponent(personId ?? "")}/payment-methods`,
+        `/v1/relationships/people/${encodeURIComponent(personId ?? "")}/payment-methods`,
         savedPaymentMethodListResponseSchema,
         client,
       ),

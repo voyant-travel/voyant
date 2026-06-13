@@ -21,7 +21,8 @@ export default defineVoyantConfig({
   // transitively via `accommodations` requiresSchemas, so it needs no entry.
   modules: [
     "@voyantjs/action-ledger",
-    "@voyantjs/crm",
+    "@voyantjs/relationships",
+    "@voyantjs/quotes",
     "@voyantjs/identity",
     "@voyantjs/suppliers",
     "@voyantjs/products",

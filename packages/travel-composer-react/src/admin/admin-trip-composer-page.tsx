@@ -9,7 +9,7 @@ import {
   type PersonPickerValue,
   type VoucherPickerValue,
 } from "@voyantjs/bookings-react/ui"
-import { usePerson } from "@voyantjs/crm-react"
+import { usePerson } from "@voyantjs/relationships-react"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { Textarea } from "@voyantjs/ui/components/textarea"

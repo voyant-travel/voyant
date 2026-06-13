@@ -3,7 +3,7 @@
 //   voyant admin generate
 
 import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/admin"
-import { createCrmAdminExtension } from "@voyantjs/crm-react/admin"
+import { createRelationshipsAdminExtension } from "@voyantjs/relationships-react/admin"
 import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
 import { createProductsAdminExtension } from "@voyantjs/products-react/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-react/admin"
@@ -25,7 +25,7 @@ import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-re
  */
 export const generatedAdminExtensionFactories = {
   actionLedger: createActionLedgerAdminExtension,
-  crm: createCrmAdminExtension,
+  relationships: createRelationshipsAdminExtension,
   suppliers: createSuppliersAdminExtension,
   products: createProductsAdminExtension,
   promotions: createPromotionsAdminExtension,

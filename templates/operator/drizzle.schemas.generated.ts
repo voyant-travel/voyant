@@ -4,7 +4,8 @@
 export const schema = [
   "../../packages/db/src/schema/index.ts",
   "../../packages/action-ledger/src/schema.ts",
-  "../../packages/crm/src/schema.ts",
+  "../../packages/relationships/src/schema.ts",
+  "../../packages/quotes/src/schema.ts",
   "../../packages/identity/src/schema.ts",
   "../../packages/facilities/src/schema.ts",
   "../../packages/suppliers/src/schema.ts",

@@ -1,6 +1,6 @@
 # Voyant Database Schema Reference
 
-> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-06-09.
+> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-06-13.
 > SQL column names are shown first; TypeScript property names are included when they differ.
 > Constraint markers are derived from the schema source, not from a live database introspection run.
 
@@ -199,7 +199,7 @@ Constraints:
 | `last_delivery_at` (`lastDeliveryAt`) | timestamp with time zone • nullable |
 | `failure_count` (`failureCount`) | integer • not null • default 0 |
 
-## CRM
+## Relationships
 
 ### `activities`
 | Column | Type |
@@ -234,15 +234,6 @@ Constraints:
 | `person_id` (`personId`) | text • FK -> people.id • not null |
 | `is_primary` (`isPrimary`) | boolean • not null • default false |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `booking_crm_details`
-| Column | Type |
-|--------|------|
-| `booking_id` (`bookingId`) | text • PK • not null |
-| `quote_id` (`quoteId`) | text • nullable |
-| `quote_version_id` (`quoteVersionId`) | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `communication_log`
 | Column | Type |
@@ -285,6 +276,27 @@ Constraints:
 | `monetary_value_cents` (`monetaryValueCents`) | integer • nullable |
 | `currency_code` (`currencyCode`) | text • nullable |
 | `json_value` (`jsonValue`) | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `customer_signals`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `product_id` (`productId`) | text • nullable |
+| `option_unit_id` (`optionUnitId`) | text • nullable |
+| `kind` | customer_signal_kind • not null |
+| `source` | customer_signal_source • not null |
+| `status` | customer_signal_status • not null • default "new" |
+| `priority` | text • not null • default "normal" |
+| `notes` | text • nullable |
+| `tags` | jsonb • not null • default [] |
+| `assigned_to_user_id` (`assignedToUserId`) | text • nullable |
+| `follow_up_at` (`followUpAt`) | timestamp with time zone • nullable |
+| `resolved_booking_id` (`resolvedBookingId`) | text • nullable |
+| `source_submission_id` (`sourceSubmissionId`) | text • nullable |
+| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -405,6 +417,35 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `segment_members`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `segment_id` (`segmentId`) | text • FK -> segments.id • not null |
+| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `segments`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `conditions` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+## Quotes
+
+### `booking_crm_details`
+| Column | Type |
+|--------|------|
+| `booking_id` (`bookingId`) | text • PK • not null |
+| `quote_id` (`quoteId`) | text • nullable |
+| `quote_version_id` (`quoteVersionId`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
 ### `pipelines`
 | Column | Type |
 |--------|------|
@@ -421,7 +462,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `quote_id` (`quoteId`) | text • FK -> quotes.id • not null |
-| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `person_id` (`personId`) | text • not null |
 | `role` | participant_role • not null • default "other" |
 | `is_primary` (`isPrimary`) | boolean • not null • default false |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -485,8 +526,8 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `title` | text • not null |
-| `person_id` (`personId`) | text • FK -> people.id • nullable |
-| `organization_id` (`organizationId`) | text • FK -> organizations.id • nullable |
+| `person_id` (`personId`) | text • nullable |
+| `organization_id` (`organizationId`) | text • nullable |
 | `pipeline_id` (`pipelineId`) | text • FK -> pipelines.id • not null |
 | `stage_id` (`stageId`) | text • FK -> stages.id • not null |
 | `owner_id` (`ownerId`) | text • nullable |
@@ -503,24 +544,6 @@ Constraints:
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 | `stage_changed_at` (`stageChangedAt`) | timestamp with time zone • not null • default |
 | `closed_at` (`closedAt`) | timestamp with time zone • nullable |
-
-### `segment_members`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `segment_id` (`segmentId`) | text • FK -> segments.id • not null |
-| `person_id` (`personId`) | text • FK -> people.id • not null |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `segments`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `conditions` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `stages`
 | Column | Type |
@@ -2653,7 +2676,7 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
 | `service_type` (`serviceType`) | service_type • not null |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `name` | text • not null |
 | `description` | text • nullable |
 | `duration` | text • nullable |
@@ -2674,7 +2697,7 @@ Constraints:
 | `default_currency` (`defaultCurrency`) | text • nullable |
 | `payment_terms_days` (`paymentTermsDays`) | integer • nullable |
 | `reservation_timeout_minutes` (`reservationTimeoutMinutes`) | integer • nullable |
-| `primary_facility_id` (`primaryFacilityId`) | text • FK -> facilities.id • nullable |
+| `primary_facility_id` (`primaryFacilityId`) | text • nullable |
 | `customer_payment_policy` (`customerPaymentPolicy`) | jsonb • nullable |
 | `tags` | jsonb • nullable • default [] |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -4128,7 +4151,7 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
+| `property_id` (`propertyId`) | text • not null |
 | `code` | text • not null |
 | `name` | text • not null |
 | `description` | text • nullable |
@@ -4160,7 +4183,7 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
+| `property_id` (`propertyId`) | text • not null |
 | `code` | text • not null |
 | `name` | text • not null |
 | `description` | text • nullable |
@@ -4196,7 +4219,7 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
+| `property_id` (`propertyId`) | text • not null |
 | `supplier_id` (`supplierId`) | text • nullable |
 | `code` | text • nullable |
 | `name` | text • not null |
@@ -4226,7 +4249,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `booking_item_id` (`bookingItemId`) | text • FK -> booking_items.id • not null |
-| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
+| `property_id` (`propertyId`) | text • not null |
 | `room_type_id` (`roomTypeId`) | text • FK -> room_types.id • not null |
 | `supplier_room_ref` (`supplierRoomRef`) | text • nullable |
 | `rate_plan_id` (`ratePlanId`) | text • FK -> rate_plans.id • not null |
@@ -4290,7 +4313,7 @@ Constraints:
 | `status` | ground_checkpoint_status • not null • default "pending" |
 | `planned_at` (`plannedAt`) | timestamp with time zone • nullable |
 | `actual_at` (`actualAt`) | timestamp with time zone • nullable |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
 | `notes` | text • nullable |
 | `metadata` | jsonb • nullable |
@@ -4304,7 +4327,7 @@ Constraints:
 | `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
 | `sequence` | integer • not null • default 0 |
 | `leg_type` (`legType`) | ground_dispatch_leg_type • not null • default "pickup" |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
 | `scheduled_at` (`scheduledAt`) | timestamp with time zone • nullable |
 | `actual_at` (`actualAt`) | timestamp with time zone • nullable |
@@ -4354,7 +4377,7 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `driver_id` (`driverId`) | text • FK -> ground_drivers.id • not null |
 | `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `starts_at` (`startsAt`) | timestamp with time zone • not null |
 | `ends_at` (`endsAt`) | timestamp with time zone • not null |
 | `status` | ground_driver_shift_status • not null • default "scheduled" |
@@ -4385,7 +4408,7 @@ Constraints:
 | `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
 | `event_type` (`eventType`) | ground_execution_event_type • not null • default "note" |
 | `occurred_at` (`occurredAt`) | timestamp with time zone • not null • default |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
 | `notes` | text • nullable |
 | `metadata` | jsonb • nullable |
@@ -4396,7 +4419,7 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `supplier_id` (`supplierId`) | text • nullable |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
 | `name` | text • not null |
 | `code` | text • nullable |
 | `active` | boolean • not null • default true |
@@ -4425,8 +4448,8 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `booking_id` (`bookingId`) | text • not null |
 | `booking_item_id` (`bookingItemId`) | text • nullable |
-| `pickup_facility_id` (`pickupFacilityId`) | text • FK -> facilities.id • nullable |
-| `dropoff_facility_id` (`dropoffFacilityId`) | text • FK -> facilities.id • nullable |
+| `pickup_facility_id` (`pickupFacilityId`) | text • nullable |
+| `dropoff_facility_id` (`dropoffFacilityId`) | text • nullable |
 | `pickup_address_id` (`pickupAddressId`) | text • FK -> identity_addresses.id • nullable |
 | `dropoff_address_id` (`dropoffAddressId`) | text • FK -> identity_addresses.id • nullable |
 | `requested_vehicle_category` (`requestedVehicleCategory`) | ground_vehicle_category • nullable |

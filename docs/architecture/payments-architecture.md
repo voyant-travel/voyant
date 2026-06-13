@@ -611,7 +611,7 @@ options like "Issue on agency credit" (flights) or "Charge to folio"
 - `@voyantjs/notifications` — payment-link emails / SMS.
 - `@voyantjs/checkout-react/ui` — `<PaymentStep>` + `<PaymentLinkLandingPage>`,
   pure UI on top of the above.
-- `@voyantjs/crm` `person_payment_methods` table — canonical record of
+- `@voyantjs/relationships` `person_payment_methods` table — canonical record of
   cards on file per person (tokenized).
 - Accommodation resale guarantee terms map onto payment-step booleans in the
   checkout flow. Legacy hotel-ops guarantee-mode references should not be

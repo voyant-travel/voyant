@@ -1,6 +1,9 @@
-import { crmService } from "@voyantjs/crm"
-import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "@voyantjs/crm/events"
-import { customerSignals } from "@voyantjs/crm/schema"
+import { relationshipsService } from "@voyantjs/relationships"
+import {
+  CUSTOMER_SIGNAL_CREATED_EVENT,
+  emitCustomerSignalCreated,
+} from "@voyantjs/relationships/events"
+import { customerSignals } from "@voyantjs/relationships/schema"
 import { and, eq } from "drizzle-orm"
 
 import type { StorefrontRequestContext } from "./service.js"
@@ -188,7 +191,7 @@ export async function createStorefrontLeadSignal(input: {
   if (existing) return leadResponse(existing, true)
 
   const { firstName, lastName } = personNameFromContact(input.body.contact)
-  const person = await crmService.createPerson(db, {
+  const person = await relationshipsService.createPerson(db, {
     firstName,
     lastName,
     status: "active",
@@ -201,7 +204,7 @@ export async function createStorefrontLeadSignal(input: {
   })
   if (!person) throw new Error("Failed to create CRM person for storefront lead")
 
-  const signal = await crmService.createCustomerSignal(db, {
+  const signal = await relationshipsService.createCustomerSignal(db, {
     personId: person.id,
     productId: input.body.productId ?? null,
     optionUnitId: input.body.optionUnitId ?? null,
@@ -264,7 +267,7 @@ export async function subscribeStorefrontNewsletter(input: {
   }
 
   const { firstName, lastName } = personNameFromNewsletter(input.body)
-  const person = await crmService.createPerson(db, {
+  const person = await relationshipsService.createPerson(db, {
     firstName,
     lastName,
     status: "active",
@@ -277,7 +280,7 @@ export async function subscribeStorefrontNewsletter(input: {
   if (!person) throw new Error("Failed to create CRM person for newsletter subscription")
 
   const doubleOptIn = input.requestDoubleOptIn ? "requested" : "not_configured"
-  let signal = await crmService.createCustomerSignal(db, {
+  let signal = await relationshipsService.createCustomerSignal(db, {
     personId: person.id,
     kind: "notify",
     source: input.body.source,
@@ -305,13 +308,13 @@ export async function subscribeStorefrontNewsletter(input: {
         context: input.context,
       })
     } catch (error) {
-      await crmService.deleteCustomerSignal(db, signal.id).catch(() => null)
-      await crmService.deletePerson(db, person.id).catch(() => null)
+      await relationshipsService.deleteCustomerSignal(db, signal.id).catch(() => null)
+      await relationshipsService.deletePerson(db, person.id).catch(() => null)
       throw error
     }
 
     signal =
-      (await crmService.updateCustomerSignal(db, signal.id, {
+      (await relationshipsService.updateCustomerSignal(db, signal.id, {
         metadata: newsletterSignalMetadata({
           email,
           doubleOptIn,

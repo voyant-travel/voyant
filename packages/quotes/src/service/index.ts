@@ -1,0 +1,14 @@
+import { pipelinesService } from "./pipelines.js"
+import { quoteVersionsService } from "./quote-versions.js"
+import { quotesService as quoteRecordsService } from "./quotes.js"
+
+export const quotesService = {
+  ...pipelinesService,
+  ...quoteRecordsService,
+  ...quoteVersionsService,
+}
+
+export { pipelinesService } from "./pipelines.js"
+export type { AcceptQuoteVersionResult } from "./quote-versions.js"
+export { QuoteVersionConflictError, quoteVersionsService } from "./quote-versions.js"
+export { quotesService as quoteRecordsService } from "./quotes.js"

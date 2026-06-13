@@ -1,11 +1,12 @@
 // agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
+
+import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
 import {
-  crmService,
   type QuoteVersion,
   QuoteVersionConflictError,
+  quotesService,
   sendQuoteVersionSchema,
-} from "@voyantjs/crm"
-import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
+} from "@voyantjs/quotes"
 import {
   type StartCheckoutResult,
   TravelComposerInvariantError,
@@ -75,10 +76,10 @@ export interface AcceptPublicProposalResult {
 }
 
 type QuoteVersionProposalReadModel = NonNullable<
-  Awaited<ReturnType<typeof crmService.getQuoteVersionProposal>>
+  Awaited<ReturnType<typeof quotesService.getQuoteVersionProposal>>
 >
 type AcceptQuoteVersionResult = NonNullable<
-  Awaited<ReturnType<typeof crmService.acceptQuoteVersion>>
+  Awaited<ReturnType<typeof quotesService.acceptQuoteVersion>>
 >
 type LockedAcceptResult =
   | {
@@ -145,7 +146,7 @@ export async function handleSendQuoteVersion(c: Context<OperatorProposalRouteEnv
   if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
 
   try {
-    const quoteVersion = await crmService.sendQuoteVersion(
+    const quoteVersion = await quotesService.sendQuoteVersion(
       operatorPostgresDb(c.get("db")),
       quoteVersionId,
       await parseOptionalJsonBody(c, sendQuoteVersionSchema),
@@ -173,8 +174,8 @@ export async function handleGetPublicProposal(c: Context<OperatorProposalRouteEn
   if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
 
   const db = operatorPostgresDb(c.get("db"))
-  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
-  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+  await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
 
   if (!proposal) return c.json({ error: "Proposal not found" }, 404)
   if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
@@ -184,7 +185,7 @@ export async function handleGetPublicProposal(c: Context<OperatorProposalRouteEn
 
   const viewedQuoteVersion =
     proposal.quoteVersion.status === "sent"
-      ? await crmService.markQuoteVersionViewed(db, quoteVersionId)
+      ? await quotesService.markQuoteVersionViewed(db, quoteVersionId)
       : proposal.quoteVersion
   const operatorSettings = await getOperatorSettings(db)
 
@@ -204,8 +205,8 @@ export async function handleDeclinePublicProposal(c: Context<OperatorProposalRou
   if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
 
   const db = operatorPostgresDb(c.get("db"))
-  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
-  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+  await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
 
   if (!proposal) return c.json({ error: "Proposal not found" }, 404)
   if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
@@ -214,7 +215,7 @@ export async function handleDeclinePublicProposal(c: Context<OperatorProposalRou
   }
 
   try {
-    const quoteVersion = await crmService.declineQuoteVersion(db, quoteVersionId)
+    const quoteVersion = await quotesService.declineQuoteVersion(db, quoteVersionId)
     if (!quoteVersion) return c.json({ error: "Proposal not found" }, 404)
     return c.json({
       data: { status: quoteVersion.status } satisfies DeclinePublicProposalResult,
@@ -233,7 +234,7 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
 
   const body = await parseOptionalJsonBody(c, acceptPublicProposalSchema)
   const db = operatorPostgresDb(c.get("db"))
-  const proposalForLock = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+  const proposalForLock = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
 
   if (!proposalForLock) return c.json({ error: "Proposal not found" }, 404)
 
@@ -295,8 +296,8 @@ async function acceptPublicProposalWithQuoteLock({
   body: z.infer<typeof acceptPublicProposalSchema>
 }): Promise<LockedAcceptResult> {
   await lockQuoteAccept(db, quoteId)
-  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
-  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+  await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
 
   if (!proposal) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
   if (proposal.quoteVersion.status === "draft") {
@@ -337,7 +338,7 @@ async function acceptPublicProposalWithQuoteLock({
 
   assertProposalMatchesTripSnapshot(proposal, snapshot)
   if (isAcceptedReplay) {
-    const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+    const accepted = await quotesService.acceptQuoteVersion(db, quoteVersionId, {})
     if (!accepted) {
       return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
     }
@@ -386,7 +387,7 @@ async function acceptPublicProposalWithQuoteLock({
     }
   }
 
-  const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+  const accepted = await quotesService.acceptQuoteVersion(db, quoteVersionId, {})
   if (!accepted) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
 
   return { kind: "accepted", accepted, snapshot, warnings: reserved.warnings }

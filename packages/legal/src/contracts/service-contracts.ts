@@ -1,4 +1,4 @@
-import { people, personDirectoryView } from "@voyantjs/crm/schema"
+import { people, personDirectoryView } from "@voyantjs/relationships/schema"
 import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {

@@ -23,9 +23,9 @@ const mocks = vi.hoisted(() => {
   }
 })
 
-vi.mock("@voyantjs/crm", () => ({
+vi.mock("@voyantjs/quotes", () => ({
   QuoteVersionConflictError: mocks.QuoteVersionConflictError,
-  crmService: {
+  quotesService: {
     applyTripSnapshotToQuoteVersion: mocks.applyTripSnapshotToQuoteVersion,
     getQuoteVersionById: mocks.getQuoteVersionById,
   },

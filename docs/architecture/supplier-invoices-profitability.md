@@ -420,7 +420,7 @@ Decision (from scoping): **build it in two phases — external/lightweight first
 - **Scoped API keys** — `require-actor.ts` already honours per-resource API-key scopes (`finance:read`, `invoices:read`, …) on `/v1/admin/*` paths (`packages/types/src/api-keys.ts` defines the resource/action taxonomy). A read-only key is the cheapest ongoing-access mechanism today.
 - **Public document delivery** — `createPublicDocumentDeliveryGrant` (`packages/hono/src/public-document-delivery.ts`) mints TTL'd (default 24h, max 30d), **revocable, access-logged** signed URLs, and finance *already* uses it to share invoice-rendition PDFs (`packages/finance/src/routes-documents.ts`). This is the share-a-report mechanism — no account required.
 - **Better Auth roles** (`owner/admin/member`, `packages/auth/src/permissions.ts`) — but these govern the **control plane** (operators, API keys, settings) and are **not** wired to module data routes. Reusing them for data-route authorization is net-new work (see 13.3).
-- **Report routes** exist (`/reports/revenue|aging|profitability`, `/aggregates`) but have **no export** — CRM has CSV export (`packages/crm/.../accounts.ts`), finance does not.
+- **Report routes** exist (`/reports/revenue|aging|profitability`, `/aggregates`) but have **no export** — Relationships has CSV export (`packages/relationships/.../accounts.ts`), finance does not.
 
 ### 13.2 Phase A — external sharing + export (reuses infra, ships first)
 

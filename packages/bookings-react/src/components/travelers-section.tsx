@@ -6,7 +6,7 @@ import {
   type PersonRelationshipRecord,
   usePerson,
   usePersonRelationships,
-} from "@voyantjs/crm-react"
+} from "@voyantjs/relationships-react"
 import {
   Button,
   Label,

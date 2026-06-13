@@ -4904,7 +4904,7 @@ export const bookingsService = {
        * a plaintext snapshot of dietary / accessibility / primary
        * passport from the linked person record. Snapshot fields fill
        * gaps in `data` only — explicit input always wins. Templates
-       * wire this from `crmService.loadPersonTravelSnapshot`.
+       * wire this from `relationshipsService.loadPersonTravelSnapshot`.
        */
       resolveTravelSnapshot?: (personId: string) => Promise<BookingTravelerSnapshot | null>
     },
