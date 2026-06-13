@@ -951,7 +951,6 @@ Following the existing convention (`describe.skipIf(!DB_AVAILABLE)`):
 - `cruise_search_index` table + bulk write endpoint for adapters
 - Local-cruise projection trigger in `cruisesService` mutations
 - Public storefront routes pointed at the index
-- Storefront example wired into `examples/nextjs-booking-portal` (cruise listing fed by the index, detail pages resolving through both sources)
 
 **Phase 5 — sub-variants + polish (1 week)**
 - Expedition enrichment programs

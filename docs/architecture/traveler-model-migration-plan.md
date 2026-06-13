@@ -260,7 +260,6 @@ Goal:
 - `apps/dev`
 - `templates/operator`
 - `templates/dmc`
-- `examples/nextjs-booking-portal`
 
 ### High-signal file groups
 
