@@ -12,9 +12,6 @@ const PIE_COLORS = [
   "hsl(160 60% 45%)",
   "hsl(28 80% 52%)",
 ]
-const _CHART_DEPARTURE_LIMIT = 12
-
-const _marginText = (value: number | null) => (value == null ? "—" : `${value.toFixed(1)}%`)
 
 export function serviceTypeChart(
   departures: DepartureProfitabilityReport | undefined,
