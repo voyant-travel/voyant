@@ -1,6 +1,11 @@
 # Frontend Package Strategy
 
-> Note (2026-06): layer 4 (shadcn registry blocks) has been retired — the registry source, `apps/registry`, and `registry:build` were deleted per `docs/architecture/packaged-admin-rfc.md` §5. Domain UI now ships only as versioned `*-ui` packages; registry references below are historical.
+> Note (2026-06): shadcn registry blocks have been retired — the registry source,
+> `apps/registry`, and `registry:build` were deleted per
+> `docs/architecture/packaged-admin-rfc.md` §5. Domain UI now ships through
+> React runtime packages and surface packages such as `admin` / `storefront`.
+> Separate `*-ui` packages are no longer a target package layer; reusable module
+> components live in the corresponding `*-react` package.
 
 Voyant separates frontend acceleration into three layers:
 
@@ -9,9 +14,12 @@ Voyant separates frontend acceleration into three layers:
 2. Framework-agnostic SDK packages when a cross-module public workflow needs a
    stable client facade, for example `@voyantjs/storefront-sdk`.
 3. `@voyantjs/<module>-react`
-   React runtime helpers for a module. These packages provide hooks, query keys, typed clients, providers, and frontend view-model helpers.
-4. shadcn registry blocks
-   Source-installed UI components and screens that developers can pull into their own app and customize locally.
+   React runtime helpers and reusable module UI for a module. These packages
+   provide hooks, query keys, typed clients, providers, frontend view-model
+   helpers, and reusable components that are not specific to one app shell.
+
+`admin`, `storefront`, and app/template packages own shell composition,
+navigation, page assembly, and deployment-specific presentation.
 
 ## Why This Split Exists
 
@@ -19,16 +27,20 @@ Starter apps should not force developers to build every screen from the raw doma
 
 1. install the domain module
 2. install the React runtime package for that module
-3. add the UI blocks they want from the registry
-4. customize those local source files as needed
+3. compose final pages inside `admin`, `storefront`, or the app/template
 
 That gives Voyant a better product shape than a monolithic starter-only UI and avoids turning every backend/domain package into a React-specific dependency.
 
 ## Naming Rules
 
 - Domain/runtime packages keep simple names like `@voyantjs/crm`, `@voyantjs/bookings`, `@voyantjs/products`.
-- React runtime packages use `-react`, for example `@voyantjs/crm-react`.
-- Registry content stays source-installable and should depend on the relevant `-react` package rather than re-implementing runtime hooks.
+- React packages use `-react`, for example `@voyantjs/crm-react`.
+  They own hooks, clients, providers, view-model helpers, and reusable module
+  components.
+- Do not create new `*-ui` packages. If a historical `*-ui` package exists,
+  fold it into the corresponding `*-react` package as part of v1 cleanup.
+- Surface packages such as `admin` and `storefront` own page assembly and should
+  not be replaced by domain React packages.
 
 ## What Belongs In `-react`
 
@@ -39,9 +51,6 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 - mutation hooks
 - query key helpers
 - frontend-oriented schemas and record types
-
-## What Belongs In The Registry
-
 - cards
 - tables
 - dialogs
@@ -49,6 +58,9 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 - detail panes
 - filter bars
 - page sections and module-specific UI building blocks
+
+Do not put a single app-specific screen in a module React package. Keep that in
+the surface/app package until a reusable component Interface exists.
 
 ## Tailwind v4 Package Styles
 
@@ -74,12 +86,14 @@ only expose Tailwind source-detection directives for package components.
 - app shell navigation
 - starter-specific theming and layout
 
-## CRM As The First Slice
+## Module UI Migration
 
-CRM is the first module being moved into this shape:
+CRM was the first module being moved into the old registry-backed shape:
 
 - `@voyantjs/crm` remains the domain package
-- `@voyantjs/crm-react` becomes the shared React runtime package
-- `packages/ui/registry/crm/*` holds the shadcn registry source for CRM UI blocks
+- `@voyantjs/crm-react` becomes the shared React package for runtime helpers and
+  reusable presentation that survives the Relationships / Quotes split
 
-Future module candidates should follow the same pattern only when they justify a reusable React runtime layer. Not every module needs `-react` immediately.
+Future module candidates should add `-react` only when they justify reusable
+React runtime helpers or reusable module components. Not every Module needs a
+React package immediately.
