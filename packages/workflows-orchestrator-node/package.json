@@ -48,7 +48,7 @@
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.6"
   },
   "publishConfig": {
     "access": "public"
