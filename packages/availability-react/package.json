@@ -18,6 +18,7 @@
     "./ui": "./src/ui.ts",
     "./allocation": "./src/allocation/index.ts",
     "./allocation/i18n": "./src/allocation/i18n/index.ts",
+    "./allocation/components/slot-allocation-model": "./src/allocation/components/slot-allocation-model.ts",
     "./allocation/components/*": "./src/allocation/components/*.tsx",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
@@ -152,6 +153,11 @@
         "types": "./dist/allocation/i18n/index.d.ts",
         "import": "./dist/allocation/i18n/index.js",
         "default": "./dist/allocation/i18n/index.js"
+      },
+      "./allocation/components/slot-allocation-model": {
+        "types": "./dist/allocation/components/slot-allocation-model.d.ts",
+        "import": "./dist/allocation/components/slot-allocation-model.js",
+        "default": "./dist/allocation/components/slot-allocation-model.js"
       },
       "./allocation/components/*": {
         "types": "./dist/allocation/components/*.d.ts",
