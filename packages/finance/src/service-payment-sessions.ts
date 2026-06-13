@@ -127,14 +127,8 @@ export const financePaymentSessionService = {
 
     const target = derivePaymentSessionTarget(data)
     const targetColumns = derivePaymentSessionTargetColumns(data)
-    const {
-      legacyOrderId,
-      orderId,
-      target: _explicitTarget,
-      provenance: _provenance,
-      ...sessionData
-    } = data as CreatePaymentSessionInput & { orderId?: string | null }
-    const resolvedLegacyOrderId = legacyOrderId ?? orderId ?? null
+    const { legacyOrderId, target: _explicitTarget, provenance: _provenance, ...sessionData } = data
+    const resolvedLegacyOrderId = legacyOrderId ?? null
     const createSession = (writer: PostgresJsDatabase) =>
       writer
         .insert(paymentSessions)
@@ -189,14 +183,8 @@ export const financePaymentSessionService = {
   ) {
     const target = derivePaymentSessionTarget(data)
     const targetColumns = derivePaymentSessionTargetColumns(data)
-    const {
-      legacyOrderId,
-      orderId,
-      target: _explicitTarget,
-      provenance: _provenance,
-      ...sessionData
-    } = data as UpdatePaymentSessionInput & { orderId?: string | null }
-    const resolvedLegacyOrderId = legacyOrderId !== undefined ? legacyOrderId : orderId
+    const { legacyOrderId, target: _explicitTarget, provenance: _provenance, ...sessionData } = data
+    const resolvedLegacyOrderId = legacyOrderId
     const updateSession = (writer: PostgresJsDatabase) =>
       writer
         .update(paymentSessions)
