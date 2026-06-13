@@ -1,5 +1,13 @@
 # @voyantjs/workflows
 
+## 0.107.10
+
+### Patch Changes
+
+- 419edac: Expose a managed Cloud resume continuation contract with waitpoint snapshots,
+  resume activation metadata, and a helper that builds resume step requests from
+  persisted journals without repeating completed steps.
+
 ## 0.107.9
 
 ### Patch Changes
