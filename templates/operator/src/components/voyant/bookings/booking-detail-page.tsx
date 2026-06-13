@@ -5,8 +5,7 @@ import { useBooking } from "@voyantjs/bookings-react"
 import { BookingDetailHost } from "@voyantjs/bookings-react/admin/booking-detail-host"
 import type { BookingDetailTabValue } from "@voyantjs/bookings-react/components/booking-detail-page"
 import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-react/components/booking-payments-summary"
-import { CollectPaymentDialog } from "@voyantjs/checkout-react/ui"
-import { RecordBookingPaymentDialog } from "@voyantjs/finance-react/ui"
+import { CollectPaymentDialog, RecordBookingPaymentDialog } from "@voyantjs/finance-react/ui"
 import { useState } from "react"
 
 /**
@@ -17,7 +16,7 @@ import { useState } from "react"
  * invoice sheet); the finance-tab cards (pending payment links, payment
  * policy) and the Invoices tab arrive as widget contributions from
  * `@voyantjs/finance-react/admin`. This wrapper only supplies the two payment
- * dialogs — `@voyantjs/finance-react/ui` / `@voyantjs/checkout-react/ui` depend on
+ * dialogs — `@voyantjs/finance-react/ui` depends on
  * `bookings-ui`, so the package host cannot import them without a cycle.
  */
 export function BookingDetailPage({

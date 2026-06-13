@@ -874,6 +874,42 @@ export function parseDateString(value: string) {
 export function derivePaymentSessionTarget(
   input: CreatePaymentSessionInput | UpdatePaymentSessionInput,
 ) {
+  const explicitTarget = "target" in input ? input.target : undefined
+  if (explicitTarget) {
+    switch (explicitTarget.type) {
+      case "booking":
+        return { targetType: "booking" as const, targetId: explicitTarget.bookingId }
+      case "invoice":
+        return { targetType: "invoice" as const, targetId: explicitTarget.invoiceId }
+      case "booking_payment_schedule":
+        return {
+          targetType: "booking_payment_schedule" as const,
+          targetId: explicitTarget.bookingPaymentScheduleId,
+        }
+      case "booking_guarantee":
+        return {
+          targetType: "booking_guarantee" as const,
+          targetId: explicitTarget.bookingGuaranteeId,
+        }
+      case "flight_order":
+        return { targetType: "flight_order" as const, targetId: explicitTarget.flightOrderId }
+      case "legacy_order":
+        return { targetType: "order" as const, targetId: explicitTarget.legacyOrderId }
+      case "program":
+        return { targetType: "other" as const, targetId: explicitTarget.programId }
+      case "supplier_settlement":
+        return { targetType: "other" as const, targetId: explicitTarget.supplierSettlementId }
+      case "channel_settlement":
+        return { targetType: "other" as const, targetId: explicitTarget.channelSettlementId }
+      case "provider_reference":
+        return { targetType: "other" as const, targetId: explicitTarget.reference }
+    }
+  }
+
+  const legacyOrderId =
+    input.legacyOrderId ??
+    ("orderId" in input ? (input as { orderId?: string | null }).orderId : null)
+
   if (input.targetType && input.targetType !== "other") {
     return {
       targetType: input.targetType,
@@ -882,7 +918,7 @@ export function derivePaymentSessionTarget(
         (input.targetType === "booking"
           ? input.bookingId
           : input.targetType === "order"
-            ? input.orderId
+            ? legacyOrderId
             : input.targetType === "invoice"
               ? input.invoiceId
               : input.targetType === "booking_payment_schedule"
@@ -905,8 +941,8 @@ export function derivePaymentSessionTarget(
   if (input.invoiceId) {
     return { targetType: "invoice" as const, targetId: input.invoiceId }
   }
-  if (input.orderId) {
-    return { targetType: "order" as const, targetId: input.orderId }
+  if (legacyOrderId) {
+    return { targetType: "order" as const, targetId: legacyOrderId }
   }
   if (input.bookingId) {
     return { targetType: "booking" as const, targetId: input.bookingId }
@@ -1020,7 +1056,7 @@ export interface PaymentCompletedEvent {
   targetType: (typeof paymentSessions.$inferSelect)["targetType"]
   targetId: string | null
   bookingId: string | null
-  orderId: string | null
+  legacyOrderId: string | null
   invoiceId: string | null
   bookingPaymentScheduleId: string | null
   bookingGuaranteeId: string | null
@@ -1081,7 +1117,7 @@ export function buildPaymentCompletedEvent(
     targetType: session.targetType,
     targetId: session.targetId,
     bookingId: session.bookingId,
-    orderId: session.orderId,
+    legacyOrderId: session.orderId,
     invoiceId: session.invoiceId,
     bookingPaymentScheduleId: session.bookingPaymentScheduleId,
     bookingGuaranteeId: session.bookingGuaranteeId,

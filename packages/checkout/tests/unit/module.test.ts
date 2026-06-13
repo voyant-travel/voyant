@@ -32,7 +32,7 @@ describe("createCheckoutHonoModule", () => {
 
     module.bootstrap?.({ bindings, container })
 
-    expect(resolveProviders).toHaveBeenCalledTimes(1)
+    expect(resolveProviders).toHaveBeenCalledTimes(2)
     expect(resolvePaymentStarters).toHaveBeenCalledTimes(1)
     expect(resolveBankTransferDetails).toHaveBeenCalledTimes(1)
     const runtime = container.resolve(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY)

@@ -40,7 +40,7 @@ Mounted as a finance extension, the package exposes:
 
 ## Checkout integration
 
-If you use `@voyantjs/checkout`, the package also exports
+If you use Finance-owned checkout collection routes, the package also exports
 `createNetopiaCheckoutStarter()`. That lets checkout create the payment session
 and start the Netopia redirect flow in one request while keeping provider
 startup optional in core checkout.

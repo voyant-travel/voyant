@@ -352,7 +352,7 @@ export function previewCheckoutCollection(
 ) {
   const parsed = previewCheckoutCollectionSchema.parse(input)
   return storefrontFetchWithValidation(
-    `/v1/public/checkout/bookings/${encodeURIComponent(bookingId)}/collection-plan`,
+    `/v1/public/finance/bookings/${encodeURIComponent(bookingId)}/collection-plan`,
     checkoutCollectionPlanResponseSchema,
     client,
     { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
@@ -367,7 +367,7 @@ export function initiateCheckoutCollection(
 ) {
   const parsed = initiateCheckoutCollectionSchema.parse(input)
   return storefrontFetchWithValidation(
-    `/v1/public/checkout/bookings/${encodeURIComponent(bookingId)}/initiate-collection`,
+    `/v1/public/finance/bookings/${encodeURIComponent(bookingId)}/initiate-collection`,
     initiatedCheckoutCollectionResponseSchema,
     client,
     { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
@@ -381,7 +381,7 @@ export function bootstrapCheckoutCollection(
 ) {
   const parsed = bootstrapCheckoutCollectionSchema.parse(input)
   return storefrontFetchWithValidation(
-    "/v1/public/checkout/collections/bootstrap",
+    "/v1/public/finance/collections/bootstrap",
     bootstrappedCheckoutCollectionResponseSchema,
     client,
     { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },

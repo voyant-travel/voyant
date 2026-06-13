@@ -26,7 +26,7 @@ import {
   type EmbeddingProvider,
   executeSemanticSearch,
 } from "@voyantjs/catalog"
-import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
+import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
@@ -36,15 +36,20 @@ import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
+import type {
+  CheckoutNotificationDelivery,
+  CheckoutPaymentStarter,
+} from "@voyantjs/finance/checkout"
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
 import { identityHonoModule } from "@voyantjs/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyantjs/inventory"
-import { inventoryAuthoringExtension } from "@voyantjs/inventory/authoring/extension"
 import { createLegalHonoModule } from "@voyantjs/legal"
 import {
   createDefaultBookingDocumentAttachment,
+  createNotificationService,
   createNotificationsHonoModule,
+  notificationsService,
 } from "@voyantjs/notifications"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
@@ -86,6 +91,42 @@ const legacyTransactionsOfferWriter: SellabilityOfferWriter = {
   createOfferBundle: (db, input) => transactionsService.createOfferBundle(db, input),
   updateOfferMetadata: (db, offerId, metadata) =>
     transactionsService.updateOffer(db, offerId, { metadata }),
+}
+
+type NotificationDeliveryLike = {
+  id: string
+  templateSlug: string | null
+  channel: "email" | "sms"
+  provider: string
+  status: "pending" | "sent" | "failed" | "cancelled"
+  toAddress: string
+  subject: string | null
+  sentAt: Date | string | null
+  failedAt: Date | string | null
+  errorMessage: string | null
+}
+
+function optionalDateTime(value: Date | string | null | undefined) {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString() : value
+}
+
+function toCheckoutNotificationDelivery(
+  delivery: NotificationDeliveryLike | null,
+): CheckoutNotificationDelivery | null {
+  if (!delivery) return null
+  return {
+    id: delivery.id,
+    templateSlug: delivery.templateSlug,
+    channel: delivery.channel,
+    provider: delivery.provider,
+    status: delivery.status,
+    toAddress: delivery.toAddress,
+    subject: delivery.subject,
+    sentAt: optionalDateTime(delivery.sentAt),
+    failedAt: optionalDateTime(delivery.failedAt),
+    errorMessage: delivery.errorMessage,
+  }
 }
 
 /**
@@ -169,7 +210,6 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/storefront",
     "@voyantjs/customer-portal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/checkout",
     "@voyantjs/travel-composer",
   ],
   extensions: [
@@ -267,6 +307,37 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
         invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
           bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
+        resolveNotificationDispatcher: (bindings) => {
+          const providers = capabilities.resolveNotificationProviders(bindings)
+          if (providers.length === 0) return null
+
+          const dispatcher = createNotificationService(providers)
+          return {
+            sendInvoiceNotification: async (db, invoiceId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendInvoiceNotification(
+                  db,
+                  dispatcher,
+                  invoiceId,
+                  input,
+                ),
+              ),
+            sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendPaymentSessionNotification(
+                  db,
+                  dispatcher,
+                  paymentSessionId,
+                  input,
+                ),
+              ),
+          }
+        },
+        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
+          netopia: capabilities.netopiaCheckoutStarter,
+        }),
+        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
+        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
       }),
     "@voyantjs/legal": ({ capabilities }) =>
       createLegalHonoModule({
@@ -334,15 +405,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveProviders: capabilities.resolveNotificationProviders,
         email: { subject: "Your verification code" },
       }),
-    "@voyantjs/checkout": ({ capabilities }) =>
-      createCheckoutHonoModule({
-        resolveProviders: capabilities.resolveNotificationProviders,
-        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-          netopia: capabilities.netopiaCheckoutStarter,
-        }),
-        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-      }),
     "@voyantjs/travel-composer": ({ capabilities }) =>
       createTravelComposerHonoModule({
         ...capabilities.createTravelComposerRoutesOptions(),
@@ -353,7 +415,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
     "@voyantjs/finance/bookings-create-extension": () => bookingsCreateExtension,
     "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
-    "@voyantjs/catalog-authoring/extension": () => inventoryAuthoringExtension,
+    "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
     "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
     "@voyantjs/transactions/booking-extension": () => transactionsBookingExtension,
     "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,

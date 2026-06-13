@@ -1,4 +1,4 @@
-import type { CheckoutBankTransferDetails } from "@voyantjs/checkout"
+import type { CheckoutBankTransferDetails } from "@voyantjs/finance/checkout"
 
 interface OperatorProfileLike {
   name?: string | null

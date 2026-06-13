@@ -14,6 +14,9 @@
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
+    "./checkout": "./src/checkout.ts",
+    "./checkout-ui": "./src/checkout-ui.ts",
+    "./checkout-i18n": "./src/checkout-i18n/index.ts",
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
@@ -135,6 +138,21 @@
         "types": "./dist/client.d.ts",
         "import": "./dist/client.js",
         "default": "./dist/client.js"
+      },
+      "./checkout": {
+        "types": "./dist/checkout.d.ts",
+        "import": "./dist/checkout.js",
+        "default": "./dist/checkout.js"
+      },
+      "./checkout-ui": {
+        "types": "./dist/checkout-ui.d.ts",
+        "import": "./dist/checkout-ui.js",
+        "default": "./dist/checkout-ui.js"
+      },
+      "./checkout-i18n": {
+        "types": "./dist/checkout-i18n/index.d.ts",
+        "import": "./dist/checkout-i18n/index.js",
+        "default": "./dist/checkout-i18n/index.js"
       },
       "./query-keys": {
         "types": "./dist/query-keys.d.ts",

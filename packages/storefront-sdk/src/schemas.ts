@@ -18,7 +18,7 @@ import {
   initiateCheckoutCollectionSchema,
   initiatedCheckoutCollectionSchema,
   previewCheckoutCollectionSchema,
-} from "@voyantjs/checkout/validation"
+} from "@voyantjs/finance/checkout-validation"
 import {
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionBootstrapSchema,

@@ -122,7 +122,8 @@ export const app = createApp<CloudflareBindings>({
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",
-    "/v1/public/checkout",
+    "/v1/public/finance/bookings",
+    "/v1/public/finance/collections",
     // Invitation redemption is reachable without a session.
     "/v1/public/invitations",
     // Payment-link landing page reads the session via TypeID (unguessable)
