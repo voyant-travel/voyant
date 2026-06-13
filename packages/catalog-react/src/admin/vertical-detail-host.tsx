@@ -6,7 +6,7 @@ import {
   useAdminNavigate,
   useOperatorAdminMessages,
 } from "@voyantjs/admin"
-import { useSuppliers } from "@voyantjs/suppliers-react"
+import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
 import { useMemo, useState } from "react"
 
 import { type CatalogDetailSurface, catalogSurfaceVertical } from "../catalog-surfaces.js"

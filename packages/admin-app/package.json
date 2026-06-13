@@ -28,7 +28,6 @@
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -45,7 +44,6 @@
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
@@ -108,9 +106,6 @@
       "optional": true
     },
     "@voyantjs/inventory-react": {
-      "optional": true
-    },
-    "@voyantjs/products-react": {
       "optional": true
     }
   }

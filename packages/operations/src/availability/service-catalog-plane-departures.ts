@@ -1,7 +1,7 @@
 /**
  * Projection extension that aggregates `availability_slots` rows into the
  * departure-facet fields declared by `productDeparturesCatalogPolicy`
- * (in `@voyantjs/products/catalog-policy-departures`).
+ * (in `@voyantjs/inventory/catalog-policy-departures`).
  *
  * Lives in `@voyantjs/operations/availability` because:
  *   - The data lives here.
@@ -40,7 +40,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import type {
   IndexerSlice,
   ProductProjectionExtension,
-} from "@voyantjs/products/service-catalog-plane"
+} from "@voyantjs/inventory/service-catalog-plane"
 import { and, asc, eq, gt, lt } from "drizzle-orm"
 
 import { availabilitySlots } from "./schema.js"

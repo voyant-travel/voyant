@@ -1,10 +1,13 @@
-import { availabilityPickupPoints, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { facilities } from "@voyantjs/facilities/schema"
 import { handleApiError } from "@voyantjs/hono"
 import { optionExtraConfigs, productExtras } from "@voyantjs/inventory/extras"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
+import {
+  availabilityPickupPoints,
+  availabilityStartTimes,
+} from "@voyantjs/operations/availability/schema"
+import { facilities } from "@voyantjs/operations/places/schema"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, expect } from "vitest"
 import { pricingRoutes } from "../../src/routes.js"

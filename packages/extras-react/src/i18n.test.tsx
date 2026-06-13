@@ -1,4 +1,4 @@
-import type { ProductRecord } from "@voyantjs/products-react"
+import type { ProductRecord } from "@voyantjs/inventory-react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -40,7 +40,7 @@ const product = {
   updatedAt: "2026-01-01T00:00:00.000Z",
 } satisfies ProductRecord
 
-vi.mock("@voyantjs/products-react", () => ({
+vi.mock("@voyantjs/inventory-react", () => ({
   useProducts: () => ({
     data: { data: [product] },
     isPending: false,

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { useOptionPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
 import { formatMessage } from "@voyantjs/i18n"
-import { useOptionPriceRuleMutation } from "@voyantjs/pricing-react"
 import {
   Badge,
   Button,

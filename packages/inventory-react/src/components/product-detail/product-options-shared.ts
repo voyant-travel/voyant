@@ -4,7 +4,7 @@ import {
   getOptionUnitPriceRulesQueryOptions as getSharedOptionUnitPriceRulesQueryOptions,
   getPriceCatalogsQueryOptions as getSharedPriceCatalogsQueryOptions,
   getPricingCategoriesQueryOptions as getSharedPricingCategoriesQueryOptions,
-} from "@voyantjs/pricing-react"
+} from "@voyantjs/commerce-react/pricing"
 import {
   getOptionUnitsQueryOptions as getSharedOptionUnitsQueryOptions,
   getProductOptionsQueryOptions as getSharedProductOptionsQueryOptions,

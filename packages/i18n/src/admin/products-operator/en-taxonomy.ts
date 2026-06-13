@@ -40,5 +40,5 @@ export const operatorAdminProductsMessagesEnTaxonomy = {
     comboboxLoading: "Loading…",
     comboboxEmpty: "No product categories found.",
   },
-  // tags: removed — owned by `@voyantjs/products-react/ui`'s tag-* primitives.
+  // tags: removed — owned by `@voyantjs/inventory-react/ui`'s tag-* primitives.
 }

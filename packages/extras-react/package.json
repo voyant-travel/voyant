@@ -35,7 +35,7 @@
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/extras": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -49,7 +49,7 @@
     "@voyantjs/catalog-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -71,7 +71,7 @@
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",

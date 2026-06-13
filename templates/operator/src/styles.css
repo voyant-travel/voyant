@@ -22,7 +22,6 @@
 @source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/legal-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/inventory-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/products-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/distribution-react/dist/suppliers/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/operations-react/dist/resources/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
@@ -42,7 +41,6 @@
 @source "../../../packages/flights-react/src/**/*.{ts,tsx}";
 @source "../../../packages/legal-react/src/**/*.{ts,tsx}";
 @source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
-@source "../../../packages/products-react/src/**/*.{ts,tsx}";
 @source "../../../packages/distribution-react/src/suppliers/**/*.{ts,tsx}";
 @source "../../../packages/operations-react/src/resources/**/*.{ts,tsx}";
 

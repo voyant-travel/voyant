@@ -1,9 +1,9 @@
-import { formatMessage } from "@voyantjs/i18n"
 import {
   type ExtraPriceRuleRecord,
   useExtraPriceRuleMutation,
   useExtraPriceRules,
-} from "@voyantjs/pricing-react"
+} from "@voyantjs/commerce-react/pricing"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,

@@ -57,8 +57,8 @@
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -95,10 +95,10 @@
     "@voyantjs/legal-react": {
       "optional": true
     },
-    "@voyantjs/pricing-react": {
+    "@voyantjs/commerce-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -134,8 +134,8 @@
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",

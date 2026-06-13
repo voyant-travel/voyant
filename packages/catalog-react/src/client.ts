@@ -1,5 +1,5 @@
 /**
- * Re-exports the shared HTTP plumbing from `@voyantjs/products-react/client`
+ * Re-exports the shared HTTP plumbing from `@voyantjs/inventory-react/client`
  * so the catalog-react package doesn't duplicate the fetcher / error-shaping
  * logic. If/when this drifts, extract into `@voyantjs/react/client` and
  * point both packages at it.

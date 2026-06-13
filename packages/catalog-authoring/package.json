@@ -22,12 +22,12 @@
     "@voyantjs/inventory": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/availability": "workspace:^",
+    "@voyantjs/operations": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/pricing": "workspace:^",
-    "@voyantjs/products": "workspace:^",
+    "@voyantjs/commerce": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "@voyantjs/voyant-test-utils": "workspace:^",
@@ -74,9 +74,9 @@
     "schema": "./schema",
     "requiresSchemas": [
       "@voyantjs/db",
-      "@voyantjs/products",
-      "@voyantjs/pricing",
-      "@voyantjs/availability",
+      "@voyantjs/inventory",
+      "@voyantjs/commerce",
+      "@voyantjs/operations",
       "@voyantjs/extras"
     ]
   }

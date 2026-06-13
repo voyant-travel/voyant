@@ -1,6 +1,6 @@
 "use client"
 
-import { type ProductRecord, useProduct, useProducts } from "@voyantjs/products-react"
+import { type ProductRecord, useProduct, useProducts } from "@voyantjs/inventory-react"
 import {
   Combobox,
   ComboboxCollection,

@@ -56,7 +56,7 @@ export function setupDistributionRoutes() {
   }
 
   async function seedProduct() {
-    const { products } = await import("@voyantjs/products/schema")
+    const { products } = await import("@voyantjs/inventory/schema")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(products)
       .values({ name: `Test Product ${Date.now()}`, sellCurrency: "USD" })

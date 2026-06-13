@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: bookings; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { handleApiError } from "@voyantjs/hono"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
 import { asc, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"

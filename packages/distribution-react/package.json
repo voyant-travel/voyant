@@ -64,7 +64,7 @@
     "react-dom": "^19.0.0",
     "zod": "^4.0.0",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "react-hook-form": "^7.60.0"
   },
@@ -81,7 +81,7 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/relationships-react": {
@@ -113,7 +113,7 @@
     "vitest": "^4.1.2",
     "zod": "^4.3.6",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
     "react-hook-form": "^7.60.0"
   },

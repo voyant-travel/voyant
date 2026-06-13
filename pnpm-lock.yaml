@@ -526,9 +526,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/facilities':
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../facilities
+        version: link:../operations
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -626,9 +626,9 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
-      '@voyantjs/products-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
@@ -738,9 +738,6 @@ importers:
       '@voyantjs/inventory-react':
         specifier: workspace:^
         version: link:../inventory-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1094,9 +1091,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -1159,6 +1156,9 @@ importers:
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
+      '@voyantjs/commerce-react':
+        specifier: workspace:^
+        version: link:../commerce-react
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
@@ -1171,18 +1171,15 @@ importers:
       '@voyantjs/identity-react':
         specifier: workspace:^
         version: link:../identity-react
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyantjs/legal-react':
         specifier: workspace:^
         version: link:../legal-react
       '@voyantjs/operations-react':
         specifier: workspace:^
         version: link:../operations-react
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../pricing-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
@@ -1260,9 +1257,9 @@ importers:
         specifier: workspace:^
         version: link:../inventory
     devDependencies:
-      '@voyantjs/availability':
+      '@voyantjs/commerce':
         specifier: workspace:^
-        version: link:../availability
+        version: link:../commerce
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
@@ -1272,12 +1269,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/pricing':
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../pricing
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
+        version: link:../operations
       '@voyantjs/voyant-test-utils':
         specifier: workspace:^
         version: link:../test-utils
@@ -1340,15 +1334,15 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyantjs/markets-react':
+      '@voyantjs/commerce-react':
         specifier: workspace:^
-        version: link:../markets-react
-      '@voyantjs/products-react':
+        version: link:../commerce-react
+      '@voyantjs/distribution-react':
         specifier: workspace:^
-        version: link:../products-react
-      '@voyantjs/suppliers-react':
+        version: link:../distribution-react
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../suppliers-react
+        version: link:../inventory-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1647,9 +1641,9 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
-      '@voyantjs/products-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1973,12 +1967,12 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/availability':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../availability
-      '@voyantjs/products':
+        version: link:../inventory
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../products
+        version: link:../operations
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -2016,9 +2010,9 @@ importers:
       '@voyantjs/distribution':
         specifier: workspace:^
         version: link:../distribution
-      '@voyantjs/products-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
@@ -2177,9 +2171,9 @@ importers:
       '@voyantjs/extras':
         specifier: workspace:^
         version: link:../extras
-      '@voyantjs/products-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2294,12 +2288,12 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/availability':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../availability
-      '@voyantjs/products':
+        version: link:../inventory
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../products
+        version: link:../operations
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -2353,18 +2347,18 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
+      '@voyantjs/distribution-react':
+        specifier: workspace:^
+        version: link:../distribution-react
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyantjs/operations-react':
         specifier: workspace:^
         version: link:../operations-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
-      '@voyantjs/suppliers-react':
-        specifier: workspace:^
-        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2473,12 +2467,12 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
-      '@voyantjs/checkout-react':
-        specifier: workspace:^
-        version: link:../checkout-react
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
+      '@voyantjs/finance-react':
+        specifier: workspace:^
+        version: link:../finance-react
       '@voyantjs/flights':
         specifier: workspace:^
         version: link:../flights
@@ -2695,18 +2689,18 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
+      '@voyantjs/distribution-react':
+        specifier: workspace:^
+        version: link:../distribution-react
       '@voyantjs/identity':
         specifier: workspace:^
         version: link:../identity
-      '@voyantjs/products-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
-      '@voyantjs/suppliers-react':
-        specifier: workspace:^
-        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2743,6 +2737,9 @@ importers:
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyantjs/commerce':
+        specifier: workspace:^
+        version: link:../commerce
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -2758,9 +2755,6 @@ importers:
       '@voyantjs/operations':
         specifier: workspace:^
         version: link:../operations
-      '@voyantjs/pricing':
-        specifier: workspace:^
-        version: link:../pricing
       '@voyantjs/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
@@ -2838,6 +2832,12 @@ importers:
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
+      '@voyantjs/commerce-react':
+        specifier: workspace:^
+        version: link:../commerce-react
+      '@voyantjs/distribution-react':
+        specifier: workspace:^
+        version: link:../distribution-react
       '@voyantjs/extras-react':
         specifier: workspace:^
         version: link:../extras-react
@@ -2850,21 +2850,12 @@ importers:
       '@voyantjs/inventory':
         specifier: workspace:^
         version: link:../inventory
-      '@voyantjs/markets-react':
-        specifier: workspace:^
-        version: link:../markets-react
       '@voyantjs/operations':
         specifier: workspace:^
         version: link:../operations
       '@voyantjs/operations-react':
         specifier: workspace:^
         version: link:../operations-react
-      '@voyantjs/pricing-react':
-        specifier: workspace:^
-        version: link:../pricing-react
-      '@voyantjs/suppliers-react':
-        specifier: workspace:^
-        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3006,24 +2997,21 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
+      '@voyantjs/commerce-react':
+        specifier: workspace:^
+        version: link:../commerce-react
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyantjs/legal':
         specifier: workspace:^
         version: link:../legal
-      '@voyantjs/markets-react':
-        specifier: workspace:^
-        version: link:../markets-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
-      '@voyantjs/suppliers-react':
-        specifier: workspace:^
-        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3067,9 +3055,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -3247,9 +3235,6 @@ importers:
 
   packages/octo:
     dependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -3262,9 +3247,12 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
+      '@voyantjs/operations':
+        specifier: workspace:^
+        version: link:../operations
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -3306,9 +3294,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -3346,12 +3334,12 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:^
         version: link:../bookings-react
+      '@voyantjs/inventory-react':
+        specifier: workspace:^
+        version: link:../inventory-react
       '@voyantjs/operations':
         specifier: workspace:^
         version: link:../operations
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3606,9 +3594,6 @@ importers:
         specifier: workspace:^
         version: link:../commerce
     devDependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3618,18 +3603,15 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/facilities':
-        specifier: workspace:^
-        version: link:../facilities
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
       '@voyantjs/inventory':
         specifier: workspace:^
         version: link:../inventory
-      '@voyantjs/products':
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../products
+        version: link:../operations
       '@voyantjs/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
@@ -3800,9 +3782,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
       '@voyantjs/voyant-test-utils':
         specifier: workspace:^
         version: link:../test-utils
@@ -4145,9 +4127,6 @@ importers:
         specifier: workspace:^
         version: link:../commerce
     devDependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
@@ -4160,15 +4139,15 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../inventory
       '@voyantjs/markets':
         specifier: workspace:^
         version: link:../markets
-      '@voyantjs/pricing':
+      '@voyantjs/operations':
         specifier: workspace:^
-        version: link:../pricing
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
+        version: link:../operations
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -4209,12 +4188,9 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
-      '@voyantjs/markets-react':
+      '@voyantjs/inventory-react':
         specifier: workspace:^
-        version: link:../markets-react
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../products-react
+        version: link:../inventory-react
       '@voyantjs/react':
         specifier: workspace:^
         version: link:../react
@@ -4291,15 +4267,15 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/products':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../products
+        version: link:../inventory
+      '@voyantjs/operations':
+        specifier: workspace:^
+        version: link:../operations
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -5255,9 +5231,6 @@ importers:
       '@voyantjs/products':
         specifier: workspace:^
         version: link:../../packages/products
-      '@voyantjs/products-react':
-        specifier: workspace:^
-        version: link:../../packages/products-react
       '@voyantjs/promotions':
         specifier: workspace:^
         version: link:../../packages/promotions

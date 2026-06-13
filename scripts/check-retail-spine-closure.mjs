@@ -78,7 +78,7 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/catalog-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason: "catalog admin components can attach operated Inventory UI when a host installs it",
   },
   {
@@ -91,21 +91,21 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/sellability-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason:
       "sellability admin components can attach operated Inventory pickers when a host installs them",
   },
   {
     from: "@voyantjs/commerce-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason:
       "Commerce React owner-path components can attach operated Inventory pickers when a host installs them",
   },
   {
     from: "@voyantjs/distribution-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason:
       "Distribution React external-reference owner-path components can attach operated Inventory pickers when a host installs them",
   },
@@ -119,7 +119,7 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason:
       "booking admin components can attach operated Inventory summaries when a host installs them",
   },
@@ -133,16 +133,9 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyantjs/finance-react",
     type: "peerDependencies",
-    to: "@voyantjs/products-react",
+    to: "@voyantjs/inventory-react",
     reason:
       "finance admin components can attach operated Inventory context when a host installs it",
-  },
-  {
-    from: "@voyantjs/admin-app",
-    type: "peerDependencies",
-    to: "@voyantjs/products-react",
-    reason:
-      "the packaged admin shell can mount operated Inventory extensions when a host installs them",
   },
   {
     from: "@voyantjs/admin-app",

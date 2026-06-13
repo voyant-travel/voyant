@@ -1,7 +1,7 @@
-import { useOptionPriceRuleMutation } from "@voyantjs/pricing-react"
-import { CancellationPolicyCombobox } from "@voyantjs/pricing-react/components/cancellation-policy-combobox"
-import { PriceCatalogCombobox } from "@voyantjs/pricing-react/components/price-catalog-combobox"
-import { PriceScheduleCombobox } from "@voyantjs/pricing-react/components/price-schedule-combobox"
+import { useOptionPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
+import { CancellationPolicyCombobox } from "@voyantjs/commerce-react/pricing/components/cancellation-policy-combobox"
+import { PriceCatalogCombobox } from "@voyantjs/commerce-react/pricing/components/price-catalog-combobox"
+import { PriceScheduleCombobox } from "@voyantjs/commerce-react/pricing/components/price-schedule-combobox"
 import {
   Button,
   Input,

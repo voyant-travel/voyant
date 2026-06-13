@@ -1,5 +1,5 @@
 import type { ChannelDetail } from "@voyantjs/distribution-react"
-import type { ProductRecord } from "@voyantjs/products-react"
+import type { ProductRecord } from "@voyantjs/inventory-react"
 import type { SellabilityPolicyRecord } from "../index.js"
 
 export type ChannelKind = ChannelDetail["kind"]

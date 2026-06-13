@@ -1,6 +1,6 @@
 "use client"
 
-import { useProduct, useProductMedia } from "@voyantjs/products-react"
+import { useProduct, useProductMedia } from "@voyantjs/inventory-react"
 import { ImageIcon } from "lucide-react"
 import * as React from "react"
 import type { BookingsUiMessages } from "../i18n/messages.js"

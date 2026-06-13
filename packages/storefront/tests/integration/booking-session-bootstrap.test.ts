@@ -1,4 +1,3 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   departurePriceOverrides,
   optionPriceRules,
@@ -8,7 +7,8 @@ import {
 import { cleanupTestDb, closeTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { bookingPaymentSchedules } from "@voyantjs/finance/schema"
 import { handleApiError } from "@voyantjs/hono"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
+import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"

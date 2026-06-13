@@ -1,8 +1,8 @@
 "use client"
 
+import type { SupplierCustomerPaymentPolicy } from "@voyantjs/distribution-react/suppliers"
+import type { SupplierDetailHostSlotContext } from "@voyantjs/distribution-react/suppliers/admin"
 import type { PaymentPolicy } from "@voyantjs/finance"
-import type { SupplierCustomerPaymentPolicy } from "@voyantjs/suppliers-react"
-import type { SupplierDetailHostSlotContext } from "@voyantjs/suppliers-react/admin"
 import {
   Button,
   Card,
@@ -22,7 +22,7 @@ import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
  * Props of the supplier payment-policy widget: exactly the slot context the
  * supplier detail host hands to `supplier.details.payment-policy` widget
  * contributions (see `supplierDetailPaymentPolicySlot` in
- * `@voyantjs/suppliers-react/admin`).
+ * `@voyantjs/distribution-react/suppliers/admin`).
  */
 export type SupplierPaymentPolicyWidgetProps = SupplierDetailHostSlotContext
 
@@ -30,7 +30,7 @@ export type SupplierPaymentPolicyWidgetProps = SupplierDetailHostSlotContext
  * Finance-owned customer-payment-policy card for the supplier detail page,
  * delivered as a widget contribution on `supplier.details.payment-policy`
  * (packaged-admin RFC §4.7 cycle resolution: this package depends on
- * `@voyantjs/suppliers-react/ui`, so the supplier host cannot import the
+ * `@voyantjs/distribution-react/suppliers/ui`, so the supplier host cannot import the
  * payment-policy form/preview directly — the contribution travels the other
  * way through the admin extension registry).
  */

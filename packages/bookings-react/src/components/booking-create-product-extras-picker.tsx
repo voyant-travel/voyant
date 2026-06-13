@@ -1,7 +1,10 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
-import { getExtraPriceRulesQueryOptions, useVoyantPricingContext } from "@voyantjs/pricing-react"
+import {
+  getExtraPriceRulesQueryOptions,
+  useVoyantPricingContext,
+} from "@voyantjs/commerce-react/pricing"
 import { Button, Label } from "@voyantjs/ui/components"
 import { type ProductExtraRecord, useProductExtras } from "../extras.js"
 import { useBookingsUiI18nOrDefault } from "../i18n/provider.js"

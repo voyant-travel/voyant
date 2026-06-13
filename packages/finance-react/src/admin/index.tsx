@@ -16,11 +16,11 @@ import {
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
 } from "@voyantjs/bookings-react/admin"
-import { defaultFetcher } from "@voyantjs/react"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
-// peer-depends on `@voyantjs/suppliers-react/ui`.
-import { supplierDetailPaymentPolicySlot } from "@voyantjs/suppliers-react/admin"
+// peer-depends on `@voyantjs/distribution-react/suppliers/ui`.
+import { supplierDetailPaymentPolicySlot } from "@voyantjs/distribution-react/suppliers/admin"
+import { defaultFetcher } from "@voyantjs/react"
 import type { ComponentType } from "react"
 import * as React from "react"
 

@@ -1,4 +1,7 @@
-import { type PricingCategoryRecord, usePricingCategoryMutation } from "@voyantjs/pricing-react"
+import {
+  type PricingCategoryRecord,
+  usePricingCategoryMutation,
+} from "@voyantjs/commerce-react/pricing"
 import {
   Button,
   Dialog,

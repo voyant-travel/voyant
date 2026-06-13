@@ -6,14 +6,14 @@ import {
   type PaymentStepCapabilities,
   type PaymentStepExtraOption,
   type SavedPaymentAccount,
-} from "@voyantjs/checkout-react/ui"
+} from "@voyantjs/finance-react/checkout-ui"
 import type { PaymentIntent } from "@voyantjs/flights/contract/types"
 import { Landmark } from "lucide-react"
 import { useMemo } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 // Re-export the canonical types so existing flights-ui consumers don't
-// need to import from `@voyantjs/checkout-react/ui` directly.
+// need to import from `@voyantjs/finance-react/checkout-ui` directly.
 export type { PaymentStepCapabilities, SavedPaymentAccount }
 /** Back-compat alias — older callers used this name; same shape. */
 export type SavedPaymentMethod = SavedPaymentAccount
@@ -39,7 +39,7 @@ export interface FlightPaymentStepProps {
 }
 
 /**
- * Flight-vertical wrapper around `<PaymentStep>` from `@voyantjs/checkout-react/ui`.
+ * Flight-vertical wrapper around `<PaymentStep>` from `@voyantjs/finance-react/checkout-ui`.
  * Maps the universal `PaymentChoice` event into the flight contract's
  * `PaymentIntent` shape, and contributes the "Issue ticket on agency
  * credit" extra option (flight-specific).

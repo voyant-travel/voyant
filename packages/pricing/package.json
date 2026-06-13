@@ -24,14 +24,12 @@
     "@voyantjs/commerce": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/availability": "workspace:^",
+    "@voyantjs/operations": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
-    "@voyantjs/facilities": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/products-contracts": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "drizzle-orm": "^0.45.2",

@@ -6,7 +6,7 @@ import {
   productCategoryProducts,
   productDestinations,
   products,
-} from "@voyantjs/products/schema"
+} from "@voyantjs/inventory/schema"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"

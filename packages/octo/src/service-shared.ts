@@ -1,4 +1,3 @@
-import type { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import type { bookingFulfillments, bookings } from "@voyantjs/bookings/schema"
 import type {
   optionUnits,
@@ -7,7 +6,11 @@ import type {
   productLocations,
   productOptions,
   products,
-} from "@voyantjs/products/schema"
+} from "@voyantjs/inventory/schema"
+import type {
+  availabilitySlots,
+  availabilityStartTimes,
+} from "@voyantjs/operations/availability/schema"
 import type { z } from "zod"
 
 import type {

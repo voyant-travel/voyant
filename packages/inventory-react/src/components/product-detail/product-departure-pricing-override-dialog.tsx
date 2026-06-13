@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useDeparturePriceOverrideMutation } from "@voyantjs/pricing-react"
+import { useDeparturePriceOverrideMutation } from "@voyantjs/commerce-react/pricing"
 import {
   Button,
   Input,

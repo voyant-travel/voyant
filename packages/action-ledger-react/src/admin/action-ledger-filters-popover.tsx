@@ -3,7 +3,7 @@
 
 import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
 import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
-import { type ProductRecord, useProducts } from "@voyantjs/products-react"
+import { type ProductRecord, useProducts } from "@voyantjs/inventory-react"
 import {
   type OrganizationRecord,
   type PersonRecord,

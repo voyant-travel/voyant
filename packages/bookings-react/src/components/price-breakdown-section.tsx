@@ -1,6 +1,6 @@
 "use client"
 
-import { useProduct } from "@voyantjs/products-react"
+import { useProduct } from "@voyantjs/inventory-react"
 import { Button, Label, Textarea } from "@voyantjs/ui/components"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import * as React from "react"

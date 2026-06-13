@@ -1,6 +1,6 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
+import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it } from "vitest"
 

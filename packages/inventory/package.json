@@ -49,7 +49,7 @@
     "@voyantjs/db": "workspace:^",
     "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/pricing": "workspace:^",
+    "@voyantjs/commerce": "workspace:^",
     "@voyantjs/products-contracts": "workspace:^",
     "@voyantjs/storage": "workspace:^",
     "@voyantjs/utils": "workspace:^",

@@ -8,7 +8,9 @@ import {
   resolveBookingExtraLines,
   travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
+import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/commerce-react/pricing"
 import { useAddresses } from "@voyantjs/identity-react"
+import { useProduct } from "@voyantjs/inventory-react"
 import {
   availabilityQueryKeys,
   getSlotQueryOptions,
@@ -16,8 +18,6 @@ import {
   useSlotUnitAvailability,
   useVoyantAvailabilityContext,
 } from "@voyantjs/operations-react/availability"
-import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/pricing-react"
-import { useProduct } from "@voyantjs/products-react"
 import { useOrganization, usePerson } from "@voyantjs/relationships-react"
 import {
   Button,
