@@ -10,6 +10,10 @@
     "./contracts/validation": "./src/contracts/validation.ts",
     "./contracts/routes": "./src/contracts/routes.ts",
     "./contracts/service": "./src/contracts/service.ts",
+    "./terms": "./src/terms/index.ts",
+    "./terms/validation": "./src/terms/validation.ts",
+    "./terms/routes": "./src/terms/routes.ts",
+    "./terms/service": "./src/terms/service.ts",
     "./policies": "./src/policies/index.ts",
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
@@ -80,6 +84,26 @@
         "types": "./dist/contracts/service.d.ts",
         "import": "./dist/contracts/service.js",
         "default": "./dist/contracts/service.js"
+      },
+      "./terms": {
+        "types": "./dist/terms/index.d.ts",
+        "import": "./dist/terms/index.js",
+        "default": "./dist/terms/index.js"
+      },
+      "./terms/validation": {
+        "types": "./dist/terms/validation.d.ts",
+        "import": "./dist/terms/validation.js",
+        "default": "./dist/terms/validation.js"
+      },
+      "./terms/routes": {
+        "types": "./dist/terms/routes.d.ts",
+        "import": "./dist/terms/routes.js",
+        "default": "./dist/terms/routes.js"
+      },
+      "./terms/service": {
+        "types": "./dist/terms/service.d.ts",
+        "import": "./dist/terms/service.js",
+        "default": "./dist/terms/service.js"
       },
       "./policies": {
         "types": "./dist/policies/index.d.ts",

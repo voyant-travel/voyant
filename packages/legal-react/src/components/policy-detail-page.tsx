@@ -293,6 +293,7 @@ export function PolicyDetailPage({
                     <TableHead>{f.fields.versionId}</TableHead>
                     <TableHead>{f.fields.personId}</TableHead>
                     <TableHead>{f.fields.bookingId}</TableHead>
+                    <TableHead>{f.fields.target}</TableHead>
                     <TableHead>{f.fields.method}</TableHead>
                     <TableHead>{f.fields.acceptedAt}</TableHead>
                   </TableRow>
@@ -591,10 +592,28 @@ function AcceptanceRow({ acceptance }: { acceptance: LegalPolicyAcceptanceRecord
       <TableCell className="font-mono text-xs">
         {acceptance.bookingId ?? messages.common.noResultsDash}
       </TableCell>
+      <TableCell className="font-mono text-xs">{getAcceptanceTarget(acceptance)}</TableCell>
       <TableCell>{acceptance.method.replace(/_/g, " ")}</TableCell>
       <TableCell>{i18n.formatDateTime(acceptance.acceptedAt)}</TableCell>
     </TableRow>
   )
+}
+
+function getAcceptanceTarget(acceptance: LegalPolicyAcceptanceRecord) {
+  if (acceptance.targetKind === "provider_source_ref") {
+    if (!acceptance.targetProvider && !acceptance.targetSourceRef) return "-"
+    return `${acceptance.targetProvider ?? "provider"}:${acceptance.targetSourceRef ?? ""}`
+  }
+  if (acceptance.targetKind && acceptance.targetId) {
+    return `${acceptance.targetKind}:${acceptance.targetId}`
+  }
+  if (acceptance.legacyTransactionOfferId) {
+    return `legacy_transaction_offer:${acceptance.legacyTransactionOfferId}`
+  }
+  if (acceptance.legacyTransactionOrderId) {
+    return `legacy_transaction_order:${acceptance.legacyTransactionOrderId}`
+  }
+  return "-"
 }
 
 function getAssignmentTargetId(assignment: LegalPolicyAssignmentRecord) {

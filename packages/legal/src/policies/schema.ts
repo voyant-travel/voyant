@@ -11,6 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
+import { legalTargetKindEnum } from "../targets/schema.js"
 
 // ---------- enums ----------
 
@@ -243,8 +244,12 @@ export const policyAcceptances = pgTable(
       .references(() => policyVersions.id, { onDelete: "restrict" }),
     personId: typeIdRef("person_id"),
     bookingId: typeIdRef("booking_id"),
-    orderId: typeIdRef("order_id"),
-    offerId: typeIdRef("offer_id"),
+    targetKind: legalTargetKindEnum("target_kind"),
+    targetId: typeIdRef("target_id"),
+    targetProvider: text("target_provider"),
+    targetSourceRef: text("target_source_ref"),
+    legacyTransactionOfferId: typeIdRef("legacy_transaction_offer_id"),
+    legacyTransactionOrderId: typeIdRef("legacy_transaction_order_id"),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull().defaultNow(),
     acceptedBy: text("accepted_by"),
     method: policyAcceptanceMethodEnum("method").notNull().default("implicit"),
@@ -257,12 +262,18 @@ export const policyAcceptances = pgTable(
     index("idx_policy_acceptances_version").on(table.policyVersionId),
     index("idx_policy_acceptances_person").on(table.personId),
     index("idx_policy_acceptances_booking").on(table.bookingId),
-    index("idx_policy_acceptances_order").on(table.orderId),
-    index("idx_policy_acceptances_offer").on(table.offerId),
+    index("idx_policy_acceptances_target").on(table.targetKind, table.targetId),
+    index("idx_policy_acceptances_provider_source").on(table.targetProvider, table.targetSourceRef),
+    index("idx_policy_acceptances_legacy_transaction_offer").on(table.legacyTransactionOfferId),
+    index("idx_policy_acceptances_legacy_transaction_order").on(table.legacyTransactionOrderId),
     index("idx_policy_acceptances_version_accepted").on(table.policyVersionId, table.acceptedAt),
     index("idx_policy_acceptances_person_accepted").on(table.personId, table.acceptedAt),
     index("idx_policy_acceptances_booking_accepted").on(table.bookingId, table.acceptedAt),
-    index("idx_policy_acceptances_order_accepted").on(table.orderId, table.acceptedAt),
+    index("idx_policy_acceptances_target_accepted").on(
+      table.targetKind,
+      table.targetId,
+      table.acceptedAt,
+    ),
   ],
 )
 

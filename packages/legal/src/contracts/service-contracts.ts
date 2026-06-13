@@ -1,6 +1,7 @@
 import { people, personDirectoryView } from "@voyantjs/relationships/schema"
 import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { normalizeLegalTargetFields, normalizeLegalTargetUpdateFields } from "../targets/service.js"
 import {
   appendContractStageHistory,
   buildContractLifecycleEvent,
@@ -38,7 +39,14 @@ export const contractRecordsService = {
     if (query.organizationId) conditions.push(eq(contracts.organizationId, query.organizationId))
     if (query.supplierId) conditions.push(eq(contracts.supplierId, query.supplierId))
     if (query.bookingId) conditions.push(eq(contracts.bookingId, query.bookingId))
-    if (query.orderId) conditions.push(eq(contracts.orderId, query.orderId))
+    if (query.targetKind) conditions.push(eq(contracts.targetKind, query.targetKind))
+    if (query.targetId) conditions.push(eq(contracts.targetId, query.targetId))
+    if (query.targetProvider) conditions.push(eq(contracts.targetProvider, query.targetProvider))
+    if (query.targetSourceRef) conditions.push(eq(contracts.targetSourceRef, query.targetSourceRef))
+    if (query.legacyTransactionOfferId)
+      conditions.push(eq(contracts.legacyTransactionOfferId, query.legacyTransactionOfferId))
+    if (query.legacyTransactionOrderId)
+      conditions.push(eq(contracts.legacyTransactionOrderId, query.legacyTransactionOrderId))
     const search = query.search?.trim()
     if (search) {
       const term = `%${search}%`
@@ -93,6 +101,7 @@ export const contractRecordsService = {
       .insert(contracts)
       .values({
         ...data,
+        ...normalizeLegalTargetFields(data),
         stageHistory: [createContractStageHistoryEntry(stage, { enteredAt: now })],
         expiresAt: toTimestamp(data.expiresAt),
       })
@@ -107,6 +116,7 @@ export const contractRecordsService = {
       .update(contracts)
       .set({
         ...update,
+        ...normalizeLegalTargetUpdateFields(update),
         expiresAt: update.expiresAt === undefined ? undefined : toTimestamp(update.expiresAt),
         updatedAt: new Date(),
       })
@@ -332,7 +342,14 @@ export const contractRecordsService = {
       if (!transition.ok) return { status: "not_signable" as const }
       const [signature] = await tx
         .insert(contractSignatures)
-        .values({ ...data, contractId })
+        .values({
+          ...data,
+          ...normalizeLegalTargetFields({
+            ...contract,
+            ...data,
+          }),
+          contractId,
+        })
         .returning()
       const now = new Date()
       const stageHistory = appendContractStageHistory(
@@ -424,14 +441,30 @@ export const contractRecordsService = {
     data: CreateContractAttachmentInput,
   ) {
     const [contract] = await db
-      .select({ id: contracts.id })
+      .select({
+        id: contracts.id,
+        bookingId: contracts.bookingId,
+        targetKind: contracts.targetKind,
+        targetId: contracts.targetId,
+        targetProvider: contracts.targetProvider,
+        targetSourceRef: contracts.targetSourceRef,
+        legacyTransactionOfferId: contracts.legacyTransactionOfferId,
+        legacyTransactionOrderId: contracts.legacyTransactionOrderId,
+      })
       .from(contracts)
       .where(eq(contracts.id, contractId))
       .limit(1)
     if (!contract) return null
     const [row] = await db
       .insert(contractAttachments)
-      .values({ ...data, contractId })
+      .values({
+        ...data,
+        ...normalizeLegalTargetFields({
+          ...contract,
+          ...data,
+        }),
+        contractId,
+      })
       .returning()
     return row ?? null
   },

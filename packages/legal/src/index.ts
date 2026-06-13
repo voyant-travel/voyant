@@ -19,10 +19,13 @@ import {
 } from "./contracts/service-auto-generate.js"
 import { policiesLinkable } from "./policies/index.js"
 import { policiesAdminRoutes, policiesPublicRoutes } from "./policies/routes.js"
+import { legalTermsLinkable } from "./terms/index.js"
+import { legalTermsAdminRoutes, legalTermsPublicRoutes } from "./terms/routes.js"
 
 export const legalLinkable = {
   ...contractsLinkable,
   ...policiesLinkable,
+  ...legalTermsLinkable,
 }
 
 export const legalModule: Module = {
@@ -55,10 +58,12 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
   const legalAdminRoutes = new Hono()
     .route("/contracts", createContractsAdminRoutes(options))
     .route("/policies", policiesAdminRoutes)
+    .route("/terms", legalTermsAdminRoutes)
 
   const legalPublicRoutes = new Hono()
     .route("/contracts", createContractsPublicRoutes(options))
     .route("/policies", policiesPublicRoutes)
+    .route("/terms", legalTermsPublicRoutes)
 
   const module: Module = {
     ...legalModule,
@@ -158,3 +163,4 @@ export {
   type ResolveContractVariablesFn,
 } from "./contracts/service-auto-generate.js"
 export * from "./policies/index.js"
+export * from "./terms/index.js"

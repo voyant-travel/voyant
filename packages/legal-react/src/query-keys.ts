@@ -4,6 +4,12 @@ export interface LegalContractsListFilters {
   status?: string | undefined
   /** Restrict to contracts linked to this booking. */
   bookingId?: string | undefined
+  targetKind?: string | undefined
+  targetId?: string | undefined
+  targetProvider?: string | undefined
+  targetSourceRef?: string | undefined
+  legacyTransactionOfferId?: string | undefined
+  legacyTransactionOrderId?: string | undefined
   personId?: string | undefined
   organizationId?: string | undefined
   limit?: number | undefined
@@ -68,7 +74,27 @@ export interface LegalPolicyAcceptancesListFilters {
   policyVersionId?: string | undefined
   personId?: string | undefined
   bookingId?: string | undefined
-  orderId?: string | undefined
+  targetKind?: string | undefined
+  targetId?: string | undefined
+  targetProvider?: string | undefined
+  targetSourceRef?: string | undefined
+  legacyTransactionOfferId?: string | undefined
+  legacyTransactionOrderId?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
+export interface LegalTermsListFilters {
+  contractId?: string | undefined
+  policyVersionId?: string | undefined
+  targetKind?: string | undefined
+  targetId?: string | undefined
+  targetProvider?: string | undefined
+  targetSourceRef?: string | undefined
+  legacyTransactionOfferId?: string | undefined
+  legacyTransactionOrderId?: string | undefined
+  termType?: string | undefined
+  acceptanceStatus?: string | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
@@ -102,6 +128,9 @@ export const legalQueryKeys = {
     [...legalQueryKeys.policies(), "assignments", filters] as const,
   policyAcceptances: (filters: LegalPolicyAcceptancesListFilters) =>
     [...legalQueryKeys.policies(), "acceptances", filters] as const,
+  terms: () => [...legalQueryKeys.all, "terms"] as const,
+  termsList: (filters: LegalTermsListFilters) => [...legalQueryKeys.terms(), filters] as const,
+  term: (id: string) => [...legalQueryKeys.terms(), id] as const,
   resolvePolicy: (filters: ResolvePolicyFilters) =>
     [...legalQueryKeys.policies(), "resolve", filters] as const,
 }

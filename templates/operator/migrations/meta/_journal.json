@@ -470,6 +470,13 @@
       "when": 1781376304776,
       "tag": "0066_striped_lila_cheney",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1781378821635,
+      "tag": "0067_lying_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }
