@@ -23,7 +23,7 @@ navigation, page assembly, and deployment-specific presentation.
 
 ## Why This Split Exists
 
-Starter apps should not force developers to build every screen from the raw domain package surface. A developer who adds CRM, bookings, products, or finance should have a fast path:
+Starter apps should not force developers to build every screen from the raw domain package surface. A developer who adds relationships, quotes, bookings, products, or finance should have a fast path:
 
 1. install the domain module
 2. install the React runtime package for that module
@@ -33,8 +33,8 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 
 ## Naming Rules
 
-- Domain/runtime packages keep simple names like `@voyantjs/crm`, `@voyantjs/bookings`, `@voyantjs/products`.
-- React packages use `-react`, for example `@voyantjs/crm-react`.
+- Domain/runtime packages keep simple names like `@voyantjs/relationships`, `@voyantjs/quotes`, `@voyantjs/bookings`, `@voyantjs/products`.
+- React packages use `-react`, for example `@voyantjs/relationships-react`.
   They own hooks, clients, providers, view-model helpers, and reusable module
   components.
 - Shared physical-place UI should use `@voyantjs/places-react` and place-first
@@ -91,11 +91,12 @@ only expose Tailwind source-detection directives for package components.
 
 ## Module UI Migration
 
-CRM was the first module being moved into the old registry-backed shape:
+The old combined customer-and-sales surface is split before v1:
 
-- `@voyantjs/crm` remains the domain package
-- `@voyantjs/crm-react` becomes the shared React package for runtime helpers and
-  reusable presentation that survives the Relationships / Quotes split
+- `@voyantjs/relationships` and `@voyantjs/relationships-react` own people,
+  organizations, activities, profile context, documents, and customer signals.
+- `@voyantjs/quotes` and `@voyantjs/quotes-react` own pipelines, stages,
+  quotes, quote versions, and proposal lifecycle UI.
 
 Future module candidates should add `-react` only when they justify reusable
 React runtime helpers or reusable module components. Not every Module needs a

@@ -5,8 +5,8 @@ import {
   type PersonRelationshipRecord,
   usePeople,
   usePerson,
-} from "@voyantjs/crm-react"
-import { PersonForm } from "@voyantjs/crm-react/ui"
+} from "@voyantjs/relationships-react"
+import { PersonForm } from "@voyantjs/relationships-react/ui"
 import {
   Button,
   Label,

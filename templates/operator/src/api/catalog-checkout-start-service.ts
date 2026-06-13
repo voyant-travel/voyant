@@ -179,7 +179,7 @@ export async function startCatalogCheckout(
 }
 
 /**
- * Inquiry intent — write a CRM quote for the operator to follow
+ * Inquiry intent — write a quote for the operator to follow
  * up on, then cancel the booking so inventory isn't blocked.
  *
  * The pipeline + stage used can be pinned via env vars
@@ -200,14 +200,14 @@ async function startInquiryCheckout(
   let stageId = env.INQUIRY_STAGE_ID ?? null
 
   if (!pipelineId || !stageId) {
-    const { crmService } = await import("@voyantjs/crm")
-    const pipelines = await crmService
+    const { quotesService } = await import("@voyantjs/quotes")
+    const pipelines = await quotesService
       .listPipelines(db, { entityType: "quote", limit: 1, offset: 0 })
       .catch(() => null)
     const firstPipeline = pipelines?.data?.[0] ?? null
     if (firstPipeline) {
       pipelineId = pipelineId ?? firstPipeline.id
-      const stages = await crmService
+      const stages = await quotesService
         .listStages(db, { pipelineId: firstPipeline.id, limit: 1, offset: 0 })
         .catch(() => null)
       stageId = stageId ?? stages?.data?.[0]?.id ?? null
@@ -215,19 +215,19 @@ async function startInquiryCheckout(
   }
 
   if (!pipelineId || !stageId) {
-    // No CRM pipeline configured. Still cancel the booking so the
+    // No quote pipeline configured. Still cancel the booking so the
     // hold doesn't linger, and return a stub inquiry reference.
     await releaseInquiryBooking(db, booking, eventBus)
     return {
       kind: "inquiry_received",
       bookingId: booking.id,
       inquiryId: `inq-${booking.id}`,
-      note: "No CRM pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real quote.",
+      note: "No quote pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real quote.",
     }
   }
 
-  const { crmService } = await import("@voyantjs/crm")
-  const quote = await crmService.createQuote(db, {
+  const { quotesService } = await import("@voyantjs/quotes")
+  const quote = await quotesService.createQuote(db, {
     title: `Inquiry — booking ${booking.bookingNumber}`,
     pipelineId,
     stageId,

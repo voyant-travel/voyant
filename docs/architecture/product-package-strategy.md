@@ -384,8 +384,10 @@ Required cleanup:
 
 Candidate packages:
 
-- `@voyantjs/crm`
-- `@voyantjs/crm-react`
+- `@voyantjs/relationships`
+- `@voyantjs/quotes`
+- `@voyantjs/relationships-react`
+- `@voyantjs/quotes-react`
 
 Adjacent packages to integrate through an explicit Interface, not fold blindly:
 
@@ -436,24 +438,21 @@ Person/Organization master records, the whole composer workspace, or
 `transactions` Offer.
 
 Target a real split, not a permanent combined CRM Module. Because Voyant is
-still beta, this can be a breaking v1 package move: introduce Relationships and
-Quotes, move internal consumers, update templates, and remove `@voyantjs/crm`
-and `@voyantjs/crm-react` before v1. Temporary facades are acceptable inside the
-migration branch only when they keep intermediate commits verifiable; they
-should not ship as public v1 API.
+still beta, this can be a breaking v1 package move: Relationships and Quotes
+own their respective runtime and React surfaces. Temporary facades are
+acceptable inside the migration branch only when they keep intermediate commits
+verifiable; they should not ship as public v1 API.
 
 Prerequisite cleanup:
 
 - Continue retiring Opportunity vocabulary.
-- Target `relationships` for the non-quote CRM Module name; treat `crm` only as
-  the current package name that will be removed or renamed before v1.
+- Target `relationships` for the non-quote Module name.
 - Split Relationships first, then Quotes inside the v1 migration branch. Quotes
   currently reference Person and Organization records; moving schema ownership
   must either preserve those tables in the same package until the split lands or
   convert cross-domain references to schema-discipline-compliant links/plain ids.
 - Move React consumers in slices: person/organization pickers and profile UI to
-  Relationships React, Quote boards and proposal UI to Quotes React, then remove
-  `crm-react`.
+  Relationships React, Quote boards and proposal UI to Quotes React.
 - Treat `transactions` Offer as adjacent legacy, not a Quotes
   consolidation candidate.
 - Decouple Quotes from `transactions` Offer first, then retire the runtime
@@ -1041,7 +1040,7 @@ Before the `reseller` / `ota` bundle can claim to omit operated Inventory, the
 runtime closure for Catalog + Commerce + Bookings + Finance + Distribution +
 Storefront + Admin must have no hard dependency on `@voyantjs/products`,
 `@voyantjs/products-react`, operated Availability/Operations schemas,
-`@voyantjs/crm`, or runtime Transactions except through deliberate optional
+Relationships/Quotes runtime packages, or runtime Transactions except through deliberate optional
 adapters or compatibility packages. Current blockers include Distribution,
 Finance, Storefront, Commerce candidates, and Booking Requirements.
 
@@ -1243,7 +1242,7 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/crm`, `@voyantjs/crm-react` | Replace with `relationships` plus `quotes` in the v1 package move. | ADR-0004 moves supported proposal language to Quote. Customer/account records should move toward Relationships; quote pursuit should move toward Quotes. Temporary facades are allowed only inside the migration branch, not as public v1 API. |
+| `@voyantjs/relationships`, `@voyantjs/relationships-react`, `@voyantjs/quotes`, `@voyantjs/quotes-react` | Keep as the split Relationships and Quotes runtime surfaces for v1. | ADR-0004 moves supported proposal language to Quote. Customer/account records belong to Relationships; quote pursuit belongs to Quotes. |
 | `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trip Composer, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
 | `@voyantjs/travel-composer`, `@voyantjs/travel-composer-react` | Rename to `@voyantjs/trip-composer` / `@voyantjs/trip-composer-react` in the v1 package move. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |

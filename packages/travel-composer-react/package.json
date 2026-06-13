@@ -31,7 +31,7 @@
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/flights": "workspace:^",
     "@voyantjs/flights-react": "workspace:^",
@@ -55,7 +55,7 @@
     "@voyantjs/catalog-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
     "@voyantjs/finance": {
@@ -79,7 +79,7 @@
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/flights": "workspace:^",
     "@voyantjs/flights-react": "workspace:^",

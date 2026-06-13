@@ -666,7 +666,7 @@ DB-backed integration tests deferred until charters is wired into a template's d
 - Provenance fields on `booking_charter_details` (`source`, `sourceProvider`, `sourceRef`)
 
 **Phase 4 — react package + storefront (1-2 weeks)**
-- `@voyantjs/charters-react` mirroring the cruises-react / crm-react shape
+- `@voyantjs/charters-react` mirroring the cruises-react / relationships-react shape
 - Hooks for products, voyages, suites, schedule, quoting (per-suite + whole-yacht), bookings, MYBA actions, external adapter actions (refresh, detach)
 - shadcn registry components: charter-product-card, voyage-detail, suite-list, suite-card, whole-yacht-quote-display, inquiry-form, external-badge
 - Wire into the example app under `/charters`

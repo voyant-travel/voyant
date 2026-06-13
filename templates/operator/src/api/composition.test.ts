@@ -36,10 +36,10 @@ describe("operator runtime composition", () => {
       buildOperatorCapabilities(),
     )
 
-    // 24 manifest entries expand to 27 mounted modules because Commerce owns
+    // 25 manifest entries expand to 28 mounted modules because Commerce owns
     // the pricing/markets/sellability/promotions runtime cluster.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(24)
-    expect(composed.modules).toHaveLength(27)
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(25)
+    expect(composed.modules).toHaveLength(28)
     expect(composed.extensions).toHaveLength(7)
 
     // Every composed unit is a real HonoModule/HonoExtension.

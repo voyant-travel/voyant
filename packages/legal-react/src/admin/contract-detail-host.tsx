@@ -7,7 +7,7 @@ import {
   useOperatorAdminMessages,
 } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
-import { usePerson } from "@voyantjs/crm-react"
+import { usePerson } from "@voyantjs/relationships-react"
 import type { MouseEvent, ReactNode } from "react"
 import {
   ContractDetailPage,
@@ -29,7 +29,7 @@ export interface ContractDetailHostProps {
  * Packaged admin host for the operator-grade contract detail page
  * (packaged-admin RFC Phase 3). Owns everything package-clean:
  *
- *   - Data access through `@voyantjs/legal-react` / `@voyantjs/crm-react` /
+ *   - Data access through `@voyantjs/legal-react` / `@voyantjs/relationships-react` /
  *     `@voyantjs/bookings-react` hooks (shared Voyant provider context — no
  *     app RPC client).
  *   - Admin chrome breadcrumbs (`Legal › Contracts › <number-or-title>`)

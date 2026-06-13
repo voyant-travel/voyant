@@ -13,7 +13,7 @@ export const BOOKING_ROUTE_RUNTIME_CONTAINER_KEY = "runtime.bookings.routes"
  * snapshot of the linked person's dietary / accessibility / primary
  * passport values, decrypted server-side via the same KMS provider
  * the route already resolved. Templates wire this from
- * `crmService.loadPersonTravelSnapshot` so the bookings package
+ * `relationshipsService.loadPersonTravelSnapshot` so the bookings package
  * stays free of any direct CRM dependency.
  */
 export type ResolveBookingTravelSnapshot = (
@@ -40,7 +40,7 @@ export interface BookingPersonResolverContact {
  * Resolves (or upserts) a CRM person from a booking's billing contact
  * snapshot. Returns the resolved person id, or `null` to leave the
  * booking's `person_id` unset. Templates wire this from
- * `crmService.upsertPersonFromContact` so the bookings package stays
+ * `relationshipsService.upsertPersonFromContact` so the bookings package stays
  * free of any direct CRM dependency — see issue #961.
  */
 export type ResolveBookingBillingPerson = (

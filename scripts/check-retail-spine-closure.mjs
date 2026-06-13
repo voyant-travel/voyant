@@ -68,8 +68,6 @@ const forbiddenPackages = new Map([
   ["@voyantjs/facilities", "operated Operations place/facility schema"],
   ["@voyantjs/facilities-react", "operated Operations place/facility UI"],
   ["@voyantjs/allocation-ui", "operated Availability allocation UI"],
-  ["@voyantjs/crm", "Relationships/Quotes package pending v1 split"],
-  ["@voyantjs/crm-react", "Relationships/Quotes UI pending v1 split"],
   ["@voyantjs/transactions", "retired runtime Transactions package"],
   ["@voyantjs/transactions-react", "retired runtime Transactions UI"],
 ])

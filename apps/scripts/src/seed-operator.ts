@@ -33,31 +33,6 @@ import {
   bookingItemTravelers,
   bookingRedemptionEvents,
 } from "../../../packages/bookings/src/schema-items.ts"
-import {
-  communicationLog,
-  organizations as crmOrganizations,
-  organizationNotes,
-  people,
-  personNotes,
-  segmentMembers,
-  segments,
-} from "../../../packages/crm/src/schema-accounts.ts"
-import {
-  activities,
-  activityLinks,
-  activityParticipants,
-  customFieldDefinitions,
-  customFieldValues,
-} from "../../../packages/crm/src/schema-activities.ts"
-import {
-  pipelines,
-  quoteParticipants,
-  quoteProducts,
-  quotes,
-  quoteVersionLines,
-  quoteVersions,
-  stages,
-} from "../../../packages/crm/src/schema-sales.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
 import { authMember, authOrganization, authUser } from "../../../packages/db/src/schema/iam/auth.ts"
 import { userProfilesTable } from "../../../packages/db/src/schema/iam/user_profiles.ts"
@@ -109,6 +84,31 @@ import {
   productTags,
   productTypes,
 } from "../../../packages/products/src/schema-taxonomy.ts"
+import {
+  pipelines,
+  quoteParticipants,
+  quoteProducts,
+  quotes,
+  quoteVersionLines,
+  quoteVersions,
+  stages,
+} from "../../../packages/quotes/src/schema-sales.ts"
+import {
+  communicationLog,
+  organizations as crmOrganizations,
+  organizationNotes,
+  people,
+  personNotes,
+  segmentMembers,
+  segments,
+} from "../../../packages/relationships/src/schema-accounts.ts"
+import {
+  activities,
+  activityLinks,
+  activityParticipants,
+  customFieldDefinitions,
+  customFieldValues,
+} from "../../../packages/relationships/src/schema-activities.ts"
 import {
   supplierAvailability,
   supplierContracts,

@@ -1,6 +1,5 @@
 // agent-quality: file-size exception -- SmartBill integration keeps event subscribers, settlement polling, and document sync mapping together until provider routes are split.
 import { bookings } from "@voyantjs/bookings/schema"
-import { organizations, people } from "@voyantjs/crm/schema"
 import {
   financeService,
   type InvoiceSettlementPoller,
@@ -17,6 +16,7 @@ import {
   type SmartbillInvoiceBody,
   type SmartbillProduct,
 } from "@voyantjs/plugin-smartbill"
+import { organizations, people } from "@voyantjs/relationships/schema"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

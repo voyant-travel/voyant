@@ -7,8 +7,8 @@ import {
   useOrganizations,
   usePeople,
   usePerson,
-} from "@voyantjs/crm-react"
-import { OrganizationForm, PersonForm } from "@voyantjs/crm-react/ui"
+} from "@voyantjs/relationships-react"
+import { OrganizationForm, PersonForm } from "@voyantjs/relationships-react/ui"
 import {
   Button,
   Label,

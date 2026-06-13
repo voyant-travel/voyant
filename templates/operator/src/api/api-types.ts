@@ -1,7 +1,6 @@
 import type { AvailabilityRoutes } from "@voyantjs/availability/routes"
 import type { BookingRequirementsRoutes } from "@voyantjs/bookings/requirements/routes"
 import type { BookingRoutes } from "@voyantjs/bookings/routes"
-import type { CrmRoutes } from "@voyantjs/crm/routes"
 import type { DistributionRoutes } from "@voyantjs/distribution/routes"
 import type { ExternalRefsRoutes } from "@voyantjs/external-refs/routes"
 import type { ExtrasRoutes } from "@voyantjs/extras/routes"
@@ -10,6 +9,8 @@ import type { IdentityRoutes } from "@voyantjs/identity/routes"
 import type { MarketsRoutes } from "@voyantjs/markets/routes"
 import type { PricingRoutes } from "@voyantjs/pricing/routes"
 import type { ProductRoutes } from "@voyantjs/products/routes"
+import type { QuotesRoutes } from "@voyantjs/quotes/routes"
+import type { RelationshipsRoutes } from "@voyantjs/relationships/routes"
 import type { ResourcesRoutes } from "@voyantjs/resources/routes"
 import type { SellabilityRoutes } from "@voyantjs/sellability/routes"
 import type { SupplierRoutes } from "@voyantjs/suppliers/routes"
@@ -25,7 +26,8 @@ import type { Hono } from "hono"
  * end-to-end typed requests.
  */
 type ApiRoutes = Hono & {
-  "/v1/crm": CrmRoutes
+  "/v1/relationships": RelationshipsRoutes
+  "/v1/quotes": QuotesRoutes
   "/v1/availability": AvailabilityRoutes
   "/v1/identity": IdentityRoutes
   "/v1/external-refs": ExternalRefsRoutes

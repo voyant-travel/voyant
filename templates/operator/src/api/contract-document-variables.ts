@@ -1,7 +1,7 @@
 import { bookingItems } from "@voyantjs/bookings/schema"
-import { crmService } from "@voyantjs/crm"
 import { bookingPaymentSchedules } from "@voyantjs/finance/schema"
 import type { AutoGenerateContractOptions } from "@voyantjs/legal"
+import { relationshipsService } from "@voyantjs/relationships"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { readPolicySourceFromInternalNotes } from "./booking-payment-policy-runtime"
@@ -199,9 +199,11 @@ async function resolveCustomerVariables(
   address: { line1: string; city: string; region: string; postal: string; country: string }
 } | null> {
   if (personId) {
-    const person = await crmService.getPersonById(db, personId)
+    const person = await relationshipsService.getPersonById(db, personId)
     if (!person) return null
-    const addresses = await crmService.listAddresses(db, "person", person.id).catch(() => [])
+    const addresses = await relationshipsService
+      .listAddresses(db, "person", person.id)
+      .catch(() => [])
     const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
     const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
     return {
@@ -222,9 +224,11 @@ async function resolveCustomerVariables(
     }
   }
   if (organizationId) {
-    const org = await crmService.getOrganizationById(db, organizationId)
+    const org = await relationshipsService.getOrganizationById(db, organizationId)
     if (!org) return null
-    const addresses = await crmService.listAddresses(db, "organization", org.id).catch(() => [])
+    const addresses = await relationshipsService
+      .listAddresses(db, "organization", org.id)
+      .catch(() => [])
     const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
     return {
       firstName: "",

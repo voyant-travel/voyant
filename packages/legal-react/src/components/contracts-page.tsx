@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
-import { type PersonRecord, usePeople } from "@voyantjs/crm-react"
+
 import { formatMessage } from "@voyantjs/i18n"
+import { type PersonRecord, usePeople } from "@voyantjs/relationships-react"
 import {
   Badge,
   Button,
