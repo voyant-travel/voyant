@@ -31,6 +31,7 @@
     "verify:cloudflare-entrypoints": "node scripts/check-cloudflare-entrypoints.mjs",
     "verify:workflows-package-surface": "node scripts/check-workflows-package-surface.mjs",
     "verify:accommodation-resale-boundary": "node scripts/check-accommodation-resale-boundary.mjs",
+    "verify:retail-spine-closure": "node scripts/check-retail-spine-closure.mjs",
     "verify:native-date-inputs": "node scripts/check-native-date-inputs.mjs",
     "verify:raw-minor-unit-labels": "node scripts/check-raw-minor-unit-labels.mjs",
     "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring && pnpm verify:cloudflare-entrypoints && pnpm verify:workflows-package-surface && pnpm verify:accommodation-resale-boundary",

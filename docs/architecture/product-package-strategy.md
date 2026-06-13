@@ -1011,6 +1011,14 @@ Storefront + Admin must have no hard dependency on `@voyantjs/products`,
 adapters or compatibility packages. Current blockers include Distribution,
 Finance, Storefront, Commerce candidates, and Booking Requirements.
 
+Run `pnpm verify:retail-spine-closure` as the pre-v1 package-closure gate for
+[#1791](https://github.com/voyantjs/voyant/issues/1791). The command computes
+the current manifest closure from the retail-spine package candidates, reports
+hard runtime blockers with package paths and dependency edges, and keeps optional
+adapter/shim exceptions as edge-specific allowlist entries. It is a named
+pre-v1 gate rather than part of `verify:architecture` until the documented
+blockers are removed; once it passes, wire it into the normal architecture lane.
+
 ## 8. Migration Strategy
 
 1. File the required migration issues before broad package moves: retail-spine
