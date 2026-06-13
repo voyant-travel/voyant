@@ -53,7 +53,12 @@ export {
   type UpdateBookingGroupInput,
 } from "./service-groups.js"
 export {
+  type CatalogReservationBookingOriginInput,
+  type DirectB2CBookingOriginInput,
+  type DirectB2CBookingOriginItemInput,
   getBookingOriginByBookingId,
+  toCatalogReservationBookingOriginInput,
+  toDirectB2CBookingOriginInput,
   type UpsertBookingOriginInput,
   upsertBookingOrigin,
 } from "./service-origin.js"

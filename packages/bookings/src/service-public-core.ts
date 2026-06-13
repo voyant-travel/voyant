@@ -27,6 +27,7 @@ import {
   bookingTravelers,
 } from "./schema.js"
 import { type BookingServiceRuntime, bookingsService } from "./service.js"
+import { toDirectB2CBookingOriginInput, upsertBookingOrigin } from "./service-origin.js"
 import type {
   InternalBookingOverviewLookupQuery,
   PublicBookingOverviewAccessQuery,
@@ -1196,6 +1197,15 @@ export const publicBookingsService = {
     if (!("booking" in result) || !result.booking) {
       return result
     }
+
+    await upsertBookingOrigin(
+      db,
+      toDirectB2CBookingOriginInput({
+        bookingId: result.booking.id,
+        externalBookingRef: input.externalBookingRef ?? null,
+        items: input.items,
+      }),
+    )
 
     for (const participant of travelers) {
       const personId = await safeResolveTravelerPerson(

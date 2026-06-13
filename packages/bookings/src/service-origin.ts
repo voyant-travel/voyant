@@ -1,3 +1,4 @@
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -31,6 +32,31 @@ export interface UpsertBookingOriginInput {
 export interface LegacyBookingTransactionLink {
   offerId: string | null
   orderId: string | null
+}
+
+export interface DirectB2CBookingOriginItemInput {
+  sourceSnapshotId?: string | null
+  metadata?: Record<string, unknown> | null
+}
+
+export interface DirectB2CBookingOriginInput {
+  bookingId: string
+  externalBookingRef?: string | null
+  items?: DirectB2CBookingOriginItemInput[]
+}
+
+export interface CatalogReservationBookingOriginInput {
+  bookingId: string
+  tripEnvelopeId?: string | null
+  tripComponentId?: string | null
+  catalogPriceResponseId?: string | null
+  catalogSnapshotId?: string | null
+  providerSourceKind?: string | null
+  providerSourceProvider?: string | null
+  providerSourceConnectionId?: string | null
+  providerSourceRef?: string | null
+  providerOrderRef?: string | null
+  metadata?: Record<string, unknown> | null
 }
 
 function nullable<T>(value: T | null | undefined): T | null {
@@ -83,13 +109,63 @@ export function toBookingOriginInsert(
   }
 }
 
+function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
+  return [...new Set(values.filter((value): value is string => Boolean(value?.trim())))]
+}
+
+function singleOrNull(values: string[]): string | null {
+  return values.length === 1 ? (values[0] ?? null) : null
+}
+
+export function toDirectB2CBookingOriginInput(
+  input: DirectB2CBookingOriginInput,
+): UpsertBookingOriginInput {
+  const catalogSnapshotIds = uniqueNonEmpty(input.items?.map((item) => item.sourceSnapshotId) ?? [])
+
+  return {
+    bookingId: input.bookingId,
+    originSource: "direct_b2c",
+    catalogSnapshotId: singleOrNull(catalogSnapshotIds),
+    metadata: {
+      source: "public_bookings_service.create_session",
+      externalBookingRef: nullable(input.externalBookingRef),
+      catalogSnapshotIds,
+      itemCount: input.items?.length ?? 0,
+    },
+  }
+}
+
+export function toCatalogReservationBookingOriginInput(
+  input: CatalogReservationBookingOriginInput,
+): UpsertBookingOriginInput {
+  return {
+    bookingId: input.bookingId,
+    originSource: "catalog_price_availability",
+    catalogPriceResponseId: nullable(input.catalogPriceResponseId),
+    catalogSnapshotId: nullable(input.catalogSnapshotId),
+    providerSourceKind: nullable(input.providerSourceKind),
+    providerSourceProvider: nullable(input.providerSourceProvider),
+    providerSourceConnectionId: nullable(input.providerSourceConnectionId),
+    providerSourceRef: nullable(input.providerSourceRef),
+    providerOrderRef: nullable(input.providerOrderRef),
+    metadata: {
+      source: "trip_composer.reserve_catalog_component",
+      tripEnvelopeId: nullable(input.tripEnvelopeId),
+      tripComponentId: nullable(input.tripComponentId),
+      ...(input.metadata ?? {}),
+    },
+  }
+}
+
 export async function upsertBookingOrigin(
-  db: PostgresJsDatabase,
+  db: AnyDrizzleDb,
   input: UpsertBookingOriginInput,
 ): Promise<BookingOrigin> {
   const values = toBookingOriginInsert(input)
 
-  const [origin] = await db
+  // Cast: AnyDrizzleDb's union does not unify insert().onConflictDoUpdate()
+  // across drivers, though all supported Postgres drivers implement it.
+  const [origin] = await (db as PostgresJsDatabase)
     .insert(bookingOrigins)
     .values(values)
     .onConflictDoUpdate({

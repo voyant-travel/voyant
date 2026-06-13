@@ -10,6 +10,7 @@ import {
   quoteEntity,
   quoteResponseV1,
 } from "@voyantjs/catalog/booking-engine"
+import { toCatalogReservationBookingOriginInput, upsertBookingOrigin } from "@voyantjs/bookings"
 import type { PricingBasis } from "@voyantjs/catalog/snapshot/schema"
 import { createCatalogPromotionEvaluator } from "@voyantjs/commerce/promotions/service-catalog-evaluator"
 import type { EventBus } from "@voyantjs/core"
@@ -89,6 +90,7 @@ export async function reserveCatalogComponent(
   c: Context,
   input: ReserveComponentInput,
 ): Promise<ReserveComponentResult> {
+  const db = getDb(c)
   const component = input.component
   const quoteId = required(component.catalogQuoteId, "component.catalogQuoteId")
   const bookingDraft = bookingDraftFromComponent(component)
@@ -99,7 +101,7 @@ export async function reserveCatalogComponent(
   const createAsDraft = readBoolean(input.envelope.constraints?.createAsDraft)
   const initialStatus = createAsDraft ? "draft" : "awaiting_payment"
   const result = await bookEntity(
-    getDb(c),
+    db,
     {
       registry: getBookingEngineRegistryFromContext(c),
       ownedHandlers: getOwnedBookingHandlerRegistryFromContext(c),
@@ -122,6 +124,28 @@ export async function reserveCatalogComponent(
   }
 
   const orderRef = result.orderRef || result.snapshotId
+  if (result.bookingId) {
+    await upsertBookingOrigin(
+      db,
+      toCatalogReservationBookingOriginInput({
+        bookingId: result.bookingId,
+        tripEnvelopeId: input.envelope.id,
+        tripComponentId: component.id,
+        catalogPriceResponseId: quoteId,
+        catalogSnapshotId: result.snapshotId,
+        providerSourceKind: component.sourceKind,
+        providerSourceConnectionId: component.sourceConnectionId,
+        providerSourceRef: component.sourceRef,
+        providerOrderRef: orderRef,
+        metadata: {
+          entityModule: component.entityModule,
+          entityId: component.entityId,
+          createAsDraft,
+        },
+      }),
+    )
+  }
+
   return {
     status: bookStatusToComponentStatus(result.status),
     bookingId: result.bookingId,
