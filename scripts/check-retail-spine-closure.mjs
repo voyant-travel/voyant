@@ -334,79 +334,83 @@ const staleAllowlistEntries = optionalEdgeAllowlist.filter(
   (entry) => !matchedAllowlistKeys.has(edgeKey(entry)),
 )
 
-console.log("Retail spine package closure gate")
-console.log("")
-console.log(`Roots: ${rootPackages.length} packages across ${retailSpineRoots.length} areas`)
-console.log(`Hard runtime closure: ${closure.size} workspace packages`)
-console.log("")
-
-if (missingRoots.length > 0) {
-  console.error("Missing configured root packages:")
-  for (const pkgName of missingRoots) {
-    console.error(`  - ${pkgName}`)
-  }
-  console.error("")
-}
-
-if (hardBlockers.length > 0) {
-  console.error("Forbidden hard runtime edges:")
-  for (const blocker of hardBlockers) {
-    console.error(`  - ${formatEdge(blocker.edge)}`)
-    console.error(`    closure path: ${formatPath(blocker.packagePath)}`)
-    console.error(`    reason: ${blocker.reason}`)
-  }
-  console.error("")
-}
-
-if (unallowlistedOptionalEdges.length > 0) {
-  console.error("Forbidden optional runtime edges missing an edge allowlist entry:")
-  for (const blocker of unallowlistedOptionalEdges) {
-    console.error(`  - ${formatEdge(blocker.edge)}`)
-    console.error(`    closure path: ${formatPath(blocker.packagePath)}`)
-    console.error(`    reason: ${blocker.reason}`)
-  }
-  console.error("")
-}
-
-if (staleAllowlistEntries.length > 0) {
-  console.error("Stale optional edge allowlist entries:")
-  for (const entry of staleAllowlistEntries) {
-    console.error(`  - ${entry.from} --${entry.type} optional--> ${entry.to}`)
-    console.error(`    reason: ${entry.reason}`)
-  }
-  console.error("")
-}
-
-if (allowedOptionalEdges.length > 0) {
-  console.log("Allowlisted optional edges:")
-  for (const allowed of allowedOptionalEdges) {
-    console.log(`  - ${formatEdge(allowed.edge)}`)
-    console.log(`    closure path: ${formatPath(allowed.packagePath)}`)
-    console.log(`    allowlist: ${allowed.reason}`)
-  }
-  console.log("")
-}
-
-if (ignoredForbiddenDevEdges.length > 0) {
-  console.log("Ignored dev/test/type-only edges to forbidden packages:")
-  for (const ignored of ignoredForbiddenDevEdges) {
-    console.log(`  - ${formatEdge(ignored.edge)}`)
-    console.log(`    closure path: ${formatPath(ignored.packagePath)}`)
-    console.log(`    reason: ${ignored.reason}`)
-  }
-  console.log("")
-}
-
-if (
+const hasFailures =
   missingRoots.length > 0 ||
   hardBlockers.length > 0 ||
   unallowlistedOptionalEdges.length > 0 ||
   staleAllowlistEntries.length > 0
-) {
-  console.error(
+
+const report = [
+  "Retail spine package closure gate",
+  "",
+  `Roots: ${rootPackages.length} packages across ${retailSpineRoots.length} areas`,
+  `Hard runtime closure: ${closure.size} workspace packages`,
+  "",
+]
+
+function appendSection(title, lines) {
+  if (lines.length === 0) {
+    return
+  }
+  report.push(title, ...lines, "")
+}
+
+appendSection(
+  "Missing configured root packages:",
+  missingRoots.map((pkgName) => `  - ${pkgName}`),
+)
+
+appendSection(
+  "Forbidden hard runtime edges:",
+  hardBlockers.flatMap((blocker) => [
+    `  - ${formatEdge(blocker.edge)}`,
+    `    closure path: ${formatPath(blocker.packagePath)}`,
+    `    reason: ${blocker.reason}`,
+  ]),
+)
+
+appendSection(
+  "Forbidden optional runtime edges missing an edge allowlist entry:",
+  unallowlistedOptionalEdges.flatMap((blocker) => [
+    `  - ${formatEdge(blocker.edge)}`,
+    `    closure path: ${formatPath(blocker.packagePath)}`,
+    `    reason: ${blocker.reason}`,
+  ]),
+)
+
+appendSection(
+  "Stale optional edge allowlist entries:",
+  staleAllowlistEntries.flatMap((entry) => [
+    `  - ${entry.from} --${entry.type} optional--> ${entry.to}`,
+    `    reason: ${entry.reason}`,
+  ]),
+)
+
+appendSection(
+  "Allowlisted optional edges:",
+  allowedOptionalEdges.flatMap((allowed) => [
+    `  - ${formatEdge(allowed.edge)}`,
+    `    closure path: ${formatPath(allowed.packagePath)}`,
+    `    allowlist: ${allowed.reason}`,
+  ]),
+)
+
+appendSection(
+  "Ignored dev/test/type-only edges to forbidden packages:",
+  ignoredForbiddenDevEdges.flatMap((ignored) => [
+    `  - ${formatEdge(ignored.edge)}`,
+    `    closure path: ${formatPath(ignored.packagePath)}`,
+    `    reason: ${ignored.reason}`,
+  ]),
+)
+
+if (hasFailures) {
+  report.push(
     "Retail spine closure is not satisfied. Remove hard runtime blockers or convert deliberate adapter/shim links to explicit optional edges.",
   )
+  console.error(report.join("\n"))
   process.exit(1)
 }
 
-console.log("Verified retail spine package closure.")
+report.push("Verified retail spine package closure.")
+console.log(report.join("\n"))
