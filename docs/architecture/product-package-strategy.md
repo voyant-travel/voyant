@@ -316,6 +316,12 @@ vertical/source adapter. Flights, cruises, charters, and sourced adapters can
 keep native live-offer or fare topology behind price-availability adapters that
 Commerce calls.
 
+For the React/admin migration, `@voyantjs/commerce-react` is the target owner
+package. It may start as a facade over `pricing-react`, `markets-react`,
+`sellability-react`, and `promotions-react` while first-party callers move to
+Commerce-owned imports. Old React package names remain compatibility surfaces
+until the source files can move without creating large review-only diffs.
+
 Finance consumes the selected commercial snapshot later; it does not own
 price-rule selection.
 

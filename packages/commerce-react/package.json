@@ -1,0 +1,143 @@
+{
+  "name": "@voyantjs/commerce-react",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/commerce-react"
+  },
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./pricing": "./src/pricing.ts",
+    "./markets": "./src/markets.ts",
+    "./sellability": "./src/sellability.ts",
+    "./promotions": "./src/promotions.ts",
+    "./promotions/admin": "./src/promotions-admin.ts",
+    "./i18n": "./src/i18n.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-table": "^8.0.0",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/markets-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/promotions-react": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/sellability-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.60.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@voyantjs/admin": {
+      "optional": true
+    },
+    "@voyantjs/distribution-react": {
+      "optional": true
+    },
+    "@voyantjs/products-react": {
+      "optional": true
+    },
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "@voyantjs/utils": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-table": "^8.21.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/markets-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/promotions-react": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/sellability-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.60.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2",
+    "zod": "^4.3.6"
+  },
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./pricing": {
+        "types": "./dist/pricing.d.ts",
+        "import": "./dist/pricing.js",
+        "default": "./dist/pricing.js"
+      },
+      "./markets": {
+        "types": "./dist/markets.d.ts",
+        "import": "./dist/markets.js",
+        "default": "./dist/markets.js"
+      },
+      "./sellability": {
+        "types": "./dist/sellability.d.ts",
+        "import": "./dist/sellability.js",
+        "default": "./dist/sellability.js"
+      },
+      "./promotions": {
+        "types": "./dist/promotions.d.ts",
+        "import": "./dist/promotions.js",
+        "default": "./dist/promotions.js"
+      },
+      "./promotions/admin": {
+        "types": "./dist/promotions-admin.d.ts",
+        "import": "./dist/promotions-admin.js",
+        "default": "./dist/promotions-admin.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n.d.ts",
+        "import": "./dist/i18n.js",
+        "default": "./dist/i18n.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  }
+}
