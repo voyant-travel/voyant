@@ -1,6 +1,4 @@
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { productOptions, products } from "@voyantjs/products/schema"
 import { boolean, date, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 import { channelContracts, channels } from "./schema-core.js"
@@ -21,13 +19,9 @@ export const channelInventoryAllotments = pgTable(
     contractId: typeIdRef("contract_id").references(() => channelContracts.id, {
       onDelete: "set null",
     }),
-    productId: typeIdRef("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-    optionId: typeIdRef("option_id").references(() => productOptions.id, { onDelete: "set null" }),
-    startTimeId: typeIdRef("start_time_id").references(() => availabilityStartTimes.id, {
-      onDelete: "set null",
-    }),
+    productId: typeIdRef("product_id").notNull(),
+    optionId: typeIdRef("option_id"),
+    startTimeId: typeIdRef("start_time_id"),
     validFrom: date("valid_from"),
     validTo: date("valid_to"),
     guaranteedCapacity: integer("guaranteed_capacity"),
@@ -61,10 +55,8 @@ export const channelInventoryAllotmentTargets = pgTable(
     allotmentId: typeIdRef("allotment_id")
       .notNull()
       .references(() => channelInventoryAllotments.id, { onDelete: "cascade" }),
-    slotId: typeIdRef("slot_id").references(() => availabilitySlots.id, { onDelete: "cascade" }),
-    startTimeId: typeIdRef("start_time_id").references(() => availabilityStartTimes.id, {
-      onDelete: "set null",
-    }),
+    slotId: typeIdRef("slot_id"),
+    startTimeId: typeIdRef("start_time_id"),
     dateLocal: date("date_local"),
     guaranteedCapacity: integer("guaranteed_capacity"),
     maxCapacity: integer("max_capacity"),
@@ -139,7 +131,7 @@ export const channelInventoryReleaseExecutions = pgTable(
     targetId: typeIdRef("target_id").references(() => channelInventoryAllotmentTargets.id, {
       onDelete: "set null",
     }),
-    slotId: typeIdRef("slot_id").references(() => availabilitySlots.id, { onDelete: "set null" }),
+    slotId: typeIdRef("slot_id"),
     actionTaken: channelReleaseExecutionActionEnum("action_taken").notNull().default("released"),
     status: channelReleaseExecutionStatusEnum("status").notNull().default("pending"),
     releasedCapacity: integer("released_capacity"),

@@ -20,14 +20,12 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/availability": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/identity": "workspace:^",
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/suppliers": "workspace:^",
     "@voyantjs/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -35,6 +33,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@voyantjs/availability": "workspace:^",
+    "@voyantjs/products": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },

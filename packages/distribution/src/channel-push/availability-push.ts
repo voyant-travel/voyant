@@ -12,7 +12,6 @@
  * Per docs/architecture/channel-push-architecture.md §5 + §12.2.
  */
 
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   AdapterRateLimitedError,
   type PushAvailabilityRequest,
@@ -30,6 +29,7 @@ import {
 } from "../schema.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
 
+import { loadAvailabilityPushSlot } from "./boundary-sql.js"
 import { type ChannelPushDeps, defaultLogger, getChannelPushDepsOrThrow } from "./types.js"
 
 /** Stable string identifier for the availability-push workflow. */
@@ -210,11 +210,7 @@ export async function processAvailabilityPushIntents(
 
   for (const { intent, channel } of intents) {
     // Read current slot state — stale events naturally don't propagate.
-    const [slot] = (await db
-      .select()
-      .from(availabilitySlots)
-      .where(eq(availabilitySlots.id, intent.slotId))
-      .limit(1)) as Array<typeof availabilitySlots.$inferSelect>
+    const slot = await loadAvailabilityPushSlot(db, intent.slotId)
 
     if (!slot) {
       // Slot deleted; drop the intent. Reconciler covers any drift.

@@ -1,5 +1,3 @@
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
-import { productOptions, products } from "@voyantjs/products/schema"
 import { suppliers } from "@voyantjs/suppliers/schema"
 import { relations } from "drizzle-orm"
 import {
@@ -75,20 +73,12 @@ export const channelCommissionRulesRelations = relations(channelCommissionRules,
     fields: [channelCommissionRules.contractId],
     references: [channelContracts.id],
   }),
-  product: one(products, {
-    fields: [channelCommissionRules.productId],
-    references: [products.id],
-  }),
 }))
 
 export const channelProductMappingsRelations = relations(channelProductMappings, ({ one }) => ({
   channel: one(channels, {
     fields: [channelProductMappings.channelId],
     references: [channels.id],
-  }),
-  product: one(products, {
-    fields: [channelProductMappings.productId],
-    references: [products.id],
   }),
 }))
 
@@ -110,18 +100,6 @@ export const channelInventoryAllotmentsRelations = relations(
       fields: [channelInventoryAllotments.contractId],
       references: [channelContracts.id],
     }),
-    product: one(products, {
-      fields: [channelInventoryAllotments.productId],
-      references: [products.id],
-    }),
-    option: one(productOptions, {
-      fields: [channelInventoryAllotments.optionId],
-      references: [productOptions.id],
-    }),
-    startTime: one(availabilityStartTimes, {
-      fields: [channelInventoryAllotments.startTimeId],
-      references: [availabilityStartTimes.id],
-    }),
     targets: many(channelInventoryAllotmentTargets),
     releaseRules: many(channelInventoryReleaseRules),
     releaseExecutions: many(channelInventoryReleaseExecutions),
@@ -134,14 +112,6 @@ export const channelInventoryAllotmentTargetsRelations = relations(
     allotment: one(channelInventoryAllotments, {
       fields: [channelInventoryAllotmentTargets.allotmentId],
       references: [channelInventoryAllotments.id],
-    }),
-    slot: one(availabilitySlots, {
-      fields: [channelInventoryAllotmentTargets.slotId],
-      references: [availabilitySlots.id],
-    }),
-    startTime: one(availabilityStartTimes, {
-      fields: [channelInventoryAllotmentTargets.startTimeId],
-      references: [availabilityStartTimes.id],
     }),
   }),
 )
@@ -228,10 +198,6 @@ export const channelInventoryReleaseExecutionsRelations = relations(
     target: one(channelInventoryAllotmentTargets, {
       fields: [channelInventoryReleaseExecutions.targetId],
       references: [channelInventoryAllotmentTargets.id],
-    }),
-    slot: one(availabilitySlots, {
-      fields: [channelInventoryReleaseExecutions.slotId],
-      references: [availabilitySlots.id],
     }),
   }),
 )
