@@ -1,5 +1,13 @@
 # @voyantjs/crm
 
+## 0.119.2
+
+### Patch Changes
+
+- db9c5cd: Split oversized CRM account tests, contract validation, React detail surfaces, and locale dictionaries into smaller internal modules while preserving existing public exports and behavior.
+- Updated dependencies [db9c5cd]
+  - @voyantjs/crm-contracts@0.106.1
+
 ## 0.119.1
 
 ### Patch Changes
