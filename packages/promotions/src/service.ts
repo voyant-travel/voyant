@@ -11,26 +11,14 @@
  * (PR3 + PR4 + PR3.boundary) are NOT in this PR.
  *
  * Cross-module reads:
- *   - `categories` scope expands via `product_category_products` (in @voyantjs/products)
- *   - `destinations` scope expands via `product_destinations` (in @voyantjs/products)
+ *   - `categories` scope expands via the Product-owned `product_category_products` table
+ *   - `destinations` scope expands via the Product-owned `product_destinations` table
+ *     through a resolver seam or raw SQL fallback. Promotions does not import
+ *     Product schemas at runtime.
  */
 
 import type { EventBus } from "@voyantjs/core"
-import { productCategoryProducts, productDestinations } from "@voyantjs/products/schema"
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm"
+import { and, count, desc, eq, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -67,7 +55,19 @@ export interface OfferMutationRuntime {
    * `"expired"` for `validUntil` crossings.
    */
   source?: PromotionChangedSource
+  /**
+   * Optional resolver for Product-owned category/destination scope expansion.
+   * Hosts that move Product authoring behind Inventory can inject the
+   * appropriate adapter here without making Promotions depend on Product
+   * schemas.
+   */
+  resolveScopeProductIds?: ResolvePromotionalOfferScopeProductIds
 }
+
+export type ResolvePromotionalOfferScopeProductIds = (
+  db: PostgresJsDatabase,
+  scope: Extract<PromotionalOfferScope, { kind: "categories" | "destinations" }>,
+) => Promise<string[]>
 
 /** Fields whose change does NOT affect projection or evaluation — safe to skip emit. */
 const NON_PROJECTION_FIELDS = new Set<keyof UpdatePromotionalOffer>(["description", "metadata"])
@@ -92,25 +92,20 @@ function shouldEmitForUpdate(patch: Partial<UpdatePromotionalOffer>): boolean {
 export async function resolveScopeProductIds(
   db: PostgresJsDatabase,
   scope: PromotionalOfferScope,
+  resolver?: ResolvePromotionalOfferScopeProductIds,
 ): Promise<string[] | null> {
   switch (scope.kind) {
     case "products":
       return [...new Set(scope.productIds)]
     case "categories": {
       if (scope.categoryIds.length === 0) return []
-      const rows = await db
-        .selectDistinct({ productId: productCategoryProducts.productId })
-        .from(productCategoryProducts)
-        .where(inArray(productCategoryProducts.categoryId, scope.categoryIds))
-      return rows.map((r) => r.productId)
+      return resolver ? resolver(db, scope) : loadProductIdsForCategoryScope(db, scope.categoryIds)
     }
     case "destinations": {
       if (scope.destinationIds.length === 0) return []
-      const rows = await db
-        .selectDistinct({ productId: productDestinations.productId })
-        .from(productDestinations)
-        .where(inArray(productDestinations.destinationId, scope.destinationIds))
-      return rows.map((r) => r.productId)
+      return resolver
+        ? resolver(db, scope)
+        : loadProductIdsForDestinationScope(db, scope.destinationIds)
     }
     case "global":
     case "markets":
@@ -119,6 +114,49 @@ export async function resolveScopeProductIds(
     case "cabin_grades":
       return null
   }
+}
+
+function readProductIdRows(result: unknown): string[] {
+  const rows = Array.isArray(result)
+    ? result
+    : Array.isArray((result as { rows?: unknown[] } | null)?.rows)
+      ? (result as { rows: unknown[] }).rows
+      : []
+  return rows
+    .map((row) => (row as { product_id?: unknown }).product_id)
+    .filter((productId): productId is string => typeof productId === "string")
+}
+
+async function loadProductIdsForCategoryScope(
+  db: PostgresJsDatabase,
+  categoryIds: string[],
+): Promise<string[]> {
+  const dbAny = db as { execute(query: unknown): Promise<unknown> }
+  const ids = sql.join(
+    categoryIds.map((categoryId) => sql`${categoryId}`),
+    sql`, `,
+  )
+  const result = await dbAny.execute(
+    // agent-quality: raw-sql reviewed -- owner: promotions; Product owns this link table, and ids are parameter-bound through Drizzle.
+    sql`SELECT DISTINCT product_id FROM product_category_products WHERE category_id IN (${ids})`,
+  )
+  return readProductIdRows(result)
+}
+
+async function loadProductIdsForDestinationScope(
+  db: PostgresJsDatabase,
+  destinationIds: string[],
+): Promise<string[]> {
+  const dbAny = db as { execute(query: unknown): Promise<unknown> }
+  const ids = sql.join(
+    destinationIds.map((destinationId) => sql`${destinationId}`),
+    sql`, `,
+  )
+  const result = await dbAny.execute(
+    // agent-quality: raw-sql reviewed -- owner: promotions; Product owns this link table, and ids are parameter-bound through Drizzle.
+    sql`SELECT DISTINCT product_id FROM product_destinations WHERE destination_id IN (${ids})`,
+  )
+  return readProductIdRows(result)
 }
 
 /**
@@ -130,8 +168,9 @@ export async function recomputeOfferLinks(
   db: PostgresJsDatabase,
   offerId: string,
   scope: PromotionalOfferScope,
+  runtime: OfferMutationRuntime = {},
 ): Promise<{ productIds: string[] | null }> {
-  const productIds = await resolveScopeProductIds(db, scope)
+  const productIds = await resolveScopeProductIds(db, scope, runtime.resolveScopeProductIds)
   await db.delete(promotionalOfferProducts).where(eq(promotionalOfferProducts.offerId, offerId))
   if (productIds && productIds.length > 0) {
     await db
@@ -319,7 +358,7 @@ async function createOffer(
   const [row] = await db.insert(promotionalOffers).values(toRowValues(input)).returning()
   if (!row) throw new Error("createOffer: insert returned no row")
 
-  const { productIds } = await recomputeOfferLinks(db, row.id, input.scope)
+  const { productIds } = await recomputeOfferLinks(db, row.id, input.scope, runtime)
 
   await emitChange(runtime, {
     offerId: row.id,
@@ -355,15 +394,18 @@ async function updateOffer(
   // category-id list edit) requires a rebuild.
   let productIds: string[] | null
   if (patch.scope !== undefined) {
-    productIds = (await recomputeOfferLinks(db, id, patch.scope)).productIds
+    productIds = (await recomputeOfferLinks(db, id, patch.scope, runtime)).productIds
   } else {
-    productIds = await resolveScopeProductIds(db, row.scope)
+    productIds = await resolveScopeProductIds(db, row.scope, runtime.resolveScopeProductIds)
   }
 
   if (shouldEmitForUpdate(patch)) {
     const affectedProductIds =
       patch.scope !== undefined && previousScope
-        ? unionAffectedProductIds(await resolveScopeProductIds(db, previousScope), productIds)
+        ? unionAffectedProductIds(
+            await resolveScopeProductIds(db, previousScope, runtime.resolveScopeProductIds),
+            productIds,
+          )
         : productIds
     await emitChange(runtime, {
       offerId: row.id,
@@ -387,7 +429,7 @@ async function archiveOffer(
     .returning()
   if (!row) return null
 
-  const productIds = await resolveScopeProductIds(db, row.scope)
+  const productIds = await resolveScopeProductIds(db, row.scope, runtime.resolveScopeProductIds)
   await emitChange(runtime, {
     offerId: row.id,
     source: runtime.source ?? "updated",
@@ -419,7 +461,11 @@ async function deleteOffer(
   // affected list after CASCADE wipes `promotional_offer_products`.
   const existing = await getOfferById(db, id)
   if (!existing) return null
-  const productIds = await resolveScopeProductIds(db, existing.scope)
+  const productIds = await resolveScopeProductIds(
+    db,
+    existing.scope,
+    runtime.resolveScopeProductIds,
+  )
 
   const [deleted] = await db
     .delete(promotionalOffers)

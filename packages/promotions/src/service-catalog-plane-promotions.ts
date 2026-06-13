@@ -1,14 +1,11 @@
 /**
  * Projection extension that decorates the product search document with
- * promotional-offer annotations declared by `productPromotionsCatalogPolicy`
- * (in `@voyantjs/products/catalog-policy-promotions`).
+ * promotional-offer annotations declared by the Product catalog policy.
  *
  * Lives in `@voyantjs/promotions` because:
  *   - The data lives here.
- *   - `promotions` already depends on `@voyantjs/products` for the
- *     `product_category_products` / `product_destinations` link tables;
- *     importing the `ProductProjectionExtension` contract type from
- *     products is the same direction.
+ *   - Product owns the document-builder implementation, while this package
+ *     exposes a structural extension that satisfies that builder contract.
  *
  * Wire via `createProductDocumentBuilder({ extensions: [...promotionsExt] })`
  * after composing `productPromotionsCatalogPolicy` into the registry.
@@ -30,11 +27,8 @@
  * Per docs/architecture/promotions-architecture.md §6.
  */
 
+import type { IndexerSlice } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import type {
-  IndexerSlice,
-  ProductProjectionExtension,
-} from "@voyantjs/products/service-catalog-plane"
 
 import {
   type AppliedOffer,
@@ -66,6 +60,15 @@ export interface PromotionsProjectionOptions {
 
   /** Override `now()` for testing. Defaults to wall-clock time at projection. */
   now?: () => Date
+}
+
+export interface ProductProjectionExtension {
+  readonly name: string
+  project(
+    db: AnyDrizzleDb,
+    productId: string,
+    slice: IndexerSlice,
+  ): Promise<ReadonlyMap<string, unknown>>
 }
 
 /**

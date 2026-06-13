@@ -3928,9 +3928,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyantjs/products':
-        specifier: workspace:^
-        version: link:../products
       '@voyantjs/workflows':
         specifier: workspace:^
         version: link:../workflows
@@ -3944,6 +3941,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@voyantjs/products':
+        specifier: workspace:^
+        version: link:../products
       '@voyantjs/voyant-test-utils':
         specifier: workspace:^
         version: link:../test-utils
