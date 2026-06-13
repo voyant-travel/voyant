@@ -1,5 +1,11 @@
 # @voyantjs/finance
 
+## 0.119.5
+
+### Patch Changes
+
+- 434e96d: Split the finance service rollup into operation-focused modules while preserving the existing public service API and behavior.
+
 ## 0.119.4
 
 ## 0.119.3
