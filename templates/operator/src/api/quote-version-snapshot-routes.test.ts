@@ -8,15 +8,15 @@ const mocks = vi.hoisted(() => {
       this.name = "QuoteVersionConflictError"
     }
   }
-  class TravelComposerInvariantError extends Error {
+  class TripComposerInvariantError extends Error {
     constructor(message: string) {
       super(message)
-      this.name = "TravelComposerInvariantError"
+      this.name = "TripComposerInvariantError"
     }
   }
   return {
     QuoteVersionConflictError,
-    TravelComposerInvariantError,
+    TripComposerInvariantError,
     applyTripSnapshotToQuoteVersion: vi.fn(),
     freezeTripSnapshot: vi.fn(),
     getQuoteVersionById: vi.fn(),
@@ -31,9 +31,9 @@ vi.mock("@voyantjs/quotes", () => ({
   },
 }))
 
-vi.mock("@voyantjs/travel-composer", () => ({
-  TravelComposerInvariantError: mocks.TravelComposerInvariantError,
-  travelComposerService: {
+vi.mock("@voyantjs/trip-composer", () => ({
+  TripComposerInvariantError: mocks.TripComposerInvariantError,
+  tripComposerService: {
     freezeTripSnapshot: mocks.freezeTripSnapshot,
   },
 }))
@@ -146,7 +146,7 @@ describe("operator quote version snapshot routes", () => {
     })
 
     const response = await app.request(
-      "/v1/admin/travel-composer/trips/trip_123/quote-versions/qver_123/snapshot",
+      "/v1/admin/trip-composer/trips/trip_123/quote-versions/qver_123/snapshot",
       {
         method: "POST",
         ...json({
@@ -195,7 +195,7 @@ describe("operator quote version snapshot routes", () => {
     })
 
     const response = await app.request(
-      "/v1/admin/travel-composer/trips/trip_123/quote-versions/qver_123/snapshot",
+      "/v1/admin/trip-composer/trips/trip_123/quote-versions/qver_123/snapshot",
       {
         method: "POST",
         ...json({}),

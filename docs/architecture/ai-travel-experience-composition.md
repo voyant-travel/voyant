@@ -16,20 +16,20 @@ composition module that turns customer intent into a priced, holdable,
 checkout-ready itinerary. AI agents, staff quote builders, storefront wizards,
 and partner APIs can all call that same module.
 
-Implementation status: `@voyantjs/travel-composer` now exists as the
+Implementation status: `@voyantjs/trip-composer` now exists as the
 deterministic composition package. It has durable Trip Envelope / Trip
 Component schema, Zod contracts, trip operations, catalog-backed component
 adaptation, aggregate price/tax snapshots, reserve and checkout handoff
 workflows, component-level cancellation preview/cancel operations, Cruise
 Extension placement helpers, admin/public Hono routes, and AI-safe MCP tools.
-`@voyantjs/travel-composer-react` exposes the corresponding client operations,
+`@voyantjs/trip-composer-react` exposes the corresponding client operations,
 query keys/options, provider, and hooks. The remaining work is integration
 hardening: deeper vertical holds, generic checkout extraction beyond the
 operator template, public-safe flight booking surfaces, and production admin UI
 for support workflows.
 
 Execution plan: use
-[`travel-composer-implementation-plan.md`](./travel-composer-implementation-plan.md)
+[`trip-composer-implementation-plan.md`](./trip-composer-implementation-plan.md)
 for the feature-branch and PR-by-PR rollout.
 
 Current code alignment, May 2026:
@@ -59,13 +59,13 @@ Current code alignment, May 2026:
 
 Voyant already has many of the required primitives:
 
-- **Travel Composer** in `@voyantjs/travel-composer` for Trip Envelopes, Trip
+- **Trip Composer** in `@voyantjs/trip-composer` for Trip Envelopes, Trip
   Components, deterministic create/revise/price/reserve/checkout/cancellation
   operations, Cruise Extension representation, Hono route mounting, and MCP
   tools. It groups multiple component bookings/orders into one customer-facing
   trip without collapsing component-level taxes, cancellation rules, supplier
   references, or support state.
-- **Travel Composer React** in `@voyantjs/travel-composer-react` for admin and
+- **Trip Composer React** in `@voyantjs/trip-composer-react` for admin and
   public client operations, validation-aware fetches, cache writers, query
   options, and hooks.
 - **Catalog plane** for normalized discovery across operated and sourced
@@ -139,7 +139,7 @@ should call deterministic tools backed by Voyant modules.
 
 Package name:
 
-`@voyantjs/travel-composer`
+`@voyantjs/trip-composer`
 
 Alternative names:
 
@@ -784,7 +784,7 @@ that component's supplier lifecycle.
 
 ### Slice 2: introduce Trip Envelopes
 
-- Add `@voyantjs/travel-composer` with Trip Envelope, Trip Day, and Trip
+- Add `@voyantjs/trip-composer` with Trip Envelope, Trip Day, and Trip
   Component contracts.
 - Support create/read/revise operations against structured intent and
   constraints.

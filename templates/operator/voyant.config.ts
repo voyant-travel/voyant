@@ -45,7 +45,7 @@ export default defineVoyantConfig({
     "@voyantjs/flights",
     "@voyantjs/legal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/travel-composer",
+    "@voyantjs/trip-composer",
   ],
   plugins: ["@voyantjs/plugin-smartbill"],
   // Mounted Hono extensions that own migrated schema.
