@@ -147,6 +147,11 @@ const checks: ExportCheck[] = [
       "publicUpsertBookingSessionStateSchema",
       "publicUpdateBookingSessionSchema",
       "bookingSessionStates",
+      "publicBookingRequirementsRoutes",
+      "bookingRequirementsService",
+      "publicTransportRequirementsQuerySchema",
+      "publicTransportRequirementsSchema",
+      "transportRequirementFieldSchema",
     ],
   },
   {
@@ -161,6 +166,11 @@ const checks: ExportCheck[] = [
       "publicBookingSessionResponse",
       "publicBookingSessionStateResponse",
       "publicBookingSessionRepriceResponse",
+      "useTransportRequirements",
+      "getTransportRequirementsQueryOptions",
+      "bookingRequirementsQueryKeys",
+      "publicTransportRequirementsSchema",
+      "transportRequirementFieldSchema",
     ],
   },
   {

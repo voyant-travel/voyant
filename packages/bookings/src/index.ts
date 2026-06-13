@@ -32,6 +32,7 @@ export {
   redactTravelerIdentity,
   shouldRevealBookingPii,
 } from "./pii-redaction.js"
+export * from "./requirements/index.js"
 export type {
   BookingCancelledEvent,
   BookingConfirmedEvent,

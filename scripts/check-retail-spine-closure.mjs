@@ -24,12 +24,7 @@ const retailSpineRoots = [
   },
   {
     area: "Bookings",
-    packages: [
-      "@voyantjs/bookings",
-      "@voyantjs/bookings-react",
-      "@voyantjs/booking-requirements",
-      "@voyantjs/booking-requirements-react",
-    ],
+    packages: ["@voyantjs/bookings", "@voyantjs/bookings-react"],
   },
   {
     area: "Finance",

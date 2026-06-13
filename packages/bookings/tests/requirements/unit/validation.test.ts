@@ -18,7 +18,7 @@ import {
   productBookingQuestionListQuerySchema,
   productContactRequirementListQuerySchema,
   updateProductContactRequirementSchema,
-} from "../../src/validation.js"
+} from "../../../src/requirements/validation.js"
 
 describe("Enum schemas", () => {
   it("accepts valid contact requirement fields", () => {

@@ -18,8 +18,8 @@
 // Singleton modules (no template-specific options).
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
 import { availabilityHonoModule } from "@voyantjs/availability"
-import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
+import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
 import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
 import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
@@ -55,6 +55,7 @@ import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
+import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createDocumentStorage } from "./lib/storage"
 import {
@@ -137,7 +138,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/identity",
     "@voyantjs/external-refs",
     "@voyantjs/extras",
-    "@voyantjs/booking-requirements",
+    "@voyantjs/bookings/requirements",
     "@voyantjs/pricing",
     "@voyantjs/markets",
     "@voyantjs/transactions",
@@ -179,7 +180,12 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/identity": () => identityHonoModule,
     "@voyantjs/external-refs": () => externalRefsHonoModule,
     "@voyantjs/extras": () => extrasHonoModule,
-    "@voyantjs/booking-requirements": () => bookingRequirementsHonoModule,
+    "@voyantjs/bookings/requirements": () =>
+      createBookingRequirementsHonoModule({
+        publicRoutes: {
+          resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
+        },
+      }),
     "@voyantjs/pricing": () => pricingHonoModule,
     "@voyantjs/markets": () => marketsHonoModule,
     "@voyantjs/transactions": () => transactionsHonoModule,

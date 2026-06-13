@@ -49,7 +49,6 @@
     "@voyantjs/auth-react": "workspace:^",
     "@voyantjs/availability": "workspace:^",
     "@voyantjs/availability-react": "workspace:^",
-    "@voyantjs/booking-requirements": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog": "workspace:^",

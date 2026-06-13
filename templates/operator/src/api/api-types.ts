@@ -1,5 +1,5 @@
 import type { AvailabilityRoutes } from "@voyantjs/availability/routes"
-import type { BookingRequirementsRoutes } from "@voyantjs/booking-requirements/routes"
+import type { BookingRequirementsRoutes } from "@voyantjs/bookings/requirements/routes"
 import type { BookingRoutes } from "@voyantjs/bookings/routes"
 import type { CrmRoutes } from "@voyantjs/crm/routes"
 import type { DistributionRoutes } from "@voyantjs/distribution/routes"

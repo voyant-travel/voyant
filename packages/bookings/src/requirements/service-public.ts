@@ -1,4 +1,3 @@
-import { productCapabilities, products } from "@voyantjs/products/schema"
 import { and, asc, eq, isNull, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -14,6 +13,17 @@ const transportFieldKeys = [
 
 type TransportFieldKey = (typeof transportFieldKeys)[number]
 type RequirementRow = typeof productContactRequirements.$inferSelect
+
+export interface BookingRequirementsProductSnapshot {
+  id: string
+  bookingMode?: string | null
+  capabilities?: readonly string[]
+}
+
+export type ResolveBookingRequirementsProductSnapshot = (
+  db: PostgresJsDatabase,
+  productId: string,
+) => Promise<BookingRequirementsProductSnapshot | null>
 
 function uniqueSorted<T extends string>(values: Iterable<T>) {
   return Array.from(new Set(values)).sort()
@@ -32,21 +42,11 @@ export async function getPublicTransportRequirements(
   db: PostgresJsDatabase,
   productId: string,
   query: PublicTransportRequirementsQuery,
+  resolveProductSnapshot?: ResolveBookingRequirementsProductSnapshot,
 ) {
-  const [product, capabilityRows, requirementRows] = await Promise.all([
-    db
-      .select()
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
-    db
-      .select({ capability: productCapabilities.capability })
-      .from(productCapabilities)
-      .where(
-        and(eq(productCapabilities.productId, productId), eq(productCapabilities.enabled, true)),
-      )
-      .orderBy(asc(productCapabilities.capability)),
+  const defaultProductSnapshot: BookingRequirementsProductSnapshot = { id: productId }
+  const [product, requirementRows] = await Promise.all([
+    resolveProductSnapshot ? resolveProductSnapshot(db, productId) : defaultProductSnapshot,
     db
       .select()
       .from(productContactRequirements)
@@ -76,7 +76,7 @@ export async function getPublicTransportRequirements(
     transportFieldKeys.includes(row.fieldKey as TransportFieldKey),
   )
   const requiredRows = relevantRows.filter((row) => row.isRequired)
-  const capabilitySet = new Set(capabilityRows.map((row) => row.capability))
+  const capabilitySet = new Set(product.capabilities ?? [])
 
   return {
     productId,

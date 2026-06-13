@@ -75,7 +75,7 @@ hotel-operations system; see
 ### Travel domain modules
 
 - [`@voyantjs/crm`](./packages/crm/README.md), [`@voyantjs/suppliers`](./packages/suppliers/README.md), [`@voyantjs/products`](./packages/products/README.md), [`@voyantjs/availability`](./packages/availability/README.md)
-- [`@voyantjs/booking-requirements`](./packages/booking-requirements/README.md), [`@voyantjs/resources`](./packages/resources/README.md), [`@voyantjs/transactions`](./packages/transactions/README.md), [`@voyantjs/bookings`](./packages/bookings/README.md)
+- [`@voyantjs/bookings/requirements`](./packages/bookings/README.md), [`@voyantjs/resources`](./packages/resources/README.md), [`@voyantjs/transactions`](./packages/transactions/README.md), [`@voyantjs/bookings`](./packages/bookings/README.md)
 - [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md), [`@voyantjs/checkout`](./packages/checkout), [`@voyantjs/legal`](./packages/legal/README.md)
 - [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/markets`](./packages/markets/README.md), [`@voyantjs/pricing`](./packages/pricing/README.md), [`@voyantjs/extras`](./packages/extras/README.md), [`@voyantjs/sellability`](./packages/sellability/README.md)
 - [`@voyantjs/facilities`](./packages/facilities/README.md), [`@voyantjs/ground`](./packages/ground/README.md), [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/external-refs`](./packages/external-refs/README.md), [`@voyantjs/octo`](./packages/octo)
@@ -96,7 +96,7 @@ Reference apps under [`apps/`](./apps) compose these into deployable shapes — 
 
 ### UI and React families
 
-Each domain module has matching `-ui` (admin components/pages) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-react/ui`](./packages/crm-react/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-react/ui`](./packages/bookings-react) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
+Each domain module has matching `-react` packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-react/ui`](./packages/crm-react/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-react/ui`](./packages/bookings-react) + [`@voyantjs/bookings-react`](./packages/bookings-react), and bookings requirements via `@voyantjs/bookings-react/requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
 
 ### Plugins
 

@@ -39,6 +39,13 @@ export {
   getTaxPreviewQueryOptions,
   getTravelersQueryOptions,
 } from "./query-options.js"
+export {
+  bookingRequirementsQueryKeys,
+  getTransportRequirementsQueryOptions,
+  publicTransportRequirementsSchema,
+  transportRequirementFieldSchema,
+  useTransportRequirements,
+} from "./requirements/index.js"
 export * from "./schemas.js"
 export {
   type BookingStatusBadgeVariant,

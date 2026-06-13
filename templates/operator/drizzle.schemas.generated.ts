@@ -21,7 +21,6 @@ export const schema = [
   "../../packages/resources/src/schema.ts",
   "../../packages/markets/src/schema.ts",
   "../../packages/notifications/src/schema.ts",
-  "../../packages/booking-requirements/src/schema.ts",
   "../../packages/external-refs/src/schema.ts",
   "../../packages/extras/src/schema.ts",
   "../../packages/flights/src/reference/local-postgres.ts",
