@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   getLegacyTransactionLinkFromBookingOrigin,
   toBookingOriginInsert,
+  toCatalogReservationBookingOriginInput,
+  toDirectB2CBookingOriginInput,
 } from "../../src/service-origin.js"
 
 describe("booking origins", () => {
@@ -78,5 +80,63 @@ describe("booking origins", () => {
     })
 
     expect(link).toEqual({ offerId: "off_1797", orderId: "ord_1797" })
+  })
+
+  it("builds direct storefront provenance from booking session items", () => {
+    const input = toDirectB2CBookingOriginInput({
+      bookingId: "book_direct_1797",
+      externalBookingRef: "storefront-cart-123",
+      items: [
+        { sourceSnapshotId: "bcsn_1" },
+        { sourceSnapshotId: "bcsn_1" },
+        { sourceSnapshotId: "bcsn_2" },
+      ],
+    })
+
+    expect(input).toEqual({
+      bookingId: "book_direct_1797",
+      originSource: "direct_b2c",
+      catalogSnapshotId: null,
+      metadata: {
+        source: "public_bookings_service.create_session",
+        externalBookingRef: "storefront-cart-123",
+        catalogSnapshotIds: ["bcsn_1", "bcsn_2"],
+        itemCount: 3,
+      },
+    })
+  })
+
+  it("builds catalog trip reservation provenance for composer handoffs", () => {
+    const input = toCatalogReservationBookingOriginInput({
+      bookingId: "book_trip_1797",
+      tripEnvelopeId: "trenv_1797",
+      tripComponentId: "trcmp_1797",
+      catalogPriceResponseId: "cquo_1797",
+      catalogSnapshotId: "bcsn_1797",
+      providerSourceKind: "catalog",
+      providerSourceConnectionId: "src_conn_1797",
+      providerSourceRef: "departure_1797",
+      providerOrderRef: "ord_provider_1797",
+      metadata: { entityModule: "products", entityId: "prod_1797" },
+    })
+
+    expect(input).toEqual({
+      bookingId: "book_trip_1797",
+      originSource: "catalog_price_availability",
+      catalogPriceResponseId: "cquo_1797",
+      catalogSnapshotId: "bcsn_1797",
+      providerSourceKind: "catalog",
+      providerSourceProvider: null,
+      providerSourceConnectionId: "src_conn_1797",
+      providerSourceRef: "departure_1797",
+      providerOrderRef: "ord_provider_1797",
+      metadata: {
+        source: "trip_composer.reserve_catalog_component",
+        tripEnvelopeId: "trenv_1797",
+        tripComponentId: "trcmp_1797",
+        entityModule: "products",
+        entityId: "prod_1797",
+      },
+    })
   })
 })
