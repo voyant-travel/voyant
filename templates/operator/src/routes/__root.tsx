@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { createRootRouteWithContext, Outlet, useRouteContext } from "@tanstack/react-router"
-import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyantjs/admin-app"
+import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyantjs/admin/app/root"
 import { Toaster } from "@voyantjs/ui/components"
 
 import { Providers } from "../components/providers"

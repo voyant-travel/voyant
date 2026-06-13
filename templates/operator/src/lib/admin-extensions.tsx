@@ -73,7 +73,7 @@ type AdminExtensionNavMessages = Pick<
 >
 
 // The CORE admin surfaces — dashboard, account, settings — are
-// package-delivered by `@voyantjs/admin-app` (packaged-admin RFC §4.2): the
+// package-delivered by `@voyantjs/admin-app/core-extension` (packaged-admin RFC §4.2): the
 // extension contributes NO navigation (Dashboard/Settings are part of the
 // BASE operator navigation; Account is linked from the user menu) and is
 // registered for the routes seam. The app composes two seams through the

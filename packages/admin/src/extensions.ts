@@ -147,7 +147,7 @@ export interface AdminUiRouteContribution {
    * a child path of exactly `"/"` is the parent's index route. Hosts bind
    * children under the parent's code-based route (packaged-admin RFC §4.8 —
    * see `attachAdminExtensionRoutes` / `adminExtensionChildRoutes` in
-   * `@voyantjs/admin-app`).
+   * `@voyantjs/admin/app`).
    */
   children?: ReadonlyArray<AdminUiRouteContribution>
 }

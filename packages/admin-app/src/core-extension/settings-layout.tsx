@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useOperatorAdminMessages } from "@voyantjs/admin/providers/operator-admin-messages"
 import { cn } from "@voyantjs/ui/lib/utils"
 
 import {

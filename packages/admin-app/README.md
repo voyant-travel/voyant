@@ -1,13 +1,12 @@
 # @voyantjs/admin-app
 
-The Voyant admin application factory: the root document, router defaults,
-auth-guarded workspace shell, and router-aware navigation — the composition
-glue every Voyant admin previously copied from the template, delivered as a
-versioned package.
+First-party admin app composition package.
 
-Part of the Packaged Admin direction (`docs/architecture/packaged-admin-rfc.md`,
-Phase 1). `@voyantjs/admin` stays the primitives package (providers, layout,
-extension seam); this package owns the application-level composition on top.
+The reusable shell implementation lives in `@voyantjs/admin/app/*` so the
+top-level `admin` package owns the packaged staff shell and extension surface.
+This package re-exports those shell helpers for compatibility and owns the
+domain-backed core extension bundle that imports first-party domain React
+packages.
 
 ## What it provides
 
@@ -29,14 +28,20 @@ extension seam); this package owns the application-level composition on top.
   contract: packaged pages resolve `AdminDestinations` keys to hrefs via
   `useAdminHref`/`useAdminNavigate`, and the shell routes them through the app
   router.
+- **`createAdminCoreExtension(options?)`** — dashboard, account, and settings
+  route contributions backed by first-party domain React packages.
 
 ## Usage
 
 ```tsx
 // src/router.tsx
+import { createAdminRouter } from "@voyantjs/admin/app"
+
 export const getRouter = () => createAdminRouter({ routeTree })
 
 // src/routes/__root.tsx
+import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyantjs/admin/app/root"
+
 export const Route = createRootRouteWithContext<AdminRouterContext>()({
   head: () => adminRootHead({ title: "Acme Admin" }),
   shellComponent: AdminRootShell,
@@ -45,6 +50,12 @@ export const Route = createRootRouteWithContext<AdminRouterContext>()({
 })
 
 // src/routes/_workspace/route.tsx
+import {
+  AdminWorkspacePendingFallback,
+  AdminWorkspaceShell,
+  createAdminWorkspaceBeforeLoad,
+} from "@voyantjs/admin/app/workspace"
+
 export const Route = createFileRoute("/_workspace")({
   ssr: "data-only",
   beforeLoad: createAdminWorkspaceBeforeLoad({ getCurrentUser }),
@@ -66,6 +77,9 @@ export const Route = createFileRoute("/_workspace")({
 
 What stays app-owned: the provider list (which domain modules are mounted),
 extension definitions, navigation icons, branding, and the auth client.
+
+New first-party code should import shell helpers from `@voyantjs/admin/app/*`
+and the domain-backed core extension from `@voyantjs/admin-app/core-extension`.
 
 ## License
 

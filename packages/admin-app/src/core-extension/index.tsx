@@ -1,3 +1,8 @@
+// Lean static only: the dashboard skeleton (pending boundary). Every page —
+// dashboard (recharts), account, and the settings pages — resolves through
+// dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
+// thunks, so the heavy chunks load on navigation, not with workspace chrome.
+import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -5,12 +10,7 @@ import {
   type AdminUiRouteContribution,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
-// Lean static only: the dashboard skeleton (pending boundary). Every page —
-// dashboard (recharts), account, and the settings pages — resolves through
-// dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
-// thunks, so the heavy chunks load on navigation, not with workspace chrome.
-import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
+} from "@voyantjs/admin/extensions"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
@@ -241,7 +241,7 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
 function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteContribution {
   const entry = adminCoreSettingsNavEntries.find((candidate) => candidate.id === id)
   if (!entry) {
-    throw new Error(`[voyant-admin-app] Unknown core settings page "${id}".`)
+    throw new Error(`[voyant-admin] Unknown core settings page "${id}".`)
   }
   const base = { id: `core-settings-${id}`, path: entry.path, title: entry.defaultTitle }
 
