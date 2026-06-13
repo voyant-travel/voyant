@@ -1,5 +1,4 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { suppliers } from "@voyantjs/suppliers/schema"
 import { sql } from "drizzle-orm"
 import {
   boolean,
@@ -12,7 +11,6 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
-
 import {
   channelCommissionScopeEnum,
   channelCommissionTypeEnum,
@@ -23,6 +21,7 @@ import {
   distributionCancellationOwnerEnum,
   distributionPaymentOwnerEnum,
 } from "./schema-shared.js"
+import { suppliers } from "./suppliers/schema.js"
 
 export const channels = pgTable(
   "channels",

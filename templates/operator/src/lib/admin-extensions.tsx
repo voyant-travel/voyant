@@ -324,7 +324,7 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the list keeps its filters local), and the pages are the packaged hosts
-// from @voyantjs/suppliers-react/admin — the route files under
+// from @voyantjs/distribution-react/suppliers/admin — the route files under
 // src/routes/_workspace/suppliers/* only bind route params onto them. The
 // detail page's customer-payment-policy card arrives via finance-ui's widget
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔

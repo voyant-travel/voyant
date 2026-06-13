@@ -1,6 +1,5 @@
+import { supplierAggregatesQuerySchema } from "@voyantjs/distribution/suppliers/validation"
 import { describe, expect, it } from "vitest"
-
-import { supplierAggregatesQuerySchema } from "../../src/validation.js"
 
 describe("supplierAggregatesQuerySchema", () => {
   it("accepts an empty object", () => {

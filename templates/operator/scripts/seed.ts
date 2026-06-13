@@ -40,6 +40,12 @@ import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
 import {
+  supplierNotes,
+  supplierRates,
+  supplierServices,
+  suppliers,
+} from "@voyantjs/distribution/suppliers/schema"
+import {
   facilities,
   facilityFeatures,
   facilityOperationSchedules,
@@ -111,12 +117,6 @@ import {
   segmentMembers,
   segments,
 } from "@voyantjs/relationships/schema"
-import {
-  supplierNotes,
-  supplierRates,
-  supplierServices,
-  suppliers,
-} from "@voyantjs/suppliers/schema"
 import { hashPassword } from "better-auth/crypto"
 import { asc, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"

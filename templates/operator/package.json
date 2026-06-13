@@ -108,7 +108,6 @@
     "@voyantjs/storefront": "workspace:^",
     "@voyantjs/storefront-verification": "workspace:^",
     "@voyantjs/suppliers": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/trip-composer": "workspace:^",
     "@voyantjs/trip-composer-react": "workspace:^",
     "@voyantjs/types": "workspace:^",

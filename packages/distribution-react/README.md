@@ -2,6 +2,9 @@
 
 The distribution client tier: headless data hooks/clients plus the styled UI
 components and page-level compositions (formerly `@voyantjs/distribution-ui`).
+Supplier and external-reference UI owner paths live in this package under
+`./suppliers` and `./external-refs`; old `@voyantjs/suppliers-react` and
+`@voyantjs/external-refs-react` package names are compatibility facades.
 
 Headless consumers import from the root, `./hooks`, `./client`, or
 `./query-keys` — these pull no styling peers. Styled surfaces live under
@@ -68,6 +71,8 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 - `ChannelDetailPage`, `ContractDetailPage`, `CommissionRuleDetailPage`, `MappingDetailPage`, `BookingLinkDetailPage`, `WebhookEventDetailPage`
 - `DistributionChannelsTab`, `DistributionContractsTab`, `DistributionCommissionsTab`
 - `DistributionMappingsTab`, `DistributionBookingLinksTab`, `DistributionWebhooksTab`
+- Supplier UI: `@voyantjs/distribution-react/suppliers`, `/suppliers/ui`, `/suppliers/admin`
+- External refs UI: `@voyantjs/distribution-react/external-refs`, `/external-refs/ui`
 
 ### Not included (registry-only)
 

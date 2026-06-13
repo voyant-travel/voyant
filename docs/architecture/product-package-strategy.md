@@ -812,8 +812,13 @@ one workflow.
 Solution:
 
 Fold supplier runtime and external reference runtime into Distribution in the v1
-package move. Keep Supplier and Channel distinct inside the Distribution domain:
-Supplier is procurement/source/delivery-side, while Channel is outbound resale or
+package move. Current v1 owner paths are
+`@voyantjs/distribution/suppliers` and
+`@voyantjs/distribution/external-refs`; the old `@voyantjs/suppliers` and
+`@voyantjs/external-refs` package names are compatibility facades until the v1
+public-name policy removes or deprecates them. Keep Supplier and Channel
+distinct inside the Distribution domain: Supplier is
+procurement/source/delivery-side, while Channel is outbound resale or
 distribution-side. The shared Module should own external identity, mappings,
 source/operator links, adapter-facing references, channel push, allotments, and
 reconciliation.
@@ -835,10 +840,14 @@ procurement language into an outbound-only Distribution meaning.
 Required cleanup:
 
 - Keep `@voyantjs/suppliers-contracts` separate unless ADR-0002 changes.
-- Move schema ownership only through the migration contract below; do not strand
-  supplier tables behind a deleted package name.
-- Replace broad `external-refs-react` imports with Distribution React surfaces
-  or narrow extension points.
+- Move schema/template manifest ownership only through the migration contract
+  below; do not strand supplier or external-ref tables behind deleted package
+  names. During the owner-path phase, legacy schema package entries may re-export
+  Distribution-owned schema files for manifest parity.
+- Replace broad `external-refs-react` and `suppliers-react` imports in
+  first-party runtime/template code with Distribution React owner paths or
+  narrow extension points. Reusable packages may keep compatibility imports when
+  retargeting would introduce UI peer cycles.
 - Keep supplier costing and invoices in Finance; Distribution can reference
   them but should not own ledger state.
 - Update `UBIQUITOUS_LANGUAGE.md` so Distribution clearly covers supplier-side
@@ -1310,9 +1319,9 @@ stay unchanged.
 | --- | --- | --- |
 | `@voyantjs/finance`, `@voyantjs/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, vouchers, settlement, and profitability. |
 | `@voyantjs/legal`, `@voyantjs/legal-react` | Keep separate. | Legal documents, contracts, terms, templates, signatures, and legal workflows cut across quotes, bookings, Distribution, and finance. |
-| `@voyantjs/suppliers`, `@voyantjs/suppliers-react` | Fold into `distribution` in the v1 package move. | Supplier remains a distinct role/entity inside Distribution; it should not be flattened into Channel. |
+| `@voyantjs/suppliers`, `@voyantjs/suppliers-react` | Compatibility facades over `@voyantjs/distribution/suppliers` and `@voyantjs/distribution-react/suppliers` after the v1 owner-path move. | Supplier remains a distinct role/entity inside Distribution; it should not be flattened into Channel. |
 | `@voyantjs/distribution`, `@voyantjs/distribution-react` | Keep as the proposed Distribution Module name and absorb supplier/external-ref scope if the broader commercial-network definition is accepted. | Distribution owns supplier-side and channel-side commercial network concerns: Suppliers, Channels, mappings, allotments, channel push, source/operator links, reconciliation, and integration-facing references. |
-| `@voyantjs/external-refs`, `@voyantjs/external-refs-react` | Fold into `distribution` in the v1 package move. | External refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |
+| `@voyantjs/external-refs`, `@voyantjs/external-refs-react` | Compatibility facades over `@voyantjs/distribution/external-refs` and `@voyantjs/distribution-react/external-refs` after the v1 owner-path move. | External refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |
 
 ### 10.6 Admin And Surface Packages
 

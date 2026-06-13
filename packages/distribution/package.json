@@ -9,7 +9,15 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./booking-extension": "./src/booking-extension.ts",
-    "./channel-push": "./src/channel-push/index.ts"
+    "./channel-push": "./src/channel-push/index.ts",
+    "./suppliers": "./src/suppliers/index.ts",
+    "./suppliers/schema": "./src/suppliers/schema.ts",
+    "./suppliers/validation": "./src/suppliers/validation.ts",
+    "./suppliers/routes": "./src/suppliers/routes.ts",
+    "./external-refs": "./src/external-refs/index.ts",
+    "./external-refs/schema": "./src/external-refs/schema.ts",
+    "./external-refs/validation": "./src/external-refs/validation.ts",
+    "./external-refs/routes": "./src/external-refs/routes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,11 +34,11 @@
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/identity": "workspace:^",
-    "@voyantjs/suppliers": "workspace:^",
     "@voyantjs/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@voyantjs/suppliers-contracts": "workspace:^"
   },
   "devDependencies": {
     "@voyantjs/availability": "workspace:^",
@@ -73,6 +81,46 @@
         "types": "./dist/channel-push/index.d.ts",
         "import": "./dist/channel-push/index.js",
         "default": "./dist/channel-push/index.js"
+      },
+      "./suppliers": {
+        "types": "./dist/suppliers/index.d.ts",
+        "import": "./dist/suppliers/index.js",
+        "default": "./dist/suppliers/index.js"
+      },
+      "./suppliers/schema": {
+        "types": "./dist/suppliers/schema.d.ts",
+        "import": "./dist/suppliers/schema.js",
+        "default": "./dist/suppliers/schema.js"
+      },
+      "./suppliers/validation": {
+        "types": "./dist/suppliers/validation.d.ts",
+        "import": "./dist/suppliers/validation.js",
+        "default": "./dist/suppliers/validation.js"
+      },
+      "./suppliers/routes": {
+        "types": "./dist/suppliers/routes.d.ts",
+        "import": "./dist/suppliers/routes.js",
+        "default": "./dist/suppliers/routes.js"
+      },
+      "./external-refs": {
+        "types": "./dist/external-refs/index.d.ts",
+        "import": "./dist/external-refs/index.js",
+        "default": "./dist/external-refs/index.js"
+      },
+      "./external-refs/schema": {
+        "types": "./dist/external-refs/schema.d.ts",
+        "import": "./dist/external-refs/schema.js",
+        "default": "./dist/external-refs/schema.js"
+      },
+      "./external-refs/validation": {
+        "types": "./dist/external-refs/validation.d.ts",
+        "import": "./dist/external-refs/validation.js",
+        "default": "./dist/external-refs/validation.js"
+      },
+      "./external-refs/routes": {
+        "types": "./dist/external-refs/routes.d.ts",
+        "import": "./dist/external-refs/routes.js",
+        "default": "./dist/external-refs/routes.js"
       }
     },
     "main": "./dist/index.js",

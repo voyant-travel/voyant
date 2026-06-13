@@ -1,7 +1,10 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { insertExternalRefSchema, updateExternalRefSchema } from "@voyantjs/external-refs"
+import type {
+  insertExternalRefSchema,
+  updateExternalRefSchema,
+} from "@voyantjs/distribution/external-refs"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
