@@ -45,6 +45,18 @@ const triggerWorkflowBodySchema = z
   })
   .strict()
 
+export type WorkflowAdminSurface = "tenant" | "cloud" | "disabled"
+
+export function resolveWorkflowAdminSurface(value: string | undefined): WorkflowAdminSurface {
+  if (value === "tenant" || value === "cloud" || value === "disabled") return value
+  if (value !== undefined && value.trim().length > 0) {
+    throw new Error(
+      `Invalid workflow admin surface "${value}". Expected tenant, cloud, or disabled.`,
+    )
+  }
+  return "tenant"
+}
+
 function hasWorkflowTriggerScope(scopes: unknown): boolean {
   if (!Array.isArray(scopes) || !scopes.every((scope) => typeof scope === "string")) {
     return false
@@ -75,12 +87,21 @@ export interface MountWorkflowRunsAdminRoutesOptions {
    * are recorded without an actor.
    */
   resolveUserId?: (c: unknown) => string | null
+  /**
+   * Controls whether tenant-admin workflow management actions are exposed.
+   * `tenant` preserves local/self-host behavior. `cloud` and `disabled`
+   * reject tenant-admin trigger/rerun/resume routes server-side while leaving
+   * read paths mounted for observability consumers that still need them.
+   */
+  adminSurface?: WorkflowAdminSurface
 }
 
 export function mountWorkflowRunsAdminRoutes(
   hono: Hono,
   opts: MountWorkflowRunsAdminRoutesOptions = {},
 ): void {
+  const adminSurface = opts.adminSurface ?? defaultWorkflowAdminSurface()
+
   hono.get("/v1/admin/workflow-runs", async (c) => {
     const params = Object.fromEntries(new URL(c.req.url).searchParams)
     const parsed = listQuerySchema.safeParse(params)
@@ -129,6 +150,9 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.post("/v1/admin/workflows/:name/runs", async (c) => {
+    const blocked = rejectWorkflowAdminAction(adminSurface, c)
+    if (blocked) return blocked
+
     if (!opts.runners) {
       return c.json(
         { error: "trigger_not_configured", detail: "no WorkflowRunnerRegistry mounted" },
@@ -189,6 +213,9 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.post("/v1/admin/workflow-runs/:id/rerun", async (c) => {
+    const blocked = rejectWorkflowAdminAction(adminSurface, c)
+    if (blocked) return blocked
+
     // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
@@ -269,6 +296,9 @@ export function mountWorkflowRunsAdminRoutes(
   })
 
   hono.post("/v1/admin/workflow-runs/:id/resume", async (c) => {
+    const blocked = rejectWorkflowAdminAction(adminSurface, c)
+    if (blocked) return blocked
+
     // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
@@ -358,4 +388,41 @@ export function mountWorkflowRunsAdminRoutes(
       )
     }
   })
+}
+
+function rejectWorkflowAdminAction(
+  surface: WorkflowAdminSurface,
+  c: { json(body: unknown, status?: number): Response },
+): Response | undefined {
+  if (surface === "tenant") return undefined
+  return c.json(
+    {
+      error: "workflow_admin_surface_restricted",
+      detail:
+        surface === "cloud"
+          ? "Workflow management actions are owned by Voyant Cloud for this deployment."
+          : "Workflow management actions are disabled for this deployment.",
+      surface,
+    },
+    403,
+  )
+}
+
+function defaultWorkflowAdminSurface(): WorkflowAdminSurface {
+  const env = (
+    globalThis as typeof globalThis & {
+      process?: {
+        env?: {
+          VOYANT_CLOUD_APP_SLUG?: string
+          VOYANT_CLOUD_WORKFLOWS_URL?: string
+          VOYANT_WORKFLOW_ADMIN_SURFACE?: string
+        }
+      }
+    }
+  ).process?.env
+  if (env?.VOYANT_WORKFLOW_ADMIN_SURFACE !== undefined) {
+    return resolveWorkflowAdminSurface(env.VOYANT_WORKFLOW_ADMIN_SURFACE)
+  }
+  if (env?.VOYANT_CLOUD_WORKFLOWS_URL || env?.VOYANT_CLOUD_APP_SLUG) return "cloud"
+  return "tenant"
 }

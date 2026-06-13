@@ -73,11 +73,25 @@ export function buildTestManifest(versionId = "v_test_001"): WorkflowManifest {
     versionId,
     builtAt: 1_700_000_000_000,
     builderVersion: "test-0.0.0",
-    capabilities: ["events:v1"],
+    capabilities: testReleaseCapabilities(),
     workflows: [],
     eventFilters: [],
+    diagnostics: [],
     bindings: {},
     environments: { production: {}, preview: {}, development: {} },
+  }
+}
+
+function testReleaseCapabilities(): WorkflowManifest["capabilities"] {
+  return {
+    trigger: true,
+    events: true,
+    schedules: true,
+    rerun: true,
+    resume: true,
+    cancel: true,
+    humanApproval: false,
+    stepRerun: false,
   }
 }
 

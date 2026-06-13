@@ -26,6 +26,10 @@ export const sendBookingReminders = workflow({
 ## Subpaths
 
 - `@voyantjs/workflows` — authoring API (`workflow`, `workflows`, `trigger`, conditions, errors).
+- `@voyantjs/workflows/client` — app/server-safe managed Cloud client and
+  Cloud-mode driver. Use this from app code that only needs
+  `workflows.trigger(...)` or event forwarding; it does not import workflow
+  definitions, runner code, or Node-only workflow dependencies.
 - `@voyantjs/workflows/testing` — in-process test harness
   (`runWorkflowForTest`, `resumeWorkflowForTest`).
 - `@voyantjs/workflows/handler` — tenant-side step handler for the
@@ -43,6 +47,30 @@ export const sendBookingReminders = workflow({
   (`FatalError`, `RetryableError`, `TimeoutError`, and related classes).
 - `@voyantjs/workflows/protocol` — wire-protocol types shared with the
   orchestrator.
+
+## Managed Cloud runtime split
+
+Managed Voyant Cloud runs workflow bundles in the hosted Cloud runtime. App
+bundles should import only `@voyantjs/workflows/client` and call
+`workflows.trigger(...)`; workflow definition files keep importing
+`workflow(...)`, `ctx.step(...)`, `ctx.sleep(...)`, and `trigger.on(...)` from
+`@voyantjs/workflows`.
+
+Cloud deployments inject:
+
+```txt
+VOYANT_CLOUD_WORKFLOWS_URL
+VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN
+VOYANT_CLOUD_APP_SLUG
+VOYANT_CLOUD_ENVIRONMENT
+```
+
+The client posts trigger calls to the app-scoped Cloud API. The Cloud-mode
+driver forwards event ingest to the same boundary, but workflow release
+registration is disabled by default: Cloud creates releases from deployments,
+artifacts, hashes, and environment snapshots. Existing self-host Node/Docker
+and Cloudflare runtimes continue to use the driver/orchestrator packages
+directly.
 
 ## Full contract
 

@@ -31,9 +31,11 @@ function deserializeWorkflowManifest(manifest: Record<string, unknown>): Workflo
     capabilities,
     workflows,
     eventFilters,
+    diagnostics,
     bindings,
     environments,
   } = manifest
+  const normalizedCapabilities = normalizeManifestCapabilities(capabilities)
 
   if (
     schemaVersion !== 1 ||
@@ -41,7 +43,7 @@ function deserializeWorkflowManifest(manifest: Record<string, unknown>): Workflo
     typeof versionId !== "string" ||
     typeof builtAt !== "number" ||
     typeof builderVersion !== "string" ||
-    !isStringArray(capabilities) ||
+    !normalizedCapabilities ||
     !Array.isArray(workflows) ||
     !Array.isArray(eventFilters) ||
     !isRecord(bindings) ||
@@ -56,9 +58,10 @@ function deserializeWorkflowManifest(manifest: Record<string, unknown>): Workflo
     versionId,
     builtAt,
     builderVersion,
-    capabilities,
+    capabilities: normalizedCapabilities,
     workflows: workflows as WorkflowManifest["workflows"],
     eventFilters: eventFilters as WorkflowManifest["eventFilters"],
+    diagnostics: Array.isArray(diagnostics) ? (diagnostics as WorkflowManifest["diagnostics"]) : [],
     bindings: bindings as WorkflowManifest["bindings"],
     environments: environments as WorkflowManifest["environments"],
   }
@@ -68,8 +71,35 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string")
+function normalizeManifestCapabilities(
+  value: unknown,
+): WorkflowManifest["capabilities"] | undefined {
+  if (isRecord(value)) {
+    return {
+      trigger: value.trigger === true,
+      events: value.events === true,
+      schedules: value.schedules === true,
+      rerun: value.rerun === true,
+      resume: value.resume === true,
+      cancel: value.cancel === true,
+      humanApproval: value.humanApproval === true,
+      stepRerun: value.stepRerun === true,
+    }
+  }
+  if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+    const legacy = new Set(value)
+    return {
+      trigger: legacy.has("trigger"),
+      events: legacy.has("events") || legacy.has("events:v1"),
+      schedules: legacy.has("schedules"),
+      rerun: legacy.has("rerun"),
+      resume: legacy.has("resume"),
+      cancel: legacy.has("cancel"),
+      humanApproval: legacy.has("human-approval"),
+      stepRerun: legacy.has("step-rerun"),
+    }
+  }
+  return undefined
 }
 
 export interface EventHandlerDeps<Id = unknown> {
