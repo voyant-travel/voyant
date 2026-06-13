@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   availabilityQueryKeys,
   getSlotQueryOptions,
@@ -16,16 +16,9 @@ import {
   travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
-import { type ProductExtraRecord, useProductExtras } from "@voyantjs/extras-react"
 import { useAddresses } from "@voyantjs/identity-react"
-import {
-  getExtraPriceRulesQueryOptions,
-  type PricingCategoryRecord,
-  useOptionUnitPriceRules,
-  usePricingCategories,
-  useVoyantPricingContext,
-} from "@voyantjs/pricing-react"
-import { useProduct, useProductMedia } from "@voyantjs/products-react"
+import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/pricing-react"
+import { useProduct } from "@voyantjs/products-react"
 import {
   Button,
   Checkbox,
@@ -38,9 +31,8 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { ImageIcon, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import * as React from "react"
-import type { BookingsUiMessages } from "../i18n/messages.js"
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -49,15 +41,30 @@ import {
 import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
-  type BookingCreatePaymentScheduleInput,
   type BookingCreateVoucherRedemptionInput,
   type BookingRecord,
-  type PricingPreviewSnapshot,
   useBookingCreateMutation,
-  useBookingTaxPreview,
   usePricingPreview,
   VoyantApiError,
 } from "../index.js"
+import {
+  formatPayloadResolverMismatchError,
+  generateBookingNumber,
+  hasAnyPaidPayment,
+  inferTravelerPricingCategoryId,
+  isBookingInventoryUnit,
+  isPayloadResolverMismatchBody,
+  mergePricingRoomMetadata,
+  normalizeBookingUnit,
+  type PricingCategoryLike,
+  paymentScheduleToRows,
+  pricingSnapshotRoomUnits,
+  sameRoomUnits,
+  stripOptionPrefix,
+  stripUnitSuffix,
+} from "./booking-create-form-utils.js"
+import { BookingPreviewCard } from "./booking-create-preview-card.js"
+import { ProductExtrasPickerSection } from "./booking-create-product-extras-picker.js"
 import {
   getBookableDepartureSlots,
   getOverCapacityInventoryAssignments,
@@ -83,7 +90,7 @@ import {
   PersonPickerSection,
   type PersonPickerValue,
 } from "./person-picker-section.js"
-import { PriceBreakdownSection, type PriceBreakdownValue } from "./price-breakdown-section.js"
+import type { PriceBreakdownValue } from "./price-breakdown-section.js"
 import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section.js"
 import {
   emptySharedRoomValue,
@@ -94,7 +101,6 @@ import {
   emptyTravelerListValue,
   type RoomGroup,
   type RoomUnitOption,
-  type TravelerEntry,
   type TravelerListValue,
   type TravelerPricingCategoryOption,
   TravelersSection,
@@ -104,285 +110,6 @@ import {
   VoucherPickerSection,
   type VoucherPickerValue,
 } from "./voucher-picker-section.js"
-
-function generateBookingNumber(): string {
-  const now = new Date()
-  const y = now.getFullYear().toString().slice(-2)
-  const m = String(now.getMonth() + 1).padStart(2, "0")
-  const seq = String(Math.floor(Math.random() * 9000) + 1000)
-  return `BK-${y}${m}-${seq}`
-}
-
-function paymentScheduleToRows(
-  value: PaymentScheduleValue,
-  currency: string,
-  totalAmountCents: number | null,
-): BookingCreatePaymentScheduleInput[] {
-  if (value.mode === "full") {
-    const installment = value.installments[0]
-    if (!installment?.dueDate || totalAmountCents === null) return []
-    return [
-      {
-        scheduleType: "balance",
-        status: installment.alreadyPaid ? "paid" : "due",
-        dueDate: installment.dueDate,
-        currency,
-        amountCents: totalAmountCents,
-        notes: paidScheduleNotes(
-          installment.alreadyPaid,
-          installment.paymentDate,
-          installment.paymentMethod,
-          installment.paymentReference,
-        ),
-      },
-    ]
-  }
-
-  // split — N installments
-  const rows: BookingCreatePaymentScheduleInput[] = []
-  for (const [idx, installment] of value.installments.entries()) {
-    if (!installment.dueDate || installment.amountCents == null) continue
-    rows.push({
-      scheduleType: "installment",
-      // First installment defaults to `due` (immediately collectable),
-      // subsequent ones to `pending` so the dashboard's "next due" picker
-      // doesn't flag them all at once.
-      status: installment.alreadyPaid ? "paid" : idx === 0 ? "due" : "pending",
-      dueDate: installment.dueDate,
-      currency,
-      amountCents: installment.amountCents,
-      notes: paidScheduleNotes(
-        installment.alreadyPaid,
-        installment.paymentDate,
-        installment.paymentMethod,
-        installment.paymentReference,
-      ),
-    })
-  }
-  return rows
-}
-
-function paidScheduleNotes(
-  alreadyPaid: boolean,
-  paymentDate: string | null,
-  paymentMethod: string,
-  paymentReference: string,
-) {
-  if (!alreadyPaid) return null
-  return JSON.stringify({
-    alreadyPaid: true,
-    paymentDate,
-    paymentMethod,
-    paymentReference: paymentReference.trim() || null,
-  })
-}
-
-/**
- * Pick the option-unit that matches a given age. Falls back to an
- * ADULT-coded unit when no min/max window matches, then to the first
- * unit in the option. When `age` is null (no DOB), prefer ADULT.
- */
-/**
- * The catalog stepper builds unit names like "Standard double - Adult"
- * when an option has multiple units. The Room dropdown wants the bare
- * option name ("Standard double"), so we trim off the trailing
- * "- <unit>" suffix for display.
- */
-function stripUnitSuffix(name: string): string {
-  const idx = name.lastIndexOf(" - ")
-  return idx > 0 ? name.slice(0, idx) : name
-}
-
-/**
- * Any payment-schedule entry the operator has marked as already
- * paid. Drives the smart-default booking status on submit — if money
- * is in (deposit / full / split installment), the booking lands in
- * `confirmed`; otherwise it lands in `awaiting_payment`.
- */
-function hasAnyPaidPayment(schedule: PaymentScheduleValue): boolean {
-  return schedule.installments.some((installment) => installment.alreadyPaid)
-}
-
-/**
- * Inverse of stripUnitSuffix — strip the leading "Option name - " so
- * the per-unit label stands alone for category buttons.
- */
-function stripOptionPrefix(name: string): string {
-  const idx = name.indexOf(" - ")
-  return idx > 0 ? name.slice(idx + 3) : name
-}
-
-function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepperUnit[]): boolean {
-  if (left.length !== right.length) return false
-  return left.every((unit, index) => {
-    const other = right[index]
-    return (
-      other !== undefined &&
-      unit.optionId === other.optionId &&
-      unit.optionUnitId === other.optionUnitId &&
-      unit.unitName === other.unitName &&
-      unit.unitCode === other.unitCode &&
-      unit.unitType === other.unitType &&
-      unit.minAge === other.minAge &&
-      unit.maxAge === other.maxAge &&
-      unit.occupancyMax === other.occupancyMax &&
-      unit.remaining === other.remaining
-    )
-  })
-}
-
-function inferTravelerPricingCategoryId(
-  traveler: TravelerEntry,
-  categories: ReadonlyArray<TravelerPricingCategoryOption>,
-): string | null {
-  if (traveler.pricingCategoryId) return traveler.pricingCategoryId
-  const pool = traveler.inventoryUnitId
-    ? categories.filter((category) => category.unitIds.includes(traveler.inventoryUnitId ?? ""))
-    : categories
-  if (pool.length === 0) return null
-  const roleType = traveler.role === "child" || traveler.role === "infant" ? traveler.role : "adult"
-  return (
-    pool.find((category) => category.categoryType === roleType)?.categoryId ??
-    pool[0]?.categoryId ??
-    null
-  )
-}
-
-function toStepperUnitType(
-  value: string | null | undefined,
-): OptionUnitsStepperUnit["unitType"] | null {
-  if (
-    value === "person" ||
-    value === "group" ||
-    value === "room" ||
-    value === "vehicle" ||
-    value === "service" ||
-    value === "other"
-  ) {
-    return value
-  }
-  return null
-}
-
-function normalizeBookingUnit(unit: OptionUnitsStepperUnit): OptionUnitsStepperUnit {
-  return {
-    ...unit,
-    unitType: unit.unitType ?? (unit.occupancyMax != null ? "room" : null),
-  }
-}
-
-function isBookingInventoryUnit(
-  unit: Pick<OptionUnitsStepperUnit, "unitType" | "occupancyMax">,
-): boolean {
-  return unit.unitType === "room" || unit.unitType === "vehicle" || unit.occupancyMax != null
-}
-
-function pricingSnapshotRoomUnits(
-  snapshot: PricingPreviewSnapshot | null | undefined,
-): OptionUnitsStepperUnit[] {
-  if (!snapshot) return []
-  const unitsById = new Map<string, OptionUnitsStepperUnit>()
-  for (const unitPrice of snapshot.unitPrices) {
-    if (unitPrice.unitType !== "room" && unitPrice.unitType !== "vehicle") continue
-    if (unitsById.has(unitPrice.unitId)) continue
-    unitsById.set(unitPrice.unitId, {
-      optionId: unitPrice.optionId,
-      optionUnitId: unitPrice.unitId,
-      unitName: unitPrice.unitName ?? unitPrice.unitId,
-      unitCode: null,
-      minAge: null,
-      maxAge: null,
-      unitType: toStepperUnitType(unitPrice.unitType) ?? "room",
-      occupancyMax: unitPrice.occupancyMax,
-      initial: null,
-      reserved: 0,
-      remaining: null,
-    })
-  }
-  return Array.from(unitsById.values())
-}
-
-function mergePricingRoomMetadata(
-  units: readonly OptionUnitsStepperUnit[],
-  pricingUnits: readonly OptionUnitsStepperUnit[],
-): OptionUnitsStepperUnit[] {
-  if (pricingUnits.length === 0) return units.map(normalizeBookingUnit)
-  const pricingUnitById = new Map(pricingUnits.map((unit) => [unit.optionUnitId, unit]))
-  const seen = new Set<string>()
-  const merged = units.map((unit) => {
-    seen.add(unit.optionUnitId)
-    const pricingUnit = pricingUnitById.get(unit.optionUnitId)
-    if (!pricingUnit) return normalizeBookingUnit(unit)
-    return normalizeBookingUnit({
-      ...pricingUnit,
-      ...unit,
-      optionId: unit.optionId ?? pricingUnit.optionId,
-      unitName: unit.unitName || pricingUnit.unitName,
-      unitType: unit.unitType ?? pricingUnit.unitType,
-      occupancyMax: unit.occupancyMax ?? pricingUnit.occupancyMax,
-    })
-  })
-  for (const pricingUnit of pricingUnits) {
-    if (!seen.has(pricingUnit.optionUnitId)) merged.push(pricingUnit)
-  }
-  return merged
-}
-
-type PricingCategoryLike = Pick<
-  PricingCategoryRecord,
-  "id" | "name" | "code" | "minAge" | "maxAge" | "sortOrder"
-> & {
-  categoryType: string
-}
-
-interface PayloadResolverMismatch {
-  kind: "qty" | "missing" | "extra"
-  optionUnitId: string
-  submittedQuantity: number
-  resolvedQuantity: number
-}
-
-function isPayloadResolverMismatchBody(
-  body: unknown,
-): body is { code: "payload_resolver_mismatch"; mismatches: PayloadResolverMismatch[] } {
-  if (typeof body !== "object" || body === null) return false
-  const candidate = body as { code?: unknown; mismatches?: unknown }
-  return (
-    candidate.code === "payload_resolver_mismatch" &&
-    Array.isArray(candidate.mismatches) &&
-    candidate.mismatches.every((mismatch) => {
-      if (typeof mismatch !== "object" || mismatch === null) return false
-      const item = mismatch as Record<string, unknown>
-      return (
-        (item.kind === "qty" || item.kind === "missing" || item.kind === "extra") &&
-        typeof item.optionUnitId === "string" &&
-        typeof item.submittedQuantity === "number" &&
-        typeof item.resolvedQuantity === "number"
-      )
-    })
-  )
-}
-
-function formatPayloadResolverMismatchError(
-  body: { mismatches: PayloadResolverMismatch[] },
-  unitLabels: Record<string, string>,
-  validationMessages: BookingsUiMessages["bookingCreateDialog"]["validation"],
-) {
-  const details = body.mismatches
-    .map((mismatch) => {
-      const label = unitLabels[mismatch.optionUnitId] ?? mismatch.optionUnitId
-      return formatMessage(validationMessages.payloadResolverMismatchLine, {
-        label,
-        resolvedQuantity: mismatch.resolvedQuantity,
-        submittedQuantity: mismatch.submittedQuantity,
-      })
-    })
-    .join("; ")
-
-  return details
-    ? formatMessage(validationMessages.payloadResolverMismatchDetails, { details })
-    : validationMessages.payloadResolverMismatchFallback
-}
 
 export interface BookingCreateSheetProps {
   open: boolean
@@ -1586,462 +1313,6 @@ export function BookingCreateForm({
             }}
           />
         ) : null}
-      </div>
-    </div>
-  )
-}
-
-function ProductExtrasPickerSection({
-  productId,
-  optionId,
-  currency,
-  travelerCount,
-  value,
-  onChange,
-  enabled,
-  labels,
-}: {
-  productId: string
-  optionId: string | null
-  currency: string
-  travelerCount: number
-  value: BookingCreateExtraLineInput[]
-  onChange: (value: BookingCreateExtraLineInput[]) => void
-  enabled: boolean
-  labels: {
-    heading: string
-    empty: string
-    included: string
-    onRequest: string
-    perPerson: string
-  }
-}) {
-  const { formatCurrency } = useBookingsUiI18nOrDefault()
-  const pricingClient = useVoyantPricingContext()
-  const extrasQuery = useProductExtras({
-    productId,
-    active: true,
-    limit: 100,
-    enabled: enabled && Boolean(productId),
-  })
-  const extras = extrasQuery.data?.data ?? []
-  const priceQueries = useQueries({
-    queries: extras.map((extra) => ({
-      ...getExtraPriceRulesQueryOptions(pricingClient, {
-        productExtraId: extra.id,
-        ...(optionId ? { optionId } : {}),
-        active: true,
-        limit: 10,
-      }),
-      enabled,
-    })),
-  })
-  const priceByExtraId = new Map(
-    extras.flatMap((extra, index) => {
-      const row = priceQueries[index]?.data?.data?.[0]
-      return row ? ([[extra.id, row]] as const) : []
-    }),
-  )
-  const selectedByExtraId = new Map(value.map((line) => [line.productExtraId, line]))
-
-  const setQuantity = (extra: ProductExtraRecord, quantity: number) => {
-    const next = value.filter((line) => line.productExtraId !== extra.id)
-    if (quantity > 0) {
-      const price = priceByExtraId.get(extra.id)
-      const pricingMode =
-        price?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
-      const unitSellAmountCents = price?.sellAmountCents ?? null
-      const chargedQuantity =
-        pricingMode === "per_person" || extra.pricedPerPerson
-          ? Math.max(1, travelerCount) * quantity
-          : quantity
-      const totalSellAmountCents =
-        unitSellAmountCents == null ? null : unitSellAmountCents * chargedQuantity
-      next.push({
-        productExtraId: extra.id,
-        name: extra.name,
-        description: extra.description,
-        pricingMode,
-        pricedPerPerson: extra.pricedPerPerson,
-        quantity,
-        sellCurrency: currency,
-        unitSellAmountCents,
-        totalSellAmountCents,
-      })
-    }
-    onChange(next)
-  }
-
-  if (extras.length === 0 && extrasQuery.isSuccess) {
-    return (
-      <div className="flex flex-col gap-2 rounded-md border p-3">
-        <Label>{labels.heading}</Label>
-        <p className="text-xs text-muted-foreground">{labels.empty}</p>
-      </div>
-    )
-  }
-
-  if (extras.length === 0) return null
-
-  return (
-    <div className="flex flex-col gap-2 rounded-md border p-3">
-      <Label>{labels.heading}</Label>
-      <div className="flex flex-col gap-2">
-        {extras.map((extra) => {
-          const selected = selectedByExtraId.get(extra.id)
-          const quantity = selected?.quantity ?? 0
-          const price = priceByExtraId.get(extra.id)
-          const pricingMode =
-            price?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
-          const unitAmount = price?.sellAmountCents ?? null
-          const priceLabel =
-            pricingMode === "included" || pricingMode === "free"
-              ? labels.included
-              : unitAmount == null
-                ? labels.onRequest
-                : `${formatCurrency(unitAmount / 100, currency)}${
-                    pricingMode === "per_person" || extra.pricedPerPerson
-                      ? ` ${labels.perPerson}`
-                      : ""
-                  }`
-          const maxQuantity = extra.maxQuantity ?? undefined
-          return (
-            <div key={extra.id} className="flex items-center gap-3 rounded-md border px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{extra.name}</div>
-                <div className="text-xs text-muted-foreground">{priceLabel}</div>
-              </div>
-              <QuantityButtons
-                value={quantity}
-                max={maxQuantity}
-                onChange={(next) => setQuantity(extra, next)}
-              />
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function QuantityButtons({
-  value,
-  max,
-  onChange,
-}: {
-  value: number
-  max?: number
-  onChange(value: number): void
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-7 w-7 p-0"
-        disabled={value <= 0}
-        onClick={() => onChange(Math.max(0, value - 1))}
-      >
-        -
-      </Button>
-      <span className="min-w-6 text-center text-sm tabular-nums">{value}</span>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-7 w-7 p-0"
-        disabled={max != null && value >= max}
-        onClick={() => onChange(value + 1)}
-      >
-        +
-      </Button>
-    </div>
-  )
-}
-
-/**
- * Right-rail live preview for the booking-create dialog. Mirrors the
- * operator's in-progress selections — product (with thumbnail),
- * departure, options + quantities, travelers, and the current
- * confirmed price — so the operator gets a "what am I about to book"
- * summary without scrolling back through the form.
- */
-function BookingPreviewCard({
-  productId,
-  optionId,
-  slotId,
-  slotLabel,
-  unitQuantities,
-  unitLabels,
-  pricingCategoryQuantities,
-  pricingCategoryLabels,
-  extraLines,
-  travelers,
-  messages,
-  onPricingChange,
-}: {
-  productId: string
-  optionId: string | null
-  slotId: string | null
-  slotLabel: string | null
-  unitQuantities: Record<string, number>
-  unitLabels: Record<string, string>
-  pricingCategoryQuantities: Record<string, Record<string, number>>
-  pricingCategoryLabels: Record<string, string>
-  extraLines: BookingCreateExtraLineInput[]
-  travelers: TravelerEntry[]
-  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>
-  onPricingChange: (value: PriceBreakdownValue) => void
-}) {
-  const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
-  const productQuery = useProduct(productId || undefined, { enabled: Boolean(productId) })
-  const mediaQuery = useProductMedia(productId, { limit: 1, enabled: Boolean(productId) })
-  const product = productQuery.data ?? null
-  const cover = (mediaQuery.data?.data ?? []).find((m) => m.isCover) ?? mediaQuery.data?.data?.[0]
-  const labels = messages.bookingCreateDialog.labels
-  // Mirror the breakdown locally so we can drive the tax preview hook
-  // off the same `confirmedAmountCents` the parent receives via
-  // onPricingChange. Manual overrides flow through the same field, so
-  // the tax line follows whatever the operator decides to charge.
-  const [breakdown, setBreakdown] = React.useState<PriceBreakdownValue | null>(null)
-  const handlePricingChange = React.useCallback(
-    (value: PriceBreakdownValue) => {
-      const extraTotal = extraLines.reduce((sum, line) => sum + (line.totalSellAmountCents ?? 0), 0)
-      const next =
-        extraTotal > 0
-          ? {
-              ...value,
-              catalogAmountCents:
-                value.catalogAmountCents == null ? null : value.catalogAmountCents + extraTotal,
-              confirmedAmountCents:
-                value.confirmedAmountCents == null ? null : value.confirmedAmountCents + extraTotal,
-              lines: [
-                ...value.lines,
-                ...extraLines.map((line) => ({
-                  unitId: `extra:${line.productExtraId}`,
-                  label: line.name,
-                  quantity: line.quantity,
-                  unitAmountCents: line.unitSellAmountCents ?? null,
-                  totalAmountCents: line.totalSellAmountCents ?? null,
-                  tierLabel: null,
-                  isGroupRate: false,
-                })),
-              ],
-            }
-          : value
-      setBreakdown(next)
-      onPricingChange(next)
-    },
-    [extraLines, onPricingChange],
-  )
-  const taxSubtotalCents = breakdown?.confirmedAmountCents ?? breakdown?.catalogAmountCents ?? 0
-  const taxCurrency = breakdown?.currency ?? "EUR"
-  const taxPreview = useBookingTaxPreview({
-    productId,
-    subtotalCents: taxSubtotalCents,
-    currency: taxCurrency,
-    enabled: Boolean(productId) && taxSubtotalCents > 0,
-  })
-  const previewMessages = {
-    heading: labels.previewHeading,
-    empty: labels.previewEmpty,
-    product: labels.previewProduct,
-    departure: labels.previewDeparture,
-    travelers: labels.previewTravelers,
-    loading: labels.previewLoading,
-    travelerUnnamed: labels.previewTravelerUnnamed,
-  }
-
-  const showPriceBreakdown = Boolean(productId && slotId)
-  const hasContent =
-    Boolean(productId) || slotLabel != null || travelers.length > 0 || showPriceBreakdown
-
-  return (
-    <aside>
-      <div className="flex flex-col gap-4 rounded-md border bg-muted/10 p-4">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          {previewMessages.heading}
-        </div>
-
-        {!hasContent ? (
-          <p className="text-xs text-muted-foreground">{previewMessages.empty}</p>
-        ) : null}
-
-        {productId ? (
-          <div className="flex gap-3">
-            {cover?.url ? (
-              <img
-                src={cover.url}
-                alt={product?.name ?? ""}
-                className="h-14 w-14 shrink-0 rounded-md object-cover ring-1 ring-border"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-            )}
-            <div className="flex min-w-0 flex-col">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {previewMessages.product}
-              </span>
-              <span className="truncate text-sm font-medium">
-                {product?.name ?? previewMessages.loading}
-              </span>
-            </div>
-          </div>
-        ) : null}
-
-        {slotLabel ? (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              {previewMessages.departure}
-            </span>
-            <span className="text-sm">{slotLabel}</span>
-          </div>
-        ) : null}
-
-        {travelers.length > 0 ? (
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              {previewMessages.travelers}
-            </span>
-            <ul className="flex flex-col gap-0.5 text-sm">
-              {travelers.map((traveler, idx) => {
-                const name = [traveler.firstName, traveler.lastName]
-                  .filter((part) => part.trim().length > 0)
-                  .join(" ")
-                  .trim()
-                return (
-                  <li
-                    key={traveler.personId ?? `traveler-${idx}`}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <span className="truncate text-muted-foreground">
-                      {name || previewMessages.travelerUnnamed}
-                    </span>
-                    <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
-                      {traveler.role}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ) : null}
-
-        {/* Priced lines + totals + manual override live inside the same
-            summary card now — the standalone price-breakdown card was
-            duplicating the option/total rows shown above. */}
-        {showPriceBreakdown ? (
-          <div className="border-t pt-3">
-            <PriceBreakdownSection
-              flat
-              productId={productId}
-              optionId={optionId}
-              unitQuantities={unitQuantities}
-              unitLabels={unitLabels}
-              pricingCategoryQuantities={pricingCategoryQuantities}
-              pricingCategoryLabels={pricingCategoryLabels}
-              labels={{
-                heading: labels.breakdownHeading,
-                total: labels.breakdownTotal,
-                onRequest: labels.breakdownOnRequest,
-                groupRate: labels.breakdownGroupRate,
-                empty: labels.breakdownEmpty,
-                noPricing: labels.breakdownNoPricing,
-                confirmedTotal: labels.breakdownConfirmedTotal,
-                manualTotal: labels.breakdownManualTotal,
-                useCatalogTotal: labels.breakdownUseCatalogTotal,
-                overrideReason: labels.breakdownOverrideReason,
-                overrideReasonPlaceholder: labels.breakdownOverrideReasonPlaceholder,
-                overrideReasonRequired: labels.breakdownOverrideReasonRequired,
-              }}
-              onChange={handlePricingChange}
-            />
-            {extraLines.length > 0 ? (
-              <div className="mt-2 flex flex-col gap-1.5 border-t pt-2 text-sm">
-                {extraLines.map((line) => (
-                  <div
-                    key={line.productExtraId}
-                    className="flex items-baseline justify-between gap-3"
-                  >
-                    <div className="flex items-baseline gap-2">
-                      <span className="tabular-nums">{formatNumber(line.quantity)}x</span>
-                      <span>{line.name}</span>
-                    </div>
-                    <div className="tabular-nums">
-                      {line.totalSellAmountCents == null || !line.sellCurrency
-                        ? labels.breakdownOnRequest
-                        : formatCurrency(line.totalSellAmountCents / 100, line.sellCurrency)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            {taxPreview.data?.data && taxPreview.data.data.taxCents > 0 ? (
-              <TaxPreviewRows
-                snapshot={taxPreview.data.data}
-                labels={{
-                  subtotal: labels.breakdownSubtotal,
-                  tax: labels.breakdownTax,
-                  taxIncluded: labels.breakdownTaxIncluded,
-                  total: labels.breakdownTotal,
-                }}
-                formatAmount={(cents, currency) => formatCurrency(cents / 100, currency)}
-                formatRate={(basisPoints) =>
-                  formatNumber(basisPoints / 100, {
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 0,
-                  })
-                }
-              />
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </aside>
-  )
-}
-
-function TaxPreviewRows({
-  snapshot,
-  labels,
-  formatAmount,
-  formatRate,
-}: {
-  snapshot: {
-    subtotalCents: number
-    taxCents: number
-    totalCents: number
-    currency: string
-    taxRate: { code: string; label: string; rateBasisPoints: number; priceMode: string } | null
-  }
-  labels: { subtotal: string; tax: string; taxIncluded: string; total: string }
-  formatAmount: (cents: number, currency: string) => string
-  formatRate: (basisPoints: number) => string
-}) {
-  const inclusive = snapshot.taxRate?.priceMode === "inclusive"
-  const ratePart = snapshot.taxRate ? ` (${formatRate(snapshot.taxRate.rateBasisPoints)}%)` : ""
-  const inclTag = inclusive ? ` · ${labels.taxIncluded}` : ""
-  return (
-    <div className="mt-3 flex flex-col gap-1 border-t pt-3 text-sm">
-      <div className="flex items-center justify-between text-muted-foreground">
-        <span>{labels.subtotal}</span>
-        <span>{formatAmount(snapshot.subtotalCents, snapshot.currency)}</span>
-      </div>
-      <div className="flex items-center justify-between text-muted-foreground">
-        <span>
-          {snapshot.taxRate?.label ?? labels.tax}
-          {ratePart}
-          {inclTag}
-        </span>
-        <span>{formatAmount(snapshot.taxCents, snapshot.currency)}</span>
-      </div>
-      <div className="flex items-center justify-between font-medium">
-        <span>{labels.total}</span>
-        <span>{formatAmount(snapshot.totalCents, snapshot.currency)}</span>
       </div>
     </div>
   )
