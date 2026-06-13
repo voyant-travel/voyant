@@ -1,204 +1,63 @@
+import type { Module } from "@voyantjs/core"
 import {
-  type CheckoutCapabilityAction,
-  type GuestBookingAccessAction,
-  requireCheckoutCapability,
-  requireGuestBookingAccess,
-} from "@voyantjs/bookings/checkout-capability"
-import type { Module, ModuleContainer } from "@voyantjs/core"
-import {
-  idempotencyKey,
-  parseJsonBody,
-  parseOptionalJsonBody,
-  parseQuery,
-  UnauthorizedApiError,
-} from "@voyantjs/hono"
+  buildFinanceCheckoutRouteRuntime,
+  CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+  type CheckoutNotificationDispatcher,
+  createFinanceCheckoutAdminRoutes,
+  createFinanceCheckoutRoutes,
+  type CheckoutRouteRuntime as FinanceCheckoutRouteRuntime,
+  type CheckoutRoutesOptions as FinanceCheckoutRoutesOptions,
+} from "@voyantjs/finance"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { NotificationProvider } from "@voyantjs/notifications"
 import { createNotificationService } from "@voyantjs/notifications"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono, type MiddlewareHandler } from "hono"
+import { notificationDispatcherFor } from "./service.js"
+import { listBookingReminderRuns } from "./service-reminder-runs.js"
 
-import {
-  bootstrapCheckoutCollection,
-  type CheckoutBankTransferDetails,
-  type CheckoutPaymentStarter,
-  type CheckoutPolicyOptions,
-  initiateCheckoutCollection,
-  listBookingReminderRuns,
-  previewCheckoutCollection,
-} from "./service.js"
-import {
-  bootstrapCheckoutCollectionSchema,
-  checkoutReminderRunListQuerySchema,
-  initiateCheckoutCollectionSchema,
-  previewCheckoutCollectionSchema,
-} from "./validation.js"
+export { CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY }
 
-type Env = {
-  Bindings: Record<string, unknown>
-  Variables: {
-    container: ModuleContainer
-    db: PostgresJsDatabase
-    userId?: string
-  }
-}
-
-export type CheckoutRoutesOptions = {
-  policy?: CheckoutPolicyOptions
+export type CheckoutRoutesOptions = FinanceCheckoutRoutesOptions & {
   providers?: ReadonlyArray<NotificationProvider>
   resolveProviders?: (bindings: Record<string, unknown>) => ReadonlyArray<NotificationProvider>
-  paymentStarters?: Record<string, CheckoutPaymentStarter>
-  resolvePaymentStarters?: (
-    bindings: Record<string, unknown>,
-  ) => Record<string, CheckoutPaymentStarter>
-  bankTransferDetails?: CheckoutBankTransferDetails | null
-  resolveBankTransferDetails?: (
-    bindings: Record<string, unknown>,
-  ) => CheckoutBankTransferDetails | null
-  publicCheckoutBaseUrl?: string | null
-  resolvePublicCheckoutBaseUrl?: (bindings: Record<string, unknown>) => string | null | undefined
 }
 
-export type CheckoutRouteRuntime = {
-  bindings: Record<string, unknown>
+export type CheckoutRouteRuntime = FinanceCheckoutRouteRuntime & {
   providers: ReadonlyArray<NotificationProvider>
-  paymentStarters: Record<string, CheckoutPaymentStarter>
-  bankTransferDetails: CheckoutBankTransferDetails | null
-  publicCheckoutBaseUrl?: string | null
 }
 
-export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.checkout.runtime"
+function dispatcherFromProviders(
+  providers: ReadonlyArray<NotificationProvider>,
+): CheckoutNotificationDispatcher | null {
+  if (providers.length === 0) return null
+  const service = createNotificationService(providers)
 
-function runtimeEnv(c: { env: Record<string, unknown> }): Record<string, string | undefined> {
-  return c.env as Record<string, string | undefined>
+  return notificationDispatcherFor(service)
 }
 
-type CollectionCapabilityAction = Extract<CheckoutCapabilityAction, GuestBookingAccessAction>
+function resolveProviders(
+  bindings: Record<string, unknown>,
+  options: CheckoutRoutesOptions,
+): ReadonlyArray<NotificationProvider> {
+  return options.resolveProviders?.(bindings) ?? options.providers ?? []
+}
 
-function collectionCapability(action: CollectionCapabilityAction): MiddlewareHandler<Env> {
-  return async (c, next) => {
-    const bookingId = c.req.param("bookingId")!
-    try {
-      await requireCheckoutCapability(c, bookingId, action, runtimeEnv(c))
-    } catch (error) {
-      if (!(error instanceof UnauthorizedApiError)) {
-        throw error
-      }
-      await requireGuestBookingAccess(c, bookingId, action, runtimeEnv(c))
-    }
-    await next()
+function toFinanceOptions(options: CheckoutRoutesOptions = {}): FinanceCheckoutRoutesOptions {
+  return {
+    ...options,
+    resolveNotificationDispatcher: (bindings) =>
+      options.resolveNotificationDispatcher?.(bindings) ??
+      options.notificationDispatcher ??
+      dispatcherFromProviders(resolveProviders(bindings, options)),
+    listBookingReminderRuns: options.listBookingReminderRuns ?? listBookingReminderRuns,
   }
-}
-
-function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: CheckoutRoutesOptions) {
-  // Pin the middleware to this module's Env so Hono doesn't intersect the
-  // middleware's default VoyantBindings into the handlers' `c.env` type.
-  const collectionIdempotency = () => idempotencyKey<Env["Bindings"], Env["Variables"]>()
-  function getRuntime(
-    bindings: Record<string, unknown>,
-    resolveFromContainer?: (key: string) => CheckoutRouteRuntime | undefined,
-  ) {
-    return (
-      resolveFromContainer?.(CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY) ??
-      buildCheckoutRouteRuntime(bindings, options)
-    )
-  }
-
-  return (
-    app
-      // Mostly a read, but `ensureDefaultPaymentPlan` can materialize a
-      // default payment plan — so it gets the same opt-in idempotency as
-      // the other collection mutations.
-      .post("/bookings/:bookingId/collection-plan", collectionIdempotency(), async (c) => {
-        try {
-          const plan = await previewCheckoutCollection(
-            c.get("db"),
-            c.req.param("bookingId")!,
-            await parseOptionalJsonBody(c, previewCheckoutCollectionSchema),
-            options.policy,
-          )
-
-          if (!plan) {
-            return c.json({ error: "Booking not found" }, 404)
-          }
-
-          return c.json({ data: plan })
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Failed to preview checkout collection"
-          return c.json({ error: message }, 400)
-        }
-      })
-      .post("/bookings/:bookingId/initiate-collection", collectionIdempotency(), async (c) => {
-        try {
-          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
-          const dispatcher = createNotificationService(runtime.providers)
-          const result = await initiateCheckoutCollection(
-            c.get("db"),
-            c.req.param("bookingId")!,
-            await parseJsonBody(c, initiateCheckoutCollectionSchema),
-            options.policy,
-            dispatcher,
-            runtime,
-          )
-
-          if (!result) {
-            return c.json({ error: "Booking not found" }, 404)
-          }
-
-          return c.json({ data: result }, 201)
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Failed to initiate checkout collection"
-          if (message.includes("Booking not found")) {
-            return c.json({ error: message }, 404)
-          }
-          return c.json({ error: message }, 409)
-        }
-      })
-      .post("/collections/bootstrap", collectionIdempotency(), async (c) => {
-        try {
-          const runtime = getRuntime(c.env, (key) => c.var.container?.resolve(key))
-          const dispatcher = createNotificationService(runtime.providers)
-          const result = await bootstrapCheckoutCollection(
-            c.get("db"),
-            await parseJsonBody(c, bootstrapCheckoutCollectionSchema),
-            options.policy,
-            dispatcher,
-            runtime,
-          )
-
-          if (!result) {
-            return c.json({ error: "Booking session not found" }, 404)
-          }
-
-          return c.json({ data: result }, 201)
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Failed to bootstrap checkout collection"
-          if (message.includes("Booking not found")) {
-            return c.json({ error: message }, 404)
-          }
-          return c.json({ error: message }, 409)
-        }
-      })
-  )
 }
 
 export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
-  const app = new Hono<Env>()
-  app.use("/bookings/:bookingId/collection-plan", collectionCapability("payment:read"))
-  app.use("/bookings/:bookingId/initiate-collection", collectionCapability("payment:start"))
-  return attachCollectionRoutes(app, options)
+  return createFinanceCheckoutRoutes(toFinanceOptions(options))
 }
 
 export function createCheckoutAdminRoutes(options: CheckoutRoutesOptions = {}) {
-  const app = new Hono<Env>().get("/bookings/:bookingId/reminder-runs", async (c) => {
-    const query = parseQuery(c, checkoutReminderRunListQuerySchema)
-
-    return c.json(await listBookingReminderRuns(c.get("db"), c.req.param("bookingId"), query))
-  })
-  return attachCollectionRoutes(app, options)
+  return createFinanceCheckoutAdminRoutes(toFinanceOptions(options))
 }
 
 export const checkoutModule: Module = {
@@ -228,12 +87,7 @@ export function buildCheckoutRouteRuntime(
   options: CheckoutRoutesOptions = {},
 ): CheckoutRouteRuntime {
   return {
-    bindings,
-    providers: options.resolveProviders?.(bindings) ?? options.providers ?? [],
-    paymentStarters: options.resolvePaymentStarters?.(bindings) ?? options.paymentStarters ?? {},
-    bankTransferDetails:
-      options.resolveBankTransferDetails?.(bindings) ?? options.bankTransferDetails ?? null,
-    publicCheckoutBaseUrl:
-      options.resolvePublicCheckoutBaseUrl?.(bindings) ?? options.publicCheckoutBaseUrl ?? null,
+    ...buildFinanceCheckoutRouteRuntime(bindings, toFinanceOptions(options)),
+    providers: resolveProviders(bindings, options),
   }
 }

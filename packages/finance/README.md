@@ -73,6 +73,21 @@ The by-reference variant resolves invoice numbers and payment reference numbers
 only inside that booking, so a valid capability for one booking cannot retrieve
 documents from another booking.
 
+## Checkout Collection
+
+Finance owns the checkout collection runtime under the `./checkout`,
+`./checkout-routes`, and `./checkout-validation` subpaths. Provider startup is
+injected through payment starters, bank-transfer details are resolved through
+host wiring, and notification delivery stays behind a dispatcher instead of a
+direct package dependency.
+
+Mounted Finance routes include:
+
+- `POST /v1/public/finance/bookings/:bookingId/collection-plan`
+- `POST /v1/public/finance/bookings/:bookingId/initiate-collection`
+- `POST /v1/public/finance/collections/bootstrap`
+- `GET /v1/admin/finance/bookings/:bookingId/reminder-runs`
+
 ## Booking Tax Preview
 
 Booking creation UIs can show the same tax line that booking finalization will

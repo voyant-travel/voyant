@@ -3,6 +3,13 @@ import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 import { Hono } from "hono"
 
+import {
+  buildFinanceCheckoutRouteRuntime,
+  type CheckoutRoutesOptions,
+  createFinanceCheckoutAdminRoutes,
+  createFinanceCheckoutRoutes,
+  FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "./checkout-routes.js"
 import { createInvoiceFxRoutes } from "./invoice-fx.js"
 import {
   buildFinanceRouteRuntime,
@@ -16,6 +23,79 @@ import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./rou
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
 
+export type {
+  CheckoutRouteRuntime,
+  CheckoutRoutesOptions,
+} from "./checkout-routes.js"
+export {
+  buildFinanceCheckoutRouteRuntime,
+  CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+  createFinanceCheckoutAdminRoutes,
+  createFinanceCheckoutRoutes,
+  FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "./checkout-routes.js"
+export type {
+  BootstrappedCheckoutCollection,
+  CheckoutBankTransferDetails,
+  CheckoutCollectionPlan,
+  CheckoutNotificationDelivery,
+  CheckoutNotificationDispatcher,
+  CheckoutPaymentStarter,
+  CheckoutPaymentStarterContext,
+  CheckoutPolicyOptions,
+  CheckoutProviderStartResult,
+  CheckoutRuntimeOptions,
+  InitiatedCheckoutCollection,
+} from "./checkout-service.js"
+export {
+  bootstrapCheckoutCollection,
+  initiateCheckoutCollection,
+  previewCheckoutCollection,
+  resolvePaymentSessionTarget,
+} from "./checkout-service.js"
+export type {
+  BootstrapCheckoutCollectionInput,
+  BootstrappedCheckoutCollectionRecord,
+  CheckoutBankTransferInstructionsRecord,
+  CheckoutInvoiceNotificationInput,
+  CheckoutPaymentSessionNotificationInput,
+  CheckoutProviderStartInput,
+  CheckoutProviderStartResultRecord,
+  CheckoutReminderRunListQuery,
+  CheckoutReminderRunRecord,
+  InitiateCheckoutCollectionInput,
+  InitiatedCheckoutCollectionRecord,
+  PreviewCheckoutCollectionInput,
+} from "./checkout-validation.js"
+export {
+  bootstrapCheckoutCollectionSchema,
+  bootstrappedCheckoutCollectionSchema,
+  checkoutBankTransferInstructionsSchema,
+  checkoutCollectionIntentSchema,
+  checkoutCollectionInvoiceSchema,
+  checkoutCollectionMethodSchema,
+  checkoutCollectionPlanSchema,
+  checkoutCollectionScheduleSchema,
+  checkoutCollectionStageSchema,
+  checkoutInvoiceDocumentTypeSchema,
+  checkoutInvoiceNotificationSchema,
+  checkoutNotificationAttachmentSchema,
+  checkoutNotificationChannelSchema,
+  checkoutNotificationDeliverySchema,
+  checkoutNotificationDeliveryStatusSchema,
+  checkoutPaymentSessionNotificationSchema,
+  checkoutPaymentSessionTargetSchema,
+  checkoutProviderStartInputSchema,
+  checkoutProviderStartResultSchema,
+  checkoutReminderRunListQuerySchema,
+  checkoutReminderRunListResponseSchema,
+  checkoutReminderRunSchema,
+  checkoutReminderRunStatusSchema,
+  checkoutReminderTargetTypeSchema,
+  initiateCheckoutCollectionSchema,
+  initiatedCheckoutCollectionSchema,
+  previewCheckoutCollectionSchema,
+} from "./checkout-validation.js"
 export {
   type BookingCheckoutUrlSettings,
   type BuildBookingCheckoutUrlOptions,
@@ -79,11 +159,13 @@ export const financeModule: Module = {
 
 export interface FinanceHonoModuleOptions
   extends FinanceRuntimeOptions,
-    PublicFinanceRouteOptions {}
+    PublicFinanceRouteOptions,
+    CheckoutRoutesOptions {}
 
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
   const adminRoutes = new Hono()
     .route("/", financeRoutes)
+    .route("/", createFinanceCheckoutAdminRoutes(options))
     .route("/", financeActionLedgerRoutes)
     .route("/", supplierInvoiceRoutes)
     .route("/", createInvoiceFxRoutes(options))
@@ -101,13 +183,21 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
       // webhook silently no-ops because the runtime has no bus attached.
       if (!runtime.eventBus && eventBus) runtime.eventBus = eventBus
       container.register(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, runtime)
+      container.register(
+        FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+        buildFinanceCheckoutRouteRuntime(bindings as Record<string, unknown>, options),
+      )
     },
   }
+
+  const publicRoutes = new Hono()
+    .route("/", createPublicFinanceRoutes(options))
+    .route("/", createFinanceCheckoutRoutes(options))
 
   return {
     module,
     adminRoutes,
-    publicRoutes: createPublicFinanceRoutes(options),
+    publicRoutes,
     routes: adminRoutes,
   }
 }
@@ -458,7 +548,9 @@ export {
   paymentListQuerySchema,
   paymentListSortDirSchema,
   paymentListSortFieldSchema,
+  paymentProvenanceSchema,
   paymentSessionListQuerySchema,
+  paymentTargetSchema,
   polledInvoiceSettlementProviderResultSchema,
   polledInvoiceSettlementResultSchema,
   pollInvoiceSettlementInputSchema,

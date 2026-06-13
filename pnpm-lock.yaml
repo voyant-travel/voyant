@@ -1608,9 +1608,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
-      '@voyantjs/checkout':
-        specifier: workspace:^
-        version: link:../checkout
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
@@ -3484,9 +3481,6 @@ importers:
 
   packages/plugins/netopia:
     dependencies:
-      '@voyantjs/checkout':
-        specifier: workspace:^
-        version: link:../../checkout
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../../core
@@ -4526,9 +4520,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
-      '@voyantjs/checkout':
+      '@voyantjs/finance':
         specifier: workspace:^
-        version: link:../checkout
+        version: link:../finance
       '@voyantjs/storefront':
         specifier: workspace:^
         version: link:../storefront
@@ -5422,12 +5416,6 @@ importers:
       '@voyantjs/charters':
         specifier: workspace:^
         version: link:../../packages/charters
-      '@voyantjs/checkout':
-        specifier: workspace:^
-        version: link:../../packages/checkout
-      '@voyantjs/checkout-react':
-        specifier: workspace:^
-        version: link:../../packages/checkout-react
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))

@@ -90,14 +90,51 @@ function normalizeDocumentLookupQuery(
   return typeof query === "string" ? { reference: query } : query
 }
 
+function toPublicPaymentTarget(
+  session: NonNullable<Awaited<ReturnType<typeof financeService.getPaymentSessionById>>>,
+) {
+  if (session.bookingPaymentScheduleId) {
+    return {
+      type: "booking_payment_schedule" as const,
+      bookingPaymentScheduleId: session.bookingPaymentScheduleId,
+    }
+  }
+  if (session.bookingGuaranteeId) {
+    return { type: "booking_guarantee" as const, bookingGuaranteeId: session.bookingGuaranteeId }
+  }
+  if (session.invoiceId) {
+    return { type: "invoice" as const, invoiceId: session.invoiceId }
+  }
+  if (session.targetType === "flight_order" && session.targetId) {
+    return { type: "flight_order" as const, flightOrderId: session.targetId }
+  }
+  if (session.bookingId) {
+    return { type: "booking" as const, bookingId: session.bookingId }
+  }
+  if (session.orderId) {
+    return { type: "legacy_order" as const, legacyOrderId: session.orderId }
+  }
+  if (session.provider && session.externalReference) {
+    return {
+      type: "provider_reference" as const,
+      provider: session.provider,
+      reference: session.externalReference,
+    }
+  }
+  return null
+}
+
 function toPublicPaymentSession(
   session: NonNullable<Awaited<ReturnType<typeof financeService.getPaymentSessionById>>>,
 ) {
   return {
     id: session.id,
+    target: toPublicPaymentTarget(session),
+    provenance: null,
     targetType: session.targetType,
     targetId: session.targetId ?? null,
     bookingId: session.bookingId ?? null,
+    legacyOrderId: session.orderId ?? null,
     invoiceId: session.invoiceId ?? null,
     bookingPaymentScheduleId: session.bookingPaymentScheduleId ?? null,
     bookingGuaranteeId: session.bookingGuaranteeId ?? null,

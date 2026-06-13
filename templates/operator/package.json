@@ -55,8 +55,6 @@
     "@voyantjs/catalog-authoring": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/charters": "workspace:^",
-    "@voyantjs/checkout": "workspace:^",
-    "@voyantjs/checkout-react": "workspace:^",
     "@voyantjs/cloud-sdk": "^0.8.0",
     "@voyantjs/commerce": "workspace:^",
     "@voyantjs/commerce-react": "workspace:^",

@@ -69,7 +69,7 @@ export async function buildPaymentAuthorizationCreateActionLedgerInput(
           commandInput: {
             paymentAuthorizationId: input.authorization.id,
             bookingId: input.authorization.bookingId,
-            orderId: input.authorization.orderId,
+            legacyOrderId: input.authorization.orderId,
             invoiceId: input.authorization.invoiceId,
             bookingGuaranteeId: input.authorization.bookingGuaranteeId,
             amountCents: input.authorization.amountCents,

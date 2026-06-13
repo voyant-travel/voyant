@@ -1,7 +1,10 @@
 # @voyantjs/checkout-react
 
-The checkout client tier: headless admin hooks and provider for the
-checkout orchestration layer, plus the styled payment UI components
+Compatibility entrypoint for the checkout client tier.
+
+The React owner path is now `@voyantjs/finance-react/checkout` for headless
+hooks and `@voyantjs/finance-react/checkout-ui` for styled payment UI. This
+package re-exports those Finance-owned surfaces for existing consumers
 (formerly `@voyantjs/checkout-ui`).
 
 Headless consumers (storefronts, portals) import from the root,
@@ -12,17 +15,17 @@ optional and only needed when you import those subpaths.
 
 ## UI components
 
-Universal payment UI components built on the existing Voyant payments
-stack:
+Universal payment UI components built on the existing Voyant payments stack:
 
-- `@voyantjs/finance` — `payment_sessions`, `payments`, `payment_instruments`
-- `@voyantjs/checkout` — collection plans + `paymentStarters` registration
-- `@voyantjs/plugin-netopia` (and future plugins) — real processor adapters
-- `@voyantjs/notifications` — payment-link emails
+- `@voyantjs/finance` - `payment_sessions`, `payments`,
+  `payment_instruments`, collection plans, and `paymentStarters` registration
+- `@voyantjs/finance-react` - owner path for checkout hooks and UI components
+- `@voyantjs/plugin-netopia` (and future plugins) - real processor adapters
+- host notification wiring - payment-link delivery
 
 The styled subpaths (`@voyantjs/checkout-react/ui`,
 `@voyantjs/checkout-react/components/*`) add **pure UI** on top of that
-stack — no parallel state, no parallel contracts. Verticals wrap
+stack - no parallel state, no parallel contracts. Verticals wrap
 `<PaymentStep>` and translate `PaymentChoice` events into checkout calls.
 
 ## Components

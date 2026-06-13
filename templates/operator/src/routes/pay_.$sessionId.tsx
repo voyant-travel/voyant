@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Navigate } from "@tanstack/react-router"
-import { type BankTransferInstructions, PaymentLinkLandingPage } from "@voyantjs/checkout-react/ui"
 import { usePublicPaymentSession } from "@voyantjs/finance-react"
+import { type BankTransferInstructions, PaymentLinkLandingPage } from "@voyantjs/finance-react/ui"
 import { Loader2 } from "lucide-react"
 
 import { usePaymentLinkBookingSummary } from "@/components/voyant/checkout/payment-link-booking-summary"
