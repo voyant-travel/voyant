@@ -1,5 +1,7 @@
 # @voyantjs/travel-composer
 
+## 0.110.2
+
 ## 0.110.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/travel-composer-react
 
+## 0.110.2
+
+### Patch Changes
+
+- 81ab5a7: Split oversized travel composer admin page, panel, and detail host surfaces into focused internal modules while preserving the existing admin exports and behavior.
+  - @voyantjs/finance@0.119.4
+  - @voyantjs/travel-composer@0.110.2
+
 ## 0.110.1
 
 ### Patch Changes
