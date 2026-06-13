@@ -1,5 +1,11 @@
 # @voyantjs/promotions
 
+## 0.111.7
+
+### Patch Changes
+
+- @voyantjs/workflows@0.107.7
+
 ## 0.111.6
 
 ### Patch Changes
