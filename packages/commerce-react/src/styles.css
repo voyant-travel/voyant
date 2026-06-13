@@ -1,0 +1,9 @@
+/* Tailwind v4 source-detection helper for the Commerce React facade. */
+@source "../node_modules/@voyantjs/markets-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/pricing-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/promotions-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/sellability-react/dist/**/*.{js,mjs}";
+
+@import "@voyantjs/markets-react/styles.css";
+@import "@voyantjs/pricing-react/styles.css";
+@import "@voyantjs/sellability-react/styles.css";

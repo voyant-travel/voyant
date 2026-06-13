@@ -305,7 +305,9 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
             adminRoutePageModule(module.PricingCategoriesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getPricingCategoriesQueryOptions } = await import("@voyantjs/pricing-react")
+          const { getPricingCategoriesQueryOptions } = await import(
+            "@voyantjs/commerce-react/pricing"
+          )
           return ctx.queryClient.ensureQueryData(
             getPricingCategoriesQueryOptions(coreClient(ctx), { limit: 25, active: undefined }),
           )
@@ -320,7 +322,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
             adminRoutePageModule(module.PriceCatalogsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getPriceCatalogsQueryOptions } = await import("@voyantjs/pricing-react")
+          const { getPriceCatalogsQueryOptions } = await import("@voyantjs/commerce-react/pricing")
           return ctx.queryClient.ensureQueryData(
             getPriceCatalogsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )

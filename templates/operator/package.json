@@ -59,6 +59,7 @@
     "@voyantjs/checkout-react": "workspace:^",
     "@voyantjs/cloud-sdk": "^0.8.0",
     "@voyantjs/commerce": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/connect-adapter": "^0.2.20",
     "@voyantjs/connect-cruises": "^0.3.13",
     "@voyantjs/connect-sdk": "^0.7.1",

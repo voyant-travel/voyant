@@ -24,6 +24,7 @@
     "@tanstack/react-router": "^1.0.0",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
@@ -40,6 +41,7 @@
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/pricing-react": "workspace:^",
@@ -94,6 +96,9 @@
   },
   "peerDependenciesMeta": {
     "@voyantjs/auth-react": {
+      "optional": true
+    },
+    "@voyantjs/commerce-react": {
       "optional": true
     },
     "@voyantjs/distribution-react": {

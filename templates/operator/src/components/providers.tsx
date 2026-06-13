@@ -13,12 +13,11 @@ import { AllocationUiMessagesProvider } from "@voyantjs/availability-react/alloc
 import { VoyantAvailabilityProvider } from "@voyantjs/availability-react/provider"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/i18n"
 import { CatalogUiMessagesProvider } from "@voyantjs/catalog-react/i18n"
+import { CommerceUiMessagesProvider } from "@voyantjs/commerce-react/i18n"
 import { FinanceUiMessagesProvider } from "@voyantjs/finance-react/i18n"
 import { LegalUiMessagesProvider } from "@voyantjs/legal-react/i18n"
 import { NotificationsUiMessagesProvider } from "@voyantjs/notifications-react/i18n"
-import { PricingUiMessagesProvider } from "@voyantjs/pricing-react/i18n"
 import { ProductsUiMessagesProvider } from "@voyantjs/products-react/i18n"
-import { PromotionsUiMessagesProvider } from "@voyantjs/promotions-react/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/relationships-react/i18n"
 import { ResourcesUiMessagesProvider } from "@voyantjs/resources-react/i18n"
 import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-react/i18n"
@@ -42,10 +41,9 @@ const domainMessageProviders = [
   BookingsUiMessagesProvider,
   CatalogUiMessagesProvider,
   ProductsUiMessagesProvider,
-  PricingUiMessagesProvider,
+  CommerceUiMessagesProvider,
   LegalUiMessagesProvider,
   CrmUiMessagesProvider,
-  PromotionsUiMessagesProvider,
   ResourcesUiMessagesProvider,
   FinanceUiMessagesProvider,
   NotificationsUiMessagesProvider,

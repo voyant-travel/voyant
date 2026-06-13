@@ -31,6 +31,11 @@ It does not expose `pricing`, `markets`, `sellability`, `promotions`, or `fx`
 subpaths as default v1 APIs. The old package names remain compatibility and
 schema-owner packages until the v1 migration removes them.
 
+React/admin consumers should prefer `@voyantjs/commerce-react` for Commerce-owned
+UI wiring. That package exposes facade entrypoints for pricing, markets,
+sellability, and promotions React surfaces while the old package names remain
+temporary compatibility packages.
+
 ## Runtime Mounting
 
 Templates should declare one Commerce runtime entry and expand it through
