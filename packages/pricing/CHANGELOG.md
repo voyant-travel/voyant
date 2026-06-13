@@ -1,5 +1,7 @@
 # @voyantjs/pricing
 
+## 0.119.2
+
 ## 0.119.1
 
 ### Patch Changes

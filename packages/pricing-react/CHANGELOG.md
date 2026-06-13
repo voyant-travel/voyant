@@ -1,5 +1,12 @@
 # @voyantjs/pricing-react
 
+## 0.119.2
+
+### Patch Changes
+
+- 2da2635: Split oversized pricing React query options, sellability service workflows, and transaction offer services into smaller internal modules while preserving existing public exports and behavior.
+  - @voyantjs/pricing@0.119.2
+
 ## 0.119.1
 
 ### Patch Changes
