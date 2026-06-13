@@ -239,6 +239,21 @@ describe("renderNotificationTemplate", () => {
     expect(rendered).toBe("Paid 10 EUR; balance 89 EUR by 2026-05-04")
   })
 
+  it("renders payment schedule context without invoice, session, or booking data", () => {
+    const rendered = renderNotificationTemplate(
+      "Pay {{ payment.amount }} by {{ payment.dueDate }}",
+      {
+        paymentSchedule: {
+          dueDate: "2026-05-04",
+          amountCents: 5000,
+          scheduleType: "deposit",
+        },
+      },
+    )
+
+    expect(rendered).toBe("Pay 50 by 2026-05-04")
+  })
+
   it("preserves explicit payment data when no finance context is present", () => {
     expect(
       renderNotificationTemplate("{% if payment.isPaidInFull %}Paid{% endif %}", {

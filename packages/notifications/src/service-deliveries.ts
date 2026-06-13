@@ -1,11 +1,16 @@
-// agent-quality: file-size exception -- owner: notifications; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { bookings } from "@voyantjs/bookings/schema"
 import { invoices, paymentSessions } from "@voyantjs/finance"
-import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationDeliveries } from "./schema.js"
+import {
+  attachmentsFromMetadata,
+  metadataWithoutFailureLog,
+  normalizeDeliveryAttachments,
+  resolveNotificationPaymentUrl,
+  serializeNotificationError,
+} from "./service-delivery-metadata.js"
 import type {
   NotificationDeliveryListQuery,
   NotificationService,
@@ -25,141 +30,8 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 import { getTemplateById, getTemplateBySlug } from "./service-templates.js"
-import type { NotificationAttachment } from "./types.js"
 
-function normalizeAttachments(
-  attachments:
-    | Array<{
-        filename: string
-        contentBase64?: string | null
-        path?: string | null
-        contentType?: string | null
-        disposition?: "attachment" | "inline" | null
-        contentId?: string | null
-      }>
-    | null
-    | undefined,
-): NotificationAttachment[] | undefined {
-  if (!attachments || attachments.length === 0) {
-    return undefined
-  }
-
-  return attachments.map((attachment) => ({
-    filename: attachment.filename,
-    ...(attachment.contentBase64 ? { contentBase64: attachment.contentBase64 } : {}),
-    ...(attachment.path ? { path: attachment.path } : {}),
-    ...(attachment.contentType ? { contentType: attachment.contentType } : {}),
-    ...(attachment.disposition ? { disposition: attachment.disposition } : {}),
-    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
-  }))
-}
-
-function truncateLogValue(value: string, maxLength = 4000) {
-  if (value.length <= maxLength) return value
-  return `${value.slice(0, maxLength)}…`
-}
-
-function readErrorField(error: unknown, field: string) {
-  if (!error || typeof error !== "object" || !(field in error)) return null
-  const value = (error as Record<string, unknown>)[field]
-  if (typeof value === "string") return truncateLogValue(value)
-  if (typeof value === "number" || typeof value === "boolean") return value
-  if (value == null) return null
-  try {
-    return truncateLogValue(JSON.stringify(value))
-  } catch {
-    return String(value)
-  }
-}
-
-function serializeNotificationError(error: unknown) {
-  const base =
-    error instanceof Error
-      ? {
-          name: error.name,
-          message: truncateLogValue(error.message),
-          stack: error.stack ? truncateLogValue(error.stack) : null,
-          cause:
-            error.cause instanceof Error
-              ? {
-                  name: error.cause.name,
-                  message: truncateLogValue(error.cause.message),
-                  stack: error.cause.stack ? truncateLogValue(error.cause.stack) : null,
-                }
-              : readErrorField(error, "cause"),
-        }
-      : {
-          name: typeof error,
-          message: truncateLogValue(String(error)),
-          stack: null,
-          cause: null,
-        }
-
-  return {
-    ...base,
-    code: readErrorField(error, "code"),
-    status: readErrorField(error, "status"),
-    statusCode: readErrorField(error, "statusCode"),
-    responseStatus: readErrorField(error, "responseStatus"),
-    responseBody: readErrorField(error, "responseBody") ?? readErrorField(error, "body"),
-    data: readErrorField(error, "data"),
-    notificationRequest: readErrorField(error, "notificationRequest"),
-  }
-}
-
-export function resolveNotificationPaymentUrl(
-  paymentSessionId: string,
-  options: { paymentLinkBaseUrl?: string | null; redirectUrl?: string | null } = {},
-) {
-  if (options.paymentLinkBaseUrl?.trim()) {
-    return buildPaymentLinkUrl(paymentSessionId, { baseUrl: options.paymentLinkBaseUrl })
-  }
-
-  return normalizeAbsolutePaymentUrl(options.redirectUrl)
-}
-
-function normalizeAbsolutePaymentUrl(value: string | null | undefined) {
-  const trimmed = value?.trim()
-  if (!trimmed) return null
-
-  try {
-    const url = new URL(trimmed)
-    return url.protocol === "http:" || url.protocol === "https:" ? trimmed : null
-  } catch {
-    return null
-  }
-}
-
-function metadataWithoutFailureLog(metadata: Record<string, unknown> | null | undefined) {
-  if (!metadata) return null
-  const rest = { ...metadata }
-  delete rest.failureLog
-  return rest
-}
-
-function isAttachmentSummary(value: unknown): value is NotificationAttachment {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false
-  const record = value as Record<string, unknown>
-  return (
-    typeof record.filename === "string" &&
-    record.filename.length > 0 &&
-    (typeof record.path === "string" || typeof record.contentBase64 === "string")
-  )
-}
-
-function attachmentsFromMetadata(metadata: Record<string, unknown> | null | undefined) {
-  const rawAttachments = metadata?.attachments
-  if (!Array.isArray(rawAttachments)) return undefined
-  const attachments = rawAttachments.filter(isAttachmentSummary).map((attachment) => ({
-    filename: attachment.filename,
-    ...(attachment.contentBase64 ? { contentBase64: attachment.contentBase64 } : {}),
-    ...(attachment.path ? { path: attachment.path } : {}),
-    ...(attachment.contentType ? { contentType: attachment.contentType } : {}),
-    ...(attachment.disposition ? { disposition: attachment.disposition } : {}),
-    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
-  }))
-  return attachments.length > 0 ? attachments : undefined
-}
+export { resolveNotificationPaymentUrl } from "./service-delivery-metadata.js"
 
 export async function listDeliveries(db: PostgresJsDatabase, query: NotificationDeliveryListQuery) {
   const conditions = []
@@ -275,7 +147,7 @@ export async function sendNotification(
   const subject = input.subject ?? renderNotificationTemplate(template?.subjectTemplate, data)
   const html = input.html ?? renderNotificationTemplate(template?.htmlTemplate, data)
   const text = input.text ?? renderNotificationTemplate(template?.textTemplate, data)
-  const attachments = normalizeAttachments(input.attachments)
+  const attachments = normalizeDeliveryAttachments(input.attachments)
   const attachmentSummary = summarizeNotificationAttachments(attachments)
 
   const [pending] = await db

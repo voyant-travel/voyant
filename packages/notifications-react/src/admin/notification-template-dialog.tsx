@@ -1,11 +1,9 @@
-// agent-quality: file-size exception -- owner: notifications-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
 import type { Editor } from "@tiptap/core"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -31,175 +29,39 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { z } from "zod/v4"
-import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type NotificationTemplateRecord,
   useNotificationTemplateAuthoring,
   useNotificationTemplateMutation,
   useNotificationTemplateTools,
 } from "../index.js"
+import { NotificationTemplateAttachmentsField } from "./notification-template-attachments-field.js"
 import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
-
-const CHANNEL_VALUES = ["email", "sms"] as const
-const STATUS_VALUES = ["draft", "active", "archived"] as const
-const ATTACHMENT_VALUES = ["contract", "invoice", "brochure"] as const
-
-const channelItemLabel = (
-  t: NotificationsUiMessages["admin"]["common"],
-  value: (typeof CHANNEL_VALUES)[number],
-) => (value === "email" ? t.channelEmail : t.channelSms)
-
-const statusItemLabel = (
-  t: NotificationsUiMessages["admin"]["common"],
-  value: (typeof STATUS_VALUES)[number],
-) => (value === "draft" ? t.statusDraft : value === "active" ? t.statusActive : t.statusArchived)
-
-const attachmentItemLabel = (
-  t: NotificationsUiMessages["admin"]["templateDialog"],
-  value: (typeof ATTACHMENT_VALUES)[number],
-) =>
-  value === "contract"
-    ? t.attachmentContract
-    : value === "invoice"
-      ? t.attachmentInvoice
-      : t.attachmentBrochure
-
-const nativeSelectClassName =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
-
-const templateAttachmentSchema = z.enum(["contract", "invoice", "brochure"])
-
-const templateFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
-  channel: z.enum(["email", "sms"]),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  subjectTemplate: z.string().optional(),
-  htmlTemplate: z.string().optional(),
-  textTemplate: z.string().optional(),
-  fromAddress: z.string().optional(),
-  attachments: z.array(templateAttachmentSchema).default([]),
-  active: z.boolean(),
-})
-
-type FormValues = z.input<typeof templateFormSchema>
-type FormOutput = z.output<typeof templateFormSchema>
-type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
+import {
+  appendTemplateValue,
+  buildSamplePayload,
+  buildTemplateMetadata,
+  CHANNEL_VALUES,
+  channelItemLabel,
+  type FormOutput,
+  type FormValues,
+  type InsertionTarget,
+  nativeSelectClassName,
+  readTemplateAttachments,
+  STATUS_VALUES,
+  statusItemLabel,
+  type TemplateAttachment,
+  templateFormSchema,
+  variableReference,
+} from "./notification-template-dialog-utils.js"
+import { NotificationTemplateRenderedPreview } from "./notification-template-rendered-preview.js"
 
 type NotificationTemplateDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   template?: NotificationTemplateRecord
   onSuccess: () => void
-}
-
-type InsertionTarget = "subject" | "body" | "text"
-
-function parsePath(path: string) {
-  return path
-    .replace(/\[(\d+)\]/g, ".$1")
-    .split(".")
-    .filter(Boolean)
-}
-
-function setDeepValue(target: Record<string, unknown>, path: string, value: unknown) {
-  const segments = parsePath(path)
-  let current: unknown = target
-
-  for (let index = 0; index < segments.length; index += 1) {
-    const segment = segments[index]!
-    const isLast = index === segments.length - 1
-    const nextSegment = segments[index + 1]
-    const nextIsIndex = nextSegment ? /^\d+$/.test(nextSegment) : false
-
-    if (Array.isArray(current)) {
-      const arrayIndex = Number(segment)
-      if (Number.isNaN(arrayIndex)) return
-      if (isLast) {
-        current[arrayIndex] = value
-        return
-      }
-      if (current[arrayIndex] == null) {
-        current[arrayIndex] = nextIsIndex ? [] : {}
-      }
-      current = current[arrayIndex] as Record<string, unknown> | unknown[]
-      continue
-    }
-
-    if (typeof current !== "object" || current == null) return
-    const record = current as Record<string, unknown>
-    if (isLast) {
-      record[segment] = value
-      return
-    }
-    if (record[segment] == null) {
-      record[segment] = nextIsIndex ? [] : {}
-    }
-    current = record[segment] as Record<string, unknown> | unknown[]
-  }
-}
-
-function buildSamplePayload(
-  variableGroups: Array<{
-    variables: Array<{ key: string; example: string }>
-  }>,
-) {
-  const sample: Record<string, unknown> = {}
-  for (const group of variableGroups) {
-    for (const variable of group.variables) {
-      setDeepValue(sample, variable.key, variable.example)
-    }
-  }
-  return sample
-}
-
-function appendTemplateValue(current: string | undefined, addition: string) {
-  if (!current?.trim()) return addition
-  return `${current}${current.endsWith("\n") ? "" : "\n"}${addition}`
-}
-
-function variableReference(key: string) {
-  return `{{ ${key} }}`
-}
-
-function getMetadataRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null
-  }
-  return value as Record<string, unknown>
-}
-
-function readTemplateAttachments(metadata: unknown): TemplateAttachment[] {
-  const record = getMetadataRecord(metadata)
-  const value = record?.attachments
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  const allowed = new Set(ATTACHMENT_VALUES)
-  return ATTACHMENT_VALUES.filter(
-    (attachment) => allowed.has(attachment) && value.includes(attachment),
-  )
-}
-
-function buildTemplateMetadata(
-  metadata: unknown,
-  attachments: ReadonlyArray<TemplateAttachment>,
-): Record<string, unknown> | null {
-  const current = getMetadataRecord(metadata)
-  const next = current ? { ...current } : {}
-
-  if (attachments.length > 0) {
-    next.attachments = [...attachments]
-  } else {
-    delete next.attachments
-  }
-
-  return Object.keys(next).length > 0 ? next : null
 }
 
 export function NotificationTemplateDialog(props: NotificationTemplateDialogProps) {
@@ -511,31 +373,11 @@ function NotificationTemplateDialogInner({
 
               {channel === "email" ? (
                 <>
-                  <div className="flex flex-col gap-2">
-                    <Label>{t.attachmentsLabel}</Label>
-                    <div className="flex flex-wrap gap-3">
-                      {ATTACHMENT_VALUES.map((value) => (
-                        <div
-                          key={value}
-                          className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
-                        >
-                          <Checkbox
-                            id={`notification-template-attachment-${value}`}
-                            checked={attachments.includes(value)}
-                            onCheckedChange={(checked) =>
-                              setAttachmentSelected(value, checked === true)
-                            }
-                          />
-                          <Label
-                            htmlFor={`notification-template-attachment-${value}`}
-                            className="cursor-pointer text-sm font-normal"
-                          >
-                            {attachmentItemLabel(t, value)}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <NotificationTemplateAttachmentsField
+                    attachments={attachments}
+                    onAttachmentChange={setAttachmentSelected}
+                    t={t}
+                  />
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
@@ -655,50 +497,11 @@ function NotificationTemplateDialogInner({
                         </Button>
                       </div>
 
-                      <div className="space-y-3 rounded-md border p-4">
-                        <div className="text-sm font-medium">{t.renderedPreviewTitle}</div>
-
-                        {channel === "email" ? (
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                                {t.renderedSubjectLabel}
-                              </div>
-                              <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
-                                {preview.data?.subject || t.noSubjectRendered}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                                {t.renderedHtmlLabel}
-                              </div>
-                              <div className="rounded-md border bg-background">
-                                {preview.data?.html ? (
-                                  <div
-                                    className="prose prose-sm max-w-none px-3 py-3 dark:prose-invert"
-                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Preview HTML is generated server-side for template preview. -- owner: notifications-react; existing suppression is intentional pending typed cleanup.
-                                    dangerouslySetInnerHTML={{ __html: preview.data.html }}
-                                  />
-                                ) : (
-                                  <div className="px-3 py-3 text-sm text-muted-foreground">
-                                    {t.noHtmlRendered}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                            <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                              {t.renderedSmsLabel}
-                            </div>
-                            <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
-                              {preview.data?.text || t.noSmsRendered}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
+                      <NotificationTemplateRenderedPreview
+                        channel={channel}
+                        data={preview.data}
+                        t={t}
+                      />
                     </div>
 
                     <div className="space-y-4 rounded-md border p-4">
