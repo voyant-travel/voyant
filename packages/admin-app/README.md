@@ -1,13 +1,12 @@
 # @voyantjs/admin-app
 
-The Voyant admin application factory: the root document, router defaults,
-auth-guarded workspace shell, and router-aware navigation — the composition
-glue every Voyant admin previously copied from the template, delivered as a
-versioned package.
+Compatibility package for the admin app shell.
 
-Part of the Packaged Admin direction (`docs/architecture/packaged-admin-rfc.md`,
-Phase 1). `@voyantjs/admin` stays the primitives package (providers, layout,
-extension seam); this package owns the application-level composition on top.
+The implementation now lives in `@voyantjs/admin/app/*` so the top-level
+`admin` package owns the packaged staff shell and extension surface. This
+package remains temporarily available for existing imports and re-exports the
+same root document, router defaults, auth-guarded workspace shell, route binder,
+and core extension helpers.
 
 ## What it provides
 
@@ -34,9 +33,13 @@ extension seam); this package owns the application-level composition on top.
 
 ```tsx
 // src/router.tsx
+import { createAdminRouter } from "@voyantjs/admin/app"
+
 export const getRouter = () => createAdminRouter({ routeTree })
 
 // src/routes/__root.tsx
+import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyantjs/admin/app/root"
+
 export const Route = createRootRouteWithContext<AdminRouterContext>()({
   head: () => adminRootHead({ title: "Acme Admin" }),
   shellComponent: AdminRootShell,
@@ -45,6 +48,12 @@ export const Route = createRootRouteWithContext<AdminRouterContext>()({
 })
 
 // src/routes/_workspace/route.tsx
+import {
+  AdminWorkspacePendingFallback,
+  AdminWorkspaceShell,
+  createAdminWorkspaceBeforeLoad,
+} from "@voyantjs/admin/app/workspace"
+
 export const Route = createFileRoute("/_workspace")({
   ssr: "data-only",
   beforeLoad: createAdminWorkspaceBeforeLoad({ getCurrentUser }),
@@ -66,6 +75,9 @@ export const Route = createFileRoute("/_workspace")({
 
 What stays app-owned: the provider list (which domain modules are mounted),
 extension definitions, navigation icons, branding, and the auth client.
+
+Existing `@voyantjs/admin-app` imports continue to work through this package,
+but new first-party code should import from `@voyantjs/admin/app/*`.
 
 ## License
 

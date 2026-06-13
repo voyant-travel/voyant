@@ -1233,10 +1233,10 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/admin` | Keep as packaged staff shell primitives. | Admin is a surface/extension host, not a domain Module. |
-| `@voyantjs/admin-app` | Fold into `admin` unless a runtime app shell split remains useful. | Separate issue already tracks rationalizing admin package boundaries. |
+| `@voyantjs/admin` | Keep as packaged staff shell and extension surface. | Admin is a surface/extension host, not a domain Module. App-shell exports live under `@voyantjs/admin/app/*`. |
+| `@voyantjs/admin-app` | Fold into `admin`; keep only as a temporary compatibility shim. | First-party callers should move to `@voyantjs/admin/app/*`. Remove the shim after the v1 compatibility window. |
 | `@voyantjs/admin-client`, `@voyantjs/admin-contracts` | Keep if the framework-neutral admin client contract remains useful. | This is a client/contract seam, not a domain seam. |
-| `@voyantjs/admin-react` | Fold into `admin` or keep only if it has real independent consumers. | Current value appears thin relative to package surface. |
+| `@voyantjs/admin-react` | Keep separate only as the React Query adapter over `admin-client`; fold before v1 if no independent React SDK consumers are confirmed. | It is not part of the packaged shell/runtime surface moved into `admin`. |
 | `@voyantjs/storefront`, `@voyantjs/storefront-react` | Keep as the customer-facing runtime/surface concept. | Storefront composes public and authenticated customer flows; it should not own product, price, booking, or finance truth. |
 | `@voyantjs/customer-portal`, `@voyantjs/customer-portal-react` | Fold into `storefront` as authenticated account/after-booking surfaces in the v1 package move. | The portal composes bookings, finance, legal, identity, and Relationships; it should not own those records or remain a separate public v1 package. |
 | `@voyantjs/storefront-sdk` | Keep as a framework-agnostic facade if public flows stay cross-module. | SDK shape may simplify once commerce/bookings/finance consolidate. |

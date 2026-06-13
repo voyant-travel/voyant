@@ -2,7 +2,7 @@ import {
   type AdminRouterContext,
   attachAdminExtensionRoutes,
   createAdminRouter,
-} from "@voyantjs/admin-app"
+} from "@voyantjs/admin/app"
 
 import {
   type AdminExtensionRoutesByFullPath,

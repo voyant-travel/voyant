@@ -5,7 +5,7 @@ import {
   adminRoutePageModule,
   createAdminExtensionRegistry,
 } from "@voyantjs/admin"
-import { createAdminCoreExtension } from "@voyantjs/admin-app/core-extension"
+import { createAdminCoreExtension } from "@voyantjs/admin/app/core-extension"
 import { Button } from "@voyantjs/ui/components/button"
 import { Building, Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
@@ -73,7 +73,7 @@ type AdminExtensionNavMessages = Pick<
 >
 
 // The CORE admin surfaces — dashboard, account, settings — are
-// package-delivered by `@voyantjs/admin-app` (packaged-admin RFC §4.2): the
+// package-delivered by `@voyantjs/admin/app` (packaged-admin RFC §4.2): the
 // extension contributes NO navigation (Dashboard/Settings are part of the
 // BASE operator navigation; Account is linked from the user menu) and is
 // registered for the routes seam. The app composes two seams through the

@@ -1,6 +1,7 @@
-import type { OperatorAdminMessages } from "@voyantjs/admin"
 import { Coins, Hash, KeyRound, Layers, Package, Percent, Tag, Tags, Users } from "lucide-react"
 import type * as React from "react"
+
+import type { OperatorAdminMessages } from "../../providers/operator-admin-messages.js"
 
 /**
  * Catalog of the BUILT-IN settings pages the admin core extension ships
