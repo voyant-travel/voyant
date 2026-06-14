@@ -123,7 +123,7 @@ receive time. Do not bend `PaymentRequest` for vertical-specific fields.
 
 ### 3. One `PaymentStep` UI, capability-gated
 
-`@voyantjs/checkout-react/ui` ships a single `<PaymentStep>` component that takes
+`@voyantjs/finance-react/checkout-ui` ships a single `<PaymentStep>` component that takes
 a `PaymentRequest` and the active processor's `capabilities`. It renders
 sections based on what the processor declares:
 
@@ -152,14 +152,14 @@ Rule:
 
 Verticals do not implement their own payment selectors. If a vertical
 needs to render payment options, it imports `<PaymentStep>` from
-`@voyantjs/checkout-react/ui` and feeds it a `PaymentRequest`. Branding /
+`@voyantjs/finance-react/checkout-ui` and feeds it a `PaymentRequest`. Branding /
 notes / layout slots are exposed via render-prop slots.
 
 ### 4. One payment-link landing page
 
 When the chosen flow is "send payment link", the customer lands on a
 universal `/pay/:sessionId` page rendered by the
-`<PaymentLinkLandingPage>` component from `@voyantjs/checkout-react/ui`.
+`<PaymentLinkLandingPage>` component from `@voyantjs/finance-react/checkout-ui`.
 
 It shows:
 
@@ -182,7 +182,7 @@ into the `paid` webhook to update their order/folio/booking state.
 
 ### 5. Webhooks are universal but routing is per-vertical
 
-Processor webhooks land on a single receiver in `@voyantjs/checkout-react/ui`
+Processor webhooks land on a single receiver in `@voyantjs/finance-react/checkout-ui`
 that:
 
 1. Verifies the signature via the processor's `verifyWebhook` capability
@@ -252,7 +252,7 @@ three:
 3. **Sandbox modes of real integrations** — Netopia sandbox, Stripe test
    keys, Mollie test mode. Real plugin, fake account.
 
-Shared components (`@voyantjs/checkout-react/ui`, `@voyantjs/flights-react/ui`,
+Shared components (`@voyantjs/finance-react/checkout-ui`, `@voyantjs/flights-react/ui`,
 `@voyantjs/payments-react`) never carry "demo" defaults — no
 `DEFAULT_CAPABILITIES`, no `DEMO_*` constants, no fallback that pretends a
 processor declared capabilities it doesn't. When a prop isn't passed, the
@@ -322,11 +322,9 @@ The Voyant payments stack is **already built** — these are the actual
 packages, not new ones to create:
 
 ```
-packages/finance               ← state: payment_sessions, payments, payment_instruments, invoices
-packages/finance-react         ← hooks: usePublicPaymentSession, usePublicBookingPaymentOptions, …
-packages/checkout              ← orchestration: collection plans, paymentStarters seam, bank-transfer details
+packages/finance               ← state plus checkout orchestration: payment sessions, invoices, collection plans, paymentStarters seam, bank-transfer details
+packages/finance-react         ← hooks and UI: usePublicPaymentSession, usePublicBookingPaymentOptions, <PaymentStep>, <PaymentLinkLandingPage>
 packages/notifications         ← payment-link emails / SMS
-packages/checkout-react           ← <PaymentStep>, <PaymentLinkLandingPage>  (UI on top of finance + checkout)
 packages/plugins/netopia       ← @voyantjs/plugin-netopia — real Netopia integration with sandbox mode
 packages/plugins/<future>      ← Stripe / Mollie / EuPlatesc plugins as needed
 ```
@@ -334,14 +332,13 @@ packages/plugins/<future>      ← Stripe / Mollie / EuPlatesc plugins as needed
 **There is no `@voyantjs/payments` contract package and no
 `@voyantjs/payments-react` hooks package.** Earlier drafts proposed
 both; they were rolled back when it became clear they duplicated
-finance + checkout / finance-react. The "contract" is the existing
-finance schemas + checkout `paymentStarters` seam — that's the
+Finance / Finance React. The "contract" is the existing
+Finance schemas plus the Finance checkout `paymentStarters` seam — that's the
 canonical surface.
 
-Plugin packages register themselves via checkout's `paymentStarters`
-record. Verticals depend on `checkout-ui` for the components and on
-`finance-react` for the data hooks — never on individual processor
-plugins.
+Plugin packages register themselves via Finance checkout's `paymentStarters`
+record. Verticals depend on Finance React checkout UI for the components and on
+Finance React hooks for the data — never on individual processor plugins.
 
 Plugin selection happens at template-config time:
 
@@ -369,19 +366,19 @@ customer preference). Defaults to first-declared.
 |---|---|---|
 | Payment sessions / payments / invoices state | `@voyantjs/finance` | No — schema |
 | Saved payment instruments (cards on file) | `@voyantjs/finance` (`payment_instruments`) | No — schema |
-| Collection plan + initiate flow | `@voyantjs/checkout` | Per-template policy options |
-| `paymentStarters` registration | `@voyantjs/checkout` (DI seam) | Per-template wiring |
-| Bank-transfer details (IBAN block) | `@voyantjs/checkout` (`bankTransferDetails`) | Per-deployment |
+| Collection plan + initiate flow | `@voyantjs/finance/checkout` | Per-template policy options |
+| `paymentStarters` registration | `@voyantjs/finance/checkout` (DI seam) | Per-template wiring |
+| Bank-transfer details (IBAN block) | `@voyantjs/finance/checkout` (`bankTransferDetails`) | Per-deployment |
 | Real processor adapters | `packages/plugins/{processor}` (e.g. `plugin-netopia`) | No — adapter implementation |
 | Public hooks (`usePublicPaymentSession`, `usePublicBookingPaymentOptions`) | `@voyantjs/finance-react` | No — wraps finance routes |
-| `<PaymentStep>` (capability-gated UI) | `@voyantjs/checkout-react/ui` | `extraOptions` slot per vertical |
-| `<PaymentLinkLandingPage>` | `@voyantjs/checkout-react/ui` | Brand slots, IBAN block |
+| `<PaymentStep>` (capability-gated UI) | `@voyantjs/finance-react/checkout-ui` | `extraOptions` slot per vertical |
+| `<PaymentLinkLandingPage>` | `@voyantjs/finance-react/checkout-ui` | Brand slots, IBAN block |
 | Per-vertical wrappers (e.g. `FlightPaymentStep`) | per-vertical UI package | Maps `PaymentChoice` → vertical action |
 | Email / SMS templates | `@voyantjs/notifications` | Per-template overrides |
 | Webhook routes (mounted) | template, plugin-supplied handler | One-line wiring |
 | Plugin selection (Netopia / Stripe / …) | `voyant.config.ts` + plugin imports | Per-deployment |
 | Branding / landing page polish | template `payments-portal` route | Per-deployment |
-| Payment schedules (deposit + balance) | `@voyantjs/finance` + `@voyantjs/checkout` | Per-vertical |
+| Payment schedules (deposit + balance) | `@voyantjs/finance` + `@voyantjs/finance/checkout` | Per-vertical |
 
 ---
 
@@ -482,7 +479,7 @@ capabilities are passed, only Hold + Issue-on-credit render — honest
 about what's actually wired. No invented capability ids in shared code.
 
 Scope:
-- ✅ `PaymentStep` (universal) in `@voyantjs/checkout-react/ui` with `PaymentChoice`
+- ✅ `PaymentStep` (universal) in `@voyantjs/finance-react/checkout-ui` with `PaymentChoice`
   events + capability-gated sections
 - ✅ `FlightPaymentStep` is now a thin wrapper over `PaymentStep`,
   translating `PaymentChoice` ↔ flight `PaymentIntent`, contributing the
@@ -490,7 +487,7 @@ Scope:
 - ✅ Operator booking page passes nothing for capabilities (only Hold +
   Credit shows) until Phase B wires the existing checkout integration
 
-### Phase B — Wire `@voyantjs/checkout` into the flight booking flow
+### Phase B — Wire `@voyantjs/finance/checkout` into the flight booking flow
 
 Currently flights have their own in-memory order store
 (`templates/operator/src/api/lib/flights-runtime.ts`). To use the real
@@ -505,7 +502,7 @@ Scope:
   Recommend (a) — flights have enough vertical-specific shape to deserve
   their own target type.
 - Add `flight_order` to the `payment_session_target_type` enum
-- Operator template wires checkout's `paymentStarters` from the
+- Operator template wires Finance checkout's `paymentStarters` from the
   configured plugin (Phase C deliverable)
 - Booking page builds `PaymentStepCapabilities` from
   `paymentStarters` registration + `bankTransferDetails` configuration,
@@ -534,7 +531,7 @@ Scope:
 
 ### Phase D — Customer payment-link landing page
 
-`<PaymentLinkLandingPage>` is already in `@voyantjs/checkout-react/ui` (Phase A
+`<PaymentLinkLandingPage>` is already in `@voyantjs/finance-react/checkout-ui` (Phase A
 shipped the skeleton). Mount it at `/pay/:sessionId` in the operator
 template. Customer lands, reads the session via `usePublicPaymentSession`,
 clicks Pay-by-card → redirects to Netopia hosted checkout, or reads the
@@ -557,7 +554,7 @@ consumers.
 
 Scope:
 - Accommodations (or bookings) checkout flow imports `<PaymentStep>` from
-  `@voyantjs/checkout-react/ui`, builds capabilities from configured wiring
+  `@voyantjs/finance-react/checkout-ui`, builds capabilities from configured wiring
 - Vertical-specific "extras" via `extraOptions` (e.g. "Charge to folio")
 - Validates the abstraction against a real second usage
 
@@ -602,14 +599,14 @@ options like "Issue on agency credit" (flights) or "Charge to folio"
 - `@voyantjs/finance-react` — public hooks (`usePublicPaymentSession`,
   `usePublicBookingPaymentOptions`, etc.). Single source of truth for the
   data the UI consumes.
-- `@voyantjs/checkout` — orchestration layer. Collection plans,
+- `@voyantjs/finance/checkout` — orchestration layer. Collection plans,
   `paymentStarters` registration, `bankTransferDetails` resolver,
   notification dispatch.
 - `@voyantjs/plugin-netopia` — real Netopia integration with sandbox
   mode. Registers as a `paymentStarter`. Existing finance extension
   mounts the callback route.
 - `@voyantjs/notifications` — payment-link emails / SMS.
-- `@voyantjs/checkout-react/ui` — `<PaymentStep>` + `<PaymentLinkLandingPage>`,
+- `@voyantjs/finance-react/checkout-ui` — `<PaymentStep>` + `<PaymentLinkLandingPage>`,
   pure UI on top of the above.
 - `@voyantjs/relationships` `person_payment_methods` table — canonical record of
   cards on file per person (tokenized).

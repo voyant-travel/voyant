@@ -23,7 +23,7 @@ Current implementation state, May 2026:
   the products module and still book sourced catalog rows.
 - `@voyantjs/trip-composer` now exists as the multi-line orchestration layer
   above this journey. It owns Trip Envelopes, Trip Components, aggregate
-  pricing/reserve/checkout/cancellation operations, and calls this journey's
+  pricing/reserve/finance/checkout/cancellation operations, and calls this journey's
   single-line catalog booking-engine primitives per component.
 
 Five load-bearing rules, in order of importance:
@@ -93,7 +93,7 @@ Before specifying anything new, this doc commits to reusing the following primit
 | Encrypted PII (passport, DOB, dietary, accessibility) | `booking_traveler_travel_details` with `KmsEnvelope` columns (`identityEncrypted`, `dietaryEncrypted`, `accessibilityEncrypted`) — `packages/bookings/src/schema/travel-details.ts` | **Reuse.** Per-traveler document fields collected in the Travelers step commit through this envelope; no parallel `bookingTravelers.documents jsonb`. The Travelers step's *transient* draft state may carry plaintext during the journey, but the commit path encrypts. |
 | Tax-regime catalog (jurisdiction × rate) | `tax_regimes` table — `packages/finance/src/schema.ts` | **Reuse.** New `tax_classes` (this doc, §9) carries the per-product tax-treatment decision and *resolves to* a `tax_regimes` row at quote time. They stack, not overlap. |
 | Per-occupancy pricing for cruises | `cruise_prices.occupancy` column + `cruisePrices` table — `packages/cruises/src/schema-pricing.ts` | **Reuse for cruises.** The new `product_pax_pricing_tiers` (§9) is for non-cruise verticals that need single-supplement / triple-share. Cruises keep their specialized table; the engine reads from the right place per vertical. |
-| Payment-collection UI (saved cards, new card, processor flow) | `checkout-ui`'s `PaymentStep` — `packages/checkout-react/src/components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to `checkout-ui`'s `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
+| Payment-collection UI (saved cards, new card, processor flow) | Finance React checkout UI's `PaymentStep` — `packages/finance-react/src/checkout-components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to Finance React checkout UI's `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
 | Quantity-tier pricing (more units → cheaper per-unit) | `option_unit_tiers` — `packages/pricing/src/schema-option-rules.ts` | **Reuse.** Quantity tiers are an orthogonal axis to per-occupancy tiers; the engine consults both when pricing an option. |
 | Snapshot graph at commit | `booking_catalog_snapshot` + `captureSnapshot` / `captureSnapshotGraph` — `packages/catalog/src/services/snapshot-service.ts` | **Reuse.** Both owned and sourced commits pass through these. |
 | Atomic owned-product transaction | `bookingsCreate` — `packages/finance/src/service-booking-create.ts` | **Bridge only.** The products owned handler maps a draft to booking-create's input shape for the current commit path. Booking-create's input still does not model every axis the journey can collect (full extras, all accommodation stay details, encrypted travel details, tax lines, catalog snapshots, arbitrary draft shape), so vertical handlers remain the seam for richer commit primitives. |
@@ -545,7 +545,7 @@ The same wizard handles each of these by reading the descriptor; no special-case
 | Travelers | `PassengersSection` | Widen with `dateOfBirth`, `band`, `documents` driven by `travelerFields[]` |
 | Accommodation | `RoomsStepperSection`, `SharedRoomSection` | Compose into a single `AccommodationStep` |
 | Extras | — | New `AddonsStep` with quantity stepper per Extra (per-pax / per-booking semantics); component name is legacy-compatible |
-| Payment | `PaymentScheduleSection` (intent + schedule shape) + **compose `checkout-ui`'s `PaymentStep`** (provider mechanics) | Thin wrapper that picks intent/schedule, then mounts `checkout-ui`'s `PaymentStep` at commit transition. No new provider seam in the journey shell. |
+| Payment | `PaymentScheduleSection` (intent + schedule shape) + **compose Finance React checkout UI's `PaymentStep`** (provider mechanics) | Thin wrapper that picks intent/schedule, then mounts Finance React checkout UI's `PaymentStep` at commit transition. No new provider seam in the journey shell. |
 | Review | — | New `ReviewStep` showing the full draft + final pricing |
 | Side panel | `PriceBreakdownSection` | Adapt to consume the new `PricingBreakdown` shape |
 
@@ -583,8 +583,8 @@ The wizard shell takes render-prop slots for the bits that legitimately differ b
   defaultBuyerType="B2B"
   // Operator: "Send confirmation to customer". Storefront: hand off to checkout/payment.
   onCommitted={(booking) => navigate({ to: "/orders/catalog" })}
-  // Optional: payment-provider mechanics live in checkout-ui. The
-  // journey hands the chosen intent + schedule to checkout-ui's
+  // Optional: payment-provider mechanics live in Finance React checkout UI. The
+  // journey hands the chosen intent + schedule to Finance React checkout UI's
   // PaymentStep at commit time; the slot below lets the template pass
   // a pre-configured PaymentStep with its capabilities + saved methods.
   renderPaymentProviderStep={(intent, schedule, capabilities) => (
@@ -608,7 +608,7 @@ operator (admin):
       - renderLeadContactPicker: CRM-backed PersonPicker
       - defaultBuyerType: "B2B"
       - onCommitted: navigate to /orders/catalog
-      - renderPaymentProviderStep: composes `checkout-ui`'s PaymentStep
+      - renderPaymentProviderStep: composes Finance React checkout UI's PaymentStep
         with operator capabilities + Netopia (when configured)
 
 storefront (customer):
@@ -621,7 +621,7 @@ storefront (customer):
                                  that swaps to CRM picker on auth
       - defaultBuyerType: "B2C"
       - onCommitted: navigate to /confirmation/$bookingId
-      - renderPaymentProviderStep: composes `checkout-ui`'s PaymentStep
+      - renderPaymentProviderStep: composes Finance React checkout UI's PaymentStep
         with the storefront's payment-provider capabilities
 ```
 
@@ -757,7 +757,7 @@ section as the current execution map.
   `templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx`
   and `templates/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`.
 - Storefront checkout handoff exists at
-  `POST /v1/public/catalog/checkout/start`, but it is still template-owned.
+  `POST /v1/public/catalog/finance/checkout/start`, but it is still template-owned.
 
 **Next execution slice 1 — make the single-line journey production-hard:**
 
@@ -783,7 +783,7 @@ section as the current execution map.
 
 **Next execution slice 3 — extract checkout start for composer reuse:**
 
-- Move reusable parts of `POST /v1/public/catalog/checkout/start` out of the
+- Move reusable parts of `POST /v1/public/catalog/finance/checkout/start` out of the
   operator template into framework-owned checkout/catalog services.
 - Keep deployment-specific payment provider configuration, contract template
   choice, CRM Quote creation, and bank-transfer details in templates.

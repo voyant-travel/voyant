@@ -29,7 +29,6 @@ import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyantjs/commerce"
-import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/distribution/external-refs"
 import { suppliersHonoModule } from "@voyantjs/distribution/suppliers"
@@ -56,6 +55,7 @@ import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
+import { createCustomerPortalHonoModule } from "@voyantjs/storefront/customer-portal"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { createTripComposerHonoModule } from "@voyantjs/trip-composer"
 
@@ -196,7 +196,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/public-document-delivery",
     "@voyantjs/notifications",
     "@voyantjs/storefront",
-    "@voyantjs/customer-portal",
+    "@voyantjs/storefront/customer-portal",
     "@voyantjs/storefront-verification",
     "@voyantjs/trip-composer",
   ],
@@ -381,7 +381,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           persistence: createRelationshipsStorefrontIntakePersistence(),
         },
       }),
-    "@voyantjs/customer-portal": ({ capabilities }) =>
+    "@voyantjs/storefront/customer-portal": ({ capabilities }) =>
       createCustomerPortalHonoModule({
         resolveDocumentDownloadUrl: (bindings, storageKey) =>
           capabilities.resolveDocumentDownloadUrl(bindings, storageKey),

@@ -17,6 +17,12 @@
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
+    "./customer-portal": "./src/customer-portal/index.ts",
+    "./customer-portal/client": "./src/customer-portal/client.ts",
+    "./customer-portal/hooks": "./src/customer-portal/hooks/index.ts",
+    "./customer-portal/operations": "./src/customer-portal/operations.ts",
+    "./customer-portal/provider": "./src/customer-portal/provider.tsx",
+    "./customer-portal/query-keys": "./src/customer-portal/query-keys.ts",
     "./components/storefront-settings-page": "./src/components/storefront-settings-page.tsx"
   },
   "scripts": {
@@ -101,6 +107,36 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./customer-portal": {
+        "types": "./dist/customer-portal/index.d.ts",
+        "import": "./dist/customer-portal/index.js",
+        "default": "./dist/customer-portal/index.js"
+      },
+      "./customer-portal/client": {
+        "types": "./dist/customer-portal/client.d.ts",
+        "import": "./dist/customer-portal/client.js",
+        "default": "./dist/customer-portal/client.js"
+      },
+      "./customer-portal/hooks": {
+        "types": "./dist/customer-portal/hooks/index.d.ts",
+        "import": "./dist/customer-portal/hooks/index.js",
+        "default": "./dist/customer-portal/hooks/index.js"
+      },
+      "./customer-portal/operations": {
+        "types": "./dist/customer-portal/operations.d.ts",
+        "import": "./dist/customer-portal/operations.js",
+        "default": "./dist/customer-portal/operations.js"
+      },
+      "./customer-portal/provider": {
+        "types": "./dist/customer-portal/provider.d.ts",
+        "import": "./dist/customer-portal/provider.js",
+        "default": "./dist/customer-portal/provider.js"
+      },
+      "./customer-portal/query-keys": {
+        "types": "./dist/customer-portal/query-keys.d.ts",
+        "import": "./dist/customer-portal/query-keys.js",
+        "default": "./dist/customer-portal/query-keys.js"
       },
       "./components/storefront-settings-page": {
         "types": "./dist/components/storefront-settings-page.d.ts",

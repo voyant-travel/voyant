@@ -1,6 +1,1 @@
-export {
-  useVoyantReactContext as useVoyantCustomerPortalContext,
-  type VoyantReactContextValue as VoyantCustomerPortalContextValue,
-  VoyantReactProvider as VoyantCustomerPortalProvider,
-  type VoyantReactProviderProps as VoyantCustomerPortalProviderProps,
-} from "@voyantjs/react"
+export * from "@voyantjs/storefront-react/customer-portal/provider"

@@ -126,13 +126,17 @@ The orchestrator's auth gate is skipped entirely when no token is configured (`v
 **Impact:** With auth misconfigured/absent: anonymous triggering of arbitrary workflows, reading run payloads (booking PII), and manifest registration. With a shared token: forge "completed" step outputs (e.g. a `charge-payment` success that never ran), and read/cancel/resume/inject into any run by id; cross-tenant enumeration where one token fronts multiple tenants.
 **Fix:** Fail closed when no verifier is configured outside explicit development; bind run access to a tenant claim in the verified token checked against `run.tenantMeta`; restrict `seedResults` to a privileged operator scope; add a `verifyRequest` option to the Node self-host server.
 
-### H5 — Unauthenticated checkout-collection routes keyed only by `bookingId`
-**`packages/checkout/src/routes.ts:79-151`, `packages/checkout/src/service.ts:598-672`**
+### H5 — Resolved: checkout-collection routes require booking capability
+**Current owner: `packages/finance/src/checkout-routes.ts`, `packages/finance/src/checkout-service.ts`**
 
-`POST /v1/public/checkout/bookings/:bookingId/collection-plan` and `/initiate-collection` are public (operator `publicPaths`) and take `bookingId` straight from the path with **no capability token and no ownership check**. `initiate-collection` creates a collection invoice, creates a payment session, and **sends invoice/payment-session notifications**.
+This was originally reported against the retired `packages/checkout` module.
+The v1 branch moved checkout collection into Finance and now gates
+`/bookings/:bookingId/collection-plan` and `/initiate-collection` with
+`requireCheckoutCapability(...)`, falling back to guest booking access only when
+that access is explicitly present.
 
-**Impact:** Anyone who learns a `bookingId` (exposed in post-payment redirect URLs and confirmation emails) can read a booking's outstanding-balance/payment schedule (financial disclosure) and trigger payment-collection emails to the customer (spam). Inconsistent with the bookings module, which gates the equivalent operations behind signed capability tokens. Sole protection is TypeID entropy.
-**Fix:** Require a checkout/guest-booking capability bound to the bookingId (same scheme as `requireCheckoutCapability`).
+**Residual check:** Keep this covered by route tests whenever Finance checkout
+public paths change.
 
 ### H6 — Unbounded anonymous row creation (CRM intake + outbox flooding)
 **`packages/storefront/src/service-intake.ts:101,160-225`, `packages/storefront/src/routes-public.ts:269-299`**

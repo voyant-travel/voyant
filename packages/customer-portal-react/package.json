@@ -46,7 +46,9 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@voyantjs/react": "workspace:^"
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/storefront": "workspace:^",
+    "@voyantjs/storefront-react": "workspace:^"
   },
   "files": [
     "dist"

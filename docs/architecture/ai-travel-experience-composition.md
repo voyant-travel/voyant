@@ -104,8 +104,8 @@ Voyant already has many of the required primitives:
 - **Storefront/public contracts** that separate customer-facing routes from
   admin CRUD semantics.
 - **React/runtime layers** such as `catalog-react`, `storefront-react`,
-  `checkout-react`, and source-installed UI packages that keep public flows
-  reusable without owning the final storefront shell.
+  `finance-react` checkout UI, and source-installed UI packages that keep
+  public flows reusable without owning the final storefront shell.
 
 The missing piece was not more CRUD around those modules. It was a first-class
 **composition layer** between catalog discovery and the commercial ladder. That

@@ -795,8 +795,8 @@ Candidate packages:
 
 - `@voyantjs/finance`
 - `@voyantjs/finance-react`
-- `@voyantjs/checkout`
-- `@voyantjs/checkout-react`
+- retired `@voyantjs/checkout`
+- retired `@voyantjs/checkout-react`
 
 Problem:
 
@@ -806,16 +806,16 @@ guarantees. It is not a standalone travel-domain concept.
 Solution:
 
 Fold checkout into finance as the collection/session subdomain. Keep public
-checkout contracts explicit and customer-safe.
+checkout contracts explicit and customer-safe. Implementation status: the
+standalone checkout packages have been removed from the v1 branch; Finance owns
+the checkout services/routes and Finance React owns the payment hooks/UI.
 
 Required cleanup:
 
-- Invert the current Checkout -> Notifications and Notifications -> Finance
-  cycle before Checkout folds into Finance. Finance should emit collection,
-  payment, invoice, and reminder events; Notifications should subscribe or attach
-  through a provider/adapter seam rather than Finance importing Notifications.
-- Retarget checkout consumers such as payment plugins, `storefront-sdk`, and
-  template payment routes to Finance collection/payment-session Interfaces.
+- Keep notification dispatch injected through Finance checkout route options.
+  Finance should not import Notifications directly.
+- Keep checkout consumers such as payment plugins, `storefront-sdk`, and
+  template payment routes on Finance collection/payment-session Interfaces.
 - Remove direct Product and operated Availability dependencies from Finance
   where they are only used to derive payment context; use Booking, Invoice,
   Schedule, Guarantee, Catalog snapshot, or CommercialDecision refs instead.
@@ -1329,7 +1329,7 @@ stay unchanged.
 | `@voyantjs/trip-composer`, `@voyantjs/trip-composer-react` | Keep as the standalone Trip Composer packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | `@voyantjs/booking-requirements`, `@voyantjs/booking-requirements-react` | Temporary compatibility shims for `@voyantjs/bookings/requirements*` and `@voyantjs/bookings-react/requirements*`. | Requirements define what must be collected to commit a booking; keep the booking requirements domain term. |
-| `@voyantjs/checkout`, `@voyantjs/checkout-react` | Fold into `finance`. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. |
+| `@voyantjs/checkout`, `@voyantjs/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published pre-v1 names should be npm-deprecated to the Finance owner paths. |
 
 ### 10.4 Operations Packages
 
@@ -1363,7 +1363,7 @@ stay unchanged.
 | `@voyantjs/admin-client`, `@voyantjs/admin-contracts` | Keep if the framework-neutral admin client contract remains useful. | This is a client/contract seam, not a domain seam. |
 | `@voyantjs/admin-react` | Keep separate only as the React Query adapter over `admin-client`; fold before v1 if no independent React SDK consumers are confirmed. | It is not part of the packaged shell/runtime surface moved into `admin`. |
 | `@voyantjs/storefront`, `@voyantjs/storefront-react` | Keep as the customer-facing runtime/surface concept. | Storefront composes public and authenticated customer flows; it should not own product, price, booking, or finance truth. |
-| `@voyantjs/customer-portal`, `@voyantjs/customer-portal-react` | Fold into `storefront` as authenticated account/after-booking surfaces in the v1 package move. | The portal composes bookings, finance, legal, identity, and Relationships; it should not own those records or remain a separate public v1 package. |
+| `@voyantjs/customer-portal`, `@voyantjs/customer-portal-react` | Folded into `storefront` as authenticated account/after-booking surfaces in the v1 package move. | `@voyantjs/storefront/customer-portal` and `@voyantjs/storefront-react/customer-portal` own the implementation. The legacy package names remain compatibility wrappers until the v1 public surface drops them. |
 | `@voyantjs/storefront-sdk` | Keep as a framework-agnostic facade if public flows stay cross-module. | SDK shape may simplify once commerce/bookings/finance consolidate. |
 | `@voyantjs/storefront-verification` | Keep as a public-surface support package unless folded into storefront. | Verification is a support capability for storefront/public flows. |
 

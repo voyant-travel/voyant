@@ -1,2 +1,1 @@
-export * from "./validation-public/bookings.js"
-export * from "./validation-public/profile.js"
+export * from "@voyantjs/storefront/customer-portal/public-validation"

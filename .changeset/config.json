@@ -15,7 +15,6 @@
       "@voyantjs/catalog-react"
     ],
     ["@voyantjs/charters", "@voyantjs/charters-react"],
-    ["@voyantjs/checkout", "@voyantjs/checkout-react"],
     ["@voyantjs/crm", "@voyantjs/crm-react"],
     ["@voyantjs/cruises", "@voyantjs/cruises-react"],
     ["@voyantjs/customer-portal", "@voyantjs/customer-portal-react"],

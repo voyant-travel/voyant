@@ -113,6 +113,13 @@ const optionalEdgeAllowlist = [
       "Distribution React admin components can attach Relationships context when a host installs it",
   },
   {
+    from: "@voyantjs/storefront",
+    type: "peerDependencies",
+    to: "@voyantjs/relationships",
+    reason:
+      "Storefront customer-portal subpath can attach Relationships account context when a host installs it",
+  },
+  {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
     to: "@voyantjs/operations-react",

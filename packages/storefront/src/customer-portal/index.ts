@@ -1,0 +1,113 @@
+import type { Module } from "@voyantjs/core"
+import type { HonoModule } from "@voyantjs/hono/module"
+
+import {
+  buildPublicCustomerPortalRouteRuntime,
+  CUSTOMER_PORTAL_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "./route-runtime.js"
+import {
+  createPublicCustomerPortalRoutes,
+  type PublicCustomerPortalRouteOptions,
+} from "./routes-public.js"
+
+export type { CustomerPortalRoutes } from "./routes.js"
+export { customerPortalRoutes } from "./routes.js"
+export type { PublicCustomerPortalRoutes } from "./routes-public.js"
+export { createPublicCustomerPortalRoutes, publicCustomerPortalRoutes } from "./routes-public.js"
+export { publicCustomerPortalService } from "./service-public.js"
+export type {
+  BootstrapCustomerPortalInput,
+  BootstrapCustomerPortalResult,
+  CreateCustomerPortalCompanionInput,
+  CreateCustomerPortalProfileDocumentInput,
+  CustomerPortalAddress,
+  CustomerPortalBookingBillingContact,
+  CustomerPortalBookingDetail,
+  CustomerPortalBookingDocument,
+  CustomerPortalBookingFinancialDocument,
+  CustomerPortalBookingFinancials,
+  CustomerPortalBookingPayment,
+  CustomerPortalBookingSummary,
+  CustomerPortalBootstrapCandidate,
+  CustomerPortalCompanion,
+  CustomerPortalContactExistsQuery,
+  CustomerPortalContactExistsResult,
+  CustomerPortalPhoneContactExistsQuery,
+  CustomerPortalPhoneContactExistsResult,
+  CustomerPortalProfile,
+  CustomerPortalProfileDocument,
+  ImportCustomerPortalBookingParticipantsInput,
+  ImportCustomerPortalBookingParticipantsResult,
+  ImportCustomerPortalBookingTravelersInput,
+  ImportCustomerPortalBookingTravelersResult,
+  UpdateCustomerPortalAddressInput,
+  UpdateCustomerPortalCompanionInput,
+  UpdateCustomerPortalProfileDocumentInput,
+  UpdateCustomerPortalProfileInput,
+} from "./validation-public.js"
+export {
+  bootstrapCustomerPortalResultSchema,
+  bootstrapCustomerPortalSchema,
+  createCustomerPortalCompanionSchema,
+  createCustomerPortalProfileDocumentSchema,
+  customerPortalAddressSchema,
+  customerPortalBookingBillingContactSchema,
+  customerPortalBookingDetailSchema,
+  customerPortalBookingDocumentSchema,
+  customerPortalBookingFinancialDocumentSchema,
+  customerPortalBookingFinancialsSchema,
+  customerPortalBookingPaymentSchema,
+  customerPortalBookingSummarySchema,
+  customerPortalBootstrapCandidateSchema,
+  customerPortalCompanionSchema,
+  customerPortalContactExistsQuerySchema,
+  customerPortalContactExistsResultSchema,
+  customerPortalPhoneContactExistsQuerySchema,
+  customerPortalPhoneContactExistsResultSchema,
+  customerPortalProfileDocumentSchema,
+  customerPortalProfileSchema,
+  importCustomerPortalBookingParticipantsResultSchema,
+  importCustomerPortalBookingParticipantsSchema,
+  importCustomerPortalBookingTravelersResultSchema,
+  importCustomerPortalBookingTravelersSchema,
+  updateCustomerPortalAddressSchema,
+  updateCustomerPortalCompanionSchema,
+  updateCustomerPortalProfileDocumentSchema,
+  updateCustomerPortalProfileSchema,
+} from "./validation-public.js"
+
+export const customerPortalModule: Module = {
+  name: "customer-portal",
+}
+
+export function createCustomerPortalHonoModule(
+  options: PublicCustomerPortalRouteOptions = {},
+): HonoModule {
+  const module: Module = {
+    ...customerPortalModule,
+    bootstrap: ({ bindings, container }) => {
+      container.register(
+        CUSTOMER_PORTAL_ROUTE_RUNTIME_CONTAINER_KEY,
+        buildPublicCustomerPortalRouteRuntime(bindings as Record<string, unknown>, options),
+      )
+    },
+  }
+
+  return {
+    module,
+    publicRoutes: createPublicCustomerPortalRoutes(options),
+  }
+}
+
+export const customerPortalHonoModule: HonoModule = createCustomerPortalHonoModule()
+
+export type {
+  CustomerPortalRouteRuntime,
+  PublicCustomerPortalRouteRuntime,
+  PublicCustomerPortalRuntimeOptions,
+} from "./route-runtime.js"
+export {
+  buildCustomerPortalRouteRuntime,
+  buildPublicCustomerPortalRouteRuntime,
+  CUSTOMER_PORTAL_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "./route-runtime.js"

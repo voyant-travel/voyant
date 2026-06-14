@@ -15,7 +15,7 @@ The SDK wraps existing public contracts from:
   extensions, availability, and price preview
 - `@voyantjs/bookings` for public booking sessions, wizard state, repricing,
   confirmation, expiration, and overview lookup
-- `@voyantjs/checkout` for public checkout collection preview/initiation and
+- `@voyantjs/finance/checkout` for public checkout collection preview/initiation and
   collection bootstrap
 
 The SDK does not own routes, persistence, or lifecycle side effects. It is a
@@ -107,8 +107,8 @@ The public route family behind the facade remains:
 | Update travelers/session data | `bookingEngine.updateTravelers`, `bookingEngine.updateSession` | `PATCH /v1/public/bookings/sessions/:sessionId` |
 | Persist UI progress | `bookingEngine.updateProgress` | `PUT /v1/public/bookings/sessions/:sessionId/state` |
 | Quote or reprice | `bookingEngine.reprice` | `POST /v1/public/bookings/sessions/:sessionId/reprice` |
-| Start checkout collection | `bookingEngine.startPayment` | `POST /v1/public/checkout/bookings/:bookingId/initiate-collection` |
-| Resume redirect/bootstrap | `bookingEngine.bootstrapPayment` | `POST /v1/public/checkout/collections/bootstrap` |
+| Start checkout collection | `bookingEngine.startPayment` | `POST /v1/public/finance/checkout/bookings/:bookingId/initiate-collection` |
+| Resume redirect/bootstrap | `bookingEngine.bootstrapPayment` | `POST /v1/public/finance/checkout/collections/bootstrap` |
 | Finalize booking | `bookingEngine.confirm` | `POST /v1/public/bookings/sessions/:sessionId/confirm` |
 | Expire abandoned hold | `bookingEngine.expire` | `POST /v1/public/bookings/sessions/:sessionId/expire` |
 | Success summary | `bookingEngine.getOverview` | `GET /v1/public/bookings/overview` |

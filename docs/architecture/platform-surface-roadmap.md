@@ -121,8 +121,10 @@ Resolved upstream for contracts, partially resolved for reusable UI:
 Resolved upstream for the base platform contract, adoption still incomplete in
   downstream apps:
 
-- dedicated `@voyantjs/customer-portal` and
-  `@voyantjs/customer-portal-react` packages exist
+- `@voyantjs/storefront/customer-portal` and
+  `@voyantjs/storefront-react/customer-portal` own the portal runtime and
+  React surface; the legacy `@voyantjs/customer-portal` package names are
+  compatibility wrappers
 - public/authenticated routes now cover bootstrap, profile, companions,
   booking list/detail, documents, marketing consent, email contact-exists, and
   phone contact-exists
@@ -211,10 +213,10 @@ Partially resolved:
   explicit `applyToSession` support
 - matching React helpers now exist in `@voyantjs/bookings-react` for public
   session read, state read/write, and repricing flows
-- `@voyantjs/checkout` now exposes a module-based checkout surface with typed
+- `@voyantjs/finance/checkout` now exposes a module-based checkout surface with typed
   collection-plan and initiate-collection contracts
-- `@voyantjs/checkout` now also exposes a unified
-  `/v1/public/checkout/collections/bootstrap` contract that can start exact-amount
+- `@voyantjs/finance/checkout` now also exposes a unified
+  `/v1/public/finance/checkout/collections/bootstrap` contract that can start exact-amount
   collection from either a `bookingId` or a `sessionId`, covering booking-
   backed and session-backed storefront flows through one request shape
 - admin checkout reminder tracking is now backed by first-class notification

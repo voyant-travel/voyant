@@ -17,7 +17,7 @@ import {
   updateCustomerPortalCompanionSchema,
   updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
-} from "@voyantjs/customer-portal"
+} from "@voyantjs/storefront/customer-portal"
 import { z } from "zod"
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })

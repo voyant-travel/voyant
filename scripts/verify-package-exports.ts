@@ -339,27 +339,6 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/checkout",
-    entry: "packages/checkout/dist/index.js",
-    requiredExports: [
-      "createCheckoutRoutes",
-      "createCheckoutAdminRoutes",
-      "createCheckoutHonoModule",
-      "checkoutModule",
-      "checkoutBankTransferInstructionsSchema",
-      "checkoutCollectionIntentSchema",
-      "checkoutCollectionPlanSchema",
-      "bootstrapCheckoutCollectionSchema",
-      "bootstrappedCheckoutCollectionSchema",
-      "checkoutProviderStartInputSchema",
-      "checkoutProviderStartResultSchema",
-      "bootstrapCheckoutCollection",
-      "initiatedCheckoutCollectionSchema",
-      "checkoutReminderRunListResponseSchema",
-      "listBookingReminderRuns",
-    ],
-  },
-  {
     packageName: "@voyantjs/plugin-netopia",
     entry: "packages/plugins/netopia/dist/index.js",
     requiredExports: [
