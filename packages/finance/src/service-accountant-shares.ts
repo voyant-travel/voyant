@@ -1,10 +1,10 @@
-import { infraPublicDocumentDeliveryGrantsTable } from "@voyantjs/db/schema/infra"
+import { infraPublicDocumentDeliveryGrantsTable } from "@voyant-travel/db/schema/infra"
 import {
   createDrizzlePublicDocumentDeliveryGrantStore,
   createPublicDocumentDeliveryGrant,
   resolvePublicDocumentDeliveryGrant,
   revokePublicDocumentDeliveryGrant,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent } from "@voyantjs/ui/components/card"
+import { Card, CardContent } from "@voyant-travel/ui/components/card"
 import { Loader2 } from "lucide-react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { usePerson } from "../index.js"

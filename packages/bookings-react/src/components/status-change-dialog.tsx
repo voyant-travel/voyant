@@ -16,8 +16,8 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"

@@ -1,4 +1,4 @@
-import { typeIdSchemas } from "@voyantjs/schema-kit/typeid"
+import { typeIdSchemas } from "@voyant-travel/schema-kit/typeid"
 import { z } from "zod"
 
 import {
@@ -249,7 +249,7 @@ export const convertProductSchema = z
            * into the inserted booking_item's
            * `metadata.bookingCreateLineKey` so the orchestrator can
            * link items to travelers via `booking_item_travelers`.
-           * See voyantjs/voyant#1267.
+           * See voyant-travel/voyant#1267.
            */
           clientLineKey: z.string().min(1).max(255).optional().nullable(),
           optionId: z.string().min(1).optional().nullable(),

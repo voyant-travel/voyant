@@ -1,7 +1,7 @@
 // Compact list of the workflow schedules declared by the loaded
 // entry file. Empty = no declared schedules.
 
-import { Badge } from "@voyantjs/ui/components/badge"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import { Timer } from "lucide-react"
 
 import type { ScheduleSummary } from "@/lib/api"

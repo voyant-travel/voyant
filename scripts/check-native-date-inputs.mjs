@@ -17,7 +17,7 @@ for (const file of files) {
   const source = readFileSync(file, "utf8")
   for (const match of source.matchAll(nativeDateInputPattern)) {
     const line = source.slice(0, match.index).split("\n").length
-    violations.push(`${file}:${line}: use DatePicker or DateTimePicker from @voyantjs/ui`)
+    violations.push(`${file}:${line}: use DatePicker or DateTimePicker from @voyant-travel/ui`)
   }
 }
 

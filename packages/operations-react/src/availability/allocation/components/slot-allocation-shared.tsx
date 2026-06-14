@@ -5,8 +5,8 @@ import type {
   AllocationManifestTraveler,
   AllocationPaymentStatus,
   AllocationResource,
-} from "@voyantjs/operations-react/availability"
-import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyantjs/ui/components"
+} from "@voyant-travel/operations-react/availability"
+import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyant-travel/ui/components"
 import { Accessibility, CircleAlert, Crown, History, UtensilsCrossed } from "lucide-react"
 import type { ReactNode } from "react"
 

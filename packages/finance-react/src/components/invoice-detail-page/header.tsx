@@ -14,8 +14,8 @@ import {
   Button,
   ConfirmActionButton,
   Textarea,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowLeft, ArrowRightLeft, Loader2, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../../i18n/index.js"

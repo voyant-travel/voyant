@@ -1,7 +1,7 @@
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { TableCell, TableRow } from "@voyantjs/ui/components/table"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
+import { TableCell, TableRow } from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

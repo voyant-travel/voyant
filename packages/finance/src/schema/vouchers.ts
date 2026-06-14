@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import { voucherSourceTypeEnum, voucherStatusEnum } from "./enums.js"

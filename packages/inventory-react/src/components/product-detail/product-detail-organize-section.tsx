@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { Badge, DropdownMenuItem } from "@voyantjs/ui/components"
+import { Badge, DropdownMenuItem } from "@voyant-travel/ui/components"
 import { Pencil } from "lucide-react"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { ActionMenu, DetailRow, Section } from "./product-detail-section-shell.js"

@@ -1,4 +1,4 @@
-import { countries } from "@voyantjs/utils/countries"
+import { countries } from "@voyant-travel/utils/countries"
 import * as React from "react"
 import {
   Combobox,

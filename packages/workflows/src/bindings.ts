@@ -1,4 +1,4 @@
-// @voyantjs/workflows/bindings
+// @voyant-travel/workflows/bindings
 //
 // Runtime binding shim. Edge runtime passes through to native CF bindings;
 // container runtime makes authenticated HTTPS calls to CF's per-binding APIs.
@@ -128,7 +128,7 @@ export interface Queue<T> {
 export const env: Env = new Proxy({} as Env, {
   get(_, key: string): Binding {
     throw new Error(
-      `@voyantjs/workflows/bindings: env.${key} was accessed outside a workflow / step body. ` +
+      `@voyant-travel/workflows/bindings: env.${key} was accessed outside a workflow / step body. ` +
         `Bindings are injected by the runtime — see docs/sdk-surface.md §9.`,
     )
   },

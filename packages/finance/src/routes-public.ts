@@ -1,8 +1,13 @@
 import {
   type CheckoutCapabilityAction,
   requireCheckoutCapability,
-} from "@voyantjs/bookings/checkout-capability"
-import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
+} from "@voyant-travel/bookings/checkout-capability"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseQuery,
+  UnauthorizedApiError,
+} from "@voyant-travel/hono"
 import { zipSync } from "fflate"
 import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"

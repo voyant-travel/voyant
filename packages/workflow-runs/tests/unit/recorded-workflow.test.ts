@@ -1,6 +1,6 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import type { ServiceResolver } from "@voyantjs/workflows/driver"
-import { createInMemoryDriver } from "@voyantjs/workflows-orchestrator"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import type { ServiceResolver } from "@voyant-travel/workflows/driver"
+import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 

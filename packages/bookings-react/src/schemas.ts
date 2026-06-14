@@ -3,7 +3,7 @@ import {
   publicBookingSessionRepriceResultSchema,
   publicBookingSessionSchema,
   publicBookingSessionStateSchema,
-} from "@voyantjs/bookings/validation"
+} from "@voyant-travel/bookings/validation"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
@@ -412,7 +412,7 @@ export const publicBookingSessionRepriceResponse = singleEnvelope(
 
 // Pricing preview — the catalog-resolved snapshot the storefront engine uses
 // to compute totals. Consumers match it against their traveler/unit selection
-// to render a breakdown; see @voyantjs/bookings/validation for the request.
+// to render a breakdown; see @voyant-travel/bookings/validation for the request.
 const pricingPreviewCatalogSchema = z.object({
   id: z.string(),
   currencyCode: z.string(),

@@ -11,8 +11,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
 COPY apps/workflows-node-step-container ./apps/workflows-node-step-container
 RUN corepack enable && \
-    pnpm install --frozen-lockfile --filter @voyantjs/workflows-node-step-container...
-RUN pnpm --filter @voyantjs/workflows-node-step-container build
+    pnpm install --frozen-lockfile --filter @voyant-travel/workflows-node-step-container...
+RUN pnpm --filter @voyant-travel/workflows-node-step-container build
 
 # ---- Runtime image ----
 FROM node:20-slim AS runtime

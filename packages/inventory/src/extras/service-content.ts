@@ -28,9 +28,9 @@ import {
   type SourceAdapter,
   type SourceAdapterContext,
   withContentRefreshLock,
-} from "@voyantjs/catalog"
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
 import {

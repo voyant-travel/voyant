@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useEffect, useMemo, useState } from "react"
 import { useAdminStorefrontSettings, useAdminStorefrontSettingsMutation } from "../index.js"
 

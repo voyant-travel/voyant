@@ -27,13 +27,13 @@
 // can symlink or copy your own `voyant workflows build` output.
 import "./bundle.mjs"
 
-import { createHmacSigner, createHmacVerifier } from "@voyantjs/workflows/auth"
-import { createStepHandler, type StepRunner } from "@voyantjs/workflows/handler"
+import { createHmacSigner, createHmacVerifier } from "@voyant-travel/workflows/auth"
+import { createStepHandler, type StepRunner } from "@voyant-travel/workflows/handler"
 import {
   type ContainerNamespaceLike,
   createCfContainerStepRunner,
   createR2Presigner,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 export interface Env {
   /** DO namespace backing the `NodeStepContainer` class in the orchestrator Worker. */

@@ -10,20 +10,20 @@
  * Per docs/architecture/channel-push-architecture.md §4 + §12.1.
  */
 
-import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import {
   AdapterRateLimitedError,
   type PushBookingRequest,
   type SourceAdapter,
   type SourceAdapterContext,
-} from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+} from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import {
   channelBookingLinks,
   channelProductMappings,
   channels,
-} from "@voyantjs/distribution/schema"
+} from "@voyant-travel/distribution/schema"
 import { and, eq, inArray } from "drizzle-orm"
 
 import { acquireToken, channelScopeKey, drainBucket } from "../rate-limit.js"

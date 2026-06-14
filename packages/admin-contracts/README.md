@@ -1,4 +1,4 @@
-# @voyantjs/admin-contracts
+# @voyant-travel/admin-contracts
 
 The Admin API contract layer for Voyant — typed, versioned, transport-agnostic
 descriptors for the operations an authenticated operator can perform against a
@@ -18,12 +18,12 @@ web-UI dependencies. See [`docs/adr/0003-admin-api-contract-sdk.md`](../../docs/
   (first slice: list/get/confirm/cancel and invoice list/get, record payment,
   create payment link).
 
-Execute these with [`@voyantjs/admin-client`](../admin-client/README.md).
+Execute these with [`@voyant-travel/admin-client`](../admin-client/README.md).
 
 ## Usage
 
 ```ts
-import { bookingsOperations, type InferInput } from "@voyantjs/admin-contracts"
+import { bookingsOperations, type InferInput } from "@voyant-travel/admin-contracts"
 
 const op = bookingsOperations.confirm
 op.id            // "bookings.confirm"

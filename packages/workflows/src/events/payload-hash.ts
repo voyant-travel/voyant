@@ -94,7 +94,7 @@ function getCrypto(): Crypto {
   const c = (globalThis as { crypto?: Crypto }).crypto
   if (!c?.subtle) {
     throw new Error(
-      "@voyantjs/workflows/events: globalThis.crypto.subtle is required for payload-hash. " +
+      "@voyant-travel/workflows/events: globalThis.crypto.subtle is required for payload-hash. " +
         "Polyfill via webcrypto on legacy runtimes.",
     )
   }

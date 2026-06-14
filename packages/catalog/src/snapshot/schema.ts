@@ -10,15 +10,15 @@
  * See `docs/architecture/catalog-architecture.md` §5.3 for the full design.
  */
 
-import type { PricingBasis } from "@voyantjs/catalog-contracts/snapshot"
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import type { PricingBasis } from "@voyant-travel/catalog-contracts/snapshot"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import { jsonb, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import type { AppliedOffer } from "../booking-engine/promotions-contract.js"
 
 // `PricingBasis` is imported above (used by the snapshot table column type) and
-// re-exported here to keep existing @voyantjs/catalog import paths stable.
+// re-exported here to keep existing @voyant-travel/catalog import paths stable.
 export type { PricingBasis }
 
 /**

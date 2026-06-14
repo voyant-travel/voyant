@@ -1,4 +1,4 @@
-import type { FieldPolicyInput } from "@voyantjs/catalog/contract"
+import type { FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 export const CRUISE_CORE_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Source pointer / provenance ─────────────────────────────────────────

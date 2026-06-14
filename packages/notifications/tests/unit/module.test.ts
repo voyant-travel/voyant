@@ -1,4 +1,4 @@
-import { createContainer, createEventBus } from "@voyantjs/core"
+import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {

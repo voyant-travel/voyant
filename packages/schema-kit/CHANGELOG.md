@@ -1,16 +1,16 @@
-# @voyantjs/schema-kit
+# @voyant-travel/schema-kit
 
 ## 0.105.2
 
 ### Patch Changes
 
-- f25e790: New `@voyantjs/db/write-intents` + `write_intents` table (TypeID prefix `wint`) — the queued write pipeline's result mailbox (RFC #1687 Phase 3.2). **Requires the `write_intents` migration.** `enqueueWriteIntent` dedups on `idempotencyKey` (a retried POST returns the SAME intent), `settleWriteIntent` only transitions pending rows (at-least-once redelivery after success is a no-op), and `expireStaleWriteIntents` backstops intents whose event dead-lettered in the outbox.
+- f25e790: New `@voyant-travel/db/write-intents` + `write_intents` table (TypeID prefix `wint`) — the queued write pipeline's result mailbox (RFC #1687 Phase 3.2). **Requires the `write_intents` migration.** `enqueueWriteIntent` dedups on `idempotencyKey` (a retried POST returns the SAME intent), `settleWriteIntent` only transitions pending rows (at-least-once redelivery after success is a no-op), and `expireStaleWriteIntents` backstops intents whose event dead-lettered in the outbox.
 
 ## 0.105.1
 
 ### Patch Changes
 
-- b7056f1: New `@voyantjs/db/outbox` module + `event_outbox` table (`schema/infra`, TypeID prefix `evob`) — the Postgres half of the transactional outbox (RFC #1687 Phase 2.1). **Requires the `event_outbox` migration.**
+- b7056f1: New `@voyant-travel/db/outbox` module + `event_outbox` table (`schema/infra`, TypeID prefix `evob`) — the Postgres half of the transactional outbox (RFC #1687 Phase 2.1). **Requires the `event_outbox` migration.**
 
   - `createOutboxEventStore(getDb)` — plugs into `createEventBus`'s durable emit.
   - `insertOutboxEvents(dbOrTx, envelopes)` — atomic capture inside a domain transaction ("transactional outbox" proper); dedups on `metadata.eventId`.
@@ -70,11 +70,11 @@
 
 - 577eaf5: Add in-context translations for products and itinerary days.
 
-  - `@voyantjs/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
-  - `@voyantjs/products-contracts`: validation schemas for the product default language and itinerary-day translations.
-  - `@voyantjs/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
-  - `@voyantjs/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
-  - `@voyantjs/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
+  - `@voyant-travel/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
+  - `@voyant-travel/products-contracts`: validation schemas for the product default language and itinerary-day translations.
+  - `@voyant-travel/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
+  - `@voyant-travel/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
+  - `@voyant-travel/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
 
 ## 0.101.1
 
@@ -90,26 +90,26 @@
 
 ### Minor Changes
 
-- 7094c8e: Add `@voyantjs/schema-kit` and extend the `*-contracts` pattern to the
+- 7094c8e: Add `@voyant-travel/schema-kit` and extend the `*-contracts` pattern to the
   operational modules.
 
-  `@voyantjs/schema-kit` (pure: zod + typeid-js) is the new foundational home for
+  `@voyant-travel/schema-kit` (pure: zod + typeid-js) is the new foundational home for
   schema primitives shared by the runtime and the contract packages — the TypeID
   system (prefix registry, id generation, zod validators), `booleanQueryParam`,
-  and `kmsEnvelopeSchema`. These moved out of `@voyantjs/db` (which now re-exports
+  and `kmsEnvelopeSchema`. These moved out of `@voyant-travel/db` (which now re-exports
   them from their original paths, so every call-site is unchanged) so they sit
   below the data layer and the contract packages can depend on them without
   pulling Drizzle.
 
   New zod-only contract packages own each module's validation surface (schemas +
-  enums): `@voyantjs/bookings-contracts`, `@voyantjs/finance-contracts`,
-  `@voyantjs/crm-contracts`, `@voyantjs/transactions-contracts`,
-  `@voyantjs/suppliers-contracts`, `@voyantjs/identity-contracts`, and
-  `@voyantjs/legal-contracts`. Each runtime module re-exports from its contracts
-  package, so existing `@voyantjs/<module>/validation` import paths are unchanged.
-  Shared primitives come from `@voyantjs/schema-kit`, keeping the contract
+  enums): `@voyant-travel/bookings-contracts`, `@voyant-travel/finance-contracts`,
+  `@voyant-travel/crm-contracts`, `@voyant-travel/transactions-contracts`,
+  `@voyant-travel/suppliers-contracts`, `@voyant-travel/identity-contracts`, and
+  `@voyant-travel/legal-contracts`. Each runtime module re-exports from its contracts
+  package, so existing `@voyant-travel/<module>/validation` import paths are unchanged.
+  Shared primitives come from `@voyant-travel/schema-kit`, keeping the contract
   packages free of the data layer.
 
-  (`legal-contracts` still transitively depends on `@voyantjs/utils` for the
+  (`legal-contracts` still transitively depends on `@voyant-travel/utils` for the
   template-syntax validator used by contract validation — a tracked follow-up
   would purify it.)

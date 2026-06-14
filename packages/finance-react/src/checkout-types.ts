@@ -1,4 +1,4 @@
-import type { PublicBookingPaymentOptions } from "@voyantjs/finance/public-validation"
+import type { PublicBookingPaymentOptions } from "@voyant-travel/finance/public-validation"
 
 /**
  * Saved payment instrument as the picker needs it — the canonical finance
@@ -9,7 +9,7 @@ export type SavedPaymentAccount = PublicBookingPaymentOptions["accounts"][number
 
 /**
  * Universal payment-choice contract used by the `<PaymentStep>` UI in
- * `@voyantjs/finance-react/ui` and the `useCollectPayment` hook here.
+ * `@voyant-travel/finance-react/ui` and the `useCollectPayment` hook here.
  *
  * Admin-side choices only — the customer-facing card-vs-bank-transfer
  * decision happens on the public payment-link landing page, not here.

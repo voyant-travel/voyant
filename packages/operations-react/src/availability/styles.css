@@ -3,7 +3,7 @@
  * Templates that consume this package should `@import` this CSS so Tailwind
  * scans these component files for utility classes:
  *
- *   @import "@voyantjs/operations-react/availability/styles.css";
+ *   @import "@voyant-travel/operations-react/availability/styles.css";
  *
  * Without it, classes that only appear inside this package (e.g. table and
  * skeleton layout utilities) won't be compiled into the final bundle.

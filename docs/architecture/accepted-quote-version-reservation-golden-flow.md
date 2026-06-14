@@ -1,7 +1,7 @@
 # Accepted Quote Version Reservation Golden Flow
 
 Status: active architecture proof for
-[#1793](https://github.com/voyantjs/voyant/issues/1793). This note narrows the
+[#1793](https://github.com/voyant-travel/voyant/issues/1793). This note narrows the
 proposal-to-reserve trace from ADR-0004, ADR-0005, and the product package
 strategy into a testable ownership contract.
 
@@ -18,7 +18,7 @@ schema moves remain owned by their follow-up issues.
 | Step | Owner | Module Interface called | Durable owner record created or updated |
 | --- | --- | --- | --- |
 | 1 | Quotes | `Quotes.acceptQuoteVersion` | `quote_versions.status = accepted`, sibling `quote_versions.status`, `quotes.acceptedVersionId`, `quotes.status = won` |
-| 2 | Trip Composer | `TripComposer.prepareReservationPlanForAcceptedQuoteVersion` | Reads the accepted Version's `quote_versions.tripSnapshotId`; creates `trip_reservation_plans` as the reservation-plan input record |
+| 2 | Trips | `Trips.prepareReservationPlanForAcceptedQuoteVersion` | Reads the accepted Version's `quote_versions.tripSnapshotId`; creates `trip_reservation_plans` as the reservation-plan input record |
 | 3 | Commerce | `Commerce.evaluateCommercialDecision` | No write by default; returns a `CommercialDecision` for each priced line |
 | 4 | Commerce | `Commerce.recordCommercialSnapshot` | `commercial_snapshots` against the Trip Component or equivalent explicit target |
 | 5 | Bookings | `Bookings.submitReservationPlan` | `booking_origins`, `bookings`, `booking_items`, `booking_travelers`, `booking_allocations`, and fulfillment state |
@@ -30,7 +30,7 @@ schema moves remain owned by their follow-up issues.
 - Quotes accepts exactly one Quote Version for a Quote, closes the Quote won,
   and hands off only the frozen Trip snapshot reference. Quotes does not reserve
   inventory.
-- Trip Composer owns Trip snapshots, reservation-plan inputs, and component
+- Trips owns Trip snapshots, reservation-plan inputs, and component
   commitment refs. It re-evaluates priced lines through the Commerce Interface
   before submitting the plan.
 - Bookings owns active reservation orchestration for both direct B2C checkout

@@ -1,4 +1,4 @@
-import type { StepRunner } from "@voyantjs/workflows/handler"
+import type { StepRunner } from "@voyant-travel/workflows/handler"
 
 export const nodeStepRunner: StepRunner = async ({ attempt, fn, stepCtx }) => {
   const startedAt = Date.now()

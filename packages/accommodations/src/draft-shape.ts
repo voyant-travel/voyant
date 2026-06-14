@@ -22,7 +22,7 @@ import {
   paxBandsAllowedTotalFrom,
   type RatePlanOption,
   type RoomOption,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 
 import type { AccommodationContent } from "./content-shape.js"
 

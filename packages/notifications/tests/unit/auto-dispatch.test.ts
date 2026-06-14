@@ -1,4 +1,4 @@
-import { createContainer, createEventBus } from "@voyantjs/core"
+import { createContainer, createEventBus } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it, vi } from "vitest"
 

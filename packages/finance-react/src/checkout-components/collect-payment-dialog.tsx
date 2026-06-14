@@ -1,26 +1,26 @@
 "use client"
 
-import type { InitiatedCheckoutCollectionRecord } from "@voyantjs/finance/checkout"
-import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
+import type { InitiatedCheckoutCollectionRecord } from "@voyant-travel/finance/checkout"
+import { buildPaymentLinkUrl } from "@voyant-travel/finance/payment-link"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/ui/components/dialog"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { CheckCircle2, Copy, ExternalLink, Loader2, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"

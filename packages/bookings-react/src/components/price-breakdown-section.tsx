@@ -1,8 +1,8 @@
 "use client"
 
-import { useProduct } from "@voyantjs/inventory-react"
-import { Button, Label, Textarea } from "@voyantjs/ui/components"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
+import { useProduct } from "@voyant-travel/inventory-react"
+import { Button, Label, Textarea } from "@voyant-travel/ui/components"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { usePricingPreview } from "../index.js"

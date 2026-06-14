@@ -135,7 +135,7 @@ export const coreProductsService = {
 
     if (query.tag) {
       // Postgres jsonb `@>` containment: does the array include this string?
-      // Mirrors the pattern used in @voyantjs/charters and @voyantjs/cruises.
+      // Mirrors the pattern used in @voyant-travel/charters and @voyant-travel/cruises.
       // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       conditions.push(sql`${products.tags} @> ${JSON.stringify([query.tag])}::jsonb`)
     }

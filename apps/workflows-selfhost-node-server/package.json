@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/workflows-selfhost-node-server",
+  "name": "@voyant-travel/workflows-selfhost-node-server",
   "version": "0.0.3",
   "description": "Reference Node/Docker self-host server for Voyant Workflows.",
   "license": "Apache-2.0",
@@ -7,23 +7,23 @@
   "type": "module",
   "main": "./dist/server.js",
   "scripts": {
-    "build:deps": "pnpm -C ../.. --filter @voyantjs/workflows build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-node build",
-    "build": "pnpm --filter @voyantjs/workflows-selfhost-node-server build:deps && tsc -p tsconfig.json",
-    "bundle:example": "pnpm -C ../.. --filter @voyantjs/cli build && node ../../packages/cli/bin/voyant.mjs workflows build --file ./examples/basic-workflows.ts --out ./dist --platform node",
-    "check-types": "pnpm --filter @voyantjs/workflows-selfhost-node-server build:deps && tsc --noEmit",
+    "build:deps": "pnpm -C ../.. --filter @voyant-travel/workflows build && pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator build && pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-node build",
+    "build": "pnpm --filter @voyant-travel/workflows-selfhost-node-server build:deps && tsc -p tsconfig.json",
+    "bundle:example": "pnpm -C ../.. --filter @voyant-travel/cli build && node ../../packages/cli/bin/voyant.mjs workflows build --file ./examples/basic-workflows.ts --out ./dist --platform node",
+    "check-types": "pnpm --filter @voyant-travel/workflows-selfhost-node-server build:deps && tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
     "docker:build": "docker build -f apps/workflows-selfhost-node-server/Dockerfile -t voyant-selfhost-node .",
-    "migrate": "pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-node db:migrate",
+    "migrate": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-node db:migrate",
     "migrate:runtime": "node ./dist/migrate.js",
     "start": "node ./dist/server.js"
   },
   "dependencies": {
-    "@voyantjs/workflows-orchestrator-node": "workspace:^",
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/workflows-orchestrator-node": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2"
   }
 }

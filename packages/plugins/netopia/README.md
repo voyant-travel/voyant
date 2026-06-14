@@ -1,8 +1,8 @@
-# `@voyantjs/plugin-netopia`
+# `@voyant-travel/plugin-netopia`
 
 Netopia hosted-card payment adapter bundle for Voyant finance.
 
-This package sits on top of `@voyantjs/finance` and its `payment_sessions`
+This package sits on top of `@voyant-travel/finance` and its `payment_sessions`
 model. It does not replace finance state.
 
 Architecturally, this package is primarily:
@@ -51,7 +51,7 @@ path in the app.
 ## Usage
 
 ```ts
-import { createNetopiaFinanceAdapter } from "@voyantjs/plugin-netopia"
+import { createNetopiaFinanceAdapter } from "@voyant-travel/plugin-netopia"
 
 const netopiaFinanceExtension = createNetopiaFinanceAdapter()
 ```

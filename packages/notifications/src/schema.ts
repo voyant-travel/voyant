@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: notifications; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
-import type { LinkableDefinition, Module } from "@voyantjs/core"
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { relations } from "drizzle-orm"
 import {
   boolean,

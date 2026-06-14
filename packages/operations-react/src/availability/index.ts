@@ -7,7 +7,7 @@ export {
   slotEndDateLocal,
   slotLocalEnd,
   slotLocalStart,
-} from "@voyantjs/operations"
+} from "@voyant-travel/operations"
 export {
   defaultFetcher,
   fetchWithValidation,

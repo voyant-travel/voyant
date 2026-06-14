@@ -1,4 +1,4 @@
-import { Button } from "@voyantjs/ui/components"
+import { Button } from "@voyant-travel/ui/components"
 import { Plus } from "lucide-react"
 
 export function SectionHeader({

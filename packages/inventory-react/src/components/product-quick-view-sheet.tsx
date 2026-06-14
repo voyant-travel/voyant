@@ -9,7 +9,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowRight, Calendar, ImageIcon, Layers, MapPin, Route, Tag } from "lucide-react"
 import type { ReactNode } from "react"
 import { useProductsUiI18nOrDefault, useProductsUiMessagesOrDefault } from "../i18n/provider.js"

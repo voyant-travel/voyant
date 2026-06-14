@@ -1,4 +1,4 @@
-import type { OperatorAdminMessages } from "@voyantjs/admin/providers/operator-admin-messages"
+import type { OperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import { Coins, Hash, KeyRound, Layers, Package, Percent, Tag, Tags, Users } from "lucide-react"
 import type * as React from "react"
 

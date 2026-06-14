@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/plugin-sanity-cms",
+  "name": "@voyant-travel/plugin-sanity-cms",
   "version": "0.104.8",
   "license": "Apache-2.0",
   "type": "module",
@@ -18,12 +18,12 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -59,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/plugins/sanity-cms"
   }
 }

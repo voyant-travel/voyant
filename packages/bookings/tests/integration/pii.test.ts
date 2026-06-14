@@ -17,7 +17,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -48,12 +48,12 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
 
   beforeEach(async () => {
     seq = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 
@@ -80,7 +80,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
   }
 
   it("encrypts participant travel details at rest and decrypts them on read", async () => {
-    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyantjs/utils")
+    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyant-travel/utils")
     const { participant } = await seedParticipant()
 
     const pii = createBookingPiiService({
@@ -116,7 +116,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
   }, 20000)
 
   it("supports traveler travel detail aliases", async () => {
-    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyantjs/utils")
+    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyant-travel/utils")
     const { participant } = await seedParticipant()
 
     const pii = createBookingPiiService({
@@ -139,7 +139,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
   }, 20000)
 
   it("deletes participant travel details", async () => {
-    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyantjs/utils")
+    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyant-travel/utils")
     const { participant } = await seedParticipant()
 
     const pii = createBookingPiiService({

@@ -2,7 +2,7 @@ import type {
   CommitOwnedRequest,
   ComputeQuoteRequest,
   OwnedHandlerContext,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -387,7 +387,7 @@ describe("createProductsBookingHandler.commit", () => {
     )
   })
 
-  it("threads trip-composer billing and traveler records into the booking bridge", async () => {
+  it("threads trips billing and traveler records into the booking bridge", async () => {
     const createBooking = vi.fn(async () => ({
       status: "ok" as const,
       bookingId: "book_1",

@@ -1,4 +1,4 @@
-import { newId } from "@voyantjs/db/lib/typeid"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { describe, expect, it } from "vitest"
 
 import {

@@ -1,5 +1,5 @@
 ---
-"@voyantjs/distribution": patch
+"@voyant-travel/distribution": patch
 ---
 
 Remove Distribution runtime dependencies on Product and Availability schemas.

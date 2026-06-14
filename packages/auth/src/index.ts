@@ -59,4 +59,4 @@ export function parseVoyantSubdomain(hostname: string): VoyantSubdomain | null {
 // NOTE: Do NOT re-export from ./server here.
 // Those modules import better-auth which uses dynamic code evaluation
 // (eval/new Function) incompatible with Edge Runtime middleware.
-// Import it directly: @voyantjs/auth/server
+// Import it directly: @voyant-travel/auth/server

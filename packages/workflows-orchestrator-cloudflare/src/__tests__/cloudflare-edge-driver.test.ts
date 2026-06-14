@@ -1,18 +1,21 @@
 // Mode 1 (CF edge) driver compliance — runs the parameterized suite from
-// `@voyantjs/workflows-orchestrator/testing` against `createCloudflareEdgeDriver`,
+// `@voyant-travel/workflows-orchestrator/testing` against `createCloudflareEdgeDriver`,
 // wired to an in-process fake DO namespace that delegates back to the same
 // orchestrator state machine production uses.
 //
 // The fake stack mirrors `__tests__/adapter.test.ts`'s pattern: an
 // in-memory `DurableObjectStorageLike` per run, an in-process step
 // dispatcher backed by `handleStepRequest` from
-// `@voyantjs/workflows/handler`. End-to-end exercises the manifest KV
+// `@voyant-travel/workflows/handler`. End-to-end exercises the manifest KV
 // store, the event router, and the DO trigger forward path without
 // requiring `wrangler dev`.
 
-import { workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
-import { runDriverComplianceSuite, testFactoryDeps } from "@voyantjs/workflows-orchestrator/testing"
+import { workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import {
+  runDriverComplianceSuite,
+  testFactoryDeps,
+} from "@voyant-travel/workflows-orchestrator/testing"
 import { describe, expect, it } from "vitest"
 
 import { createCloudflareEdgeDriver } from "../cloudflare-edge-driver.js"

@@ -1,4 +1,4 @@
-import { startNodeSelfHostServer } from "@voyantjs/workflows-orchestrator-node"
+import { startNodeSelfHostServer } from "@voyant-travel/workflows-orchestrator-node"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))

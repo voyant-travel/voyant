@@ -1,15 +1,15 @@
 ---
-"@voyantjs/operations": minor
-"@voyantjs/operations-react": minor
-"@voyantjs/bookings-react": patch
-"@voyantjs/finance-react": patch
-"@voyantjs/inventory": patch
-"@voyantjs/inventory-react": patch
+"@voyant-travel/operations": minor
+"@voyant-travel/operations-react": minor
+"@voyant-travel/bookings-react": patch
+"@voyant-travel/finance-react": patch
+"@voyant-travel/inventory": patch
+"@voyant-travel/inventory-react": patch
 "operator": patch
 ---
 
 Move availability, allocation UI, resources, ground logistics, and places source
 under Operations owner paths. The old operated-execution package names are
 removed from the v1 workspace surface while first-party runtime, React, and
-operator imports use `@voyantjs/operations` and `@voyantjs/operations-react`
+operator imports use `@voyant-travel/operations` and `@voyant-travel/operations-react`
 surfaces.

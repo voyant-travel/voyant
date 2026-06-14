@@ -1,4 +1,4 @@
-import { actionLedgerService } from "@voyantjs/action-ledger/service"
+import { actionLedgerService } from "@voyant-travel/action-ledger/service"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 

@@ -1,9 +1,9 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge, Button } from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { Badge, Button } from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { IdCard, Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useIdentityUiMessagesOrDefault } from "../i18n/index.js"

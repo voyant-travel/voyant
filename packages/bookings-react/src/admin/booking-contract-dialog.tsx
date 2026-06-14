@@ -1,12 +1,12 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   legalQueryKeys,
   useLegalContractAttachmentMutation,
   useLegalContractMutation,
-} from "@voyantjs/legal-react"
+} from "@voyant-travel/legal-react"
 import {
   Button,
   Dialog,
@@ -17,7 +17,7 @@ import {
   Input,
   Label,
   Skeleton,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { FileText, Loader2, Paperclip, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useBookingContractGenerationMutation } from "../index.js"

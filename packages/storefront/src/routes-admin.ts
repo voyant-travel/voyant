@@ -1,4 +1,4 @@
-import { ApiHttpError, parseJsonBody } from "@voyantjs/hono"
+import { ApiHttpError, parseJsonBody } from "@voyant-travel/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

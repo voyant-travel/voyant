@@ -1,5 +1,10 @@
-import type { ModuleContainer } from "@voyantjs/core"
-import { ForbiddenApiError, handleApiError, parseJsonBody, requireUserId } from "@voyantjs/hono"
+import type { ModuleContainer } from "@voyant-travel/core"
+import {
+  ForbiddenApiError,
+  handleApiError,
+  parseJsonBody,
+  requireUserId,
+} from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 

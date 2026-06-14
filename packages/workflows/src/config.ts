@@ -1,11 +1,11 @@
-// @voyantjs/workflows/config
+// @voyant-travel/workflows/config
 //
 // Types and `defineConfig` helper for `voyant.config.ts`.
 // Contract defined in docs/sdk-surface.md §10 and docs/design.md §5.4.3.
 
 export type Duration = number | `${number}${"ms" | "s" | "m" | "h" | "d" | "w"}`
 
-/** Cloudflare Container instance types — see `@voyantjs/workflows` for the size table. */
+/** Cloudflare Container instance types — see `@voyant-travel/workflows` for the size table. */
 export type MachineType =
   | "lite"
   | "basic"

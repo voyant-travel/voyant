@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: plugins; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { createContainer, createEventBus } from "@voyantjs/core"
-import { financeService, type PaymentSession } from "@voyantjs/finance"
-import { notificationsService } from "@voyantjs/notifications"
+import { createContainer, createEventBus } from "@voyant-travel/core"
+import { financeService, type PaymentSession } from "@voyant-travel/finance"
+import { notificationsService } from "@voyant-travel/notifications"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { NetopiaClientApi } from "../../src/client.js"

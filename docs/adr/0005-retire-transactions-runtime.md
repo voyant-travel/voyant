@@ -15,7 +15,7 @@ assignments, order terms, PII audit, and booking extension links.
 That generic ladder is now the wrong seam for v1:
 
 - bespoke proposal lifecycle belongs in Quotes and Quote Versions
-- quote-time commercial decisions belong in Commerce and Trip Composer snapshots
+- quote-time commercial decisions belong in Commerce and Trips snapshots
 - active reservation orchestration belongs in Bookings
 - payment, invoice, settlement, and collection state belongs in Finance
 - terms, policy acceptance, contracts, and signatures belong in Legal
@@ -29,7 +29,7 @@ a generic record even when their local records already carry the durable truth.
 
 ## Decision
 
-Retire `@voyantjs/transactions` and `@voyantjs/transactions-react` as public v1
+Retire `@voyant-travel/transactions` and `@voyant-travel/transactions-react` as public v1
 runtime packages.
 
 Do not replace them with a new first-party `orders` or `commitments` Module.
@@ -39,7 +39,7 @@ replaced by:
 - Bookings-owned origin/provenance for durable commitment context
 - Booking sessions, booking items, traveler records, allocation/fulfillment
   state, and customer-safe booking state in Bookings
-- Trip Composer reservation plans and Trip Component commitment refs for
+- Trips reservation plans and Trip Component commitment refs for
   composed trips before and during reserve
 - Finance target links for payment sessions, schedules, invoices, credit notes,
   supplier invoices, settlement, guarantees, and profitability
@@ -52,18 +52,19 @@ replaced by:
 Transactions Offer becomes legacy compatibility language only. Commerce must not
 construct or persist Transactions Offers as its normal sellability output.
 Commerce returns commercial decisions, price/availability responses, commercial
-snapshots, quote-version pricing inputs, booking drafts, or Trip Composer price
+snapshots, quote-version pricing inputs, booking drafts, or Trips price
 snapshots depending on the caller.
 
-`@voyantjs/transactions-contracts` may remain only as a temporary legacy contract
-package if external consumers still depend on those zod schemas. It must not be
-part of default v1 bundles.
+`@voyant-travel/transactions-contracts` is also removed from the v1 workspace
+surface. Useful validation schemas from the retired generic Offer/Order ladder
+must move to the owning package instead of preserving a standalone Transactions
+contract seam.
 
 ## Required v1 ownership
 
 - Quotes owns Quote, Quote Version, proposal lifecycle, send/view/accept
   decisions, accepted-version state, and accept-to-reserve handoff.
-- Trip Composer owns Trip Envelope draft workspaces, frozen trip snapshots,
+- Trips owns Trip Envelope draft workspaces, frozen trip snapshots,
   reservation plans, and checkout handoff handles.
 - Bookings owns active reservation orchestration for direct B2C checkout and
   accepted Quote Version flows.
@@ -82,12 +83,12 @@ part of default v1 bundles.
 
 1. Quotes records that a Quote Version was accepted, closes the Quote won, and
    emits or calls an accept-to-reserve handoff.
-2. Trip Composer receives the accepted Quote Version's frozen Trip snapshot and
+2. Trips receives the accepted Quote Version's frozen Trip snapshot and
    prepares a reservation plan.
-3. Trip Composer asks Commerce to re-evaluate priced lines through the Commerce
+3. Trips asks Commerce to re-evaluate priced lines through the Commerce
    Interface. Commerce returns commercial snapshots and source/provider handles
    where applicable.
-4. Trip Composer submits the reservation plan to Bookings.
+4. Trips submits the reservation plan to Bookings.
 5. Bookings performs active reservation orchestration. Catalog-backed sourced
    lines reserve through Catalog or vertical adapters; operated lines reserve
    through Bookings and Operations Interfaces; manual placeholders enter staff
@@ -126,8 +127,8 @@ part of default v1 bundles.
 
 Before removing the runtime package from templates:
 
-- no non-legacy runtime package imports `@voyantjs/transactions` or
-  `@voyantjs/transactions-react`
+- no non-legacy runtime package imports `@voyant-travel/transactions` or
+  `@voyant-travel/transactions-react`
 - default templates no longer mount `transactionsHonoModule`,
   `transactionsBookingExtension`, or transactions link tables
 - Sellability no longer constructs or persists Transactions Offers
@@ -155,7 +156,7 @@ Distribution, and vertical adapters. That preserves the shallow seam.
 ### Keep Transactions Offer only
 
 Rejected for v1 runtime. ADR-0004 already moved travel-native proposal language
-to Quote Version. Commerce and Trip Composer need commercial snapshots and
+to Quote Version. Commerce and Trips need commercial snapshots and
 price/availability responses, not another public Offer primitive.
 
 ### Keep transactions as a compatibility runtime package

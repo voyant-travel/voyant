@@ -5,7 +5,7 @@ import type {
   AllocationResource,
   SeatLayoutCell,
   SeatLayoutSpec,
-} from "@voyantjs/operations-react/availability"
+} from "@voyant-travel/operations-react/availability"
 import {
   Badge,
   Button,
@@ -23,7 +23,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Armchair, Crown, DoorOpen, Users, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 

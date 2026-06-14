@@ -1,6 +1,6 @@
 "use client"
 
-import { currencies } from "@voyantjs/utils/currencies"
+import { currencies } from "@voyant-travel/utils/currencies"
 import * as React from "react"
 
 import {
@@ -42,7 +42,7 @@ export interface CurrencyComboboxProps {
 
 /**
  * Currency picker backed by the canonical `currencies` list from
- * `@voyantjs/utils`. Trigger displays `CODE (symbol)`; items display
+ * `@voyant-travel/utils`. Trigger displays `CODE (symbol)`; items display
  * `CODE — Name (symbol)`. Searchable across code, name, and symbol.
  */
 export function CurrencyCombobox({

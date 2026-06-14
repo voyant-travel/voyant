@@ -1,4 +1,4 @@
-import { verifySessionClaims } from "@voyantjs/utils/session-claims"
+import { verifySessionClaims } from "@voyant-travel/utils/session-claims"
 
 export interface SessionAuthContext {
   userId: string

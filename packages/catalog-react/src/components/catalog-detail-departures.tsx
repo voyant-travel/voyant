@@ -1,16 +1,16 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/select"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronRight, X } from "lucide-react"
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react"
 

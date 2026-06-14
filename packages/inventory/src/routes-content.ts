@@ -19,14 +19,14 @@
  *
  * Templates mount this router under their preferred prefix; the
  * factory takes a `resolveRegistry` callback so the catalog
- * `SourceAdapterRegistry` stays template-owned (singleton lifetime,
+ * `SourceAdapterRegistry` stays starter-owned (singleton lifetime,
  * adapters carry HTTP clients).
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.3.
  */
 
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

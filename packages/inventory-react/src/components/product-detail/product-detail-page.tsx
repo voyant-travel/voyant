@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query"
-import { Button } from "@voyantjs/ui/components"
+import { Button } from "@voyant-travel/ui/components"
 import { useMemo } from "react"
 import { ProductsUiMessagesProvider } from "../../i18n/index.js"
 import { ProductOptionsSection } from "../product-options-section.js"

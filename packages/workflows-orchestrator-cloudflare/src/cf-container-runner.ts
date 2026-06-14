@@ -20,11 +20,11 @@
 //   - return a `StepJournalEntry` JSON.
 //
 // The container entry point is a short adapter around
-// `@voyantjs/workflows/handler`'s `executeWorkflowStep` with the
+// `@voyant-travel/workflows/handler`'s `executeWorkflowStep` with the
 // workflow registry already loaded. See
 // `apps/workflows-node-step-container/` for the reference image.
 
-import type { StepJournalEntry, StepRunner } from "@voyantjs/workflows/handler"
+import type { StepJournalEntry, StepRunner } from "@voyant-travel/workflows/handler"
 
 const STEP_RESPONSE_AUTH_HEADER = "x-voyant-step-response-auth"
 
@@ -89,7 +89,7 @@ export interface CfContainerRunnerDeps {
   /**
    * Optional HMAC signer for the `X-Voyant-Step-Auth` header so the
    * container can verify the request came from a Voyant orchestrator.
-   * Shape matches `createHmacSigner` from `@voyantjs/workflows/auth`.
+   * Shape matches `createHmacSigner` from `@voyant-travel/workflows/auth`.
    */
   sign?: (body: string) => Promise<string> | string
   /** Optional structured logger. */

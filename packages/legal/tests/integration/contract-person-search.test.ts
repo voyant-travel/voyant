@@ -1,5 +1,5 @@
-import { newId } from "@voyantjs/db/lib/typeid"
-import { people } from "@voyantjs/relationships/schema"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import { people } from "@voyant-travel/relationships/schema"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -13,18 +13,18 @@ describe.skipIf(!DB_AVAILABLE)("contractRecordsService person search", () => {
   let db: PostgresJsDatabase
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

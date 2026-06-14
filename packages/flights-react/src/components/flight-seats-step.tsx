@@ -9,8 +9,8 @@ import type {
   PassengerCounts,
   Seat,
   SeatMap,
-} from "@voyantjs/flights/contract/types"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/flights/contract/types"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { CheckCircle2, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

@@ -10,7 +10,7 @@ import {
   publicRepriceBookingSessionSchema,
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
-} from "@voyantjs/bookings/public-validation"
+} from "@voyant-travel/bookings/public-validation"
 import {
   bootstrapCheckoutCollectionSchema,
   bootstrappedCheckoutCollectionSchema,
@@ -18,7 +18,7 @@ import {
   initiateCheckoutCollectionSchema,
   initiatedCheckoutCollectionSchema,
   previewCheckoutCollectionSchema,
-} from "@voyantjs/finance/checkout-validation"
+} from "@voyant-travel/finance/checkout-validation"
 import {
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionBootstrapSchema,
@@ -50,7 +50,7 @@ import {
   storefrontPromotionalOfferListQuerySchema,
   storefrontPromotionalOfferSchema,
   storefrontSettingsSchema,
-} from "@voyantjs/storefront/validation"
+} from "@voyant-travel/storefront/validation"
 import { z } from "zod"
 
 export const storefrontSingleEnvelopeSchema = <T extends z.ZodTypeAny>(item: T) =>

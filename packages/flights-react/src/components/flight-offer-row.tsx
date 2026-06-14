@@ -1,9 +1,9 @@
 "use client"
 
-import type { FlightOffer, Itinerary } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { FlightOffer, Itinerary } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Plane } from "lucide-react"
 import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"

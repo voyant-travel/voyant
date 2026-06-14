@@ -1,6 +1,6 @@
-# @voyantjs/action-ledger-react
+# @voyant-travel/action-ledger-react
 
-React client utilities for `@voyantjs/action-ledger`.
+React client utilities for `@voyant-travel/action-ledger`.
 
 This package delivers the packaged admin surface for the action ledger
 (packaged-admin RFC): the Logs list page with cursor pagination, the
@@ -12,7 +12,7 @@ to an admin host.
 ## Install
 
 ```bash
-pnpm add @voyantjs/action-ledger-react @voyantjs/action-ledger
+pnpm add @voyant-travel/action-ledger-react @voyant-travel/action-ledger
 ```
 
 ## Exports

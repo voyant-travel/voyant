@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Button } from "@voyantjs/ui/components"
+import { Button } from "@voyant-travel/ui/components"
 import { Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useVoyantProductsContext } from "../../index.js"

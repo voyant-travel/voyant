@@ -461,7 +461,7 @@ export const bookingDraftV1 = z.object({
 
   /**
    * Customer-typed promotion code. Validated case-insensitively against
-   * `promotional_offers.code` at quote time when the operator template
+   * `promotional_offers.code` at quote time when the operator starter
    * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a
    * `code_*` `invalidReason` on the quote when the code is bad.
    *

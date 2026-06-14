@@ -41,7 +41,7 @@
  *   - Tag hierarchy. Tags are flat by design.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const PRODUCT_TAXONOMY_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Category labels (denormalized with ancestors, locale-aware) ──────────

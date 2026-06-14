@@ -1,4 +1,4 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import { type AdminExtension, defineAdminExtension } from "@voyant-travel/admin"
 import { z } from "zod"
 // Lean static: the browse search contract lives in its own schema-only
 // module — importing it through `../index.js` would pin the whole catalog
@@ -12,10 +12,10 @@ import type { CatalogDetailSurface } from "../catalog-surfaces.js"
  * RFC §4.7). The catalog pages link into routes they do not own — the booking
  * journey, the supplier page, the product editor — so instead of importing a
  * host route tree they resolve these keys through
- * `useAdminHref`/`useAdminNavigate` from `@voyantjs/admin`. Hosts register one
+ * `useAdminHref`/`useAdminNavigate` from `@voyant-travel/admin`. Hosts register one
  * resolver per key (`satisfies AdminDestinationResolvers`).
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /**
      * The unified booking journey wizard for an offer-carrying entity.
@@ -70,7 +70,7 @@ export { type CatalogSearchParams, catalogSearchSchema } from "../catalog-search
 // or host component values — it is evaluated with the workspace chrome, so
 // a static page/host re-export would pin the heavy catalog pages into the
 // entry chunk. Pages and hosts import from their specific modules
-// (`@voyantjs/catalog-react/components/*`, `./pages/*` wrappers); only
+// (`@voyant-travel/catalog-react/components/*`, `./pages/*` wrappers); only
 // their TYPES re-export here.
 export {
   type CatalogDetailSurface,
@@ -130,17 +130,17 @@ export interface CreateCatalogAdminExtensionOptions {
 
 /**
  * The catalog admin contribution (packaged-admin RFC Phase 2,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Catalog nav group (with its five surface
  * sub-items) is part of the BASE operator navigation — see
- * `createOperatorAdminNavigation` in `@voyantjs/admin` — so contributing nav
+ * `createOperatorAdminNavigation` in `@voyant-travel/admin` — so contributing nav
  * entries here would duplicate them. If the base nav ever drops the catalog
  * group, this extension is where the entries move.
  *
  * ROUTES: contributions carry the FULL route implementation (packaged-admin
  * RFC §4.8 endgame) — the package-owned search contracts
- * (`catalogSearchSchema` from `@voyantjs/catalog-react` for the browse
+ * (`catalogSearchSchema` from `@voyant-travel/catalog-react` for the browse
  * surfaces, {@link productDetailSearchSchema} for the package detail page)
  * plus a lazy `page` module loader per route. Hosts assemble a code-based
  * route tree straight from these contributions (no per-route host files);

@@ -1,9 +1,9 @@
-import type { EventBus, ModuleContainer } from "@voyantjs/core"
+import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import {
   createDrizzlePublicDocumentDeliveryGrantStore,
   createPublicDocumentDeliveryGrant,
   parseOptionalJsonBody,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 

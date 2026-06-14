@@ -1,12 +1,12 @@
-import type { LinkableDefinition, Module } from "@voyantjs/core"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { chartersAdminRoutes } from "./routes.js"
 import { chartersPublicRoutes } from "./routes-public.js"
 
 // Adapter contract + registry — re-exported so templates can import everything
-// from `@voyantjs/charters` without reaching into sub-paths. Sub-path
-// `@voyantjs/charters/adapters` remains the lighter import for adapter-only
+// from `@voyant-travel/charters` without reaching into sub-paths. Sub-path
+// `@voyant-travel/charters/adapters` remains the lighter import for adapter-only
 // implementations.
 export type {
   AdapterCallContext,
@@ -68,7 +68,7 @@ export {
   type CreateWholeYachtBookingResult,
   chartersBookingService,
 } from "./service-bookings.js"
-// MYBA contract wrapper (DI-shaped, no hard dep on @voyantjs/legal).
+// MYBA contract wrapper (DI-shaped, no hard dep on @voyant-travel/legal).
 export {
   type CharterContractsService,
   type GenerateMybaContractInput,

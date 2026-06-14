@@ -3,4 +3,4 @@ export {
   type VoyantReactContextValue as VoyantContextValue,
   VoyantReactProvider as VoyantProvider,
   type VoyantReactProviderProps as VoyantProviderProps,
-} from "@voyantjs/react"
+} from "@voyant-travel/react"

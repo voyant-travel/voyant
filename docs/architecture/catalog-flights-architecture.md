@@ -78,7 +78,7 @@ If any of these cannot be implemented, the connection is not a flight connection
 The capability set is open-ended; new capability ids are added when a real provider needs them. This is exactly the "narrow at the edges, broad at the center" shape from the foundation §5.6 — applied to flights specifically.
 
 The package also ships zod runtime schemas for the public flight contract
-under `@voyantjs/flights/contract/schemas`. Any consumer exposing the
+under `@voyant-travel/flights/contract/schemas`. Any consumer exposing the
 adapter contract over HTTP, queues, RPC, or another wire boundary should
 validate with those shipped schemas instead of maintaining a parallel local
 copy of the contract shape.
@@ -225,7 +225,7 @@ packages/flights                    operator-facing flight vertical:
 
 Templates that need flights (a tour-package vertical, a corporate-travel storefront, a luxury-cruise reseller offering coordinated flights) opt in by registering `packages/flights`. Templates that don't need flights skip it entirely — same opt-in posture as `packages/charters`, `packages/cruises`, etc.
 
-Flight adapters (Hisky, Amadeus, Duffel, Sabre, Travelport NDC, an operator-built GDS connector) live in their own packages — `@voyantjs/voyant-flight-adapter-hisky`, `@voyantjs/voyant-flight-adapter-amadeus`, etc. — or come through Voyant Connect's existing flight connector ecosystem. Same as for source adapters generally (foundation §5.6), no implementer is privileged.
+Flight adapters (Hisky, Amadeus, Duffel, Sabre, Travelport NDC, an operator-built GDS connector) live in their own packages — `@voyant-travel/voyant-flight-adapter-hisky`, `@voyant-travel/voyant-flight-adapter-amadeus`, etc. — or come through Voyant Connect's existing flight connector ecosystem. Same as for source adapters generally (foundation §5.6), no implementer is privileged.
 
 ## 8. Open questions
 

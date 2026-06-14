@@ -4,13 +4,13 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Type-only: binds the bookings-ui `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, `organization.detail`, ...) into this
 // program — the contract detail page's reference cells navigate through
 // those shared keys, and `booking.detail`'s shape carries bookings-ui's own
 // tab union, so re-declaring it here could not stay shape-identical.
-import type {} from "@voyantjs/bookings-react/admin"
+import type {} from "@voyant-travel/bookings-react/admin"
 
 // Lean static only: the client module (fetcher + client contract type).
 // Query options resolve via dynamic import inside the loaders so the legal
@@ -26,7 +26,7 @@ import { defaultFetcher, type FetchWithValidationOptions } from "../client.js"
  * packaged pages and breadcrumbs resolve through
  * `useAdminHref`/`useAdminNavigate`.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The legal area's landing surface (redirects to contracts). */
     "legal.home": Record<string, never>
@@ -83,11 +83,11 @@ export interface CreateLegalAdminExtensionOptions {
 
 /**
  * The legal admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Legal nav group (contracts, contract
  * templates, policies, number series) is part of the BASE operator
- * navigation — see `createOperatorAdminNavigation` in `@voyantjs/admin` —
+ * navigation — see `createOperatorAdminNavigation` in `@voyant-travel/admin` —
  * so contributing nav entries here would duplicate them. If the base nav
  * ever drops the legal group, this extension is where the entries move.
  *

@@ -4,7 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type BookingCharterDetail, bookingCharterDetails } from "./booking-extension.js"
 
 /**
- * Minimal subset of `@voyantjs/legal`'s `contractsService` we depend on.
+ * Minimal subset of `@voyant-travel/legal`'s `contractsService` we depend on.
  * Defined structurally so charters does NOT take a hard dependency on
  * the legal package — templates wire the real service in. Mirrors the
  * dependency-inversion pattern legal already uses for document

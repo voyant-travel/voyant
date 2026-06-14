@@ -11,15 +11,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components/sheet"
+} from "@voyant-travel/ui/components/sheet"
 import { Eye, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

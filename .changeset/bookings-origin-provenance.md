@@ -1,5 +1,5 @@
 ---
-"@voyantjs/bookings": minor
+"@voyant-travel/bookings": minor
 ---
 
 Add Booking-owned origin/provenance records for quote, trip, catalog,

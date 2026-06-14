@@ -5,7 +5,7 @@ import { NotificationSettingsForm } from "../components/notification-settings-fo
 /**
  * Packaged admin host for the tenant-wide notification settings page
  * (packaged-admin RFC Phase 3). Zero-prop: the settings form owns its data
- * wiring through `@voyantjs/notifications-react`.
+ * wiring through `@voyant-travel/notifications-react`.
  */
 export function NotificationSettingsHost() {
   return (

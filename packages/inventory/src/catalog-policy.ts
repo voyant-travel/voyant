@@ -3,7 +3,7 @@
  * Catalog plane field policy for Inventory-owned products.
  *
  * Declares every product field's governance under the
- * `@voyantjs/catalog` 12-attribute contract. Phase B shake-out
+ * `@voyant-travel/catalog` 12-attribute contract. Phase B shake-out
  * adoption — see `docs/architecture/catalog-architecture.md` §9.1.
  *
  * Scope of this file:
@@ -19,7 +19,7 @@
  *     single `tags` column; declared here as merchandisable with a TODO.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 /**
  * Field-policy declarations for `products`. Pass through `defineFieldPolicy`

@@ -12,8 +12,8 @@
  * no extra identity lookup required.
  */
 
-import { getDb } from "@voyantjs/db"
-import { authSession, authUser } from "@voyantjs/db/schema/iam"
+import { getDb } from "@voyant-travel/db"
+import { authSession, authUser } from "@voyant-travel/db/schema/iam"
 import { and, eq, gt } from "drizzle-orm"
 
 const SESSION_COOKIE_NAME = "better-auth.session_token"

@@ -10,7 +10,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -19,7 +19,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import { Link2, Plus, X } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

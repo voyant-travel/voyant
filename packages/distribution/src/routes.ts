@@ -1,10 +1,10 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import {
   insertContactPointForEntitySchema,
   insertNamedContactForEntitySchema,
   updateContactPointSchema as updateIdentityContactPointSchema,
   updateNamedContactSchema as updateIdentityNamedContactSchema,
-} from "@voyantjs/identity/validation"
+} from "@voyant-travel/identity/validation"
 import { Hono } from "hono"
 import {
   batchIdsSchema,

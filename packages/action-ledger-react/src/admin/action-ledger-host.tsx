@@ -2,23 +2,26 @@
 "use client"
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import type { ActionLedgerEntryResponse, ActionLedgerListResponse } from "@voyantjs/action-ledger"
+import type {
+  ActionLedgerEntryResponse,
+  ActionLedgerListResponse,
+} from "@voyant-travel/action-ledger"
 import {
   useAdminHref,
   useOperatorAdminMessages as useAdminMessages,
   useAdminNavigate,
   useLocale,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Type-only: binds the bookings-react `AdminDestinations` augmentation
 // (`booking.detail`, ...) into this module — the target cell links booking
 // rows through that shared key.
-import type {} from "@voyantjs/bookings-react/admin"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import type {} from "@voyant-travel/bookings-react/admin"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -26,7 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye, Search, X } from "lucide-react"
 import * as React from "react"
 

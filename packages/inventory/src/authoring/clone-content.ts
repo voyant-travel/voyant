@@ -1,5 +1,5 @@
-import { pricingCategories, pricingCategoryDependencies } from "@voyantjs/commerce"
-import { productOptionResourceTemplates } from "@voyantjs/operations"
+import { pricingCategories, pricingCategoryDependencies } from "@voyant-travel/commerce"
+import { productOptionResourceTemplates } from "@voyant-travel/operations"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { optionExtraConfigs, productExtras } from "../extras.js"

@@ -18,7 +18,7 @@ Voyant is aligned with the intended architecture:
 - admin composition flows through the shared admin runtime and typed extension
   helpers instead of ad hoc shell patching
 - public/storefront capabilities sit under the shared `/v1/public/*` HTTP
-  boundary instead of drifting into template-local namespaces
+  boundary instead of drifting into starter-local namespaces
 - document and attachment delivery resolve from storage keys and explicit
   download resolvers instead of broad persisted signed-URL compatibility
   assumptions
@@ -45,7 +45,7 @@ construction where a shared seam already exists.
 
 ### 3. Admin Surface Adoption
 
-The operator template now composes admin contributions through the shared admin
+The operator starter now composes admin contributions through the shared admin
 runtime helpers rather than treating the extension registry as a template-only
 concept. Templates still own the final shell, but the extension seam is now
 explicitly framework-level.
@@ -55,7 +55,7 @@ explicitly framework-level.
 Customer-facing contract and preflight routes now sit under `/v1/public/*`,
 including the remaining customer-portal and checkout surfaces that previously
 used legacy non-public paths. Shared client packages consume those public
-routes directly, reducing template-local compatibility glue.
+routes directly, reducing starter-local compatibility glue.
 
 ### 5. Storage And Document Access Adoption
 

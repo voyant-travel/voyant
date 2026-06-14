@@ -4,4 +4,4 @@ export {
   type BuildSeededResumeJournalInput,
   buildResumeJournal,
   buildSeededResumeJournal,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"

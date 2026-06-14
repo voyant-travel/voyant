@@ -8,11 +8,11 @@
  * an indexed product document continues to show an expired discount
  * until something else reindexes it. This scheduler is what guarantees
  * the storefront eventually sees the boundary transition — within the
- * cron interval (5 min by default in the operator template).
+ * cron interval (5 min by default in the operator starter).
  *
  * Per docs/architecture/promotions-architecture.md §9.2.
  *
- * Operator template wires this to a Cloudflare Workers cron in
+ * Operator starter wires this to a Cloudflare Workers cron in
  * `src/api/promotion-scheduled.ts` + `wrangler.jsonc`.
  *
  * Idempotent on retry: the scheduler's effect is "emit `promotion.changed`
@@ -22,8 +22,8 @@
  * no-op modulo the eventual-consistency window).
  */
 
-import type { EventBus } from "@voyantjs/core"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { EventBus } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, gt, lte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

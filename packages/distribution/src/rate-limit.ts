@@ -17,8 +17,8 @@
  * Per docs/architecture/channel-push-architecture.md §14.2 and §14.3.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { infraRateLimitBucketsTable } from "@voyantjs/db/schema/infra"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { infraRateLimitBucketsTable } from "@voyant-travel/db/schema/infra"
 import { eq } from "drizzle-orm"
 
 export type ChannelPushPriority = "booking" | "availability" | "content"

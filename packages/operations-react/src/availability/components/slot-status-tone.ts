@@ -8,7 +8,7 @@ import type { SlotStatusTone } from "../index.js"
  * Tailwind `@source` scan in operator/dmc templates picks the class
  * strings up — those templates only glob the UI packages.
  *
- * Palette mirrors `@voyantjs/bookings-react/ui`'s `StatusBadge` so slot
+ * Palette mirrors `@voyant-travel/bookings-react/ui`'s `StatusBadge` so slot
  * statuses sit alongside booking statuses with identical color and
  * weight.
  */

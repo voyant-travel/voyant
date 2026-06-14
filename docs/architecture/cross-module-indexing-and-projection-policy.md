@@ -83,7 +83,7 @@ Every projection must have an explicit owner; there is no such thing as a
 
 ### 5. The query graph is the current cross-module read contract
 
-Today's cross-module read runtime is centered on `@voyantjs/core/query` and the
+Today's cross-module read runtime is centered on `@voyant-travel/core/query` and the
 link runtime, not on precomputed projections.
 
 That means Voyant currently expects:

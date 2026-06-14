@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 
 import { type ProductDetailApi, useOptionalProductDetailHost, useProductDetailApi } from "./host.js"
 

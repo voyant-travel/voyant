@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Button } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -8,8 +8,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Check, CircleDollarSign, Loader2, X } from "lucide-react"
 import { useExtrasUiMessagesOrDefault } from "../i18n/index.js"
 import {

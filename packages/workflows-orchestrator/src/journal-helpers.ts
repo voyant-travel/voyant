@@ -1,4 +1,4 @@
-import type { JournalSlice } from "@voyantjs/workflows/protocol"
+import type { JournalSlice } from "@voyant-travel/workflows/protocol"
 
 export function emptyJournal(): JournalSlice {
   return {

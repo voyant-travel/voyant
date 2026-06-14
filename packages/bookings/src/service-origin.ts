@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

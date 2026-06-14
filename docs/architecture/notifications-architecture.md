@@ -178,7 +178,7 @@ generic URL assumption.
 
 ### 10. Templates should wire providers, not duplicate delivery systems
 
-Starter templates may decide which providers are configured by default, but they
+Starters may decide which providers are configured by default, but they
 should not create a second notification model in app code.
 
 Rule:

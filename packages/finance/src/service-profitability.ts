@@ -1,10 +1,10 @@
 // agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingTravelers } from "@voyant-travel/bookings/schema"
 import type {
   DepartureProfitabilityQuery,
   ProductProfitabilityQuery,
   TravelerProfitabilityQuery,
-} from "@voyantjs/finance-contracts"
+} from "@voyant-travel/finance-contracts"
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

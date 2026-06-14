@@ -56,7 +56,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
     await db.execute(sql`DROP TABLE IF EXISTS booking_traveler_travel_details CASCADE`)
@@ -86,12 +86,12 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
 
   beforeEach(async () => {
     seq = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 
@@ -104,7 +104,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
   }
 
   async function buildPii() {
-    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyantjs/utils")
+    const { generateEnvKmsKey, EnvKmsProvider } = await import("@voyant-travel/utils")
     return createBookingPiiService({
       kms: new EnvKmsProvider({ key: generateEnvKmsKey() }),
     })

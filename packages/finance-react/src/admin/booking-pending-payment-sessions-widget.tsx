@@ -2,15 +2,15 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { bookingsQueryKeys } from "@voyantjs/bookings-react"
-import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-react/admin"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { bookingsQueryKeys } from "@voyant-travel/bookings-react"
+import type { BookingDetailHostSlotContext } from "@voyant-travel/bookings-react/admin"
 import {
   IconActionButton,
   StatusBadge,
   useBookingsUiI18nOrDefault,
-} from "@voyantjs/bookings-react/ui"
-import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
+} from "@voyant-travel/bookings-react/ui"
+import { buildPaymentLinkUrl } from "@voyant-travel/finance/payment-link"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,10 +20,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@voyantjs/ui/components"
-import { Button } from "@voyantjs/ui/components/button"
-import { DataTable } from "@voyantjs/ui/components/data-table"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+} from "@voyant-travel/ui/components"
+import { Button } from "@voyant-travel/ui/components/button"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { Check, Copy, Loader2, Plus, Trash2, Wallet } from "lucide-react"
 import * as React from "react"
 import { toast } from "sonner"
@@ -43,7 +43,7 @@ type PaymentSessionsMessages = ReturnType<
  * Props of the pending payment-sessions widget: exactly the slot context
  * the bookings detail host hands to `booking.details.finance-start` widget
  * contributions (see `bookingDetailFinanceStartSlot` in
- * `@voyantjs/bookings-react/admin`).
+ * `@voyant-travel/bookings-react/admin`).
  */
 export type BookingPendingPaymentSessionsWidgetProps = BookingDetailHostSlotContext
 
@@ -51,13 +51,13 @@ export type BookingPendingPaymentSessionsWidgetProps = BookingDetailHostSlotCont
  * Finance-owned payment-links card for the booking detail page's Finance
  * tab, delivered as a widget contribution on `booking.details.finance-start`
  * (packaged-admin RFC §4.7 cycle resolution: this package depends on
- * `@voyantjs/bookings-react/ui`, so the bookings host cannot import the card —
+ * `@voyant-travel/bookings-react/ui`, so the bookings host cannot import the card —
  * finance contributes it instead). Lists the booking's pending payment
  * sessions and lets ops copy the public payment link, mark a session paid
  * (manual bank-transfer capture) or cancel it.
  *
  * The copy action resolves the public checkout origin from the
- * template-level `/v1/public/payment-link-config` route through the shared
+ * starter-level `/v1/public/payment-link-config` route through the shared
  * finance provider context, falling back to the dashboard origin.
  */
 export function BookingPendingPaymentSessionsWidget({

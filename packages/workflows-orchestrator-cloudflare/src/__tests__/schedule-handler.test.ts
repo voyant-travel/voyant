@@ -1,4 +1,4 @@
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 import { describe, expect, test } from "vitest"
 
 import { createInMemoryKv, createKvManifestStore } from "../manifest-kv-store.js"

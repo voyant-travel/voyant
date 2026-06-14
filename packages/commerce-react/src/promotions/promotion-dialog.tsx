@@ -11,7 +11,7 @@
  * search components per scope kind.
  */
 
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -29,10 +29,10 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
-import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { useEffect, useState } from "react"
 import type { PromotionsUiMessages } from "./i18n/messages.js"
 import { usePromotionsUiMessagesOrDefault } from "./i18n/provider.js"

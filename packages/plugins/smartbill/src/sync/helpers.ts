@@ -1,5 +1,5 @@
-import type { Invoice } from "@voyantjs/finance"
-import { financeService } from "@voyantjs/finance"
+import type { Invoice } from "@voyant-travel/finance"
+import { financeService } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {

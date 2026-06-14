@@ -1,6 +1,6 @@
 ---
-"@voyantjs/inventory": minor
-"@voyantjs/inventory-react": minor
+"@voyant-travel/inventory": minor
+"@voyant-travel/inventory-react": minor
 ---
 
 Add optional Inventory package entrypoints for operated product authoring and

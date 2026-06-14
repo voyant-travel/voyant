@@ -1,4 +1,4 @@
-import { defineLink, type LinkableDefinition, type LinkRow } from "@voyantjs/core"
+import { defineLink, type LinkableDefinition, type LinkRow } from "@voyant-travel/core"
 import type { SQL } from "drizzle-orm"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, it, vi } from "vitest"

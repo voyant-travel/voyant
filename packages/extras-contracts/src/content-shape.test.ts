@@ -7,7 +7,7 @@ import {
   validateExtraContent,
 } from "./index.js"
 
-describe("@voyantjs/extras-contracts content shape", () => {
+describe("@voyant-travel/extras-contracts content shape", () => {
   it("validates the extras/v1 rich content payload", () => {
     const content = extraContentSchema.parse({
       extra: { id: "prx_abc", name: "Airport Transfer", category: "transfer" },

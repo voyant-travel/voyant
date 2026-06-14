@@ -1,4 +1,4 @@
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { and, desc, eq } from "drizzle-orm"
 import type { drizzle } from "drizzle-orm/node-postgres"
 import { snapshotRunsTable } from "./postgres-schema.js"

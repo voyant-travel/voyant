@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/utils",
+  "name": "@voyant-travel/utils",
   "version": "0.105.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/utils"
   },
   "description": "Utility functions for the workspace",
@@ -126,15 +126,15 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/types": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "liquidjs": "^10.27.0",
     "pdf-lib": "^1.17.1",
     "zod": "^4.3.6",
-    "@voyantjs/templating": "workspace:^"
+    "@voyant-travel/templating": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@types/node": "^25.5.2",
     "typescript": "^6.0.2",
     "vitest": "4.1.2"

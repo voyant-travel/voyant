@@ -1,4 +1,4 @@
-export type { VoyantPermission } from "@voyantjs/core"
+export type { VoyantPermission } from "@voyant-travel/core"
 export { createApp } from "./app.js"
 export type { SessionAuthContext } from "./auth/index.js"
 export {

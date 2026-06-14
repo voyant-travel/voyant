@@ -1,4 +1,4 @@
-import type { FlightOrderStatus, FlightSearchRequest } from "@voyantjs/flights/contract/types"
+import type { FlightOrderStatus, FlightSearchRequest } from "@voyant-travel/flights/contract/types"
 
 export interface AirportSearchFilters {
   q?: string | undefined
@@ -46,7 +46,7 @@ export const flightsQueryKeys = {
   seatMapForSegment: (offerId: string, segmentId: string) =>
     [...flightsQueryKeys.seatMap(), offerId, segmentId] as const,
 
-  /** Saved payment methods are CRM-adjacent but currently expose via the operator template route. */
+  /** Saved payment methods are CRM-adjacent but currently expose via the operator starter route. */
   savedPaymentMethods: (personId: string) =>
     [...flightsQueryKeys.all, "saved-payment-methods", personId] as const,
 

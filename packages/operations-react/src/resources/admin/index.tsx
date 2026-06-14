@@ -4,7 +4,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 // Lean statics only: the client module (fetcher) and the skeletons (their
 // own modules, no page imports). The page-data helpers pull the resources
@@ -26,7 +26,7 @@ import { ResourcesPageSkeleton } from "./resources-page-skeleton.js"
  * pages, the detail pages link back to the dashboard and across to the
  * supplier/product/operations-slot pages — instead of importing a host
  * route tree they resolve these keys through `useAdminHref`/
- * `useAdminNavigate` from `@voyantjs/admin`. Hosts register one resolver
+ * `useAdminNavigate` from `@voyant-travel/admin`. Hosts register one resolver
  * per key (`satisfies AdminDestinationResolvers`).
  *
  * `supplier.detail`, `product.detail` and `availabilitySlot.detail` are
@@ -34,7 +34,7 @@ import { ResourcesPageSkeleton } from "./resources-page-skeleton.js"
  * bookings-ui) — interface merging requires the member shape to stay
  * identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The resources tab dashboard. */
     "resource.list": Record<string, never>
@@ -83,11 +83,11 @@ export interface CreateResourcesAdminExtensionOptions {
 
 /**
  * The resources admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Resources nav item is part of the BASE
  * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing nav entries here would duplicate it.
+ * `@voyant-travel/admin` — so contributing nav entries here would duplicate it.
  * If the base nav ever drops the resources item, this extension is where
  * the entry moves.
  *

@@ -1,7 +1,7 @@
-import type { VoyantAuthContext } from "@voyantjs/core"
-import { apikeyTable, type SelectApikey } from "@voyantjs/db/schema/iam"
-import { permissionsToStrings } from "@voyantjs/types/api-keys"
-import type { KVStore } from "@voyantjs/utils/cache"
+import type { VoyantAuthContext } from "@voyant-travel/core"
+import { apikeyTable, type SelectApikey } from "@voyant-travel/db/schema/iam"
+import { permissionsToStrings } from "@voyant-travel/types/api-keys"
+import type { KVStore } from "@voyant-travel/utils/cache"
 import { and, eq, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 

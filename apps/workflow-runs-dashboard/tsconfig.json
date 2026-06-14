@@ -1,5 +1,5 @@
 {
-  "extends": "@voyantjs/voyant-typescript-config/react.json",
+  "extends": "@voyant-travel/voyant-typescript-config/react.json",
   "compilerOptions": {
     "types": ["react"],
     "baseUrl": ".",

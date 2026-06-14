@@ -1,4 +1,4 @@
-import { productsService } from "@voyantjs/inventory"
+import { productsService } from "@voyant-travel/inventory"
 import {
   optionUnits,
   productCapabilities,
@@ -8,8 +8,8 @@ import {
   productLocations,
   productOptions,
   products,
-} from "@voyantjs/inventory/schema"
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
+} from "@voyant-travel/inventory/schema"
+import { availabilitySlots, availabilityStartTimes } from "@voyant-travel/operations"
 import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

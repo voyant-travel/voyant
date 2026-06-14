@@ -10,9 +10,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Plus, X } from "lucide-react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 

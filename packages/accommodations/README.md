@@ -1,4 +1,4 @@
-# @voyantjs/accommodations
+# @voyant-travel/accommodations
 
 Accommodation resale contracts for Voyant.
 

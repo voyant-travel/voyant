@@ -1,4 +1,4 @@
-import type { ProductRecord } from "@voyantjs/inventory-react"
+import type { ProductRecord } from "@voyant-travel/inventory-react"
 
 export type ProductStatus = ProductRecord["status"]
 export type ProductBookingMode = ProductRecord["bookingMode"]

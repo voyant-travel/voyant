@@ -1,7 +1,7 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { cn } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { cn } from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -10,8 +10,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { languages } from "@voyantjs/utils/languages"
+} from "@voyant-travel/ui/components/combobox"
+import { languages } from "@voyant-travel/utils/languages"
 import { Pencil } from "lucide-react"
 import { type ComponentType, useState } from "react"
 

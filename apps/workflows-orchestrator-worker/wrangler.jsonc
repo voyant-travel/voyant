@@ -102,7 +102,7 @@
   // Service binding to the sibling workflows Worker that hosts the
   // step bodies. Replace `voyant-workflows` with the script name of
   // the Worker you deploy from your workflows code (the one that
-  // mounts `@voyantjs/workflows/handler` at `/__voyant/workflow-step`).
+  // mounts `@voyant-travel/workflows/handler` at `/__voyant/workflow-step`).
   //
   // Multi-tenant deployments that need to route each run to a different
   // tenant Worker should swap `createServiceBindingDispatcher` in

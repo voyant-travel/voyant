@@ -5,7 +5,7 @@ import {
   useAdminNavigate,
   useLocale,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import { useMemo, useState } from "react"
 
 import {
@@ -22,13 +22,13 @@ import { createProductDetailRestApi } from "../product-detail-api.js"
  * Packaged default for the `products-detail` contribution: binds the
  * canonical {@link ProductDetailPage} to its host wiring without any app
  * code — REST transport from the shared products provider context,
- * messages/locale/breadcrumbs from `@voyantjs/admin`, navigation through
+ * messages/locale/breadcrumbs from `@voyant-travel/admin`, navigation through
  * semantic destinations (RFC §4.7), and a media upload handler that posts
- * to the template-level `/v1/uploads` storage route.
+ * to the starter-level `/v1/uploads` storage route.
  *
  * Hosts that need app-owned composition (e.g. the operator's
  * availability-react option resource templates panel — a cycle from here,
- * since `@voyantjs/operations-react/availability` depends on this package) substitute
+ * since `@voyant-travel/operations-react/availability` depends on this package) substitute
  * their own implementation via the factory's `detailPageComponent` option.
  */
 export interface ProductDetailPageComponentProps {

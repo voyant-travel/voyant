@@ -4,23 +4,23 @@ import {
   type AdminWidgetContribution,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Importing the slot id also binds the bookings-ui `AdminDestinations`
 // augmentation (`booking.detail`, `person.detail`, `organization.detail`,
 // `invoice.detail`, `payment.detail`, ...) into this program — the finance
 // pages navigate through those shared keys, and this package already
-// peer-depends on `@voyantjs/bookings-react/ui`, so re-declaring them here would
+// peer-depends on `@voyant-travel/bookings-react/ui`, so re-declaring them here would
 // just duplicate the contract.
 import {
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
-} from "@voyantjs/bookings-react/admin"
+} from "@voyant-travel/bookings-react/admin"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
-// peer-depends on `@voyantjs/distribution-react/suppliers/ui`.
-import { supplierDetailPaymentPolicySlot } from "@voyantjs/distribution-react/suppliers/admin"
-import { defaultFetcher } from "@voyantjs/react"
+// peer-depends on `@voyant-travel/distribution-react/suppliers/ui`.
+import { supplierDetailPaymentPolicySlot } from "@voyant-travel/distribution-react/suppliers/admin"
+import { defaultFetcher } from "@voyant-travel/react"
 import type { ComponentType } from "react"
 import * as React from "react"
 
@@ -101,10 +101,10 @@ const LazySupplierPaymentPolicyWidget = lazyWidget<SupplierPaymentPolicyWidgetPr
  * `organization.detail`, `payment.detail`) come from the bookings-ui
  * augmentation bound above; declared here are the finance-owned list
  * targets plus `supplier.detail`, re-declared shape-locked — also declared
- * by `@voyantjs/catalog-react/admin`, and interface merging requires the
+ * by `@voyant-travel/catalog-react/admin`, and interface merging requires the
  * member shape to stay identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The invoices list page (the finance area's landing surface). */
     "invoice.list": Record<string, never>
@@ -156,12 +156,12 @@ export interface CreateFinanceAdminExtensionOptions {
 
 /**
  * The finance admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Finance nav group (invoices, number
  * series, payments, supplier invoices, profitability) is part of the BASE
  * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing nav entries here would duplicate them.
+ * `@voyant-travel/admin` — so contributing nav entries here would duplicate them.
  * If the base nav ever drops the finance group, this extension is where the
  * entries move.
  *
@@ -176,7 +176,7 @@ export interface CreateFinanceAdminExtensionOptions {
  * bind it onto {@link InvoiceDetailHost} / {@link PaymentDetailHost}.
  * Cross-route links resolve through the semantic destinations declared
  * above. The supplier-invoices pages carry their previously app-owned wiring
- * package-side now: attachment uploads post to the template-level
+ * package-side now: attachment uploads post to the starter-level
  * `/v1/uploads` route through the shared finance provider context (the
  * `BookingInvoicesWidget` precedent), inline supplier creation rides the
  * suppliers package's `useSupplierMutation`, and the allocation dialog's
@@ -185,7 +185,7 @@ export interface CreateFinanceAdminExtensionOptions {
  *
  * WIDGETS: the cycle-resolution piece (RFC §4.7). The booking detail page
  * needs the finance-owned invoices card, but this package peer-depends on
- * `@voyantjs/bookings-react/ui`, so the bookings host cannot import it. Instead
+ * `@voyant-travel/bookings-react/ui`, so the bookings host cannot import it. Instead
  * this extension contributes {@link BookingInvoicesWidget} on the
  * `booking.details.invoices-tab` slot the bookings host exposes; the host
  * mounts its Invoices tab whenever a contribution targets that slot and
@@ -244,7 +244,7 @@ export function createFinanceAdminExtension(
         id: "finance-invoices-detail",
         path: `${basePath}/invoices/$id`,
         title: invoices,
-        // Key declared by @voyantjs/bookings-react/admin (bound above).
+        // Key declared by @voyant-travel/bookings-react/admin (bound above).
         destination: "invoice.detail",
         destinationParams: { id: "invoiceId" },
         ssr: "data-only",
@@ -312,7 +312,7 @@ export function createFinanceAdminExtension(
         id: "finance-payments-detail",
         path: `${basePath}/payments/$id`,
         title: payments,
-        // Key declared by @voyantjs/bookings-react/admin (bound above).
+        // Key declared by @voyant-travel/bookings-react/admin (bound above).
         destination: "payment.detail",
         destinationParams: { id: "paymentId" },
         ssr: "data-only",

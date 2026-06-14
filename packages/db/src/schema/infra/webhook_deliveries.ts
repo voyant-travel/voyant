@@ -20,7 +20,7 @@ import { typeId, typeIdSchema } from "../../lib/index.js"
  * Per docs/architecture/channel-push-architecture.md §11.
  *
  * IMPORTANT: callers MUST NOT INSERT directly. Use the
- * `prepareOutboundEnvelope` helper (in `@voyantjs/voyant-distribution` or
+ * `prepareOutboundEnvelope` helper (in `@voyant-travel/voyant-distribution` or
  * a future shared infra package) — it enforces auth-header redaction,
  * PII redaction, and excerpt-bounding. Direct inserts are a lint
  * violation per §11.3.

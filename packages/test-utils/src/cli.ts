@@ -4,7 +4,7 @@
  *
  *   { argv: string[], cwd: string, stdout: (s) => void, stderr: (s) => void }
  *
- * We define the shape structurally here to avoid a dep on `@voyantjs/cli`.
+ * We define the shape structurally here to avoid a dep on `@voyant-travel/cli`.
  */
 
 export interface TestCommandContext {

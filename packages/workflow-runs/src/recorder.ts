@@ -3,7 +3,7 @@
  * lifecycle / finish writes against the `workflow_runs` +
  * `workflow_run_steps` tables.
  *
- * Designed for the `@voyantjs/core/workflows` saga primitive:
+ * Designed for the `@voyant-travel/core/workflows` saga primitive:
  * callers do
  *
  *   const recorder = await beginWorkflowRun(db, { workflowName, ... })

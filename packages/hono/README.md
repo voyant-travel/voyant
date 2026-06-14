@@ -1,4 +1,4 @@
-# @voyantjs/hono
+# @voyant-travel/hono
 
 Hono transport adapter for Voyant. Provides `createApp()`, middleware, auth
 helpers, and plugin expansion for mounting Voyant modules behind a Hono app.
@@ -6,13 +6,13 @@ helpers, and plugin expansion for mounting Voyant modules behind a Hono app.
 ## Install
 
 ```bash
-pnpm add @voyantjs/hono hono
+pnpm add @voyant-travel/hono hono
 ```
 
 ## Usage
 
 ```typescript
-import { createApp } from "@voyantjs/hono"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   db: (env) => getDb(env),

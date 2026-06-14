@@ -66,7 +66,7 @@ vi.mock("./index.js", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/ui/components", async () => {
+vi.mock("@voyant-travel/ui/components", async () => {
   return {
     Button: ({ children, ...props }: ReactTypes.ButtonHTMLAttributes<HTMLButtonElement>) => (
       <button {...props}>{children}</button>
@@ -131,7 +131,7 @@ vi.mock("@voyantjs/ui/components", async () => {
   }
 })
 
-vi.mock("@voyantjs/ui/components/currency-combobox", () => ({
+vi.mock("@voyant-travel/ui/components/currency-combobox", () => ({
   CurrencyCombobox: ({
     onChange,
     value,
@@ -151,7 +151,7 @@ vi.mock("@voyantjs/ui/components/currency-combobox", () => ({
   ),
 }))
 
-vi.mock("@voyantjs/ui/components/currency-input", () => ({
+vi.mock("@voyant-travel/ui/components/currency-input", () => ({
   CurrencyInput: ({
     id,
     onChange,
@@ -169,7 +169,7 @@ vi.mock("@voyantjs/ui/components/currency-input", () => ({
   ),
 }))
 
-vi.mock("@voyantjs/ui/components/date-picker", () => ({
+vi.mock("@voyant-travel/ui/components/date-picker", () => ({
   DatePicker: ({
     onChange,
     value,

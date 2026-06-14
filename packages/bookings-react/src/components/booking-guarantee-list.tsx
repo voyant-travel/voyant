@@ -5,7 +5,7 @@ import {
   type BookingGuaranteeRecord,
   useBookingGuaranteeMutation,
   useBookingGuarantees,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
 

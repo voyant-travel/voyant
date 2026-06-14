@@ -20,12 +20,12 @@ import {
   ledgerSensitiveRead,
   mapActionLedgerRequestContext,
   requestActionLedgerApproval,
-} from "@voyantjs/action-ledger"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/action-ledger"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
-} from "@voyantjs/db/aggregate-snapshots"
+} from "@voyant-travel/db/aggregate-snapshots"
 import {
   ForbiddenApiError,
   handleApiError,
@@ -36,7 +36,7 @@ import {
   RequestValidationError,
   requireUserId,
   UnauthorizedApiError,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import { z } from "zod"

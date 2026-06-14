@@ -2,7 +2,7 @@
  * Projection extension that decorates the product search document with
  * promotional-offer annotations declared by the Product catalog policy.
  *
- * Lives in `@voyantjs/commerce` because:
+ * Lives in `@voyant-travel/commerce` because:
  *   - The data lives here.
  *   - Product owns the document-builder implementation, while this package
  *     exposes a structural extension that satisfies that builder contract.
@@ -27,8 +27,8 @@
  * Per docs/architecture/commerce-architecture.md §6.
  */
 
-import type { IndexerSlice } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
   type AppliedOffer,

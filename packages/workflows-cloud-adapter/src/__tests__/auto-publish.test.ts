@@ -1,9 +1,9 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import {
   createInMemoryKv,
   createKvManifestStore,
   type DurableObjectNamespaceLike,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { publishManifest, scheduleAutoPublishManifest } from "../auto-publish.js"

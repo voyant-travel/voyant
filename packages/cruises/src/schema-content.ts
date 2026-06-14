@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { boolean, index, integer, pgTable, smallint, text, timestamp } from "drizzle-orm/pg-core"
 
 import { cruiseSailings, cruises } from "./schema-core.js"

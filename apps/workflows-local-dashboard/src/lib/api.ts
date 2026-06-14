@@ -8,7 +8,7 @@ export const API_BASE = ""
 
 /**
  * Shape of `StoredRun.result` on the wire. Mirrors
- * `TestResult<TOut>` from `@voyantjs/workflows/testing` but loosened to
+ * `TestResult<TOut>` from `@voyant-travel/workflows/testing` but loosened to
  * the fields the dashboard actually renders.
  */
 export interface RunResult {

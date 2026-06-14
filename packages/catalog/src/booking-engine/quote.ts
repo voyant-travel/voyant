@@ -11,8 +11,8 @@
  * shows every quote attempt.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 
 import type { LiveResolveResult, SourceAdapterContext } from "../adapter/contract.js"
 import type { PricingBasis } from "../snapshot/schema.js"
@@ -156,7 +156,7 @@ export interface QuoteEntityDeps {
    * Optional promotion-evaluator hook. When wired, called after the
    * adapter's `liveResolve` succeeds (only for `entity_module ==
    * "products"` in v1). Discounts apply to `pricing.base_amount`
-   * pre-tax; the operator template's `applyOperatorTaxToQuoteResult`
+   * pre-tax; the operator starter's `applyOperatorTaxToQuoteResult`
    * step downstream recomputes taxes against the new base.
    *
    * When the customer-supplied code fails validation, the engine
@@ -246,7 +246,7 @@ export async function quoteEntity(
 
   // Promotion evaluation — runs only for the products vertical in v1
   // (other verticals would need their own bridge to the evaluator).
-  // Discounts apply to `pricing.base_amount` pre-tax; operator template
+  // Discounts apply to `pricing.base_amount` pre-tax; operator starter
   // tax recompute downstream picks up the new base.
   let appliedOffers: PromotionEvaluationOutput["applied"] | undefined
   if (deps.evaluatePromotions && available && pricing && request.entityModule === "products") {

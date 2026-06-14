@@ -4,8 +4,8 @@
 // at logic the live scheduler uses, and optionally merges persisted scheduler
 // dispatch state when a control plane provides it.
 
-import type { ManifestSchedule } from "@voyantjs/workflows/protocol"
-import { computeNextFire } from "@voyantjs/workflows-orchestrator"
+import type { ManifestSchedule } from "@voyant-travel/workflows/protocol"
+import { computeNextFire } from "@voyant-travel/workflows-orchestrator"
 
 import type { CfManifestStore } from "./manifest-kv-store.js"
 import type { CfScheduleStateStore, ScheduleStateRecord } from "./schedule-state-store.js"

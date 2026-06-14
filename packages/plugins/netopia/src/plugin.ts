@@ -1,7 +1,15 @@
-import type { Extension, ModuleContainer } from "@voyantjs/core"
-import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "@voyantjs/finance"
-import { defineHonoBundle, type HonoBundle, idempotencyKey, parseJsonBody } from "@voyantjs/hono"
-import type { HonoExtension } from "@voyantjs/hono/module"
+import type { Extension, ModuleContainer } from "@voyant-travel/core"
+import {
+  FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
+  type FinanceRouteRuntime,
+} from "@voyant-travel/finance"
+import {
+  defineHonoBundle,
+  type HonoBundle,
+  idempotencyKey,
+  parseJsonBody,
+} from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { MiddlewareHandler } from "hono"
 import { Hono } from "hono"

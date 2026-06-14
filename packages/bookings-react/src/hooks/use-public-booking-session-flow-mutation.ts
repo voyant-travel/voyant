@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   PublicBookingSessionRepriceInput,
   PublicUpsertBookingSessionStateInput,
-} from "@voyantjs/bookings/validation"
+} from "@voyant-travel/bookings/validation"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantBookingsContext } from "../provider.js"

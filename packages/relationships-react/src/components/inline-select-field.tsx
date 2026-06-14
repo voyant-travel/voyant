@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { type ComponentType, useState } from "react"
 

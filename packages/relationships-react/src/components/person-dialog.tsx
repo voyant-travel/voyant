@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
+} from "@voyant-travel/ui/components/dialog"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { PersonRecord } from "../index.js"
 import { PersonForm } from "./person-form.js"

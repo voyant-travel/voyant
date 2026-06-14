@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   insertNotificationReminderStageChannelSchema,
   updateNotificationReminderStageChannelSchema,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

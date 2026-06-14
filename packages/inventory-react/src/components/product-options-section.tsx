@@ -2,16 +2,16 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
-import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+import { Alert, AlertDescription, AlertTitle } from "@voyant-travel/ui/components/alert"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/ui/components/card"
+} from "@voyant-travel/ui/components/card"
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import {
   ChevronDown,
   ChevronRight,

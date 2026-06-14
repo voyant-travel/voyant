@@ -7,8 +7,8 @@ import {
   CardHeader,
   ConfirmActionButton,
   cn,
-} from "@voyantjs/ui/components"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+} from "@voyant-travel/ui/components"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { ArrowLeft, GitMerge, Loader2, Pencil } from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"

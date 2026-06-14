@@ -5,18 +5,18 @@
  * Everything else imports shared helpers from here.
  */
 
-import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { PhoneInput } from "@voyantjs/ui/components/phone-input"
+import type { BookingDraftShape } from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import type { Draft } from "../../lib/draft-state.js"
 import type { DeparturePickerProps, UnitsPickerProps } from "../../types.js"
@@ -107,7 +107,7 @@ export function PhoneField({
 
 /**
  * Date field that uses the shared `<DatePicker />` from
- * `@voyantjs/ui` with a month + year dropdown caption so users can
+ * `@voyant-travel/ui` with a month + year dropdown caption so users can
  * jump across decades without arrow-clicking. The `range` hint picks
  * a reasonable startMonth/endMonth window per use case:
  *

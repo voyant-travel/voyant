@@ -230,8 +230,8 @@ export interface AdapterCapabilities {
 
 Adapters that don't implement `getContent` (the demo upstream, simple bedbanks that only have prices) declare `supportsContentFetch: false`. The catalog plane then renders thin content from the indexer projection — same as today, no regression.
 
-`@voyantjs/catalog` also ships zod runtime schemas for the public
-`SourceAdapter` payload contract under `@voyantjs/catalog/adapter/schemas`.
+`@voyant-travel/catalog` also ships zod runtime schemas for the public
+`SourceAdapter` payload contract under `@voyant-travel/catalog/adapter/schemas`.
 Consumers that cross HTTP, queue, RPC, or adapter-process boundaries should
 validate with those shipped schemas rather than maintaining parallel local
 validators.
@@ -500,7 +500,7 @@ Owned products use the existing `FieldDrift` events; sourced products use `Conte
 
 ## 3.5. Multi-language as a first-class axis
 
-Voyant is multilingual at every layer of the catalog plane it already covers — the indexer is sliced per locale (`IndexerSlice.locale`), the overlay store is keyed on `(entity, field, locale, audience, market)`, owned products carry `product_translations` / `product_option_translations` / `option_unit_translations` tables, BCP 47 codes are the lingua franca (`@voyantjs/utils/languages`). **Sourced content has to match this posture.** Treating it as a "cache afterthought" — one canonical locale stored, translation deferred — silently degrades sourced rows everywhere a non-English customer or operator looks at one.
+Voyant is multilingual at every layer of the catalog plane it already covers — the indexer is sliced per locale (`IndexerSlice.locale`), the overlay store is keyed on `(entity, field, locale, audience, market)`, owned products carry `product_translations` / `product_option_translations` / `option_unit_translations` tables, BCP 47 codes are the lingua franca (`@voyant-travel/utils/languages`). **Sourced content has to match this posture.** Treating it as a "cache afterthought" — one canonical locale stored, translation deferred — silently degrades sourced rows everywhere a non-English customer or operator looks at one.
 
 Real adapters reflect this:
 
@@ -601,7 +601,7 @@ Translation provider is wired via the existing pattern (Voyant Cloud AI gateway,
 
 ### 3.5.6. Backfill and supportedContentLocales
 
-When a deployment configures its set of `DEFAULT_SLICES` (operator template ships with en-GB; storefronts add ro-RO, de-DE, etc.), an admin script can call `adapter.capabilities.supportedContentLocales` (when known) and preload content for every entity × deployment-locale matrix. Background job; out of v1 scope but the data shape supports it cleanly.
+When a deployment configures its set of `DEFAULT_SLICES` (operator starter ships with en-GB; storefronts add ro-RO, de-DE, etc.), an admin script can call `adapter.capabilities.supportedContentLocales` (when known) and preload content for every entity × deployment-locale matrix. Background job; out of v1 scope but the data shape supports it cleanly.
 
 For adapters that don't declare `supportedContentLocales`, the cache populates lazily — first read in a new locale fetches and caches.
 
@@ -767,7 +767,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 - Add `products_sourced_content` schema with `content_schema_version "products/v1"` (§3.2).
 - Add the products-vertical content shape definition (`{ product, options[], days[], media[], policies[] }`) + Zod validator + `mergeOverlaysIntoContent` function.
 - Wire `getProductContent` (owned-vs-sourced dispatch via `readProvenance`, locale-resolved cache reads, SWR refresh, synthesizer fallback).
-- Operator template's product detail route + storefront detail route use the new service.
+- Operator starter's product detail route + storefront detail route use the new service.
 - Demo upstream remains thin (declares `supportsContentFetch: false`); detail page renders synthesizer output from the durable projection (§3.6).
 
 **Phase E — Cruises vertical migrates** (3-4 days):

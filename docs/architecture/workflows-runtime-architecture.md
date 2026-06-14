@@ -1,28 +1,28 @@
 # Workflows runtime — architecture
 
-Status: design / pre-implementation. Closes voyantjs/voyant#514. Unblocks voyantjs/voyant#515 and a small family of follow-up issues that migrate existing inline subscribers onto workflows (§20).
+Status: design / pre-implementation. Closes voyant-travel/voyant#514. Unblocks voyant-travel/voyant#515 and a small family of follow-up issues that migrate existing inline subscribers onto workflows (§20).
 
-This doc describes the workflow runtime as a **first-class, framework-owned, self-host-first** primitive. `@voyantjs/workflows` is THE workflow engine for Voyant; modules and plugins ship workflows and event filters; `createApp()` defaults to the self-host composition with one config field (`db`); managed deployment is a wrapper that lives in voyant-cloud, not in this repo. Operators who want a different orchestrator implement the driver interface and assemble from primitives.
+This doc describes the workflow runtime as a **first-class, framework-owned, self-host-first** primitive. `@voyant-travel/workflows` is THE workflow engine for Voyant; modules and plugins ship workflows and event filters; `createApp()` defaults to the self-host composition with one config field (`db`); managed deployment is a wrapper that lives in voyant-cloud, not in this repo. Operators who want a different orchestrator implement the driver interface and assemble from primitives.
 
 ## 1. Why this exists
 
 Three forces converge on this work:
 
-**1.** `trigger.on()` (`packages/workflows/src/trigger.ts:131`) and `WorkflowManifest.eventFilters` (`packages/workflows/src/protocol/index.ts:85`) ship as SDK declarations with no runtime. Calling `trigger.on(...)` throws synchronously. The orchestrator has no event ingest, no manifest registration, no filter matcher. Any event → workflow flow has to fall back to one of three workarounds: poll a flag column, do unbounded work inline in a Workers subscriber (CPU/wall-time unsafe), or log + skip + ask ops to run a CLI. All three are explicitly broken paths in `docs/architecture/event-delivery-and-durable-execution-policy.md`. Concrete callsites that picked workaround #3 today: `templates/operator/src/api/catalog-bridge.ts:247-264`, `templates/operator/src/api/promotion-scheduled.ts:82-91`.
+**1.** `trigger.on()` (`packages/workflows/src/trigger.ts:131`) and `WorkflowManifest.eventFilters` (`packages/workflows/src/protocol/index.ts:85`) ship as SDK declarations with no runtime. Calling `trigger.on(...)` throws synchronously. The orchestrator has no event ingest, no manifest registration, no filter matcher. Any event → workflow flow has to fall back to one of three workarounds: poll a flag column, do unbounded work inline in a Workers subscriber (CPU/wall-time unsafe), or log + skip + ask ops to run a CLI. All three are explicitly broken paths in `docs/architecture/event-delivery-and-durable-execution-policy.md`. Concrete callsites that picked workaround #3 today: `starters/operator/src/api/catalog-bridge.ts:247-264`, `starters/operator/src/api/promotion-scheduled.ts:82-91`.
 
 **2.** `event-delivery-and-durable-execution-policy.md` §6 already mandates *"use durable jobs or workflows for retryable background execution."* That policy implies a single, framework-owned engine — but the framework doesn't ship one in a usable form. The policy can't be enforced because there is no runtime to enforce it against.
 
-**3.** The team already removed Hatchet and Trigger.dev (per `MEMORY.md` Workflow orchestration), committing to first-party orchestration. The remaining work is to finish that commitment: make the engine reachable from any module's `eventBus.emit()`, with no per-template wiring, in both self-host and managed-cloud deployment shapes.
+**3.** The team already removed Hatchet and Trigger.dev (per `MEMORY.md` Workflow orchestration), committing to first-party orchestration. The remaining work is to finish that commitment: make the engine reachable from any module's `eventBus.emit()`, with no per-starter wiring, in both self-host and managed-cloud deployment shapes.
 
 This doc resolves all three.
 
 ## 2. Goals
 
-1. **Workflows are first-class.** A module that declares a workflow and a `trigger.on()` filter has those workflows fire automatically when the named event is emitted, regardless of which template hosts the module, regardless of deployment shape, with no template-level glue.
+1. **Workflows are first-class.** A module that declares a workflow and a `trigger.on()` filter has those workflows fire automatically when the named event is emitted, regardless of which starter hosts the module, regardless of deployment shape, with no starter-level glue.
 2. **Self-host is the primary architectural unit.** The runtime defaults to a single-tenant, in-process composition. `createApp({ workflows: { db } })` is enough to run workflows. Multi-tenancy, customer dashboards, billing, and scoped tokens are layered on top by managed-cloud deployments — they do not live in the runtime.
 3. **Two reference deployment shapes ship together.** Mode 1 — all on Cloudflare (Workers + DO + KV + Sandboxes/Containers, reusing the existing `workflows-orchestrator-cloudflare` package). Mode 2 — all in Docker (single Node process or sibling-process pair sharing Postgres; extends the existing `workflows-orchestrator-node` package with manifest store + idempotency wiring).
 4. **No env-var-based driver selection.** `createApp({ workflows: ... })` is explicit. The default is Mode 2 (`{ db }` shorthand). Mode 1 requires explicit factory wiring. Misconfiguration is a startup error, not a runtime surprise.
-5. **Modules and plugins are the primary declaration sites.** `@voyantjs/commerce` ships the promotions `bulkReindexProducts` workflow and `trigger.on("promotion.changed", { ... })` declarations from its package. `definePlugin({ workflows, eventFilters })` exposes the same to plugins. Templates don't see the manifest unless they're adding workflows of their own.
+5. **Modules and plugins are the primary declaration sites.** `@voyant-travel/commerce` ships the promotions `bulkReindexProducts` workflow and `trigger.on("promotion.changed", { ... })` declarations from its package. `definePlugin({ workflows, eventFilters })` exposes the same to plugins. Templates don't see the manifest unless they're adding workflows of their own.
 6. **Durable run execution; non-durable event delivery in v1.** Once an event has been ingested by the driver, the resulting run is durable: persisted to Postgres or DO storage, retried on transient failures, replay-safe, surviving process restart. Event *ingest* itself is at-most-once in v1 because the EventBus forwarder is fire-and-forget, matching the in-process EventBus's existing semantics. The upgrade path to at-least-once durable ingest (an outbox table on the emitter side) is designed-for in §16.2 and ships as a separate piece of work.
 7. **Closes #514 and unblocks #515.** When this lands the `affected.kind === "all"` reindex paths in promotions become a routine `trigger.on(...)` declaration plus a workflow body, not a doc-flagged hole.
 
@@ -44,7 +44,7 @@ Each has an upgrade path and at least one is mentioned by name in §21.
 
 ## 4. Architectural stance
 
-`@voyantjs/workflows` is the workflow runtime. Not a runtime, not one option among several. There is exactly one orchestrator state machine in the codebase (already in `packages/workflows-orchestrator/src/orchestrator.ts`); we wrap it in two adapter compositions and treat the engine as part of the framework's standard equipment.
+`@voyant-travel/workflows` is the workflow runtime. Not a runtime, not one option among several. There is exactly one orchestrator state machine in the codebase (already in `packages/workflows-orchestrator/src/orchestrator.ts`); we wrap it in two adapter compositions and treat the engine as part of the framework's standard equipment.
 
 The architecture is **self-host first.** The runtime carries no tenant identity by default. Manifest registration is "the framework reads its own modules at boot" — no HTTP endpoint to set up, no token to mint, no port to expose unless the operator opts in. Most events are emitted by the same process that runs the workflow, so there is no network boundary, so no auth needed. Multi-tenancy, scoped tokens, and customer dashboards are wrapper concerns that live in voyant-cloud, not in the runtime.
 
@@ -182,7 +182,7 @@ export interface WorkflowAdmin {
 
 Drivers expose this by declaring `admin?: WorkflowAdmin` on the returned driver object. `apps/workflow-runs-dashboard` checks for `driver.admin` and falls back to a "admin not available for this driver" empty state when absent.
 
-- **Mode 2 (Postgres)**: implements `admin` natively against `voyant_snapshot_runs` + `voyant_wakeups` (existing tables in `@voyantjs/workflows-orchestrator-node`). List, search, filter, all relational queries are free.
+- **Mode 2 (Postgres)**: implements `admin` natively against `voyant_snapshot_runs` + `voyant_wakeups` (existing tables in `@voyant-travel/workflows-orchestrator-node`). List, search, filter, all relational queries are free.
 - **Mode 1 (DO/KV)**: implements `getRun(runId)` (single-DO read) and `cancelRun(runId)` (DO RPC). `listRuns` is **not implemented** — the framework returns "admin.list not supported in CF Mode 1; bring your own index." Voyant Cloud's wrapper provides one.
 - **InMemory** (test-only): partial admin sufficient for compliance tests.
 
@@ -279,7 +279,7 @@ This is the contract. Anything that doesn't pass this suite is not a driver.
 
 The default. Single Node process (or sibling-process pair) running app + orchestrator + step execution, with Postgres as the only external dependency. Everything in Docker.
 
-**Mode 2 extends the existing `@voyantjs/workflows-orchestrator-node` package**, not a new one. That package already ships a Postgres state store, a persistent wakeup manager (the time wheel), self-host server primitives, a dashboard server, and 3 Drizzle migrations. This work adds the manifest store + idempotency wiring + the `createNodeStandaloneDriver` factory; it does not duplicate the run-store and wakeup-manager machinery.
+**Mode 2 extends the existing `@voyant-travel/workflows-orchestrator-node` package**, not a new one. That package already ships a Postgres state store, a persistent wakeup manager (the time wheel), self-host server primitives, a dashboard server, and 3 Drizzle migrations. This work adds the manifest store + idempotency wiring + the `createNodeStandaloneDriver` factory; it does not duplicate the run-store and wakeup-manager machinery.
 
 ### 7.1 What's already there
 
@@ -331,8 +331,8 @@ Three additive pieces, all inside `packages/workflows-orchestrator-node`:
    - Existing `createPostgresSnapshotRunStore` for state.
    - Existing `createPersistentWakeupManager` for the time wheel.
    - New `createPostgresManifestStore` for manifests.
-   - New `event-router.ts` (from `@voyantjs/workflows-orchestrator`) for `where`-predicate matching.
-   - In-process step dispatch via `handleStepRequest` from `@voyantjs/workflows/handler`.
+   - New `event-router.ts` (from `@voyant-travel/workflows-orchestrator`) for `where`-predicate matching.
+   - In-process step dispatch via `handleStepRequest` from `@voyant-travel/workflows/handler`.
 
    Returns a `DriverFactory` (per §6.3) that `createApp()` invokes once the container is built. The factory closes over its options; the resulting driver gets `services` from the framework deps argument.
 
@@ -351,7 +351,7 @@ activations itself. When an activation parks, Cloud persists the returned
 id, stable key, kind, optional event/signal/token name, expiry, timeout, and
 framework metadata. A later resume dispatch must resolve one stored waitpoint
 into the journal before invoking the runner. The framework helper
-`buildResumeStepRequest(...)` in `@voyantjs/workflows/handler` performs that
+`buildResumeStepRequest(...)` in `@voyant-travel/workflows/handler` performs that
 mutation and attaches `activation.kind = "resume"` metadata with release,
 bundle, journal reference, waitpoint, payload reference, and freshness fields.
 The runner still receives the normal `WorkflowStepRequest` shape, so it
@@ -362,7 +362,7 @@ fresh run or a rerun from scratch.
 
 ### 7.4 Step execution
 
-For Mode 2, the driver wires `StepHandler` (`packages/workflows-orchestrator/src/types.ts:149`) directly to `handleStepRequest` from `@voyantjs/workflows/handler` — no HTTP, no dispatch namespace. The workflow body executes in the same process as the driver.
+For Mode 2, the driver wires `StepHandler` (`packages/workflows-orchestrator/src/types.ts:149`) directly to `handleStepRequest` from `@voyant-travel/workflows/handler` — no HTTP, no dispatch namespace. The workflow body executes in the same process as the driver.
 
 This collapses the `runtime: "edge"` vs `runtime: "node"` distinction inside single-process Mode 2. Both run in the same Node process; the runtime hint is preserved in the journal for observability but doesn't change scheduling. Documented as a Mode 2 caveat.
 
@@ -370,7 +370,7 @@ For Mode 2 operators who want isolation (run heavy steps in a separate process s
 
 ### 7.5 Crash safety
 
-The existing `@voyantjs/workflows-orchestrator-node` already provides:
+The existing `@voyant-travel/workflows-orchestrator-node` already provides:
 
 - `voyant_snapshot_runs` updates use snapshot store guards; lost writes don't silently overwrite.
 - `voyant_wakeups` leases expire on driver crash; another driver claims the wakeup on the next poll.
@@ -387,7 +387,7 @@ The orchestrator core's `driveUntilPaused` already assumes replay-safe semantics
 
 ### 7.7 What changed from the previous draft
 
-For reviewers comparing against an earlier version of this doc: the previous draft proposed creating `@voyantjs/workflows-orchestrator-postgres` with `workflow_runs` + `workflow_journal_events` + `workflow_manifests` tables and a SKIP-LOCKED time wheel. **All of that is replaced by extending `@voyantjs/workflows-orchestrator-node`**, which already ships equivalents:
+For reviewers comparing against an earlier version of this doc: the previous draft proposed creating `@voyant-travel/workflows-orchestrator-postgres` with `workflow_runs` + `workflow_journal_events` + `workflow_manifests` tables and a SKIP-LOCKED time wheel. **All of that is replaced by extending `@voyant-travel/workflows-orchestrator-node`**, which already ships equivalents:
 
 | Previous draft | Existing in `workflows-orchestrator-node` |
 |---|---|
@@ -470,15 +470,15 @@ The deployment specifics, multi-tenant logic, billing integration, and dashboard
 
 ### 10.1 Module interface
 
-`packages/core/src/module.ts` `Module` gets two new optional fields. To avoid a `core ↔ workflows` dependency cycle (core can't import `WorkflowDefinition` from `@voyantjs/workflows`, since `@voyantjs/workflows` already imports `Module` and `ModuleContainer` from core), the field types are **structural descriptors defined in core**:
+`packages/core/src/module.ts` `Module` gets two new optional fields. To avoid a `core ↔ workflows` dependency cycle (core can't import `WorkflowDefinition` from `@voyant-travel/workflows`, since `@voyant-travel/workflows` already imports `Module` and `ModuleContainer` from core), the field types are **structural descriptors defined in core**:
 
 ```ts
 // packages/core/src/module.ts (new types)
 
-/** Minimum shape of a workflow registration; @voyantjs/workflows's WorkflowDefinition satisfies this structurally. */
+/** Minimum shape of a workflow registration; @voyant-travel/workflows's WorkflowDefinition satisfies this structurally. */
 export interface WorkflowDescriptor {
   readonly id: string
-  // The driver/runtime treats this as opaque — the concrete runtime types live in @voyantjs/workflows
+  // The driver/runtime treats this as opaque — the concrete runtime types live in @voyant-travel/workflows
   // and structurally extend this descriptor. Core never inspects beyond `id`.
 }
 
@@ -500,7 +500,7 @@ export interface Module {
 }
 ```
 
-`@voyantjs/workflows`'s concrete types — `WorkflowDefinition` (`packages/workflows/src/workflow.ts:42`) and `EventFilterRuntimeEntry` (new in PR2) — satisfy these structural descriptors via TypeScript's structural compat without either side importing the other. Core stays workflow-agnostic; workflows stays core-aware (one-way dependency, as today). The framework's manifest-builder casts the collected descriptors back to their concrete types at the workflow-runtime boundary, where the runtime owns both shapes.
+`@voyant-travel/workflows`'s concrete types — `WorkflowDefinition` (`packages/workflows/src/workflow.ts:42`) and `EventFilterRuntimeEntry` (new in PR2) — satisfy these structural descriptors via TypeScript's structural compat without either side importing the other. Core stays workflow-agnostic; workflows stays core-aware (one-way dependency, as today). The framework's manifest-builder casts the collected descriptors back to their concrete types at the workflow-runtime boundary, where the runtime owns both shapes.
 
 This is the same pattern Voyant uses for `LinkableDefinition` (`packages/core/src/links.ts`) — core defines the structural contract, downstream packages provide concrete instances.
 
@@ -508,7 +508,7 @@ A module's source becomes:
 
 ```ts
 // packages/commerce/src/promotions/workflows/bulk-reindex-products.ts
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 import { z } from "zod"
 
 export const BulkReindexInput = z.object({
@@ -529,7 +529,7 @@ export const bulkReindexProducts = workflow<BulkReindexInput, void>({
 })
 
 // packages/commerce/src/promotions/event-filters.ts
-import { trigger } from "@voyantjs/workflows"
+import { trigger } from "@voyant-travel/workflows"
 import { bulkReindexProducts } from "./workflows/bulk-reindex-products.js"
 
 export const promotionsEventFilters = [
@@ -570,7 +570,7 @@ This means the SmartBill, Payload-CMS, and Sanity-CMS plugins (`packages/plugins
 
 ### 10.3 `createApp()` integration
 
-`createApp()` in `@voyantjs/voyant-hono` gains two responsibilities:
+`createApp()` in `@voyant-travel/voyant-hono` gains two responsibilities:
 
 1. **Resolve a workflow driver.** `createApp({ workflows: { db } })` (Mode 2 default) or `createApp({ workflows: { driver: ... } })` (explicit). No `workflows` field at all is also valid for templates that don't use workflows — the framework no-ops the boot pipeline below.
 2. **Collect, register, and bridge.** After resolving modules + plugins, gather their `workflows` and `eventFilters` arrays, build the manifest, call `driver.registerManifest(manifest)`, and install an EventBus forwarder that routes emitted events to `driver.ingestEvent(...)`.
@@ -587,7 +587,7 @@ After this work lands, the promotions module ships:
 - `packages/commerce/src/promotions/event-filters.ts` — one `trigger.on()` declaration.
 - `packages/commerce/src/promotions/index.ts` — module wires the above.
 
-The operator template's `catalog-bridge.ts:247-264` and `promotion-scheduled.ts:82-91` warn-blocks delete entirely. Closes #515.
+The operator starter's `catalog-bridge.ts:247-264` and `promotion-scheduled.ts:82-91` warn-blocks delete entirely. Closes #515.
 
 ## 11. Workflow context and dependency injection
 
@@ -656,9 +656,9 @@ Typed resolution: modules export a typed accessor alongside the registration so 
 
 ```ts
 // packages/commerce/src/promotions/services.ts
-import type { ModuleContainerView } from "@voyantjs/core"
-import type { IndexerService } from "@voyantjs/catalog"
-import type { ProductsRepository } from "@voyantjs/inventory"
+import type { ModuleContainerView } from "@voyant-travel/core"
+import type { IndexerService } from "@voyant-travel/catalog"
+import type { ProductsRepository } from "@voyant-travel/inventory"
 
 export const promotionsServices = {
   indexer: (c: ModuleContainerView): IndexerService => c.resolve("indexer"),
@@ -705,12 +705,12 @@ bootstrap completes. This is where catalog services like `indexer` and
 Concrete patterns the gap blocks today:
 
 - **Modules ship workflow bodies that read shared services.** `bulkReindexProducts` uses `ctx.services.resolve("indexer")` instead of constructing one. Move the workflow between templates → it still works, as long as the host template registers an `indexer`.
-- **Plugins inject services for module workflows.** A `@voyantjs/plugin-typesense` could register `indexer` against a Typesense client; a `@voyantjs/plugin-meilisearch` could register the same key against Meilisearch. Module workflows are unchanged.
+- **Plugins inject services for module workflows.** A `@voyant-travel/plugin-typesense` could register `indexer` against a Typesense client; a `@voyant-travel/plugin-meilisearch` could register the same key against Meilisearch. Module workflows are unchanged.
 - **Tests inject mocks.** `createInMemoryDriver({ services: testContainer })` for isolated workflow body tests; `createNodeStandaloneDriver({ db: testDb })(testFactoryDeps({ services: testContainer }))` for integration tests.
 
 ### 11.7 What it does NOT do
 
-- **Not a DI framework.** No scoping, no factories, no lifecycle hooks. The `ModuleContainer` is a Map. Templates that want richer DI wrap or replace it (per `packages/core/src/container.ts:5`).
+- **Not a DI framework.** No scoping, no factories, no lifecycle hooks. The `ModuleContainer` is a Map. Starters that want richer DI wrap or replace it (per `packages/core/src/container.ts:5`).
 - **Not lazy.** Services are registered at boot; resolution is synchronous. A workflow body that calls `ctx.services.resolve("missing")` throws synchronously and that exception fails the step.
 - **Not type-safe end-to-end.** TypeScript can't verify that `resolve("indexer")` returns the same type the registrar passed. The typed-accessor pattern (§11.3) is the recommended workaround. A future revision could add registration-side type tags; out of scope for v1.
 
@@ -897,7 +897,7 @@ Size: hard cap 256 KiB per event payload; over → 413 (HTTP) or `EventTooLargeE
 By default Mode 2 has no HTTP boundary at all — `driver.ingestEvent(...)` is an in-process function call from the EventBus forwarder. When external emitters need to fire events into the runtime (a storefront BFF on a different host, a third-party webhook, a sibling process on a different machine), the operator mounts the **HTTP ingest adapter**:
 
 ```ts
-import { mountHttpIngestAdapter } from "@voyantjs/workflows/http-ingest"
+import { mountHttpIngestAdapter } from "@voyant-travel/workflows/http-ingest"
 
 const app = createApp({ /* ... */ workflows: { db } })
 
@@ -950,7 +950,7 @@ The §2 goal 6 commitment is "durable run execution; non-durable event delivery 
 2. A drain (cron or DO alarm) selects pending rows and calls `driver.ingestEvent(...)`, marking sent / backing off / dead-lettering. Idempotency at the driver protects against double delivery on retry.
 3. Driver-side unchanged. The `metadata.eventId` ULID stamped by the outbox is what makes step 2 idempotent.
 
-Designed-for, not built. The §10.3 / §18 EventBus forwarder's interface is the only thing that changes — its body becomes `outbox.write(...)` instead of `driver.ingestEvent(...)`. The outbox + drain are an additive package (`@voyantjs/workflows-outbox`); no driver changes; no manifest changes.
+Designed-for, not built. The §10.3 / §18 EventBus forwarder's interface is the only thing that changes — its body becomes `outbox.write(...)` instead of `driver.ingestEvent(...)`. The outbox + drain are an additive package (`@voyant-travel/workflows-outbox`); no driver changes; no manifest changes.
 
 ## 17. Auth, telemetry, failure modes
 
@@ -983,7 +983,7 @@ Mode 1: counters land in CF Analytics Engine when bound; locally they're `logger
 `createApp()` is and remains synchronous (`packages/hono/src/app.ts:32`) — it returns a `Hono<...>` and bootstraps lazily on the first request that reads the bootstrap promise. The workflow runtime hooks into that existing lazy path; no signature change, no breaking async factory.
 
 ```ts
-import { createApp } from "@voyantjs/voyant-hono"
+import { createApp } from "@voyant-travel/voyant-hono"
 
 // Mode 2 default — most users
 const app = createApp({
@@ -998,7 +998,7 @@ await app.ready()
 
 ```ts
 // Mode 1 — explicit factory (DriverFactory; createApp() invokes it after container assembly)
-import { createCloudflareEdgeDriver } from "@voyantjs/workflows/driver-cloudflare-edge"
+import { createCloudflareEdgeDriver } from "@voyant-travel/workflows/driver-cloudflare-edge"
 
 const app = createApp({
   modules: [/* ... */],
@@ -1027,7 +1027,7 @@ What runs inside the `bootstrapPromise` (deferred, async):
 
 7. Builds the manifest and calls `driver.registerManifest(...)`.
 8. Subscribes a forwarder on the EventBus for each unique `eventType` in the manifest. The forwarder converts the bus envelope into `IngestEventArgs`, stamps `metadata.eventId` with a ULID, and calls `driver.ingestEvent(...)`. Fire-and-forget per §15.3.
-9. (Mode 2 only) Starts the time wheel — the existing `createPersistentWakeupManager` from `@voyantjs/workflows-orchestrator-node`.
+9. (Mode 2 only) Starts the time wheel — the existing `createPersistentWakeupManager` from `@voyant-travel/workflows-orchestrator-node`.
 10. Wires `app.shutdown = async () => { await driver.shutdown?.() }` so SIGTERM stops the wheel cleanly.
 
 **Fail-closed boot semantics.** If `workflows: ...` is configured and any of steps 7-9 throws, the `bootstrapPromise` rejects and the app is unhealthy until restarted. Manifest registration failures are NOT isolated like module-bootstrap failures (which are best-effort logged) — when workflows are configured, registration is part of the contract, and silently skipping it would leave the runtime in a state where some events fire workflows and others vanish. The framework surfaces the rejection through the request handler so the next request sees a 503 with the registration error in the response body.
@@ -1055,7 +1055,7 @@ Both share the same Postgres. The lease mechanism in `voyant_wakeups` handles co
 The workflow this design unblocks. Lives in `packages/commerce/src/promotions/workflows/bulk-reindex-products.ts`:
 
 ```ts
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 import { z } from "zod"
 
 import { promotionsServices } from "../services.js"
@@ -1117,7 +1117,7 @@ The workflow uses the existing SDK (`workflow({ id, run })`, `ctx.step`, `ctx.me
 The filter declaration in `packages/commerce/src/promotions/event-filters.ts`:
 
 ```ts
-import { trigger } from "@voyantjs/workflows"
+import { trigger } from "@voyant-travel/workflows"
 import { bulkReindexProducts } from "./workflows/bulk-reindex-products.js"
 
 export const promotionsEventFilters = [
@@ -1152,7 +1152,7 @@ export const promotionsModule: Module = {
 }
 ```
 
-Once `createApp({ modules: [promotionsModule, ...], workflows: { db } })` is wired, the affected-all reindex Just Works. No template-level glue. The two `console.warn` blocks in the operator template delete entirely.
+Once `createApp({ modules: [promotionsModule, ...], workflows: { db } })` is wired, the affected-all reindex Just Works. No starter-level glue. The two `console.warn` blocks in the operator starter delete entirely.
 
 ## 20. Migration of existing inline subscribers
 
@@ -1160,7 +1160,7 @@ This work enables migration; it does not perform it. Each candidate gets a follo
 
 | Subscriber | Location | Recommended migration | Priority |
 |---|---|---|---|
-| `affected.kind === "all"` reindex | `templates/operator/src/api/catalog-bridge.ts:247-264`, `promotion-scheduled.ts:82-91` | Move to `bulkReindexProducts` workflow + `trigger.on("promotion.changed", ...)`. | Closes #515 (this work) |
+| `affected.kind === "all"` reindex | `starters/operator/src/api/catalog-bridge.ts:247-264`, `promotion-scheduled.ts:82-91` | Move to `bulkReindexProducts` workflow + `trigger.on("promotion.changed", ...)`. | Closes #515 (this work) |
 | Snapshot capture | `catalog-bridge.ts:289-325` | Move to a `captureBookingSnapshot` workflow + `trigger.on("booking.confirmed", ...)`. Adds retry on transient DB errors. | Follow-up issue |
 | Per-product reindex (product / availability / pricing) | `catalog-bridge.ts:156-229` | Bounded; fine inline today. Move when execution time becomes a concern. | Follow-up issue |
 | Promotion redemption recorder | `catalog-bridge.ts:272-287` | Move to a `recordPromotionRedemptions` workflow for retry semantics. | Follow-up issue |
@@ -1180,7 +1180,7 @@ Accepted: the runtime is single-tenant and in-process by default. `createApp({ w
 
 ### 21.2 Workflow runtime is first-class, not pluggable
 
-Rejected: keep `@voyantjs/workflows` as one orchestration option among several. Already rejected by removing Hatchet / Trigger.dev. Re-affirmed.
+Rejected: keep `@voyant-travel/workflows` as one orchestration option among several. Already rejected by removing Hatchet / Trigger.dev. Re-affirmed.
 
 ### 21.3 Server-side filter matching, structured DSL
 
@@ -1206,7 +1206,7 @@ Accepted: `createApp({ workflows: { db } })` for Mode 2 default, `createApp({ wo
 
 ### 21.7 Mode 2 reuses snapshot-store update guards for resume contention
 
-Earlier drafts proposed a `version` column on a custom `workflow_runs` table for optimistic concurrency. With §21.17's decision to extend `@voyantjs/workflows-orchestrator-node`, this becomes moot: the existing `createPostgresSnapshotRunStore` already implements update guards via read-modify-write, and the existing `voyant_wakeups` lease mechanism handles cross-process drive contention. No new column needed.
+Earlier drafts proposed a `version` column on a custom `workflow_runs` table for optimistic concurrency. With §21.17's decision to extend `@voyant-travel/workflows-orchestrator-node`, this becomes moot: the existing `createPostgresSnapshotRunStore` already implements update guards via read-modify-write, and the existing `voyant_wakeups` lease mechanism handles cross-process drive contention. No new column needed.
 
 ### 21.8 Three orchestrator endpoints, not one
 
@@ -1254,11 +1254,11 @@ The core `EventEnvelope` has no `eventId`. The framework-installed forwarder alw
 
 The DO-per-run model has no native cross-run query layer. Adding one in this work would conflate runtime concerns with read-side concerns. Self-host Mode 1 operators who want a dashboard either accept the limit, switch to Mode 2, or stand up their own index. Voyant Cloud handles it in its repo. The runtime is not in the dashboard-index business.
 
-### 21.17 Mode 2 extends `@voyantjs/workflows-orchestrator-node`, not a new package
+### 21.17 Mode 2 extends `@voyant-travel/workflows-orchestrator-node`, not a new package
 
-Rejected: ship a parallel `@voyantjs/workflows-orchestrator-postgres` package with its own schema, run store, and time wheel.
+Rejected: ship a parallel `@voyant-travel/workflows-orchestrator-postgres` package with its own schema, run store, and time wheel.
 
-Accepted: extend the existing `@voyantjs/workflows-orchestrator-node` package. It already provides `voyant_snapshot_runs`, `voyant_wakeups`, `createPostgresSnapshotRunStore`, `createPersistentWakeupManager`, `runPostgresMigrations`, and self-host server primitives. This work adds two migrations (idempotency column + manifest table) and the `createNodeStandaloneDriver` factory; everything else composes the existing infrastructure. Smaller delta, no parallel data model, no test-matrix duplication.
+Accepted: extend the existing `@voyant-travel/workflows-orchestrator-node` package. It already provides `voyant_snapshot_runs`, `voyant_wakeups`, `createPostgresSnapshotRunStore`, `createPersistentWakeupManager`, `runPostgresMigrations`, and self-host server primitives. This work adds two migrations (idempotency column + manifest table) and the `createNodeStandaloneDriver` factory; everything else composes the existing infrastructure. Smaller delta, no parallel data model, no test-matrix duplication.
 
 ### 21.18 Single-tenant runtime keeps the tenant-shaped protocol with default values
 
@@ -1268,9 +1268,9 @@ Accepted: in the single-tenant runtime, populate `tenantMeta` with literal defau
 
 ### 21.19 Module/Plugin workflow fields use structural descriptors in core
 
-Rejected: import `WorkflowDefinition` from `@voyantjs/workflows` into `packages/core/src/module.ts`. Creates a circular dependency (workflows already imports `Module` and `ModuleContainer` from core).
+Rejected: import `WorkflowDefinition` from `@voyant-travel/workflows` into `packages/core/src/module.ts`. Creates a circular dependency (workflows already imports `Module` and `ModuleContainer` from core).
 
-Accepted: define minimal structural types `WorkflowDescriptor` and `EventFilterDescriptor` in core. `Module.workflows: readonly WorkflowDescriptor[]`. `@voyantjs/workflows`'s concrete `WorkflowDefinition` and `EventFilterRuntimeEntry` satisfy these shapes via TypeScript structural compat. Same pattern Voyant uses for `LinkableDefinition` (`packages/core/src/links.ts`). One-way dependency preserved.
+Accepted: define minimal structural types `WorkflowDescriptor` and `EventFilterDescriptor` in core. `Module.workflows: readonly WorkflowDescriptor[]`. `@voyant-travel/workflows`'s concrete `WorkflowDefinition` and `EventFilterRuntimeEntry` satisfy these shapes via TypeScript structural compat. Same pattern Voyant uses for `LinkableDefinition` (`packages/core/src/links.ts`). One-way dependency preserved.
 
 ### 21.20 Driver is a factory function, not a pre-constructed object
 
@@ -1300,7 +1300,7 @@ Resolve at PR review time; not blocking design sign-off.
 2. **Driver retry on registration.** Recommend 3 retries with exponential backoff for the bootstrap registration call, then log + continue. No event-time retries.
 3. **Path index syntax.** `data.items[0]` is supported. `data.items[]` (any-element) is not. Defer until a use-case appears.
 4. **Wildcard event types.** `trigger.on("booking.*", ...)` — useful for fan-out subscribers (audit). Defer to a future revision; v1 is exact-match only.
-5. **`metadata` envelope contract.** Recommend defining `EventEnvelopeMetadata` extension in `@voyantjs/workflows/events` with workflow-specific fields: `eventId` (always stamped by forwarder), `tenantId`, `actorId`, `requestId?`, `traceId?`. Layer on top of the open-shaped `EventMetadata` (`packages/core/src/events.ts:30`).
+5. **`metadata` envelope contract.** Recommend defining `EventEnvelopeMetadata` extension in `@voyant-travel/workflows/events` with workflow-specific fields: `eventId` (always stamped by forwarder), `tenantId`, `actorId`, `requestId?`, `traceId?`. Layer on top of the open-shaped `EventMetadata` (`packages/core/src/events.ts:30`).
 6. **Mode 2 time wheel batch size.** Recommend 32, configurable via `tickBatchSize` opt.
 7. **Driver shutdown semantics.** Drain in-flight steps, refuse new triggers, wait up to `gracefulShutdownMs` (default 30 s), force-cancel after.
 8. **Counter persistence.** v1 in-process counters are logger-side (ephemeral). Postgres-backed counters are a follow-up.
@@ -1313,7 +1313,7 @@ The branch `feat/workflows-runtime` lands as **4 sequenced PRs**, each independe
 
 ### PR1 — `WorkflowDriver` factory, Mode 2 extensions, container threading, idempotency wiring
 
-The biggest piece. Defines the driver-as-factory contract (§6.3, §21.20), extends `@voyantjs/workflows-orchestrator-node` with the manifest store + idempotency column (§7.2, §21.17), threads `ModuleContainer` through to `WorkflowContext.services` (§11, §21.13), and wires `TriggerOptions.idempotencyKey` end-to-end (§15.2, §21.20-area).
+The biggest piece. Defines the driver-as-factory contract (§6.3, §21.20), extends `@voyant-travel/workflows-orchestrator-node` with the manifest store + idempotency column (§7.2, §21.17), threads `ModuleContainer` through to `WorkflowContext.services` (§11, §21.13), and wires `TriggerOptions.idempotencyKey` end-to-end (§15.2, §21.20-area).
 
 Files (new):
 - `packages/workflows/src/driver.ts` — `WorkflowDriver` + `WorkflowAdmin` interfaces; `DriverFactory` type alias; types, errors.
@@ -1326,7 +1326,7 @@ Files (new):
 - `packages/workflows-orchestrator-node/drizzle/0004_workflow_manifests.sql` — `voyant_workflow_manifests` table + `is_current` partial unique index.
 
 Files (modified):
-- `packages/core/src/module.ts` — adds structural `WorkflowDescriptor` + `EventFilterDescriptor` types; `Module.workflows`, `Module.eventFilters` reference them. No import from `@voyantjs/workflows`.
+- `packages/core/src/module.ts` — adds structural `WorkflowDescriptor` + `EventFilterDescriptor` types; `Module.workflows`, `Module.eventFilters` reference them. No import from `@voyant-travel/workflows`.
 - `packages/core/src/plugin.ts` — same descriptor-based fields on `Plugin`.
 - `packages/workflows/src/handler/index.ts` — `StepHandlerDeps` gains `services?: ModuleContainer`.
 - `packages/workflows/src/runtime/ctx.ts` — `CtxBuildArgs` gains `services?`; `buildCtx` exposes it on `WorkflowContext`.
@@ -1343,7 +1343,7 @@ Tests:
 - Container-threading test: a workflow body resolves a service from `ctx.services` registered by the harness.
 - Migration test: 0003 + 0004 apply cleanly on top of the existing 0000-0002 schema.
 
-Acceptance: compliance suite green for both drivers; `pnpm typecheck` clean; `pnpm -F @voyantjs/workflows-orchestrator-node test` green including the two new migrations.
+Acceptance: compliance suite green for both drivers; `pnpm typecheck` clean; `pnpm -F @voyant-travel/workflows-orchestrator-node test` green including the two new migrations.
 
 PR1 also adds the **single engine fix** that #514 depends on: `TriggerOptions.idempotencyKey` enforcement (currently declared-only — see §3 audit-findings non-goal). Other audit-found gaps (concurrency, schedule firing, debounce/delay/ttl/priority/concurrencyKey) are explicitly out of scope and tracked as separate follow-up issues (#516, #517, #518).
 
@@ -1401,8 +1401,8 @@ Files (new):
 
 Files (modified):
 - `packages/commerce/src/promotions/index.ts` — export `workflows` + `eventFilters`.
-- `templates/operator/src/api/catalog-bridge.ts` — delete the `affected.kind === "all"` warn block.
-- `templates/operator/src/api/promotion-scheduled.ts` — emit `promotion.changed` instead of warning; remove inline indexer call for the all-affected case.
+- `starters/operator/src/api/catalog-bridge.ts` — delete the `affected.kind === "all"` warn block.
+- `starters/operator/src/api/promotion-scheduled.ts` — emit `promotion.changed` instead of warning; remove inline indexer call for the all-affected case.
 
 Tests:
 - `createApp` boot with a module that ships workflows + filters; verify manifest registration and forwarder wiring (against the InMemory driver).
@@ -1439,13 +1439,13 @@ No new test infrastructure required beyond `TEST_DATABASE_URL` for the Mode 2 co
 
 ## 25. References
 
-- Issue: voyantjs/voyant#514 — Implement trigger.on() runtime in workflow orchestrator.
-- Follow-up: voyantjs/voyant#515 — Move `affected.kind === "all"` reindex onto a workflow (closes when PR4 lands).
+- Issue: voyant-travel/voyant#514 — Implement trigger.on() runtime in workflow orchestrator.
+- Follow-up: voyant-travel/voyant#515 — Move `affected.kind === "all"` reindex onto a workflow (closes when PR4 lands).
 - Audit-found follow-ups (filed):
-  - voyantjs/voyant#516 — Wire ConcurrencyPolicy enforcement.
-  - voyantjs/voyant#517 — Implement schedule firing (cron / every / at).
-  - voyantjs/voyant#518 — Wire TriggerOptions enforcement (delay, ttl, debounce, priority, concurrencyKey).
+  - voyant-travel/voyant#516 — Wire ConcurrencyPolicy enforcement.
+  - voyant-travel/voyant#517 — Implement schedule firing (cron / every / at).
+  - voyant-travel/voyant#518 — Wire TriggerOptions enforcement (delay, ttl, debounce, priority, concurrencyKey).
 - Follow-up issues to file (one per row in §20's "Follow-up issue" rows).
 - Voyant Cloud deployment: `/Users/mihai/builds/internal/voyant-all/voyant-cloud` (proprietary repo; out of scope here).
 - Related architecture: `docs/architecture/event-delivery-and-durable-execution-policy.md` (especially §3, §6); `docs/architecture/workflows-monorepo-migration-plan.md`; `docs/architecture/promotions-architecture.md` §9.1, §9.2.
-- Existing surface: `packages/core/src/{events,container,module,plugin}.ts`; `packages/workflows/src/{trigger,protocol/index,workflow,handler/index,runtime/ctx}.ts`; `packages/workflows-orchestrator/src/{orchestrator,types,in-memory-store}.ts`; `packages/workflows-orchestrator-cloudflare/src/{worker,durable-object,types,do-store}.ts`; `apps/workflows-orchestrator-worker/src/worker.ts`; `templates/operator/src/api/{catalog-bridge,promotion-scheduled}.ts`; `packages/hono/src/app.ts`.
+- Existing surface: `packages/core/src/{events,container,module,plugin}.ts`; `packages/workflows/src/{trigger,protocol/index,workflow,handler/index,runtime/ctx}.ts`; `packages/workflows-orchestrator/src/{orchestrator,types,in-memory-store}.ts`; `packages/workflows-orchestrator-cloudflare/src/{worker,durable-object,types,do-store}.ts`; `apps/workflows-orchestrator-worker/src/worker.ts`; `starters/operator/src/api/{catalog-bridge,promotion-scheduled}.ts`; `packages/hono/src/app.ts`.

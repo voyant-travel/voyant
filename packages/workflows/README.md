@@ -1,10 +1,10 @@
-# @voyantjs/workflows
+# @voyant-travel/workflows
 
 Authoring SDK for [Voyant Workflows](https://voyant.cloud/workflows) —
 durable, step-based orchestrations for Voyant Cloud.
 
 ```ts
-import { workflow } from "@voyantjs/workflows";
+import { workflow } from "@voyant-travel/workflows";
 import { z } from "zod";
 
 export const sendBookingReminders = workflow({
@@ -25,36 +25,36 @@ export const sendBookingReminders = workflow({
 
 ## Subpaths
 
-- `@voyantjs/workflows` — authoring API (`workflow`, `workflows`, `trigger`, conditions, errors).
-- `@voyantjs/workflows/client` — app/server-safe managed Cloud client and
+- `@voyant-travel/workflows` — authoring API (`workflow`, `workflows`, `trigger`, conditions, errors).
+- `@voyant-travel/workflows/client` — app/server-safe managed Cloud client and
   Cloud-mode driver. Use this from app code that only needs
   `workflows.trigger(...)` or event forwarding; it does not import workflow
   definitions, runner code, or Node-only workflow dependencies.
-- `@voyantjs/workflows/testing` — in-process test harness
+- `@voyant-travel/workflows/testing` — in-process test harness
   (`runWorkflowForTest`, `resumeWorkflowForTest`).
-- `@voyantjs/workflows/handler` — tenant-side step handler for the
+- `@voyant-travel/workflows/handler` — tenant-side step handler for the
   v1 wire protocol. Mount at `POST /__voyant/workflow-step` in your
   Worker: `export default { fetch: createStepHandler() }`.
-- `@voyantjs/workflows/auth` — paired HMAC signer + verifier for the
+- `@voyant-travel/workflows/auth` — paired HMAC signer + verifier for the
   `X-Voyant-Dispatch-Auth` header. Wires into the orchestrator's
   `sign` hook and the handler's `verifyRequest` hook with a shared
   secret.
-- `@voyantjs/workflows/bindings` — runtime binding types and `env`
+- `@voyant-travel/workflows/bindings` — runtime binding types and `env`
   shim for workflow code that reads platform bindings.
-- `@voyantjs/workflows/config` — `defineConfig` and `voyant.config.ts`
+- `@voyant-travel/workflows/config` — `defineConfig` and `voyant.config.ts`
   types.
-- `@voyantjs/workflows/errors` — typed user/runtime errors
+- `@voyant-travel/workflows/errors` — typed user/runtime errors
   (`FatalError`, `RetryableError`, `TimeoutError`, and related classes).
-- `@voyantjs/workflows/protocol` — wire-protocol types shared with the
+- `@voyant-travel/workflows/protocol` — wire-protocol types shared with the
   orchestrator.
 
 ## Managed Cloud runtime split
 
 Managed Voyant Cloud runs workflow bundles in the hosted Cloud runtime. App
-bundles should import only `@voyantjs/workflows/client` and call
+bundles should import only `@voyant-travel/workflows/client` and call
 `workflows.trigger(...)`; workflow definition files keep importing
 `workflow(...)`, `ctx.step(...)`, `ctx.sleep(...)`, and `trigger.on(...)` from
-`@voyantjs/workflows`.
+`@voyant-travel/workflows`.
 
 Cloud deployments inject:
 

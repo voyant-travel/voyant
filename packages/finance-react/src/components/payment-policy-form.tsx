@@ -5,8 +5,8 @@ import {
   computePaymentSchedule,
   noDepositPolicy,
   type PaymentPolicy,
-} from "@voyantjs/finance"
-import { formatMessage } from "@voyantjs/i18n"
+} from "@voyant-travel/finance"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   InputGroup,
@@ -24,8 +24,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { HelpCircle } from "lucide-react"
 import * as React from "react"
 

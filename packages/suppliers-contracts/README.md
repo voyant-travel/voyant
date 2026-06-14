@@ -1,4 +1,4 @@
-# @voyantjs/suppliers-contracts
+# @voyant-travel/suppliers-contracts
 
 Pure suppliers validation schemas (suppliers, services, rates) and enums,
 zod-only, for consumers (admin SDK, Voyant Connect) that validate supplier
@@ -7,7 +7,7 @@ payloads without the Distribution runtime.
 ## Install
 
 ```bash
-pnpm add @voyantjs/suppliers-contracts zod
+pnpm add @voyant-travel/suppliers-contracts zod
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ import {
   insertSupplierSchema,
   selectSupplierSchema,
   type InsertSupplier,
-} from "@voyantjs/suppliers-contracts"
+} from "@voyant-travel/suppliers-contracts"
 ```
 
-Runtime supplier and counterparty workflows live in `@voyantjs/distribution`.
+Runtime supplier and counterparty workflows live in `@voyant-travel/distribution`.

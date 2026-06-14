@@ -61,8 +61,8 @@ The core modules should stay provider-agnostic. Channel-specific payloads, statu
 
 Suggested packages:
 
-- `@voyantjs/channel-viator-supplier`
-- `@voyantjs/channel-getyourguide-supplier`
+- `@voyant-travel/channel-viator-supplier`
+- `@voyant-travel/channel-getyourguide-supplier`
 
 These packages may be distributed as plugins later, but their runtime role is adapter/extension, not a new domain module.
 

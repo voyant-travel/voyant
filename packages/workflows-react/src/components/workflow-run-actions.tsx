@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { AlertTriangle, Play, RotateCw } from "lucide-react"
 import { useCallback, useState } from "react"
 

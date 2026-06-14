@@ -1,7 +1,7 @@
 # ADR-0001: Tenant scoping is enforced at the deployment boundary, not in-process
 
 - **Status:** Accepted (2026-04-25)
-- **Closes:** [#287](https://github.com/voyantjs/voyant/issues/287)
+- **Closes:** [#287](https://github.com/voyant-travel/voyant/issues/287)
 
 ## Context
 
@@ -32,7 +32,7 @@ or any query interceptor that auto-applies an `organizationId` filter.
 
 Concretely, this means:
 
-- No `requireOrgId` middleware in `@voyantjs/hono`.
+- No `requireOrgId` middleware in `@voyant-travel/hono`.
 - No org-scoped wrapper around `createDbClient(...)`.
 - No `organizationId` parameter is threaded through the request context
   for the purpose of filtering.

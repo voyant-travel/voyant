@@ -1,5 +1,5 @@
-import type { Plugin, Subscriber } from "@voyantjs/core"
-import { financeService } from "@voyantjs/finance"
+import type { Plugin, Subscriber } from "@voyant-travel/core"
+import { financeService } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"

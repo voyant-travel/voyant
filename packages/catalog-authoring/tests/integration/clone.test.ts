@@ -1,5 +1,5 @@
-import { priceCatalogs } from "@voyantjs/commerce"
-import { createTestDb, describeIfDb } from "@voyantjs/voyant-test-utils/db"
+import { priceCatalogs } from "@voyant-travel/commerce"
+import { createTestDb, describeIfDb } from "@voyant-travel/voyant-test-utils/db"
 import { beforeAll, expect, it } from "vitest"
 import { buildProductGraph } from "../../src/builder.js"
 import { cloneProduct } from "../../src/clone.js"

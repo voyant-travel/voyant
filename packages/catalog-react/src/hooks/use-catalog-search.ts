@@ -17,7 +17,7 @@ export type CatalogSearchProjection = "raw" | "storefront-card"
 
 export interface CatalogSearchFilter {
   field: string
-  // biome-ignore lint/suspicious/noExplicitAny: reason: filter shape mirrors the SearchFilter union from @voyantjs/catalog
+  // biome-ignore lint/suspicious/noExplicitAny: reason: filter shape mirrors the SearchFilter union from @voyant-travel/catalog
   [key: string]: any
 }
 

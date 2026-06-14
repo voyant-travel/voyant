@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/accommodations",
+  "name": "@voyant-travel/accommodations",
   "version": "0.105.17",
   "license": "Apache-2.0",
   "type": "module",
@@ -24,17 +24,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/accommodations-contracts": "workspace:^",
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/operations": "workspace:^",
+    "@voyant-travel/accommodations-contracts": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/operations": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -100,15 +100,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/accommodations"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db",
-      "@voyantjs/operations",
-      "@voyantjs/bookings"
+      "@voyant-travel/db",
+      "@voyant-travel/operations",
+      "@voyant-travel/bookings"
     ]
   }
 }

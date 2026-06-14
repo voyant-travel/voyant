@@ -2,7 +2,7 @@
  * Legal admin operations: contracts (CRUD + issue/send/void) and policies
  * (CRUD + cancellation evaluation).
  *
- * Input schemas derive from `@voyantjs/legal-contracts` so the SDK can't drift
+ * Input schemas derive from `@voyant-travel/legal-contracts` so the SDK can't drift
  * from the routes. Output schemas stay loose client-facing projections
  * (ADR-0003) — unknown server fields are stripped, not rejected.
  */
@@ -11,13 +11,13 @@ import {
   contractListQuerySchema,
   insertContractSchema,
   updateContractSchema,
-} from "@voyantjs/legal-contracts/contracts/validation"
+} from "@voyant-travel/legal-contracts/contracts/validation"
 import {
   evaluateCancellationInputSchema,
   insertPolicySchema,
   policyListQuerySchema,
   updatePolicySchema,
-} from "@voyantjs/legal-contracts/policies/validation"
+} from "@voyant-travel/legal-contracts/policies/validation"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"

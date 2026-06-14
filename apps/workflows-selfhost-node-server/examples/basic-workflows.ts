@@ -1,4 +1,4 @@
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 
 workflow({
   id: "docker-hello",

@@ -7,18 +7,21 @@ import {
   resolveBookingDraft,
   resolveBookingExtraLines,
   travelersToRows,
-} from "@voyantjs/bookings/pricing-assignment"
-import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/commerce-react/pricing"
-import { useAddresses } from "@voyantjs/identity-react"
-import { useProduct } from "@voyantjs/inventory-react"
+} from "@voyant-travel/bookings/pricing-assignment"
+import {
+  useOptionUnitPriceRules,
+  usePricingCategories,
+} from "@voyant-travel/commerce-react/pricing"
+import { useAddresses } from "@voyant-travel/identity-react"
+import { useProduct } from "@voyant-travel/inventory-react"
 import {
   availabilityQueryKeys,
   getSlotQueryOptions,
   useSlots,
   useSlotUnitAvailability,
   useVoyantAvailabilityContext,
-} from "@voyantjs/operations-react/availability"
-import { useOrganization, usePerson } from "@voyantjs/relationships-react"
+} from "@voyant-travel/operations-react/availability"
+import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
 import {
   Button,
   Checkbox,
@@ -29,8 +32,8 @@ import {
   SheetHeader,
   SheetTitle,
   Textarea,
-} from "@voyantjs/ui/components"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+} from "@voyant-travel/ui/components"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import {

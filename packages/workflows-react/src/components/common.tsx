@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import { AlertCircle, CheckCircle2, Clock, Copy, RefreshCw, XCircle } from "lucide-react"
 import { useMemo, useState } from "react"
 

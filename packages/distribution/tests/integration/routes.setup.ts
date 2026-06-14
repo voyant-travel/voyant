@@ -18,10 +18,10 @@ function nextChannelName() {
 
 export function setupDistributionRoutes() {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -35,7 +35,7 @@ export function setupDistributionRoutes() {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db as never)
   })
 

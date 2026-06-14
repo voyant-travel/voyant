@@ -14,7 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Field,
   FieldDescription,
@@ -23,8 +23,8 @@ import {
   FieldLegend,
   FieldSet,
   FieldTitle,
-} from "@voyantjs/ui/components/field"
-import { Switch } from "@voyantjs/ui/components/switch"
+} from "@voyant-travel/ui/components/field"
+import { Switch } from "@voyant-travel/ui/components/switch"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

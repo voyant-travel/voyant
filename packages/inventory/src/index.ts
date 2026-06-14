@@ -1,5 +1,5 @@
-import type { LinkableDefinition, Module } from "@voyantjs/core"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"

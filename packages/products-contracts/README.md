@@ -1,4 +1,4 @@
-# @voyantjs/products-contracts
+# @voyant-travel/products-contracts
 
 Pure product content contracts for adapter implementers and external
 consumers that need to validate `products/v1` rich content payloads
@@ -6,7 +6,7 @@ without installing the full Inventory runtime package.
 
 Use this package for `PRODUCTS_CONTENT_SCHEMA_VERSION`,
 `productContentSchema`, `ProductContent`, nested content types, and
-`validateProductContent`. Use `@voyantjs/inventory` when you also need
+`validateProductContent`. Use `@voyant-travel/inventory` when you also need
 Drizzle schema, routes, services, booking integration, catalog projection, or
 runtime content resolution (including the `mergeOverlaysIntoProductContent`
 overlay composition).
@@ -14,7 +14,7 @@ overlay composition).
 ## Install
 
 ```bash
-pnpm add @voyantjs/products-contracts zod
+pnpm add @voyant-travel/products-contracts zod
 ```
 
 ## Usage
@@ -24,7 +24,7 @@ import {
   PRODUCTS_CONTENT_SCHEMA_VERSION,
   productContentSchema,
   type ProductContent,
-} from "@voyantjs/products-contracts"
+} from "@voyant-travel/products-contracts"
 ```
 
-Runtime product authoring and catalog projection live in `@voyantjs/inventory`.
+Runtime product authoring and catalog projection live in `@voyant-travel/inventory`.

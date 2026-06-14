@@ -1,7 +1,11 @@
 // agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { type OperatorAdminMessages, useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
+import {
+  type OperatorAdminMessages,
+  useLocale,
+  useOperatorAdminMessages,
+} from "@voyant-travel/admin"
 import {
   Badge,
   Button,
@@ -10,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Download, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import { useInvoiceAttachments, useVoyantFinanceContext } from "../index.js"
 

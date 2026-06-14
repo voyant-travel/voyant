@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/index.js"
 import type { BookingRecord } from "../index.js"

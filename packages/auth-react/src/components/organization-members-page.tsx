@@ -1,6 +1,6 @@
 "use client"
 
-import { OperatorAdminPageShell } from "@voyantjs/admin"
+import { OperatorAdminPageShell } from "@voyant-travel/admin"
 import {
   Badge,
   Button,
@@ -14,7 +14,7 @@ import {
   Label,
   NativeSelect,
   NativeSelectOption,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2, Send, UserPlus } from "lucide-react"
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react"
 import { useAuthUiI18nOrDefault, useAuthUiMessagesOrDefault } from "../i18n/provider.js"

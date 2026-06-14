@@ -7,11 +7,11 @@ the package names represent one installable module surface.
 
 - Do not put every publishable package on one global release train.
 - Use Changesets `fixed` cohorts for module runtime surfaces that should move
-  together, for example `@voyantjs/bookings`, `@voyantjs/bookings-react`, and
-  `@voyantjs/bookings-react/ui`.
+  together, for example `@voyant-travel/bookings`, `@voyant-travel/bookings-react`, and
+  `@voyant-travel/bookings-react/ui`.
 - Keep `*-contracts` packages independently versioned. Contract package versions
   describe contract changes, not unrelated runtime or UI churn.
-- Use `workspace:^` for internal `@voyantjs/*` dependencies. Patch releases
+- Use `workspace:^` for internal `@voyant-travel/*` dependencies. Patch releases
   should not force compatible dependents to publish; minor and major releases
   still propagate when they leave the dependent's range.
 - Build and verify only the package set that will be published, plus the build

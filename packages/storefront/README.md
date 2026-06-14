@@ -1,4 +1,4 @@
-# @voyantjs/storefront
+# @voyant-travel/storefront
 
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
@@ -56,7 +56,7 @@ uses `sourceSubmissionId` for idempotency; when omitted, the email address is
 used to derive a stable newsletter submission key.
 
 ```ts
-import { createStorefrontHonoModule } from "@voyantjs/storefront"
+import { createStorefrontHonoModule } from "@voyant-travel/storefront"
 
 createStorefrontHonoModule({
   intake: {
@@ -78,6 +78,57 @@ Accepted intake emits `customer.signal.created` on the app event bus with
 signal came from `lead` or `newsletter` intake. Notification adapters can
 subscribe to that event to send CRM email, Slack, or other operator alerts.
 
+## Verification
+
+Storefront owns public email and SMS verification challenges for customer-facing
+checkout and account flows.
+
+```ts
+import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront/verification"
+
+const storefrontVerification = createStorefrontVerificationHonoModule({
+  resolveProviders: (bindings) => [
+    // return notification-compatible providers for email and/or sms
+  ],
+  email: {
+    subject: "Your verification code",
+  },
+})
+```
+
+Mount the returned module in the same app that exposes the public route:
+
+```ts
+createApp({
+  publicPaths: ["/v1/public/storefront-verification"],
+  modules: [storefrontVerification],
+})
+```
+
+The route module serves:
+
+- `POST /v1/public/storefront-verification/email/start`
+- `POST /v1/public/storefront-verification/email/confirm`
+- `POST /v1/public/storefront-verification/sms/start`
+- `POST /v1/public/storefront-verification/sms/confirm`
+
+The verification schema lives at
+`@voyant-travel/storefront/verification/schema` and stores challenge rows in
+`storefront_verification_challenges`. Apps that maintain an explicit Drizzle
+schema array must include:
+
+```ts
+export default defineConfig({
+  schema: [
+    "../../packages/db/src/schema/index.ts",
+    "../../packages/storefront/src/verification/schema.ts",
+  ],
+})
+```
+
+For package-based tooling, `@voyant-travel/storefront` declares its schema as
+`./verification/schema` with `@voyant-travel/db` as the required base schema.
+
 ## Guest Booking Lookup
 
 Use the bookings public guest lookup endpoint before rendering booking overview
@@ -93,7 +144,7 @@ token for non-browser clients. When `RATE_LIMIT` KV is bound, lookups are
 throttled per client IP and booking code.
 
 ```ts
-import { createGuestBookingGuard } from "@voyantjs/storefront"
+import { createGuestBookingGuard } from "@voyant-travel/storefront"
 
 const guestBooking = createGuestBookingGuard()
 
@@ -115,7 +166,7 @@ Storefronts can check whether traveler document facts satisfy departure-level
 transport rules before checkout confirmation.
 
 ```ts
-import { createStorefrontPublicRoutes } from "@voyantjs/storefront"
+import { createStorefrontPublicRoutes } from "@voyant-travel/storefront"
 
 createStorefrontPublicRoutes({
   transportEligibilityRules: [
@@ -134,7 +185,7 @@ createStorefrontPublicRoutes({
 ```
 
 Schemas and the standalone evaluator are exported from
-`@voyantjs/storefront/transport-eligibility`.
+`@voyant-travel/storefront/transport-eligibility`.
 
 The public API is available at:
 

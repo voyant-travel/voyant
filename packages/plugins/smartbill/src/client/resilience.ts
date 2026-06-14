@@ -2,7 +2,7 @@ import {
   type CircuitBreaker,
   CircuitOpenError,
   type RetryOptions,
-} from "@voyantjs/utils/resilience"
+} from "@voyant-travel/utils/resilience"
 
 /**
  * Outbound-HTTP resilience knobs for the SmartBill client. Every call goes

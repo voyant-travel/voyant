@@ -21,7 +21,7 @@ starters; see
 
 This document covers the catalog foundation plus the catalog-owned semantic
 search primitives: embeddings, hybrid/semantic search orchestration, and
-cross-audience search helpers now live in `@voyantjs/catalog`. Agent runtimes
+cross-audience search helpers now live in `@voyant-travel/catalog`. Agent runtimes
 wrap the catalog HTTP APIs directly; MCP packaging is an application/runtime
 concern, not a first-party catalog package. Phase 3 (the flights vertical and
 the swappable `ReferenceDataProvider`) is designed in
@@ -175,7 +175,7 @@ packages/catalog       shared cross-cutting infrastructure:
                          result-set provenance markers); see §5.4.3
   src/drift/             drift event types + queue contract
   src/events/            catalog event taxonomy, payload builders with
-                         visibility filtering; emits via @voyantjs/core/events,
+                         visibility filtering; emits via @voyant-travel/core/events,
                          consumed by the existing webhook delivery pipeline (§5.8)
 ```
 
@@ -191,8 +191,8 @@ Vertical packages depend on `packages/catalog` for the contract types and the sh
 
 Extras represent booking add-ons (optional line items on a booked parent), not
 independently-sellable inventory. They are exposed through
-`@voyantjs/inventory/extras` for operated authoring/catalog projection and
-`@voyantjs/bookings/extras` for booking-time selections. Extras are a
+`@voyant-travel/inventory/extras` for operated authoring/catalog projection and
+`@voyant-travel/bookings/extras` for booking-time selections. Extras are a
 borderline case for the catalog contract:
 
 - It does need provenance (extras can be sourced from upstream alongside their parent product).
@@ -392,7 +392,7 @@ The architecture supports all of these from day one; the contract does not chang
 The overlay store is **not** Voyant-admin-UI-only. It accepts writes from multiple sources, all governed by the same field-policy contract:
 
 - **Voyant admin UI** — the built-in editorial surface; default writer for deployments that don't run an external CMS.
-- **External CMS plugins** — Sanity, Payload, Contentful, WordPress, Strapi. Each CMS has a Voyant plugin (the inbound mirror of the existing outbound `@voyantjs/voyant-plugin-payload-cms`) that listens to CMS webhooks and writes overlay rows. Marketing teams keep their existing tools; their edits land in the overlay store.
+- **External CMS plugins** — Sanity, Payload, Contentful, WordPress, Strapi. Each CMS has a Voyant plugin (the inbound mirror of the existing outbound `@voyant-travel/voyant-plugin-payload-cms`) that listens to CMS webhooks and writes overlay rows. Marketing teams keep their existing tools; their edits land in the overlay store.
 - **Bulk import** — CSV upload, spreadsheet sync, batch operations for migration or large editorial moves.
 - **AI-generated copy** — automated SEO copywriters, alt-text generators, multilingual translation pipelines.
 - **Storefront-driven** — analytics-driven auto-tuning (e.g. underperforming titles get rewritten), gated by overlay-friction policies.
@@ -418,7 +418,7 @@ Per-field canonical-writer configuration (e.g. "Sanity is the only writer that m
 
 **Bidirectional CMS sync.** A typical CMS plugin handles both directions:
 
-- **Outbound** (already implemented in `@voyantjs/voyant-plugin-payload-cms`): listens for `catalog.entity.*` events, upserts the corresponding doc in the CMS so editors see the entity in their tool.
+- **Outbound** (already implemented in `@voyant-travel/voyant-plugin-payload-cms`): listens for `catalog.entity.*` events, upserts the corresponding doc in the CMS so editors see the entity in their tool.
 - **Inbound** (new for this architecture): listens for CMS webhooks, writes overlay rows when editors save changes.
 
 Single package per CMS, two subscriber sets, one bidirectional contract.
@@ -493,7 +493,7 @@ The contract is intentionally narrow:
 
 Swap-in implementers can be:
 
-- **First-party plugins** — Voyant may publish Algolia, Meilisearch, or Postgres FTS adapters as separate packages (`@voyantjs/voyant-indexer-algolia`, etc.) if real demand emerges.
+- **First-party plugins** — Voyant may publish Algolia, Meilisearch, or Postgres FTS adapters as separate packages (`@voyant-travel/voyant-indexer-algolia`, etc.) if real demand emerges.
 - **Operator-built** — a deployment with an existing Elasticsearch cluster writes its own adapter against the contract.
 - **Third-party** — a vendor or integrator publishes an adapter package the same way they would publish a source adapter (§5.6).
 
@@ -725,7 +725,7 @@ The catalog plane emits change events when a CatalogEntry's projection or overla
 1. **Internal:** the indexer reindex queue (§5.4), the drift detector (§5.5), in-deployment subscribers reacting to mutations.
 2. **External:** other Voyant deployments, third-party storefronts, partner agencies, CMS systems, internal data lakes — anything holding a downstream copy of catalog data that needs to stay fresh.
 
-The internal case rides Voyant's in-process event bus (`@voyantjs/core/events`). The external case rides Voyant's existing webhook delivery infrastructure (`infraWebhookSubscriptionsTable` + the delivery pipeline documented in [`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md)). The catalog plane does **not** reinvent subscription storage, signing, retry, or HTTP delivery — those already exist. This section defines only the catalog-specific event taxonomy and payload-visibility rules that sit on top.
+The internal case rides Voyant's in-process event bus (`@voyant-travel/core/events`). The external case rides Voyant's existing webhook delivery infrastructure (`infraWebhookSubscriptionsTable` + the delivery pipeline documented in [`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md)). The catalog plane does **not** reinvent subscription storage, signing, retry, or HTTP delivery — those already exist. This section defines only the catalog-specific event taxonomy and payload-visibility rules that sit on top.
 
 #### 5.8.1. The motivating cross-deployment case
 
@@ -800,7 +800,7 @@ The catalog plane is responsible for:
 - Detecting which mutations should fire which catalog event names (mutation hooks in vertical service layers + the overlay store).
 - Constructing payloads with field-policy-driven visibility filtering.
 - Stamping events with provenance.
-- Emitting via `@voyantjs/core/events`; the existing dispatcher routes domain events to the webhook delivery pipeline.
+- Emitting via `@voyant-travel/core/events`; the existing dispatcher routes domain events to the webhook delivery pipeline.
 
 The existing webhook system is responsible for:
 
@@ -1113,7 +1113,7 @@ The work has natural sequencing because vertical adoption depends on contract ty
 7. `packages/catalog/src/indexer/typesense.ts` — native Typesense implementation of `IndexerAdapter` (§5.4.1). Default for v1 deployments.
 8. `packages/catalog/src/search/rerank.ts` — Tier 2 two-stage-search orchestration helper for browse-time pricing (§5.4.3). Storefront BFFs import this; v1 ships the helper but storefronts opt in per query.
 9. `packages/catalog/src/drift/events.ts` — drift event types.
-10. `packages/catalog/src/events/taxonomy.ts` — catalog event names + payload builders with field-policy-driven visibility filtering (§5.8). Emits via `@voyantjs/core/events`; reuses the existing webhook delivery pipeline.
+10. `packages/catalog/src/events/taxonomy.ts` — catalog event names + payload builders with field-policy-driven visibility filtering (§5.8). Emits via `@voyant-travel/core/events`; reuses the existing webhook delivery pipeline.
 11. `packages/catalog/src/adapter/contract.ts` — the public source-adapter contract (§5.6).
 
 The `EmbeddingProvider` contract and embedding pipeline ship in `packages/catalog`.

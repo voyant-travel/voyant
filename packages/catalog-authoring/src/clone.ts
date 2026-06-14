@@ -3,4 +3,4 @@ export {
   type CloneProductOptions,
   type CloneProductOutcome,
   cloneProduct,
-} from "@voyantjs/inventory/authoring"
+} from "@voyant-travel/inventory/authoring"

@@ -1,20 +1,20 @@
 // agent-quality: file-size exception -- owner: relationships-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { useAddressMutation } from "@voyantjs/identity-react"
-import { Button } from "@voyantjs/ui/components/button"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { PhoneInput } from "@voyantjs/ui/components/phone-input"
+import { useAddressMutation } from "@voyant-travel/identity-react"
+import { Button } from "@voyant-travel/ui/components/button"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"

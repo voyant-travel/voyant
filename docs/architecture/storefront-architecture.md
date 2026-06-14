@@ -8,7 +8,7 @@ The goal is simple:
 - keep `storefront` as the customer-facing product/runtime concept
 - keep `/v1/public/*` as the external-facing HTTP boundary
 - separate public contracts from admin CRUD semantics
-- keep the final storefront application template-owned while the shared public
+- keep the final storefront application starter-owned while the shared public
   contract remains framework-owned
 
 Storefront should be a first-class framework surface, not just a set of public
@@ -98,7 +98,7 @@ That means:
 Rule:
 
 The shared storefront/public contract should be reusable and typed, not
-template-local glue.
+starter-local glue.
 
 ### 6. Public context should stay explicit
 
@@ -110,7 +110,7 @@ Public contract behavior may depend on context such as:
 - customer/session identity when authenticated
 
 That context should be explicit in the public contract and routing model instead
-of hidden as template-local behavior.
+of hidden as starter-local behavior.
 
 Rule:
 
@@ -162,7 +162,7 @@ Voyant already has distinct frontend layers that should remain separate:
 - public/storefront contract packages
 - shared React/runtime packages
 - reusable module components shipped from the relevant `*-react` packages
-- app/template-owned final storefront shell
+- app/starter-owned final storefront shell
 
 These are complementary layers, not competing strategies.
 
@@ -174,7 +174,7 @@ page composition and deployment-specific presentation.
 
 ### 9. Preserve editable storefront composition
 
-Voyant should keep final storefront presentation editable in the app/template or
+Voyant should keep final storefront presentation editable in the app/starter or
 surface package. The retired registry/source-installed block approach is no
 longer the target package model.
 
@@ -193,9 +193,9 @@ should not be replaced with a closed turnkey frontend system.
 
 ## Template Ownership
 
-### 10. Storefront apps should remain template-owned
+### 10. Storefront apps should remain starter-owned
 
-The final storefront application should remain app/template-owned.
+The final storefront application should remain app/starter-owned.
 
 That includes:
 
@@ -209,7 +209,7 @@ frontend product.
 
 Rule:
 
-The final storefront UX is template-owned even when the shared public contract
+The final storefront UX is starter-owned even when the shared public contract
 is framework-owned.
 
 ### 11. Shared public contracts should reduce app-local compatibility code
@@ -233,7 +233,7 @@ layers, not create more of them.
 When adding or reviewing a storefront/public capability:
 
 1. Decide whether it belongs in the shared public contract or only in an
-   app/template.
+   app/starter.
 2. Keep the HTTP surface under `/v1/public/*`.
 3. Keep `storefront` as the package/runtime term, not a nested HTTP namespace.
 4. Shape the public payload around customer-facing needs, not admin CRUD.
@@ -242,7 +242,7 @@ When adding or reviewing a storefront/public capability:
    customer-entered state updates, repricing mutations, finalization, and
    payment bootstrap.
 7. Keep payment amounts server-derived from booking/payment targets.
-8. Keep the final storefront shell template-owned.
+8. Keep the final storefront shell starter-owned.
 9. Preserve editable storefront composition while using `-react` for runtime
    helpers and reusable module components.
 
@@ -252,7 +252,7 @@ This guide does not introduce:
 
 - a closed turnkey storefront product
 - a second HTTP namespace for `storefront`
-- a replacement for editable app/template-owned storefront presentation
+- a replacement for editable app/starter-owned storefront presentation
 
 The point is a clear shared storefront/public contract, not a more rigid
 frontend platform.

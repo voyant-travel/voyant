@@ -12,7 +12,7 @@ export function createApp(db: CatalogDemoDb): Hono {
     return c.json({ error: message }, 500)
   })
 
-  // Permissive CORS — the operator template hits these endpoints from a
+  // Permissive CORS — the operator starter hits these endpoints from a
   // worker, and ops users hit /inventory from a browser tab. Real upstream
   // sources lock CORS down; the demo is a dev tool.
   app.use("*", async (c, next) => {

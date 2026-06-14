@@ -1,4 +1,4 @@
-// @voyantjs/workflows/errors
+// @voyant-travel/workflows/errors
 //
 // Typed error classes used across the Voyant Workflows SDK.
 // Contract defined in docs/sdk-surface.md §7.

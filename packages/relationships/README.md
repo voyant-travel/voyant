@@ -1,4 +1,4 @@
-# @voyantjs/relationships
+# @voyant-travel/relationships
 
 Relationships owns people, organizations, account records, profile context,
 person documents, activities, custom fields, segments, customer signals, and
@@ -7,14 +7,14 @@ KMS-backed person PII route runtime.
 ## Install
 
 ```bash
-pnpm add @voyantjs/relationships
+pnpm add @voyant-travel/relationships
 ```
 
 ## Usage
 
 ```typescript
-import { relationshipsModule } from "@voyantjs/relationships"
-import { createApp } from "@voyantjs/hono"
+import { relationshipsModule } from "@voyant-travel/relationships"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [relationshipsModule],

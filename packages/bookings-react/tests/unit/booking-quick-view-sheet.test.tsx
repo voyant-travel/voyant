@@ -1,5 +1,5 @@
-import type { InvoiceAttachmentRecord, InvoiceRecord } from "@voyantjs/finance-react"
-import type { LegalContractAttachmentRecord, LegalContractRecord } from "@voyantjs/legal-react"
+import type { InvoiceAttachmentRecord, InvoiceRecord } from "@voyant-travel/finance-react"
+import type { LegalContractAttachmentRecord, LegalContractRecord } from "@voyant-travel/legal-react"
 import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -32,12 +32,12 @@ vi.mock("../../src/index.js", () => ({
   useRevealTraveler: () => ({ data: null, isFetching: false, isError: false }),
 }))
 
-vi.mock("@voyantjs/relationships-react", () => ({
+vi.mock("@voyant-travel/relationships-react", () => ({
   useOrganization: () => ({ data: null }),
   usePerson: () => ({ data: null }),
 }))
 
-vi.mock("@voyantjs/finance-react", () => ({
+vi.mock("@voyant-travel/finance-react", () => ({
   useAdminBookingPayments: () => ({ data: { data: { payments: [] } } }),
   useBookingPaymentSchedules: () => ({ data: { data: [] } }),
   useInvoices: () => ({ data: { data: financeState.invoices } }),
@@ -50,7 +50,7 @@ vi.mock("@voyantjs/finance-react", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/legal-react", () => ({
+vi.mock("@voyant-travel/legal-react", () => ({
   useLegalContracts: () => ({ data: { data: legalState.contracts } }),
   useLegalContractAttachments: ({ contractId }: { contractId: string }) => ({
     data: legalState.attachmentsByContractId[contractId] ?? [],
@@ -61,7 +61,7 @@ vi.mock("@voyantjs/legal-react", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/ui/components", () => ({
+vi.mock("@voyant-travel/ui/components", () => ({
   Badge: ({ children, className }: { children?: ReactNode; className?: string }) => (
     <span className={className}>{children}</span>
   ),

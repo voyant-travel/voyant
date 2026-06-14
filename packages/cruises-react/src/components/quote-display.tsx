@@ -1,8 +1,8 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type * as React from "react"
 import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 import type { Quote } from "../index.js"

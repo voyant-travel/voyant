@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query"
-import type { FlightOffer, FlightSearchRequest } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
+import type { FlightOffer, FlightSearchRequest } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
 import type { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { flightsQueryKeys } from "../index.js"
 import { EMPTY_FLIGHT_FILTERS, type FlightFiltersValue } from "./flight-filters-bar.js"

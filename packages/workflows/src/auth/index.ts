@@ -1,4 +1,4 @@
-// @voyantjs/workflows/auth
+// @voyant-travel/workflows/auth
 //
 // Paired HMAC signer + verifier for the `X-Voyant-Dispatch-Auth`
 // header on `POST /__voyant/workflow-step`. Both sides share a
@@ -11,14 +11,14 @@
 //
 // Usage on the orchestrator side:
 //
-//   import { createHmacSigner } from "@voyantjs/workflows/auth";
+//   import { createHmacSigner } from "@voyant-travel/workflows/auth";
 //   const sign = await createHmacSigner(process.env.VOYANT_SIGNING_KEY!);
 //   createDispatchStepHandler(script, { dispatcher, sign });
 //
 // Usage on the tenant side:
 //
-//   import { createHmacVerifier } from "@voyantjs/workflows/auth";
-//   import { createStepHandler } from "@voyantjs/workflows/handler";
+//   import { createHmacVerifier } from "@voyant-travel/workflows/auth";
+//   import { createStepHandler } from "@voyant-travel/workflows/handler";
 //   const verify = await createHmacVerifier(env.VOYANT_SIGNING_KEY);
 //   export default { fetch: createStepHandler({ verifyRequest: verify }) };
 

@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
   ConfirmActionButton,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   ArrowLeft,
   Building,

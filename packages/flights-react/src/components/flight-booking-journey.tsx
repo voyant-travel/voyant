@@ -7,9 +7,9 @@ import type {
   FlightPassenger,
   PassengerCounts,
   PaymentIntent,
-} from "@voyantjs/flights/contract/types"
-import { Button } from "@voyantjs/ui/components/button"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/flights/contract/types"
+import { Button } from "@voyant-travel/ui/components/button"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { useFlightsUiI18nOrDefault } from "../i18n/index.js"

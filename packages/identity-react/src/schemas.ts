@@ -2,7 +2,7 @@ import {
   insertAddressSchema,
   insertContactPointSchema,
   insertNamedContactSchema,
-} from "@voyantjs/identity"
+} from "@voyant-travel/identity"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

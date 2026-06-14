@@ -1,10 +1,10 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import {
   insertAddressForEntitySchema,
   insertContactPointForEntitySchema,
   updateAddressSchema as updateIdentityAddressSchema,
   updateContactPointSchema as updateIdentityContactPointSchema,
-} from "@voyantjs/identity/validation"
+} from "@voyant-travel/identity/validation"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 

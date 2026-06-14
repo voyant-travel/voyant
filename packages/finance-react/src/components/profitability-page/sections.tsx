@@ -1,4 +1,4 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Card,
   CardDescription,
@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -17,8 +17,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useFinanceUiI18nOrDefault } from "../../i18n/index.js"
 import type { DepartureProfitabilityRow, ProductProfitabilityRow } from "../../index.js"
 import { useTravelerProfitability } from "../../index.js"

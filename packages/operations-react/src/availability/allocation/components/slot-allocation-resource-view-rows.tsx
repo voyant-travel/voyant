@@ -4,7 +4,7 @@ import type {
   AllocationManifestTraveler,
   AllocationPaymentStatus,
   AllocationResource,
-} from "@voyantjs/operations-react/availability"
+} from "@voyant-travel/operations-react/availability"
 import {
   Badge,
   Button,
@@ -26,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Accessibility,
   Bed,

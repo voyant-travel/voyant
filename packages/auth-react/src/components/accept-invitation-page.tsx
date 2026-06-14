@@ -10,7 +10,7 @@ import {
   cn,
   Input,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { AlertCircle, CheckCircle2, Loader2, LogIn, UserPlus } from "lucide-react"
 import { type FormEvent, useEffect, useId, useState } from "react"
 import { VoyantApiError } from "../client.js"

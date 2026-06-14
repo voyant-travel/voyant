@@ -26,7 +26,7 @@ import {
   type PendingWaitpoint,
   type RunRecord,
   type StepHandler,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 import type { StepDispatcher } from "./dispatchers.js"
 import { createDurableObjectRunStore } from "./do-store.js"

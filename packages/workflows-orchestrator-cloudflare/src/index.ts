@@ -1,6 +1,6 @@
-// @voyantjs/workflows-orchestrator-cloudflare
+// @voyant-travel/workflows-orchestrator-cloudflare
 //
-// Cloudflare Worker + Durable Object adapter for @voyantjs/workflows-orchestrator.
+// Cloudflare Worker + Durable Object adapter for @voyant-travel/workflows-orchestrator.
 // Composes the protocol-agnostic state machine with a DO-backed run
 // store and a pluggable step dispatcher (`StepDispatcher`).
 //

@@ -1,6 +1,6 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { beforeEach, describe, expect, it } from "vitest"
 import {
   createServiceBindingDispatcher,

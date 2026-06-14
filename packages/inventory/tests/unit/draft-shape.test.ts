@@ -1,4 +1,4 @@
-import { DEFAULT_PAX_BANDS } from "@voyantjs/catalog/booking-engine"
+import { DEFAULT_PAX_BANDS } from "@voyant-travel/catalog/booking-engine"
 import { describe, expect, it } from "vitest"
 import type { ProductContent } from "../../src/content-shape.js"
 import { productContentSchema } from "../../src/content-shape.js"

@@ -1,6 +1,6 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { handleApiError, parseJsonBody, RequestValidationError } from "@voyantjs/hono"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { handleApiError, parseJsonBody, RequestValidationError } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

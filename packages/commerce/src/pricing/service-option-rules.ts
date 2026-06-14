@@ -1,5 +1,5 @@
-import type { EventBus } from "@voyantjs/core"
-import { RequestValidationError } from "@voyantjs/hono"
+import type { EventBus } from "@voyant-travel/core"
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, asc, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

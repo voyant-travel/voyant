@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/admin-contracts",
+  "name": "@voyant-travel/admin-contracts",
   "version": "0.104.4",
   "license": "Apache-2.0",
   "type": "module",
@@ -30,21 +30,21 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/bookings-contracts": "workspace:^",
-    "@voyantjs/crm-contracts": "workspace:^",
-    "@voyantjs/finance-contracts": "workspace:^",
-    "@voyantjs/legal-contracts": "workspace:^",
-    "@voyantjs/products-contracts": "workspace:^",
+    "@voyant-travel/bookings-contracts": "workspace:^",
+    "@voyant-travel/relationships-contracts": "workspace:^",
+    "@voyant-travel/finance-contracts": "workspace:^",
+    "@voyant-travel/legal-contracts": "workspace:^",
+    "@voyant-travel/products-contracts": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/admin-contracts"
   }
 }

@@ -3,8 +3,8 @@
 // swaps. Matches the Trigger.dev style of a persistent, low-chrome
 // left rail scoped to the current session.
 
-import { Button } from "@voyantjs/ui/components/button"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Button } from "@voyant-travel/ui/components/button"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { ListTree, Workflow } from "lucide-react"
 

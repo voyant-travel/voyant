@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
+} from "@voyant-travel/ui/components"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import { useEffect, useState } from "react"
 import { type PricingCategoryRecord, usePricingCategoryMutation } from "./commerce-client.js"
 import { useProductDetailMessages } from "./host.js"

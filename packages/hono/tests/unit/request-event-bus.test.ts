@@ -1,4 +1,4 @@
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import { requestScopedEventBus } from "../../src/lib/request-event-bus.js"

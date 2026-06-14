@@ -7,7 +7,7 @@
  * Why a subscriber rather than a `BookEntityDeps` hook: `bookEntity`
  * does sequential writes without an enclosing `db.transaction(...)`,
  * and the owned `createBooking` path opens its own transaction in
- * `@voyantjs/finance`. There is no single commit transaction to be
+ * `@voyant-travel/finance`. There is no single commit transaction to be
  * atomic with — claiming "atomic with commit" would be misleading.
  *
  * Per docs/architecture/promotions-architecture.md §3.6 + §7.3.
@@ -22,8 +22,8 @@
  * aggregate cleanly even if the subscriber is replayed.
  */
 
-import { type AppliedOffer, catalogQuotesTable } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import { type AppliedOffer, catalogQuotesTable } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -131,7 +131,7 @@ export async function recordPromotionRedemptionsForBooking(
 }
 
 /**
- * Wiring guidance for the operator template — the canonical subscriber
+ * Wiring guidance for the operator starter — the canonical subscriber
  * pattern (mirrors how `catalog-bridge.ts` wires `captureSnapshotGraph`):
  *
  *   eventBus.subscribe<BookingConfirmedEvent>("booking.confirmed", async ({ data }) => {
@@ -150,7 +150,7 @@ export async function recordPromotionRedemptionsForBooking(
  *
  * The factory is intentionally kept in the template (not here) because:
  *   - The subscriber needs the template's `withDbFromEnv` from
- *     `templates/operator/src/api/lib/db.ts` (the Pool lifecycle helper
+ *     `starters/operator/src/api/lib/db.ts` (the Pool lifecycle helper
  *     introduced in #510 / #512). That helper isn't exported from a
  *     package.
  *   - Keeping the package package-side core (`recordPromotionRedemptionsForBooking`)

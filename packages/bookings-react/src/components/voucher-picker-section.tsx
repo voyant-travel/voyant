@@ -1,7 +1,7 @@
 "use client"
 
-import { usePublicVoucherValidationMutation } from "@voyantjs/finance-react"
-import { Button, Input, Label } from "@voyantjs/ui/components"
+import { usePublicVoucherValidationMutation } from "@voyant-travel/finance-react"
+import { Button, Input, Label } from "@voyant-travel/ui/components"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 

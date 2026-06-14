@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { relations } from "drizzle-orm"
 import {
   boolean,
@@ -71,7 +71,7 @@ export const suppliers = pgTable(
      * Customer-facing payment policy override. When set, sourced
      * bookings against this supplier inherit these terms instead of
      * the deployment's default policy. Shape mirrors `PaymentPolicy`
-     * from `@voyantjs/finance` (jsonb so the shape can evolve
+     * from `@voyant-travel/finance` (jsonb so the shape can evolve
      * without per-field column adds).
      *
      * `null` means "inherit from operator default" — most suppliers

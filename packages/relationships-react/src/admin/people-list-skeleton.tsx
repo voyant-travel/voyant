@@ -1,7 +1,7 @@
 "use client"
 
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
+import { Table, TableHead, TableHeader, TableRow } from "@voyant-travel/ui/components/table"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { SkeletonRows } from "./crm-skeleton-rows.js"

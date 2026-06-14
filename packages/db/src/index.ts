@@ -236,7 +236,7 @@ function getDefaultDbInstance() {
     const defaultAdapter = (process.env.DB_ADAPTER as DbAdapter) || "edge"
     if (defaultAdapter === "serverless") {
       throw new Error(
-        "The global @voyantjs/db proxy cannot use DB_ADAPTER=serverless. Use createServerlessDbClient() per request and dispose it after use.",
+        "The global @voyant-travel/db proxy cannot use DB_ADAPTER=serverless. Use createServerlessDbClient() per request and dispose it after use.",
       )
     }
     _defaultDb = getDb(defaultAdapter)

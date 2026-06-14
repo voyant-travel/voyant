@@ -35,7 +35,7 @@ vi.mock("drizzle-orm", async () => {
   }
 })
 
-vi.mock("@voyantjs/db/schema/infra", () => ({
+vi.mock("@voyant-travel/db/schema/infra", () => ({
   infraIdempotencyKeysTable: {
     id: { __name: "id" },
     scope: { __name: "scope" },

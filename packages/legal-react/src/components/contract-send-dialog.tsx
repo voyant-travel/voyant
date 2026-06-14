@@ -9,7 +9,7 @@ import {
   Input,
   Label,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2, Mail, Paperclip } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLegalUiMessagesOrDefault } from "../i18n/index.js"
@@ -21,7 +21,7 @@ export interface ContractSendDialogProps {
   contract: LegalContractRecord
   /**
    * Recipient email — typically the linked person's primary email, resolved
-   * by the caller (the operator template knows how to look it up via CRM).
+   * by the caller (the operator starter knows how to look it up via CRM).
    * The dialog uses this as the read-only "To" line; if absent the dialog
    * shows a warning and disables Send.
    */

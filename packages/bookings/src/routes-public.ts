@@ -1,4 +1,9 @@
-import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseQuery,
+  UnauthorizedApiError,
+} from "@voyant-travel/hono"
 import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 

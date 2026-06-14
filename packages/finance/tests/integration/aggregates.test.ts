@@ -33,19 +33,19 @@ describe.skipIf(!DB_AVAILABLE)("getFinanceAggregates dashboard fields", () => {
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
   })
 
   beforeEach(async () => {
     counter = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

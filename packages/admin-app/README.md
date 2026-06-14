@@ -1,8 +1,8 @@
-# @voyantjs/admin-app
+# @voyant-travel/admin-app
 
 First-party admin app composition package.
 
-The reusable shell implementation lives in `@voyantjs/admin/app/*` so the
+The reusable shell implementation lives in `@voyant-travel/admin/app/*` so the
 top-level `admin` package owns the packaged staff shell and extension surface.
 This package re-exports those shell helpers for compatibility and owns the
 domain-backed core extension bundle that imports first-party domain React
@@ -35,12 +35,12 @@ packages.
 
 ```tsx
 // src/router.tsx
-import { createAdminRouter } from "@voyantjs/admin/app"
+import { createAdminRouter } from "@voyant-travel/admin/app"
 
 export const getRouter = () => createAdminRouter({ routeTree })
 
 // src/routes/__root.tsx
-import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyantjs/admin/app/root"
+import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyant-travel/admin/app/root"
 
 export const Route = createRootRouteWithContext<AdminRouterContext>()({
   head: () => adminRootHead({ title: "Acme Admin" }),
@@ -54,7 +54,7 @@ import {
   AdminWorkspacePendingFallback,
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
-} from "@voyantjs/admin/app/workspace"
+} from "@voyant-travel/admin/app/workspace"
 
 export const Route = createFileRoute("/_workspace")({
   ssr: "data-only",
@@ -78,8 +78,8 @@ export const Route = createFileRoute("/_workspace")({
 What stays app-owned: the provider list (which domain modules are mounted),
 extension definitions, navigation icons, branding, and the auth client.
 
-New first-party code should import shell helpers from `@voyantjs/admin/app/*`
-and the domain-backed core extension from `@voyantjs/admin-app/core-extension`.
+New first-party code should import shell helpers from `@voyant-travel/admin/app/*`
+and the domain-backed core extension from `@voyant-travel/admin-app/core-extension`.
 
 ## License
 

@@ -1,4 +1,4 @@
-import type { LinkableDefinition } from "@voyantjs/core"
+import type { LinkableDefinition } from "@voyant-travel/core"
 
 export type { PoliciesAdminRoutes, PoliciesPublicRoutes } from "./routes.js"
 

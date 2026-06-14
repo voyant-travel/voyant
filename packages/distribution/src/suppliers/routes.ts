@@ -1,8 +1,8 @@
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
-} from "@voyantjs/db/aggregate-snapshots"
-import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+} from "@voyant-travel/db/aggregate-snapshots"
+import { parseJsonBody, parseQuery, requireUserId } from "@voyant-travel/hono"
 import {
   insertAddressForEntitySchema,
   insertContactPointForEntitySchema,
@@ -10,7 +10,7 @@ import {
   updateAddressSchema as updateIdentityAddressSchema,
   updateContactPointSchema as updateIdentityContactPointSchema,
   updateNamedContactSchema as updateIdentityNamedContactSchema,
-} from "@voyantjs/identity/validation"
+} from "@voyant-travel/identity/validation"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"

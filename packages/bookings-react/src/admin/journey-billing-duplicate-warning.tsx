@@ -6,7 +6,7 @@
  * a link to each. Helps operators avoid accidental duplicate bookings.
  */
 
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
 
 import { useBookings } from "../hooks/use-bookings.js"
 import type { BillingExtrasContext } from "../journey/index.js"

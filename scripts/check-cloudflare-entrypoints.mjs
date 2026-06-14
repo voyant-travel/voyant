@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, "..")
 
-const ENTRYPOINTS = ["templates/operator/src/entry.ts"]
+const ENTRYPOINTS = ["starters/operator/src/entry.ts"]
 
 const FORBIDDEN_IMPORTS = [
   {

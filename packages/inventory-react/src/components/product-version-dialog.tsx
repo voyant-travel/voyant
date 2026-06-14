@@ -1,15 +1,15 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
-import { Label } from "@voyantjs/ui/components/label"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/ui/components/dialog"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

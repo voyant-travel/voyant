@@ -4,7 +4,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 // Lean statics only: the client module (fetcher) and the skeletons. Query
 // options resolve via dynamic import inside the loaders so the data layer
@@ -20,16 +20,16 @@ import { PersonDetailSkeleton } from "./person-detail-skeleton.js"
  * Semantic destinations the Relationships admin surfaces navigate to (packaged-admin
  * RFC §4.7). The people/organization pages link into routes they do not own,
  * so they resolve these keys through `useAdminHref`/`useAdminNavigate` from
- * `@voyantjs/admin`; hosts register one resolver per key
+ * `@voyant-travel/admin`; hosts register one resolver per key
  * (`satisfies AdminDestinationResolvers`).
  *
  * `person.detail` and `organization.detail` are ALSO declared by
- * `@voyantjs/bookings-react/admin` (its pages were their first consumers).
+ * `@voyant-travel/bookings-react/admin` (its pages were their first consumers).
  * This package cannot peer-depend on bookings-ui — bookings-ui depends on
  * crm-ui — so the keys are re-declared here shape-locked: interface merging
  * requires the member shape to stay identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The Relationships people list page. */
     "person.list": Record<string, never>
@@ -73,11 +73,11 @@ export interface CreateRelationshipsAdminExtensionOptions {
 
 /**
  * The Relationships admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The People and Organizations nav items are
  * part of the BASE operator navigation — see `createOperatorAdminNavigation`
- * in `@voyantjs/admin` — so contributing nav entries here would duplicate
+ * in `@voyant-travel/admin` — so contributing nav entries here would duplicate
  * them. If the base nav ever drops those items, this extension is where the
  * entries move.
  *
@@ -96,7 +96,7 @@ export interface CreateRelationshipsAdminExtensionOptions {
  *
  * WIDGET SLOTS: the person detail page exposes
  * {@link personDetailBookingsTabSlot} — the bookings-ui ↔ crm-ui cycle
- * resolution (RFC §4.7). `@voyantjs/bookings-react/ui` depends on this package, so
+ * resolution (RFC §4.7). `@voyant-travel/bookings-react/ui` depends on this package, so
  * the person page cannot import the bookings-owned person-bookings card;
  * instead bookings-ui's admin extension contributes a widget targeting that
  * slot and {@link PersonDetailHost} mounts its Bookings tab whenever a

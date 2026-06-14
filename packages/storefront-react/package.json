@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/storefront-react",
+  "name": "@voyant-travel/storefront-react",
   "version": "0.120.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/storefront-react"
   },
   "type": "module",
@@ -35,15 +35,15 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/storefront": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/storefront": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     },
     "lucide-react": {
@@ -51,16 +51,16 @@
     }
   },
   "dependencies": {
-    "@voyantjs/react": "workspace:^"
+    "@voyant-travel/react": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/storefront": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/storefront": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

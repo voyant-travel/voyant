@@ -17,7 +17,7 @@
  *     Product schemas at runtime.
  */
 
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 import { and, count, desc, eq, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

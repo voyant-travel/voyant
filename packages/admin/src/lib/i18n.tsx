@@ -19,4 +19,4 @@ export {
   resolvePackageMessages,
   useMessages,
   useResolvedLocaleMessages,
-} from "@voyantjs/i18n"
+} from "@voyant-travel/i18n"

@@ -4,13 +4,13 @@ import type {
   Module,
   ModuleContainer,
   WorkflowDescriptor,
-} from "@voyantjs/core"
-import type { WorkflowDriver } from "@voyantjs/workflows/driver"
+} from "@voyant-travel/core"
+import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import {
   type BuildManifestArgs,
   buildManifest,
   type EventFilterRuntimeEntry,
-} from "@voyantjs/workflows/events"
+} from "@voyant-travel/workflows/events"
 
 import type { VoyantAppConfig } from "./types.js"
 
@@ -50,7 +50,7 @@ export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promis
       throw new Error(
         `[voyant] event filter "${entry.id}" (event "${entry.eventType}") is missing the runtime ` +
           `\`manifest\` field. Filters must be produced via \`trigger.on(eventName, { ... })\` from ` +
-          `@voyantjs/workflows - the public EventFilterDescriptor is the structural minimum, but ` +
+          `@voyant-travel/workflows - the public EventFilterDescriptor is the structural minimum, but ` +
           `createApp() needs the manifest payload to register with the driver.`,
       )
     }

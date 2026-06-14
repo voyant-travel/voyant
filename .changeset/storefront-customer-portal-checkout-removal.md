@@ -1,8 +1,8 @@
 ---
-"@voyantjs/storefront": minor
-"@voyantjs/storefront-react": minor
-"@voyantjs/finance": patch
-"@voyantjs/finance-react": patch
+"@voyant-travel/storefront": minor
+"@voyant-travel/storefront-react": minor
+"@voyant-travel/finance": patch
+"@voyant-travel/finance-react": patch
 ---
 
 Move customer portal runtime and React surfaces under Storefront owner paths and

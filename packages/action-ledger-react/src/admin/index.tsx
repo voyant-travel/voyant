@@ -5,11 +5,11 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Lean static only: the shared fetcher fallback. The page-data helpers
 // resolve via dynamic import inside the loader so the admin REST module
 // stays out of the workspace-chrome chunk that evaluates this factory.
-import { defaultFetcher } from "@voyantjs/react"
+import { defaultFetcher } from "@voyant-travel/react"
 
 /**
  * No destinations declared: nothing navigates TO the Logs page by semantic
@@ -49,11 +49,11 @@ export interface CreateActionLedgerAdminExtensionOptions {
 
 /**
  * The action-ledger admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-react/admin` convention).
+ * `@voyant-travel/<domain>-react/admin` convention).
  *
  * NAVIGATION: package-delivered. The Logs item is NOT part of the BASE
  * operator navigation (`createOperatorAdminNavigation` in
- * `@voyantjs/admin`), so the extension contributes it — order 60 nudges it
+ * `@voyant-travel/admin`), so the extension contributes it — order 60 nudges it
  * past the default admin items so it lands with the operator's audit
  * tooling. The icon stays a host choice.
  *

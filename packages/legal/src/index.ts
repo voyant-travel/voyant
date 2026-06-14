@@ -1,6 +1,6 @@
-import type { Module } from "@voyantjs/core"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { Module } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { contractsLinkable } from "./contracts/index.js"
@@ -40,7 +40,7 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
    * `booking.confirmed` subscriber fires outside request scope, so it
    * needs its own db handle from runtime bindings. Returns `AnyDrizzleDb`
    * (the `PostgresJsDatabase | NeonHttpDatabase` union from
-   * `@voyantjs/db`) so consumers don't need to cast through `unknown` when
+   * `@voyant-travel/db`) so consumers don't need to cast through `unknown` when
    * wiring a Hyperdrive/Neon client.
    */
   resolveDb?: (bindings: Record<string, unknown>) => AnyDrizzleDb

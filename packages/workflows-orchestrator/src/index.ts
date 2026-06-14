@@ -1,4 +1,4 @@
-// @voyantjs/workflows-orchestrator
+// @voyant-travel/workflows-orchestrator
 //
 // Reference orchestrator for Voyant Workflows. Drives runs through
 // the tenant step handler over the v1 wire protocol. Transport- and

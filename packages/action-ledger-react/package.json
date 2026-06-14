@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/action-ledger-react",
+  "name": "@voyant-travel/action-ledger-react",
   "version": "0.6.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/action-ledger-react"
   },
   "type": "module",
@@ -24,50 +24,50 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/bookings-react": "workspace:^",
+    "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/admin": {
+    "@voyant-travel/admin": {
       "optional": true
     },
-    "@voyantjs/bookings-react": {
+    "@voyant-travel/bookings-react": {
       "optional": true
     },
-    "@voyantjs/relationships-react": {
+    "@voyant-travel/relationships-react": {
       "optional": true
     },
-    "@voyantjs/inventory-react": {
+    "@voyant-travel/inventory-react": {
       "optional": true
     },
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     }
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^"
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/bookings-react": "workspace:^",
+    "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

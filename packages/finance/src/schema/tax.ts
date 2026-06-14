@@ -1,4 +1,4 @@
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import {
   boolean,
   index,

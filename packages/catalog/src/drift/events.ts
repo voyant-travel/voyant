@@ -1,1 +1,1 @@
-export * from "@voyantjs/catalog-contracts/drift/events"
+export * from "@voyant-travel/catalog-contracts/drift/events"

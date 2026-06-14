@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
+import { Button } from "@voyant-travel/ui/components/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo } from "react"
 

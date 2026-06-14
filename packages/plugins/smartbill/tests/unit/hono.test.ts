@@ -6,7 +6,7 @@ import { createSmartbillAdminRoutes } from "../../src/hono.js"
 const financeRuntimeKey = vi.hoisted(() => "providers.finance.runtime")
 const syncSmartbillInvoiceMock = vi.hoisted(() => vi.fn())
 
-vi.mock("@voyantjs/finance", () => ({
+vi.mock("@voyant-travel/finance", () => ({
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY: financeRuntimeKey,
 }))
 

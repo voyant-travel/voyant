@@ -12,8 +12,8 @@ import * as React from "react"
  * TanStack Router uses):
  *
  * ```ts
- * // inside @voyantjs/catalog-react
- * declare module "@voyantjs/admin" {
+ * // inside @voyant-travel/catalog-react
+ * declare module "@voyant-travel/admin" {
  *   interface AdminDestinations {
  *     "supplier.detail": { supplierId: string }
  *   }
@@ -88,7 +88,7 @@ export interface AdminNavigationProviderProps {
 /**
  * Provides destination resolution + navigation to packaged admin pages.
  * Hosts mount it once around the workspace (e.g. via `AdminWorkspaceShell`'s
- * `destinations` prop in `@voyantjs/admin/app/workspace`).
+ * `destinations` prop in `@voyant-travel/admin/app/workspace`).
  */
 export function AdminNavigationProvider({
   resolvers,

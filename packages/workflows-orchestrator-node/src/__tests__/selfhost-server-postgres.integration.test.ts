@@ -3,7 +3,7 @@ import { createServer } from "node:net"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { type ServeHandle, startNodeSelfHostServer } from "../dashboard-server.js"
@@ -36,7 +36,7 @@ describeIfDb("node self-host server over postgres", () => {
     await writeFile(
       entryFile,
       [
-        'import { workflow } from "@voyantjs/workflows";',
+        'import { workflow } from "@voyant-travel/workflows";',
         "",
         "workflow({",
         '  id: "server_wait_signal",',

@@ -1,15 +1,15 @@
-import type { AdminDestinationKey, AdminDestinationResolvers } from "@voyantjs/admin"
+import type { AdminDestinationKey, AdminDestinationResolvers } from "@voyant-travel/admin"
 import { describe, expect, it } from "vitest"
 
 // Type-only import binds nothing at runtime; for `tsc --noEmit` the
 // augmentation file (src/admin/index.tsx) is part of the program via the
-// tsconfig include, so the `declare module "@voyantjs/admin"` block below it
+// tsconfig include, so the `declare module "@voyant-travel/admin"` block below it
 // merges into AdminDestinations here.
 import type { ProductDetailSearchParams } from "../src/admin/index.js"
 
 /**
  * Type-level proof of the semantic-destination contract (packaged-admin RFC
- * §4.7): the `declare module "@voyantjs/admin"` augmentation in
+ * §4.7): the `declare module "@voyant-travel/admin"` augmentation in
  * `src/admin/index.tsx` must surface the catalog destination keys on
  * `AdminDestinationKey`, and a resolver map over them must satisfy
  * `AdminDestinationResolvers` — including param shapes. Compilation IS the

@@ -1,9 +1,9 @@
 /**
- * @voyantjs/voyant-test-utils — shared testing helpers for Voyant packages.
+ * @voyant-travel/voyant-test-utils — shared testing helpers for Voyant packages.
  *
  * Re-exports all sub-entries from this barrel so callers can do:
  *
- *   import { createTestDb, json, makeCliCtx } from "@voyantjs/voyant-test-utils"
+ *   import { createTestDb, json, makeCliCtx } from "@voyant-travel/voyant-test-utils"
  *
  * …or the narrower sub-paths (`/db`, `/http`, `/seq`, `/cli`).
  */

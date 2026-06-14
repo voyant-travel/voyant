@@ -1,15 +1,15 @@
 # `flights-demo-api`
 
-Standalone HTTP service that mocks a flight supplier/GDS provider so templates
+Standalone HTTP service that mocks a flight supplier/GDS provider so starters
 and examples can exercise the full flight booking flow without external
 credentials. This is a demo/reference supplier-integration surface, not an
 airline or flight-operator deployment. Mirrors `FlightConnectorAdapter` 1:1 over REST; the
-`@voyantjs/plugin-flights-demo` package is a thin fetch client that
+`@voyant-travel/plugin-flights-demo` package is a thin fetch client that
 implements the adapter interface against this service.
 
 Owns its own Postgres database — orders persist here, not in the
-template's primary DB. Replace it with a real GDS connector by swapping
-the plugin, no template tables to drop.
+starter's primary DB. Replace it with a real GDS connector by swapping
+the plugin, no starter tables to drop.
 
 ## Run
 
@@ -20,7 +20,7 @@ pnpm db:migrate             # creates demo_flight_orders
 pnpm dev                    # listens on :3320 by default
 ```
 
-Then in your template (e.g. `templates/operator/.dev.vars`):
+Then in your starter (e.g. `starters/operator/.dev.vars`):
 
 ```
 FLIGHTS_DEMO_API_URL=http://localhost:3320

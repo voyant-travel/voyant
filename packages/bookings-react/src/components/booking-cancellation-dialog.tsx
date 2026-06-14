@@ -1,6 +1,6 @@
 "use client"
 
-import { useEvaluateCancellation, useResolvePolicy } from "@voyantjs/legal-react"
+import { useEvaluateCancellation, useResolvePolicy } from "@voyant-travel/legal-react"
 import {
   Badge,
   Button,
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   Label,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import * as React from "react"
 import {

@@ -2,20 +2,24 @@
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
-} from "@voyantjs/action-ledger"
+} from "@voyant-travel/action-ledger"
 import {
   type BookingConfirmedEvent,
   bookingGroupsService,
   bookingsService,
-} from "@voyantjs/bookings"
+} from "@voyant-travel/bookings"
 import {
   type BookingDraftMismatch,
   type PricingAssignmentUnit,
   verifyBookingDraft,
-} from "@voyantjs/bookings/pricing-assignment"
-import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
-import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
-import { bookingStatusSchema } from "@voyantjs/bookings/validation"
+} from "@voyant-travel/bookings/pricing-assignment"
+import type { Booking, BookingGroupMember, BookingTraveler } from "@voyant-travel/bookings/schema"
+import {
+  bookingItems,
+  bookingItemTravelers,
+  bookingTravelers,
+} from "@voyant-travel/bookings/schema"
+import { bookingStatusSchema } from "@voyant-travel/bookings/validation"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
@@ -93,7 +97,7 @@ const itemLineInputSchema = z.object({
    * Stable client-side key (e.g. `unit:optu_adult`). Server stamps
    * this into `booking_items.metadata.bookingCreateLineKey` so the
    * post-insert pass can look up the row and link it to travelers
-   * via `booking_item_travelers`. See voyantjs/voyant#1267.
+   * via `booking_item_travelers`. See voyant-travel/voyant#1267.
    */
   clientLineKey: z.string().min(1).max(255).optional().nullable(),
   optionUnitId: z.string().min(1),
@@ -525,8 +529,8 @@ export type BookingCreateOutcome =
  * Event emission is post-commit — if the tx rolls back, subscribers never
  * hear about it.
  *
- * Why the orchestrator lives in `@voyantjs/finance`: finance already imports
- * from `@voyantjs/bookings` (invoices-from-bookings, voucher service, payment
+ * Why the orchestrator lives in `@voyant-travel/finance`: finance already imports
+ * from `@voyant-travel/bookings` (invoices-from-bookings, voucher service, payment
  * schedules all sit here), so this is the one place that can compose the
  * three packages without creating a new workspace dep cycle. The route wires
  * it under `/v1/admin/bookings/create` via a HonoExtension whose
@@ -642,7 +646,7 @@ async function findDuplicateBookingForCreate(
 /**
  * Load the option_unit catalog for a product so the resolver can
  * verify the submitted itemLines server-side. Raw SQL because
- * `option_units` lives in `@voyantjs/inventory` and finance doesn't
+ * `option_units` lives in `@voyant-travel/inventory` and finance doesn't
  * depend on it directly — adding a runtime dependency for a log-only
  * sanity check would be overkill.
  */
@@ -921,7 +925,7 @@ function uniqueTravelerKeys(keys: readonly string[] | null | undefined): string[
  *
  * The metadata-key bridge lets the wire-format `clientLineKey` thread
  * through the create flow without forcing the converter to return a
- * map back to the orchestrator. See voyantjs/voyant#1267.
+ * map back to the orchestrator. See voyant-travel/voyant#1267.
  */
 async function linkBookingCreateItemsToTravelers(
   tx: PostgresJsDatabase,
@@ -1289,7 +1293,7 @@ export async function createBooking(
                 // `linkBookingCreateItemsToTravelers` can look up
                 // extra rows by clientLineKey and write
                 // booking_item_travelers links for per-person
-                // extras. See voyantjs/voyant#1267.
+                // extras. See voyant-travel/voyant#1267.
                 ...(line.clientLineKey ? { bookingCreateLineKey: line.clientLineKey } : {}),
               },
             }
@@ -1301,7 +1305,7 @@ export async function createBooking(
       // deprecated pricing-tier alias accepted for compatibility but
       // not stored on the traveler row itself. Per-traveler item linkage
       // is expressed through `booking_item_travelers` rows linked from
-      // each `booking_item`. See voyantjs/voyant#1267.
+      // each `booking_item`. See voyant-travel/voyant#1267.
       const travelers: BookingTraveler[] = []
       for (const traveler of input.travelers ?? []) {
         const [row] = await tx
@@ -1338,7 +1342,7 @@ export async function createBooking(
 
       // 2c. Re-run the resolver server-side against the submitted
       // itemLines + travelers and reject any client/server drift on
-      // per-band quantities. See voyantjs/voyant#1272.
+      // per-band quantities. See voyant-travel/voyant#1272.
       await verifyBookingCreatePayload(tx, { ...input, itemLines: normalizedItemLines })
 
       // 3. Payment schedules

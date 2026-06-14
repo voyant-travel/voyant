@@ -23,9 +23,9 @@ neutral territory without coupling one module's schema directly to another's.
 
 Today that model consists of:
 
-- a typed `defineLink(...)` contract in `@voyantjs/core`
-- generated link tables from `@voyantjs/core/generateLinkTableSql(...)`
-- runtime create/list/dismiss/delete behavior in `@voyantjs/db/createLinkService(...)`
+- a typed `defineLink(...)` contract in `@voyant-travel/core`
+- generated link tables from `@voyant-travel/core/generateLinkTableSql(...)`
+- runtime create/list/dismiss/delete behavior in `@voyant-travel/db/createLinkService(...)`
 
 Those link rows currently carry:
 
@@ -209,7 +209,7 @@ are invented ad hoc.
 Rule:
 
 Keep relationship semantics in owned runtime/module surfaces, not in
-template-local link conventions.
+starter-local link conventions.
 
 ### 12. Queries should stay honest about what they are reading
 

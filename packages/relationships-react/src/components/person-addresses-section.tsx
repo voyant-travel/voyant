@@ -1,20 +1,20 @@
 "use client"
 
-import { type AddressRecord, useAddresses, useAddressMutation } from "@voyantjs/identity-react"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+import { type AddressRecord, useAddresses, useAddressMutation } from "@voyant-travel/identity-react"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { Switch } from "@voyantjs/ui/components/switch"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/ui/components/select"
+import { Switch } from "@voyant-travel/ui/components/switch"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Loader2, MapPin, Pencil, Plus, Trash2, X } from "lucide-react"
 import * as React from "react"
 

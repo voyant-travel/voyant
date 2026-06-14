@@ -1,4 +1,10 @@
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
 import { type AvailabilityRule, ScheduleForm } from "./product-schedule-form.js"

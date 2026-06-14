@@ -20,7 +20,7 @@
  * extension once that policy lands.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, inArray } from "drizzle-orm"
 
 import { destinations, destinationTranslations, productDestinations } from "./schema-taxonomy.js"

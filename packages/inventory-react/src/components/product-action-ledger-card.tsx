@@ -1,8 +1,8 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Activity, Loader2 } from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
 import { useProductsUiI18nOrDefault } from "../i18n/provider.js"

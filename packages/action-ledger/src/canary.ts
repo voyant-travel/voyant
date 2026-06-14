@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import { buildIdempotencyFingerprint } from "./fingerprint.js"
 import { actionLedgerService } from "./service.js"

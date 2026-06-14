@@ -10,7 +10,7 @@
  *
  * Core plugins are transport-agnostic — they contain {@link Module} and
  * {@link Extension} values (no HTTP routes). Transport adapters (such as
- * `@voyantjs/hono`) layer their own plugin shape on top of this
+ * `@voyant-travel/hono`) layer their own plugin shape on top of this
  * contract to carry route bundles.
  */
 
@@ -57,7 +57,7 @@ export interface Subscriber<
  * - {@link LinkDefinition} values (cross-module associations)
  *
  * Transport adapters can intersect this shape with their own fields (see
- * `HonoPlugin` in `@voyantjs/hono` for the Hono variant).
+ * `HonoPlugin` in `@voyant-travel/hono` for the Hono variant).
  */
 export interface Plugin {
   /** Unique plugin identifier (e.g. "payload-cms", "bokun"). */

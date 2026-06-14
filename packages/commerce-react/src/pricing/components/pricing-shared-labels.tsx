@@ -1,6 +1,6 @@
 "use client"
 
-import { useProduct, useProductOption } from "@voyantjs/inventory-react"
+import { useProduct, useProductOption } from "@voyant-travel/inventory-react"
 import {
   useCancellationPolicy,
   useOptionPriceRule,

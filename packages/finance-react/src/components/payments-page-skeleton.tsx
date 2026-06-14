@@ -1,4 +1,4 @@
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 

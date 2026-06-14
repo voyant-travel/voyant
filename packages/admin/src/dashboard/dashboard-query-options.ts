@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { VoyantFetcher } from "@voyantjs/react"
-import type { ChartConfig } from "@voyantjs/ui/components/chart"
+import type { VoyantFetcher } from "@voyant-travel/react"
+import type { ChartConfig } from "@voyant-travel/ui/components/chart"
 
 export interface DashboardQueryClient {
   baseUrl: string

@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/workflow-runs",
+  "name": "@voyant-travel/workflow-runs",
   "version": "0.107.10",
   "description": "Workflow run recording, admin routes, and rerun/resume dispatch primitives for Voyant operator apps.",
   "license": "Apache-2.0",
@@ -15,7 +15,7 @@
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   },
   "scripts": {
@@ -27,17 +27,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/workflows": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
-    "@voyantjs/workflows-orchestrator": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/workflows-orchestrator": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -83,7 +83,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/workflow-runs"
   }
 }

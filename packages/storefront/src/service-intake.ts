@@ -1,4 +1,4 @@
-import type { EventBus, EventSource } from "@voyantjs/core"
+import type { EventBus, EventSource } from "@voyant-travel/core"
 
 import type { StorefrontRequestContext } from "./service.js"
 import type {

@@ -7,7 +7,7 @@
 // at its HTTP boundary.
 //
 // Transport-agnostic: takes a minimal `HttpAppLike` interface so the SDK
-// stays a leaf package (no `hono` dep). `@voyantjs/voyant-hono`'s `Hono`
+// stays a leaf package (no `hono` dep). `@voyant-travel/voyant-hono`'s `Hono`
 // instance satisfies the shape via TypeScript structural compat.
 //
 // Architecture: docs/architecture/workflows-runtime-architecture.md §15.4.
@@ -59,7 +59,7 @@ export interface MountHttpIngestAdapterOptions {
   /**
    * Optional auth check. Receives the original `Request` and returns
    * `void` on success / throws on failure. Reuse
-   * `createBearerVerifier(...)` from `@voyantjs/workflows/auth` for the
+   * `createBearerVerifier(...)` from `@voyant-travel/workflows/auth` for the
    * canonical bearer-token shape.
    */
   verifyRequest?: (req: Request) => void | Promise<void>

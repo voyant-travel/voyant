@@ -2,7 +2,7 @@
 
 Status: active architecture note
 Audience: developers implementing an external adapter package for
-`@voyantjs/cruises`.
+`@voyant-travel/cruises`.
 
 This contract keeps the cruises framework provider-neutral. The framework owns
 the normalized cruise shapes, route behavior, SourceRef encoding, search-index
@@ -12,13 +12,13 @@ provider-specific mappings.
 
 ## Boundary
 
-An adapter package implements `CruiseAdapter` from `@voyantjs/cruises/adapters`
+An adapter package implements `CruiseAdapter` from `@voyant-travel/cruises/adapters`
 and registers it at application startup. The framework must not import the
-adapter package. The adapter package can depend on `@voyantjs/cruises` for
+adapter package. The adapter package can depend on `@voyant-travel/cruises` for
 types, helpers, and compatibility tests.
 
 ```ts
-import { memoizeCruiseAdapter, registerCruiseAdapter } from "@voyantjs/cruises/adapters"
+import { memoizeCruiseAdapter, registerCruiseAdapter } from "@voyant-travel/cruises/adapters"
 import { createCruiseAdapter } from "external-cruise-adapter"
 
 const adapter = createCruiseAdapter({
@@ -132,10 +132,10 @@ Manual operator refresh paths:
 
 - `POST /v1/admin/cruises/search-index/rebuild` refreshes the cruise vertical
   browse index from registered cruise adapters.
-- `pnpm sync:sources` in `templates/operator` refreshes catalog sourced entries
+- `pnpm sync:sources` in `starters/operator` refreshes catalog sourced entries
   and search slices from registered catalog source adapters.
 
-Scheduled refresh in `templates/operator` runs daily at `30 3 * * *` via
+Scheduled refresh in `starters/operator` runs daily at `30 3 * * *` via
 `EXTERNAL_CRUISE_CATALOG_REFRESH_CRON`. Deployments can add adapter-specific
 webhook/event handlers that call the same `refreshExternalCruiseCatalog(...)`
 service for targeted near-real-time refreshes without coupling the framework to
@@ -148,11 +148,11 @@ own test suite:
 
 ```ts
 import { describe, it } from "vitest"
-import { assertCruiseAdapterCompatibility } from "@voyantjs/cruises/adapters"
+import { assertCruiseAdapterCompatibility } from "@voyant-travel/cruises/adapters"
 import { createCruiseAdapter } from "../src/index.js"
 
 describe("cruise adapter contract", () => {
-  it("satisfies @voyantjs/cruises", async () => {
+  it("satisfies @voyant-travel/cruises", async () => {
     const adapter = createCruiseAdapter({ mode: "sandbox" })
 
     await assertCruiseAdapterCompatibility(adapter, {
@@ -219,7 +219,7 @@ That catches the most common integration bug: collapsing identity to
 
 - The framework package imports only framework code and shared types.
 - Adapter packages keep credentials, HTTP clients, OAuth flows, throttling, and
-  provider mappings outside `@voyantjs/cruises`.
+  provider mappings outside `@voyant-travel/cruises`.
 - Route keys, catalog entity ids, search-index identity, and booking snapshots
   use full refs.
 - Projection methods can be scheduled or replicated by the adapter package;

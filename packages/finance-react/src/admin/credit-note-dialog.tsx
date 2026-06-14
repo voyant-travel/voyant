@@ -1,6 +1,6 @@
 "use client"
 
-import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
   Dialog,
@@ -12,9 +12,9 @@ import {
   Input,
   Label,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"

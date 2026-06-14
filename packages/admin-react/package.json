@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/admin-react",
+  "name": "@voyant-travel/admin-react",
   "version": "0.111.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/admin-react"
   },
   "type": "module",
@@ -28,14 +28,14 @@
     "react": "^19.0.0"
   },
   "dependencies": {
-    "@voyantjs/admin-client": "workspace:^"
+    "@voyant-travel/admin-client": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "jsdom": "^25.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

@@ -1,9 +1,9 @@
 "use client"
 
-import type { useOperatorAdminMessages } from "@voyantjs/admin"
-import { Input } from "@voyantjs/ui/components"
-import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
-import { languages } from "@voyantjs/utils/languages"
+import type { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { Input } from "@voyant-travel/ui/components"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
+import { languages } from "@voyant-travel/utils/languages"
 import type { UseFormSetValue, UseFormWatch } from "react-hook-form"
 import { z } from "zod/v4"
 

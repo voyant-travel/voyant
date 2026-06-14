@@ -1,5 +1,5 @@
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyant-travel/ui/components"
 import { CalendarRange, DollarSign, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"
 import type { DepartureSlot } from "./product-departure-dialog.js"

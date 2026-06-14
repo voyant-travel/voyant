@@ -4,5 +4,5 @@ export type {
   DocumentDownloadResolver,
   DocumentDownloadResolverResult,
   StoredDocumentReference,
-} from "@voyantjs/hono/document-download"
-export { resolveStoredDocumentDownload } from "@voyantjs/hono/document-download"
+} from "@voyant-travel/hono/document-download"
+export { resolveStoredDocumentDownload } from "@voyant-travel/hono/document-download"

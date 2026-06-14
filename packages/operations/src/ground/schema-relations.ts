@@ -1,4 +1,4 @@
-import { identityAddresses } from "@voyantjs/identity/schema"
+import { identityAddresses } from "@voyant-travel/identity/schema"
 import { relations } from "drizzle-orm"
 
 import { groundDispatches, groundTransferPreferences } from "./schema-dispatch.js"

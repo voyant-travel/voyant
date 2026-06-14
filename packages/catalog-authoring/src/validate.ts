@@ -1,1 +1,1 @@
-export { validateProductGraph } from "@voyantjs/inventory/authoring"
+export { validateProductGraph } from "@voyant-travel/inventory/authoring"

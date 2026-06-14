@@ -4,7 +4,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 import {
   type CreateSuppliersAdminExtensionOptions,
@@ -16,7 +16,7 @@ import { defaultFetcher } from "../suppliers/client.js"
 
 export { type CreateSuppliersAdminExtensionOptions, createSuppliersAdminExtension }
 
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The suppliers list page. */
     "supplier.list": Record<string, never>

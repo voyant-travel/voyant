@@ -1,9 +1,9 @@
 "use client"
 
-import { Avatar, AvatarFallback } from "@voyantjs/ui/components/avatar"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Avatar, AvatarFallback } from "@voyant-travel/ui/components/avatar"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Mail, Phone } from "lucide-react"
 import type * as React from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"

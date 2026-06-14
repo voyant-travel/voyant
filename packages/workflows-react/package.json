@@ -1,11 +1,11 @@
 {
-  "name": "@voyantjs/workflows-react",
+  "name": "@voyant-travel/workflows-react",
   "version": "0.107.10",
-  "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs — plus the styled workflow-run admin UI (formerly @voyantjs/workflows-ui).",
+  "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs — plus the styled workflow-run admin UI (formerly @voyant-travel/workflows-ui).",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/workflows-react"
   },
   "type": "module",
@@ -32,19 +32,19 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0 || ^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     },
     "lucide-react": {
@@ -55,10 +55,10 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

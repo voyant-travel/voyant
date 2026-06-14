@@ -17,7 +17,7 @@
  * See `docs/architecture/catalog-flights-architecture.md` §6.2.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq, inArray } from "drizzle-orm"
 import { integer, pgTable, real, text } from "drizzle-orm/pg-core"
 

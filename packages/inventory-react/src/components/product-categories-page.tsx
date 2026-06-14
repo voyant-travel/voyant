@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
 import { ProductCategoryList, type ProductCategoryListProps } from "./product-category-list.js"
 

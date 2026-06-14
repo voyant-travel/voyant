@@ -1,5 +1,5 @@
-import type { getDb } from "@voyantjs/db"
-import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
+import type { getDb } from "@voyant-travel/db"
+import { authUser, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import { eq, sql } from "drizzle-orm"
 
 type WorkspaceDb = ReturnType<typeof getDb>

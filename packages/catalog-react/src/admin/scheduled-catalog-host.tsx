@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminHref, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useAdminHref, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   ScheduledCatalogPage as ScheduledCatalogPageUi,
   type ScheduledScope,

@@ -3,7 +3,7 @@
 // A driver is the runtime-side object that backs `createApp({ workflows })`:
 // it owns manifest registration, run triggering, event ingest, and (optionally)
 // admin reads. Concrete drivers live in downstream packages
-// (`@voyantjs/workflows-orchestrator` for InMemory, `-node` for Mode 2 / Postgres,
+// (`@voyant-travel/workflows-orchestrator` for InMemory, `-node` for Mode 2 / Postgres,
 // `-cloudflare` for Mode 1 / DO+KV).
 //
 // Drivers are constructed via *factories* — `DriverFactory` is a function the
@@ -19,13 +19,13 @@ import type { ListRunsOptions, Run, RunDetail, RunSummary, TriggerOptions } from
 import type { EnvironmentName, WaitpointKind } from "./types.js"
 import type { WorkflowDefinition } from "./workflow.js"
 
-// ---- Structural deps (kept local to avoid an @voyantjs/core dep here) ----
+// ---- Structural deps (kept local to avoid an @voyant-travel/core dep here) ----
 
 /**
  * Read-only view of a service container. Step bodies resolve services via
  * `ctx.services.resolve(...)`. The framework's `ModuleContainer`
- * (in `@voyantjs/core`) satisfies this shape structurally; we don't import
- * it directly to keep `@voyantjs/workflows` a leaf package.
+ * (in `@voyant-travel/core`) satisfies this shape structurally; we don't import
+ * it directly to keep `@voyant-travel/workflows` a leaf package.
  */
 export interface ServiceResolver {
   resolve<T>(name: string): T
@@ -34,7 +34,7 @@ export interface ServiceResolver {
 
 /**
  * Structural shape of an event envelope as ingested by a driver. Matches
- * `EventEnvelope` from `@voyantjs/core` (`name`, `data`, `metadata?`, `emittedAt`),
+ * `EventEnvelope` from `@voyant-travel/core` (`name`, `data`, `metadata?`, `emittedAt`),
  * declared structurally so the SDK package doesn't import core.
  */
 export interface IngestEventEnvelope<TData = unknown> {

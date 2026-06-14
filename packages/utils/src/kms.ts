@@ -3,10 +3,10 @@
  *
  * Callers encrypt/decrypt opaque strings via a `KmsProvider` implementation.
  * The returned ciphertext is paired with the `{ enc: "..." }` envelope from
- * `@voyantjs/types/schemas/kms/envelope` when persisted.
+ * `@voyant-travel/types/schemas/kms/envelope` when persisted.
  */
 
-import type { KmsEncryptedEnvelope } from "@voyantjs/types/schemas/kms/envelope"
+import type { KmsEncryptedEnvelope } from "@voyant-travel/types/schemas/kms/envelope"
 import type { z } from "zod"
 
 import { type AwsKmsConfig, AwsKmsProvider } from "./kms-aws.js"

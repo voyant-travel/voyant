@@ -1,5 +1,5 @@
-import { createEventBus } from "@voyantjs/core"
-import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { createEventBus } from "@voyant-travel/core"
+import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {

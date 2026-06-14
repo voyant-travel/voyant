@@ -12,7 +12,7 @@
  *     accommodations, cruises, etc.).
  *
  * The two registries live side-by-side, never wrap each other. The
- * dispatch direction inverts: instead of `@voyantjs/catalog`
+ * dispatch direction inverts: instead of `@voyant-travel/catalog`
  * importing every vertical, each vertical imports this interface
  * and provides an implementation. Catalog stays a contract package;
  * verticals stay self-contained.
@@ -23,7 +23,7 @@
  * the dispatch.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import type { SourceAdapterContext } from "../adapter/contract.js"
 import type { PricingBasis } from "../snapshot/schema.js"

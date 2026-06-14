@@ -20,14 +20,14 @@ const skipDirs = new Set([".git", ".turbo", ".wrangler", "coverage", "dist", "no
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"])
 
 const removedRuntimePackages = [
-  "@voyantjs/checkout",
-  "@voyantjs/checkout-react",
-  "@voyantjs/crm",
-  "@voyantjs/crm-react",
-  "@voyantjs/transactions",
-  "@voyantjs/transactions-react",
-  "@voyantjs/travel-composer",
-  "@voyantjs/travel-composer-react",
+  "@voyant-travel/checkout",
+  "@voyant-travel/checkout-react",
+  "@voyant-travel/crm",
+  "@voyant-travel/crm-react",
+  "@voyant-travel/transactions",
+  "@voyant-travel/transactions-react",
+  "@voyant-travel/travel-composer",
+  "@voyant-travel/travel-composer-react",
 ]
 
 function packageList(value: string): TemporaryPackage[] {
@@ -49,37 +49,37 @@ function packageList(value: string): TemporaryPackage[] {
 }
 
 const temporaryPackages = packageList(`
-  @voyantjs/allocation-ui|orphan|@voyantjs/operations-react/availability/allocation|@voyantjs/operations-react
-  @voyantjs/availability|facade|@voyantjs/operations/availability|@voyantjs/operations
-  @voyantjs/availability-react|facade|@voyantjs/operations-react/availability|@voyantjs/operations-react
-  @voyantjs/booking-requirements|orphan|@voyantjs/bookings/requirements|@voyantjs/bookings
-  @voyantjs/booking-requirements-react|orphan|@voyantjs/bookings-react/requirements|@voyantjs/bookings-react
-  @voyantjs/customer-portal|orphan|@voyantjs/storefront/customer-portal|@voyantjs/storefront
-  @voyantjs/customer-portal-react|orphan|@voyantjs/storefront-react/customer-portal|@voyantjs/storefront-react
-  @voyantjs/external-refs|facade|@voyantjs/distribution/external-refs|@voyantjs/distribution
-  @voyantjs/external-refs-react|facade|@voyantjs/distribution-react/external-refs|@voyantjs/distribution-react
-  @voyantjs/extras|orphan|@voyantjs/inventory/extras + @voyantjs/bookings/extras|@voyantjs/inventory,@voyantjs/bookings
-  @voyantjs/extras-react|orphan|@voyantjs/inventory-react/extras + @voyantjs/bookings-react/extras|@voyantjs/inventory-react,@voyantjs/bookings-react
-  @voyantjs/facilities|orphan|@voyantjs/operations/places|@voyantjs/operations
-  @voyantjs/facilities-react|orphan|@voyantjs/operations-react/places|@voyantjs/operations-react
-  @voyantjs/ground|orphan|@voyantjs/operations/ground|@voyantjs/operations
-  @voyantjs/ground-react|orphan|@voyantjs/operations-react/ground|@voyantjs/operations-react
-  @voyantjs/markets|facade|@voyantjs/commerce/markets|@voyantjs/commerce
-  @voyantjs/markets-react|facade|@voyantjs/commerce-react/markets|@voyantjs/commerce-react
-  @voyantjs/places|orphan|@voyantjs/operations/places|@voyantjs/operations
-  @voyantjs/places-react|orphan|@voyantjs/operations-react/places|@voyantjs/operations-react
-  @voyantjs/pricing|facade|@voyantjs/commerce/pricing|@voyantjs/commerce
-  @voyantjs/pricing-react|facade|@voyantjs/commerce-react/pricing|@voyantjs/commerce-react
-  @voyantjs/products|facade|@voyantjs/inventory|@voyantjs/inventory
-  @voyantjs/products-react|facade|@voyantjs/inventory-react|@voyantjs/inventory-react
-  @voyantjs/promotions|facade|@voyantjs/commerce/promotions|@voyantjs/commerce
-  @voyantjs/promotions-react|facade|@voyantjs/commerce-react/promotions|@voyantjs/commerce-react
-  @voyantjs/resources|facade|@voyantjs/operations/resources|@voyantjs/operations
-  @voyantjs/resources-react|facade|@voyantjs/operations-react/resources|@voyantjs/operations-react
-  @voyantjs/sellability|facade|@voyantjs/commerce/sellability|@voyantjs/commerce
-  @voyantjs/sellability-react|facade|@voyantjs/commerce-react/sellability|@voyantjs/commerce-react
-  @voyantjs/suppliers|facade|@voyantjs/distribution/suppliers|@voyantjs/distribution
-  @voyantjs/suppliers-react|facade|@voyantjs/distribution-react/suppliers|@voyantjs/distribution-react
+  @voyant-travel/allocation-ui|orphan|@voyant-travel/operations-react/availability/allocation|@voyant-travel/operations-react
+  @voyant-travel/availability|facade|@voyant-travel/operations/availability|@voyant-travel/operations
+  @voyant-travel/availability-react|facade|@voyant-travel/operations-react/availability|@voyant-travel/operations-react
+  @voyant-travel/booking-requirements|orphan|@voyant-travel/bookings/requirements|@voyant-travel/bookings
+  @voyant-travel/booking-requirements-react|orphan|@voyant-travel/bookings-react/requirements|@voyant-travel/bookings-react
+  @voyant-travel/customer-portal|orphan|@voyant-travel/storefront/customer-portal|@voyant-travel/storefront
+  @voyant-travel/customer-portal-react|orphan|@voyant-travel/storefront-react/customer-portal|@voyant-travel/storefront-react
+  @voyant-travel/external-refs|facade|@voyant-travel/distribution/external-refs|@voyant-travel/distribution
+  @voyant-travel/external-refs-react|facade|@voyant-travel/distribution-react/external-refs|@voyant-travel/distribution-react
+  @voyant-travel/extras|orphan|@voyant-travel/inventory/extras + @voyant-travel/bookings/extras|@voyant-travel/inventory,@voyant-travel/bookings
+  @voyant-travel/extras-react|orphan|@voyant-travel/inventory-react/extras + @voyant-travel/bookings-react/extras|@voyant-travel/inventory-react,@voyant-travel/bookings-react
+  @voyant-travel/facilities|orphan|@voyant-travel/operations/places|@voyant-travel/operations
+  @voyant-travel/facilities-react|orphan|@voyant-travel/operations-react/places|@voyant-travel/operations-react
+  @voyant-travel/ground|orphan|@voyant-travel/operations/ground|@voyant-travel/operations
+  @voyant-travel/ground-react|orphan|@voyant-travel/operations-react/ground|@voyant-travel/operations-react
+  @voyant-travel/markets|facade|@voyant-travel/commerce/markets|@voyant-travel/commerce
+  @voyant-travel/markets-react|facade|@voyant-travel/commerce-react/markets|@voyant-travel/commerce-react
+  @voyant-travel/places|orphan|@voyant-travel/operations/places|@voyant-travel/operations
+  @voyant-travel/places-react|orphan|@voyant-travel/operations-react/places|@voyant-travel/operations-react
+  @voyant-travel/pricing|facade|@voyant-travel/commerce/pricing|@voyant-travel/commerce
+  @voyant-travel/pricing-react|facade|@voyant-travel/commerce-react/pricing|@voyant-travel/commerce-react
+  @voyant-travel/products|facade|@voyant-travel/inventory|@voyant-travel/inventory
+  @voyant-travel/products-react|facade|@voyant-travel/inventory-react|@voyant-travel/inventory-react
+  @voyant-travel/promotions|facade|@voyant-travel/commerce/promotions|@voyant-travel/commerce
+  @voyant-travel/promotions-react|facade|@voyant-travel/commerce-react/promotions|@voyant-travel/commerce-react
+  @voyant-travel/resources|facade|@voyant-travel/operations/resources|@voyant-travel/operations
+  @voyant-travel/resources-react|facade|@voyant-travel/operations-react/resources|@voyant-travel/operations-react
+  @voyant-travel/sellability|facade|@voyant-travel/commerce/sellability|@voyant-travel/commerce
+  @voyant-travel/sellability-react|facade|@voyant-travel/commerce-react/sellability|@voyant-travel/commerce-react
+  @voyant-travel/suppliers|facade|@voyant-travel/distribution/suppliers|@voyant-travel/distribution
+  @voyant-travel/suppliers-react|facade|@voyant-travel/distribution-react/suppliers|@voyant-travel/distribution-react
 `)
 
 function exportList(value: string) {
@@ -88,7 +88,7 @@ function exportList(value: string) {
 
 const temporaryOwnerExports = new Map<string, string[]>([
   [
-    "@voyantjs/commerce",
+    "@voyant-travel/commerce",
     exportList(`
       ./markets ./markets/routes ./markets/schema ./markets/service-core
       ./markets/service-rules ./markets/service-shared ./markets/service
@@ -115,7 +115,7 @@ const temporaryOwnerExports = new Map<string, string[]>([
     `),
   ],
   [
-    "@voyantjs/operations",
+    "@voyant-travel/operations",
     exportList(`
       ./availability ./availability/schema ./availability/validation ./availability/routes
       ./availability/rrule ./availability/service-holds
@@ -125,7 +125,7 @@ const temporaryOwnerExports = new Map<string, string[]>([
     `),
   ],
   [
-    "@voyantjs/distribution",
+    "@voyant-travel/distribution",
     exportList(`
       ./booking-extension ./channel-push ./suppliers ./suppliers/schema ./suppliers/validation
       ./suppliers/routes ./external-refs ./external-refs/schema ./external-refs/validation
@@ -135,10 +135,10 @@ const temporaryOwnerExports = new Map<string, string[]>([
 ])
 
 const temporaryOwnerExportPrefixes = new Map<string, string[]>([
-  ["@voyantjs/commerce", ["./markets", "./pricing", "./promotions", "./sellability"]],
-  ["@voyantjs/operations", ["./availability", "./resources", "./ground", "./places"]],
+  ["@voyant-travel/commerce", ["./markets", "./pricing", "./promotions", "./sellability"]],
+  ["@voyant-travel/operations", ["./availability", "./resources", "./ground", "./places"]],
   [
-    "@voyantjs/distribution",
+    "@voyant-travel/distribution",
     ["./booking-extension", "./channel-push", "./suppliers", "./external-refs"],
   ],
 ])
@@ -212,7 +212,7 @@ function packageImportPatterns(packageName: string) {
 
 function findSourceImporters(packageName: string, ownPackageJsonPath: string | undefined) {
   const ownPackageDir = ownPackageJsonPath ? path.dirname(ownPackageJsonPath) : undefined
-  const searchRoots = ["packages", "templates", "apps", "scripts"]
+  const searchRoots = ["packages", "starters", "apps", "scripts"]
     .map((entry) => path.join(repoRoot, entry))
     .filter((entry) => fs.existsSync(entry))
   const patterns = packageImportPatterns(packageName)
@@ -356,8 +356,8 @@ async function main() {
     ? collectTableNames(legacyExtrasSchema)
     : new Set<string>()
 
-  if (packagesByName.has("@voyantjs/extras") && !legacyExtrasSchema) {
-    problems.push("@voyantjs/extras exists but packages/extras/src/schema.ts is missing")
+  if (packagesByName.has("@voyant-travel/extras") && !legacyExtrasSchema) {
+    problems.push("@voyant-travel/extras exists but packages/extras/src/schema.ts is missing")
   }
 
   if (legacyExtrasSchema) {
@@ -380,13 +380,13 @@ async function main() {
     const ownerOnlyExtrasTables = diffSet(ownerExtrasTables, legacyExtrasTables)
 
     if (legacyExtrasTables.size === 0) {
-      problems.push("@voyantjs/extras legacy schema does not export any Drizzle tables")
+      problems.push("@voyant-travel/extras legacy schema does not export any Drizzle tables")
     }
 
     if (legacyOnlyExtrasTables.length > 0 || ownerOnlyExtrasTables.length > 0) {
       problems.push(
         [
-          "@voyantjs/extras legacy schema table names must exactly mirror Inventory/Bookings extras owner tables.",
+          "@voyant-travel/extras legacy schema table names must exactly mirror Inventory/Bookings extras owner tables.",
           `legacy-only: ${formatList(legacyOnlyExtrasTables)}`,
           `owner-only: ${formatList(ownerOnlyExtrasTables)}`,
         ].join(" "),

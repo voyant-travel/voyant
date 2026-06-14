@@ -1,4 +1,4 @@
-import { optionPriceRules, optionUnitPriceRules, optionUnitTiers } from "@voyantjs/commerce"
+import { optionPriceRules, optionUnitPriceRules, optionUnitTiers } from "@voyant-travel/commerce"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   optionUnits,

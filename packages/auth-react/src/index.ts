@@ -1,4 +1,4 @@
-export type { AuthStatus, CurrentUser } from "@voyantjs/auth/workspace"
+export type { AuthStatus, CurrentUser } from "@voyant-travel/auth/workspace"
 export {
   defaultFetcher,
   fetchWithValidation,

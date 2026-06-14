@@ -1,13 +1,13 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
+import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
 import {
   bookingGroups,
   bookingItems,
   bookingItemTravelers,
   bookings,
   bookingTravelers,
-} from "@voyantjs/bookings/schema"
-import { createEventBus } from "@voyantjs/core"
+} from "@voyant-travel/bookings/schema"
+import { createEventBus } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -78,10 +78,10 @@ function nextBookingNumber() {
 }
 
 describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await resetTables(db)
   })
@@ -91,7 +91,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

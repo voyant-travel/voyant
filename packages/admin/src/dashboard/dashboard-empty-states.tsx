@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent } from "@voyantjs/ui/components"
-import { buttonVariants } from "@voyantjs/ui/components/button"
+import { Card, CardContent } from "@voyant-travel/ui/components"
+import { buttonVariants } from "@voyant-travel/ui/components/button"
 import {
   Empty,
   EmptyContent,
@@ -9,8 +9,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@voyantjs/ui/components/empty"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/empty"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import {
   BarChart3,
   CalendarCheck,

@@ -1,5 +1,5 @@
-import { workflow } from "@voyantjs/workflows"
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import { workflow } from "@voyant-travel/workflows"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { describe, expect, it } from "vitest"
 import { createInMemoryKv, createKvScheduleStateStore, handleWorkerRequest } from "../index.js"
 import { inProcessRunDONamespace, tenantMeta } from "./adapter-test-support.js"

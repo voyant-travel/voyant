@@ -4,7 +4,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 // Lean statics only: the client module (fetcher) and the skeletons. Query
 // options resolve via dynamic import inside the loaders so the suppliers
@@ -19,14 +19,14 @@ import { SuppliersListSkeleton } from "./suppliers-list-skeleton.js"
  * (packaged-admin RFC §4.7). The supplier pages link between the list and
  * the detail page, so instead of importing a host route tree they resolve
  * these keys through `useAdminHref`/`useAdminNavigate` from
- * `@voyantjs/admin`. Hosts register one resolver per key
+ * `@voyant-travel/admin`. Hosts register one resolver per key
  * (`satisfies AdminDestinationResolvers`).
  *
- * `supplier.detail` is also declared by `@voyantjs/catalog-react/admin` and
- * `@voyantjs/finance-react/admin` — interface merging requires the member shape
+ * `supplier.detail` is also declared by `@voyant-travel/catalog-react/admin` and
+ * `@voyant-travel/finance-react/admin` — interface merging requires the member shape
  * to stay identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The suppliers list page. */
     "supplier.list": Record<string, never>
@@ -63,11 +63,11 @@ export interface CreateSuppliersAdminExtensionOptions {
 
 /**
  * The suppliers admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Suppliers nav item is part of the BASE
  * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing nav entries here would duplicate it.
+ * `@voyant-travel/admin` — so contributing nav entries here would duplicate it.
  * If the base nav ever drops the suppliers item, this extension is where the
  * entry moves.
  *
@@ -90,7 +90,7 @@ export interface CreateSuppliersAdminExtensionOptions {
  * WIDGETS: none contributed, but {@link SupplierDetailHost} exposes the
  * `supplier.details.payment-policy` slot ({@link
  * supplierDetailPaymentPolicySlot}) — the §4.7 cycle resolution that lets
- * `@voyantjs/finance-react/ui` (which depends on this package) contribute the
+ * `@voyant-travel/finance-react/ui` (which depends on this package) contribute the
  * finance-owned customer-payment-policy card to the supplier detail page.
  */
 export function createSuppliersAdminExtension(

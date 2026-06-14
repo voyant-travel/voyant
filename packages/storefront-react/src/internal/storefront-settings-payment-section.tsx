@@ -8,8 +8,14 @@ import {
   Checkbox,
   Input,
   Textarea,
-} from "@voyantjs/ui/components"
-import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@voyantjs/ui/components/field"
+} from "@voyant-travel/ui/components"
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@voyant-travel/ui/components/field"
 import { Loader2, Save } from "lucide-react"
 
 import { type FormState, paymentMethods } from "./storefront-settings-form.js"

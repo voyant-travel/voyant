@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   boolean,
   date,
@@ -61,7 +61,7 @@ export const products = pgTable(
     /**
      * Per-product tax class — drives the engine's tax computation at
      * quote time. Plain text (no FK) since `tax_classes` lives in
-     * @voyantjs/finance and cross-domain refs go through the link
+     * @voyant-travel/finance and cross-domain refs go through the link
      * service per schema-discipline. Default null → falls through to a
      * market-level default. Per booking-journey-architecture §9.
      */
@@ -69,7 +69,7 @@ export const products = pgTable(
     /**
      * Per-listing customer payment policy override. Wins over the
      * product's category and supplier policies in the cascade. Shape
-     * mirrors `PaymentPolicy` from `@voyantjs/finance`.
+     * mirrors `PaymentPolicy` from `@voyant-travel/finance`.
      *
      * `null` means "inherit from category / supplier / operator
      * default" — most products leave this empty.
@@ -101,7 +101,7 @@ export const products = pgTable(
     ),
     // Trigram GIN indexes back the `ILIKE '%term%'` search in the admin
     // list + public product search. Requires the pg_trgm extension
-    // (enabled in the operator template's migrations).
+    // (enabled in the operator starter's migrations).
     index("idx_products_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
     index("idx_products_description_trgm").using("gin", table.description.op("gin_trgm_ops")),
   ],

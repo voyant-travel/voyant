@@ -5,9 +5,9 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
-import { useBooking } from "@voyantjs/bookings-react"
-import { usePerson } from "@voyantjs/relationships-react"
+} from "@voyant-travel/admin"
+import { useBooking } from "@voyant-travel/bookings-react"
+import { usePerson } from "@voyant-travel/relationships-react"
 import type { MouseEvent, ReactNode } from "react"
 import {
   ContractDetailPage,
@@ -29,8 +29,8 @@ export interface ContractDetailHostProps {
  * Packaged admin host for the operator-grade contract detail page
  * (packaged-admin RFC Phase 3). Owns everything package-clean:
  *
- *   - Data access through `@voyantjs/legal-react` / `@voyantjs/relationships-react` /
- *     `@voyantjs/bookings-react` hooks (shared Voyant provider context — no
+ *   - Data access through `@voyant-travel/legal-react` / `@voyant-travel/relationships-react` /
+ *     `@voyant-travel/bookings-react` hooks (shared Voyant provider context — no
  *     app RPC client).
  *   - Admin chrome breadcrumbs (`Legal › Contracts › <number-or-title>`)
  *     with hrefs resolved through the `legal.home` / `contract.list`
@@ -99,7 +99,7 @@ function ContractReferenceCell({ kind, id }: ContractReferenceRenderProps) {
     default:
       // Org / supplier / channel / order — no dedicated resolver yet,
       // so fall through to the raw id. Wiring those when their detail
-      // pages land in the operator template.
+      // pages land in the operator starter.
       return <span className="font-mono text-xs">{id}</span>
   }
 }

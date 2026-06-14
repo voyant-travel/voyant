@@ -8,10 +8,10 @@ import {
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
-} from "@voyantjs/commerce"
-import { createEventBus } from "@voyantjs/core"
-import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { productExtras } from "@voyantjs/inventory/extras"
+} from "@voyant-travel/commerce"
+import { createEventBus } from "@voyant-travel/core"
+import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
+import { productExtras } from "@voyant-travel/inventory/extras"
 import {
   optionUnits,
   productDayServices,
@@ -21,10 +21,10 @@ import {
   productMedia,
   productOptions,
   products,
-} from "@voyantjs/inventory/schema"
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
-import { relationshipsService } from "@voyantjs/relationships"
-import { customerSignals } from "@voyantjs/relationships/schema"
+} from "@voyant-travel/inventory/schema"
+import { availabilitySlots, availabilityStartTimes } from "@voyant-travel/operations"
+import { relationshipsService } from "@voyant-travel/relationships"
+import { customerSignals } from "@voyant-travel/relationships/schema"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"

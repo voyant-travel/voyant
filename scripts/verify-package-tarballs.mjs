@@ -174,6 +174,37 @@ async function extractTarball(tarballPath) {
   }
 }
 
+async function cleanAndBuildPackage(packageDir, pkg) {
+  if (pkg.scripts?.clean) {
+    try {
+      await execFileAsync("pnpm", ["run", "clean"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return `pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`
+    }
+  }
+  removeTsBuildInfoFiles(packageDir)
+
+  if (pkg.scripts?.build) {
+    try {
+      await execFileAsync("pnpm", ["run", "build"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return `pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`
+    }
+  }
+
+  return null
+}
+
 function hasExplicitRuntimeExtension(specifier) {
   return /\.(?:c?js|mjs|json|css|wasm|svg|png|jpe?g|gif|webp)(?:[?#].*)?$/.test(specifier)
 }
@@ -258,85 +289,7 @@ function getPublishedTargets(pkg) {
   return [...targets].sort()
 }
 
-function shouldVerifyPackageDir(packageDir) {
-  if (PACKAGE_FILTERS.size === 0) {
-    return true
-  }
-
-  const packageJsonPath = path.join(packageDir, "package.json")
-  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
-
-  return PACKAGE_FILTERS.has(pkg.name)
-}
-
-const packageDirs = packageRoots
-  .filter((packageRoot) => fs.existsSync(packageRoot))
-  .flatMap((packageRoot) => findPackageDirs(packageRoot))
-  .filter(shouldVerifyPackageDir)
-  .sort()
-
-if (PACKAGE_FILTERS.size > 0) {
-  const foundPackageNames = new Set(
-    packageDirs.map((packageDir) => {
-      const pkg = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
-      return pkg.name
-    }),
-  )
-  const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
-    if (!packageName.startsWith("@voyantjs/")) return false
-    return !foundPackageNames.has(packageName)
-  })
-
-  if (missingPackageNames.length > 0) {
-    console.error(`No package directories found for: ${missingPackageNames.join(", ")}`)
-    process.exit(1)
-  }
-}
-
-async function verifyPackage(packageDir) {
-  const packageJsonPath = path.join(packageDir, "package.json")
-  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
-
-  if (pkg.private) return null
-
-  if (!REUSE_DIST) {
-    if (pkg.scripts?.clean) {
-      try {
-        await execFileAsync("pnpm", ["run", "clean"], {
-          cwd: packageDir,
-          encoding: "utf8",
-          maxBuffer: 16 * 1024 * 1024,
-          env: process.env,
-        })
-      } catch (error) {
-        return {
-          name: pkg.name,
-          packageDir,
-          problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
-        }
-      }
-    }
-    removeTsBuildInfoFiles(packageDir)
-
-    if (pkg.scripts?.build) {
-      try {
-        await execFileAsync("pnpm", ["run", "build"], {
-          cwd: packageDir,
-          encoding: "utf8",
-          maxBuffer: 64 * 1024 * 1024,
-          env: process.env,
-        })
-      } catch (error) {
-        return {
-          name: pkg.name,
-          packageDir,
-          problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
-        }
-      }
-    }
-  }
-
-  const sourceFiles = new Set(listPackageFiles(packageDir))
+async function packAndInspectPackage(packageDir) {
   const packDestination = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-"))
 
   let stdout
@@ -363,9 +316,7 @@ async function verifyPackage(packageDir) {
   } catch (error) {
     fs.rmSync(packDestination, { recursive: true, force: true })
     return {
-      name: pkg.name,
-      packageDir,
-      problems: [`pnpm pack failed: ${error.stderr?.toString().trim() || error.message}`],
+      error: `pnpm pack failed: ${error.stderr?.toString().trim() || error.message}`,
     }
   }
 
@@ -380,18 +331,19 @@ async function verifyPackage(packageDir) {
       packInfo,
     )
   } catch (error) {
-    extracted?.cleanup()
-    fs.rmSync(packDestination, { recursive: true, force: true })
-    return {
-      name: pkg.name,
-      packageDir,
-      problems: [`could not parse pnpm pack output: ${error.message}`],
-    }
+    return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
     extracted?.cleanup()
     fs.rmSync(packDestination, { recursive: true, force: true })
   }
 
+  return { packInfo, packedManifest, extensionlessRelativeSpecifiers }
+}
+
+function collectTarballProblems(
+  { packInfo, packedManifest, extensionlessRelativeSpecifiers },
+  sourceFiles,
+) {
   const expectedTargets = getPublishedTargets(packedManifest)
   const tarballFiles = new Set(packInfo.files.map((file) => file.path))
   const missingTargets = expectedTargets.filter(
@@ -424,6 +376,82 @@ async function verifyPackage(packageDir) {
   }
   if (suspiciousFiles.length > 0) {
     problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)
+  }
+
+  return { missingTargets, problems }
+}
+
+function shouldVerifyPackageDir(packageDir) {
+  if (PACKAGE_FILTERS.size === 0) {
+    return true
+  }
+
+  const packageJsonPath = path.join(packageDir, "package.json")
+  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
+
+  return PACKAGE_FILTERS.has(pkg.name)
+}
+
+const packageDirs = packageRoots
+  .filter((packageRoot) => fs.existsSync(packageRoot))
+  .flatMap((packageRoot) => findPackageDirs(packageRoot))
+  .filter(shouldVerifyPackageDir)
+  .sort()
+
+if (PACKAGE_FILTERS.size > 0) {
+  const foundPackageNames = new Set(
+    packageDirs.map((packageDir) => {
+      const pkg = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
+      return pkg.name
+    }),
+  )
+  const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
+    if (!packageName.startsWith("@voyant-travel/")) return false
+    return !foundPackageNames.has(packageName)
+  })
+
+  if (missingPackageNames.length > 0) {
+    console.error(`No package directories found for: ${missingPackageNames.join(", ")}`)
+    process.exit(1)
+  }
+}
+
+async function verifyPackage(packageDir) {
+  const packageJsonPath = path.join(packageDir, "package.json")
+  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
+
+  if (pkg.private) return null
+
+  if (!REUSE_DIST) {
+    const buildProblem = await cleanAndBuildPackage(packageDir, pkg)
+    if (buildProblem) return { name: pkg.name, packageDir, problems: [buildProblem] }
+  }
+
+  const sourceFiles = new Set(listPackageFiles(packageDir))
+  let inspection = await packAndInspectPackage(packageDir)
+  if (inspection.error) {
+    return {
+      name: pkg.name,
+      packageDir,
+      problems: [inspection.error],
+    }
+  }
+
+  let { missingTargets, problems } = collectTarballProblems(inspection, sourceFiles)
+
+  if (REUSE_DIST && missingTargets.length > 0 && pkg.scripts?.build) {
+    const buildProblem = await cleanAndBuildPackage(packageDir, pkg)
+    if (buildProblem) return { name: pkg.name, packageDir, problems: [buildProblem] }
+
+    inspection = await packAndInspectPackage(packageDir)
+    if (inspection.error) {
+      return {
+        name: pkg.name,
+        packageDir,
+        problems: [inspection.error],
+      }
+    }
+    ;({ problems } = collectTarballProblems(inspection, sourceFiles))
   }
 
   if (problems.length === 0) return null

@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
+import { useAdminHref, useAdminNavigate } from "@voyant-travel/admin"
 import {
   Badge,
   Button,
@@ -14,7 +14,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowLeft, Loader2, Pencil } from "lucide-react"
 import { lazy, Suspense, useMemo, useState } from "react"
 import { toast } from "sonner"

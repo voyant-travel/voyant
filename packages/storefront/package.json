@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/storefront",
+  "name": "@voyant-travel/storefront",
   "version": "0.120.1",
   "license": "Apache-2.0",
   "type": "module",
@@ -13,7 +13,18 @@
     "./public-routes": "./src/routes-public.ts",
     "./service": "./src/service.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./verification": "./src/verification/index.ts",
+    "./verification/schema": "./src/verification/schema.ts",
+    "./verification/public-routes": "./src/verification/routes-public.ts",
+    "./verification/service": "./src/verification/service.ts",
+    "./verification/validation": "./src/verification/validation.ts"
+  },
+  "voyant": {
+    "schema": "./verification/schema",
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -24,41 +35,41 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/commerce": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/crm-contracts": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/commerce": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/relationships-contracts": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "@voyantjs/identity": "workspace:^",
-    "@voyantjs/legal": "workspace:^",
-    "@voyantjs/relationships": "workspace:^"
+    "@voyant-travel/identity": "workspace:^",
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/relationships": "workspace:^"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/identity": {
+    "@voyant-travel/identity": {
       "optional": true
     },
-    "@voyantjs/legal": {
+    "@voyant-travel/legal": {
       "optional": true
     },
-    "@voyantjs/relationships": {
+    "@voyant-travel/relationships": {
       "optional": true
     }
   },
   "devDependencies": {
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/identity": "workspace:^",
-    "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/legal": "workspace:^",
-    "@voyantjs/operations": "workspace:^",
-    "@voyantjs/relationships": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/identity": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/operations": "workspace:^",
+    "@voyant-travel/relationships": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -117,6 +128,31 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./verification": {
+        "types": "./dist/verification/index.d.ts",
+        "import": "./dist/verification/index.js",
+        "default": "./dist/verification/index.js"
+      },
+      "./verification/schema": {
+        "types": "./dist/verification/schema.d.ts",
+        "import": "./dist/verification/schema.js",
+        "default": "./dist/verification/schema.js"
+      },
+      "./verification/public-routes": {
+        "types": "./dist/verification/routes-public.d.ts",
+        "import": "./dist/verification/routes-public.js",
+        "default": "./dist/verification/routes-public.js"
+      },
+      "./verification/service": {
+        "types": "./dist/verification/service.d.ts",
+        "import": "./dist/verification/service.js",
+        "default": "./dist/verification/service.js"
+      },
+      "./verification/validation": {
+        "types": "./dist/verification/validation.d.ts",
+        "import": "./dist/verification/validation.js",
+        "default": "./dist/verification/validation.js"
       }
     },
     "main": "./dist/index.js",
@@ -124,7 +160,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/storefront"
   }
 }

@@ -1,4 +1,4 @@
-import { type NotificationService, notificationsService } from "@voyantjs/notifications"
+import { type NotificationService, notificationsService } from "@voyant-travel/notifications"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { NetopiaClientApi } from "./client.js"
 import {

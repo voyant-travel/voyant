@@ -67,7 +67,7 @@ const missingExports = componentEntries.filter(({ moduleSpecifier }) => {
 })
 
 if (missingExports.length > 0) {
-  console.error("@voyantjs/ui components barrel is missing these component modules:")
+  console.error("@voyant-travel/ui components barrel is missing these component modules:")
   for (const { displayPath } of missingExports) {
     console.error(`  - packages/ui/src/components/${displayPath}`)
   }
@@ -75,4 +75,4 @@ if (missingExports.length > 0) {
   process.exit(1)
 }
 
-console.log(`Verified ${componentEntries.length} @voyantjs/ui component barrel exports.`)
+console.log(`Verified ${componentEntries.length} @voyant-travel/ui component barrel exports.`)

@@ -18,14 +18,14 @@
  * runs view surfaces the failed step for ops.
  *
  * This is a thin adapter on top of `createWorkflow` from
- * `@voyantjs/core/workflows` — no durability, no event-await; the
+ * `@voyant-travel/core/workflows` — no durability, no event-await; the
  * caller subscribes to `payment.completed` and runs the workflow
  * inline. Phase 6 of the storefront-checkout-flow plan elaborates
  * with workflow-runs surfacing.
  */
 
-import type { EventBus } from "@voyantjs/core"
-import { createWorkflow, step } from "@voyantjs/core/workflows"
+import type { EventBus } from "@voyant-travel/core"
+import { createWorkflow, step } from "@voyant-travel/core/workflows"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export interface CheckoutFinalizeInput {
@@ -37,7 +37,7 @@ export interface CheckoutFinalizeInput {
 
 /**
  * Optional step-lifecycle hooks the caller can wire to the
- * `@voyantjs/workflow-runs` recorder (or any other observability
+ * `@voyant-travel/workflow-runs` recorder (or any other observability
  * sink). Catalog stays neutral — it just emits the events.
  */
 export interface CheckoutFinalizeStepRecorder {

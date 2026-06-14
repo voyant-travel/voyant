@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query"
 import type {
   previewNotificationTemplateSchema,
   sendNotificationSchema,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

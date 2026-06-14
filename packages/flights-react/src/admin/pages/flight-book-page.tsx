@@ -1,6 +1,6 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminHref, useAdminNavigate } from "@voyantjs/admin"
+import { type AdminRoutePageProps, useAdminHref, useAdminNavigate } from "@voyant-travel/admin"
 
 import { FlightBookingPage } from "../../components/flight-booking-page.js"
 import type { PaymentStepCapabilities } from "../../components/flight-payment-step.js"

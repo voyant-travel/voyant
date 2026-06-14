@@ -88,7 +88,7 @@ async function main() {
   }
 
   console.log(
-    `Verified ${config.fixed.length} release cohorts and compatible @voyantjs workspace ranges.`,
+    `Verified ${config.fixed.length} release cohorts and compatible @voyant-travel workspace ranges.`,
   )
 }
 

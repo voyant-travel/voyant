@@ -1,14 +1,14 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { Search, X } from "lucide-react"
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react"
 import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"

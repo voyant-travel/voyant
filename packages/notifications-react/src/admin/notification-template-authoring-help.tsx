@@ -4,14 +4,14 @@ import type {
   NotificationLiquidSnippet,
   NotificationTemplateVariableCategory,
   NotificationTemplateVariableDefinition,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 
 import {
   ContractTemplateAuthoringHelp,
   type TemplateAuthoringSnippet,
   type TemplateAuthoringVariable,
   type TemplateAuthoringVariableGroup,
-} from "@voyantjs/ui/components/contract-template-authoring-help"
+} from "@voyant-travel/ui/components/contract-template-authoring-help"
 
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 

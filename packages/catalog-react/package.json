@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/catalog-react",
+  "name": "@voyant-travel/catalog-react",
   "version": "0.117.2",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/catalog-react"
   },
   "type": "module",
@@ -34,11 +34,11 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/distribution-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sonner": "^2.0.0",
@@ -48,19 +48,19 @@
     "@tanstack/react-table": {
       "optional": true
     },
-    "@voyantjs/admin": {
+    "@voyant-travel/admin": {
       "optional": true
     },
-    "@voyantjs/commerce-react": {
+    "@voyant-travel/commerce-react": {
       "optional": true
     },
-    "@voyantjs/inventory-react": {
+    "@voyant-travel/inventory-react": {
       "optional": true
     },
-    "@voyantjs/distribution-react": {
+    "@voyant-travel/distribution-react": {
       "optional": true
     },
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     },
     "sonner": {
@@ -68,23 +68,23 @@
     }
   },
   "dependencies": {
-    "@voyantjs/catalog-contracts": "workspace:^",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^"
+    "@voyant-travel/catalog-contracts": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/distribution-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

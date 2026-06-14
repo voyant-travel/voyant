@@ -1,6 +1,6 @@
 "use client"
 
-import type { OperatorAdminMessages } from "@voyantjs/i18n"
+import type { OperatorAdminMessages } from "@voyant-travel/i18n"
 import { createContext, type ReactNode, useContext } from "react"
 
 import type { ProductMediaUploadHandler } from "../product-media-section.js"

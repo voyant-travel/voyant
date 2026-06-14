@@ -11,10 +11,10 @@ import {
   type EventFilterDescriptor,
   type Module,
   type WorkflowDescriptor,
-} from "@voyantjs/core"
-import { __resetRegistry, trigger, workflow } from "@voyantjs/workflows"
-import { __resetEventFilterRegistry } from "@voyantjs/workflows/events"
-import { createInMemoryDriver } from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/core"
+import { __resetRegistry, trigger, workflow } from "@voyant-travel/workflows"
+import { __resetEventFilterRegistry } from "@voyant-travel/workflows/events"
+import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator"
 import { afterEach, describe, expect, test } from "vitest"
 
 import { createApp } from "../../src/app.js"
@@ -421,7 +421,7 @@ describe("createApp workflows wiring", () => {
   test("rejects event-filter descriptors that omit the runtime manifest field", async () => {
     // A plugin that only satisfies the public EventFilterDescriptor
     // (`{ id, eventType }`) — the structural minimum from
-    // @voyantjs/core — must not be silently passed through to the
+    // @voyant-travel/core — must not be silently passed through to the
     // manifest builder, which reads `entry.manifest.id` deep inside its
     // sort and would otherwise crash with a confusing TypeError.
     const moduleSpec: Module = {

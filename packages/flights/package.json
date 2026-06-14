@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/flights",
+  "name": "@voyant-travel/flights",
   "version": "0.119.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -18,7 +18,7 @@
   "voyant": {
     "schema": "./reference/local-postgres",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   },
   "scripts": {
@@ -90,20 +90,20 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/flights-contracts": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/flights-contracts": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/flights"
   }
 }

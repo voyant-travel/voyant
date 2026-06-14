@@ -1,9 +1,9 @@
 "use client"
 
-import type { FlightOffer, Money, PassengerCounts } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { FlightOffer, Money, PassengerCounts } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Check, Pencil, Plane, Users } from "lucide-react"
 import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"

@@ -1,4 +1,4 @@
-# @voyantjs/worker-runtime
+# @voyant-travel/worker-runtime
 
 ## 0.1.0
 
@@ -8,12 +8,12 @@
   Worker infrastructure ships as versioned packages instead of copied template
   files.
 
-  - `@voyantjs/worker-runtime`: `createApiDispatch` (prefix-routed API/auth
+  - `@voyant-travel/worker-runtime`: `createApiDispatch` (prefix-routed API/auth
     dispatch with lean-auth cold-start protection and background API warm-up),
     `createWorkerFetch` (API-vs-SSR Worker entrypoint), `lazyApp` (memoized app
     loaders), and `withActiveRouteSsrManifest` (restricts the TanStack Start SSR
     manifest to active route matches).
-  - `@voyantjs/vite-config`: `voyantStartViteConfig` build preset (vendor
+  - `@voyant-travel/vite-config`: `voyantStartViteConfig` build preset (vendor
     chunking, SSR optimizeDeps, `@` alias, dev-tunnel hosts) plus à-la-carte
     exports (`voyantVendorChunk`, `VOYANT_SSR_OPTIMIZE_DEPS`,
     `VOYANT_ROUTE_FILE_IGNORE_PATTERN`, `createAnalyzePlugin`).

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useVoyantReactContext } from "@voyantjs/react"
+import { useVoyantReactContext } from "@voyant-travel/react"
 import {
   Button,
   Card,
@@ -17,8 +17,8 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@voyantjs/ui/components"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
 import { createContext, useContext, useMemo, useState } from "react"
 

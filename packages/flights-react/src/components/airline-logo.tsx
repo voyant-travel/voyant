@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useState } from "react"
 
 export interface AirlineLogoProps {

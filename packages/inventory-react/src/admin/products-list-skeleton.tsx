@@ -1,7 +1,7 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 
 const SKELETON_ROWS = 6
 const COLUMN_WIDTHS = ["w-48", "w-16", "w-24", "w-8", "w-24"] as const

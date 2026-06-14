@@ -1,4 +1,4 @@
-import type { InvoiceIssueRuntime } from "@voyantjs/finance"
+import type { InvoiceIssueRuntime } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
   persistSmartbillInvoiceArtifact,

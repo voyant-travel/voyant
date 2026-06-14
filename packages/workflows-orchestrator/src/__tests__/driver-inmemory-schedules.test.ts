@@ -1,4 +1,4 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
 import { createInMemoryDriver } from "../driver-inmemory.js"

@@ -1,4 +1,4 @@
-import type { Plugin } from "@voyantjs/core"
+import type { Plugin } from "@voyant-travel/core"
 import { beforeEach, vi } from "vitest"
 import { financeServiceMock } from "./plugin-test-setup.js"
 

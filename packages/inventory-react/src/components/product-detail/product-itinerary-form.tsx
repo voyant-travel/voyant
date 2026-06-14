@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input, Label } from "@voyantjs/ui/components"
+import { Button, Checkbox, Input, Label } from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

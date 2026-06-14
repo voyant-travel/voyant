@@ -1,4 +1,4 @@
-import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
+import { CircuitOpenError, createCircuitBreaker } from "@voyant-travel/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
 import { createPayloadClient } from "../../src/client.js"

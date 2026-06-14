@@ -4,7 +4,7 @@ import {
   resumeDueAlarms,
   type StepHandler,
   type StreamChunk,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 export interface SleepAlarmStoredRun {
   id: string

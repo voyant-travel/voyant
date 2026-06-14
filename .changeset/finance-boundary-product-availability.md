@@ -1,5 +1,5 @@
 ---
-"@voyantjs/finance": patch
+"@voyant-travel/finance": patch
 ---
 
 Remove Finance runtime dependencies on Product and Availability schemas for tax

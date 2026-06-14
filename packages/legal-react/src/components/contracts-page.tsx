@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 
-import { formatMessage } from "@voyantjs/i18n"
-import { type PersonRecord, usePeople } from "@voyantjs/relationships-react"
+import { formatMessage } from "@voyant-travel/i18n"
+import { type PersonRecord, usePeople } from "@voyant-travel/relationships-react"
 import {
   Badge,
   Button,
@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Command,
   CommandEmpty,
@@ -21,9 +21,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@voyantjs/ui/components/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -31,8 +31,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronDown, ListFilter, Plus, Search, User, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"

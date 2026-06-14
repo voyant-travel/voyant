@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import { useFacilitiesUiMessagesOrDefault } from "../i18n/provider.js"
 import { useFacility } from "../index.js"
 

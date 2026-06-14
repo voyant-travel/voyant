@@ -1,7 +1,7 @@
-import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
-import type { Extension } from "@voyantjs/core"
-import { parseJsonBody } from "@voyantjs/hono"
-import type { HonoExtension } from "@voyantjs/hono/module"
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import type { Extension } from "@voyant-travel/core"
+import { parseJsonBody } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import { type Context, Hono } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
@@ -52,7 +52,7 @@ function getBookingCreateActionLedgerRequestContext(
 /**
  * Mounted under `/v1/admin/bookings/*` via the extension's `module` target, so
  * the endpoint's public-facing path lands at `POST /v1/admin/bookings/create`
- * even though the code lives in `@voyantjs/finance`. See the header comment in
+ * even though the code lives in `@voyant-travel/finance`. See the header comment in
  * service-booking-create.ts for why finance owns this orchestration.
  */
 const createBookingRoutes = new Hono<Env>()

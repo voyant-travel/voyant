@@ -1,9 +1,9 @@
 "use client"
 
-import type { PaymentPolicy } from "@voyantjs/finance"
-import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-react/ui"
-import { Badge, Button, Label, Switch } from "@voyantjs/ui/components"
-import { Separator } from "@voyantjs/ui/components/separator"
+import type { PaymentPolicy } from "@voyant-travel/finance"
+import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyant-travel/finance-react/ui"
+import { Badge, Button, Label, Switch } from "@voyant-travel/ui/components"
+import { Separator } from "@voyant-travel/ui/components/separator"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"

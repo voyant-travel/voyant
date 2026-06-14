@@ -1,7 +1,14 @@
 // agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { useQueryClient } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -9,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"

@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/accommodations/booking-engine` — owned-arm booking
+ * `@voyant-travel/accommodations/booking-engine` — owned-arm booking
  * handler for the accommodation vertical.
  *
  * Per `docs/architecture/booking-journey-architecture.md` §6.

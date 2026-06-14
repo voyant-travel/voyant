@@ -1,4 +1,4 @@
-import { typeIdSchema } from "@voyantjs/db/lib/typeid"
+import { typeIdSchema } from "@voyant-travel/db/lib/typeid"
 import { z } from "zod"
 
 export const externalRefStatusSchema = z.enum(["active", "inactive", "archived"])

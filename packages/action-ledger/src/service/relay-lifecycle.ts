@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, sql } from "drizzle-orm"
 
 import { type ActionLedgerRelayOutbox, actionLedgerRelayOutbox } from "../schema.js"

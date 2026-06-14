@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
-import { useOperatorAdminMessages } from "@voyantjs/admin/providers/operator-admin-messages"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
+import { cn } from "@voyant-travel/ui/lib/utils"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
@@ -11,7 +11,7 @@ import {
 } from "./settings-nav.js"
 
 /**
- * The settings area layout (packaged from the operator template's
+ * The settings area layout (packaged from the operator starter's
  * `SettingsLayout`): a grouped sub-navigation sidebar plus an outlet for
  * the active settings page. Mounted as the core extension's `/settings`
  * layout route; the child pages render into the outlet.

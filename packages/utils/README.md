@@ -1,20 +1,20 @@
-# @voyantjs/utils
+# @voyant-travel/utils
 
 Shared utility functions for Voyant. Caching, KMS, KV, rate limits, session claims, and localized geographic data (countries, currencies, languages, timezones, regions).
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/utils
+pnpm add @voyant-travel/utils
 ```
 
 ## Usage
 
 ```typescript
-import { cached } from "@voyantjs/utils/cache"
-import { COUNTRIES } from "@voyantjs/utils/countries"
-import { CURRENCIES } from "@voyantjs/utils/currencies"
-import { TIMEZONES } from "@voyantjs/utils/timezones"
+import { cached } from "@voyant-travel/utils/cache"
+import { COUNTRIES } from "@voyant-travel/utils/countries"
+import { CURRENCIES } from "@voyant-travel/utils/currencies"
+import { TIMEZONES } from "@voyant-travel/utils/timezones"
 
 const result = await cached(key, ttlSeconds, computeFn, kv)
 ```

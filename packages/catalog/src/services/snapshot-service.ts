@@ -14,9 +14,9 @@
  * See `docs/architecture/catalog-architecture.md` §5.3 for the design.
  */
 
-import type { CaptureSnapshotInput } from "@voyantjs/catalog-contracts/snapshot"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { CaptureSnapshotInput } from "@voyant-travel/catalog-contracts/snapshot"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq } from "drizzle-orm"
 
 import type { ResolvedView } from "../overlay/resolver.js"
@@ -30,8 +30,8 @@ import {
 // Captures
 // ─────────────────────────────────────────────────────────────────────────────
 
-// `CaptureSnapshotInput` now lives in @voyantjs/catalog-contracts (pure).
-// Re-exported here to keep existing @voyantjs/catalog import paths stable.
+// `CaptureSnapshotInput` now lives in @voyant-travel/catalog-contracts (pure).
+// Re-exported here to keep existing @voyant-travel/catalog import paths stable.
 export type { CaptureSnapshotInput }
 
 /**

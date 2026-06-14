@@ -1,5 +1,5 @@
 ---
-"@voyantjs/commerce": minor
+"@voyant-travel/commerce": minor
 ---
 
 Introduce the Commerce commercial decision Interface with adapter-registered

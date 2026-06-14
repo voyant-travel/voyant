@@ -11,7 +11,7 @@ describe.skipIf(!DB_AVAILABLE)("CRM person resolution helpers (issue #961)", () 
   let db: Awaited<ReturnType<typeof loadDb>>
 
   async function loadDb() {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     return createTestDb()
   }
 
@@ -20,7 +20,7 @@ describe.skipIf(!DB_AVAILABLE)("CRM person resolution helpers (issue #961)", () 
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 

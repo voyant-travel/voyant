@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
+} from "@voyant-travel/ui/components/dialog"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 import type { ProductCategoryRecord } from "../index.js"
 import { ProductCategoryForm } from "./product-category-form.js"

@@ -10,7 +10,7 @@ import {
   DialogTitle,
   Label,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

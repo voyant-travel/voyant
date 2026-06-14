@@ -1,1 +1,1 @@
-export * from "@voyantjs/inventory/authoring/schema"
+export * from "@voyant-travel/inventory/authoring/schema"

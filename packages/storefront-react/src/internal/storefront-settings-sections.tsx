@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Field,
   FieldDescription,
@@ -15,8 +15,8 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from "@voyantjs/ui/components/field"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components/field"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { AlertCircle, Plus, Trash2 } from "lucide-react"
 
 import {

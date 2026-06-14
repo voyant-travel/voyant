@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, cn, Input, Textarea } from "@voyantjs/ui/components"
+import { Button, cn, Input, Textarea } from "@voyant-travel/ui/components"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { type ComponentType, type KeyboardEvent, useState } from "react"
 

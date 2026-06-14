@@ -1,7 +1,7 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components"
 import { type SeatLayoutSpec, seatLayoutSpecSchema } from "../index.js"
 
 export function SeatMapSummaryBadge({

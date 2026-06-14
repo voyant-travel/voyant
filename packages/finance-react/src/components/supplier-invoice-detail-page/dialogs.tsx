@@ -1,4 +1,4 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -14,8 +14,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../../i18n/index.js"
 import type {

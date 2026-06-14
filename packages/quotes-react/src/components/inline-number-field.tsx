@@ -1,7 +1,7 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { Button, Input } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button, Input } from "@voyant-travel/ui/components"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { type ComponentType, type KeyboardEvent, useState } from "react"
 

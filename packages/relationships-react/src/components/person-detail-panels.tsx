@@ -1,7 +1,7 @@
 "use client"
 
-import { Badge, Card, CardContent, ConfirmActionButton } from "@voyantjs/ui/components"
-import { Separator } from "@voyantjs/ui/components/separator"
+import { Badge, Card, CardContent, ConfirmActionButton } from "@voyant-travel/ui/components"
+import { Separator } from "@voyant-travel/ui/components/separator"
 import { Eye, EyeOff, FileText, Loader2, Pencil } from "lucide-react"
 import { type ReactNode, useState } from "react"
 

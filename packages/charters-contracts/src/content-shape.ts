@@ -15,7 +15,7 @@
  *
  * This module is the pure content contract: schemas, types, version, and
  * the validator. The `mergeOverlaysIntoCharterContent` overlay
- * composition stays in the `@voyantjs/charters` runtime package.
+ * composition stays in the `@voyant-travel/charters` runtime package.
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */

@@ -125,7 +125,7 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
     })
 
     it("merges duplicate organizations and repoints people and booking references", async () => {
-      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
       const db = createTestDb()
 
       const keepRes = await getApp().request("/organizations", {

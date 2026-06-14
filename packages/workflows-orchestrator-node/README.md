@@ -1,6 +1,6 @@
-# @voyantjs/workflows-orchestrator-node
+# @voyant-travel/workflows-orchestrator-node
 
-Node/Docker runtime primitives for `@voyantjs/workflows-orchestrator`.
+Node/Docker runtime primitives for `@voyant-travel/workflows-orchestrator`.
 
 This package is the first building block for the Docker/GCE self-host target:
 
@@ -25,7 +25,7 @@ Operator admin processes can use the client helper instead of hand-rolling the
 self-host HTTP contract:
 
 ```ts
-import { createNodeSelfHostWorkflowClient } from "@voyantjs/workflows-orchestrator-node";
+import { createNodeSelfHostWorkflowClient } from "@voyant-travel/workflows-orchestrator-node";
 
 const workflows = createNodeSelfHostWorkflowClient({
   baseUrl: process.env.WORKFLOW_SERVER_URL!,
@@ -53,14 +53,14 @@ const resumed = await workflows.resume(parentRunId, {
 self-host snapshot id and `seedResults` is omitted, the server derives seed
 entries from the parent run's successful journaled steps before the failed step.
 When the parent id comes from an external admin recorder such as
-`@voyantjs/workflow-runs`, pass `workflowId`, `resumeFromStep`, and
+`@voyant-travel/workflow-runs`, pass `workflowId`, `resumeFromStep`, and
 `seedResults` from that recorder's `WorkflowResumeContext`. Seeded steps are
 replayed from the journal, so their side effects do not run again.
 
 ## Service-backed package workflows
 
 Package workflows can resolve host-provided services through
-`ctx.services.resolve(...)`. For example, `@voyantjs/commerce` exports the
+`ctx.services.resolve(...)`. For example, `@voyant-travel/commerce` exports the
 `promotions.reindex-all-products` workflow, which resolves the bulk reindex
 service registered under `BULK_REINDEX_SERVICE_KEY`.
 
@@ -70,13 +70,13 @@ to the driver factory, and the Node standalone driver forwards that resolver
 into every workflow step:
 
 ```ts
-import { createApp } from "@voyantjs/hono"
-import type { HonoModule } from "@voyantjs/hono/module"
-import { createNodeStandaloneDriver } from "@voyantjs/workflows-orchestrator-node"
+import { createApp } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
+import { createNodeStandaloneDriver } from "@voyant-travel/workflows-orchestrator-node"
 import {
   BULK_REINDEX_SERVICE_KEY,
   createCommerceHonoModules,
-} from "@voyantjs/commerce"
+} from "@voyant-travel/commerce"
 
 const promotionsWorkflowServices: HonoModule = {
   module: {
@@ -106,9 +106,9 @@ entry file, pass the same read-only resolver to `startNodeSelfHostServer()` or
 `createNodeSelfHostDeps()`:
 
 ```ts
-import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/commerce"
-import type { ServiceResolver } from "@voyantjs/workflows/driver"
-import { startNodeSelfHostServer } from "@voyantjs/workflows-orchestrator-node"
+import { BULK_REINDEX_SERVICE_KEY } from "@voyant-travel/commerce"
+import type { ServiceResolver } from "@voyant-travel/workflows/driver"
+import { startNodeSelfHostServer } from "@voyant-travel/workflows-orchestrator-node"
 
 const services: ServiceResolver = {
   resolve<T>(name: string): T {
@@ -145,13 +145,13 @@ Apply migrations with:
 
 ```bash
 DATABASE_URL='<postgres connection string>' \
-  pnpm --filter @voyantjs/workflows-orchestrator-node db:migrate
+  pnpm --filter @voyant-travel/workflows-orchestrator-node db:migrate
 ```
 
 Or run the same committed SQL migrations through the runtime-owned helper:
 
 ```ts
-import { runPostgresMigrations } from "@voyantjs/workflows-orchestrator-node";
+import { runPostgresMigrations } from "@voyant-travel/workflows-orchestrator-node";
 
 await runPostgresMigrations({
   databaseUrl: process.env.DATABASE_URL!,
@@ -161,7 +161,7 @@ await runPostgresMigrations({
 Generate a new migration after editing the schema with:
 
 ```bash
-pnpm --filter @voyantjs/workflows-orchestrator-node db:generate -- --name your_change_name
+pnpm --filter @voyant-travel/workflows-orchestrator-node db:generate -- --name your_change_name
 ```
 
 ## Integration test
@@ -170,7 +170,7 @@ Run the Postgres-backed integration suite with a local database, for example:
 
 ```bash
 TEST_DATABASE_URL='<postgres test connection string>' \
-  pnpm --filter @voyantjs/workflows-orchestrator-node test:integration
+  pnpm --filter @voyant-travel/workflows-orchestrator-node test:integration
 ```
 
 For a Docker-first reference deployment, use

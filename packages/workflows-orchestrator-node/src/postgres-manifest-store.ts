@@ -17,7 +17,7 @@ import { workflowManifestsTable } from "./postgres-schema.js"
 type ManifestDb = ReturnType<typeof drizzle>
 
 /**
- * Structural view of `WorkflowManifest` (from `@voyantjs/workflows/protocol`).
+ * Structural view of `WorkflowManifest` (from `@voyant-travel/workflows/protocol`).
  * Declared locally to avoid pulling the workflows package's protocol export
  * into this store — every consumer satisfies the shape via TypeScript
  * structural compat, same pattern Voyant uses elsewhere.

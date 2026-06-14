@@ -79,7 +79,7 @@ export function adminRoutePageModule<P>(component: React.ComponentType<P>): Admi
  *
  * Originally metadata only; as of the packaged-admin RFC Phase 2
  * (docs/architecture/packaged-admin-rfc.md §4.2) contributions may carry the
- * route IMPLEMENTATION — everything a template route file can express — so
+ * route IMPLEMENTATION — everything a starter route file can express — so
  * domain packages can ship pages. All implementation fields are optional:
  * metadata-only contributions remain valid, and hosts decide how the fields
  * map onto their router (TanStack hosts spread them into route options).
@@ -147,7 +147,7 @@ export interface AdminUiRouteContribution {
    * a child path of exactly `"/"` is the parent's index route. Hosts bind
    * children under the parent's code-based route (packaged-admin RFC §4.8 —
    * see `attachAdminExtensionRoutes` / `adminExtensionChildRoutes` in
-   * `@voyantjs/admin/app`).
+   * `@voyant-travel/admin/app`).
    */
   children?: ReadonlyArray<AdminUiRouteContribution>
 }
@@ -155,7 +155,7 @@ export interface AdminUiRouteContribution {
 /**
  * Contribute one or more navigation items to the shared admin shell.
  *
- * Contributions are appended after the template's base navigation and sorted
+ * Contributions are appended after the starter's base navigation and sorted
  * by `order`. Set `insertAfter` to a base nav item id to splice the
  * contribution's items in directly after that item instead — useful when
  * the extension's items belong logically next to a built-in entry (e.g.
@@ -170,13 +170,13 @@ export interface AdminNavigationContribution {
 /**
  * Named widget slot identifier.
  *
- * Templates define the slots they expose on specific admin pages and modules
+ * Starters define the slots they expose on specific admin pages and modules
  * or extensions can target them with React components.
  */
 export type AdminWidgetSlot = string
 
 /**
- * A widget contribution that can be rendered inside a template-defined slot.
+ * A widget contribution that can be rendered inside a starter-defined slot.
  */
 export interface AdminWidgetContribution<Props = Record<string, unknown>> {
   id: string
@@ -189,7 +189,7 @@ export interface AdminWidgetContribution<Props = Record<string, unknown>> {
  * Shared admin extension bundle.
  *
  * This keeps the extension surface explicit and typed without forcing a more
- * dynamic plugin runtime into templates.
+ * dynamic plugin runtime into starters.
  */
 export interface AdminExtension {
   id: string
@@ -300,7 +300,7 @@ export function requireImplementedAdminRoute(
 }
 
 /**
- * Compose an explicit admin extension registry for a template or app shell.
+ * Compose an explicit admin extension registry for a starter or app shell.
  *
  * The admin surface stays source-controlled and typed while still routing
  * all contributions through the shared admin runtime package.

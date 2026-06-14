@@ -4,9 +4,9 @@ import {
   createQueryRunner,
   type EventFilterDescriptor,
   type WorkflowDescriptor,
-} from "@voyantjs/core"
-import { createOutboxEventStore } from "@voyantjs/db/outbox"
-import type { WorkflowDriver } from "@voyantjs/workflows/driver"
+} from "@voyant-travel/core"
+import { createOutboxEventStore } from "@voyant-travel/db/outbox"
+import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import { Hono } from "hono"
 
 import {
@@ -114,7 +114,7 @@ export interface VoyantAppExtensions<TBindings = unknown> {
    *     await app.ready(env)
    *     await withDbFromEnv(env, (db) => drainOutbox(db, app.eventBus))
    */
-  eventBus: import("@voyantjs/core").EventBus
+  eventBus: import("@voyant-travel/core").EventBus
 }
 
 export function createApp<TBindings extends VoyantBindings>(
@@ -346,7 +346,7 @@ export function createApp<TBindings extends VoyantBindings>(
     // e-invoicing) no longer add their latency to every mutation.
     //
     // With `outbox: true`, emits are also durable (persisted before
-    // delivery, retried by `drainOutbox` from @voyantjs/db/outbox) —
+    // delivery, retried by `drainOutbox` from @voyant-travel/db/outbox) —
     // INCLUDING on runtimes without an ExecutionContext (Node/headless),
     // where emits await handlers inline but still capture through the
     // store. Only when there's neither a scheduler nor a store does the
@@ -377,7 +377,7 @@ export function createApp<TBindings extends VoyantBindings>(
       // Surfaced on `c.var.workflowDriver` so HTTP route handlers can
       // call `driver.trigger(...)` directly without re-resolving from
       // the container. Also used by the optional HTTP ingest adapter
-      // (`mountHttpIngestAdapter` from `@voyantjs/workflows/http-ingest`).
+      // (`mountHttpIngestAdapter` from `@voyant-travel/workflows/http-ingest`).
       c.set("workflowDriver", workflowDriver)
     }
     return next()
@@ -403,7 +403,7 @@ export function createApp<TBindings extends VoyantBindings>(
   // /v1/admin/products), or (c) a template-supplied extra path
   // (`dbTransactionalPaths` — for additionalRoutes / adapter-wired flows
   // like the catalog booking engine whose transactionality depends on
-  // template wiring).
+  // starter wiring).
   const txModuleNames = new Set<string>(
     allModules.filter((m) => m.module.requiresTransactionalDb).map((m) => m.module.name),
   )
@@ -468,7 +468,7 @@ export function createApp<TBindings extends VoyantBindings>(
   // Admin capability discovery — GET /v1/admin/_meta/capabilities. A built-in
   // framework route (like /health), mounted only when the deployment supplies
   // the operation catalogue via `config.adminMeta` (from
-  // `@voyantjs/admin-contracts`) — keeping `@voyantjs/hono` decoupled from it.
+  // `@voyant-travel/admin-contracts`) — keeping `@voyant-travel/hono` decoupled from it.
   // Guarded by the `/v1/admin/*` staff actor guard above.
   if (config.adminMeta) {
     const adminMeta = config.adminMeta

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { FlightBookRequest } from "@voyantjs/flights/contract/types"
+import type { FlightBookRequest } from "@voyant-travel/flights/contract/types"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantFlightsContext } from "../provider.js"

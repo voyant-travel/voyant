@@ -1,4 +1,4 @@
-# @voyantjs/core
+# @voyant-travel/core
 
 Module system and framework primitives for Voyant. Transport-agnostic —
 provides the contracts, registry, container, event bus, links, query,
@@ -8,17 +8,17 @@ and transport adapter builds on.
 ## Install
 
 ```bash
-pnpm add @voyantjs/core
+pnpm add @voyant-travel/core
 ```
 
 ## Usage
 
 ```typescript
-import { defineModule } from "@voyantjs/core/module"
-import { defineLink } from "@voyantjs/core/links"
-import { definePlugin } from "@voyantjs/core/plugin"
-import { defineVoyantConfig } from "@voyantjs/core/config"
-import { createWorkflow, step } from "@voyantjs/core/workflows"
+import { defineModule } from "@voyant-travel/core/module"
+import { defineLink } from "@voyant-travel/core/links"
+import { definePlugin } from "@voyant-travel/core/plugin"
+import { defineVoyantConfig } from "@voyant-travel/core/config"
+import { createWorkflow, step } from "@voyant-travel/core/workflows"
 ```
 
 In Voyant, modules, providers, extensions, and workflows are the main runtime

@@ -5,7 +5,7 @@ import {
   type OperatorAdminMessages,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,7 @@ import {
   Badge,
   Button,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowLeft, ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { InvoiceActionLedgerCard } from "../components/invoice-action-ledger-card.js"
@@ -75,7 +75,7 @@ export interface InvoiceDetailHostProps {
  * Packaged admin host for the operator-grade invoice detail page
  * (packaged-admin RFC Phase 3). Owns everything package-clean:
  *
- *   - Data access through `@voyantjs/finance-react` hooks (shared finance
+ *   - Data access through `@voyant-travel/finance-react` hooks (shared finance
  *     provider context — no app RPC client).
  *   - Cross-route links resolve through semantic destinations (RFC §4.7):
  *     `invoice.list` (back/after delete), `invoice.detail` (after a proforma

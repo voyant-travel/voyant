@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent } from "@voyantjs/ui/components"
+import { Badge, Card, CardContent } from "@voyant-travel/ui/components"
 import { TrendingUp } from "lucide-react"
 
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"

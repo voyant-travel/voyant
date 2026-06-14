@@ -1,7 +1,7 @@
 import { createServer } from "node:http"
 import { resolve as resolvePath } from "node:path"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
-import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import { createInMemoryRateLimiter } from "@voyant-travel/workflows/rate-limit"
 import {
   createInMemoryRunStore,
   type RunRecord,
@@ -9,7 +9,7 @@ import {
   resumeDueAlarms,
   type StepHandler,
   trigger,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 import { createChunkBus } from "./dashboard-chunks.js"
 import { startServer } from "./dashboard-http-server.js"
 import { renderMetrics } from "./dashboard-metrics.js"
@@ -44,7 +44,7 @@ import { createFsSnapshotRunStore, type StoredRun } from "./snapshot-run-store.j
 import { createFsWakeupStore } from "./wakeup-store.js"
 
 type WorkflowRegistryModule = Pick<
-  typeof import("@voyantjs/workflows"),
+  typeof import("@voyant-travel/workflows"),
   "__resetRegistry" | "__listRegisteredWorkflows"
 >
 
@@ -89,14 +89,14 @@ export async function createNodeSelfHostDeps(
   const pg = databaseUrl ? createPostgresConnection({ databaseUrl }) : undefined
   const store =
     opts.store ?? (pg ? createPostgresSnapshotRunStore({ db: pg.db }) : createFsSnapshotRunStore())
-  const wfMod: WorkflowRegistryModule = await import("@voyantjs/workflows")
+  const wfMod: WorkflowRegistryModule = await import("@voyant-travel/workflows")
   wfMod.__resetRegistry()
 
   const entryAbs = resolvePath(process.cwd(), opts.entryFile)
   await assertReadableFile(entryAbs, "workflow entry")
   await loadEntryFile(entryAbs, { cacheBust: opts.cacheBustEntry })
 
-  const _handlerMod = await import("@voyantjs/workflows/handler")
+  const _handlerMod = await import("@voyant-travel/workflows/handler")
   const rateLimiter = createInMemoryRateLimiter()
   const chunkBus = createChunkBus()
 

@@ -1,7 +1,7 @@
 /**
  * Storefront resolvers — populate the previously-empty
  * `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug`
- * endpoints in `@voyantjs/storefront` with real data.
+ * endpoints in `@voyant-travel/storefront` with real data.
  *
  * Wire via:
  *
@@ -27,7 +27,7 @@
  *     code-gated offers are still queryable via `getOfferBySlug`.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"

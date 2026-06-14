@@ -1,8 +1,8 @@
 "use client"
 
-import { Separator } from "@voyantjs/ui/components"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Separator } from "@voyant-travel/ui/components"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import { type Draft, setAddons } from "../../lib/draft-state.js"
 import { bucketBy, type StepCommonProps } from "./shared.js"

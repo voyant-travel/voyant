@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Plus, Search } from "lucide-react"
 import { useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

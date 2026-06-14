@@ -1,4 +1,4 @@
-import { typeIdSchema } from "@voyantjs/schema-kit/typeid"
+import { typeIdSchema } from "@voyant-travel/schema-kit/typeid"
 import { z } from "zod"
 
 const supplierTypeSchema = z.enum([

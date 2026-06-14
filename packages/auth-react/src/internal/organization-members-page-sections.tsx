@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2, Mail, RefreshCw, Trash2, Users } from "lucide-react"
 import type {
   OrganizationMembersPageMessages,

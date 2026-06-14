@@ -1,11 +1,11 @@
-# @voyantjs/identity
+# @voyant-travel/identity
 
 Identity primitives for Voyant. Provides shared contact-point, address, and named-contact records used across CRM, suppliers, facilities, and distribution.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/identity
+pnpm add @voyant-travel/identity
 ```
 
 ## Usage
@@ -13,8 +13,8 @@ pnpm add @voyantjs/identity
 CRM's person create/update syncs inline contact fields (email, phone, website, address, city, country) to this module, keeping identity primitives canonical across consumers.
 
 ```typescript
-import { identityModule } from "@voyantjs/identity"
-import { createApp } from "@voyantjs/hono"
+import { identityModule } from "@voyant-travel/identity"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [identityModule],

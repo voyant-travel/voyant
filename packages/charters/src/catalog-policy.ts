@@ -17,7 +17,7 @@
  *   - `charter_schedule_days` — composite list (mixed-class leaves).
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const CHARTER_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Source pointer / provenance ─────────────────────────────────────────

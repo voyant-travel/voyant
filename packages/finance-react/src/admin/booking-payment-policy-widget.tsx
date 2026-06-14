@@ -1,11 +1,11 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { bookingsQueryKeys, useBookingActivity } from "@voyantjs/bookings-react"
-import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-react/admin"
-import type { PaymentPolicy, PaymentPolicySource } from "@voyantjs/finance"
-import { formatMessage } from "@voyantjs/i18n"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { bookingsQueryKeys, useBookingActivity } from "@voyant-travel/bookings-react"
+import type { BookingDetailHostSlotContext } from "@voyant-travel/bookings-react/admin"
+import type { PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -18,7 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ChevronDown, History, Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -33,14 +33,14 @@ type PaymentPolicyCardMessages = ReturnType<
  * Props of the payment-policy widget: exactly the slot context the
  * bookings detail host hands to `booking.details.finance-end` widget
  * contributions (see `bookingDetailFinanceEndSlot` in
- * `@voyantjs/bookings-react/admin`).
+ * `@voyant-travel/bookings-react/admin`).
  */
 export type BookingPaymentPolicyWidgetProps = BookingDetailHostSlotContext
 
 /**
  * Booking detail → Finance tab → Payment-policy card, delivered as a
  * widget contribution on `booking.details.finance-end` (packaged-admin RFC
- * §4.7 cycle resolution: this package depends on `@voyantjs/bookings-react/ui`,
+ * §4.7 cycle resolution: this package depends on `@voyant-travel/bookings-react/ui`,
  * so the bookings host cannot import the card — finance contributes it).
  *
  * Surfaces the cascade trace (which layer's policy applied to this

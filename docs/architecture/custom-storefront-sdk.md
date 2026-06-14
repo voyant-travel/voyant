@@ -6,16 +6,16 @@ fetch helpers.
 
 ## Decision
 
-`@voyantjs/storefront-sdk` is the supported integration surface for custom
+`@voyant-travel/storefront-sdk` is the supported integration surface for custom
 storefront booking UIs.
 
 The SDK wraps existing public contracts from:
 
-- `@voyantjs/storefront` for public settings, departures, itinerary, offers,
+- `@voyant-travel/storefront` for public settings, departures, itinerary, offers,
   extensions, availability, and price preview
-- `@voyantjs/bookings` for public booking sessions, wizard state, repricing,
+- `@voyant-travel/bookings` for public booking sessions, wizard state, repricing,
   confirmation, expiration, and overview lookup
-- `@voyantjs/finance/checkout` for public checkout collection preview/initiation and
+- `@voyant-travel/finance/checkout` for public checkout collection preview/initiation and
   collection bootstrap
 
 The SDK does not own routes, persistence, or lifecycle side effects. It is a
@@ -26,10 +26,10 @@ typed client facade over the public route contracts those modules already own.
 Use this stack for custom booking UIs:
 
 1. Public Hono route modules expose `/v1/public/*` capability contracts.
-2. `@voyantjs/storefront-sdk` provides framework-agnostic TypeScript operations
+2. `@voyant-travel/storefront-sdk` provides framework-agnostic TypeScript operations
    and a first-class `bookingEngine` facade.
-3. `@voyantjs/storefront-react` provides React Query hooks on top of the SDK.
-4. Registry UI blocks and app/template storefronts provide presentation.
+3. `@voyant-travel/storefront-react` provides React Query hooks on top of the SDK.
+4. Registry UI blocks and app/starter storefronts provide presentation.
 
 Custom UIs may skip layer 3 when they are not React applications.
 
@@ -161,7 +161,7 @@ a structured error envelope. Custom booking engines should prefer this field
 over parsing raw response bodies.
 
 The booking-engine error vocabulary is exported from
-`@voyantjs/storefront-sdk/errors`:
+`@voyant-travel/storefront-sdk/errors`:
 
 - `contract_template_missing`
 - `reservation_expired`
@@ -190,7 +190,7 @@ Structured errors use:
 2. Do not move booking, checkout, finance, legal, or notification side effects
    into the SDK. The SDK calls public contracts; modules own behavior.
 3. Do not make React a dependency of the SDK. React hooks belong in
-   `@voyantjs/storefront-react`.
+   `@voyant-travel/storefront-react`.
 4. Add new SDK methods only when they wrap a stable public contract or a stable
    derived client-side helper.
 5. When a custom UI needs a new backend behavior, add the public route contract

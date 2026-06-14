@@ -1,7 +1,7 @@
 "use client"
 
-import { usePublicBookingPayments } from "@voyantjs/finance-react"
-import { Badge, Button } from "@voyantjs/ui/components"
+import { usePublicBookingPayments } from "@voyant-travel/finance-react"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import {
   Pagination,
   PaginationContent,
@@ -9,7 +9,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@voyantjs/ui/components/pagination"
+} from "@voyant-travel/ui/components/pagination"
 import {
   Activity,
   Clock,
@@ -34,7 +34,7 @@ export interface BookingActivityTimelineProps {
   bookingId: string
   /**
    * Extra events to merge into the timeline alongside the built-in
-   * activity / document / payment sources. Operator templates pass
+   * activity / document / payment sources. Operator starters pass
    * action-ledger entries through here so the timeline stays a single
    * chronological feed instead of getting split across tabs.
    */

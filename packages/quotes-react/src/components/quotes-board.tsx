@@ -1,5 +1,5 @@
-import { Card } from "@voyantjs/ui/components"
-import { ScrollArea, ScrollBar } from "@voyantjs/ui/components/scroll-area"
+import { Card } from "@voyant-travel/ui/components"
+import { ScrollArea, ScrollBar } from "@voyant-travel/ui/components/scroll-area"
 import { TrendingUp } from "lucide-react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 import type { QuoteRecord as QuoteData, StageRecord as StageData } from "../index.js"

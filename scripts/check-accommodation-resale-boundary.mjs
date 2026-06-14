@@ -20,43 +20,47 @@ const FORBIDDEN_PATHS = [
 
 const FILE_CHECKS = [
   {
-    file: "templates/operator/package.json",
-    patterns: [/"@voyantjs\/hospitality"/],
+    file: "starters/operator/package.json",
+    patterns: [/"@voyant-travel\/hospitality"/],
   },
   {
-    file: "templates/operator/src/api/catalog-content.ts",
-    patterns: [/@voyantjs\/hospitality/, /\/v1\/(?:admin|public)\/hospitality/],
+    file: "starters/operator/src/api/catalog-content.ts",
+    patterns: [/@voyant-travel\/hospitality/, /\/v1\/(?:admin|public)\/hospitality/],
   },
   {
-    file: "templates/operator/src/api/lib/booking-engine-runtime.ts",
-    patterns: [/@voyantjs\/hospitality/, /\bhospitalityBookingsService\b/],
+    file: "starters/operator/src/api/lib/booking-engine-runtime.ts",
+    patterns: [/@voyant-travel\/hospitality/, /\bhospitalityBookingsService\b/],
   },
   {
-    file: "templates/operator/src/api/lib/catalog-runtime.ts",
-    patterns: [/@voyantjs\/hospitality/, /\bhospitalityCatalogPolicy\b/, /"hospitality"/],
+    file: "starters/operator/src/api/lib/catalog-runtime.ts",
+    patterns: [/@voyant-travel\/hospitality/, /\bhospitalityCatalogPolicy\b/, /"hospitality"/],
   },
   {
-    file: "templates/operator/src/api/booking-schedule.ts",
-    patterns: [/@voyantjs\/hospitality/, /\bresolveHospitalityListingPolicy\b/, /"hospitality"/],
+    file: "starters/operator/src/api/booking-schedule.ts",
+    patterns: [
+      /@voyant-travel\/hospitality/,
+      /\bresolveHospitalityListingPolicy\b/,
+      /"hospitality"/,
+    ],
   },
   {
-    file: "templates/operator/src/api/app.ts",
+    file: "starters/operator/src/api/app.ts",
     patterns: [/\/v1\/public\/hospitality/],
   },
   {
-    file: "templates/operator/src/routes/(storefront)/shop.tsx",
+    file: "starters/operator/src/routes/(storefront)/shop.tsx",
     patterns: [/"hospitality"/],
   },
   {
-    file: "templates/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
-    patterns: [/@voyantjs\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
+    file: "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
+    patterns: [/@voyant-travel\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
   },
   {
-    file: "templates/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
-    patterns: [/@voyantjs\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
+    file: "starters/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
+    patterns: [/@voyant-travel\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
   },
   {
-    file: "templates/operator/drizzle.config.ts",
+    file: "starters/operator/drizzle.config.ts",
     patterns: [/packages\/hospitality/],
   },
   {
@@ -144,39 +148,39 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer/src/validation.ts",
+    file: "packages/trips/src/validation.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer/src/service-trips.ts",
+    file: "packages/trips/src/service-trips.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/operations.ts",
+    file: "packages/trips-react/src/operations.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/trips/trip-list-filters.tsx",
+    file: "starters/operator/src/components/voyant/trips/trip-list-filters.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/admin/admin-trip-composer-page.tsx",
+    file: "packages/trips-react/src/admin/admin-trips-page.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/admin/admin-trip-composer-panels.tsx",
+    file: "packages/trips-react/src/admin/admin-trips-panels.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/trip-composer/storefront-composer-block.tsx",
+    file: "starters/operator/src/components/voyant/trips/storefront-composer-block.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/routes/_workspace/trips/index.tsx",
+    file: "starters/operator/src/routes/_workspace/trips/index.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/routes/_workspace/trips/$id.tsx",
+    file: "starters/operator/src/routes/_workspace/trips/$id.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
@@ -245,11 +249,11 @@ const FILE_CHECKS = [
   },
   {
     file: "packages/hospitality/README.md",
-    patterns: [/pnpm add @voyantjs\/hospitality/, /\bhospitalityModule\b/],
+    patterns: [/pnpm add @voyant-travel\/hospitality/, /\bhospitalityModule\b/],
   },
   {
     file: "packages/hospitality-ui/README.md",
-    patterns: [/pnpm add @voyantjs\/hospitality-ui/, /npx shadcn add @voyant\/.*hospitality/],
+    patterns: [/pnpm add @voyant-travel\/hospitality-ui/, /npx shadcn add @voyant\/.*hospitality/],
   },
 ]
 

@@ -4,7 +4,7 @@ import type { HonoExtension, HonoModule } from "./module.js"
  * Manifest-driven runtime composition.
  *
  * The `voyant.config.ts` manifest already drives the migration/schema side
- * (see `@voyantjs/cli` `db doctor` and `docs/architecture/migration-resilience-rfc.md`).
+ * (see `@voyant-travel/cli` `db doctor` and `docs/architecture/migration-resilience-rfc.md`).
  * This module lets the SAME manifest drive runtime composition: instead of a
  * template hand-listing `createApp({ modules, extensions })`, it registers a
  * factory per manifest entry and derives the arrays from the manifest.

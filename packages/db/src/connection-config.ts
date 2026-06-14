@@ -165,7 +165,7 @@ export function warnIfDirectNeonEndpoint(connectionString: string): void {
   }
   warnedDirectNeonEndpoints.add(connectionString)
   console.warn(
-    "[@voyantjs/db] The serverless adapter is connecting to a Neon DIRECT endpoint " +
+    "[@voyant-travel/db] The serverless adapter is connecting to a Neon DIRECT endpoint " +
       `(${hostnameOf(connectionString) ?? "unknown host"}). Direct endpoints have a low ` +
       "max_connections ceiling that per-request pools exhaust quickly. Use the pooled " +
       'endpoint instead (the host containing "-pooler", e.g. ' +

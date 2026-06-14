@@ -3,15 +3,15 @@ import {
   type GuestBookingAccessAction,
   requireCheckoutCapability,
   requireGuestBookingAccess,
-} from "@voyantjs/bookings/checkout-capability"
-import type { ModuleContainer } from "@voyantjs/core"
+} from "@voyant-travel/bookings/checkout-capability"
+import type { ModuleContainer } from "@voyant-travel/core"
 import {
   idempotencyKey,
   parseJsonBody,
   parseOptionalJsonBody,
   parseQuery,
   UnauthorizedApiError,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono, type MiddlewareHandler } from "hono"
 

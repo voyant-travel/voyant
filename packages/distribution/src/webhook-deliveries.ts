@@ -18,14 +18,14 @@
  * helper are a lint violation per §11.3.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import {
   type InfraWebhookDelivery,
   infraWebhookDeliveriesTable,
   infraWebhookDeliverySelectSchema,
   type SelectInfraWebhookDelivery,
-} from "@voyantjs/db/schema/infra"
+} from "@voyant-travel/db/schema/infra"
 import { eq } from "drizzle-orm"
 
 const DEFAULT_EXCERPT_BYTES = 4 * 1024

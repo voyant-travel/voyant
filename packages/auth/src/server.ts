@@ -1,12 +1,12 @@
 import { apiKey } from "@better-auth/api-key"
-import { getDb } from "@voyantjs/db"
+import { getDb } from "@voyant-travel/db"
 import {
   apikeyTable,
   authAccount,
   authSession,
   authUser,
   authVerification,
-} from "@voyantjs/db/schema/iam"
+} from "@voyant-travel/db/schema/iam"
 import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { emailOTP } from "better-auth/plugins"

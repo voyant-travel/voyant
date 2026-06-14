@@ -62,7 +62,7 @@ export interface BuildManifestArgs {
  */
 export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowManifest> {
   const builtAt = args.builtAt ?? Date.now()
-  const builderVersion = args.builderVersion ?? "@voyantjs/workflows@manifest-builder"
+  const builderVersion = args.builderVersion ?? "@voyant-travel/workflows@manifest-builder"
   const projectId = args.projectId ?? "default"
 
   const eventFilters: EventFilterManifestEntry[] = args.eventFilters

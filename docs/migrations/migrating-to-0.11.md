@@ -8,7 +8,7 @@ Consolidated breaking-change notes for the `0.11.0` release train. All entries h
 
 ## TL;DR
 
-- The Booking state machine is now private. `BOOKING_TRANSITIONS`, `canTransitionBooking`, `transitionBooking`, `BookingStatusPatch`, `BookingTransitionError` are removed from `@voyantjs/bookings`.
+- The Booking state machine is now private. `BOOKING_TRANSITIONS`, `canTransitionBooking`, `transitionBooking`, `BookingStatusPatch`, `BookingTransitionError` are removed from `@voyant-travel/bookings`.
 - `PATCH /v1/bookings/:id/status` is **removed**. Use the named verb routes instead: `/start`, `/complete`, `/override-status`, plus the existing `/confirm`, `/cancel`, `/expire`.
 - `bookingsService.updateBookingStatus(...)` is **removed**; use `.startBooking(...)` / `.completeBooking(...)` / `.overrideBookingStatus(...)` (or the existing `.confirmBooking` / `.cancelBooking` / `.expireBooking`).
 - React: `useBookingStatusMutation` and `useBookingStatusByIdMutation` now require `currentStatus` in their input.
@@ -32,7 +32,7 @@ Run `drizzle-kit push` to sync. Activity-log readers that switch on `activity_ty
 
 ## Removed exports
 
-### `@voyantjs/bookings`
+### `@voyant-travel/bookings`
 
 | Removed | Replacement |
 |---|---|
@@ -79,10 +79,10 @@ If you were calling `PATCH /v1/bookings/:id/status` directly (operator scripts, 
 | `draft` / `on_hold` / `confirmed` / `in_progress` | `cancelled` | `/cancel` | `{ note? }` |
 | (anything else) | (anything) | `/override-status` | `{ status, reason, note? }` (reason required, server returns 400 on empty) |
 
-This table is also the body of the framework-agnostic `dispatchBookingStatusChange` helper exported from `@voyantjs/bookings/status-dispatch` — see [PR #334](https://github.com/voyantjs/voyant/pull/334).
+This table is also the body of the framework-agnostic `dispatchBookingStatusChange` helper exported from `@voyant-travel/bookings/status-dispatch` — see [PR #334](https://github.com/voyant-travel/voyant/pull/334).
 
 ```ts
-import { dispatchBookingStatusChange } from "@voyantjs/bookings/status-dispatch"
+import { dispatchBookingStatusChange } from "@voyant-travel/bookings/status-dispatch"
 
 const target = dispatchBookingStatusChange(bookingId, currentStatus, targetStatus, note)
 await fetch(`${apiBase}${target.path}`, {
@@ -96,7 +96,7 @@ await fetch(`${apiBase}${target.path}`, {
 
 ## Hook signature changes
 
-### `@voyantjs/bookings-react`
+### `@voyant-travel/bookings-react`
 
 `useBookingStatusMutation` and `useBookingStatusByIdMutation` now require `currentStatus` in their input. The hook dispatches client-side to the right verb endpoint; non-adjacent jumps fall through to `/override-status`, using the operator's note as the reason.
 
@@ -120,7 +120,7 @@ The `<StatusChangeDialog>` UX is unchanged — pass the booking's current status
 
 ```ts
 // Before — 0.10.x
-import { transitionBooking } from "@voyantjs/bookings"
+import { transitionBooking } from "@voyant-travel/bookings"
 const patch = transitionBooking(currentStatus, "confirmed")
 await db.update(bookings).set(patch).where(eq(bookings.id, bookingId))
 
@@ -147,8 +147,8 @@ If your app reads `booking_activity_log.activity_type`, add cases for `booking_s
 
 For full detail, including patch-level changes and dependency updates not listed here:
 
-- [`@voyantjs/bookings@0.11.0`](../../packages/bookings/CHANGELOG.md)
-- [`@voyantjs/bookings-react@0.11.0`](../../packages/bookings-react/CHANGELOG.md)
-- [`@voyantjs/hono@0.11.0`](../../packages/hono/CHANGELOG.md)
-- [`@voyantjs/db@0.11.0`](../../packages/db/CHANGELOG.md)
-- [`@voyantjs/core@0.11.0`](../../packages/core/CHANGELOG.md)
+- [`@voyant-travel/bookings@0.11.0`](../../packages/bookings/CHANGELOG.md)
+- [`@voyant-travel/bookings-react@0.11.0`](../../packages/bookings-react/CHANGELOG.md)
+- [`@voyant-travel/hono@0.11.0`](../../packages/hono/CHANGELOG.md)
+- [`@voyant-travel/db@0.11.0`](../../packages/db/CHANGELOG.md)
+- [`@voyant-travel/core@0.11.0`](../../packages/core/CHANGELOG.md)

@@ -1,13 +1,13 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { Separator } from "@voyantjs/ui/components"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+import { Separator } from "@voyant-travel/ui/components"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { RadioGroup, RadioGroupItem } from "@voyant-travel/ui/components/radio-group"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { useEffect, useRef, useState } from "react"
 import {
   PaymentScheduleSection,

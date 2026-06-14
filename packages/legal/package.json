@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/legal",
+  "name": "@voyant-travel/legal",
   "version": "0.119.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -28,24 +28,24 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/legal-contracts": "workspace:^",
-    "@voyantjs/relationships": "workspace:^",
-    "@voyantjs/storage": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/legal-contracts": "workspace:^",
+    "@voyant-travel/relationships": "workspace:^",
+    "@voyant-travel/storage": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6",
-    "@voyantjs/distribution": "workspace:^"
+    "@voyant-travel/distribution": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/voyant-test-utils": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-test-utils": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.0.0"
   },
@@ -131,13 +131,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/legal"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   }
 }

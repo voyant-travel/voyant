@@ -7,7 +7,7 @@ import type { ProductGraphSpec } from "./spec.js"
  * instead of producing a malformed-but-bookable product.
  *
  * Keyed on `bookingMode` (the structural classifier that exists in the schema
- * today; `supplyModel` is still proposed). See the voyantjs/platform authoring
+ * today; `supplyModel` is still proposed). See the voyant-travel/platform authoring
  * spec for the canonical per-category rules.
  *
  * Scope: the generic products graph — excursion (`date`/`date_time`), multi-day

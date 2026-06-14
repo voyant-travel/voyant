@@ -1,4 +1,4 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 
 import type { PromotionsUiMessages } from "./i18n/messages.js"
 import type {

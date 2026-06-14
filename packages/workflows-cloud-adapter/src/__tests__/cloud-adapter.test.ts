@@ -1,6 +1,6 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import { createHmacSigner } from "@voyantjs/workflows/auth"
-import type { DurableObjectStorageLike } from "@voyantjs/workflows-orchestrator-cloudflare"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import { createHmacSigner } from "@voyant-travel/workflows/auth"
+import type { DurableObjectStorageLike } from "@voyant-travel/workflows-orchestrator-cloudflare"
 import { beforeEach, describe, expect, it } from "vitest"
 import {
   type CloudWorkflowsEnv,

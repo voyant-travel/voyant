@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { emptyJournal, type RunRecord } from "@voyantjs/workflows-orchestrator"
+import { emptyJournal, type RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createFsWakeupStore, syncWakeupFromRecord } from "../wakeup-store.js"
 

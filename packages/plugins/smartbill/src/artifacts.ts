@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: plugins; existing module stays co-located until a dedicated split preserves behavior and tests.
-import { financeService, type InvoiceExternalRef } from "@voyantjs/finance"
-import type { StorageProvider } from "@voyantjs/storage"
+import { financeService, type InvoiceExternalRef } from "@voyant-travel/finance"
+import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { SmartbillClientApi } from "./client.js"

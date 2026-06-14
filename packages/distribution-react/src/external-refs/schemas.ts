@@ -1,4 +1,4 @@
-import { insertExternalRefSchema } from "@voyantjs/distribution"
+import { insertExternalRefSchema } from "@voyant-travel/distribution"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

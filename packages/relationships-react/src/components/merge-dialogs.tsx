@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components"
-import { Alert, AlertDescription } from "@voyantjs/ui/components/alert"
+} from "@voyant-travel/ui/components"
+import { Alert, AlertDescription } from "@voyant-travel/ui/components/alert"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"

@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components"
 import {
   Carousel,
   type CarouselApi,
@@ -10,9 +10,9 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@voyantjs/ui/components/carousel"
-import { Dialog, DialogContent, DialogTitle } from "@voyantjs/ui/components/dialog"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/carousel"
+import { Dialog, DialogContent, DialogTitle } from "@voyant-travel/ui/components/dialog"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import {
   ChevronLeft,
   ChevronRight,

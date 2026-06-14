@@ -1,8 +1,8 @@
 # Product Detail Page Consolidation — Migration Handoff
 
-> Status: **OPERATOR CUTOVER COMPLETE** ✅ — `@voyantjs/inventory-react/ui` now owns the
+> Status: **OPERATOR CUTOVER COMPLETE** ✅ — `@voyant-travel/inventory-react/ui` now owns the
 > canonical `ProductDetailPage`; the operator consumes it via `ProductDetailHostProvider`.
-> Both `@voyantjs/inventory-react/ui` and `operator` typecheck + lint clean. The 36 operator
+> Both `@voyant-travel/inventory-react/ui` and `operator` typecheck + lint clean. The 36 operator
 > dupes are deleted. ~~Remaining: migrate `dmc` + `apps/dev` onto the same page (§5.9).~~
 > Resolved: `templates/dmc` and `apps/dev` were deleted by the packaged-admin work
 > (`docs/architecture/packaged-admin-rfc.md` §5), so §5.9 is moot.
@@ -11,7 +11,7 @@
 >
 > All of §5.1–5.8 below are DONE; they are kept as the record of how it was done.
 > The injection seam is: `ProductDetailHostProvider` (host.tsx) ← operator route
-> (`templates/operator/src/routes/_workspace/products/$id.tsx`) supplies messages
+> (`starters/operator/src/routes/_workspace/products/$id.tsx`) supplies messages
 > (`useAdminMessages()`), `api`, `locale`, `navigate` callbacks, `uploadMedia` (storage
 > step only — the page creates the record via `api`), `setBreadcrumbs`, and
 > `renderOptionExtras` (the availability panel).
@@ -20,22 +20,22 @@
 
 ## 1. Goal
 
-Make a **single canonical product-detail page** that lives in `@voyantjs/inventory-react/ui`
+Make a **single canonical product-detail page** that lives in `@voyant-travel/inventory-react/ui`
 and is consumed by every template, instead of the current situation where each
 template maintains its **own fork**.
 
 ### Why (the situation we found)
 - There are **three independent forks** of the product detail page:
-  - `templates/operator/src/components/voyant/products/product-detail-page.tsx` (the **richest / best** — has translations, markets, channels, brochure, activity, payment policy, departures, schedules, itinerary, day sheet, etc.)
+  - `starters/operator/src/components/voyant/products/product-detail-page.tsx` (the **richest / best** — has translations, markets, channels, brochure, activity, payment policy, departures, schedules, itinerary, day sheet, etc.)
   - `templates/dmc/src/components/voyant/products/product-detail-page.tsx`
   - `apps/dev/src/components/voyant/products/product-detail-page.tsx`
-- `@voyantjs/inventory-react/ui` supersedes the old packaged Product Detail Page
+- `@voyant-travel/inventory-react/ui` supersedes the old packaged Product Detail Page
   surface that was not imported by any template.
-- Each template route renders its **local** `product-detail-page`, not the packaged one.
+- Each starter route renders its **local** `product-detail-page`, not the packaged one.
 
 ### User directive
 > "Replace products-ui page with the operator fork as that is exactly how it should be
-> for everyone, and then import it back into the operator template."
+> for everyone, and then import it back into the operator starter."
 
 **Scope for now:** operator ↔ products-ui. `dmc` and `apps/dev` are a **follow-up**
 (they are independent forks — they do **not** consume products-ui's `ProductDetailPage`,
@@ -52,7 +52,7 @@ all of that through one context.
 **`product-detail/host.tsx` (DONE, validated):**
 ```ts
 interface ProductDetailHostValue {
-  messages: ProductDetailMessages        // = OperatorAdminProductsMessages["products"]  (from @voyantjs/i18n, type-only)
+  messages: ProductDetailMessages        // = OperatorAdminProductsMessages["products"]  (from @voyant-travel/i18n, type-only)
   api: ProductDetailApi                  // { get,post,patch,delete }<T>(path, body?) => Promise<T>
   locale: string
   navigate: ProductDetailNavigation      // toProducts / toProduct(id) / toNewBooking(productId) / toAvailability(slotId)
@@ -86,11 +86,11 @@ rewritten already (see §4). Plus new files:
 - `MIGRATION.md` — this file.
 
 The operator originals live in:
-`templates/operator/src/components/voyant/products/` (36 files; `products-list-skeleton.tsx`
+`starters/operator/src/components/voyant/products/` (36 files; `products-list-skeleton.tsx`
 is the only file there that is NOT part of the detail page and was NOT copied).
 
 The **only external consumer** of the page is the route:
-`templates/operator/src/routes/_workspace/products/$id.tsx`
+`starters/operator/src/routes/_workspace/products/$id.tsx`
 (imports `ProductDetailPage` + a couple things from `product-detail-shared`).
 
 ---
@@ -101,12 +101,12 @@ The **only external consumer** of the page is the route:
   `./host.js`); type `AdminMessages` → `ProductMessagesRoot`. `messages.products.*` access unchanged.
 - ✅ **Locale** (5 files): `const { resolvedLocale } = useLocale()` → `const resolvedLocale = useProductLocale()`.
 - ✅ **Breadcrumbs** (`product-detail-header.tsx`): `useAdminBreadcrumbs([...])` → `host.setBreadcrumbs?.([...])` in a `useEffect`.
-- ✅ **`formatMessage`** import source `@voyantjs/admin` → `@voyantjs/i18n`.
+- ✅ **`formatMessage`** import source `@voyant-travel/admin` → `@voyant-travel/i18n`.
 - ✅ **`@/lib/zod-resolver`** → `./zod-resolver.js` (file moved here).
 - ✅ **`@/lib/timezone-options`** → `./timezone-options.js` (file moved here).
-- ✅ **`@/components/ui/combobox` / `/date-picker`** → `@voyantjs/ui/components/...`.
+- ✅ **`@/components/ui/combobox` / `/date-picker`** → `@voyant-travel/ui/components/...`.
 
-Verify: `grep -rln '@voyantjs/admin\|@/lib/admin-i18n\|@/lib/zod-resolver\|@/lib/timezone-options' packages/inventory-react/src/components/product-detail/` → should be **0**.
+Verify: `grep -rln '@voyant-travel/admin\|@/lib/admin-i18n\|@/lib/zod-resolver\|@/lib/timezone-options' packages/inventory-react/src/components/product-detail/` → should be **0**.
 
 ---
 
@@ -152,11 +152,11 @@ Make the page accept a `renderOptionExtras?(productId, optionId)` slot prop (or 
 passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is owned by inventory-react and commerce-react owner paths.
 
 ### 5.5 Dependencies to add to `packages/inventory-react/package.json`
-- `@voyantjs/utils` — used by `product-translation-popover.tsx` / `product-day-translation.tsx`
+- `@voyant-travel/utils` — used by `product-translation-popover.tsx` / `product-day-translation.tsx`
   (`/languages`) and `timezone-options.ts` (`/timezones`). **Not currently a dep.**
-- `@voyantjs/commerce-react` — used by `product-market-rules-section.tsx`. **Not currently a dep.**
+- `@voyant-travel/commerce-react` — used by `product-market-rules-section.tsx`. **Not currently a dep.**
 - Confirm `@hookform/resolvers` is NOT needed (the moved `zod-resolver.ts` is hand-rolled — only needs `react-hook-form` + `zod`, both already deps).
-- inventory-react already deps: `@voyantjs/i18n`, `@voyantjs/operations-react/availability`, `@voyantjs/commerce-react`,
+- inventory-react already deps: `@voyant-travel/i18n`, `@voyant-travel/operations-react/availability`, `@voyant-travel/commerce-react`,
   `react-hook-form`, `zod`.
 
 ### 5.6 Wire inventory-react exports
@@ -167,7 +167,7 @@ passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is
   once nothing imports its named exports (`ProductOverviewCard`, etc.). Grep first.
 
 ### 5.7 Operator rewire (the cutover)
-- Rewrite `templates/operator/src/routes/_workspace/products/$id.tsx` to render the inventory-react page
+- Rewrite `starters/operator/src/routes/_workspace/products/$id.tsx` to render the inventory-react page
   inside `ProductDetailHostProvider`, supplying:
   - `messages: useAdminMessages().products`
   - `api: <operator api client>`
@@ -181,7 +181,7 @@ passes the availability panel. `PricingPanel` (`product-options-pricing.tsx`) is
   grep confirmed the route is the only external importer, but re-verify after moving.
 
 ### 5.8 Typecheck / lint
-- `pnpm -F @voyantjs/inventory-react typecheck` (expect a long fix tail on first run), then
+- `pnpm -F @voyant-travel/inventory-react typecheck` (expect a long fix tail on first run), then
   `pnpm -F operator typecheck`, then `npx biome check --write` on the changed files.
 - inventory-react typecheck will FAIL until §5.1–5.6 are complete — that's expected. The operator dev
   server is unaffected meanwhile (the staged files aren't imported anywhere yet).

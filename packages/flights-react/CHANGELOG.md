@@ -1,4 +1,4 @@
-# @voyantjs/flights-react
+# @voyant-travel/flights-react
 
 ## 0.119.2
 
@@ -9,83 +9,83 @@
   Split oversized flights UI, charter booking, and accommodation content modules into smaller internal slices while preserving the existing public exports and behavior.
 
 - Updated dependencies [f1c05dc]
-  - @voyantjs/bookings-react@0.119.2
-  - @voyantjs/finance@0.119.3
-  - @voyantjs/flights@0.119.2
+  - @voyant-travel/bookings-react@0.119.2
+  - @voyant-travel/finance@0.119.3
+  - @voyant-travel/flights@0.119.2
 
 ## 0.119.1
 
 ### Patch Changes
 
-- @voyantjs/finance@0.119.1
-- @voyantjs/flights@0.119.1
-- @voyantjs/bookings-react@0.119.1
-- @voyantjs/crm-react@0.119.1
+- @voyant-travel/finance@0.119.1
+- @voyant-travel/flights@0.119.1
+- @voyant-travel/bookings-react@0.119.1
+- @voyant-travel/crm-react@0.119.1
 
 ## 0.119.0
 
 ### Patch Changes
 
-- @voyantjs/finance@0.119.0
-- @voyantjs/crm-react@0.119.0
-- @voyantjs/ui@0.106.1
-- @voyantjs/bookings-react@0.119.0
-- @voyantjs/checkout-react@0.119.0
-- @voyantjs/flights@0.119.0
+- @voyant-travel/finance@0.119.0
+- @voyant-travel/crm-react@0.119.0
+- @voyant-travel/ui@0.106.1
+- @voyant-travel/bookings-react@0.119.0
+- @voyant-travel/checkout-react@0.119.0
+- @voyant-travel/flights@0.119.0
 
 ## 0.118.0
 
 ### Patch Changes
 
-- @voyantjs/finance@0.118.0
-- @voyantjs/bookings-react@0.118.0
-- @voyantjs/checkout-react@0.118.0
-- @voyantjs/crm-react@0.118.0
-- @voyantjs/flights@0.118.0
+- @voyant-travel/finance@0.118.0
+- @voyant-travel/bookings-react@0.118.0
+- @voyant-travel/checkout-react@0.118.0
+- @voyant-travel/crm-react@0.118.0
+- @voyant-travel/flights@0.118.0
 
 ## 0.117.1
 
 ### Patch Changes
 
 - Updated dependencies [b7056f1]
-  - @voyantjs/finance@0.117.1
-  - @voyantjs/flights@0.117.1
-  - @voyantjs/bookings-react@0.117.1
-  - @voyantjs/checkout-react@0.117.1
-  - @voyantjs/crm-react@0.117.1
+  - @voyant-travel/finance@0.117.1
+  - @voyant-travel/flights@0.117.1
+  - @voyant-travel/bookings-react@0.117.1
+  - @voyant-travel/checkout-react@0.117.1
+  - @voyant-travel/crm-react@0.117.1
 
 ## 0.117.0
 
 ### Patch Changes
 
 - Updated dependencies [7255353]
-  - @voyantjs/finance@0.117.0
-  - @voyantjs/flights@0.117.0
-  - @voyantjs/bookings-react@0.117.0
-  - @voyantjs/checkout-react@0.117.0
-  - @voyantjs/crm-react@0.117.0
+  - @voyant-travel/finance@0.117.0
+  - @voyant-travel/flights@0.117.0
+  - @voyant-travel/bookings-react@0.117.0
+  - @voyant-travel/checkout-react@0.117.0
+  - @voyant-travel/crm-react@0.117.0
 
 ## 0.116.0
 
 ### Patch Changes
 
-- @voyantjs/finance@0.116.0
-- @voyantjs/flights@0.116.0
-- @voyantjs/bookings-react@0.116.0
-- @voyantjs/checkout-react@0.116.0
-- @voyantjs/crm-react@0.116.0
+- @voyant-travel/finance@0.116.0
+- @voyant-travel/flights@0.116.0
+- @voyant-travel/bookings-react@0.116.0
+- @voyant-travel/checkout-react@0.116.0
+- @voyant-travel/crm-react@0.116.0
 
 ## 0.115.0
 
 ### Patch Changes
 
 - Updated dependencies [41b08db]
-  - @voyantjs/admin@0.111.0
-  - @voyantjs/bookings-react@0.115.0
-  - @voyantjs/crm-react@0.115.0
-  - @voyantjs/checkout-react@0.115.0
-  - @voyantjs/finance@0.115.0
-  - @voyantjs/flights@0.115.0
+  - @voyant-travel/admin@0.111.0
+  - @voyant-travel/bookings-react@0.115.0
+  - @voyant-travel/crm-react@0.115.0
+  - @voyant-travel/checkout-react@0.115.0
+  - @voyant-travel/finance@0.115.0
+  - @voyant-travel/flights@0.115.0
 
 ## 0.114.0
 
@@ -93,26 +93,26 @@
 
 - f7bd971: Three more operator surfaces become package-delivered admin contributions (packaged-admin RFC §4.8):
 
-  - `@voyantjs/flights-react/admin` (new entry): `createFlightsAdminExtension` ships the flight search page and the booking wizard as full route contributions — package-owned search contracts (`flightsIndexSearchSchema`, `flightsBookSearchSchema`), lazy page modules, and semantic destinations (`flight.search` route-backed; `flightBooking.start` declared for the host's hand-written resolver; post-booking lands on the shared `booking.detail`). The wizard mounts as a flat sibling of the search route, reproducing the old file-based `flights_.book` section-chrome escape exactly.
-  - `@voyantjs/distribution-react/admin` (new entry): `createDistributionAdminExtension` ships the channel-sync page as a lazy route contribution; the page reads `baseUrl` + credentialed fetcher from the shared provider context, so the host needs no props and no route file.
-  - `@voyantjs/finance-react/admin`: the two supplier-invoices contributions graduate from metadata-only to full implementations. The previously app-owned wiring travels package-side: attachment uploads post to the template-level `/v1/uploads` through the finance provider context (the `BookingInvoicesWidget` precedent), inline supplier creation rides `useSupplierMutation().create` from `@voyantjs/suppliers-react`, and the allocation dialog's cross-domain target search composes `getProductsQueryOptions` / `getBookingsQueryOptions` / `getSlotsQueryOptions` through the same context client (new optional peers: `@voyantjs/products-react`, `@voyantjs/availability-react`). New route-backed destinations: `supplierInvoice.list`, `supplierInvoice.detail`.
+  - `@voyant-travel/flights-react/admin` (new entry): `createFlightsAdminExtension` ships the flight search page and the booking wizard as full route contributions — package-owned search contracts (`flightsIndexSearchSchema`, `flightsBookSearchSchema`), lazy page modules, and semantic destinations (`flight.search` route-backed; `flightBooking.start` declared for the host's hand-written resolver; post-booking lands on the shared `booking.detail`). The wizard mounts as a flat sibling of the search route, reproducing the old file-based `flights_.book` section-chrome escape exactly.
+  - `@voyant-travel/distribution-react/admin` (new entry): `createDistributionAdminExtension` ships the channel-sync page as a lazy route contribution; the page reads `baseUrl` + credentialed fetcher from the shared provider context, so the host needs no props and no route file.
+  - `@voyant-travel/finance-react/admin`: the two supplier-invoices contributions graduate from metadata-only to full implementations. The previously app-owned wiring travels package-side: attachment uploads post to the template-level `/v1/uploads` through the finance provider context (the `BookingInvoicesWidget` precedent), inline supplier creation rides `useSupplierMutation().create` from `@voyant-travel/suppliers-react`, and the allocation dialog's cross-domain target search composes `getProductsQueryOptions` / `getBookingsQueryOptions` / `getSlotsQueryOptions` through the same context client (new optional peers: `@voyant-travel/products-react`, `@voyant-travel/availability-react`). New route-backed destinations: `supplierInvoice.list`, `supplierInvoice.detail`.
 
 ### Patch Changes
 
-- @voyantjs/bookings-react@0.114.0
-- @voyantjs/checkout-react@0.114.0
-- @voyantjs/crm-react@0.114.0
-- @voyantjs/finance@0.114.0
-- @voyantjs/flights@0.114.0
+- @voyant-travel/bookings-react@0.114.0
+- @voyant-travel/checkout-react@0.114.0
+- @voyant-travel/crm-react@0.114.0
+- @voyant-travel/finance@0.114.0
+- @voyant-travel/flights@0.114.0
 
 ## 0.113.0
 
 ### Patch Changes
 
-- @voyantjs/crm-react@0.113.0
-- @voyantjs/checkout-react@0.113.0
-- @voyantjs/finance@0.113.0
-- @voyantjs/flights@0.113.0
+- @voyant-travel/crm-react@0.113.0
+- @voyant-travel/checkout-react@0.113.0
+- @voyant-travel/finance@0.113.0
+- @voyant-travel/flights@0.113.0
 
 ## 0.112.0
 
@@ -120,20 +120,20 @@
 
 - Updated dependencies [279f97c]
 - Updated dependencies [faec538]
-  - @voyantjs/crm-react@0.112.0
-  - @voyantjs/checkout-react@0.112.0
-  - @voyantjs/finance@0.112.0
-  - @voyantjs/flights@0.112.0
+  - @voyant-travel/crm-react@0.112.0
+  - @voyant-travel/checkout-react@0.112.0
+  - @voyant-travel/finance@0.112.0
+  - @voyant-travel/flights@0.112.0
 
 ## 0.111.0
 
 ### Patch Changes
 
 - Updated dependencies [478aa7c]
-  - @voyantjs/crm-react@0.111.0
-  - @voyantjs/checkout-react@0.111.0
-  - @voyantjs/finance@0.111.0
-  - @voyantjs/flights@0.111.0
+  - @voyant-travel/crm-react@0.111.0
+  - @voyant-travel/checkout-react@0.111.0
+  - @voyant-travel/finance@0.111.0
+  - @voyant-travel/flights@0.111.0
 
 ## 0.110.0
 
@@ -145,1642 +145,1642 @@
   in under new subpaths — `./ui` (the old `*-ui` root barrel), `./components/*`,
   `./admin`, `./i18n`, `./i18n/en`, `./i18n/ro`, and `./styles.css`.
 
-  Migration from `@voyantjs/<module>-ui`:
+  Migration from `@voyant-travel/<module>-ui`:
 
-  - `@voyantjs/<module>-ui` → `@voyantjs/<module>-react/ui`
-  - `@voyantjs/<module>-ui/<subpath>` → `@voyantjs/<module>-react/<subpath>`
+  - `@voyant-travel/<module>-ui` → `@voyant-travel/<module>-react/ui`
+  - `@voyant-travel/<module>-ui/<subpath>` → `@voyant-travel/<module>-react/<subpath>`
   - package.json: drop the `-ui` dependency; `-react` covers both tiers.
 
-  Styled-tier peers (`@voyantjs/ui`, `@voyantjs/admin`, `@tanstack/react-table`,
+  Styled-tier peers (`@voyant-travel/ui`, `@voyant-travel/admin`, `@tanstack/react-table`,
   `sonner`, `react-hook-form`, sibling `*-react` hooks packages) are optional
   peers — headless consumers that only import the root/`hooks`/`client` subpaths
-  do not need them. The 27 `@voyantjs/*-ui` packages are deprecated on npm in
-  favor of these subpaths; `@voyantjs/allocation-ui` and
-  `@voyantjs/workflow-runs-ui` (no `-react` sibling) are unaffected.
+  do not need them. The 27 `@voyant-travel/*-ui` packages are deprecated on npm in
+  favor of these subpaths; `@voyant-travel/allocation-ui` and
+  `@voyant-travel/workflow-runs-ui` (no `-react` sibling) are unaffected.
 
 ### Patch Changes
 
 - Updated dependencies [6c27159]
-  - @voyantjs/checkout-react@0.110.0
-  - @voyantjs/crm-react@0.110.0
-  - @voyantjs/finance@0.110.0
-  - @voyantjs/flights@0.110.0
+  - @voyant-travel/checkout-react@0.110.0
+  - @voyant-travel/crm-react@0.110.0
+  - @voyant-travel/finance@0.110.0
+  - @voyant-travel/flights@0.110.0
 
 ## 0.109.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.109.0
+- @voyant-travel/flights@0.109.0
 
 ## 0.108.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.108.0
+- @voyant-travel/flights@0.108.0
 
 ## 0.107.0
 
 ### Patch Changes
 
 - Updated dependencies [c2aef18]
-  - @voyantjs/flights@0.107.0
+  - @voyant-travel/flights@0.107.0
 
 ## 0.106.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.106.0
+- @voyant-travel/flights@0.106.0
 
 ## 0.105.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.105.0
+- @voyant-travel/flights@0.105.0
 
 ## 0.104.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.104.1
-- @voyantjs/react@0.104.1
+- @voyant-travel/flights@0.104.1
+- @voyant-travel/react@0.104.1
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.104.0
-- @voyantjs/react@0.104.0
+- @voyant-travel/flights@0.104.0
+- @voyant-travel/react@0.104.0
 
 ## 0.103.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.103.0
-- @voyantjs/react@0.103.0
+- @voyant-travel/flights@0.103.0
+- @voyant-travel/react@0.103.0
 
 ## 0.102.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.102.0
-- @voyantjs/react@0.102.0
+- @voyant-travel/flights@0.102.0
+- @voyant-travel/react@0.102.0
 
 ## 0.101.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.101.2
-- @voyantjs/react@0.101.2
+- @voyant-travel/flights@0.101.2
+- @voyant-travel/react@0.101.2
 
 ## 0.101.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.101.1
-- @voyantjs/react@0.101.1
+- @voyant-travel/flights@0.101.1
+- @voyant-travel/react@0.101.1
 
 ## 0.101.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.101.0
-- @voyantjs/react@0.101.0
+- @voyant-travel/flights@0.101.0
+- @voyant-travel/react@0.101.0
 
 ## 0.100.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.100.0
-- @voyantjs/react@0.100.0
+- @voyant-travel/flights@0.100.0
+- @voyant-travel/react@0.100.0
 
 ## 0.99.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.99.0
-- @voyantjs/react@0.99.0
+- @voyant-travel/flights@0.99.0
+- @voyant-travel/react@0.99.0
 
 ## 0.98.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.98.0
-- @voyantjs/react@0.98.0
+- @voyant-travel/flights@0.98.0
+- @voyant-travel/react@0.98.0
 
 ## 0.97.0
 
 ### Patch Changes
 
 - Updated dependencies [2555264]
-  - @voyantjs/flights@0.97.0
-  - @voyantjs/react@0.97.0
+  - @voyant-travel/flights@0.97.0
+  - @voyant-travel/react@0.97.0
 
 ## 0.96.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.96.0
-- @voyantjs/react@0.96.0
+- @voyant-travel/flights@0.96.0
+- @voyant-travel/react@0.96.0
 
 ## 0.95.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.95.0
-- @voyantjs/react@0.95.0
+- @voyant-travel/flights@0.95.0
+- @voyant-travel/react@0.95.0
 
 ## 0.94.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.94.0
-- @voyantjs/react@0.94.0
+- @voyant-travel/flights@0.94.0
+- @voyant-travel/react@0.94.0
 
 ## 0.93.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.93.0
-- @voyantjs/react@0.93.0
+- @voyant-travel/flights@0.93.0
+- @voyant-travel/react@0.93.0
 
 ## 0.92.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.92.0
-- @voyantjs/react@0.92.0
+- @voyant-travel/flights@0.92.0
+- @voyant-travel/react@0.92.0
 
 ## 0.91.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.91.0
-- @voyantjs/react@0.91.0
+- @voyant-travel/flights@0.91.0
+- @voyant-travel/react@0.91.0
 
 ## 0.90.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.90.0
-- @voyantjs/react@0.90.0
+- @voyant-travel/flights@0.90.0
+- @voyant-travel/react@0.90.0
 
 ## 0.89.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.89.0
-- @voyantjs/react@0.89.0
+- @voyant-travel/flights@0.89.0
+- @voyant-travel/react@0.89.0
 
 ## 0.88.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.88.0
-- @voyantjs/react@0.88.0
+- @voyant-travel/flights@0.88.0
+- @voyant-travel/react@0.88.0
 
 ## 0.87.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.87.1
-- @voyantjs/react@0.87.1
+- @voyant-travel/flights@0.87.1
+- @voyant-travel/react@0.87.1
 
 ## 0.87.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.87.0
-- @voyantjs/react@0.87.0
+- @voyant-travel/flights@0.87.0
+- @voyant-travel/react@0.87.0
 
 ## 0.86.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.86.0
-- @voyantjs/react@0.86.0
+- @voyant-travel/flights@0.86.0
+- @voyant-travel/react@0.86.0
 
 ## 0.85.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.85.4
-- @voyantjs/react@0.85.4
+- @voyant-travel/flights@0.85.4
+- @voyant-travel/react@0.85.4
 
 ## 0.85.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.85.3
-- @voyantjs/react@0.85.3
+- @voyant-travel/flights@0.85.3
+- @voyant-travel/react@0.85.3
 
 ## 0.85.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.85.2
-- @voyantjs/react@0.85.2
+- @voyant-travel/flights@0.85.2
+- @voyant-travel/react@0.85.2
 
 ## 0.85.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.85.1
-- @voyantjs/react@0.85.1
+- @voyant-travel/flights@0.85.1
+- @voyant-travel/react@0.85.1
 
 ## 0.85.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.85.0
-- @voyantjs/react@0.85.0
+- @voyant-travel/flights@0.85.0
+- @voyant-travel/react@0.85.0
 
 ## 0.84.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.84.4
-- @voyantjs/react@0.84.4
+- @voyant-travel/flights@0.84.4
+- @voyant-travel/react@0.84.4
 
 ## 0.84.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.84.3
-- @voyantjs/react@0.84.3
+- @voyant-travel/flights@0.84.3
+- @voyant-travel/react@0.84.3
 
 ## 0.84.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.84.2
-- @voyantjs/react@0.84.2
+- @voyant-travel/flights@0.84.2
+- @voyant-travel/react@0.84.2
 
 ## 0.84.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.84.1
-- @voyantjs/react@0.84.1
+- @voyant-travel/flights@0.84.1
+- @voyant-travel/react@0.84.1
 
 ## 0.84.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.84.0
-- @voyantjs/react@0.84.0
+- @voyant-travel/flights@0.84.0
+- @voyant-travel/react@0.84.0
 
 ## 0.83.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.83.1
-- @voyantjs/react@0.83.1
+- @voyant-travel/flights@0.83.1
+- @voyant-travel/react@0.83.1
 
 ## 0.83.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.83.0
-- @voyantjs/react@0.83.0
+- @voyant-travel/flights@0.83.0
+- @voyant-travel/react@0.83.0
 
 ## 0.82.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.82.1
-- @voyantjs/react@0.82.1
+- @voyant-travel/flights@0.82.1
+- @voyant-travel/react@0.82.1
 
 ## 0.82.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.82.0
-- @voyantjs/react@0.82.0
+- @voyant-travel/flights@0.82.0
+- @voyant-travel/react@0.82.0
 
 ## 0.81.21
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.21
-- @voyantjs/react@0.81.21
+- @voyant-travel/flights@0.81.21
+- @voyant-travel/react@0.81.21
 
 ## 0.81.20
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.20
-- @voyantjs/react@0.81.20
+- @voyant-travel/flights@0.81.20
+- @voyant-travel/react@0.81.20
 
 ## 0.81.19
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.19
-- @voyantjs/react@0.81.19
+- @voyant-travel/flights@0.81.19
+- @voyant-travel/react@0.81.19
 
 ## 0.81.18
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.18
-- @voyantjs/react@0.81.18
+- @voyant-travel/flights@0.81.18
+- @voyant-travel/react@0.81.18
 
 ## 0.81.17
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.17
-- @voyantjs/react@0.81.17
+- @voyant-travel/flights@0.81.17
+- @voyant-travel/react@0.81.17
 
 ## 0.81.16
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.16
-- @voyantjs/react@0.81.16
+- @voyant-travel/flights@0.81.16
+- @voyant-travel/react@0.81.16
 
 ## 0.81.15
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.15
-- @voyantjs/react@0.81.15
+- @voyant-travel/flights@0.81.15
+- @voyant-travel/react@0.81.15
 
 ## 0.81.14
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.14
-- @voyantjs/react@0.81.14
+- @voyant-travel/flights@0.81.14
+- @voyant-travel/react@0.81.14
 
 ## 0.81.13
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.13
-- @voyantjs/react@0.81.13
+- @voyant-travel/flights@0.81.13
+- @voyant-travel/react@0.81.13
 
 ## 0.81.12
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.12
-- @voyantjs/react@0.81.12
+- @voyant-travel/flights@0.81.12
+- @voyant-travel/react@0.81.12
 
 ## 0.81.11
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.11
-- @voyantjs/react@0.81.11
+- @voyant-travel/flights@0.81.11
+- @voyant-travel/react@0.81.11
 
 ## 0.81.10
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.10
-- @voyantjs/react@0.81.10
+- @voyant-travel/flights@0.81.10
+- @voyant-travel/react@0.81.10
 
 ## 0.81.9
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.9
-- @voyantjs/react@0.81.9
+- @voyant-travel/flights@0.81.9
+- @voyant-travel/react@0.81.9
 
 ## 0.81.8
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.8
-- @voyantjs/react@0.81.8
+- @voyant-travel/flights@0.81.8
+- @voyant-travel/react@0.81.8
 
 ## 0.81.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.7
-- @voyantjs/react@0.81.7
+- @voyant-travel/flights@0.81.7
+- @voyant-travel/react@0.81.7
 
 ## 0.81.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.6
-- @voyantjs/react@0.81.6
+- @voyant-travel/flights@0.81.6
+- @voyant-travel/react@0.81.6
 
 ## 0.81.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.5
-- @voyantjs/react@0.81.5
+- @voyant-travel/flights@0.81.5
+- @voyant-travel/react@0.81.5
 
 ## 0.81.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.4
-- @voyantjs/react@0.81.4
+- @voyant-travel/flights@0.81.4
+- @voyant-travel/react@0.81.4
 
 ## 0.81.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.3
-- @voyantjs/react@0.81.3
+- @voyant-travel/flights@0.81.3
+- @voyant-travel/react@0.81.3
 
 ## 0.81.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.2
-- @voyantjs/react@0.81.2
+- @voyant-travel/flights@0.81.2
+- @voyant-travel/react@0.81.2
 
 ## 0.81.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.1
-- @voyantjs/react@0.81.1
+- @voyant-travel/flights@0.81.1
+- @voyant-travel/react@0.81.1
 
 ## 0.81.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.81.0
-- @voyantjs/react@0.81.0
+- @voyant-travel/flights@0.81.0
+- @voyant-travel/react@0.81.0
 
 ## 0.80.18
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.18
-- @voyantjs/react@0.80.18
+- @voyant-travel/flights@0.80.18
+- @voyant-travel/react@0.80.18
 
 ## 0.80.17
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.17
-- @voyantjs/react@0.80.17
+- @voyant-travel/flights@0.80.17
+- @voyant-travel/react@0.80.17
 
 ## 0.80.16
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.16
-- @voyantjs/react@0.80.16
+- @voyant-travel/flights@0.80.16
+- @voyant-travel/react@0.80.16
 
 ## 0.80.15
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.15
-- @voyantjs/react@0.80.15
+- @voyant-travel/flights@0.80.15
+- @voyant-travel/react@0.80.15
 
 ## 0.80.14
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.14
-- @voyantjs/react@0.80.14
+- @voyant-travel/flights@0.80.14
+- @voyant-travel/react@0.80.14
 
 ## 0.80.13
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.13
-- @voyantjs/react@0.80.13
+- @voyant-travel/flights@0.80.13
+- @voyant-travel/react@0.80.13
 
 ## 0.80.12
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.12
-- @voyantjs/react@0.80.12
+- @voyant-travel/flights@0.80.12
+- @voyant-travel/react@0.80.12
 
 ## 0.80.11
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.11
-- @voyantjs/react@0.80.11
+- @voyant-travel/flights@0.80.11
+- @voyant-travel/react@0.80.11
 
 ## 0.80.10
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.10
-- @voyantjs/react@0.80.10
+- @voyant-travel/flights@0.80.10
+- @voyant-travel/react@0.80.10
 
 ## 0.80.9
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.9
-- @voyantjs/react@0.80.9
+- @voyant-travel/flights@0.80.9
+- @voyant-travel/react@0.80.9
 
 ## 0.80.8
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.8
-- @voyantjs/react@0.80.8
+- @voyant-travel/flights@0.80.8
+- @voyant-travel/react@0.80.8
 
 ## 0.80.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.7
-- @voyantjs/react@0.80.7
+- @voyant-travel/flights@0.80.7
+- @voyant-travel/react@0.80.7
 
 ## 0.80.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.6
-- @voyantjs/react@0.80.6
+- @voyant-travel/flights@0.80.6
+- @voyant-travel/react@0.80.6
 
 ## 0.80.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.5
-- @voyantjs/react@0.80.5
+- @voyant-travel/flights@0.80.5
+- @voyant-travel/react@0.80.5
 
 ## 0.80.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.4
-- @voyantjs/react@0.80.4
+- @voyant-travel/flights@0.80.4
+- @voyant-travel/react@0.80.4
 
 ## 0.80.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.3
-- @voyantjs/react@0.80.3
+- @voyant-travel/flights@0.80.3
+- @voyant-travel/react@0.80.3
 
 ## 0.80.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.2
-- @voyantjs/react@0.80.2
+- @voyant-travel/flights@0.80.2
+- @voyant-travel/react@0.80.2
 
 ## 0.80.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.1
-- @voyantjs/react@0.80.1
+- @voyant-travel/flights@0.80.1
+- @voyant-travel/react@0.80.1
 
 ## 0.80.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.80.0
-- @voyantjs/react@0.80.0
+- @voyant-travel/flights@0.80.0
+- @voyant-travel/react@0.80.0
 
 ## 0.79.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.79.0
-- @voyantjs/react@0.79.0
+- @voyant-travel/flights@0.79.0
+- @voyant-travel/react@0.79.0
 
 ## 0.78.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.78.0
-- @voyantjs/react@0.78.0
+- @voyant-travel/flights@0.78.0
+- @voyant-travel/react@0.78.0
 
 ## 0.77.13
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.13
-- @voyantjs/react@0.77.13
+- @voyant-travel/flights@0.77.13
+- @voyant-travel/react@0.77.13
 
 ## 0.77.12
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.12
-- @voyantjs/react@0.77.12
+- @voyant-travel/flights@0.77.12
+- @voyant-travel/react@0.77.12
 
 ## 0.77.11
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.11
-- @voyantjs/react@0.77.11
+- @voyant-travel/flights@0.77.11
+- @voyant-travel/react@0.77.11
 
 ## 0.77.10
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.10
-- @voyantjs/react@0.77.10
+- @voyant-travel/flights@0.77.10
+- @voyant-travel/react@0.77.10
 
 ## 0.77.9
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.9
-- @voyantjs/react@0.77.9
+- @voyant-travel/flights@0.77.9
+- @voyant-travel/react@0.77.9
 
 ## 0.77.8
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.8
-- @voyantjs/react@0.77.8
+- @voyant-travel/flights@0.77.8
+- @voyant-travel/react@0.77.8
 
 ## 0.77.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.7
-- @voyantjs/react@0.77.7
+- @voyant-travel/flights@0.77.7
+- @voyant-travel/react@0.77.7
 
 ## 0.77.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.6
-- @voyantjs/react@0.77.6
+- @voyant-travel/flights@0.77.6
+- @voyant-travel/react@0.77.6
 
 ## 0.77.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.5
-- @voyantjs/react@0.77.5
+- @voyant-travel/flights@0.77.5
+- @voyant-travel/react@0.77.5
 
 ## 0.77.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.4
-- @voyantjs/react@0.77.4
+- @voyant-travel/flights@0.77.4
+- @voyant-travel/react@0.77.4
 
 ## 0.77.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.3
-- @voyantjs/react@0.77.3
+- @voyant-travel/flights@0.77.3
+- @voyant-travel/react@0.77.3
 
 ## 0.77.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.2
-- @voyantjs/react@0.77.2
+- @voyant-travel/flights@0.77.2
+- @voyant-travel/react@0.77.2
 
 ## 0.77.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.1
-- @voyantjs/react@0.77.1
+- @voyant-travel/flights@0.77.1
+- @voyant-travel/react@0.77.1
 
 ## 0.77.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.77.0
-- @voyantjs/react@0.77.0
+- @voyant-travel/flights@0.77.0
+- @voyant-travel/react@0.77.0
 
 ## 0.76.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.76.0
-- @voyantjs/react@0.76.0
+- @voyant-travel/flights@0.76.0
+- @voyant-travel/react@0.76.0
 
 ## 0.75.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.7
-- @voyantjs/react@0.75.7
+- @voyant-travel/flights@0.75.7
+- @voyant-travel/react@0.75.7
 
 ## 0.75.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.6
-- @voyantjs/react@0.75.6
+- @voyant-travel/flights@0.75.6
+- @voyant-travel/react@0.75.6
 
 ## 0.75.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.5
-- @voyantjs/react@0.75.5
+- @voyant-travel/flights@0.75.5
+- @voyant-travel/react@0.75.5
 
 ## 0.75.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.4
-- @voyantjs/react@0.75.4
+- @voyant-travel/flights@0.75.4
+- @voyant-travel/react@0.75.4
 
 ## 0.75.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.3
-- @voyantjs/react@0.75.3
+- @voyant-travel/flights@0.75.3
+- @voyant-travel/react@0.75.3
 
 ## 0.75.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.2
-- @voyantjs/react@0.75.2
+- @voyant-travel/flights@0.75.2
+- @voyant-travel/react@0.75.2
 
 ## 0.75.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.1
-- @voyantjs/react@0.75.1
+- @voyant-travel/flights@0.75.1
+- @voyant-travel/react@0.75.1
 
 ## 0.75.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.75.0
-- @voyantjs/react@0.75.0
+- @voyant-travel/flights@0.75.0
+- @voyant-travel/react@0.75.0
 
 ## 0.74.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.74.2
-- @voyantjs/react@0.74.2
+- @voyant-travel/flights@0.74.2
+- @voyant-travel/react@0.74.2
 
 ## 0.74.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.74.1
-- @voyantjs/react@0.74.1
+- @voyant-travel/flights@0.74.1
+- @voyant-travel/react@0.74.1
 
 ## 0.74.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.74.0
-- @voyantjs/react@0.74.0
+- @voyant-travel/flights@0.74.0
+- @voyant-travel/react@0.74.0
 
 ## 0.73.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.73.1
-- @voyantjs/react@0.73.1
+- @voyant-travel/flights@0.73.1
+- @voyant-travel/react@0.73.1
 
 ## 0.73.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.73.0
-- @voyantjs/react@0.73.0
+- @voyant-travel/flights@0.73.0
+- @voyant-travel/react@0.73.0
 
 ## 0.72.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.72.0
-- @voyantjs/react@0.72.0
+- @voyant-travel/flights@0.72.0
+- @voyant-travel/react@0.72.0
 
 ## 0.71.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.71.0
-- @voyantjs/react@0.71.0
+- @voyant-travel/flights@0.71.0
+- @voyant-travel/react@0.71.0
 
 ## 0.70.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.70.0
-- @voyantjs/react@0.70.0
+- @voyant-travel/flights@0.70.0
+- @voyant-travel/react@0.70.0
 
 ## 0.69.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.69.1
-- @voyantjs/react@0.69.1
+- @voyant-travel/flights@0.69.1
+- @voyant-travel/react@0.69.1
 
 ## 0.69.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.69.0
-- @voyantjs/react@0.69.0
+- @voyant-travel/flights@0.69.0
+- @voyant-travel/react@0.69.0
 
 ## 0.68.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.68.0
-- @voyantjs/react@0.68.0
+- @voyant-travel/flights@0.68.0
+- @voyant-travel/react@0.68.0
 
 ## 0.67.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.67.0
-- @voyantjs/react@0.67.0
+- @voyant-travel/flights@0.67.0
+- @voyant-travel/react@0.67.0
 
 ## 0.66.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.6
-- @voyantjs/react@0.66.6
+- @voyant-travel/flights@0.66.6
+- @voyant-travel/react@0.66.6
 
 ## 0.66.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.5
-- @voyantjs/react@0.66.5
+- @voyant-travel/flights@0.66.5
+- @voyant-travel/react@0.66.5
 
 ## 0.66.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.4
-- @voyantjs/react@0.66.4
+- @voyant-travel/flights@0.66.4
+- @voyant-travel/react@0.66.4
 
 ## 0.66.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.3
-- @voyantjs/react@0.66.3
+- @voyant-travel/flights@0.66.3
+- @voyant-travel/react@0.66.3
 
 ## 0.66.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.2
-- @voyantjs/react@0.66.2
+- @voyant-travel/flights@0.66.2
+- @voyant-travel/react@0.66.2
 
 ## 0.66.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.1
-- @voyantjs/react@0.66.1
+- @voyant-travel/flights@0.66.1
+- @voyant-travel/react@0.66.1
 
 ## 0.66.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.66.0
-- @voyantjs/react@0.66.0
+- @voyant-travel/flights@0.66.0
+- @voyant-travel/react@0.66.0
 
 ## 0.65.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.65.0
-- @voyantjs/react@0.65.0
+- @voyant-travel/flights@0.65.0
+- @voyant-travel/react@0.65.0
 
 ## 0.64.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.64.1
-- @voyantjs/react@0.64.1
+- @voyant-travel/flights@0.64.1
+- @voyant-travel/react@0.64.1
 
 ## 0.64.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.64.0
-- @voyantjs/react@0.64.0
+- @voyant-travel/flights@0.64.0
+- @voyant-travel/react@0.64.0
 
 ## 0.63.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.63.1
-- @voyantjs/react@0.63.1
+- @voyant-travel/flights@0.63.1
+- @voyant-travel/react@0.63.1
 
 ## 0.63.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.63.0
-- @voyantjs/react@0.63.0
+- @voyant-travel/flights@0.63.0
+- @voyant-travel/react@0.63.0
 
 ## 0.62.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.62.3
-- @voyantjs/react@0.62.3
+- @voyant-travel/flights@0.62.3
+- @voyant-travel/react@0.62.3
 
 ## 0.62.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.62.2
-- @voyantjs/react@0.62.2
+- @voyant-travel/flights@0.62.2
+- @voyant-travel/react@0.62.2
 
 ## 0.62.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.62.1
-- @voyantjs/react@0.62.1
+- @voyant-travel/flights@0.62.1
+- @voyant-travel/react@0.62.1
 
 ## 0.62.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.62.0
-- @voyantjs/react@0.62.0
+- @voyant-travel/flights@0.62.0
+- @voyant-travel/react@0.62.0
 
 ## 0.61.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.61.0
-- @voyantjs/react@0.61.0
+- @voyant-travel/flights@0.61.0
+- @voyant-travel/react@0.61.0
 
 ## 0.60.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.60.0
-- @voyantjs/react@0.60.0
+- @voyant-travel/flights@0.60.0
+- @voyant-travel/react@0.60.0
 
 ## 0.59.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.59.0
-- @voyantjs/react@0.59.0
+- @voyant-travel/flights@0.59.0
+- @voyant-travel/react@0.59.0
 
 ## 0.58.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.58.0
-- @voyantjs/react@0.58.0
+- @voyant-travel/flights@0.58.0
+- @voyant-travel/react@0.58.0
 
 ## 0.57.0
 
 ### Patch Changes
 
 - Updated dependencies [0829145]
-  - @voyantjs/flights@0.57.0
-  - @voyantjs/react@0.57.0
+  - @voyant-travel/flights@0.57.0
+  - @voyant-travel/react@0.57.0
 
 ## 0.56.0
 
 ### Patch Changes
 
 - Updated dependencies [fe403fc]
-  - @voyantjs/flights@0.56.0
-  - @voyantjs/react@0.56.0
+  - @voyant-travel/flights@0.56.0
+  - @voyant-travel/react@0.56.0
 
 ## 0.55.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.55.1
-- @voyantjs/react@0.55.1
+- @voyant-travel/flights@0.55.1
+- @voyant-travel/react@0.55.1
 
 ## 0.55.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.55.0
-- @voyantjs/react@0.55.0
+- @voyant-travel/flights@0.55.0
+- @voyant-travel/react@0.55.0
 
 ## 0.54.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.54.0
-- @voyantjs/react@0.54.0
+- @voyant-travel/flights@0.54.0
+- @voyant-travel/react@0.54.0
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.53.2
-- @voyantjs/react@0.53.2
+- @voyant-travel/flights@0.53.2
+- @voyant-travel/react@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.53.1
-- @voyantjs/react@0.53.1
+- @voyant-travel/flights@0.53.1
+- @voyant-travel/react@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.53.0
-- @voyantjs/react@0.53.0
+- @voyant-travel/flights@0.53.0
+- @voyant-travel/react@0.53.0
 
 ## 0.52.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.52.4
-- @voyantjs/react@0.52.4
+- @voyant-travel/flights@0.52.4
+- @voyant-travel/react@0.52.4
 
 ## 0.52.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.52.3
-- @voyantjs/react@0.52.3
+- @voyant-travel/flights@0.52.3
+- @voyant-travel/react@0.52.3
 
 ## 0.52.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.52.2
-- @voyantjs/react@0.52.2
+- @voyant-travel/flights@0.52.2
+- @voyant-travel/react@0.52.2
 
 ## 0.52.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.52.1
-- @voyantjs/react@0.52.1
+- @voyant-travel/flights@0.52.1
+- @voyant-travel/react@0.52.1
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.52.0
-- @voyantjs/react@0.52.0
+- @voyant-travel/flights@0.52.0
+- @voyant-travel/react@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.51.1
-- @voyantjs/react@0.51.1
+- @voyant-travel/flights@0.51.1
+- @voyant-travel/react@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.51.0
-- @voyantjs/react@0.51.0
+- @voyant-travel/flights@0.51.0
+- @voyant-travel/react@0.51.0
 
 ## 0.50.8
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.8
-- @voyantjs/react@0.50.8
+- @voyant-travel/flights@0.50.8
+- @voyant-travel/react@0.50.8
 
 ## 0.50.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.7
-- @voyantjs/react@0.50.7
+- @voyant-travel/flights@0.50.7
+- @voyant-travel/react@0.50.7
 
 ## 0.50.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.6
-- @voyantjs/react@0.50.6
+- @voyant-travel/flights@0.50.6
+- @voyant-travel/react@0.50.6
 
 ## 0.50.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.5
-- @voyantjs/react@0.50.5
+- @voyant-travel/flights@0.50.5
+- @voyant-travel/react@0.50.5
 
 ## 0.50.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.4
-- @voyantjs/react@0.50.4
+- @voyant-travel/flights@0.50.4
+- @voyant-travel/react@0.50.4
 
 ## 0.50.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.3
-- @voyantjs/react@0.50.3
+- @voyant-travel/flights@0.50.3
+- @voyant-travel/react@0.50.3
 
 ## 0.50.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.2
-- @voyantjs/react@0.50.2
+- @voyant-travel/flights@0.50.2
+- @voyant-travel/react@0.50.2
 
 ## 0.50.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.1
-- @voyantjs/react@0.50.1
+- @voyant-travel/flights@0.50.1
+- @voyant-travel/react@0.50.1
 
 ## 0.50.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.50.0
-- @voyantjs/react@0.50.0
+- @voyant-travel/flights@0.50.0
+- @voyant-travel/react@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.49.0
-- @voyantjs/react@0.49.0
+- @voyant-travel/flights@0.49.0
+- @voyant-travel/react@0.49.0
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.48.0
-- @voyantjs/react@0.48.0
+- @voyant-travel/flights@0.48.0
+- @voyant-travel/react@0.48.0
 
 ## 0.47.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.47.0
-- @voyantjs/react@0.47.0
+- @voyant-travel/flights@0.47.0
+- @voyant-travel/react@0.47.0
 
 ## 0.46.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.46.0
-- @voyantjs/react@0.46.0
+- @voyant-travel/flights@0.46.0
+- @voyant-travel/react@0.46.0
 
 ## 0.45.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.45.0
-- @voyantjs/react@0.45.0
+- @voyant-travel/flights@0.45.0
+- @voyant-travel/react@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.44.0
-- @voyantjs/react@0.44.0
+- @voyant-travel/flights@0.44.0
+- @voyant-travel/react@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.43.0
-- @voyantjs/react@0.43.0
+- @voyant-travel/flights@0.43.0
+- @voyant-travel/react@0.43.0
 
 ## 0.42.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.42.0
-- @voyantjs/react@0.42.0
+- @voyant-travel/flights@0.42.0
+- @voyant-travel/react@0.42.0
 
 ## 0.41.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.41.3
-- @voyantjs/react@0.41.3
+- @voyant-travel/flights@0.41.3
+- @voyant-travel/react@0.41.3
 
 ## 0.41.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.41.2
-- @voyantjs/react@0.41.2
+- @voyant-travel/flights@0.41.2
+- @voyant-travel/react@0.41.2
 
 ## 0.41.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.41.1
-- @voyantjs/react@0.41.1
+- @voyant-travel/flights@0.41.1
+- @voyant-travel/react@0.41.1
 
 ## 0.41.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.41.0
-- @voyantjs/react@0.41.0
+- @voyant-travel/flights@0.41.0
+- @voyant-travel/react@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.40.1
-- @voyantjs/react@0.40.1
+- @voyant-travel/flights@0.40.1
+- @voyant-travel/react@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.40.0
-- @voyantjs/react@0.40.0
+- @voyant-travel/flights@0.40.0
+- @voyant-travel/react@0.40.0
 
 ## 0.39.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.39.0
-- @voyantjs/react@0.39.0
+- @voyant-travel/flights@0.39.0
+- @voyant-travel/react@0.39.0
 
 ## 0.38.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.38.2
-- @voyantjs/react@0.38.2
+- @voyant-travel/flights@0.38.2
+- @voyant-travel/react@0.38.2
 
 ## 0.38.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.38.1
-- @voyantjs/react@0.38.1
+- @voyant-travel/flights@0.38.1
+- @voyant-travel/react@0.38.1
 
 ## 0.38.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.38.0
-- @voyantjs/react@0.38.0
+- @voyant-travel/flights@0.38.0
+- @voyant-travel/react@0.38.0
 
 ## 0.37.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.37.1
-- @voyantjs/react@0.37.1
+- @voyant-travel/flights@0.37.1
+- @voyant-travel/react@0.37.1
 
 ## 0.37.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.37.0
-- @voyantjs/react@0.37.0
+- @voyant-travel/flights@0.37.0
+- @voyant-travel/react@0.37.0
 
 ## 0.36.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.36.0
-- @voyantjs/react@0.36.0
+- @voyant-travel/flights@0.36.0
+- @voyant-travel/react@0.36.0
 
 ## 0.35.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.35.0
-- @voyantjs/react@0.35.0
+- @voyant-travel/flights@0.35.0
+- @voyant-travel/react@0.35.0
 
 ## 0.34.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.34.0
-- @voyantjs/react@0.34.0
+- @voyant-travel/flights@0.34.0
+- @voyant-travel/react@0.34.0
 
 ## 0.33.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.33.1
-- @voyantjs/react@0.33.1
+- @voyant-travel/flights@0.33.1
+- @voyant-travel/react@0.33.1
 
 ## 0.33.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.33.0
-- @voyantjs/react@0.33.0
+- @voyant-travel/flights@0.33.0
+- @voyant-travel/react@0.33.0
 
 ## 0.32.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.32.3
-- @voyantjs/react@0.32.3
+- @voyant-travel/flights@0.32.3
+- @voyant-travel/react@0.32.3
 
 ## 0.32.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.32.2
-- @voyantjs/react@0.32.2
+- @voyant-travel/flights@0.32.2
+- @voyant-travel/react@0.32.2
 
 ## 0.32.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.32.1
-- @voyantjs/react@0.32.1
+- @voyant-travel/flights@0.32.1
+- @voyant-travel/react@0.32.1
 
 ## 0.32.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.32.0
-- @voyantjs/react@0.32.0
+- @voyant-travel/flights@0.32.0
+- @voyant-travel/react@0.32.0
 
 ## 0.31.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.31.4
-- @voyantjs/react@0.31.4
+- @voyant-travel/flights@0.31.4
+- @voyant-travel/react@0.31.4
 
 ## 0.31.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.31.3
-- @voyantjs/react@0.31.3
+- @voyant-travel/flights@0.31.3
+- @voyant-travel/react@0.31.3
 
 ## 0.31.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.31.2
-- @voyantjs/react@0.31.2
+- @voyant-travel/flights@0.31.2
+- @voyant-travel/react@0.31.2
 
 ## 0.31.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.31.1
-- @voyantjs/react@0.31.1
+- @voyant-travel/flights@0.31.1
+- @voyant-travel/react@0.31.1
 
 ## 0.31.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.31.0
-- @voyantjs/react@0.31.0
+- @voyant-travel/flights@0.31.0
+- @voyant-travel/react@0.31.0
 
 ## 0.30.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.7
-- @voyantjs/react@0.30.7
+- @voyant-travel/flights@0.30.7
+- @voyant-travel/react@0.30.7
 
 ## 0.30.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.6
-- @voyantjs/react@0.30.6
+- @voyant-travel/flights@0.30.6
+- @voyant-travel/react@0.30.6
 
 ## 0.30.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.5
-- @voyantjs/react@0.30.5
+- @voyant-travel/flights@0.30.5
+- @voyant-travel/react@0.30.5
 
 ## 0.30.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.4
-- @voyantjs/react@0.30.4
+- @voyant-travel/flights@0.30.4
+- @voyant-travel/react@0.30.4
 
 ## 0.30.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.3
-- @voyantjs/react@0.30.3
+- @voyant-travel/flights@0.30.3
+- @voyant-travel/react@0.30.3
 
 ## 0.30.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.2
-- @voyantjs/react@0.30.2
+- @voyant-travel/flights@0.30.2
+- @voyant-travel/react@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.1
-- @voyantjs/react@0.30.1
+- @voyant-travel/flights@0.30.1
+- @voyant-travel/react@0.30.1
 
 ## 0.30.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.30.0
-- @voyantjs/react@0.30.0
+- @voyant-travel/flights@0.30.0
+- @voyant-travel/react@0.30.0
 
 ## 0.29.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.29.0
-- @voyantjs/react@0.29.0
+- @voyant-travel/flights@0.29.0
+- @voyant-travel/react@0.29.0
 
 ## 0.28.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.28.3
-- @voyantjs/react@0.28.3
+- @voyant-travel/flights@0.28.3
+- @voyant-travel/react@0.28.3
 
 ## 0.28.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.28.2
-- @voyantjs/react@0.28.2
+- @voyant-travel/flights@0.28.2
+- @voyant-travel/react@0.28.2
 
 ## 0.28.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.28.1
-- @voyantjs/react@0.28.1
+- @voyant-travel/flights@0.28.1
+- @voyant-travel/react@0.28.1
 
 ## 0.28.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.28.0
-- @voyantjs/react@0.28.0
+- @voyant-travel/flights@0.28.0
+- @voyant-travel/react@0.28.0
 
 ## 0.27.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.27.0
-- @voyantjs/react@0.27.0
+- @voyant-travel/flights@0.27.0
+- @voyant-travel/react@0.27.0
 
 ## 0.26.9
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.9
-- @voyantjs/react@0.26.9
+- @voyant-travel/flights@0.26.9
+- @voyant-travel/react@0.26.9
 
 ## 0.26.8
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.8
-- @voyantjs/react@0.26.8
+- @voyant-travel/flights@0.26.8
+- @voyant-travel/react@0.26.8
 
 ## 0.26.7
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.7
-- @voyantjs/react@0.26.7
+- @voyant-travel/flights@0.26.7
+- @voyant-travel/react@0.26.7
 
 ## 0.26.6
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.6
-- @voyantjs/react@0.26.6
+- @voyant-travel/flights@0.26.6
+- @voyant-travel/react@0.26.6
 
 ## 0.26.5
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.5
-- @voyantjs/react@0.26.5
+- @voyant-travel/flights@0.26.5
+- @voyant-travel/react@0.26.5
 
 ## 0.26.4
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.4
-- @voyantjs/react@0.26.4
+- @voyant-travel/flights@0.26.4
+- @voyant-travel/react@0.26.4
 
 ## 0.26.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.3
-- @voyantjs/react@0.26.3
+- @voyant-travel/flights@0.26.3
+- @voyant-travel/react@0.26.3
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.2
-- @voyantjs/react@0.26.2
+- @voyant-travel/flights@0.26.2
+- @voyant-travel/react@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.1
-- @voyantjs/react@0.26.1
+- @voyant-travel/flights@0.26.1
+- @voyant-travel/react@0.26.1
 
 ## 0.26.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.26.0
-- @voyantjs/react@0.26.0
+- @voyant-travel/flights@0.26.0
+- @voyant-travel/react@0.26.0
 
 ## 0.25.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.25.0
-- @voyantjs/react@0.25.0
+- @voyant-travel/flights@0.25.0
+- @voyant-travel/react@0.25.0
 
 ## 0.24.3
 
 ### Patch Changes
 
-- @voyantjs/flights@0.24.3
-- @voyantjs/react@0.24.3
+- @voyant-travel/flights@0.24.3
+- @voyant-travel/react@0.24.3
 
 ## 0.24.2
 
 ### Patch Changes
 
-- @voyantjs/flights@0.24.2
-- @voyantjs/react@0.24.2
+- @voyant-travel/flights@0.24.2
+- @voyant-travel/react@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.24.1
-- @voyantjs/react@0.24.1
+- @voyant-travel/flights@0.24.1
+- @voyant-travel/react@0.24.1
 
 ## 0.24.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.24.0
-- @voyantjs/react@0.24.0
+- @voyant-travel/flights@0.24.0
+- @voyant-travel/react@0.24.0
 
 ## 0.23.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.23.0
-- @voyantjs/react@0.23.0
+- @voyant-travel/flights@0.23.0
+- @voyant-travel/react@0.23.0
 
 ## 0.22.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.22.0
-- @voyantjs/react@0.22.0
+- @voyant-travel/flights@0.22.0
+- @voyant-travel/react@0.22.0
 
 ## 0.21.1
 
 ### Patch Changes
 
-- @voyantjs/flights@0.21.1
-- @voyantjs/react@0.21.1
+- @voyant-travel/flights@0.21.1
+- @voyant-travel/react@0.21.1
 
 ## 0.21.0
 
 ### Patch Changes
 
-- @voyantjs/flights@0.21.0
-- @voyantjs/react@0.21.0
+- @voyant-travel/flights@0.21.0
+- @voyant-travel/react@0.21.0
 
 ## 0.20.0
 
@@ -1790,18 +1790,18 @@
 
   The previous demo adapter lived inside the operator template, used an in-memory `Map` for "persistence" (orders vanished on every restart), and bled fake tables into the template's primary Postgres. None of that scales to "show me my bookings". This release extracts the demo into a proper standalone provider so the operator template no longer pretends a demo is real.
 
-  - **New** `@voyantjs/plugin-flights-demo` is now a thin HTTP-client `FlightConnectorAdapter` (~150 lines, zero state). `createDemoFlightAdapter({ baseUrl })` returns the adapter; every method `fetch()`s the standalone service. Real GDS connectors (Sabre, Amadeus, Duffel) plug in the same way — replace the import, no template churn.
+  - **New** `@voyant-travel/plugin-flights-demo` is now a thin HTTP-client `FlightConnectorAdapter` (~150 lines, zero state). `createDemoFlightAdapter({ baseUrl })` returns the adapter; every method `fetch()`s the standalone service. Real GDS connectors (Sabre, Amadeus, Duffel) plug in the same way — replace the import, no template churn.
   - **New runnable** `apps/flights-demo-api` (Node + Hono + drizzle + postgres) — own database, own migrations, own `docker-compose.yml`. Mirrors the `FlightConnectorAdapter` 1:1 over REST: `POST /search`, `POST /price`, `POST /book`, `GET /orders`, `GET /orders/:id`, `POST /orders/:id/cancel`, `POST /ancillaries`, `POST /seatmap`, `GET /health`. Fails fast at startup if its Postgres is unreachable. Set `FLIGHTS_DEMO_DATABASE_URL` (preferred over the shared `DATABASE_URL` so the demo can never silently inherit the operator's DB).
   - **Booking** is no longer "idempotent" via deterministic order id — `synthesizeOrder` now seeds with the offer hash + `Date.now()` + a random nonce so every `bookFlight` call mints a unique PNR, matching real GDS behaviour. Same offer + same passengers → distinct order rows.
   - **Contract: `FlightConnectorAdapter.listOrders?(ctx, query)`** is a new optional method (`flight/list-orders` capability), with `FlightOrdersListQuery` and `FlightOrdersListResponse` types. Adapters that own a persistent store (the demo, real travel-tech connectors with agency-side APIs) implement it; pass-through GDS connectors simply omit it. `FlightAdapterContext.deps` is a new optional escape hatch for adapter-specific runtime handles (DB, FX clients, etc.) — real connectors ignore it.
-  - **`useFlightOrders(filters?)`** hook in `@voyantjs/flights-react` with `cursor` / `limit` / `search` / `status` / `paymentStatus` filters, plus the `FlightOrdersListResponseDto` schema and the new `FlightOrderPaymentStatus` enum.
+  - **`useFlightOrders(filters?)`** hook in `@voyant-travel/flights-react` with `cursor` / `limit` / `search` / `status` / `paymentStatus` filters, plus the `FlightOrdersListResponseDto` schema and the new `FlightOrderPaymentStatus` enum.
   - **Operator template** gets `/flights/orders` route, sidebar "Orders" sub-item under Flights (en + ro i18n), payment status badge on the booking confirmation page, and the orders list now includes Booking + Payment status columns, search debounced 250ms, two filter dropdowns (booking status + payment status — operator-side filter against the bulk-fetched session map, no N+1), and toggle-direction sort headers on Order/Total.
   - **Webhook + redirect plumbing**: the operator template adds the Netopia callback path (`/v1/finance/providers/netopia/callback`) to `publicPaths`, sets `vite.config.ts` `server.allowedHosts: true` (Cloudflare-tunnel friendly for dev webhook delivery), and ships a `/pay` resolver route + `POST /v1/public/payment-link/resolve?ref=` + `POST /v1/public/payment-link/:sessionId/retry` + `POST /v1/public/payment-link/:sessionId/start-card` so any orderID/clientReference echoed back by Netopia resolves to the canonical session id, lazy-starts the card path on demand, and supports retrying after a failed payment by minting a fresh session.
 
-  Migration: if you were importing `createDemoFlightAdapter` from the old (template-internal) location, switch to `@voyantjs/plugin-flights-demo` and pass `{ baseUrl: env.FLIGHTS_DEMO_API_URL }`. Stand up the new service via `pnpm --filter flights-demo-api db:migrate && pnpm --filter flights-demo-api dev` (defaults to `:3320`). Drop the `demo_flight_orders` table from your operator DB — migration `0006_common_vance_astro` handles this idempotently for templates following the operator one.
+  Migration: if you were importing `createDemoFlightAdapter` from the old (template-internal) location, switch to `@voyant-travel/plugin-flights-demo` and pass `{ baseUrl: env.FLIGHTS_DEMO_API_URL }`. Stand up the new service via `pnpm --filter flights-demo-api db:migrate && pnpm --filter flights-demo-api dev` (defaults to `:3320`). Drop the `demo_flight_orders` table from your operator DB — migration `0006_common_vance_astro` handles this idempotently for templates following the operator one.
 
 ### Patch Changes
 
 - Updated dependencies [cc3eddd]
-  - @voyantjs/flights@0.20.0
-  - @voyantjs/react@0.20.0
+  - @voyant-travel/flights@0.20.0
+  - @voyant-travel/react@0.20.0

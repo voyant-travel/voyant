@@ -1,4 +1,4 @@
-# @voyantjs/i18n
+# @voyant-travel/i18n
 
 ## 0.106.1
 
@@ -13,7 +13,7 @@
 - 7122c2a: Admin booking journey overhaul + unified new-booking + reusable catalog UI (#1625)
 
   - **bookings-ui**: the operator books on a single stacked, guided accordion (progressive unlock, auto-advance) instead of the wizard; storefront keeps the wizard. Travelers as add-rows + per-traveler type + CRM linking, Configure with departure-first + nested rooms + occupancy-dependency rules, price override + voucher in the side panel, single payment-link checkbox, notes/docs block, save-as-draft / confirmed-if-paid status, duplicate-departure warning, commit lands on the booking detail. Journey steps split into per-step modules. B2B billing is satisfied by a picked organization; switching the product option clears stale room selections.
-  - **catalog / catalog-react / catalog-ui**: the operator catalog browse/detail UI moves into the shared `@voyantjs/catalog-ui` + `@voyantjs/catalog-react` packages (detail pages, browse/dynamic/scheduled, gallery, calendar, sheet, enrichment, catalog i18n) so other templates can reuse them; booking-engine commit path returns the booking id and lands on detail.
+  - **catalog / catalog-react / catalog-ui**: the operator catalog browse/detail UI moves into the shared `@voyant-travel/catalog-ui` + `@voyant-travel/catalog-react` packages (detail pages, browse/dynamic/scheduled, gallery, calendar, sheet, enrichment, catalog i18n) so other templates can reuse them; booking-engine commit path returns the booking id and lands on detail.
   - **catalog-contracts**: adds pax-band occupancy dependencies, the option-units configure sub-step, and the sourced stays/package rate pin (`roomTypeId` / `ratePlanId` / `board`) to the booking-engine draft + adapter contracts.
   - **products / i18n**: products booking handler forwards the slot id + breakdown currency; admin booking-journey i18n strings.
 
@@ -70,10 +70,10 @@
 
 - b6d0673: Redesign the operator's **Booking options & prices** for low-tech travel agents and close the inventory/allocation gaps it exposed.
 
-  - `@voyantjs/products-ui`: each option now renders **one adaptive table** — a rooms grid (rooms × traveler types) or a per-person seats list — derived from the product's inventory (rooms always win over booking mode). The rate-plan layer is hidden behind an **Advanced** disclosure (a single default plan is auto-managed); the default plan's matrix is no longer duplicated there. Single-option products show the table directly with no chrome. The unit form pins its type in the contextual add ("Add room" can't create a vehicle) and uses type-aware quantity/occupancy labels; the price dialog uses the design-system currency input and pricing-mode-aware quantity labels. New departures pre-fill **Capacity (pax)** from the configured inventory (overridable).
-  - `@voyantjs/products`: `createProduct` seeds a default `Standard` option so new products open straight into the pricing table; the day-translation create route now verifies the day belongs to the product.
-  - `@voyantjs/availability` + `@voyantjs/availability-react`: departure inventory templates can be **generated from the option's rooms** and **applied to existing open departures** (new bulk endpoint + hook). The full-inventory materializer now works for product-level departures (no `optionId`), so auto-seed on publish and bulk apply create the full room set. New per-slot `materialize-templates` endpoint.
-  - `@voyantjs/allocation-ui`: a slot's **Generate resources** now materializes the full configured inventory across all kinds in one click, instead of the pax-derived single-kind path.
+  - `@voyant-travel/products-ui`: each option now renders **one adaptive table** — a rooms grid (rooms × traveler types) or a per-person seats list — derived from the product's inventory (rooms always win over booking mode). The rate-plan layer is hidden behind an **Advanced** disclosure (a single default plan is auto-managed); the default plan's matrix is no longer duplicated there. Single-option products show the table directly with no chrome. The unit form pins its type in the contextual add ("Add room" can't create a vehicle) and uses type-aware quantity/occupancy labels; the price dialog uses the design-system currency input and pricing-mode-aware quantity labels. New departures pre-fill **Capacity (pax)** from the configured inventory (overridable).
+  - `@voyant-travel/products`: `createProduct` seeds a default `Standard` option so new products open straight into the pricing table; the day-translation create route now verifies the day belongs to the product.
+  - `@voyant-travel/availability` + `@voyant-travel/availability-react`: departure inventory templates can be **generated from the option's rooms** and **applied to existing open departures** (new bulk endpoint + hook). The full-inventory materializer now works for product-level departures (no `optionId`), so auto-seed on publish and bulk apply create the full room set. New per-slot `materialize-templates` endpoint.
+  - `@voyant-travel/allocation-ui`: a slot's **Generate resources** now materializes the full configured inventory across all kinds in one click, instead of the pax-derived single-kind path.
 
 ## 0.101.2
 
@@ -81,11 +81,11 @@
 
 - 577eaf5: Add in-context translations for products and itinerary days.
 
-  - `@voyantjs/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
-  - `@voyantjs/products-contracts`: validation schemas for the product default language and itinerary-day translations.
-  - `@voyantjs/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
-  - `@voyantjs/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
-  - `@voyantjs/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
+  - `@voyant-travel/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
+  - `@voyant-travel/products-contracts`: validation schemas for the product default language and itinerary-day translations.
+  - `@voyant-travel/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
+  - `@voyant-travel/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
+  - `@voyant-travel/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
 
 ## 0.101.1
 
@@ -93,12 +93,12 @@
 
 - f736ba5: Improve product booking configuration for room-based travel products.
 
-  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
-  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
-  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
-  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
-  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
-  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+  - `@voyant-travel/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyant-travel/bookings` and `@voyant-travel/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyant-travel/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyant-travel/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyant-travel/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyant-travel/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
 
 ## 0.101.0
 
@@ -175,18 +175,18 @@
 - 79ce168: Slot-detail / allocation / booking-sheet UX pass.
 
   - `AvailabilitySlotDetailPage`: status badge color-coded by tone (open=green, closed/sold-out=red), product-type badge, locale-formatted date range with timezone chip, financial KPI cards (Remaining/Initial Pax, Total, Paid + %, Outstanding + %, per-currency rollup), timeline-style Activity tab, `<dl>`-style Metadata tab, AlertDialog delete confirmation, host-driven Edit / Open Product / Create Booking actions.
-  - Slot allocation grid: side-by-side Unallocated + resources layout kicks in at `lg:` instead of `xl:`; payment-status chip palette unchanged but Tailwind source paths now cover `@voyantjs/allocation-ui` in the operator template so the colors actually render.
+  - Slot allocation grid: side-by-side Unallocated + resources layout kicks in at `lg:` instead of `xl:`; payment-status chip palette unchanged but Tailwind source paths now cover `@voyant-travel/allocation-ui` in the operator template so the colors actually render.
   - `AvailabilitySlotsTab`: optional header / `asPanel` / `hideBulkDelete` / `bulkStatusSelect` props let hosts embed the slots table outside of a Tabs shell and replace the bulk Open/Close buttons with a single "Change status" select.
-  - Allocation manifest now exposes `sellAmountCents` / `paidAmountCents` per booking (and `derivePaidAmountCents` is exported from `@voyantjs/availability`). `productOptionSchema` adds `sellCurrency` and `productType` so consumers can drive currency / badge UI off the catalog response.
+  - Allocation manifest now exposes `sellAmountCents` / `paidAmountCents` per booking (and `derivePaidAmountCents` is exported from `@voyant-travel/availability`). `productOptionSchema` adds `sellCurrency` and `productType` so consumers can drive currency / badge UI off the catalog response.
   - `GET /v1/products/:id` joins `product_types` and returns `productType` alongside the product row via new `productsService.getProductByIdWithType`.
   - `BookingCreateDialog` → `BookingCreateSheet` (file + symbol + registry slug rename). Right-side wide sheet, departure picker disables when opened with a `defaultSlotId`, full-mode payment schedule defaults the due date to the departure day until the operator touches it, payment-schedule currency falls back through product → pricing → placeholder so the server's `invalid_payment_schedules` validator stops rejecting mismatched currencies, slot-allocation cache busted after create so new bookings appear without a manual refresh.
   - `BookingQuickViewSheet`: real Payer section (email/phone/language/website/address), card-per-traveler details (email/phone/language/special-requests/notes), per-traveler document list, and a collapsible "More info" that lazily calls the audit-logged reveal endpoint to surface DOB / nationality / document / dietary / accessibility / bed preference.
-  - `ProductQuickViewSheet`: new component in `@voyantjs/products-ui` mirroring the booking quick view shape — cover image, booking/capacity mode badges, full description, dates, itinerary days (with location + description), options list with status badges, tags, "View full product" footer.
+  - `ProductQuickViewSheet`: new component in `@voyant-travel/products-ui` mirroring the booking quick view shape — cover image, booking/capacity mode badges, full description, dates, itinerary days (with location + description), options list with status badges, tags, "View full product" footer.
   - `AsyncCombobox` now forwards `disabled` to `ComboboxInput` so disabled comboboxes are actually uneditable.
   - `DataTable` selection checkboxes use bubble-phase `stopPropagation` (wrapped in a `<div>`) instead of `onClickCapture` — fixes the "checkbox doesn't fire" bug under base-ui's checkbox event flow.
   - `useBookingCreateMutation` consumers (sheet) invalidate `availabilityQueryKeys.slots()` after create.
   - `loadProductOptionUnits` in finance booking-create now uses the exported `toRows<T>` normalizer to handle both `drizzle-orm/postgres-js` and `drizzle-orm/node-postgres` return shapes.
-  - Operator template: Availability nav item moved directly under Products; slot detail route hosts the new edit dialog, booking quick view, product quick view; Tailwind `@source` scans `@voyantjs/allocation-ui` dist + src.
+  - Operator template: Availability nav item moved directly under Products; slot detail route hosts the new edit dialog, booking quick view, product quick view; Tailwind `@source` scans `@voyant-travel/allocation-ui` dist + src.
   - I18n: en/ro keys added for `tabSlots: "List"` rename, slot detail Activity timeline filters, slot Meta block, "Change status", "Create booking", "Edit slot", traveler reveal labels, booking quick view payer.
 
 ## 0.81.21
@@ -201,11 +201,11 @@
 
 - 93874e4: Follow-ups to the booking-detail UX overhaul (#1332):
 
-  - **Status change dialog (`@voyantjs/bookings-ui`)**: surface the existing `suppressNotifications` API as a switch in `StatusChangeDialog`. The toggle only appears when the target status is `confirmed` (the only transition that honors the flag server-side per `status-dispatch.ts`) and routes the value through to `useBookingStatusMutation`. Lets operators confirm a booking silently — no confirmation email, no document bundle. EN/RO labels added.
+  - **Status change dialog (`@voyant-travel/bookings-ui`)**: surface the existing `suppressNotifications` API as a switch in `StatusChangeDialog`. The toggle only appears when the target status is `confirmed` (the only transition that honors the flag server-side per `status-dispatch.ts`) and routes the value through to `useBookingStatusMutation`. Lets operators confirm a booking silently — no confirmation email, no document bundle. EN/RO labels added.
   - **Booking documents tab (`templates/operator`)**: contracts table now has an "Open contract page" icon action linking to `/legal/contracts/$id`. EN/RO copy added under `bookings.detail.documentsTable.contractOpenTooltip`.
-  - **Contract detail page (`@voyantjs/legal-ui`)**: delete button now renders for `void` contracts too, not just drafts.
-  - **Contract delete API (`@voyantjs/legal`)**: `deleteContract` accepts `draft | void` (was draft-only). Returns `not_deletable` instead of `not_draft`; route error message updated to "Only draft or void contracts can be deleted".
-  - **Contract auto-generation (issue #1335, `@voyantjs/legal`)**: `issueContract` now allocates the series number **before** rendering and merges it into the render variables, so templates that print `{{ contract.number }}` / `{{ contract.contractNumber }}` resolve on the first issued PDF. The allocated number is also persisted back into `contract.variables` so regenerations stay consistent. Same merge applied in `ensureRenderedContract` for the deferred-render fallback path. New `mergeContractNumberIntoVariables` helper (exported) + 4 unit tests.
+  - **Contract detail page (`@voyant-travel/legal-ui`)**: delete button now renders for `void` contracts too, not just drafts.
+  - **Contract delete API (`@voyant-travel/legal`)**: `deleteContract` accepts `draft | void` (was draft-only). Returns `not_deletable` instead of `not_draft`; route error message updated to "Only draft or void contracts can be deleted".
+  - **Contract auto-generation (issue #1335, `@voyant-travel/legal`)**: `issueContract` now allocates the series number **before** rendering and merges it into the render variables, so templates that print `{{ contract.number }}` / `{{ contract.contractNumber }}` resolve on the first issued PDF. The allocated number is also persisted back into `contract.variables` so regenerations stay consistent. Same merge applied in `ensureRenderedContract` for the deferred-render fallback path. New `mergeContractNumberIntoVariables` helper (exported) + 4 unit tests.
 
 ## 0.81.17
 
@@ -276,7 +276,7 @@
   - Bookings list excludeStatuses filter (string-or-array) parsed by `bookingListQuerySchema`.
   - `BookingPaymentsSummary` adds an FX equivalent column with `baseCurrency` + `baseAmountCents` plumbed through `publicFinanceBookingPaymentSchema` and the operator `useAdminBookingPayments` projection.
   - Currency combobox now correctly disables (forwards `disabled` to the inner input and hides the clear button when disabled).
-  - New shared primitives in `@voyantjs/bookings-ui`: `IconActionButton` (icon button with built-in tooltip) and `StatusBadge` (semantic tone mapping for status strings) — exported from the package root.
+  - New shared primitives in `@voyant-travel/bookings-ui`: `IconActionButton` (icon button with built-in tooltip) and `StatusBadge` (semantic tone mapping for status strings) — exported from the package root.
 
 ## 0.81.15
 
@@ -540,9 +540,9 @@
 
 - 3e09123: Quiet/auxiliary updates.
 
-  - `@voyantjs/notifications`: `booking.confirmed` subscriber honors a new `suppressNotifications` flag on the event payload so operators can confirm a booking without firing the customer-facing email/doc bundle (data corrections, manual hand-offs).
-  - `@voyantjs/customer-portal`: public service + validation tightened around the new booking tax-preview shape; integration tests updated to assert the new response.
-  - `@voyantjs/i18n`: new admin strings for the bookings billing dialog, finance tax-preview labels, CRM operator screens, and products operator surface (EN + RO).
+  - `@voyant-travel/notifications`: `booking.confirmed` subscriber honors a new `suppressNotifications` flag on the event payload so operators can confirm a booking without firing the customer-facing email/doc bundle (data corrections, manual hand-offs).
+  - `@voyant-travel/customer-portal`: public service + validation tightened around the new booking tax-preview shape; integration tests updated to assert the new response.
+  - `@voyant-travel/i18n`: new admin strings for the bookings billing dialog, finance tax-preview labels, CRM operator screens, and products operator surface (EN + RO).
 
 ## 0.52.1
 
@@ -570,7 +570,7 @@
     - `renderAllocation?: ({ slotId, productId }) => ReactNode` — host mounts the allocation manager (keeps `availability-ui` free of any runtime dependency on `allocation-ui`).
   - Product / start time rows in the Meta tab are real links via the existing `onOpenProduct` / `onOpenStartTime` callbacks.
 
-  `@voyantjs/i18n`: new keys under `availability.details.tabs.*` for the detail page's tabbed body (en + ro).
+  `@voyant-travel/i18n`: new keys under `availability.details.tabs.*` for the detail page's tabbed body (en + ro).
 
 ## 0.50.8
 
@@ -693,7 +693,7 @@
 
 - 4a6523e: Reminder sequences UI (#488).
 
-  New `@voyantjs/notifications-ui` package with the reminder-sequence editing surface:
+  New `@voyant-travel/notifications-ui` package with the reminder-sequence editing surface:
 
   - `<StageList />` — ordered stages per rule, with reorder + delete and an embedded channel list.
   - `<StageEditorDialog />` — anchor / window / cadence (`once` | `every_n_days` | `escalating(buckets[])`) / `maxSendsInStage` / `respectQuietHours`.
@@ -702,7 +702,7 @@
   - `<RemindersPreviewList />` — read-only "what would fire on this date" table with reasoning per row.
   - Full en/ro i18n with `NotificationsUiMessagesProvider`.
 
-  Hooks added to `@voyantjs/notifications-react`:
+  Hooks added to `@voyant-travel/notifications-react`:
 
   - `useReminderRuleStages`, `useReminderRuleStageMutation` (create, update, delete, reorder)
   - `useReminderStageChannels`, `useReminderStageChannelMutation`
@@ -717,43 +717,43 @@
 
 - 60ef432: Let templates lift the search + filter row out of the overview cards and into the page header (matching the rest of the operator shell), and accept a per-tab toolbar slot.
 
-  `@voyantjs/availability-ui`:
+  `@voyant-travel/availability-ui`:
 
   - `<AvailabilityOverview />` accepts `showFilters?: boolean` (default `true`). When `false`, the inline search input + product filter + clear-filters button row is hidden so the consuming page can render the same controls in its own header without duplication. KPI cards and the rest of the overview still render unchanged.
   - `<AvailabilitySlotsTab />`, `<AvailabilityRulesTab />`, `<AvailabilityStartTimesTab />`, `<AvailabilityCloseoutsTab />`, `<AvailabilityPickupPointsTab />` each accept an optional `toolbar?: ReactNode` rendered between the selection action bar and the data table — for tab-scoped filter chips, pickers, etc.
 
-  `@voyantjs/availability-react`:
+  `@voyant-travel/availability-react`:
 
   - `ProductListFilters` now accepts an optional `search` string, threaded through `getProductsQueryOptions` as a `?search=` query-string parameter so product pickers can autocomplete server-side.
 
-  `@voyantjs/resources-ui`:
+  `@voyant-travel/resources-ui`:
 
   - `<ResourcesOverview />` accepts `showFilters?: boolean` (default `true`) with the same semantics as the availability overview — hides the inline search + kind-filter row when the consuming page surfaces those controls in its header.
 
-  `@voyantjs/i18n`:
+  `@voyant-travel/i18n`:
 
   - Admin resources messages add `filtersButton`, `filtersKindLabel`, `filtersSupplierLabel` / `filtersSupplierAny` / `filtersSupplierEmpty`, `filtersProductLabel` / `filtersProductAny` / `filtersProductEmpty` (en + ro) for the new header-level filter popover.
 
 - 60ef432: Add a unified payments listing that joins customer and supplier payments into a single feed, and split the operator finance area into separate Invoices and Payments pages.
 
-  `@voyantjs/finance`:
+  `@voyant-travel/finance`:
 
   - New routes `GET /v1/admin/finance/payments` and `GET /v1/admin/finance/payments/:id`. The list endpoint accepts a `kind` filter (`customer` | `supplier`) plus the usual `status` / `paymentMethod` / `currency` / `invoiceId` / `bookingId` / `supplierId` / `paymentDateFrom` / `paymentDateTo` / `search` filters and `sortBy` (`amountCents` | `status` | `paymentDate` | `createdAt`) / `sortDir`. The detail endpoint dispatches by typeid prefix — `pay_*` resolves to a customer payment, `spay_*` resolves to a supplier payment. `bookingId` is applied to both branches: directly to `supplier_payments.booking_id` on the supplier side and via `invoices.booking_id` (joined as `i`) on the customer side, so a booking-scoped query no longer returns unrelated customer rows.
   - `financeService.listAllPayments(db, query)` and `financeService.getPaymentById(db, id)` return a `UnifiedPaymentRow` shape with normalized fields (`personName`, `organizationName`, `supplierName`, `invoiceNumber`, `bookingNumber`) joined in via SQL so the operator UI doesn't need follow-up lookups.
   - New exports: `UnifiedPaymentRow` (service.ts) and `paymentKindSchema` / `paymentListQuerySchema` / `paymentListSortFieldSchema` / `paymentListSortDirSchema` (validation-payments.ts).
 
-  `@voyantjs/finance-react`:
+  `@voyant-travel/finance-react`:
 
   - New hooks: `useAllPayments(filters)` and `usePayment(id)` plus the underlying `getAllPaymentsQueryOptions` / `getPaymentQueryOptions` query-options factories.
   - New types: `FinancePaymentKind`, `FinanceAllPaymentsListFilters`, `FinanceAllPaymentsListSortField`, `FinanceAllPaymentsListSortDir`.
   - New schemas: `paymentKindSchema`, `unifiedPaymentRecordSchema`, `allPaymentsListResponse`, `paymentSingleResponse`, plus matching `UnifiedPaymentRecord` type.
   - New invoice-payment-mutation invalidation now also invalidates `financeQueryKeys.allPayments()` so the unified feed stays in sync with single-invoice payment flows.
 
-  `@voyantjs/admin`:
+  `@voyant-travel/admin`:
 
   - Operator nav `finance` entry now points at `/finance/invoices` and exposes an `items` sub-nav with `invoices` and `payments` links, matching the new operator page split.
 
-  `@voyantjs/i18n`:
+  `@voyant-travel/i18n`:
 
   - Operator nav messages add `invoices` and `payments` (en + ro).
   - Admin finance messages add `invoicesPageTitle`/`invoicesPageDescription`, `paymentsPageTitle`/`paymentsPageDescription`, `recordPayment`, `searchPaymentsPlaceholder`, `kindColumn`/`kindCustomer`/`kindSupplier`/`partyColumn`/`filtersKindLabel`/`filtersKindAll`, plus the `paymentDetail` and `recordPaymentDialog` message groups (en + ro).
@@ -785,7 +785,7 @@
 
   Operators can now opt a single departure out of the seasonal `priceSchedule` layer by setting an explicit per-unit price. Resolved at snapshot time before option price rules: a unit with an active override on a given departure gets that override's amount; units without an override fall through to the schedule-matched rule.
 
-  **`@voyantjs/pricing`**
+  **`@voyant-travel/pricing`**
 
   - New `departure_price_overrides` table (TypeID prefix `dpov`). One row per `(departureId × optionUnitId × priceCatalogId)` with `sellAmountCents`, optional `costAmountCents`, `active` flag, `notes`, `metadata`.
   - Service + admin REST CRUD at `/v1/admin/pricing/departure-overrides`.
@@ -794,13 +794,13 @@
   - Migrations shipped for the `operator` and `dmc` templates.
   - 5 integration tests covering: override beats unit price for the targeted unit, falls through when absent, respects `active=false`, multi-unit overrides coexist, no overrides applied when `departureId` is omitted.
 
-  **`@voyantjs/pricing-react`**
+  **`@voyant-travel/pricing-react`**
 
   - New hooks: `useDeparturePriceOverrides`, `useDeparturePriceOverride`, `useDeparturePriceOverrideMutation`.
   - New query options: `getDeparturePriceOverridesQueryOptions`, `getDeparturePriceOverrideQueryOptions`.
   - New record schema + paginated/single response envelopes.
 
-  **`@voyantjs/i18n`**
+  **`@voyant-travel/i18n`**
 
   - Admin strings for the operator template's "Override pricing" affordance and "Custom price" badge (EN + RO).
 

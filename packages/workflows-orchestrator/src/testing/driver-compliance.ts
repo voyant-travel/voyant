@@ -5,7 +5,7 @@
 // we ship: InMemory, Mode 2 / Postgres, Mode 1 / CF edge.
 //
 // Importable from a regular `.ts` file so downstream packages
-// (`@voyantjs/workflows-orchestrator-node`, `-cloudflare`) can run the
+// (`@voyant-travel/workflows-orchestrator-node`, `-cloudflare`) can run the
 // same suite against their own driver factories without duplicating the
 // assertions. Vitest globals are imported explicitly because this file
 // isn't a `.test.ts` (no auto-injection).
@@ -18,10 +18,14 @@
 //
 // Architecture: docs/architecture/workflows-runtime-architecture.md §6.4.
 
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import type { DriverFactory, DriverFactoryDeps, ServiceResolver } from "@voyantjs/workflows/driver"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import type {
+  DriverFactory,
+  DriverFactoryDeps,
+  ServiceResolver,
+} from "@voyant-travel/workflows/driver"
 // agent-quality: file-size exception -- Shared driver compliance suite intentionally keeps cross-driver behavioral cases together so all drivers run the same contract.
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
 import { WorkflowConcurrencyRejectedError } from "../concurrency.js"

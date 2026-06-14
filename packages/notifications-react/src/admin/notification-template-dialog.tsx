@@ -1,7 +1,7 @@
 "use client"
 
 import type { Editor } from "@tiptap/core"
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -18,13 +18,13 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
-} from "@voyantjs/ui/components"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+} from "@voyant-travel/ui/components"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import {
   insertPlainText,
   insertVariableToken,
-} from "@voyantjs/ui/components/rich-text-variable-extension"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components/rich-text-variable-extension"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"

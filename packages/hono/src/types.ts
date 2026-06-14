@@ -8,11 +8,11 @@ import type {
   QueryRunner,
   VoyantAuthContext,
   VoyantPermission,
-} from "@voyantjs/core"
-import type { SelectApikey } from "@voyantjs/db/schema/iam"
-import { dbClientDispose } from "@voyantjs/db/transaction-capability"
-import type { KVStore } from "@voyantjs/utils/cache"
-import type { DriverFactory } from "@voyantjs/workflows/driver"
+} from "@voyant-travel/core"
+import type { SelectApikey } from "@voyant-travel/db/schema/iam"
+import { dbClientDispose } from "@voyant-travel/db/transaction-capability"
+import type { KVStore } from "@voyant-travel/utils/cache"
+import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -60,7 +60,7 @@ export type VoyantVariables = CoreVoyantVariables & {
   /** Shared cross-module query runtime, when the app wires one in. */
   query?: VoyantQueryRuntime
   /** Optional workflow driver surfaced to HTTP routes after lazy app bootstrap. */
-  workflowDriver?: import("@voyantjs/workflows/driver").WorkflowDriver
+  workflowDriver?: import("@voyant-travel/workflows/driver").WorkflowDriver
   /** Per-request db metrics counter populated by the metrics middleware. */
   __voyantDbMetrics?: import("./middleware/metrics.js").RequestDbMetrics
 }
@@ -232,7 +232,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   dbTransactional?: DbFactory<TBindings>
   /**
    * Extra path prefixes that must receive the transactional client —
-   * for template-owned routes mounted via `additionalRoutes` that run
+   * for starter-owned routes mounted via `additionalRoutes` that run
    * interactive transactions (e.g. `"/api/checkout"`). Only meaningful
    * together with `dbTransactional`.
    */
@@ -259,7 +259,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * Transactional outbox (RFC #1687 Phase 2.1). When `true`, request
    * emits persist the envelope to the `event_outbox` table BEFORE any
    * subscriber runs (durable, at-least-once with retry/dead-letter via
-   * `drainOutbox` from `@voyantjs/db/outbox`). Requires the
+   * `drainOutbox` from `@voyant-travel/db/outbox`). Requires the
    * `event_outbox` migration. Deployments should run a periodic drain
    * (cron) for redelivery of failed/interrupted deliveries:
    * `drainOutbox(db, app.eventBus)`. Services needing write atomicity
@@ -307,10 +307,10 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * Admin API capability metadata, served at `GET /v1/admin/_meta/capabilities`
    * so clients (the admin SDK) can discover what this deployment supports —
    * enabled modules, available operations, contract/deployment version, and the
-   * caller's resolved actor + scopes. Provide it from `@voyantjs/admin-contracts`:
+   * caller's resolved actor + scopes. Provide it from `@voyant-travel/admin-contracts`:
    * `{ contractVersion: ADMIN_CONTRACT_VERSION, operations: operationCapabilities() }`.
-   * When omitted, the route is not mounted. Typed structurally so `@voyantjs/hono`
-   * stays decoupled from `@voyantjs/admin-contracts`.
+   * When omitted, the route is not mounted. Typed structurally so `@voyant-travel/hono`
+   * stays decoupled from `@voyant-travel/admin-contracts`.
    */
   adminMeta?: {
     contractVersion: string
@@ -378,7 +378,7 @@ export interface VoyantWorkflowsConfig<TBindings = unknown> {
 }
 
 /**
- * Structural shape of a `DriverFactory` from `@voyantjs/workflows/driver`.
+ * Structural shape of a `DriverFactory` from `@voyant-travel/workflows/driver`.
  * The SDK package's concrete `DriverFactory` satisfies this via TS
  * structural compat (architecture doc §21.19).
  */

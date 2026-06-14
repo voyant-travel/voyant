@@ -17,10 +17,10 @@ function nextBookingNumber() {
 
 describe.skipIf(!DB_AVAILABLE)("Booking groups routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -34,12 +34,12 @@ describe.skipIf(!DB_AVAILABLE)("Booking groups routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

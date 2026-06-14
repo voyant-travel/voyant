@@ -10,7 +10,7 @@ import {
   Checkbox,
   Input,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { KeyRound, Loader2, Mail, Save, UserRound } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"

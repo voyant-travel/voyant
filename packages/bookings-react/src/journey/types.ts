@@ -1,6 +1,6 @@
 /**
  * Shell-side types for `<BookingJourney />`. These complement the
- * engine contracts in `@voyantjs/catalog-contracts/booking-engine/contracts`
+ * engine contracts in `@voyant-travel/catalog-contracts/booking-engine/contracts`
  * with React-specific slots and event shapes that don't belong on
  * the wire.
  *
@@ -11,8 +11,8 @@ import type {
   BookingDraftV1,
   BookResponseV1,
   PricingBreakdownV1,
-} from "@voyantjs/catalog-contracts/booking-engine/contracts"
-import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
+} from "@voyant-travel/catalog-contracts/booking-engine/contracts"
+import type { BookingDraftShape } from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
 import type { ReactNode } from "react"
 
 export type JourneyStep =

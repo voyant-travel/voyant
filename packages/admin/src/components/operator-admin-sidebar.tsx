@@ -13,7 +13,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Settings as DefaultSettingsIcon } from "lucide-react"
 import type * as React from "react"
 

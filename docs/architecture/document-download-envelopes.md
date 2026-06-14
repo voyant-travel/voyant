@@ -21,7 +21,7 @@ the signer does not expose an expiry. `filename` should come from the stored
 document row when available, then metadata, then the storage key basename.
 
 Routes must resolve envelopes through `resolveStoredDocumentDownload(...)` from
-`@voyantjs/hono`. That helper centralizes resolver precedence, metadata
+`@voyant-travel/hono`. That helper centralizes resolver precedence, metadata
 fallbacks, filename derivation, and the `resolver_not_configured` state used by
 redirect-style download routes.
 

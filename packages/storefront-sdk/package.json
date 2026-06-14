@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/storefront-sdk",
+  "name": "@voyant-travel/storefront-sdk",
   "version": "0.120.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/storefront-sdk"
   },
   "type": "module",
@@ -27,16 +27,16 @@
     "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/storefront": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/storefront": "workspace:^",
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/storefront": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/storefront": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
     "zod": "^4.3.6"

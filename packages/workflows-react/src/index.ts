@@ -1,6 +1,6 @@
 "use client"
 
-// @voyantjs/workflows-react
+// @voyant-travel/workflows-react
 //
 // React hooks for triggering Voyant Workflows and subscribing to run
 // state in real time. Contract defined in docs/sdk-surface.md §8.
@@ -9,9 +9,9 @@
 // (WebSocket client + public-access-token flow) is installed by the
 // cloud client; called directly in this package, the hooks throw.
 
-import type { RunStatus } from "@voyantjs/workflows"
-import type { VoyantError } from "@voyantjs/workflows/errors"
-import type { StreamEvent } from "@voyantjs/workflows/protocol"
+import type { RunStatus } from "@voyant-travel/workflows"
+import type { VoyantError } from "@voyant-travel/workflows/errors"
+import type { StreamEvent } from "@voyant-travel/workflows/protocol"
 
 export * from "./workflow-runs.js"
 
@@ -35,8 +35,8 @@ export function useTriggerWorkflow<TIn = unknown, TOut = unknown>(
   _opts: UseTriggerOptions,
 ): UseTriggerResult<TIn, TOut> {
   throw new Error(
-    "@voyantjs/workflows-react: useTriggerWorkflow() requires the Voyant Cloud client runtime. " +
-      "Install it via @voyantjs/client, or see docs/sdk-surface.md §8.",
+    "@voyant-travel/workflows-react: useTriggerWorkflow() requires the Voyant Cloud client runtime. " +
+      "Install it via @voyant-travel/client, or see docs/sdk-surface.md §8.",
   )
 }
 
@@ -55,7 +55,7 @@ export function useRealtimeRun<TOut = unknown>(
   _opts: { accessToken: string | null | undefined; lastEventId?: string },
 ): UseRealtimeRunResult<TOut> {
   throw new Error(
-    "@voyantjs/workflows-react: useRealtimeRun() called before the runtime is installed.",
+    "@voyant-travel/workflows-react: useRealtimeRun() called before the runtime is installed.",
   )
 }
 
@@ -66,7 +66,7 @@ export function useRealtimeRunsByTag(
   _opts: { accessToken: string | null | undefined; limit?: number },
 ): { runs: unknown[]; isConnected: boolean } {
   throw new Error(
-    "@voyantjs/workflows-react: useRealtimeRunsByTag() called before the runtime is installed.",
+    "@voyant-travel/workflows-react: useRealtimeRunsByTag() called before the runtime is installed.",
   )
 }
 
@@ -77,7 +77,7 @@ export function useWaitToken<T = unknown>(
   _opts: { accessToken: string | null | undefined },
 ): { payload: T | null; isResolved: boolean; error: VoyantError | null } {
   throw new Error(
-    "@voyantjs/workflows-react: useWaitToken() called before the runtime is installed.",
+    "@voyant-travel/workflows-react: useWaitToken() called before the runtime is installed.",
   )
 }
 
@@ -89,6 +89,6 @@ export function useWorkflowStream<T = unknown>(
   _opts: { accessToken: string | null | undefined },
 ): { chunks: T[]; isComplete: boolean; error: VoyantError | null } {
   throw new Error(
-    "@voyantjs/workflows-react: useWorkflowStream() called before the runtime is installed.",
+    "@voyant-travel/workflows-react: useWorkflowStream() called before the runtime is installed.",
   )
 }

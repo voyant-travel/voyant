@@ -1,4 +1,4 @@
-import { buildIndexerDocument, createFieldPolicyRegistry } from "@voyantjs/catalog"
+import { buildIndexerDocument, createFieldPolicyRegistry } from "@voyant-travel/catalog"
 import { describe, expect, it } from "vitest"
 import type {
   CruiseAdapter,

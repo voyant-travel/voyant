@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Button } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import { Info } from "lucide-react"
 import type { ReactNode } from "react"
 import {

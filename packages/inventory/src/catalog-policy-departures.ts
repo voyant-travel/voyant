@@ -42,7 +42,7 @@
  *     with mixed-duration slots can't be summarized in one number.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const PRODUCT_DEPARTURES_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Earliest open future departure ──────────────────────────────────────

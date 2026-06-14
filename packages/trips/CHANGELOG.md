@@ -1,0 +1,1579 @@
+# @voyant-travel/trips
+
+## 0.110.2
+
+## 0.110.1
+
+### Patch Changes
+
+- Updated dependencies [f25e790]
+  - @voyant-travel/db@0.108.0
+  - @voyant-travel/catalog@0.117.1
+  - @voyant-travel/hono@0.109.1
+  - @voyant-travel/catalog-mcp@0.117.1
+
+## 0.110.0
+
+### Patch Changes
+
+- Updated dependencies [b0f1e21]
+  - @voyant-travel/hono@0.109.0
+  - @voyant-travel/catalog@0.117.0
+  - @voyant-travel/catalog-mcp@0.117.0
+
+## 0.109.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.116.0
+- @voyant-travel/catalog-mcp@0.116.0
+
+## 0.108.1
+
+### Patch Changes
+
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+- Updated dependencies [b7056f1]
+  - @voyant-travel/core@0.109.0
+  - @voyant-travel/db@0.107.0
+  - @voyant-travel/hono@0.108.0
+  - @voyant-travel/catalog@0.115.1
+  - @voyant-travel/catalog-mcp@0.115.1
+
+## 0.108.0
+
+### Patch Changes
+
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+- Updated dependencies [7255353]
+  - @voyant-travel/catalog@0.115.0
+  - @voyant-travel/core@0.108.0
+  - @voyant-travel/db@0.106.0
+  - @voyant-travel/hono@0.107.0
+  - @voyant-travel/catalog-mcp@0.115.0
+
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+- Updated dependencies [418fa82]
+  - @voyant-travel/core@0.107.0
+  - @voyant-travel/db@0.105.0
+  - @voyant-travel/hono@0.106.0
+  - @voyant-travel/catalog@0.114.0
+  - @voyant-travel/catalog-mcp@0.114.0
+
+## 0.106.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.113.0
+- @voyant-travel/catalog-mcp@0.113.0
+
+## 0.105.8
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.112.0
+- @voyant-travel/catalog-mcp@0.112.0
+
+## 0.105.7
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.111.0
+- @voyant-travel/catalog-mcp@0.111.0
+
+## 0.105.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.110.0
+- @voyant-travel/catalog-mcp@0.110.0
+
+## 0.105.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.109.0
+- @voyant-travel/catalog-mcp@0.109.0
+
+## 0.105.4
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyant-travel/core@0.106.0
+  - @voyant-travel/catalog@0.108.0
+  - @voyant-travel/db@0.104.4
+  - @voyant-travel/hono@0.105.3
+  - @voyant-travel/catalog-mcp@0.108.0
+
+## 0.105.3
+
+### Patch Changes
+
+- Updated dependencies [344e7b6]
+  - @voyant-travel/core@0.105.1
+  - @voyant-travel/catalog@0.107.0
+  - @voyant-travel/catalog-mcp@0.107.0
+  - @voyant-travel/hono@0.105.2
+
+## 0.105.2
+
+### Patch Changes
+
+- Updated dependencies [7122c2a]
+  - @voyant-travel/catalog@0.106.0
+  - @voyant-travel/catalog-mcp@0.106.0
+
+## 0.105.1
+
+### Patch Changes
+
+- Updated dependencies [656b25d]
+  - @voyant-travel/hono@0.105.0
+  - @voyant-travel/catalog@0.105.1
+  - @voyant-travel/catalog-mcp@0.105.1
+
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- c2aef18: Manifest-driven migration schema resolution (#1608).
+
+  - `@voyant-travel/core` `VoyantConfig` gains `additionalSchemas`, `extensions`, and `schemas` fields (with validation) so a template's migrated schema set is derived from `voyant.config.ts`.
+  - `catalog`, `flights`, `travel-composer`, and `workflow-runs` declare `package.json#voyant` schema metadata so they resolve into the generated schema manifest (flights pins its non-standard `./reference/local-postgres` subpath).
+
+- Updated dependencies [c2aef18]
+  - @voyant-travel/core@0.105.0
+  - @voyant-travel/catalog@0.105.0
+  - @voyant-travel/db@0.104.3
+  - @voyant-travel/hono@0.104.2
+  - @voyant-travel/catalog-mcp@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.104.1
+- @voyant-travel/catalog-mcp@0.104.1
+- @voyant-travel/core@0.104.1
+- @voyant-travel/db@0.104.1
+- @voyant-travel/hono@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.104.0
+- @voyant-travel/catalog-mcp@0.104.0
+- @voyant-travel/core@0.104.0
+- @voyant-travel/db@0.104.0
+- @voyant-travel/hono@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.103.0
+- @voyant-travel/catalog-mcp@0.103.0
+- @voyant-travel/core@0.103.0
+- @voyant-travel/db@0.103.0
+- @voyant-travel/hono@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.102.0
+- @voyant-travel/catalog-mcp@0.102.0
+- @voyant-travel/core@0.102.0
+- @voyant-travel/db@0.102.0
+- @voyant-travel/hono@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.101.2
+- @voyant-travel/catalog-mcp@0.101.2
+- @voyant-travel/core@0.101.2
+- @voyant-travel/db@0.101.2
+- @voyant-travel/hono@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.101.1
+- @voyant-travel/catalog-mcp@0.101.1
+- @voyant-travel/core@0.101.1
+- @voyant-travel/db@0.101.1
+- @voyant-travel/hono@0.101.1
+
+## 0.101.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.101.0
+- @voyant-travel/catalog-mcp@0.101.0
+- @voyant-travel/core@0.101.0
+- @voyant-travel/db@0.101.0
+- @voyant-travel/hono@0.101.0
+
+## 0.100.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.100.0
+- @voyant-travel/catalog-mcp@0.100.0
+- @voyant-travel/core@0.100.0
+- @voyant-travel/db@0.100.0
+- @voyant-travel/hono@0.100.0
+
+## 0.99.0
+
+### Patch Changes
+
+- Updated dependencies [b7dde79]
+  - @voyant-travel/catalog@0.99.0
+  - @voyant-travel/catalog-mcp@0.99.0
+  - @voyant-travel/core@0.99.0
+  - @voyant-travel/db@0.99.0
+  - @voyant-travel/hono@0.99.0
+
+## 0.98.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.98.0
+- @voyant-travel/catalog-mcp@0.98.0
+- @voyant-travel/core@0.98.0
+- @voyant-travel/db@0.98.0
+- @voyant-travel/hono@0.98.0
+
+## 0.97.0
+
+### Patch Changes
+
+- Updated dependencies [2555264]
+  - @voyant-travel/catalog@0.97.0
+  - @voyant-travel/catalog-mcp@0.97.0
+  - @voyant-travel/core@0.97.0
+  - @voyant-travel/db@0.97.0
+  - @voyant-travel/hono@0.97.0
+
+## 0.96.0
+
+### Patch Changes
+
+- Updated dependencies [2d8d59b]
+  - @voyant-travel/catalog@0.96.0
+  - @voyant-travel/catalog-mcp@0.96.0
+  - @voyant-travel/core@0.96.0
+  - @voyant-travel/db@0.96.0
+  - @voyant-travel/hono@0.96.0
+
+## 0.95.0
+
+### Patch Changes
+
+- Updated dependencies [a8d3a3f]
+  - @voyant-travel/catalog@0.95.0
+  - @voyant-travel/catalog-mcp@0.95.0
+  - @voyant-travel/core@0.95.0
+  - @voyant-travel/db@0.95.0
+  - @voyant-travel/hono@0.95.0
+
+## 0.94.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.94.0
+- @voyant-travel/catalog-mcp@0.94.0
+- @voyant-travel/core@0.94.0
+- @voyant-travel/db@0.94.0
+- @voyant-travel/hono@0.94.0
+
+## 0.93.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.93.0
+- @voyant-travel/catalog-mcp@0.93.0
+- @voyant-travel/core@0.93.0
+- @voyant-travel/db@0.93.0
+- @voyant-travel/hono@0.93.0
+
+## 0.92.0
+
+### Patch Changes
+
+- Updated dependencies [5de3d72]
+  - @voyant-travel/catalog@0.92.0
+  - @voyant-travel/catalog-mcp@0.92.0
+  - @voyant-travel/core@0.92.0
+  - @voyant-travel/db@0.92.0
+  - @voyant-travel/hono@0.92.0
+
+## 0.91.0
+
+### Patch Changes
+
+- Updated dependencies [dc8554b]
+  - @voyant-travel/catalog@0.91.0
+  - @voyant-travel/catalog-mcp@0.91.0
+  - @voyant-travel/core@0.91.0
+  - @voyant-travel/db@0.91.0
+  - @voyant-travel/hono@0.91.0
+
+## 0.90.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.90.0
+- @voyant-travel/catalog-mcp@0.90.0
+- @voyant-travel/core@0.90.0
+- @voyant-travel/db@0.90.0
+- @voyant-travel/hono@0.90.0
+
+## 0.89.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.89.0
+- @voyant-travel/catalog-mcp@0.89.0
+- @voyant-travel/core@0.89.0
+- @voyant-travel/db@0.89.0
+- @voyant-travel/hono@0.89.0
+
+## 0.88.0
+
+### Patch Changes
+
+- Updated dependencies [27afa4b]
+  - @voyant-travel/catalog@0.88.0
+  - @voyant-travel/catalog-mcp@0.88.0
+  - @voyant-travel/core@0.88.0
+  - @voyant-travel/db@0.88.0
+  - @voyant-travel/hono@0.88.0
+
+## 0.87.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.87.1
+- @voyant-travel/catalog-mcp@0.87.1
+- @voyant-travel/core@0.87.1
+- @voyant-travel/db@0.87.1
+- @voyant-travel/hono@0.87.1
+
+## 0.87.0
+
+### Patch Changes
+
+- Updated dependencies [85505e6]
+  - @voyant-travel/catalog@0.87.0
+  - @voyant-travel/catalog-mcp@0.87.0
+  - @voyant-travel/core@0.87.0
+  - @voyant-travel/db@0.87.0
+  - @voyant-travel/hono@0.87.0
+
+## 0.86.0
+
+### Patch Changes
+
+- Updated dependencies [ddf4a19]
+  - @voyant-travel/catalog@0.86.0
+  - @voyant-travel/catalog-mcp@0.86.0
+  - @voyant-travel/core@0.86.0
+  - @voyant-travel/db@0.86.0
+  - @voyant-travel/hono@0.86.0
+
+## 0.85.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.85.4
+- @voyant-travel/catalog-mcp@0.85.4
+- @voyant-travel/core@0.85.4
+- @voyant-travel/db@0.85.4
+- @voyant-travel/hono@0.85.4
+
+## 0.85.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.85.3
+- @voyant-travel/catalog-mcp@0.85.3
+- @voyant-travel/core@0.85.3
+- @voyant-travel/db@0.85.3
+- @voyant-travel/hono@0.85.3
+
+## 0.85.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.85.2
+- @voyant-travel/catalog-mcp@0.85.2
+- @voyant-travel/core@0.85.2
+- @voyant-travel/db@0.85.2
+- @voyant-travel/hono@0.85.2
+
+## 0.85.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.85.1
+- @voyant-travel/catalog-mcp@0.85.1
+- @voyant-travel/core@0.85.1
+- @voyant-travel/db@0.85.1
+- @voyant-travel/hono@0.85.1
+
+## 0.85.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.85.0
+- @voyant-travel/catalog-mcp@0.85.0
+- @voyant-travel/core@0.85.0
+- @voyant-travel/db@0.85.0
+- @voyant-travel/hono@0.85.0
+
+## 0.84.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.84.4
+- @voyant-travel/catalog-mcp@0.84.4
+- @voyant-travel/core@0.84.4
+- @voyant-travel/db@0.84.4
+- @voyant-travel/hono@0.84.4
+
+## 0.84.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.84.3
+- @voyant-travel/catalog-mcp@0.84.3
+- @voyant-travel/core@0.84.3
+- @voyant-travel/db@0.84.3
+- @voyant-travel/hono@0.84.3
+
+## 0.84.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.84.2
+- @voyant-travel/catalog-mcp@0.84.2
+- @voyant-travel/core@0.84.2
+- @voyant-travel/db@0.84.2
+- @voyant-travel/hono@0.84.2
+
+## 0.84.1
+
+### Patch Changes
+
+- Updated dependencies [b9ef614]
+  - @voyant-travel/catalog@0.84.1
+  - @voyant-travel/catalog-mcp@0.84.1
+  - @voyant-travel/core@0.84.1
+  - @voyant-travel/db@0.84.1
+  - @voyant-travel/hono@0.84.1
+
+## 0.84.0
+
+### Patch Changes
+
+- 5462f07: Rename the remaining active trips stay filters from hospitality to accommodations and add a Cloudflare startup profile summary lane.
+- Updated dependencies [4ea42b3]
+  - @voyant-travel/catalog@0.84.0
+  - @voyant-travel/catalog-mcp@0.84.0
+  - @voyant-travel/core@0.84.0
+  - @voyant-travel/db@0.84.0
+  - @voyant-travel/hono@0.84.0
+
+## 0.83.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.83.1
+- @voyant-travel/catalog-mcp@0.83.1
+- @voyant-travel/core@0.83.1
+- @voyant-travel/db@0.83.1
+- @voyant-travel/hono@0.83.1
+
+## 0.83.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.83.0
+- @voyant-travel/catalog-mcp@0.83.0
+- @voyant-travel/core@0.83.0
+- @voyant-travel/db@0.83.0
+- @voyant-travel/hono@0.83.0
+
+## 0.82.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.82.1
+- @voyant-travel/catalog-mcp@0.82.1
+- @voyant-travel/core@0.82.1
+- @voyant-travel/db@0.82.1
+- @voyant-travel/hono@0.82.1
+
+## 0.82.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.82.0
+- @voyant-travel/catalog-mcp@0.82.0
+- @voyant-travel/core@0.82.0
+- @voyant-travel/db@0.82.0
+- @voyant-travel/hono@0.82.0
+
+## 0.81.21
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.21
+- @voyant-travel/catalog-mcp@0.81.21
+- @voyant-travel/core@0.81.21
+- @voyant-travel/db@0.81.21
+- @voyant-travel/hono@0.81.21
+
+## 0.81.20
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.20
+- @voyant-travel/catalog-mcp@0.81.20
+- @voyant-travel/core@0.81.20
+- @voyant-travel/db@0.81.20
+- @voyant-travel/hono@0.81.20
+
+## 0.81.19
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.19
+- @voyant-travel/catalog-mcp@0.81.19
+- @voyant-travel/core@0.81.19
+- @voyant-travel/db@0.81.19
+- @voyant-travel/hono@0.81.19
+
+## 0.81.18
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.18
+- @voyant-travel/catalog-mcp@0.81.18
+- @voyant-travel/core@0.81.18
+- @voyant-travel/db@0.81.18
+- @voyant-travel/hono@0.81.18
+
+## 0.81.17
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.17
+- @voyant-travel/catalog-mcp@0.81.17
+- @voyant-travel/core@0.81.17
+- @voyant-travel/db@0.81.17
+- @voyant-travel/hono@0.81.17
+
+## 0.81.16
+
+### Patch Changes
+
+- Updated dependencies [0a617cc]
+  - @voyant-travel/catalog@0.81.16
+  - @voyant-travel/catalog-mcp@0.81.16
+  - @voyant-travel/core@0.81.16
+  - @voyant-travel/db@0.81.16
+  - @voyant-travel/hono@0.81.16
+
+## 0.81.15
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.15
+- @voyant-travel/catalog-mcp@0.81.15
+- @voyant-travel/core@0.81.15
+- @voyant-travel/db@0.81.15
+- @voyant-travel/hono@0.81.15
+
+## 0.81.14
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.14
+- @voyant-travel/catalog-mcp@0.81.14
+- @voyant-travel/core@0.81.14
+- @voyant-travel/db@0.81.14
+- @voyant-travel/hono@0.81.14
+
+## 0.81.13
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.13
+- @voyant-travel/catalog-mcp@0.81.13
+- @voyant-travel/core@0.81.13
+- @voyant-travel/db@0.81.13
+- @voyant-travel/hono@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.12
+- @voyant-travel/catalog-mcp@0.81.12
+- @voyant-travel/core@0.81.12
+- @voyant-travel/db@0.81.12
+- @voyant-travel/hono@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.11
+- @voyant-travel/catalog-mcp@0.81.11
+- @voyant-travel/core@0.81.11
+- @voyant-travel/db@0.81.11
+- @voyant-travel/hono@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.10
+- @voyant-travel/catalog-mcp@0.81.10
+- @voyant-travel/core@0.81.10
+- @voyant-travel/db@0.81.10
+- @voyant-travel/hono@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.9
+- @voyant-travel/catalog-mcp@0.81.9
+- @voyant-travel/core@0.81.9
+- @voyant-travel/db@0.81.9
+- @voyant-travel/hono@0.81.9
+
+## 0.81.8
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.8
+- @voyant-travel/catalog-mcp@0.81.8
+- @voyant-travel/core@0.81.8
+- @voyant-travel/db@0.81.8
+- @voyant-travel/hono@0.81.8
+
+## 0.81.7
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.7
+- @voyant-travel/catalog-mcp@0.81.7
+- @voyant-travel/core@0.81.7
+- @voyant-travel/db@0.81.7
+- @voyant-travel/hono@0.81.7
+
+## 0.81.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.6
+- @voyant-travel/catalog-mcp@0.81.6
+- @voyant-travel/core@0.81.6
+- @voyant-travel/db@0.81.6
+- @voyant-travel/hono@0.81.6
+
+## 0.81.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.5
+- @voyant-travel/catalog-mcp@0.81.5
+- @voyant-travel/core@0.81.5
+- @voyant-travel/db@0.81.5
+- @voyant-travel/hono@0.81.5
+
+## 0.81.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.4
+- @voyant-travel/catalog-mcp@0.81.4
+- @voyant-travel/core@0.81.4
+- @voyant-travel/db@0.81.4
+- @voyant-travel/hono@0.81.4
+
+## 0.81.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.3
+- @voyant-travel/catalog-mcp@0.81.3
+- @voyant-travel/core@0.81.3
+- @voyant-travel/db@0.81.3
+- @voyant-travel/hono@0.81.3
+
+## 0.81.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.2
+- @voyant-travel/catalog-mcp@0.81.2
+- @voyant-travel/core@0.81.2
+- @voyant-travel/db@0.81.2
+- @voyant-travel/hono@0.81.2
+
+## 0.81.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.1
+- @voyant-travel/catalog-mcp@0.81.1
+- @voyant-travel/core@0.81.1
+- @voyant-travel/db@0.81.1
+- @voyant-travel/hono@0.81.1
+
+## 0.81.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.81.0
+- @voyant-travel/catalog-mcp@0.81.0
+- @voyant-travel/core@0.81.0
+- @voyant-travel/db@0.81.0
+- @voyant-travel/hono@0.81.0
+
+## 0.80.18
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.18
+- @voyant-travel/catalog-mcp@0.80.18
+- @voyant-travel/core@0.80.18
+- @voyant-travel/db@0.80.18
+- @voyant-travel/hono@0.80.18
+
+## 0.80.17
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.17
+- @voyant-travel/catalog-mcp@0.80.17
+- @voyant-travel/core@0.80.17
+- @voyant-travel/db@0.80.17
+- @voyant-travel/hono@0.80.17
+
+## 0.80.16
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.16
+- @voyant-travel/catalog-mcp@0.80.16
+- @voyant-travel/core@0.80.16
+- @voyant-travel/db@0.80.16
+- @voyant-travel/hono@0.80.16
+
+## 0.80.15
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.15
+- @voyant-travel/catalog-mcp@0.80.15
+- @voyant-travel/core@0.80.15
+- @voyant-travel/db@0.80.15
+- @voyant-travel/hono@0.80.15
+
+## 0.80.14
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.14
+- @voyant-travel/catalog-mcp@0.80.14
+- @voyant-travel/core@0.80.14
+- @voyant-travel/db@0.80.14
+- @voyant-travel/hono@0.80.14
+
+## 0.80.13
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.13
+- @voyant-travel/catalog-mcp@0.80.13
+- @voyant-travel/core@0.80.13
+- @voyant-travel/db@0.80.13
+- @voyant-travel/hono@0.80.13
+
+## 0.80.12
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.12
+- @voyant-travel/catalog-mcp@0.80.12
+- @voyant-travel/core@0.80.12
+- @voyant-travel/db@0.80.12
+- @voyant-travel/hono@0.80.12
+
+## 0.80.11
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.11
+- @voyant-travel/catalog-mcp@0.80.11
+- @voyant-travel/core@0.80.11
+- @voyant-travel/db@0.80.11
+- @voyant-travel/hono@0.80.11
+
+## 0.80.10
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.10
+- @voyant-travel/catalog-mcp@0.80.10
+- @voyant-travel/core@0.80.10
+- @voyant-travel/db@0.80.10
+- @voyant-travel/hono@0.80.10
+
+## 0.80.9
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.9
+- @voyant-travel/catalog-mcp@0.80.9
+- @voyant-travel/core@0.80.9
+- @voyant-travel/db@0.80.9
+- @voyant-travel/hono@0.80.9
+
+## 0.80.8
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.8
+- @voyant-travel/catalog-mcp@0.80.8
+- @voyant-travel/core@0.80.8
+- @voyant-travel/db@0.80.8
+- @voyant-travel/hono@0.80.8
+
+## 0.80.7
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.7
+- @voyant-travel/catalog-mcp@0.80.7
+- @voyant-travel/core@0.80.7
+- @voyant-travel/db@0.80.7
+- @voyant-travel/hono@0.80.7
+
+## 0.80.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.6
+- @voyant-travel/catalog-mcp@0.80.6
+- @voyant-travel/core@0.80.6
+- @voyant-travel/db@0.80.6
+- @voyant-travel/hono@0.80.6
+
+## 0.80.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.5
+- @voyant-travel/catalog-mcp@0.80.5
+- @voyant-travel/core@0.80.5
+- @voyant-travel/db@0.80.5
+- @voyant-travel/hono@0.80.5
+
+## 0.80.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.4
+- @voyant-travel/catalog-mcp@0.80.4
+- @voyant-travel/core@0.80.4
+- @voyant-travel/db@0.80.4
+- @voyant-travel/hono@0.80.4
+
+## 0.80.3
+
+### Patch Changes
+
+- Updated dependencies [6d816bb]
+  - @voyant-travel/catalog@0.80.3
+  - @voyant-travel/catalog-mcp@0.80.3
+  - @voyant-travel/core@0.80.3
+  - @voyant-travel/db@0.80.3
+  - @voyant-travel/hono@0.80.3
+
+## 0.80.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.2
+- @voyant-travel/catalog-mcp@0.80.2
+- @voyant-travel/core@0.80.2
+- @voyant-travel/db@0.80.2
+- @voyant-travel/hono@0.80.2
+
+## 0.80.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.1
+- @voyant-travel/catalog-mcp@0.80.1
+- @voyant-travel/core@0.80.1
+- @voyant-travel/db@0.80.1
+- @voyant-travel/hono@0.80.1
+
+## 0.80.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.80.0
+- @voyant-travel/catalog-mcp@0.80.0
+- @voyant-travel/core@0.80.0
+- @voyant-travel/db@0.80.0
+- @voyant-travel/hono@0.80.0
+
+## 0.79.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.79.0
+- @voyant-travel/catalog-mcp@0.79.0
+- @voyant-travel/core@0.79.0
+- @voyant-travel/db@0.79.0
+- @voyant-travel/hono@0.79.0
+
+## 0.78.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.78.0
+- @voyant-travel/catalog-mcp@0.78.0
+- @voyant-travel/core@0.78.0
+- @voyant-travel/db@0.78.0
+- @voyant-travel/hono@0.78.0
+
+## 0.77.13
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.13
+- @voyant-travel/catalog-mcp@0.77.13
+- @voyant-travel/core@0.77.13
+- @voyant-travel/db@0.77.13
+- @voyant-travel/hono@0.77.13
+
+## 0.77.12
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.12
+- @voyant-travel/catalog-mcp@0.77.12
+- @voyant-travel/core@0.77.12
+- @voyant-travel/db@0.77.12
+- @voyant-travel/hono@0.77.12
+
+## 0.77.11
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.11
+- @voyant-travel/catalog-mcp@0.77.11
+- @voyant-travel/core@0.77.11
+- @voyant-travel/db@0.77.11
+- @voyant-travel/hono@0.77.11
+
+## 0.77.10
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.10
+- @voyant-travel/catalog-mcp@0.77.10
+- @voyant-travel/core@0.77.10
+- @voyant-travel/db@0.77.10
+- @voyant-travel/hono@0.77.10
+
+## 0.77.9
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.9
+- @voyant-travel/catalog-mcp@0.77.9
+- @voyant-travel/core@0.77.9
+- @voyant-travel/db@0.77.9
+- @voyant-travel/hono@0.77.9
+
+## 0.77.8
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.8
+- @voyant-travel/catalog-mcp@0.77.8
+- @voyant-travel/core@0.77.8
+- @voyant-travel/db@0.77.8
+- @voyant-travel/hono@0.77.8
+
+## 0.77.7
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.7
+- @voyant-travel/catalog-mcp@0.77.7
+- @voyant-travel/core@0.77.7
+- @voyant-travel/db@0.77.7
+- @voyant-travel/hono@0.77.7
+
+## 0.77.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.6
+- @voyant-travel/catalog-mcp@0.77.6
+- @voyant-travel/core@0.77.6
+- @voyant-travel/db@0.77.6
+- @voyant-travel/hono@0.77.6
+
+## 0.77.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.5
+- @voyant-travel/catalog-mcp@0.77.5
+- @voyant-travel/core@0.77.5
+- @voyant-travel/db@0.77.5
+- @voyant-travel/hono@0.77.5
+
+## 0.77.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.4
+- @voyant-travel/catalog-mcp@0.77.4
+- @voyant-travel/core@0.77.4
+- @voyant-travel/db@0.77.4
+- @voyant-travel/hono@0.77.4
+
+## 0.77.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.3
+- @voyant-travel/catalog-mcp@0.77.3
+- @voyant-travel/core@0.77.3
+- @voyant-travel/db@0.77.3
+- @voyant-travel/hono@0.77.3
+
+## 0.77.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.2
+- @voyant-travel/catalog-mcp@0.77.2
+- @voyant-travel/core@0.77.2
+- @voyant-travel/db@0.77.2
+- @voyant-travel/hono@0.77.2
+
+## 0.77.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.77.1
+- @voyant-travel/catalog-mcp@0.77.1
+- @voyant-travel/core@0.77.1
+- @voyant-travel/db@0.77.1
+- @voyant-travel/hono@0.77.1
+
+## 0.77.0
+
+### Patch Changes
+
+- Updated dependencies [1da934d]
+  - @voyant-travel/catalog@0.77.0
+  - @voyant-travel/catalog-mcp@0.77.0
+  - @voyant-travel/core@0.77.0
+  - @voyant-travel/db@0.77.0
+  - @voyant-travel/hono@0.77.0
+
+## 0.76.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.76.0
+- @voyant-travel/catalog-mcp@0.76.0
+- @voyant-travel/core@0.76.0
+- @voyant-travel/db@0.76.0
+- @voyant-travel/hono@0.76.0
+
+## 0.75.7
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.7
+- @voyant-travel/catalog-mcp@0.75.7
+- @voyant-travel/core@0.75.7
+- @voyant-travel/db@0.75.7
+- @voyant-travel/hono@0.75.7
+
+## 0.75.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.6
+- @voyant-travel/catalog-mcp@0.75.6
+- @voyant-travel/core@0.75.6
+- @voyant-travel/db@0.75.6
+- @voyant-travel/hono@0.75.6
+
+## 0.75.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.5
+- @voyant-travel/catalog-mcp@0.75.5
+- @voyant-travel/core@0.75.5
+- @voyant-travel/db@0.75.5
+- @voyant-travel/hono@0.75.5
+
+## 0.75.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.4
+- @voyant-travel/catalog-mcp@0.75.4
+- @voyant-travel/core@0.75.4
+- @voyant-travel/db@0.75.4
+- @voyant-travel/hono@0.75.4
+
+## 0.75.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.3
+- @voyant-travel/catalog-mcp@0.75.3
+- @voyant-travel/core@0.75.3
+- @voyant-travel/db@0.75.3
+- @voyant-travel/hono@0.75.3
+
+## 0.75.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.2
+- @voyant-travel/catalog-mcp@0.75.2
+- @voyant-travel/core@0.75.2
+- @voyant-travel/db@0.75.2
+- @voyant-travel/hono@0.75.2
+
+## 0.75.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.1
+- @voyant-travel/catalog-mcp@0.75.1
+- @voyant-travel/core@0.75.1
+- @voyant-travel/db@0.75.1
+- @voyant-travel/hono@0.75.1
+
+## 0.75.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.75.0
+- @voyant-travel/catalog-mcp@0.75.0
+- @voyant-travel/core@0.75.0
+- @voyant-travel/db@0.75.0
+- @voyant-travel/hono@0.75.0
+
+## 0.74.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.74.2
+- @voyant-travel/catalog-mcp@0.74.2
+- @voyant-travel/core@0.74.2
+- @voyant-travel/db@0.74.2
+- @voyant-travel/hono@0.74.2
+
+## 0.74.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.74.1
+- @voyant-travel/catalog-mcp@0.74.1
+- @voyant-travel/core@0.74.1
+- @voyant-travel/db@0.74.1
+- @voyant-travel/hono@0.74.1
+
+## 0.74.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.74.0
+- @voyant-travel/catalog-mcp@0.74.0
+- @voyant-travel/core@0.74.0
+- @voyant-travel/db@0.74.0
+- @voyant-travel/hono@0.74.0
+
+## 0.73.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.73.1
+- @voyant-travel/catalog-mcp@0.73.1
+- @voyant-travel/core@0.73.1
+- @voyant-travel/db@0.73.1
+- @voyant-travel/hono@0.73.1
+
+## 0.73.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.73.0
+- @voyant-travel/catalog-mcp@0.73.0
+- @voyant-travel/core@0.73.0
+- @voyant-travel/db@0.73.0
+- @voyant-travel/hono@0.73.0
+
+## 0.72.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.72.0
+- @voyant-travel/catalog-mcp@0.72.0
+- @voyant-travel/core@0.72.0
+- @voyant-travel/db@0.72.0
+- @voyant-travel/hono@0.72.0
+
+## 0.71.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.71.0
+- @voyant-travel/catalog-mcp@0.71.0
+- @voyant-travel/core@0.71.0
+- @voyant-travel/db@0.71.0
+- @voyant-travel/hono@0.71.0
+
+## 0.70.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.70.0
+- @voyant-travel/catalog-mcp@0.70.0
+- @voyant-travel/core@0.70.0
+- @voyant-travel/db@0.70.0
+- @voyant-travel/hono@0.70.0
+
+## 0.69.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.69.1
+- @voyant-travel/catalog-mcp@0.69.1
+- @voyant-travel/core@0.69.1
+- @voyant-travel/db@0.69.1
+- @voyant-travel/hono@0.69.1
+
+## 0.69.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.69.0
+- @voyant-travel/catalog-mcp@0.69.0
+- @voyant-travel/core@0.69.0
+- @voyant-travel/db@0.69.0
+- @voyant-travel/hono@0.69.0
+
+## 0.68.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.68.0
+- @voyant-travel/catalog-mcp@0.68.0
+- @voyant-travel/core@0.68.0
+- @voyant-travel/db@0.68.0
+- @voyant-travel/hono@0.68.0
+
+## 0.67.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.67.0
+- @voyant-travel/catalog-mcp@0.67.0
+- @voyant-travel/core@0.67.0
+- @voyant-travel/db@0.67.0
+- @voyant-travel/hono@0.67.0
+
+## 0.66.6
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.6
+- @voyant-travel/catalog-mcp@0.66.6
+- @voyant-travel/core@0.66.6
+- @voyant-travel/db@0.66.6
+- @voyant-travel/hono@0.66.6
+
+## 0.66.5
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.5
+- @voyant-travel/catalog-mcp@0.66.5
+- @voyant-travel/core@0.66.5
+- @voyant-travel/db@0.66.5
+- @voyant-travel/hono@0.66.5
+
+## 0.66.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.4
+- @voyant-travel/catalog-mcp@0.66.4
+- @voyant-travel/core@0.66.4
+- @voyant-travel/db@0.66.4
+- @voyant-travel/hono@0.66.4
+
+## 0.66.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.3
+- @voyant-travel/catalog-mcp@0.66.3
+- @voyant-travel/core@0.66.3
+- @voyant-travel/db@0.66.3
+- @voyant-travel/hono@0.66.3
+
+## 0.66.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.2
+- @voyant-travel/catalog-mcp@0.66.2
+- @voyant-travel/core@0.66.2
+- @voyant-travel/db@0.66.2
+- @voyant-travel/hono@0.66.2
+
+## 0.66.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.1
+- @voyant-travel/catalog-mcp@0.66.1
+- @voyant-travel/core@0.66.1
+- @voyant-travel/db@0.66.1
+- @voyant-travel/hono@0.66.1
+
+## 0.66.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.66.0
+- @voyant-travel/catalog-mcp@0.66.0
+- @voyant-travel/core@0.66.0
+- @voyant-travel/db@0.66.0
+- @voyant-travel/hono@0.66.0
+
+## 0.65.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.65.0
+- @voyant-travel/catalog-mcp@0.65.0
+- @voyant-travel/core@0.65.0
+- @voyant-travel/db@0.65.0
+- @voyant-travel/hono@0.65.0
+
+## 0.64.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.64.1
+- @voyant-travel/catalog-mcp@0.64.1
+- @voyant-travel/core@0.64.1
+- @voyant-travel/db@0.64.1
+- @voyant-travel/hono@0.64.1
+
+## 0.64.0
+
+### Patch Changes
+
+- Updated dependencies [6d0c8f3]
+  - @voyant-travel/catalog@0.64.0
+  - @voyant-travel/catalog-mcp@0.64.0
+  - @voyant-travel/core@0.64.0
+  - @voyant-travel/db@0.64.0
+  - @voyant-travel/hono@0.64.0
+
+## 0.63.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.63.1
+- @voyant-travel/catalog-mcp@0.63.1
+- @voyant-travel/core@0.63.1
+- @voyant-travel/db@0.63.1
+- @voyant-travel/hono@0.63.1
+
+## 0.63.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.63.0
+- @voyant-travel/catalog-mcp@0.63.0
+- @voyant-travel/core@0.63.0
+- @voyant-travel/db@0.63.0
+- @voyant-travel/hono@0.63.0
+
+## 0.62.3
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.62.3
+- @voyant-travel/catalog-mcp@0.62.3
+- @voyant-travel/core@0.62.3
+- @voyant-travel/db@0.62.3
+- @voyant-travel/hono@0.62.3
+
+## 0.62.2
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.62.2
+- @voyant-travel/catalog-mcp@0.62.2
+- @voyant-travel/core@0.62.2
+- @voyant-travel/db@0.62.2
+- @voyant-travel/hono@0.62.2
+
+## 0.62.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.62.1
+- @voyant-travel/catalog-mcp@0.62.1
+- @voyant-travel/core@0.62.1
+- @voyant-travel/db@0.62.1
+- @voyant-travel/hono@0.62.1
+
+## 0.62.0
+
+### Patch Changes
+
+- Updated dependencies [77aad68]
+  - @voyant-travel/catalog@0.62.0
+  - @voyant-travel/catalog-mcp@0.62.0
+  - @voyant-travel/core@0.62.0
+  - @voyant-travel/db@0.62.0
+  - @voyant-travel/hono@0.62.0
+
+## 0.61.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.61.0
+- @voyant-travel/catalog-mcp@0.61.0
+- @voyant-travel/core@0.61.0
+- @voyant-travel/db@0.61.0
+- @voyant-travel/hono@0.61.0
+
+## 0.60.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.60.0
+- @voyant-travel/catalog-mcp@0.60.0
+- @voyant-travel/core@0.60.0
+- @voyant-travel/db@0.60.0
+- @voyant-travel/hono@0.60.0
+
+## 0.59.0
+
+### Patch Changes
+
+- Updated dependencies [48927be]
+  - @voyant-travel/catalog@0.59.0
+  - @voyant-travel/catalog-mcp@0.59.0
+  - @voyant-travel/core@0.59.0
+  - @voyant-travel/db@0.59.0
+  - @voyant-travel/hono@0.59.0
+
+## 0.58.0
+
+### Patch Changes
+
+- Updated dependencies [5b21488]
+  - @voyant-travel/catalog@0.58.0
+  - @voyant-travel/catalog-mcp@0.58.0
+  - @voyant-travel/core@0.58.0
+  - @voyant-travel/db@0.58.0
+  - @voyant-travel/hono@0.58.0
+
+## 0.57.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.57.0
+- @voyant-travel/catalog-mcp@0.57.0
+- @voyant-travel/core@0.57.0
+- @voyant-travel/db@0.57.0
+- @voyant-travel/hono@0.57.0
+
+## 0.56.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.56.0
+- @voyant-travel/catalog-mcp@0.56.0
+- @voyant-travel/core@0.56.0
+- @voyant-travel/db@0.56.0
+- @voyant-travel/hono@0.56.0
+
+## 0.55.1
+
+### Patch Changes
+
+- 819c847: Add the Travel Composer foundation for customer-facing composed trips.
+
+  `@voyant-travel/travel-composer` introduces Trip Envelopes and Trip Components,
+  durable schema, Zod contracts, deterministic draft/component operations,
+  catalog-backed component adaptation, aggregate price and tax snapshots, reserve
+  and checkout handoff workflows, component-level cancellation preview/cancel
+  operations, Cruise Extension representation helpers, admin/public Hono routes,
+  and AI-safe itinerary MCP tools.
+
+  `@voyant-travel/travel-composer-react` adds the matching React client layer:
+  admin/public operation helpers, validation-aware fetches, cache writers, query
+  keys/options, provider wiring, and hooks for draft, component, pricing,
+  reserve, checkout, and cancellation flows.
+
+- Updated dependencies [819c847]
+  - @voyant-travel/catalog@0.55.1
+  - @voyant-travel/catalog-mcp@0.55.1
+  - @voyant-travel/core@0.55.1
+  - @voyant-travel/db@0.55.1
+  - @voyant-travel/hono@0.55.1

@@ -1,4 +1,4 @@
-import { apiErrorSchema } from "@voyantjs/types"
+import { apiErrorSchema } from "@voyant-travel/types"
 import type { Context, MiddlewareHandler } from "hono"
 
 import { normalizeValidationError } from "../validation.js"

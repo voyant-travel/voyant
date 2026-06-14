@@ -14,8 +14,8 @@
  * See `docs/architecture/catalog-architecture.md` §5.2 for the design.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry, Visibility } from "../contract.js"

@@ -1,11 +1,11 @@
 {
-  "name": "@voyantjs/workflows-cloud-adapter",
+  "name": "@voyant-travel/workflows-cloud-adapter",
   "version": "0.107.10",
   "description": "Tenant Worker adapter for Voyant Cloud Workflows deployments. Wires WorkflowRunDO, inline local dispatch, and platform step-runner bindings from env.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/workflows-cloud-adapter"
   },
   "homepage": "https://voyant.cloud/workflows",
@@ -26,20 +26,20 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-cloudflare build && tsc -p tsconfig.json",
-    "check-types": "pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-cloudflare build && tsc --noEmit",
+    "build": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-cloudflare build && tsc -p tsconfig.json",
+    "check-types": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-cloudflare build && tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
-    "test": "pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-cloudflare build && vitest run",
+    "test": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-cloudflare build && vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@voyantjs/workflows": "workspace:^",
-    "@voyantjs/workflows-orchestrator": "workspace:^",
-    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:^"
+    "@voyant-travel/workflows": "workspace:^",
+    "@voyant-travel/workflows-orchestrator": "workspace:^",
+    "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "vitest": "^4.1.2"
   },

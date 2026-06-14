@@ -1,5 +1,5 @@
-import { booleanQueryParam } from "@voyantjs/db/helpers"
-import { typeIdSchema } from "@voyantjs/db/lib/typeid"
+import { booleanQueryParam } from "@voyant-travel/db/helpers"
+import { typeIdSchema } from "@voyant-travel/db/lib/typeid"
 import { z } from "zod"
 
 export { booleanQueryParam, typeIdSchema, z }

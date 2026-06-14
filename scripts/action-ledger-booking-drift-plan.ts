@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
-import { planBookingActionLedgerDriftRemediation } from "@voyantjs/bookings/action-ledger-drift-remediation"
-import { createDbClient } from "@voyantjs/db"
+import { planBookingActionLedgerDriftRemediation } from "@voyant-travel/bookings/action-ledger-drift-remediation"
+import { createDbClient } from "@voyant-travel/db"
 
 const args = parseArgs(process.argv.slice(2))
 

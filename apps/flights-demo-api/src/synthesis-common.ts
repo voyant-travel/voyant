@@ -1,4 +1,8 @@
-import type { CabinClass, FlightSearchRequest, Itinerary } from "@voyantjs/flights/contract/types"
+import type {
+  CabinClass,
+  FlightSearchRequest,
+  Itinerary,
+} from "@voyant-travel/flights/contract/types"
 
 export interface DemoCarrier {
   code: string

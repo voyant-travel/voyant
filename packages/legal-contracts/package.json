@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/legal-contracts",
+  "name": "@voyant-travel/legal-contracts",
   "version": "0.104.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -54,18 +54,18 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/schema-kit": "workspace:^",
-    "@voyantjs/templating": "workspace:^",
+    "@voyant-travel/schema-kit": "workspace:^",
+    "@voyant-travel/templating": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/legal-contracts"
   }
 }

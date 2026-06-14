@@ -97,7 +97,7 @@ Six extensions, two lists, zero enforcement that they stay in sync.
 Each template maintains its own divergent `schema: [...]` array:
 
 - `templates/dmc/drizzle.config.ts` — 24 package entries
-- `templates/operator/drizzle.config.ts` — 31 package entries + 1 template-local
+- `starters/operator/drizzle.config.ts` — 31 package entries + 1 starter-local
   (`./src/db/schema.ts`)
 - `apps/dev/drizzle.config.ts` — 21 package entries (and **no `voyant.config.ts`
   at all** — see §3.1)
@@ -159,7 +159,7 @@ runs and what migrates.** Concretely:
 
 | Capability | Status | Where |
 |---|---|---|
-| Manifest of composed modules | ✅ exists | `templates/*/voyant.config.ts` (`modules: [...]`) |
+| Manifest of composed modules | ✅ exists | `starters/*/voyant.config.ts` (`modules: [...]`) |
 | Manifest of composed **extensions** | ❌ missing | extensions are runtime-only in `app.ts` |
 | Per-package schema declaration | ⚠️ partial | `package.json#voyant.schema` / `requiresSchemas` (used by CLI only) |
 | Transitive schema resolution | ✅ exists | `cli/.../lib/resolve-schemas.ts` → `resolveSchemas()` |
@@ -183,11 +183,11 @@ the templates actually migrate. Comparing each template's `voyant.config.ts`
 schema list:
 
 - **DMC** resolver output would **miss**: `action-ledger`, `accommodations`,
-  `legal`, `catalog`, `storefront-verification`.
+  `legal`, `catalog`, `storefront`.
 - **Operator** would miss even more: `action-ledger`, `catalog-authoring`,
   `legal`, `promotions`, `cruises`, `charters`, `accommodations`,
-  `trip-composer`, `flights`, `catalog`, `workflow-runs`,
-  `storefront-verification` (plus its template-local `./src/db/schema.ts`).
+  `trips`, `flights`, `catalog`, `workflow-runs`,
+  `storefront` verification schema (plus its starter-local `./src/db/schema.ts`).
 - **apps/dev** has a `drizzle.config.ts` but **no `voyant.config.ts`** — there is
   no manifest to resolve from, so it needs a manifest-creation step before it can
   consume generated output.
@@ -195,7 +195,7 @@ schema list:
 Two further normalization gaps block resolution even where a module *is* listed:
 
 - **Missing `package.json#voyant` metadata.** `catalog`, `workflow-runs`,
-  `trip-composer`, and `flights` export schema subpaths but declare no `voyant`
+  `trips`, and `flights` export schema subpaths but declare no `voyant`
   field, so `resolveSchemas()` cannot find their schema or dependencies.
   (`crm`/`products`/`bookings` do declare it.)
 - **Non-standard schema entrypoints.** Operator lists `flights` as
@@ -221,7 +221,7 @@ first-class manifest entries, not a runtime-only array:
 export interface VoyantConfig {
   // ...existing...
   modules?: ModuleEntry[]
-  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyantjs/inventory/booking-extension"
+  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyant-travel/inventory/booking-extension"
   plugins?: PluginEntry[]
 }
 ```
@@ -278,7 +278,7 @@ stop drifting (§1.2).
 Every package that owns tables sets `package.json#voyant.schema` (default
 `./schema`) and `requiresSchemas` for FK-target dependencies — the fields
 `resolveSchemas()` already reads. Extensions that own tables (e.g.
-`@voyantjs/inventory/booking-extension`) declare their schema subpath the same way,
+`@voyant-travel/inventory/booking-extension`) declare their schema subpath the same way,
 so resolution picks them up automatically once they're in the manifest (§4.1).
 This makes "mounted but schema-less" unrepresentable.
 
@@ -294,7 +294,7 @@ detection.
 Instead, **generate real Drizzle table definitions from the link definitions** and
 feed those into the schema manifest, so **Drizzle owns the diff and the snapshot**:
 
-- A small generator turns each `LinkDefinition` (`templates/*/src/links/index.ts`)
+- A small generator turns each `LinkDefinition` (`starters/*/src/links/index.ts`)
   into a Drizzle `pgTable` (id, `<left>_id`, `<right>_id`, timestamps, the
   cardinality-derived indexes) — the same shape `generateLinkTableSql` produces,
   but as a Drizzle schema object rather than a SQL string.
@@ -365,12 +365,12 @@ defer runtime derivation (the hard part) to last.
 ### Phase 0 — inventory & normalization (no behavior change)
 - Build the per-template manifest↔schema gap inventory (§3.1) and keep it current.
 - Add `package.json#voyant` (`schema`, `requiresSchemas`) to **every**
-  schema-owning package, including `catalog`, `workflow-runs`, `trip-composer`,
+  schema-owning package, including `catalog`, `workflow-runs`, `trips`,
   and `flights`; fix non-standard entrypoints (e.g. flights'
   `src/reference/local-postgres.ts`).
 - Complete each template's `voyant.config.ts` so `modules` covers everything its
   Drizzle list migrates (DMC: + `action-ledger`, `accommodations`, `legal`,
-  `catalog`, `storefront-verification`; operator: the longer list in §3.1).
+  `catalog`, `storefront`; operator: the longer list in §3.1).
 - Create a `voyant.config.ts` for `apps/dev`.
 - **Exit criterion:** `resolveSchemas(config)` output is set-equal to each
   template's current hand list. **No arrays replaced yet.**
@@ -447,7 +447,7 @@ defer runtime derivation (the hard part) to last.
 **Still open:**
 
 1. **Generated-file location & extension granularity** — is the extension
-   manifest entry a package subpath (`@voyantjs/inventory/booking-extension`) or a
+   manifest entry a package subpath (`@voyant-travel/inventory/booking-extension`) or a
    stable extension name resolved via a registry? Lean: subpath, mirroring how
    modules are listed.
 2. **Multi-template generation** — do we generate per template

@@ -1,5 +1,5 @@
-import type { LinkableDefinition, Module } from "@voyantjs/core"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { cruiseAdminRoutes } from "./routes.js"
 import { cruisePublicRoutes } from "./routes-public.js"
@@ -18,8 +18,8 @@ export {
   mapConnectPriceComponentKind,
 } from "./adapters/connect-compat.js"
 // Adapter contract + registry — re-exported so templates can import everything
-// from `@voyantjs/cruises` without reaching into sub-paths. Sub-path
-// `@voyantjs/cruises/adapters` remains the lighter import for adapter-only
+// from `@voyant-travel/cruises` without reaching into sub-paths. Sub-path
+// `@voyant-travel/cruises/adapters` remains the lighter import for adapter-only
 // implementations.
 export type {
   AdapterCallContext,

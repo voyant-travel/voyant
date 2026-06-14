@@ -1,5 +1,5 @@
-import type { Duration, EnvironmentName, ScheduleDeclaration } from "@voyantjs/workflows"
-import type { ManifestSchedule, WorkflowManifest } from "@voyantjs/workflows/protocol"
+import type { Duration, EnvironmentName, ScheduleDeclaration } from "@voyant-travel/workflows"
+import type { ManifestSchedule, WorkflowManifest } from "@voyant-travel/workflows/protocol"
 
 export type SchedulableDeclaration = ScheduleDeclaration | ManifestSchedule
 

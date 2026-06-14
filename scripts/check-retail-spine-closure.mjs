@@ -7,133 +7,137 @@ const repoRoot = process.cwd()
 const retailSpineRoots = [
   {
     area: "Catalog",
-    packages: ["@voyantjs/catalog", "@voyantjs/catalog-react"],
+    packages: ["@voyant-travel/catalog", "@voyant-travel/catalog-react"],
   },
   {
     area: "Commerce",
-    packages: ["@voyantjs/commerce", "@voyantjs/commerce-react"],
+    packages: ["@voyant-travel/commerce", "@voyant-travel/commerce-react"],
   },
   {
     area: "Bookings",
-    packages: ["@voyantjs/bookings", "@voyantjs/bookings-react"],
+    packages: ["@voyant-travel/bookings", "@voyant-travel/bookings-react"],
   },
   {
     area: "Finance",
-    packages: ["@voyantjs/finance", "@voyantjs/finance-react"],
+    packages: ["@voyant-travel/finance", "@voyant-travel/finance-react"],
   },
   {
     area: "Distribution",
-    packages: ["@voyantjs/distribution", "@voyantjs/distribution-react"],
+    packages: ["@voyant-travel/distribution", "@voyant-travel/distribution-react"],
   },
   {
     area: "Storefront",
-    packages: ["@voyantjs/storefront", "@voyantjs/storefront-react", "@voyantjs/storefront-sdk"],
+    packages: [
+      "@voyant-travel/storefront",
+      "@voyant-travel/storefront-react",
+      "@voyant-travel/storefront-sdk",
+    ],
   },
   {
     area: "Admin surfaces",
-    packages: ["@voyantjs/admin", "@voyantjs/admin-app", "@voyantjs/admin-react"],
+    packages: ["@voyant-travel/admin", "@voyant-travel/admin-app", "@voyant-travel/admin-react"],
   },
 ]
 
 const forbiddenPackages = new Map([
-  ["@voyantjs/inventory", "operated Inventory authoring runtime"],
-  ["@voyantjs/inventory-react", "operated Inventory authoring UI"],
-  ["@voyantjs/products", "operated Inventory authoring runtime"],
-  ["@voyantjs/products-react", "operated Inventory authoring UI"],
-  ["@voyantjs/availability", "operated Availability/Operations runtime"],
-  ["@voyantjs/availability-react", "operated Availability/Operations UI"],
-  ["@voyantjs/resources", "operated Operations runtime"],
-  ["@voyantjs/resources-react", "operated Operations UI"],
-  ["@voyantjs/ground", "operated Operations runtime"],
-  ["@voyantjs/ground-react", "operated Operations UI"],
-  ["@voyantjs/facilities", "operated Operations place/facility schema"],
-  ["@voyantjs/facilities-react", "operated Operations place/facility UI"],
-  ["@voyantjs/operations", "operated Operations runtime"],
-  ["@voyantjs/operations-react", "operated Operations UI"],
-  ["@voyantjs/allocation-ui", "operated Availability allocation UI"],
-  ["@voyantjs/relationships", "mode-optional Relationships runtime"],
-  ["@voyantjs/relationships-react", "mode-optional Relationships UI"],
-  ["@voyantjs/quotes", "mode-optional Quotes runtime"],
-  ["@voyantjs/quotes-react", "mode-optional Quotes UI"],
-  ["@voyantjs/crm", "retired CRM runtime package"],
-  ["@voyantjs/crm-react", "retired CRM UI package"],
-  ["@voyantjs/transactions", "retired runtime Transactions package"],
-  ["@voyantjs/transactions-react", "retired runtime Transactions UI"],
+  ["@voyant-travel/inventory", "operated Inventory authoring runtime"],
+  ["@voyant-travel/inventory-react", "operated Inventory authoring UI"],
+  ["@voyant-travel/products", "operated Inventory authoring runtime"],
+  ["@voyant-travel/products-react", "operated Inventory authoring UI"],
+  ["@voyant-travel/availability", "operated Availability/Operations runtime"],
+  ["@voyant-travel/availability-react", "operated Availability/Operations UI"],
+  ["@voyant-travel/resources", "operated Operations runtime"],
+  ["@voyant-travel/resources-react", "operated Operations UI"],
+  ["@voyant-travel/ground", "operated Operations runtime"],
+  ["@voyant-travel/ground-react", "operated Operations UI"],
+  ["@voyant-travel/facilities", "operated Operations place/facility schema"],
+  ["@voyant-travel/facilities-react", "operated Operations place/facility UI"],
+  ["@voyant-travel/operations", "operated Operations runtime"],
+  ["@voyant-travel/operations-react", "operated Operations UI"],
+  ["@voyant-travel/allocation-ui", "operated Availability allocation UI"],
+  ["@voyant-travel/relationships", "mode-optional Relationships runtime"],
+  ["@voyant-travel/relationships-react", "mode-optional Relationships UI"],
+  ["@voyant-travel/quotes", "mode-optional Quotes runtime"],
+  ["@voyant-travel/quotes-react", "mode-optional Quotes UI"],
+  ["@voyant-travel/crm", "retired CRM runtime package"],
+  ["@voyant-travel/crm-react", "retired CRM UI package"],
+  ["@voyant-travel/transactions", "retired runtime Transactions package"],
+  ["@voyant-travel/transactions-react", "retired runtime Transactions UI"],
 ])
 
 const optionalEdgeAllowlist = [
   {
-    from: "@voyantjs/catalog-react",
+    from: "@voyant-travel/catalog-react",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason: "catalog admin components can attach operated Inventory UI when a host installs it",
   },
   {
-    from: "@voyantjs/commerce-react",
+    from: "@voyant-travel/commerce-react",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason:
       "Commerce React owner-path components can attach operated Inventory pickers when a host installs them",
   },
   {
-    from: "@voyantjs/distribution-react",
+    from: "@voyant-travel/distribution-react",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason:
       "Distribution React external-reference owner-path components can attach operated Inventory pickers when a host installs them",
   },
   {
-    from: "@voyantjs/distribution-react",
+    from: "@voyant-travel/distribution-react",
     type: "peerDependencies",
-    to: "@voyantjs/relationships-react",
+    to: "@voyant-travel/relationships-react",
     reason:
       "Distribution React admin components can attach Relationships context when a host installs it",
   },
   {
-    from: "@voyantjs/storefront",
+    from: "@voyant-travel/storefront",
     type: "peerDependencies",
-    to: "@voyantjs/relationships",
+    to: "@voyant-travel/relationships",
     reason:
       "Storefront customer-portal subpath can attach Relationships account context when a host installs it",
   },
   {
-    from: "@voyantjs/bookings-react",
+    from: "@voyant-travel/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/operations-react",
+    to: "@voyant-travel/operations-react",
     reason:
       "booking admin components can attach operated Operations controls when a host installs them",
   },
   {
-    from: "@voyantjs/bookings-react",
+    from: "@voyant-travel/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason:
       "booking admin components can attach operated Inventory summaries when a host installs them",
   },
   {
-    from: "@voyantjs/bookings-react",
+    from: "@voyant-travel/bookings-react",
     type: "peerDependencies",
-    to: "@voyantjs/relationships-react",
+    to: "@voyant-travel/relationships-react",
     reason: "booking admin components can attach Relationships context when a host installs it",
   },
   {
-    from: "@voyantjs/finance-react",
+    from: "@voyant-travel/finance-react",
     type: "peerDependencies",
-    to: "@voyantjs/operations-react",
+    to: "@voyant-travel/operations-react",
     reason:
       "finance admin components can attach operated Operations context when a host installs it",
   },
   {
-    from: "@voyantjs/finance-react",
+    from: "@voyant-travel/finance-react",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason:
       "finance admin components can attach operated Inventory context when a host installs it",
   },
   {
-    from: "@voyantjs/admin-app",
+    from: "@voyant-travel/admin-app",
     type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
+    to: "@voyant-travel/inventory-react",
     reason:
       "the packaged admin shell can mount operated Inventory owner-path extensions when a host installs them",
   },
@@ -234,7 +238,7 @@ const workspacePackages = new Map()
 for (const packageJsonPath of packageJsonFiles) {
   const pkg = readJson(packageJsonPath)
   if (typeof pkg.name !== "string") continue
-  if (!pkg.name.startsWith("@voyantjs/")) continue
+  if (!pkg.name.startsWith("@voyant-travel/")) continue
 
   workspacePackages.set(pkg.name, {
     pkg,
@@ -270,7 +274,7 @@ for (let index = 0; index < queue.length; index += 1) {
   const currentPath = packagePaths.get(pkgName) ?? [pkgName]
 
   for (const edge of packageEdges(pkgRecord)) {
-    if (!edge.to.startsWith("@voyantjs/")) continue
+    if (!edge.to.startsWith("@voyant-travel/")) continue
 
     const isForbidden = forbiddenPackages.has(edge.to)
     const isWorkspacePackage = workspacePackages.has(edge.to)

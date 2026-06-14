@@ -1,4 +1,4 @@
-import { mountTestApp } from "@voyantjs/voyant-test-utils/http"
+import { mountTestApp } from "@voyant-travel/voyant-test-utils/http"
 import { afterEach, describe, expect, it } from "vitest"
 
 import type { ExternalCruise, ExternalSailing, ExternalShip } from "../../src/adapters/index.js"

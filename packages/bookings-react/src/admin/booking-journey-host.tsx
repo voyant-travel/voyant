@@ -14,14 +14,14 @@
  */
 
 import { useQuery } from "@tanstack/react-query"
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
 // Type-only: binds catalog-react's `AdminDestinations` augmentation
 // (`catalog.browse`) into this module without pulling its runtime in.
-import type {} from "@voyantjs/catalog-react/admin"
-import type { CatalogDetailSurface } from "@voyantjs/catalog-react/ui"
-import { useAddresses } from "@voyantjs/identity-react"
-import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/inventory-react"
-import { useOrganization, usePerson } from "@voyantjs/relationships-react"
+import type {} from "@voyant-travel/catalog-react/admin"
+import type { CatalogDetailSurface } from "@voyant-travel/catalog-react/ui"
+import { useAddresses } from "@voyant-travel/identity-react"
+import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyant-travel/inventory-react"
+import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import {

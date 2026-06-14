@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Input,
@@ -12,7 +12,7 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -21,8 +21,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components/combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"

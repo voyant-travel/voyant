@@ -10,7 +10,7 @@ import { isInventoryUnit, isPersonUnit } from "./unit-helpers.js"
 /**
  * Minimal traveler shape `verifyBookingDraft` needs. Mirrors the
  * wire-format `BookingCreateTravelerInput` from
- * `@voyantjs/bookings-react`, defined here to avoid a cyclic
+ * `@voyant-travel/bookings-react`, defined here to avoid a cyclic
  * dependency. The verifier doesn't care about most fields —
  * `firstName` / `email` / etc. — only the role + traveler-category +
  * primary flag that decide which pricing band each traveler

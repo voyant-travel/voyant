@@ -32,9 +32,9 @@ const skipNames = new Set([
 mkdirSync(outDir, { recursive: true })
 
 for (const starter of starters) {
-  const source = join(repoRoot, "templates", starter)
+  const source = join(repoRoot, "starters", starter)
   if (!existsSync(source)) {
-    throw new Error(`Missing starter template: ${source}`)
+    throw new Error(`Missing starter: ${source}`)
   }
 
   const stagingRoot = mkdtempSync(join(tmpdir(), `voyant-starter-${starter}-`))

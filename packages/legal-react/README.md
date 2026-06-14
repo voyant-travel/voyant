@@ -1,22 +1,22 @@
-# @voyantjs/legal-react
+# @voyant-travel/legal-react
 
 The legal client tier: headless data hooks/clients plus the styled UI
-components and page-level compositions (formerly `@voyantjs/legal-ui`).
+components and page-level compositions (formerly `@voyant-travel/legal-ui`).
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
 live under `./ui`, `./components/*`, `./admin`, `./i18n`, and `./styles.css`,
-whose heavier peers (`@voyantjs/ui`, `@voyantjs/admin`, `react-hook-form`, and
+whose heavier peers (`@voyant-travel/ui`, `@voyant-travel/admin`, `react-hook-form`, and
 the other modules' `*-react`/`*-ui` packages) are optional and only needed
 when you import those subpaths.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/legal-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyant-travel/legal-react @voyant-travel/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/ui` provides the design-system primitives for the styled subpaths.
+`@voyant-travel/ui` provides the design-system primitives for the styled subpaths.
 The data-layer hooks ship from this package's root.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
@@ -38,7 +38,7 @@ wire CRM, supplier, or distribution selectors without the styled tier taking
 those runtime dependencies.
 
 ```tsx
-import { ContractDialog, ContractsPage } from "@voyantjs/legal-react/ui"
+import { ContractDialog, ContractsPage } from "@voyant-travel/legal-react/ui"
 
 <ContractsPage
   renderContractDialog={(props) => (
@@ -57,9 +57,9 @@ Components render English by default. To localize them, wrap your UI in
 `LegalUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { LegalUiMessagesProvider } from "@voyantjs/legal-react/ui"
-import { legalUiEn } from "@voyantjs/legal-react/i18n/en"
-import { legalUiRo } from "@voyantjs/legal-react/i18n/ro"
+import { LegalUiMessagesProvider } from "@voyant-travel/legal-react/ui"
+import { legalUiEn } from "@voyant-travel/legal-react/i18n/en"
+import { legalUiRo } from "@voyant-travel/legal-react/i18n/ro"
 ```
 
 English-only apps should import only `./i18n/en`. Bilingual apps can import

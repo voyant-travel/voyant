@@ -1,5 +1,9 @@
-import type { getDb } from "@voyantjs/db"
-import { apikeyTable, cloudAuthSessionLinks, cloudAuthUserLinks } from "@voyantjs/db/schema/iam"
+import type { getDb } from "@voyant-travel/db"
+import {
+  apikeyTable,
+  cloudAuthSessionLinks,
+  cloudAuthUserLinks,
+} from "@voyant-travel/db/schema/iam"
 import { eq } from "drizzle-orm"
 
 export async function markCloudAuthSessionRevalidated(

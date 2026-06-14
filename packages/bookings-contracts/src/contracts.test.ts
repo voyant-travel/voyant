@@ -6,7 +6,7 @@ import {
   travelerAllocationMapSchema,
 } from "./index.js"
 
-describe("@voyantjs/bookings-contracts", () => {
+describe("@voyant-travel/bookings-contracts", () => {
   it("validates booking status enum values", () => {
     expect(bookingStatusSchema.safeParse("confirmed").success).toBe(true)
     expect(bookingStatusSchema.safeParse("not_a_status").success).toBe(false)

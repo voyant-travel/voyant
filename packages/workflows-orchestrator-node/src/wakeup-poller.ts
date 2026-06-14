@@ -4,7 +4,7 @@ import {
   resumeDueAlarms,
   type StepHandler,
   type StreamChunk,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 import type { WakeupStore } from "./wakeup-store.js"
 import { syncWakeupFromRecord } from "./wakeup-store.js"
 

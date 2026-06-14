@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: inventory; existing route module stays co-located until a dedicated split preserves behavior and tests.
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { appendProductMutationLedgerEntry, changedMutationFields } from "./action-ledger.js"
 import { emitProductContentChanged } from "./events.js"

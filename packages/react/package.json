@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/react",
+  "name": "@voyant-travel/react",
   "version": "0.104.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/react"
   },
   "type": "module",
@@ -28,7 +28,7 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",

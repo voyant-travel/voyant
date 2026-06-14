@@ -5,18 +5,18 @@ import type {
   FlightOffer,
   FlightSearchRequest,
   PassengerCounts,
-} from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+} from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Sheet,
   SheetContent,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components/sheet"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/sheet"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Plane } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

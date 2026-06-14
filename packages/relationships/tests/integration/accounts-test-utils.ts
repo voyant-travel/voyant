@@ -20,7 +20,7 @@ export function setupAccountRoutesTest() {
   let app: Hono
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     const db = createTestDb()
     await db.execute(sql`CREATE EXTENSION IF NOT EXISTS "unaccent"`)
     await cleanupTestDb(db)
@@ -35,7 +35,7 @@ export function setupAccountRoutesTest() {
   })
 
   beforeEach(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(createTestDb())
   })
 

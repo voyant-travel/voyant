@@ -4,7 +4,7 @@
  * crowding the UI; templates that want more author their own.
  */
 
-import { newId } from "@voyantjs/db/lib/typeid"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { eq } from "drizzle-orm"
 
 import type { CatalogDemoDb } from "./db.js"

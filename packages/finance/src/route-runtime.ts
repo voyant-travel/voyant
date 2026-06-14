@@ -1,4 +1,4 @@
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 
 import type { InvoiceFxOptions } from "./invoice-fx.js"
 import type { FinanceDocumentRouteOptions, InvoiceDocumentGenerator } from "./routes-documents.js"

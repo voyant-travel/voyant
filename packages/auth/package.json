@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/auth",
+  "name": "@voyant-travel/auth",
   "version": "0.113.3",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/auth"
   },
   "description": "Auth package for the workspace",
@@ -105,13 +105,13 @@
   },
   "dependencies": {
     "@better-auth/api-key": "1.6.11",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "better-auth": "1.6.11",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@types/node": "25.5.2",
     "typescript": "^6.0.2"
   }

@@ -9,7 +9,7 @@
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import { sql } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest"
 

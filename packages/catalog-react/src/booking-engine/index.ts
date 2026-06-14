@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/catalog-react/booking-engine` — React Query hooks
+ * `@voyant-travel/catalog-react/booking-engine` — React Query hooks
  * driving the unified booking journey shell.
  *
  * Per `docs/architecture/booking-journey-architecture.md` §8.1.

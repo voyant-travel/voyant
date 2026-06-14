@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminBreadcrumbs } from "@voyantjs/admin"
+import { useAdminBreadcrumbs } from "@voyant-travel/admin"
 
 import {
   type ProfitabilityExportFilters,

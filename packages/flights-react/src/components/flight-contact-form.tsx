@@ -1,7 +1,7 @@
 "use client"
 
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import { Mail, Phone } from "lucide-react"
 import { flightsUiEn } from "../i18n/en.js"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

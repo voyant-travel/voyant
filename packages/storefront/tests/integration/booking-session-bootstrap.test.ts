@@ -3,12 +3,12 @@ import {
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
-} from "@voyantjs/commerce"
-import { cleanupTestDb, closeTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { bookingPaymentSchedules } from "@voyantjs/finance/schema"
-import { handleApiError } from "@voyantjs/hono"
-import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
-import { availabilitySlots } from "@voyantjs/operations"
+} from "@voyant-travel/commerce"
+import { cleanupTestDb, closeTestDb, createTestDb } from "@voyant-travel/db/test-utils"
+import { bookingPaymentSchedules } from "@voyant-travel/finance/schema"
+import { handleApiError } from "@voyant-travel/hono"
+import { optionUnits, productOptions, products } from "@voyant-travel/inventory/schema"
+import { availabilitySlots } from "@voyant-travel/operations"
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"

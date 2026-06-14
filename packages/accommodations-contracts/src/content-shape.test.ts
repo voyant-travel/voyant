@@ -8,7 +8,7 @@ import {
   validateAccommodationContent,
 } from "./index.js"
 
-describe("@voyantjs/accommodations-contracts content shape", () => {
+describe("@voyant-travel/accommodations-contracts content shape", () => {
   it("validates the accommodations/v1 rich content payload", () => {
     const content = accommodationContentSchema.parse({
       hotel: { id: "hrmt_abc", name: "Hotel Sample", star_rating: 4 },

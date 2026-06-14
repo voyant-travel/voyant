@@ -1,10 +1,10 @@
-import { publicBookingsService, resolveSessionPricingSnapshot } from "@voyantjs/bookings"
+import { publicBookingsService, resolveSessionPricingSnapshot } from "@voyant-travel/bookings"
 import {
   computePaymentSchedule,
   financeService,
   noDepositPolicy,
   type PaymentPolicy,
-} from "@voyantjs/finance"
+} from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { loadStorefrontAvailabilitySlot } from "./service-boundary-sql.js"

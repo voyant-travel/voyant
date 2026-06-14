@@ -5,7 +5,7 @@ import type {
   slotExtraCollectionBulkSchema,
   slotExtraSelectionBulkSchema,
   slotExtraSelectionPatchSchema,
-} from "@voyantjs/bookings/extras"
+} from "@voyant-travel/bookings/extras"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

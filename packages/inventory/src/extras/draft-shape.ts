@@ -27,7 +27,7 @@ import {
   defaultTravelerFields,
   type PaxBandSpec,
   paxBandsAllowedTotalFrom,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 
 import type { ExtraContent } from "./content-shape.js"
 

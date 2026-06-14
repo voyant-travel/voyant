@@ -1,4 +1,4 @@
-import { type ChannelDetail, useChannel, useChannels } from "@voyantjs/distribution-react"
+import { type ChannelDetail, useChannel, useChannels } from "@voyant-travel/distribution-react"
 import {
   Combobox,
   ComboboxCollection,
@@ -7,7 +7,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import * as React from "react"
 
 import { useSellabilityUiMessagesOrDefault } from "../i18n/index.js"

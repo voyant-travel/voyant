@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { issueCheckoutCapability } from "@voyantjs/bookings/checkout-capability"
-import { bookings } from "@voyantjs/bookings/schema"
-import { handleApiError } from "@voyantjs/hono"
+import { issueCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
+import { bookings } from "@voyant-travel/bookings/schema"
+import { handleApiError } from "@voyant-travel/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -103,12 +103,12 @@ async function cleanupFinanceTestData(
 
 describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
     process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = "public-finance-route-test-secret-32"
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
 
     db = createTestDb()
     await cleanupFinanceTestData(db)
@@ -128,7 +128,7 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     process.env.TEST_DATABASE_URL = ORIGINAL_TEST_DATABASE_URL
     process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = ORIGINAL_CHECKOUT_CAPABILITY_SECRET
     await closeTestDb()

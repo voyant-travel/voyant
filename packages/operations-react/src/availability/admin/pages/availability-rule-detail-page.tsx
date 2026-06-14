@@ -1,4 +1,4 @@
-import type { AdminRoutePageProps } from "@voyantjs/admin"
+import type { AdminRoutePageProps } from "@voyant-travel/admin"
 
 import { AvailabilityRuleDetailHost } from "../rule-detail-host.js"
 

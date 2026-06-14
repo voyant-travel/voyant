@@ -1,7 +1,7 @@
-import { resolveEntityView } from "@voyantjs/catalog"
-import { createFieldPolicyRegistry } from "@voyantjs/catalog/contract"
-import { resolveOverlay } from "@voyantjs/catalog/overlay/resolver"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import { resolveEntityView } from "@voyant-travel/catalog"
+import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
+import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { describe, expect, it } from "vitest"
 
 import { productCatalogPolicy } from "../../src/catalog-policy.js"

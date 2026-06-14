@@ -15,7 +15,7 @@
  * endpoints return 501 with a clear error.
  */
 
-import { handleApiError, parseJsonBody } from "@voyantjs/hono"
+import { handleApiError, parseJsonBody } from "@voyant-travel/hono"
 import type { Hono } from "hono"
 import { z } from "zod"
 

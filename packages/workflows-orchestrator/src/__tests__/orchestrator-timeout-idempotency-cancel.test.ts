@@ -1,5 +1,5 @@
-import { workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
+import { workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { describe, expect, it } from "vitest"
 import { cancel, createInMemoryRunStore, resume, type StepHandler, trigger } from "../index.js"
 import { handler, tenantMeta } from "./orchestrator-test-support.js"

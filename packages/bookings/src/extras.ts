@@ -1,5 +1,5 @@
-import type { Module } from "@voyantjs/core"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { Module } from "@voyant-travel/core"
+import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { bookingsExtrasRoutes } from "./extras/routes.js"
 

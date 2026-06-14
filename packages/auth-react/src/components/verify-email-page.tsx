@@ -13,7 +13,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { CheckCircle2, Loader2, RotateCcw } from "lucide-react"
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { authUiEn } from "../i18n/en.js"

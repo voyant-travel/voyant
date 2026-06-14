@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import * as React from "react"
 import { type ProductExtraRecord, useProductExtraMutation } from "../../extras-compat.js"
 import { useProductDetailMessages } from "./host.js"

@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { useOrganization, usePerson } from "@voyantjs/relationships-react"
+import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,14 +16,14 @@ import {
   Card,
   CardContent,
   cn,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@voyantjs/ui/components/collapsible"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+} from "@voyant-travel/ui/components/collapsible"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import {
   Ban,
   ChevronDown,

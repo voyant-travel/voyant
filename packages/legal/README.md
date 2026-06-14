@@ -1,18 +1,18 @@
-# @voyantjs/legal
+# @voyant-travel/legal
 
 Legal module for Voyant. Contracts and policies in a single package — templates with variable substitution, versioning, number series, signing workflow, structured cancellation/payment/T&C policies with rule evaluation, assignments, and acceptance tracking.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/legal
+pnpm add @voyant-travel/legal
 ```
 
 ## Usage
 
 ```typescript
-import { legalHonoModule } from "@voyantjs/legal"
-import { createApp } from "@voyantjs/hono"
+import { legalHonoModule } from "@voyant-travel/legal"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [legalHonoModule],

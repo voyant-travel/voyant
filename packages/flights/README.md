@@ -1,4 +1,4 @@
-# @voyantjs/flights
+# @voyant-travel/flights
 
 Phase 3 of the catalog plane. The flights vertical is a partial-adoption module
 for live-API flight supplier search and booking in OTA, tour-operator, and DMC
@@ -13,7 +13,7 @@ for the full design.
 ## Install
 
 ```bash
-pnpm add @voyantjs/flights
+pnpm add @voyant-travel/flights
 ```
 
 ## What's in the box
@@ -49,7 +49,7 @@ pnpm add @voyantjs/flights
 ## Phase relationship
 
 Phase 3 is independent of Phase 2 (RAG). Either can ship first; both build on
-Phase 1 (`@voyantjs/catalog`).
+Phase 1 (`@voyant-travel/catalog`).
 
 Flights opt **in** to:
 - Booking snapshot graph (the most important participation)
@@ -69,7 +69,7 @@ Flights opt **out** of:
 ### Multi-connection search
 
 ```typescript
-import { fanOutFlightSearch } from "@voyantjs/flights/orchestration/fan-out"
+import { fanOutFlightSearch } from "@voyant-travel/flights/orchestration/fan-out"
 
 const result = await fanOutFlightSearch({
   adapters: [hiskyAdapter, amadeusAdapter, charterConsolidatorAdapter],
@@ -92,8 +92,8 @@ const result = await fanOutFlightSearch({
 ### Runtime validation
 
 ```typescript
-import { flightBookRequestSchema } from "@voyantjs/flights/contract/schemas"
-import type { FlightBookRequest } from "@voyantjs/flights/contract/types"
+import { flightBookRequestSchema } from "@voyant-travel/flights/contract/schemas"
+import type { FlightBookRequest } from "@voyant-travel/flights/contract/types"
 
 const request: FlightBookRequest = flightBookRequestSchema.parse(await req.json())
 ```
@@ -104,7 +104,7 @@ const request: FlightBookRequest = flightBookRequestSchema.parse(await req.json(
 import {
   createLocalPostgresReferenceProvider,
   createReferenceDataTables,
-} from "@voyantjs/flights/reference/local-postgres"
+} from "@voyant-travel/flights/reference/local-postgres"
 
 // Schema lives in the operator's own DB. No external service required.
 const reference = createLocalPostgresReferenceProvider({ db })

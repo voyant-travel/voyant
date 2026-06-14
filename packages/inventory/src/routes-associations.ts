@@ -1,4 +1,4 @@
-import { parseJsonBody } from "@voyantjs/hono"
+import { parseJsonBody } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { z } from "zod"
 import { appendProductMutationLedgerEntry, changedMutationFields } from "./action-ledger.js"

@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"

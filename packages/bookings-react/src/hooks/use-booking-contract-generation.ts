@@ -23,7 +23,7 @@ export interface GenerateBookingContractInput {
  *
  * The created contract lives in the legal module — callers that display
  * contract lists should invalidate `legalQueryKeys.contracts()` (from
- * `@voyantjs/legal-react`) on `generate` success; this package cannot do
+ * `@voyant-travel/legal-react`) on `generate` success; this package cannot do
  * that without taking a dependency on the legal client.
  */
 export function useBookingContractGenerationMutation(bookingId: string) {

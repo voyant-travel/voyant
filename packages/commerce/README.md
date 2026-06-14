@@ -1,6 +1,6 @@
 # Commerce
 
-`@voyantjs/commerce` defines the narrow commercial decision Interface and owns
+`@voyant-travel/commerce` defines the narrow commercial decision Interface and owns
 the quote-time markets, pricing, promotions, and sellability runtime sources.
 
 The root call is:
@@ -27,17 +27,17 @@ The package intentionally exposes the Commerce Interface from the root:
 
 Pricing, markets, promotions, and sellability source folders are internal
 organization behind the root Commerce API. Public runtime consumers import from
-`@voyantjs/commerce` or `@voyantjs/commerce/schema`.
+`@voyant-travel/commerce` or `@voyant-travel/commerce/schema`.
 
-React/admin consumers should prefer `@voyantjs/commerce-react` for Commerce-owned
+React/admin consumers should prefer `@voyant-travel/commerce-react` for Commerce-owned
 UI wiring. That package owns the reusable Markets, Pricing, Promotions, and
 Sellability React/admin source under owner-path subpaths:
 
-- `@voyantjs/commerce-react/markets`
-- `@voyantjs/commerce-react/pricing`
-- `@voyantjs/commerce-react/promotions`
-- `@voyantjs/commerce-react/promotions/admin`
-- `@voyantjs/commerce-react/sellability`
+- `@voyant-travel/commerce-react/markets`
+- `@voyant-travel/commerce-react/pricing`
+- `@voyant-travel/commerce-react/promotions`
+- `@voyant-travel/commerce-react/promotions/admin`
+- `@voyant-travel/commerce-react/sellability`
 
 ## Runtime Mounting
 

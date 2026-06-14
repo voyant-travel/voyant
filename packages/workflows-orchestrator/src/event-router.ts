@@ -14,8 +14,8 @@ import {
   type PredicateEnvelope,
   type PredicateExpr,
   projectInput,
-} from "@voyantjs/workflows/events"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+} from "@voyant-travel/workflows/events"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 
 // ---- Public types ----
 

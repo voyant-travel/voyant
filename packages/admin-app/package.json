@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/admin-app",
+  "name": "@voyant-travel/admin-app",
   "version": "0.10.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -22,13 +22,13 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/auth-react": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
+    "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/distribution-react": "workspace:^",
+    "@voyant-travel/finance-react": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -38,14 +38,14 @@
     "@tanstack/react-router": "^1.170.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/auth-react": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
-    "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/inventory-react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
+    "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/distribution-react": "workspace:^",
+    "@voyant-travel/finance-react": "workspace:^",
+    "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -89,23 +89,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/admin-app"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/auth-react": {
+    "@voyant-travel/auth-react": {
       "optional": true
     },
-    "@voyantjs/commerce-react": {
+    "@voyant-travel/commerce-react": {
       "optional": true
     },
-    "@voyantjs/distribution-react": {
+    "@voyant-travel/distribution-react": {
       "optional": true
     },
-    "@voyantjs/finance-react": {
+    "@voyant-travel/finance-react": {
       "optional": true
     },
-    "@voyantjs/inventory-react": {
+    "@voyant-travel/inventory-react": {
       "optional": true
     }
   }

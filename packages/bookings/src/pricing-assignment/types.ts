@@ -1,6 +1,6 @@
 /**
  * Pure, transport-agnostic logic for mapping travelers onto option_units
- * at booking-create time. Lives in `@voyantjs/bookings` so the
+ * at booking-create time. Lives in `@voyant-travel/bookings` so the
  * booking-create dialog (preview + submit) is the only call site today,
  * but the server can import the same module to validate or re-resolve
  * submit payloads in a follow-up — that wiring is not yet in place.
@@ -25,7 +25,7 @@
  *
  * No React, no DB, no HTTP — just the assignment math.
  *
- * Tracking: voyantjs/voyant#1267.
+ * Tracking: voyant-travel/voyant#1267.
  */
 
 export type TravelerRole = "lead" | "adult" | "child" | "infant"
@@ -102,7 +102,7 @@ export interface ResolvedBookingDraft<TTraveler extends BookingDraftTraveler> {
 /**
  * Minimal structural shape `resolveBookingExtraLines` needs from an
  * extra line. Real callers (booking-create dialog) pass the full
- * `BookingCreateExtraLineInput` from `@voyantjs/bookings-react`; this
+ * `BookingCreateExtraLineInput` from `@voyant-travel/bookings-react`; this
  * type avoids a cyclic dependency.
  */
 export interface ResolvableExtraLine {

@@ -1,4 +1,4 @@
-import type { VoyantCloudClient } from "@voyantjs/cloud-sdk"
+import type { VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 
 import type { NotificationAttachment, NotificationProvider, NotificationResult } from "../types.js"
 

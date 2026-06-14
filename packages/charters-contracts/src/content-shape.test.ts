@@ -7,7 +7,7 @@ import {
   validateCharterContent,
 } from "./index.js"
 
-describe("@voyantjs/charters-contracts content shape", () => {
+describe("@voyant-travel/charters-contracts content shape", () => {
   it("validates the charters/v1 rich content payload", () => {
     const content = charterContentSchema.parse({
       charter: { id: "chrt_abc", name: "Aegean Escape", duration_nights: 7 },

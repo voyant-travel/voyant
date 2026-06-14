@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
+import { Button } from "@voyant-travel/ui/components/button"
 
 import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { JourneyHeaderState, JourneyStep } from "../types.js"

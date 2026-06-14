@@ -66,7 +66,7 @@ export interface ConcurrencyPolicy<TInput> {
 
 /**
  * Process-local registry. Backed by globalThis so bundles that inline
- * their own copy of @voyantjs/workflows still share the registry with
+ * their own copy of @voyant-travel/workflows still share the registry with
  * the loader's copy (voyant build relies on this to extract the
  * manifest from a user bundle at load-time). Module-local `const`
  * would create a private map per bundle copy.

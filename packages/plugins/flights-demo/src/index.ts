@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/plugin-flights-demo` — `FlightConnectorAdapter` implementation
+ * `@voyant-travel/plugin-flights-demo` — `FlightConnectorAdapter` implementation
  * that talks to the standalone `flights-demo-api` HTTP service. Drop-in
  * replacement for a real GDS connector when no upstream is configured.
  *

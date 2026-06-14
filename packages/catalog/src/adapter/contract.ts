@@ -1,1 +1,1 @@
-export * from "@voyantjs/catalog-contracts/adapter/contract"
+export * from "@voyant-travel/catalog-contracts/adapter/contract"

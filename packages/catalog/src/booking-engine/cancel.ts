@@ -8,7 +8,7 @@
  * decoupling from `packages/bookings`.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
 import type {

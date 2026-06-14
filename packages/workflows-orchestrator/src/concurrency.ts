@@ -1,4 +1,4 @@
-import type { ConcurrencyPolicy } from "@voyantjs/workflows"
+import type { ConcurrencyPolicy } from "@voyant-travel/workflows"
 
 import type { RunRecord } from "./types.js"
 

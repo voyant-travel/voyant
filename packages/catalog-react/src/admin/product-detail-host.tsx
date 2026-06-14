@@ -5,7 +5,7 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import { useState } from "react"
 
 import { ProductDetailPage } from "../components/product-detail-page.js"

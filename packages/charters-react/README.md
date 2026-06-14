@@ -1,12 +1,12 @@
-# @voyantjs/charters-react
+# @voyant-travel/charters-react
 
 The charters client tier: headless data hooks/clients plus the styled React
-UI components (formerly `@voyantjs/charters-ui`).
+UI components (formerly `@voyant-travel/charters-ui`).
 
 Headless consumers import from the root, `./hooks`, or `./client` — these
 pull no styling peers. Styled surfaces live under `./ui`, `./components/*`,
-`./i18n`, and `./styles.css`, whose heavier peers (`@voyantjs/ui`,
-`@voyantjs/catalog-react`) are optional and only needed when you import
+`./i18n`, and `./styles.css`, whose heavier peers (`@voyant-travel/ui`,
+`@voyant-travel/catalog-react`) are optional and only needed when you import
 those subpaths.
 
 ## UI components
@@ -19,9 +19,9 @@ Components render English by default. To localize them, wrap your UI in
 `ChartersUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { ChartersUiMessagesProvider } from "@voyantjs/charters-react/ui"
-import { chartersUiEn } from "@voyantjs/charters-react/i18n/en"
-import { chartersUiRo } from "@voyantjs/charters-react/i18n/ro"
+import { ChartersUiMessagesProvider } from "@voyant-travel/charters-react/ui"
+import { chartersUiEn } from "@voyant-travel/charters-react/i18n/en"
+import { chartersUiRo } from "@voyant-travel/charters-react/i18n/ro"
 ```
 
 English-only apps should import only `./i18n/en`. Bilingual apps can import
@@ -30,10 +30,10 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 ### Install
 
 ```bash
-pnpm add @voyantjs/charters-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyant-travel/charters-react @voyant-travel/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/ui` provides the design-system primitives and is only required
+`@voyant-travel/ui` provides the design-system primitives and is only required
 when importing the styled subpaths (`./ui`, `./components/*`). The data-layer
 hooks ship from the root and `./hooks` subpaths of this same package.
 

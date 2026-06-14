@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/catalog",
+  "name": "@voyant-travel/catalog",
   "version": "0.117.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -40,7 +40,7 @@
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   },
   "scripts": {
@@ -223,23 +223,23 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/catalog-contracts": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
+    "@voyant-travel/catalog-contracts": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.1.4"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/catalog"
   }
 }

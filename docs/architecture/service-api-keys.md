@@ -18,17 +18,17 @@ narrow capability without carrying an operator session.
   }
   ```
 
-- `@voyantjs/types/api-keys` owns Voyant's permission descriptor catalog and
+- `@voyant-travel/types/api-keys` owns Voyant's permission descriptor catalog and
   helper functions.
-- `@voyantjs/hono` verifies `voy_` API keys and checks Better Auth
+- `@voyant-travel/hono` verifies `voy_` API keys and checks Better Auth
   permissions against route resources.
-- `@voyantjs/auth` exposes the `/auth/api-tokens` management facade used by
+- `@voyant-travel/auth` exposes the `/auth/api-tokens` management facade used by
   the UI. The facade calls Better Auth's server API because fields such as
   `permissions`, `remaining`, and `enabled` are server-only on the underlying
   API Key plugin HTTP routes.
-- `@voyantjs/auth-react` exposes React Query hooks for token management against
+- `@voyant-travel/auth-react` exposes React Query hooks for token management against
   that facade.
-- `@voyantjs/auth-react/ui` exposes reusable management UI.
+- `@voyant-travel/auth-react/ui` exposes reusable management UI.
 
 API tokens must not become user sessions. Do not enable Better Auth's session
 mocking for API keys unless a deployment has a separate, explicit security
@@ -102,7 +102,7 @@ When a `voy_` token authenticates, the auth middleware also sets
 
 ## Creating Tokens
 
-Use the operator template's Settings -> API Tokens screen, or call Voyant's
+Use the operator starter's Settings -> API Tokens screen, or call Voyant's
 management facade from an authenticated operator session:
 
 ```ts

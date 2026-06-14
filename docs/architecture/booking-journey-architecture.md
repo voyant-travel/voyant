@@ -13,15 +13,15 @@ vertical-specific booking dialogs.
 
 Current implementation state, May 2026:
 
-- The reusable engine contracts, quote/book routes, draft CRUD routes, hold routes, `catalog_quotes`, and `booking_drafts` are in `@voyantjs/catalog/booking-engine`.
-- The shareable React hooks are in `@voyantjs/catalog-react/booking-engine`.
-- The shareable wizard shell and step components are in `@voyantjs/bookings-react/journey`.
-- The operator template mounts the shared route family on both `/v1/admin/catalog/*` and `/v1/public/catalog/*`, and wires operator-only slots, order routes, checkout start, tax transforms, and snapshot enrichment locally.
+- The reusable engine contracts, quote/book routes, draft CRUD routes, hold routes, `catalog_quotes`, and `booking_drafts` are in `@voyant-travel/catalog/booking-engine`.
+- The shareable React hooks are in `@voyant-travel/catalog-react/booking-engine`.
+- The shareable wizard shell and step components are in `@voyant-travel/bookings-react/journey`.
+- The operator starter mounts the shared route family on both `/v1/admin/catalog/*` and `/v1/public/catalog/*`, and wires operator-only slots, order routes, checkout start, tax transforms, and snapshot enrichment locally.
 - Catalog Items are the journey input. `sourceKind: "owned"` dispatches to an
   internal Voyant handler when the relevant module is installed; sourced
   inventory dispatches to the source adapter. An OTA deployment can run without
   the products module and still book sourced catalog rows.
-- `@voyantjs/trip-composer` now exists as the multi-line orchestration layer
+- `@voyant-travel/trips` now exists as the multi-line orchestration layer
   above this journey. It owns Trip Envelopes, Trip Components, aggregate
   pricing/reserve/finance/checkout/cancellation operations, and calls this journey's
   single-line catalog booking-engine primitives per component.
@@ -32,7 +32,7 @@ Five load-bearing rules, in order of importance:
 2. **The Catalog Item's *shape* drives the UI, not the source.** Every quote response carries a `BookingDraftShape` descriptor — which steps to show, which fields are required per passenger, occupancy bands, Extra catalog references. The same wizard renders a one-page booking for a 2h walking tour and a six-step booking for a 14-day cruise + flight package, by reading the descriptor.
 3. **Live pricing is the default, not an afterthought.** Every meaningful input change (pax count, age bands, dates, Extras, billing country for VAT) re-quotes. The total displayed in the sticky footer is always the price the system will commit to. No silent drift between display and commit.
 4. **Build the journey once; ship it on every surface.** Operator dashboard, customer storefront, partner portal, embedded white-label widgets — all consume the same wizard shell, the same React hooks, the same UI sections, and the same engine endpoints. Surface differences (CRM picker for operators vs. inline contact for customers, B2B billing default vs. B2C, payment provider hookup) live in injectable slots, not parallel codebases.
-5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [trip-composer](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
+5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [trips](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
 
 ## 0.5. Single-line journey vs. composed itinerary
 
@@ -42,7 +42,7 @@ That covers the high-volume case: a customer browsing a tour catalog and clickin
 
 > "Flight Bucharest → Budapest, Danube cruise to Vienna, 3-night stay in Vienna, flight back to Bucharest." Four lines, four verticals, one customer experience, one consolidated payment.
 
-That second case is the [trip-composer](./ai-travel-experience-composition.md)'s job. The composer:
+That second case is the [trips](./ai-travel-experience-composition.md)'s job. The composer:
 
 - Holds the user-built itinerary as a Trip Envelope with multiple Trip Components,
   one per line.
@@ -60,7 +60,7 @@ bundle because it shares one departure capacity and operational lifecycle.
 
 Customer-composed additions are different. If the same traveler books that
 group departure, then adds 3 extra hotel nights and a flight home, those added
-stay/flight commitments are sibling components under the trip composer, not
+stay/flight commitments are sibling components under the trips, not
 Extras inside the group-departure booking journey.
 
 **The journey and the composer share primitives, not UI:**
@@ -73,7 +73,7 @@ Extras inside the group-departure booking journey.
 | `booking_drafts` row + hold | journey (§5.7) | yes — one per `DraftItem` |
 | Wizard shell `<BookingJourney />` | journey | **no** — composer renders its own multi-line UI |
 | Per-step section components (Travelers, Payment, etc.) | `bookings-ui` | **partially** — composer reuses Billing + Payment for the consolidated view, may also reuse Travelers if travelers are shared across lines |
-| `bookingsCreate` atomic transaction | bookings | **mostly no** — composer needs cross-line atomicity that's bigger than one booking-create transaction; the saga model from `@voyantjs/core/workflows` is the right primitive |
+| `bookingsCreate` atomic transaction | bookings | **mostly no** — composer needs cross-line atomicity that's bigger than one booking-create transaction; the saga model from `@voyant-travel/core/workflows` is the right primitive |
 
 **What the journey's design must NOT lock in:**
 
@@ -112,7 +112,7 @@ A short inventory so we don't reinvent (full survey lives in the agent reports c
 - **`packages/bookings/src/requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field booking requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
 - **Booking and Inventory extras owner paths** — Extras schema (selection types, pricing modes). The journey has a generic Extras step; vertical handlers still need richer commit wiring for selected Extras.
 - **Accommodation resale / trip composition** — stay-item shape (check-in/out, room option, occupancy, daily rates) for sourced accommodation or package components. Hotel/property operations are outside the booking journey scope.
-- **`packages/finance/`** — tax regimes, voucher redemption, checkout collection primitives. Product quote tax is wired through the operator template's quote transform; broader per-line tax class support remains a handler-deepening task.
+- **`packages/finance/`** — tax regimes, voucher redemption, checkout collection primitives. Product quote tax is wired through the operator starter's quote transform; broader per-line tax class support remains a handler-deepening task.
 - **`bookingsCreateExtension`** — `POST /v1/admin/bookings/create`. One-shot atomic transaction creating booking + travelers + payment schedules + voucher redemption + group membership. The products owned handler uses it as a bridge where the draft shape fits.
 - **`packages/catalog/src/booking-engine/`** — `quoteEntity`, `bookEntity`, `cancelEntity`, `SourceAdapterRegistry`, `OwnedBookingHandlerRegistry`, `catalog_quotes`, `booking_drafts`, route factories, and V1 contracts. Dispatches sourced rows through adapters and owned rows through registered handlers.
 
@@ -121,7 +121,7 @@ Remaining execution gaps are narrower than the original proposal:
 - Broaden the products handler beyond the current booking-create bridge where Extras, encrypted travel details, and richer tax/snapshot semantics need first-class commit support.
 - Replace best-effort accommodation and cruise hold tokens with supplier/room/cabin inventory locks where the upstream or vertical inventory model supports them.
 - Make sourced soft-hold release a real `SourceAdapter` primitive; the reaper can read grace periods today but cannot release a sourced pre-booking hold without overloading cancel.
-- Keep moving template-local checkout-start behavior into reusable framework services before a generic composer package depends on it.
+- Keep moving starter-local checkout-start behavior into reusable framework services before a generic composer package depends on it.
 - Harden browser and contract tests around both admin and public journey wrappers.
 
 ## 2. Patterns we've validated elsewhere
@@ -306,12 +306,12 @@ single dialog:
 - traveler age/pricing band, sellable option unit, room/accommodation
   assignment, and explicit "no room" intent are separate draft concepts;
 - preview totals and submit payloads must be derived from the same draft
-  resolver (`@voyantjs/bookings/pricing-assignment` → `resolveBookingDraft`);
+  resolver (`@voyant-travel/bookings/pricing-assignment` → `resolveBookingDraft`);
 - item and extra line applicability is persisted through
   `booking_item_travelers`, not inferred later from display labels or raw
   traveler counts.
 
-See voyantjs/voyant#1267 for the implementation history.
+See voyant-travel/voyant#1267 for the implementation history.
 
 ## 4.5. Pricing tiers — single supplement, triple share
 
@@ -411,7 +411,7 @@ The HTTP route accepts a `draftId` instead of (or alongside) a `quoteId`. When `
 3. Capture the snapshot graph.
 4. Mark the draft `consumed_booking_id`.
 
-Drafts older than `expires_at` are reaped by the operator template's hourly scheduled job (`templates/operator/src/api/draft-reaper-scheduled.ts`); their owned holds are released first. Orphaned drafts (where the hold expired but the draft didn't) remain a recovery-surface gap rather than a shipped operator view.
+Drafts older than `expires_at` are reaped by the operator starter's hourly scheduled job (`starters/operator/src/api/draft-reaper-scheduled.ts`); their owned holds are released first. Orphaned drafts (where the hold expired but the draft didn't) remain a recovery-surface gap rather than a shipped operator view.
 
 This split — **`catalog_quotes` for the live-pricing snapshot, `booking_drafts` for the session-bound hold** — is implemented. Quotes are short-lived and engine-internal; drafts are user-facing and resumable.
 
@@ -484,11 +484,11 @@ ownedRegistry.register(createAccommodationResaleBookingHandler({ db }))
 // ... per vertical the deployment uses
 ```
 
-This inverts the dependency direction: instead of `@voyantjs/catalog` importing every vertical, each vertical imports the handler interface from `@voyantjs/catalog/booking-engine` and provides an implementation. Catalog stays a contract package; verticals stay self-contained.
+This inverts the dependency direction: instead of `@voyant-travel/catalog` importing every vertical, each vertical imports the handler interface from `@voyant-travel/catalog/booking-engine` and provides an implementation. Catalog stays a contract package; verticals stay self-contained.
 
-This is now the live dispatch shape. The operator template registers products,
+This is now the live dispatch shape. The operator starter registers products,
 accommodations, and cruises handlers in
-`templates/operator/src/api/lib/booking-engine-runtime.ts`. Products has the
+`starters/operator/src/api/lib/booking-engine-runtime.ts`. Products has the
 most complete owned path and can bridge to `bookingsCreate` plus real
 availability holds. Accommodations and cruises expose the same handler interface
 with vertical commit bridges, descriptor builders, and quote/pricing logic;
@@ -540,7 +540,7 @@ The same wizard handles each of these by reading the descriptor; no special-case
 
 | Step | Existing component to reuse | New component / change needed |
 |------|------------------------------|-------------------------------|
-| Configure | `useSlots`, `useSlotUnitAvailability` from `@voyantjs/operations-react/availability` | New `DepartureStep` (date + time + variant + pax bands) |
+| Configure | `useSlots`, `useSlotUnitAvailability` from `@voyant-travel/operations-react/availability` | New `DepartureStep` (date + time + variant + pax bands) |
 | Billing | `PersonPickerSection` (CRM picker pattern) | New `BillingStep` with B2C/B2B toggle, address, VAT — generalize beyond the existing PersonPicker |
 | Travelers | `PassengersSection` | Widen with `dateOfBirth`, `band`, `documents` driven by `travelerFields[]` |
 | Accommodation | `RoomsStepperSection`, `SharedRoomSection` | Compose into a single `AccommodationStep` |
@@ -557,16 +557,16 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 
 | Concern | Package | New / Existing |
 |---------|---------|----------------|
-| Engine endpoints + types (`POST /quote`, `POST /book`, `BookingDraftShape`, `PricingBreakdown`) | `@voyantjs/catalog/booking-engine` | Existing — extend |
-| React hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) | `@voyantjs/catalog-react/booking-engine` *(new sub-path)* | New |
-| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyantjs/bookings-react/journey` | **New** — the missing piece. Modeled on `@voyantjs/flights-react/ui`'s `FlightBookingShell`. |
-| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyantjs/bookings-react/journey` | New, with renderers per sub-step `kind` |
-| Reusable form sections that pre-date the journey | `@voyantjs/bookings-react/ui` (PassengersSection, PaymentScheduleSection, RoomsStepperSection, SharedRoomSection, VoucherPickerSection, PriceBreakdownSection) | Existing — widen as §8 table notes |
-| Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyantjs/catalog/booking-engine` | New (interface only — no vertical imports) |
+| Engine endpoints + types (`POST /quote`, `POST /book`, `BookingDraftShape`, `PricingBreakdown`) | `@voyant-travel/catalog/booking-engine` | Existing — extend |
+| React hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) | `@voyant-travel/catalog-react/booking-engine` *(new sub-path)* | New |
+| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyant-travel/bookings-react/journey` | **New** — the missing piece. Modeled on `@voyant-travel/flights-react/ui`'s `FlightBookingShell`. |
+| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyant-travel/bookings-react/journey` | New, with renderers per sub-step `kind` |
+| Reusable form sections that pre-date the journey | `@voyant-travel/bookings-react/ui` (PassengersSection, PaymentScheduleSection, RoomsStepperSection, SharedRoomSection, VoucherPickerSection, PriceBreakdownSection) | Existing — widen as §8 table notes |
+| Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyant-travel/catalog/booking-engine` | New (interface only — no vertical imports) |
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
-| Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyantjs/catalog/adapter` | Existing — extend |
+| Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyant-travel/catalog/adapter` | Existing — extend |
 | Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, accommodations, etc.) | Existing — extend |
-| Demo upstream + plugin (already shipping in the tracer) | `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo` | Existing |
+| Demo upstream + plugin (already shipping in the tracer) | `apps/catalog-demo-api` + `@voyant-travel/plugin-catalog-demo` | Existing |
 
 #### Slot injection — the seam between operator and storefront
 
@@ -595,14 +595,14 @@ The wizard shell takes render-prop slots for the bits that legitimately differ b
 
 Slots are render-props (function children), not config flags. New slots are added to the prop type as `optional` so existing callers don't break. The shell renders a sensible default when a slot is absent — e.g. a plain inline `<Input>` for the contact pickers when no `renderLeadContactPicker` is passed (which is the storefront's default).
 
-#### What templates own
+#### What Starters Own
 
-Templates wire the shell, the auth posture, the route tree, the API base URL, and the slot implementations. The operator template already wires both admin and storefront-flavored wrappers:
+Starters wire the shell, the auth posture, the route tree, the API base URL, and the slot implementations. The operator starter already wires both admin and storefront-flavored wrappers:
 
 ```
 operator (admin):
-  templates/operator/src/routes/_workspace/catalog_.book.$entityModule.$entityId.tsx
-  templates/operator/src/components/voyant/catalog/operator-booking-journey.tsx
+  starters/operator/src/routes/_workspace/catalog_.book.$entityModule.$entityId.tsx
+  starters/operator/src/components/voyant/catalog/operator-booking-journey.tsx
     → wraps <BookingJourney /> with operator slots:
       - apiBase: getApiUrl()  → /v1/admin/...
       - renderLeadContactPicker: CRM-backed PersonPicker
@@ -612,8 +612,8 @@ operator (admin):
         with operator capabilities + Netopia (when configured)
 
 storefront (customer):
-  templates/storefront/src/routes/book/$entityModule/$entityId.tsx
-  templates/storefront/src/components/voyant/catalog/storefront-booking-journey.tsx
+  starters/storefront/src/routes/book/$entityModule/$entityId.tsx
+  starters/storefront/src/components/voyant/catalog/storefront-booking-journey.tsx
     → wraps <BookingJourney /> with storefront slots:
       - apiBase: storefront's public-base URL → /v1/public/...
       - renderLeadContactPicker: omitted (default = inline contact form)
@@ -630,7 +630,7 @@ Same shell, same hooks, same engine — different chrome. **Adding a new templat
 ## 8.5. Versioned engine contracts
 
 The current package exports explicit V1 contracts as Zod schemas from
-`@voyantjs/catalog/booking-engine`. The engine service functions still accept
+`@voyant-travel/catalog/booking-engine`. The engine service functions still accept
 the lower-level `QuoteEntityRequest` / `BookEntityRequest` shapes internally,
 but the shared route module and React hooks speak the V1 HTTP contract:
 
@@ -738,33 +738,33 @@ section as the current execution map.
 **Done enough to build on:**
 
 - `OwnedBookingHandler` and `OwnedBookingHandlerRegistry` are exported from
-  `@voyantjs/catalog/booking-engine`.
+  `@voyant-travel/catalog/booking-engine`.
 - `createCatalogBookingRoutes()` and `createCatalogBookingHonoModule()` are
-  exported from `@voyantjs/catalog/booking-engine`; the operator template uses
+  exported from `@voyant-travel/catalog/booking-engine`; the operator starter uses
   the shared route factory for the reusable quote/draft/hold/book family.
 - `BookingDraftV1`, `BookingDraftShapeV1`, `QuoteResponseV1`,
   `BookResponseV1`, and `PricingBreakdownV1` are exported as Zod contracts.
-- `@voyantjs/catalog-react/booking-engine` ships `useBookingDraft`,
+- `@voyant-travel/catalog-react/booking-engine` ships `useBookingDraft`,
   `useBookingQuote`, `useBookingDraftShape`, `useBookingCommit`, and
   `useBookingHold`.
-- `@voyantjs/bookings-react/journey` ships `<BookingJourney />`, the step header,
+- `@voyant-travel/bookings-react/journey` ships `<BookingJourney />`, the step header,
   side panel, and Configure/Billing/Travelers/Accommodation/Add-ons/Payment/
   Review steps.
 - Products, accommodations, and cruises all have owned handlers and descriptor
   builders. Products has real `availability_holds`; accommodations and cruises
   need deeper inventory-lock integration.
-- The operator template wires admin and storefront journey wrappers:
-  `templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx`
-  and `templates/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`.
+- The operator starter wires admin and storefront journey wrappers:
+  `starters/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx`
+  and `starters/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`.
 - Storefront checkout handoff exists at
-  `POST /v1/public/catalog/finance/checkout/start`, but it is still template-owned.
+  `POST /v1/public/catalog/finance/checkout/start`, but it is still starter-owned.
 
 **Next execution slice 1 — make the single-line journey production-hard:**
 
 - Add focused tests for the shared route module, hooks, and journey shell around
   draft-first booking, idempotency, quote expiry, public/admin path selection,
   and hold place/release.
-- Replace remaining route-body parsing in template-owned catalog order and
+- Replace remaining route-body parsing in starter-owned catalog order and
   checkout routes with shared `parseJsonBody(...)` / schema validation where
   the route remains local.
 - Verify and document which journey entry points are canonical versus legacy
@@ -784,7 +784,7 @@ section as the current execution map.
 **Next execution slice 3 — extract checkout start for composer reuse:**
 
 - Move reusable parts of `POST /v1/public/catalog/finance/checkout/start` out of the
-  operator template into framework-owned checkout/catalog services.
+  operator starter into framework-owned checkout/catalog services.
 - Keep deployment-specific payment provider configuration, contract template
   choice, CRM Quote creation, and bank-transfer details in templates.
 - Expose a callable service the future composer can use without importing
@@ -801,7 +801,7 @@ section as the current execution map.
 
 ## 11. Non-goals (v1)
 
-- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [trip-composer](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
+- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [trips](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
 - **Customer group bookings** beyond shared-room (corporate event, school trip). This is not the same as an operated group departure product. An operated group departure can still be one journey line when the product/departure owns capacity, allocations, included services, and dependent Extras.
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
 - **Partial cancellations** (cancel only some travelers from a booking).
@@ -839,7 +839,7 @@ vertical hardening or composer work.
 - [`channel-push-architecture.md`](./channel-push-architecture.md) — outbound supplier integration. The journey's commit triggers the booking-push subscriber where configured.
 - [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — the flights vertical's specialized booking flow. The wizard described here borrows shape but does not replace it; flights stays special-case.
 - [`payments-architecture.md`](./payments-architecture.md) — payment intent + schedule. The Payment step calls into the same primitives.
-- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed trip-composer module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
+- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed trips module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
 
 ### Patterns from systems we've shipped
 

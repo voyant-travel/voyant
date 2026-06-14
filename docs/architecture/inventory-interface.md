@@ -39,25 +39,25 @@ Related:
 The target package entrypoints are:
 
 ```txt
-@voyantjs/inventory
-@voyantjs/inventory/schema
-@voyantjs/inventory/validation
-@voyantjs/inventory/routes
-@voyantjs/inventory/content-shape
-@voyantjs/inventory/draft-shape
-@voyantjs/inventory/public-routes
-@voyantjs/inventory/public-validation
-@voyantjs/inventory/catalog-policy
-@voyantjs/inventory/service-catalog-plane
-@voyantjs/inventory/booking-engine
+@voyant-travel/inventory
+@voyant-travel/inventory/schema
+@voyant-travel/inventory/validation
+@voyant-travel/inventory/routes
+@voyant-travel/inventory/content-shape
+@voyant-travel/inventory/draft-shape
+@voyant-travel/inventory/public-routes
+@voyant-travel/inventory/public-validation
+@voyant-travel/inventory/catalog-policy
+@voyant-travel/inventory/service-catalog-plane
+@voyant-travel/inventory/booking-engine
 
-@voyantjs/inventory-react
-@voyantjs/inventory-react/admin
-@voyantjs/inventory-react/components/*
-@voyantjs/inventory-react/components/product-detail
-@voyantjs/inventory-react/hooks
-@voyantjs/inventory-react/i18n
-@voyantjs/inventory-react/styles.css
+@voyant-travel/inventory-react
+@voyant-travel/inventory-react/admin
+@voyant-travel/inventory-react/components/*
+@voyant-travel/inventory-react/components/product-detail
+@voyant-travel/inventory-react/hooks
+@voyant-travel/inventory-react/i18n
+@voyant-travel/inventory-react/styles.css
 ```
 
 The main Product authoring/runtime implementation now lives under these
@@ -68,13 +68,13 @@ package names are not part of the v1 workspace package surface.
 Product graph compose/duplicate authoring now uses an Inventory owner path:
 
 ```txt
-@voyantjs/inventory/authoring
-@voyantjs/inventory/authoring/schema
-@voyantjs/inventory/authoring/spec
-@voyantjs/inventory/authoring/extension
+@voyant-travel/inventory/authoring
+@voyant-travel/inventory/authoring/schema
+@voyant-travel/inventory/authoring/spec
+@voyant-travel/inventory/authoring/extension
 ```
 
-`@voyantjs/catalog-authoring` should remain catalog-owned only if it owns real
+`@voyant-travel/catalog-authoring` should remain catalog-owned only if it owns real
 overlay/source-governance behavior. Operated Product and Product Version
 authoring belongs under Inventory owner paths.
 
@@ -108,12 +108,12 @@ discipline:
 
 - Use plain id columns for references to Catalog, Bookings, Finance,
   Relationships, Distribution, Operations, or vertical/source modules.
-- Export linkable definitions for template-owned associations.
+- Export linkable definitions for starter-owned associations.
 - Define cross-module link tables at the template layer with `defineLink(...)`.
 
 The current Inventory move does not introduce new tables or migrations. Product
-schema source has moved to `packages/inventory/src`, and the operator template
-names `@voyantjs/inventory` in `voyant.config.ts` so generated schema manifests
+schema source has moved to `packages/inventory/src`, and the operator starter
+names `@voyant-travel/inventory` in `voyant.config.ts` so generated schema manifests
 point at the owner package directly.
 
 ## 5. Extras Boundary
@@ -123,7 +123,7 @@ extra selections and manifests follow Bookings:
 
 - Booking add-on snapshot/provenance behavior stays with Bookings and Catalog's
   snapshot/provenance contracts.
-- Inventory may reference extra ids as plain ids or template-owned links when
+- Inventory may reference extra ids as plain ids or starter-owned links when
   preparing product-internal add-on authoring.
 - Do not introduce a hard Inventory-to-Bookings FK or make Catalog depend on
   Inventory to configure extras.

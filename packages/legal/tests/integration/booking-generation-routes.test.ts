@@ -1,4 +1,4 @@
-import { bookings } from "@voyantjs/bookings/schema"
+import { bookings } from "@voyant-travel/bookings/schema"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -26,7 +26,7 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
   let generatedNames: string[]
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -59,7 +59,7 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
     generatedNames = []
   })

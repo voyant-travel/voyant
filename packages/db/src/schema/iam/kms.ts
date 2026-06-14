@@ -1,8 +1,8 @@
 import { z } from "zod"
 
-// `kmsEnvelopeSchema` now lives in @voyantjs/schema-kit (pure). Re-exported here
-// to keep the @voyantjs/db/schema/iam/kms import path stable.
-export { type KmsEnvelope, kmsEnvelopeSchema } from "@voyantjs/schema-kit/kms"
+// `kmsEnvelopeSchema` now lives in @voyant-travel/schema-kit (pure). Re-exported here
+// to keep the @voyant-travel/db/schema/iam/kms import path stable.
+export { type KmsEnvelope, kmsEnvelopeSchema } from "@voyant-travel/schema-kit/kms"
 
 /**
  * Travel document types (plaintext structure before encryption)

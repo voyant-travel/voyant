@@ -1,5 +1,5 @@
-import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
-import { validateStructuredTemplateSyntax } from "@voyantjs/templating"
+import { booleanQueryParam } from "@voyant-travel/schema-kit/query-params"
+import { validateStructuredTemplateSyntax } from "@voyant-travel/templating"
 import { z } from "zod"
 import {
   legalTargetListQueryFieldsSchema,

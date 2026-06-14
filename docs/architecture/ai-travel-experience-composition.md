@@ -16,27 +16,27 @@ composition module that turns customer intent into a priced, holdable,
 checkout-ready itinerary. AI agents, staff quote builders, storefront wizards,
 and partner APIs can all call that same module.
 
-Implementation status: `@voyantjs/trip-composer` now exists as the
+Implementation status: `@voyant-travel/trips` now exists as the
 deterministic composition package. It has durable Trip Envelope / Trip
 Component schema, Zod contracts, trip operations, catalog-backed component
 adaptation, aggregate price/tax snapshots, reserve and checkout handoff
 workflows, component-level cancellation preview/cancel operations, Cruise
 Extension placement helpers, admin/public Hono routes, and AI-safe MCP tools.
-`@voyantjs/trip-composer-react` exposes the corresponding client operations,
+`@voyant-travel/trips-react` exposes the corresponding client operations,
 query keys/options, provider, and hooks. The remaining work is integration
 hardening: deeper vertical holds, generic checkout extraction beyond the
-operator template, public-safe flight booking surfaces, and production admin UI
+operator starter, public-safe flight booking surfaces, and production admin UI
 for support workflows.
 
 Execution plan: use
-[`trip-composer-implementation-plan.md`](./trip-composer-implementation-plan.md)
+[`trips-implementation-plan.md`](./trips-implementation-plan.md)
 for the feature-branch and PR-by-PR rollout.
 
 Current code alignment, May 2026:
 
 - The single-line booking journey foundation has shipped: V1 contracts,
   `catalog_quotes`, `booking_drafts`, quote/book/draft/hold routes,
-  React hooks, and `@voyantjs/bookings-react/journey`.
+  React hooks, and `@voyant-travel/bookings-react/journey`.
 - The composer is catalog-first. It selects Catalog Items, not Product tables,
   hotels, or other vertical-owned tables directly. `sourceKind: "owned"` is
   one catalog provenance/fulfillment path: the booking engine calls an internal
@@ -51,7 +51,7 @@ Current code alignment, May 2026:
   commitments under one customer-facing Trip Envelope, but live flight booking
   is still held behind public-safe flight search/price/reserve/order-status
   surfaces.
-- `POST /v1/public/catalog/checkout/start` is working template-owned storefront
+- `POST /v1/public/catalog/checkout/start` is working starter-owned storefront
   glue, and the operator composer adapter can call the extracted
   `startCatalogCheckout(...)` function. A generic composer should still depend
   on framework-owned catalog and finance checkout services before non-operator
@@ -61,46 +61,46 @@ Current code alignment, May 2026:
 
 Voyant already has many of the required primitives:
 
-- **Trip Composer** in `@voyantjs/trip-composer` for Trip Envelopes, Trip
+- **Trips** in `@voyant-travel/trips` for Trip Envelopes, Trip
   Components, deterministic create/revise/price/reserve/checkout/cancellation
   operations, Cruise Extension representation, Hono route mounting, and MCP
   tools. It groups multiple component bookings/orders into one customer-facing
   trip without collapsing component-level taxes, cancellation rules, supplier
   references, or support state.
-- **Trip Composer React** in `@voyantjs/trip-composer-react` for admin and
+- **Trips React** in `@voyant-travel/trips-react` for admin and
   public client operations, validation-aware fetches, cache writers, query
   options, and hooks.
 - **Catalog plane** for normalized discovery across operated and sourced
   inventory, with resolved views, provenance, overlays, search, and booking
   snapshots.
-- **Catalog booking engine** in `@voyantjs/catalog/booking-engine` for
+- **Catalog booking engine** in `@voyant-travel/catalog/booking-engine` for
   per-line `quoteEntity`, `bookEntity`, `cancelEntity`, `catalog_quotes`,
   `booking_drafts`, `BookingDraftShape`, source-adapter dispatch,
   optional owned-handler dispatch, and snapshot capture.
 - **Pre-booking holds** through `booking_drafts` plus `availability_holds` for
-  owned product slots. The operator template ships a scheduled draft reaper
+  owned product slots. The operator starter ships a scheduled draft reaper
   that releases expired holds and deletes abandoned drafts.
-- **Catalog semantic search** in `@voyantjs/catalog` for embedding providers,
+- **Catalog semantic search** in `@voyant-travel/catalog` for embedding providers,
   semantic/hybrid search orchestration, model-version helpers, and
   cross-audience federated search.
 - **Catalog HTTP APIs** for AI-safe catalog access. Agent runtimes define local
   tool wrappers over `/v1/admin/catalog/search`, `/v1/public/catalog/search`,
   and drill-down APIs instead of depending on a first-party catalog MCP package.
-- **Flights vertical** in `@voyantjs/flights` for live-API flight contracts,
+- **Flights vertical** in `@voyant-travel/flights` for live-API flight contracts,
   multi-connection fan-out, itinerary fingerprinting, booking snapshots, and
   reference-data provider contracts. Public/admin route mounting remains a
   template concern.
-- **Ground transport** in `@voyantjs/operations/ground` for operators,
+- **Ground transport** in `@voyant-travel/operations/ground` for operators,
   vehicles, drivers, dispatch, execution, assignments, positions, shifts, and
   related operational records.
 - **Booking Sessions** for public booking-session flows and scoped checkout
   capabilities, including storefront bootstrap paths.
-- **Finance checkout** in `@voyantjs/finance` for collection plans,
+- **Finance checkout** in `@voyant-travel/finance` for collection plans,
   bank-transfer/card initiation, and booking-session-backed collection
   bootstrap.
 - **Operator storefront checkout wiring** for `POST
   /v1/public/catalog/checkout/start`, including card, bank transfer, inquiry,
-  and hold intents. This is currently template-owned glue, not a reusable
+  and hold intents. This is currently starter-owned glue, not a reusable
   composer API.
 - **Workflows** for durable orchestration, retries, compensation, and the
   booking-engine checkout-finalize flow.
@@ -142,12 +142,12 @@ should call deterministic tools backed by Voyant modules.
 
 Package name:
 
-`@voyantjs/trip-composer`
+`@voyant-travel/trips`
 
 Alternative names:
 
-- `@voyantjs/itinerary-composer`
-- `@voyantjs/travel-experiences`
+- `@voyant-travel/itinerary-composer`
+- `@voyant-travel/travel-experiences`
 
 Recommendation: use a domain name, not an AI name. The module's job is
 composition. AI is one caller.
@@ -470,7 +470,7 @@ intent, using the existing collection primitives:
 The reusable code surface is `previewCheckoutCollection`,
 `initiateCheckoutCollection`, and `bootstrapCheckoutCollection`; the current
 customer-facing catalog handoff is
-`POST /v1/public/catalog/checkout/start` in the operator template. Before a
+`POST /v1/public/catalog/checkout/start` in the operator starter. Before a
 generic composer ships, extract the reusable parts of that route into
 framework-owned catalog and finance checkout services. The composer should not mint
 arbitrary payment amounts in a public flow.
@@ -716,16 +716,16 @@ High-level buy flow:
 3. **Public vs admin AI tools.** Customer agents need strict customer-audience
    access. Staff agents may federate across audience pools and see operational
    fields.
-4. **Flights in public surface.** The `@voyantjs/flights` package now provides
+4. **Flights in public surface.** The `@voyant-travel/flights` package now provides
    contracts, fan-out, snapshots, and reference-data providers, but AI
    storefront use still needs public-safe route mounting for search, price,
-   reserve, and order-status surfaces. The operator template has flight UI/API
+   reserve, and order-status surfaces. The operator starter has flight UI/API
    wiring, but the composer should not assume a customer-safe flight route
    family exists yet.
 5. **Manual placeholders.** Real operators often need "we will confirm this
    hotel manually." The composer should support placeholders without pretending
    they are live inventory.
-6. **Ground transport boundary.** `@voyantjs/operations/ground` is operational
+6. **Ground transport boundary.** `@voyant-travel/operations/ground` is operational
    execution state. The composer still needs a sellable transfer/search surface
    before it can treat ground services like normal Trip Components.
 7. **Hold-release primitive for sourced drafts.** The draft reaper can release
@@ -742,12 +742,12 @@ High-level buy flow:
    dependent upsells. The composer interface can hide this, but checkout,
    documents, cancellation, and support UI need a consistent target.
 9. **Template-owned checkout extraction.** `POST
-    /v1/public/catalog/checkout/start` exists in the operator template. The
+    /v1/public/catalog/checkout/start` exists in the operator starter. The
     current operator adapter can call the extracted `startCatalogCheckout(...)`
     service from that template, which is enough for the integration branch.
     Before shipping the composer as a generic package, move the reusable
     checkout-start pieces into framework-owned catalog and finance checkout
-    services so non-operator templates do not depend on operator-local code.
+    services so non-operator starters do not depend on operator-local code.
 
 ## 12. MVP slices
 
@@ -776,8 +776,8 @@ that component's supplier lifecycle.
 ### Slice 1: extract checkout-start behavior
 
 - Extract reusable checkout-start orchestration from
-  `templates/operator/src/api/catalog-checkout.ts` into a callable service.
-  The integration branch may keep the callable service in the operator template
+  `starters/operator/src/api/catalog-checkout.ts` into a callable service.
+  The integration branch may keep the callable service in the operator starter
   while the adapter wiring is proven; the hardening slice should move the
   generic parts into framework-owned catalog/checkout services.
 - Preserve template ownership of Netopia config, bank details, contract template
@@ -787,7 +787,7 @@ that component's supplier lifecycle.
 
 ### Slice 2: introduce Trip Envelopes
 
-- Add `@voyantjs/trip-composer` with Trip Envelope, Trip Day, and Trip
+- Add `@voyant-travel/trips` with Trip Envelope, Trip Day, and Trip
   Component contracts.
 - Support create/read/revise operations against structured intent and
   constraints.

@@ -1,4 +1,4 @@
-import { parseJsonBody, RequestValidationError, requireUserId } from "@voyantjs/hono"
+import { parseJsonBody, RequestValidationError, requireUserId } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { appendProductMutationLedgerEntry, changedMutationFields } from "./action-ledger.js"
 import { emitProductContentChanged } from "./events.js"

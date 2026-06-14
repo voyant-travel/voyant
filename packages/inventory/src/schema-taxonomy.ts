@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   boolean,
   doublePrecision,
@@ -52,7 +52,7 @@ export const productCategories = pgTable(
      * Customer-facing payment policy override. When set, bookings
      * for products in this category inherit these terms (unless
      * the listing or booking sets its own override). Shape mirrors
-     * `PaymentPolicy` from `@voyantjs/finance`.
+     * `PaymentPolicy` from `@voyant-travel/finance`.
      *
      * `null` means "inherit from supplier / operator default".
      *

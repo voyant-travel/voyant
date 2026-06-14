@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   boolean,
   date,
@@ -110,7 +110,7 @@ export const cruises = pgTable(
      * Cruise-level customer payment policy override. Lowest precedence
      * inside the cruise vertical — overridden by per-sailing or per-
      * cabin-category policies. Shape mirrors `PaymentPolicy` from
-     * `@voyantjs/finance`.
+     * `@voyant-travel/finance`.
      */
     customerPaymentPolicy: jsonb("customer_payment_policy"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

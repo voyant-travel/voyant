@@ -1,6 +1,6 @@
-import { createEventBus } from "@voyantjs/core"
-import { newId } from "@voyantjs/db/lib/typeid"
-import { handleApiError } from "@voyantjs/hono"
+import { createEventBus } from "@voyant-travel/core"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 

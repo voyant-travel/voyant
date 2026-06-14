@@ -2,7 +2,7 @@
 
 Status: RFC / proposal — tracked in voyant#1643; motivated by voyant#1641
 (incident & delivery-model analysis)
-Audience: anyone who has shipped a fix to `templates/operator` and realized
+Audience: anyone who has shipped a fix to `starters/operator` and realized
 existing deployments will never receive it; anyone scaffolding a new client
 project and wondering which of the ~40k copied lines they actually own.
 
@@ -19,20 +19,20 @@ Rule 2 — see §7), [`frontend-package-strategy.md`](../frontend-package-strate
 Voyant has **two delivery models** for the same product:
 
 - **Backend:** config-driven. `createApp({ modules, extensions, plugins })`
-  plus the `voyant.config.ts` manifest. A fix in `@voyantjs/hono` or any module
+  plus the `voyant.config.ts` manifest. A fix in `@voyant-travel/hono` or any module
   reaches every deployment as a version bump.
 - **Admin frontend + worker infrastructure:** fork-and-own. Every project
-  starts as a copy of `templates/operator` and immediately diverges. A fix in
+  starts as a copy of `starters/operator` and immediately diverges. A fix in
   the template reaches **zero** existing deployments.
 
 voyant#1641 documents what that costs: the #1636 outage ("admin never loads")
 was fixed by #1638, whose package half shipped automatically and whose template
 half (`entry.ts` / `hono-api-dispatch.ts`) had to be hand-ported into every
 diverged project. Same fix, two delivery models, and the load-bearing half was
-the manual one. The same pattern recurs with every template-level improvement
+the manual one. The same pattern recurs with every starter-level improvement
 (#1631/#1637 cold-start chunking, #1642 SSR preloads).
 
-The fork surface today, measured on `templates/operator`:
+The fork surface today, measured on `starters/operator`:
 
 | Surface | Size | Delivery today |
 | --- | --- | --- |
@@ -43,9 +43,9 @@ The fork surface today, measured on `templates/operator`:
 | Backend wiring (`createApp` + manifest) | config | ✅ version bump |
 
 **Proposal: invert ownership of the admin.** The admin becomes a versioned
-application delivered by `@voyantjs/admin` (`createAdminApp(...)`). Domain
+application delivered by `@voyant-travel/admin` (`createAdminApp(...)`). Domain
 packages contribute their pages, navigation, and widgets through the
-`AdminExtension` seam that already exists and that `templates/operator`
+`AdminExtension` seam that already exists and that `starters/operator`
 already uses for promotions, trips, and the action ledger. The worker dispatch
 and build preset become packages. A project shrinks to:
 
@@ -63,16 +63,16 @@ and upgrading the admin is a dependency bump. The invariant we are adopting:
 Consequences we are accepting up front:
 
 - `templates/dmc` and `apps/dev` are **deleted**. They are stale forks of the
-  same surface (we only use `templates/operator`), and they are the first
+  same surface (we only use `starters/operator`), and they are the first
   victims of the model this RFC removes.
 - **Fork-and-own is retired entirely — including the source-installed
   (registry) UI strategy.** There are exactly two ways to consume Voyant:
-  build on it (manifest + extension points + imported `@voyantjs/ui` /
+  build on it (manifest + extension points + imported `@voyant-travel/ui` /
   `*-ui` packages) or fork the repository and own everything. No partial
   forks via copied files or registry-installed component source. `*-ui`
   packages become ordinary versioned dependencies; the shadcn-style registry
   (`apps/registry`, per-package `registry/` dirs) is removed.
-- `admin-architecture.md` Rule 2 ("keep the final admin shell template-owned")
+- `admin-architecture.md` Rule 2 ("keep the final admin shell starter-owned")
   is **superseded**, and so are Rules 8–9 (the source-installed UI block
   layer): the shell becomes framework-owned; projects own composition via
   config and extensions, not via copied shell or component code.
@@ -91,7 +91,7 @@ half of it:
 
 | Change (from #1638) | Lives in | Downstream delivery |
 | --- | --- | --- |
-| CORS preflight fix | `@voyantjs/hono` | ✅ version bump |
+| CORS preflight fix | `@voyant-travel/hono` | ✅ version bump |
 | Lean `/api/auth/*` dispatch | template `entry.ts` / `hono-api-dispatch.ts` | ❌ hand-port |
 
 A missed hand-port is invisible until it breaks, and template code is exactly
@@ -143,22 +143,22 @@ demonstrates the failure mode before any client does.
 
 ## 3. Current state: most of the machinery already exists
 
-What we have (and is already exercised in `templates/operator`):
+What we have (and is already exercised in `starters/operator`):
 
-- **`@voyantjs/admin`** — shell primitives, providers (query/theme/locale/i18n),
+- **`@voyant-travel/admin`** — shell primitives, providers (query/theme/locale/i18n),
   navigation resolution, dashboard page, and the extension system:
   `AdminExtension`, `defineAdminExtension()`, `createAdminExtensionRegistry()`,
   `resolveAdminNavigation()`, `resolveAdminWidgets()`, `AdminWidgetSlot`.
-- **Live extension usage** — `templates/operator/src/lib/admin-extensions.tsx`
-  registers three extensions (promotions, trip-composer, action-ledger).
+- **Live extension usage** — `starters/operator/src/lib/admin-extensions.tsx`
+  registers three extensions (promotions, trips, action-ledger).
   Today they contribute **navigation only** (the route components behind
-  those nav entries are still template-local route files), and 7 widget
+  those nav entries are still starter-local route files), and 7 widget
   slots are exposed (`dashboard.header`, `dashboard.after-kpis`,
   `dashboard.footer`, `booking.details.header`,
   `booking.details.after-summary`, `invoice.details.header`,
   `invoice.details.after-summary`) with renderers in the booking and
   invoice detail pages.
-- **42 `@voyantjs/*-react` / `*-ui` packages** already imported by the
+- **42 `@voyant-travel/*-react` / `*-ui` packages** already imported by the
   operator — the domain UI largely lives in packages; the template wraps it
   in locally-owned pages.
 - **`voyant.config.ts`** — manifest with `admin: { enabled, path }`, the
@@ -171,9 +171,9 @@ What is missing — the actual gap this RFC closes:
 - **Nobody owns the route tree but the template.** `AdminUiRouteContribution`
   is metadata-only by design (`{ id, path, title }` —
   `packages/admin/src/extensions.ts`); the 103 route files and the TanStack
-  Router tree are template-local. A package cannot ship a page.
+  Router tree are starter-local. A package cannot ship a page.
 - **No `*-ui` package exposes an admin entrypoint.** There is no
-  `@voyantjs/<domain>-ui/admin` export anywhere today; §4.2's extension
+  `@voyant-travel/<domain>-ui/admin` export anywhere today; §4.2's extension
   exports are new surface that each domain package must grow.
 - **Nothing ties the manifest to the admin.** Mounting a module in
   `voyant.config.ts` does not produce (or verify) its admin pages/nav — the
@@ -189,17 +189,17 @@ What is missing — the actual gap this RFC closes:
 
 ### 4.1 `createAdminApp` — the admin as a package-owned application
 
-`@voyantjs/admin` owns the packaged staff shell through app-oriented subpaths
-(`@voyantjs/admin/app/*`). During the package-boundary migration,
-`@voyantjs/admin-app` re-exports those shell helpers for compatibility and owns
+`@voyant-travel/admin` owns the packaged staff shell through app-oriented subpaths
+(`@voyant-travel/admin/app/*`). During the package-boundary migration,
+`@voyant-travel/admin-app` re-exports those shell helpers for compatibility and owns
 the domain-backed core extension bundle; that bundle imports first-party domain
 React packages that depend back on the admin extension surface, so it must not
-sit in `@voyantjs/admin`.
+sit in `@voyant-travel/admin`.
 A future factory can still consolidate the host wiring:
 
 ```ts
 // src/admin/index.ts in a project — illustrative, not final API
-import { createAdminApp } from "@voyantjs/admin/app";
+import { createAdminApp } from "@voyant-travel/admin/app";
 // generated from voyant.config.ts — see "manifest-driven composition" below
 import { adminExtensions } from "./admin.extensions.generated";
 import { customExtensions } from "./extensions";
@@ -214,7 +214,7 @@ export const admin = createAdminApp({
 ```
 
 The factory owns: the route tree, the auth flows (sign-in/up, reset, invites,
-onboarding — today ~8 copied route files backed by `@voyantjs/auth-react/ui`), the
+onboarding — today ~8 copied route files backed by `@voyant-travel/auth-react/ui`), the
 provider stack, the nav shell, error/loading boundaries, and the dashboard.
 All of it versioned, none of it copied.
 
@@ -224,7 +224,7 @@ the admin) that the migration-resilience RFC eliminates for schemas. We apply
 its exact mechanism here:
 
 - Each domain package declares its admin entry — convention
-  `@voyantjs/<domain>-ui/admin` (a new export none of the `*-ui` packages
+  `@voyant-travel/<domain>-ui/admin` (a new export none of the `*-ui` packages
   has today), discoverable via a `package.json#voyant.adminEntry` field for
   non-conventional cases.
 - The CLI generates a committed `admin.extensions.generated.ts` from
@@ -243,13 +243,13 @@ its exact mechanism here:
 
 `AdminExtension` grows from route *metadata* (`{ id, path, title }` today) to
 route *implementations*. A bare `{ path, component }` pair is not enough to
-replace the 103 template route files — those files currently carry loaders,
+replace the 103 starter route files — those files currently carry loaders,
 search-param validation, SSR decisions, and boundaries. The contribution
 contract has to carry everything a route file can express today, or Phase 2
 stalls on the first non-trivial page:
 
 ```ts
-// inside @voyantjs/bookings-react — illustrative shape, not final API
+// inside @voyant-travel/bookings-react — illustrative shape, not final API
 export const bookingsAdmin = defineAdminExtension({
   id: "bookings",
   navigation: [{ to: "/bookings", label: "Bookings", icon: CalendarCheck, order: 20 }],
@@ -298,7 +298,7 @@ package knows the active route set because it built the tree.
 - *Zero-prop components only — since dissolved.* The original
   `AdminUiRouteContribution.component` attached cleanly only when the host
   was a zero-prop component, so param-taking detail hosts stayed bound by
-  thin template route files. The §4.8 endgame replaced that contract with
+  thin starter route files. The §4.8 endgame replaced that contract with
   lazy `page` modules receiving `AdminRoutePageProps`
   (`params`/`search`/`updateSearch`/`title`), so param-taking pages bind
   without any host route file.
@@ -320,7 +320,7 @@ becomes a documented, versioned contract of the admin package.
 
 Directly per voyant#1641's suggested directions:
 
-- **`@voyantjs/worker-runtime`** (or an export of `@voyantjs/hono`):
+- **`@voyant-travel/worker-runtime`** (or an export of `@voyant-travel/hono`):
   `createWorkerFetch({ ssrHandler, authApp, apiApp })` — the current
   `hono-api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
   API/auth/SSR dispatch and the SSR-manifest-restriction logic (#1642).
@@ -333,7 +333,7 @@ Directly per voyant#1641's suggested directions:
   `defineWorkerRuntime({ fetch, scheduled, durableObjects })` that also
   standardizes cron registration and workflow-DO wiring is a candidate
   follow-up, tracked as an open question (§8), not a Phase 0 deliverable.
-- **`@voyantjs/vite-config`**: `voyantAdminPreset()` carrying the manual-chunk
+- **`@voyant-travel/vite-config`**: `voyantAdminPreset()` carrying the manual-chunk
   / cold-start tuning and SSR preload configuration. A project's
   `vite.config.ts` becomes preset + project-specific additions.
 
@@ -355,7 +355,7 @@ In order of preference, all typed and all upgrade-safe:
    This is the escape hatch: explicit, named, visible in one place, and
    greppable when upgrading — the opposite of silent file divergence. An
    override is built the same way framework pages are built: by composing the
-   exported components, hooks, and primitives of `@voyantjs/ui` and the
+   exported components, hooks, and primitives of `@voyant-travel/ui` and the
    domain `*-react` / `*-ui` packages — not by copying their source. If the
    exported surface is not rich enough to build a needed override, that is a
    gap in the package's public API and gets fixed there, where the fix
@@ -395,16 +395,16 @@ The fix makes navigation an injected capability, the way data fetching
 already is. Packages express navigation as **semantic destination keys**;
 the host resolves keys to hrefs exactly once:
 
-- `@voyantjs/admin` ships an empty `AdminDestinations` interface plus
+- `@voyant-travel/admin` ships an empty `AdminDestinations` interface plus
   `AdminNavigationProvider`, `useAdminHref`, and `useAdminNavigate`. The
   hooks never throw in render paths: an unresolvable key warns once and
   degrades to `"#"` (href) or a no-op (navigate).
 - A domain package declares the destinations its pages need via declaration
-  merging — `declare module "@voyantjs/admin"` adding e.g.
+  merging — `declare module "@voyant-travel/admin"` adding e.g.
   `"supplier.detail": { supplierId: string }`. Naming convention:
   `<entity>.<action>` (`"product.detail"`, `"bookingJourney.start"`).
 - The host registers one resolver map and hands it to the workspace shell
-  (`AdminWorkspaceShell destinations={...}` in `@voyantjs/admin/app/workspace`), which
+  (`AdminWorkspaceShell destinations={...}` in `@voyant-travel/admin/app/workspace`), which
   injects router navigation behind the provider. `satisfies
   AdminDestinationResolvers` makes the map exhaustive: mounting a package
   that declares a new destination fails the host's typecheck until the key
@@ -479,7 +479,7 @@ are dynamically imported *inside* the loader so they cannot pin the page
 chunk into the host's entry graph; loader + page resolve the same chunk,
 fetched once.
 
-**The host side.** `@voyantjs/admin/app` exports the binder:
+**The host side.** `@voyant-travel/admin/app` exports the binder:
 
 - `adminExtensionRouteOptions(extension, routeId, runtime)` resolves a
   contribution (via `requireImplementedAdminRoute`, which fails at module
@@ -547,10 +547,10 @@ journey redirect formerly embedded in the bookings detail route file).
 
 ## 5. What we delete
 
-- **`templates/dmc`** — superseded fork; we only use `templates/operator`.
+- **`templates/dmc`** — superseded fork; we only use `starters/operator`.
 - **`apps/dev`** — near-duplicate of dmc with extra diverged routes. Its role
   (UI playground against a real DB) is taken over by the thinned
-  `templates/operator`, which becomes both the reference host and the proving
+  `starters/operator`, which becomes both the reference host and the proving
   ground: if the operator's local pages can't be expressed through the
   extension surface, neither can a client's.
 - **The shadcn-style registry** — `apps/registry` (the registry host worker),
@@ -559,7 +559,7 @@ journey redirect formerly embedded in the bookings detail route file).
   versioned dependencies with a public component/export surface. Projects
   that want source-level ownership fork the repository.
 
-`templates/operator` survives as the reference host and the `voyant new`
+`starters/operator` survives as the reference host and the `voyant new`
 scaffold source — but its `src/` shrinks from ~40k LOC toward the §4.6 shape.
 
 ---
@@ -578,7 +578,7 @@ code path. No admin UI changes.
 
 The factory renders the shell + auth flows + nav from the extension registry;
 operator deletes its copied providers/nav/auth route files and mounts the
-factory. Domain routes remain template-local behind a transitional
+factory. Domain routes remain starter-local behind a transitional
 `localRoutes` option — the tree is assembled by the package either way.
 
 ### Phase 2 — packages ship pages; pilot one domain
@@ -586,7 +586,7 @@ factory. Domain routes remain template-local behind a transitional
 Extend `AdminExtension` routes to carry the full §4.2 contract; pilot with a
 domain whose UI already lives in packages (catalog or promotions —
 promotions is already extension-shaped). This phase also introduces the
-`@voyantjs/<domain>-ui/admin` entrypoint convention, the
+`@voyant-travel/<domain>-ui/admin` entrypoint convention, the
 `admin.extensions.generated.ts` generator, and the manifest↔extension↔route
 parity check in report-only mode. Validate: code-based route tree, loaders +
 search validation + boundaries through the contract, SSR preloads, typed
@@ -594,7 +594,7 @@ navigation, i18n bundle merging.
 
 ### Phase 3 — migrate all domains; delete the forks
 
-Move the remaining domain pages from `templates/operator/src/components/voyant`
+Move the remaining domain pages from `starters/operator/src/components/voyant`
 + `src/routes` into their `*-ui` packages' admin extensions, one domain per
 PR. The parity check flips from report-only to a CI gate once the majority
 of domains are migrated. When the operator's local routes are only genuinely
@@ -611,7 +611,7 @@ override catalogs, and revision of `admin-architecture.md` (§7).
 
 ## 7. Revisions to existing guidance
 
-`admin-architecture.md` Rule 2 ("Keep the final admin shell template-owned")
+`admin-architecture.md` Rule 2 ("Keep the final admin shell starter-owned")
 is superseded: the shell is framework-owned; projects own **composition**
 (config + extensions + overrides), not shell code. Rules 8–9 (the
 source-installed UI block layer and the registry strategy) are also
@@ -651,16 +651,16 @@ Decided:
 Open:
 
 1. **Package shape:** resolved for the v1 cleanup direction by moving app-shell
-   exports into `@voyantjs/admin/app/*`; `@voyantjs/admin-app` remains the
+   exports into `@voyant-travel/admin/app/*`; `@voyant-travel/admin-app` remains the
    first-party composition package for the domain-backed core extension plus
    compatibility re-exports. A later full `createAdminApp` factory can build on
    those subpaths without re-splitting the package.
 2. **Typed links across packages:** how much route-path type safety do we
    accept losing in Phase 2 before the generated tree lands?
 3. **Auth route ownership:** the auth flows are framework-owned in §4.1 —
-   confirm `@voyantjs/auth-react/ui` covers all current operator auth routes
+   confirm `@voyant-travel/auth-react/ui` covers all current operator auth routes
    (incl. accept-invite/onboarding) or extend it first.
-4. **Storefront routes:** `templates/operator` also hosts `(storefront)/*`
+4. **Storefront routes:** `starters/operator` also hosts `(storefront)/*`
    pages. Same model eventually (a `createStorefrontApp`), but explicitly out
    of scope for this RFC.
 5. **i18n:** merge strategy for extension-contributed admin locale bundles
@@ -686,7 +686,7 @@ Open:
    fixes land in the `*-ui` package and reach hosts as a version bump.
 2. A new project scaffold contains no framework infrastructure: manifest,
    thin entries, empty `src/admin/extensions/`.
-3. `templates/operator/src/routes` + `src/components` shrink from ~41k LOC to
+3. `starters/operator/src/routes` + `src/components` shrink from ~41k LOC to
    only genuinely custom pages (target: under ~3k LOC). **Met** — the domain
    migrations removed ~18k LOC of operator-local UI across the 10 domains;
    what remains is host wiring and genuinely custom pages.

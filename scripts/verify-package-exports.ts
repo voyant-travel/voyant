@@ -26,7 +26,7 @@ const packageFilters = getPackageFilters(process.argv.slice(2))
 
 const checks: ExportCheck[] = [
   {
-    packageName: "@voyantjs/storage",
+    packageName: "@voyant-travel/storage",
     entry: "packages/storage/dist/index.js",
     requiredExports: [
       "createStorageService",
@@ -39,7 +39,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/finance",
+    packageName: "@voyant-travel/finance",
     entry: "packages/finance/dist/index.js",
     requiredExports: [
       "createFinanceHonoModule",
@@ -74,7 +74,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/finance-react",
+    packageName: "@voyant-travel/finance-react",
     entry: "packages/finance-react/dist/index.js",
     requiredExports: [
       "getPublicBookingDocuments",
@@ -108,7 +108,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/inventory",
+    packageName: "@voyant-travel/inventory",
     entry: "packages/inventory/dist/index.js",
     requiredExports: [
       "publicProductRoutes",
@@ -126,7 +126,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/inventory/tasks",
+    packageName: "@voyant-travel/inventory/tasks",
     entry: "packages/inventory/dist/tasks.js",
     requiredExports: [
       "createBasicPdfProductBrochurePrinter",
@@ -139,7 +139,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/bookings",
+    packageName: "@voyant-travel/bookings",
     entry: "packages/bookings/dist/index.js",
     requiredExports: [
       "publicBookingRoutes",
@@ -161,7 +161,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/bookings-react",
+    packageName: "@voyant-travel/bookings-react",
     entry: "packages/bookings-react/dist/index.js",
     requiredExports: [
       "usePublicBookingSession",
@@ -180,7 +180,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/inventory-react",
+    packageName: "@voyant-travel/inventory-react",
     entry: "packages/inventory-react/dist/index.js",
     requiredExports: [
       "useProductDayMutation",
@@ -199,7 +199,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/storefront",
+    packageName: "@voyant-travel/storefront",
     entry: "packages/storefront/dist/index.js",
     requiredExports: [
       "createStorefrontHonoModule",
@@ -223,7 +223,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/storefront-react",
+    packageName: "@voyant-travel/storefront-react",
     entry: "packages/storefront-react/dist/index.js",
     requiredExports: [
       "getStorefrontSettings",
@@ -253,17 +253,17 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/utils/template-renderer",
+    packageName: "@voyant-travel/utils/template-renderer",
     entry: "packages/utils/dist/template-renderer.js",
     requiredExports: ["renderMustacheTemplate", "renderStringTemplate", "renderStructuredTemplate"],
   },
   {
-    packageName: "@voyantjs/utils/pdf-renderer",
+    packageName: "@voyant-travel/utils/pdf-renderer",
     entry: "packages/utils/dist/pdf-renderer.js",
     requiredExports: ["renderPdfDocument"],
   },
   {
-    packageName: "@voyantjs/notifications",
+    packageName: "@voyant-travel/notifications",
     entry: "packages/notifications/dist/index.js",
     requiredExports: [
       "bookingDocumentBundleItemSchema",
@@ -284,7 +284,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/legal",
+    packageName: "@voyant-travel/legal",
     entry: "packages/legal/dist/index.js",
     requiredExports: [
       "createLegalHonoModule",
@@ -302,8 +302,8 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/storefront-verification",
-    entry: "packages/storefront-verification/dist/index.js",
+    packageName: "@voyant-travel/storefront/verification",
+    entry: "packages/storefront/dist/verification/index.js",
     requiredExports: [
       "createStorefrontVerificationHonoModule",
       "createStorefrontVerificationPublicRoutes",
@@ -315,7 +315,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/plugin-netopia",
+    packageName: "@voyant-travel/plugin-netopia",
     entry: "packages/plugins/netopia/dist/index.js",
     requiredExports: [
       "createNetopiaCheckoutStarter",
@@ -326,7 +326,7 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/plugin-smartbill",
+    packageName: "@voyant-travel/plugin-smartbill",
     entry: "packages/plugins/smartbill/dist/index.js",
     requiredExports: [
       "createSmartbillClient",
@@ -401,8 +401,8 @@ function getCssHelperPackageDirs(): string[] {
       }
 
       if (
-        packageName === "@voyantjs/admin" ||
-        packageName === "@voyantjs/ui" ||
+        packageName === "@voyant-travel/admin" ||
+        packageName === "@voyant-travel/ui" ||
         packageName.endsWith("-ui") ||
         packageName.endsWith("-react")
       ) {

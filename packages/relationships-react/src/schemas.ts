@@ -29,7 +29,7 @@ export const successEnvelope = z.object({ success: z.boolean() })
 
 /**
  * KMS-encrypted envelope shape — `{ enc: base64 }`. Mirrors the
- * `kmsEnvelopeSchema` in `@voyantjs/db/schema/iam/kms` (kept inline
+ * `kmsEnvelopeSchema` in `@voyant-travel/db/schema/iam/kms` (kept inline
  * here so relationships-react has no server-side schema dep).
  */
 export const kmsEnvelopeRecordSchema = z.object({ enc: z.string().min(1) }).nullable()

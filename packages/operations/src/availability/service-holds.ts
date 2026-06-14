@@ -11,7 +11,7 @@
  * over-allocate.
  */
 
-import { newId } from "@voyantjs/db/lib/typeid"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq, isNull, lt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

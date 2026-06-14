@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { DollarSign, ExternalLink, Link2, Search, Webhook } from "lucide-react"
 import { useDistributionUiI18nOrDefault } from "../i18n/index.js"
 import type {

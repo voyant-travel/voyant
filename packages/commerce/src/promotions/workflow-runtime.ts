@@ -4,13 +4,13 @@
  */
 
 /**
- * Service-container key the operator template registers a concrete
+ * Service-container key the operator starter registers a concrete
  * implementation against.
  */
 export const BULK_REINDEX_SERVICE_KEY = "promotions:bulk-reindex-products" as const
 
 /**
- * Contract the operator template implements for the bulk-reindex workflow.
+ * Contract the operator starter implements for the bulk-reindex workflow.
  */
 export interface BulkReindexProductsService {
   listAllProductIds(): Promise<string[]>

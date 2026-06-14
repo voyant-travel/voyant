@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { addressLabelSchema, contactPointKindSchema, namedContactRoleSchema } from "./index.js"
 
-describe("@voyantjs/identity-contracts validation", () => {
+describe("@voyant-travel/identity-contracts validation", () => {
   it("accepts valid identity enum values", () => {
     expect(contactPointKindSchema.parse("email")).toBe("email")
     expect(addressLabelSchema.parse("billing")).toBe("billing")

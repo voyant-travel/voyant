@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { describe, expect, it } from "vitest"
 import type { SourceAdapter } from "../adapter/contract.js"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"

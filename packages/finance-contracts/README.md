@@ -1,14 +1,14 @@
-# @voyantjs/finance-contracts
+# @voyant-travel/finance-contracts
 
 Pure finance validation schemas (invoices, payments, tax, vouchers) and enums,
 zod-only, for consumers (admin SDK, Voyant Connect) that validate finance
-payloads without the finance runtime. `@voyantjs/finance` re-exports these so
+payloads without the finance runtime. `@voyant-travel/finance` re-exports these so
 existing import paths are unchanged.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/finance-contracts zod
+pnpm add @voyant-travel/finance-contracts zod
 ```
 
 ## Usage
@@ -18,8 +18,8 @@ import {
   invoiceStatusSchema,
   insertInvoiceSchema,
   paymentMethodSchema,
-} from "@voyantjs/finance-contracts"
+} from "@voyant-travel/finance-contracts"
 ```
 
-Existing `@voyantjs/finance/validation` and `@voyantjs/finance` imports remain
+Existing `@voyant-travel/finance/validation` and `@voyant-travel/finance` imports remain
 available for applications that already depend on the full runtime package.

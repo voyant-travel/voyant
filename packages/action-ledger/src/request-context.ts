@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { ActionApproval, ActionLedgerEntry, NewActionMutationDetail } from "./schema.js"
 import type {
   AppendActionLedgerEntryInput,

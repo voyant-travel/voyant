@@ -5,7 +5,7 @@ import {
   defaultDraftShapeFlags,
   defaultTravelerFields,
   paxBandsAllowedTotalFrom,
-} from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
+} from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
 import { type BookingsUiMessages, formatMessage } from "../../i18n/index.js"
 import { type Draft, totalPax } from "../lib/draft-state.js"
 import { evaluatePaxBandDependencies } from "../lib/pax-band-dependencies.js"

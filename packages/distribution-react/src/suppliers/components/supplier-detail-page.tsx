@@ -8,8 +8,8 @@ import {
   CardHeader,
   CardTitle,
   Textarea,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"

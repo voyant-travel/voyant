@@ -1,6 +1,6 @@
 "use client"
 
-import { useSlots } from "@voyantjs/operations-react/availability"
+import { useSlots } from "@voyant-travel/operations-react/availability"
 import {
   Combobox,
   ComboboxCollection,
@@ -9,9 +9,9 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/ui/components/combobox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
 import { getBookableDepartureSlots } from "../components/booking-create-utils.js"

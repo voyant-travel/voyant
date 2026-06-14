@@ -17,7 +17,7 @@
  * design.
  */
 
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import type { SourceFreshness } from "./contract.js"

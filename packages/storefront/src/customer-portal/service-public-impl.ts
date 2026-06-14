@@ -8,12 +8,12 @@ import {
   bookingStaffAssignments,
   bookings,
   bookingTravelers,
-} from "@voyantjs/bookings/schema"
-import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
-import { invoiceRenditions, invoices, payments } from "@voyantjs/finance/schema"
-import { identityContactPoints } from "@voyantjs/identity/schema"
-import { identityService } from "@voyantjs/identity/service"
-import { contractAttachments, contracts } from "@voyantjs/legal/schema"
+} from "@voyant-travel/bookings/schema"
+import { authUser, userProfilesTable } from "@voyant-travel/db/schema/iam"
+import { invoiceRenditions, invoices, payments } from "@voyant-travel/finance/schema"
+import { identityContactPoints } from "@voyant-travel/identity/schema"
+import { identityService } from "@voyant-travel/identity/service"
+import { contractAttachments, contracts } from "@voyant-travel/legal/schema"
 import {
   type CreatePersonDocumentInput,
   type PersonDocument,
@@ -22,12 +22,12 @@ import {
   personPiiBlobPlaintextSchema,
   relationshipsService,
   type UpdatePersonDocumentInput,
-} from "@voyantjs/relationships"
+} from "@voyant-travel/relationships"
 import {
   decryptOptionalJsonEnvelope,
   encryptOptionalJsonEnvelope,
   type KmsProvider,
-} from "@voyantjs/utils"
+} from "@voyant-travel/utils"
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

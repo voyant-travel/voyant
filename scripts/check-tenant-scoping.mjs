@@ -3,7 +3,7 @@
  * NOT by in-process middleware. Fails CI if forbidden patterns appear in
  * framework code (`packages/`).
  *
- * Templates and apps may legitimately reference org-scoping concerns
+ * Starters and apps may legitimately reference org-scoping concerns
  * (e.g. for organisation-aware UI within a single-tenant deployment),
  * so they're scoped out.
  *

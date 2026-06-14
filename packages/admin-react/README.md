@@ -1,15 +1,15 @@
-# @voyantjs/admin-react
+# @voyant-travel/admin-react
 
 React Query bindings for the Voyant Admin API SDK. A thin, **generic** adapter
-over [`@voyantjs/admin-client`](../admin-client): the hooks are driven by
-operation descriptors from [`@voyantjs/admin-contracts`](../admin-contracts), so
+over [`@voyant-travel/admin-client`](../admin-client): the hooks are driven by
+operation descriptors from [`@voyant-travel/admin-contracts`](../admin-contracts), so
 they work for any operation — current or future — instead of bespoke
 per-screen hooks.
 
 ## Install
 
 ```sh
-pnpm add @voyantjs/admin-react @voyantjs/admin-client @tanstack/react-query react
+pnpm add @voyant-travel/admin-react @voyant-travel/admin-client @tanstack/react-query react
 ```
 
 `@tanstack/react-query` and `react` are peer dependencies.
@@ -20,7 +20,7 @@ Compose `AdminClientProvider` under a `QueryClientProvider`:
 
 ```tsx
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { AdminClientProvider } from "@voyantjs/admin-react"
+import { AdminClientProvider } from "@voyant-travel/admin-react"
 
 const queryClient = new QueryClient()
 
@@ -41,7 +41,7 @@ Then read and mutate with the descriptor-driven hooks (descriptors are
 re-exported from this package):
 
 ```tsx
-import { bookingsOperations, useAdminMutation, useAdminQuery } from "@voyantjs/admin-react"
+import { bookingsOperations, useAdminMutation, useAdminQuery } from "@voyant-travel/admin-react"
 
 function Bookings() {
   const { data, isLoading } = useAdminQuery(bookingsOperations.list, { input: { status: "on_hold" } })
@@ -54,7 +54,7 @@ function Bookings() {
 Discover what a deployment supports at runtime:
 
 ```tsx
-import { useCapabilities } from "@voyantjs/admin-react"
+import { useCapabilities } from "@voyant-travel/admin-react"
 
 const { data } = useCapabilities() // { contractVersion, modules, operations }
 ```

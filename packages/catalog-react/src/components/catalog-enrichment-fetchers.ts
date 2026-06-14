@@ -1,8 +1,8 @@
 /**
  * Back-compat re-export. The catalog detail enrichment client + its
  * `CatalogDetailEnrichment` view-model moved to the data layer
- * (`@voyantjs/catalog-react`); this shim preserves the
- * `@voyantjs/catalog-react/ui` import surface.
+ * (`@voyant-travel/catalog-react`); this shim preserves the
+ * `@voyant-travel/catalog-react/ui` import surface.
  */
 export {
   __resetEnrichmentFetcherWarnings,

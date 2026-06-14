@@ -1,18 +1,18 @@
-# @voyantjs/finance
+# @voyant-travel/finance
 
 Finance module for Voyant. Invoices, payments, credit notes, supplier payments, and finance notes.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/finance
+pnpm add @voyant-travel/finance
 ```
 
 ## Usage
 
 ```typescript
-import { financeModule } from "@voyantjs/finance"
-import { createApp } from "@voyantjs/hono"
+import { financeModule } from "@voyant-travel/finance"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [financeModule],
@@ -94,7 +94,7 @@ Booking creation UIs can show the same tax line that booking finalization will
 persist by mounting the booking-tax extension:
 
 ```typescript
-import { createBookingTaxHonoExtension } from "@voyantjs/finance/booking-tax"
+import { createBookingTaxHonoExtension } from "@voyant-travel/finance/booking-tax"
 
 createApp({
   extensions: [
@@ -113,7 +113,7 @@ createApp({
 
 The settings callback is the storage seam. A template can read a singleton
 settings table, KV, environment configuration, or any other deployment-owned
-store, while `@voyantjs/finance` owns the tax policy rule walker, tax-regime
+store, while `@voyant-travel/finance` owns the tax policy rule walker, tax-regime
 lookup, product tax-class fallback, and inclusive/exclusive math.
 
 Templates that already mount custom routes can call `mountBookingTaxRoutes(...)`
@@ -125,7 +125,7 @@ Mounting this route registers:
 - `PATCH /v1/admin/bookings/tax-settings` when `updateBookingTaxSettings` is supplied
 - `POST /v1/admin/bookings/tax-preview`
 
-The preview endpoint is consumed by `@voyantjs/bookings-react` tax-preview
+The preview endpoint is consumed by `@voyant-travel/bookings-react` tax-preview
 hooks. Consumers that use the booking-create dialog without mounting the route
 will silently lose tax rows in the dialog summary because the client treats a
 missing preview as "no tax to show".
@@ -137,7 +137,7 @@ import {
   computeBookingItemTaxLine,
   loadProductTaxFacts,
   resolveBookingSellTaxRate,
-} from "@voyantjs/finance/booking-tax"
+} from "@voyant-travel/finance/booking-tax"
 ```
 
 ## Invoice FX Settings
@@ -151,7 +151,7 @@ exchange-rate resolver:
 import {
   createFinanceHonoModule,
   createVoyantDataFxExchangeRateResolver,
-} from "@voyantjs/finance"
+} from "@voyant-travel/finance"
 
 createFinanceHonoModule({
   invoiceFxSettings: {
@@ -165,7 +165,7 @@ createFinanceHonoModule({
 })
 ```
 
-The default data resolver uses `@voyantjs/data-sdk` to call the Voyant Data FX
+The default data resolver uses `@voyant-travel/data-sdk` to call the Voyant Data FX
 pair route `/data/fx/v1/fx/pair/{invoiceCurrency}/{baseCurrency}`. SDK
 responses can add provenance metadata such as `source`, `quotedAt`, and
 `validUntil`; invoice-issued events expose those as `fxRateSource`,

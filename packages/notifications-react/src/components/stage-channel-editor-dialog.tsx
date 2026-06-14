@@ -14,8 +14,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@voyantjs/ui/components/field"
+} from "@voyant-travel/ui/components"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@voyant-travel/ui/components/field"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

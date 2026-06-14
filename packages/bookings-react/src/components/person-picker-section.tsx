@@ -7,8 +7,8 @@ import {
   useOrganizations,
   usePeople,
   usePerson,
-} from "@voyantjs/relationships-react"
-import { OrganizationForm, PersonForm } from "@voyantjs/relationships-react/ui"
+} from "@voyant-travel/relationships-react"
+import { OrganizationForm, PersonForm } from "@voyant-travel/relationships-react/ui"
 import {
   Button,
   Label,
@@ -17,7 +17,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -26,7 +26,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import { Building2, Pencil, User, UserPlus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

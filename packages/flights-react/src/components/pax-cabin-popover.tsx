@@ -1,16 +1,16 @@
 "use client"
 
-import type { CabinClass, PassengerCounts } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import type { CabinClass, PassengerCounts } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { Minus, Plus, Users } from "lucide-react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 

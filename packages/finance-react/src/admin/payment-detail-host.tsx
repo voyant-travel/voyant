@@ -7,8 +7,15 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+} from "@voyant-travel/admin"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import type { ReactNode } from "react"
 import { usePayment } from "../index.js"
@@ -98,7 +105,7 @@ export interface PaymentDetailHostProps {
 
 /**
  * Packaged admin host for the payment detail page (packaged-admin RFC
- * Phase 3). Data access goes through `@voyantjs/finance-react`; every
+ * Phase 3). Data access goes through `@voyant-travel/finance-react`; every
  * cross-route link (`payment.list` back target, person/organization/
  * invoice/supplier/booking links) resolves through semantic destinations,
  * so the page imports no host route tree.

@@ -6,7 +6,7 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import {
   AvailabilityRuleDetailPage,
   getAvailabilityRuleDetailQueryOptions,

@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from "@voyantjs/workflows/protocol"
+import { PROTOCOL_VERSION } from "@voyant-travel/workflows/protocol"
 import type { StepHandler, WorkflowStepRequest, WorkflowStepResponse } from "./types.js"
 
 interface StepHandlerError {

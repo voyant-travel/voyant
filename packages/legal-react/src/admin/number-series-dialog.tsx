@@ -1,5 +1,5 @@
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { formatMessage } from "@voyantjs/i18n"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -15,9 +15,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { Switch } from "@voyantjs/ui/components/switch"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { Switch } from "@voyant-travel/ui/components/switch"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"

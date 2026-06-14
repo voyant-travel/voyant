@@ -1,4 +1,4 @@
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { z } from "zod"

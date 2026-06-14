@@ -5,16 +5,16 @@ import { useQuery } from "@tanstack/react-query"
 import type {
   ActionLedgerEntryDetailResponse,
   ActionLedgerEntryResponse,
-} from "@voyantjs/action-ledger"
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { Badge } from "@voyantjs/ui/components/badge"
+} from "@voyant-travel/action-ledger"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components/sheet"
+} from "@voyant-travel/ui/components/sheet"
 import { Eye, KeyRound, ScrollText, ShieldCheck } from "lucide-react"
 import type { ReactNode } from "react"
 

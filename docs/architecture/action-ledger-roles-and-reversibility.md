@@ -25,7 +25,7 @@ domain-level reversal paths that humans and integrations use.
 
 Voyant already has several partial primitives:
 
-- **Request actor context** in `@voyantjs/core` with `actor`, `callerType`,
+- **Request actor context** in `@voyant-travel/core` with `actor`, `callerType`,
   `userId`, `sessionId`, `organizationId`, `scopes`, API key identifiers, and
   internal-request markers.
 - **Auth and identity architecture** that separates identity, actor context,
@@ -33,7 +33,7 @@ Voyant already has several partial primitives:
 - **Better Auth roles and API token permissions** in the auth surface, but no
   Voyant-wide capability registry that every domain module consumes
   consistently.
-- **Event envelope** in `@voyantjs/core/events` with `category`, `source`,
+- **Event envelope** in `@voyant-travel/core/events` with `category`, `source`,
   `correlationId`, and `causationId`; the event policy correctly treats the
   current EventBus as signaling, not durable audit.
 - **Booking activity logs** for booking-local state changes and notes.
@@ -415,7 +415,7 @@ those grants rather than bypass them.
 
 Recommended package ownership:
 
-- A shared `@voyantjs/action-ledger` or control-plane package defines registry
+- A shared `@voyant-travel/action-ledger` or control-plane package defines registry
   types, guard helpers, and ledger service contracts.
 - Domain modules declare capabilities at module load, consistent with the
   existing module/provider pattern.
@@ -531,7 +531,7 @@ Lifecycle requirements:
 - Approved execution consumes the approval by referencing the approval id and
   the original requested action. For HTTP route integrations, the proving
   contract is the `ACTION_LEDGER_APPROVAL_ID_HEADER` export from
-  `@voyantjs/action-ledger`. Execution must validate that the approval is
+  `@voyant-travel/action-ledger`. Execution must validate that the approval is
   approved, unexpired, linked to a requested action with the expected action
   kind/status, owned by the current principal, and still fingerprint-equivalent
   to the approved command.
@@ -887,7 +887,7 @@ rebuildable from append-only entries.
 
 ### Slice 1a: schema and write path
 
-- Add a framework-owned `@voyantjs/action-ledger` or equivalent package.
+- Add a framework-owned `@voyant-travel/action-ledger` or equivalent package.
 - Define the shared spine, profile schemas, payload refs, and transactional
   outbox/relay contract.
 - Add append-only write APIs.

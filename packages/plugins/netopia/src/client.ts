@@ -2,7 +2,7 @@ import {
   type CircuitBreaker,
   createCircuitBreaker,
   resilientFetch,
-} from "@voyantjs/utils/resilience"
+} from "@voyant-travel/utils/resilience"
 import { ZodError } from "zod"
 import type {
   NetopiaFetch,

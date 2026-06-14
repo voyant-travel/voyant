@@ -1,5 +1,5 @@
-import { bookings } from "@voyantjs/bookings/schema"
-import type { EventBus } from "@voyantjs/core"
+import { bookings } from "@voyant-travel/bookings/schema"
+import type { EventBus } from "@voyant-travel/core"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

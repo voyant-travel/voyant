@@ -7,7 +7,7 @@
  * spied on `bookingsService` so its underlying queries never run.
  */
 
-import { handleApiError } from "@voyantjs/hono"
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 

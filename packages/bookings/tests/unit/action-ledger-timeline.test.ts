@@ -1,4 +1,4 @@
-import type { ActionLedgerEntry } from "@voyantjs/action-ledger"
+import type { ActionLedgerEntry } from "@voyant-travel/action-ledger"
 import { describe, expect, it } from "vitest"
 
 import { __test__ } from "../../src/routes.js"

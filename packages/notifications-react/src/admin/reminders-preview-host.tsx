@@ -6,7 +6,7 @@ import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 /**
  * Packaged admin host for the read-only reminders preview page
  * (packaged-admin RFC Phase 3). Zero-prop: the preview list owns its data
- * wiring through `@voyantjs/notifications-react`.
+ * wiring through `@voyant-travel/notifications-react`.
  */
 export function RemindersPreviewHost() {
   const t = useNotificationsUiMessagesOrDefault().admin.previewPage

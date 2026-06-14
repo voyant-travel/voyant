@@ -14,8 +14,8 @@
  * joined at read time via the shared `booking_id` text column.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { eq } from "drizzle-orm"
 
 import type {
@@ -30,10 +30,10 @@ import {
   type SelectBookingCatalogSnapshot,
 } from "../snapshot/schema.js"
 /**
- * `BookingPaymentIntent` now lives in `@voyantjs/catalog-contracts`
+ * `BookingPaymentIntent` now lives in `@voyant-travel/catalog-contracts`
  * (the shared server/client seam, alongside `bookRequestV1` whose
  * `paymentIntent` field mirrors it). Re-exported here to keep existing
- * `@voyantjs/catalog/booking-engine` import paths stable.
+ * `@voyant-travel/catalog/booking-engine` import paths stable.
  */
 import type { BookingPaymentIntent } from "./contracts.js"
 import {

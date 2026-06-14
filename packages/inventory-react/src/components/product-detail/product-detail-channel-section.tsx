@@ -5,7 +5,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Plus, Trash2 } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"
 import { Section } from "./product-detail-section-shell.js"

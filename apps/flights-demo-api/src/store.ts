@@ -8,7 +8,7 @@ import type {
   FlightBookRequest,
   FlightOrder,
   FlightOrderStatus,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
 import type { DemoFlightsDb } from "./db.js"

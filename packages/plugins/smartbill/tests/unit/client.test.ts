@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: plugins; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { CircuitOpenError, createCircuitBreaker } from "@voyantjs/utils/resilience"
+import { CircuitOpenError, createCircuitBreaker } from "@voyant-travel/utils/resilience"
 import { describe, expect, it, vi } from "vitest"
 
 import {

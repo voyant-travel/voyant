@@ -2,12 +2,12 @@ import {
   type ContentOverlay,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 import {
   type ProductContent,
   productContentSchema,
   validateProductContent,
-} from "@voyantjs/products-contracts/content-shape"
+} from "@voyant-travel/products-contracts/content-shape"
 
 export {
   BOARD_BASIS_FROM_SHORT_CODE,
@@ -33,7 +33,7 @@ export {
   productPolicySchema,
   productSummarySchema,
   validateProductContent,
-} from "@voyantjs/products-contracts/content-shape"
+} from "@voyant-travel/products-contracts/content-shape"
 
 /**
  * Apply a list of editorial overlays to a product content payload via

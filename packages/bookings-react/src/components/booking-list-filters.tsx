@@ -1,31 +1,35 @@
 "use client"
 
-import type { Supplier } from "@voyantjs/distribution-react/suppliers"
-import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
+import type { Supplier } from "@voyant-travel/distribution-react/suppliers"
+import { useSuppliers } from "@voyant-travel/distribution-react/suppliers"
 import type {
   ProductCategoryRecord,
   ProductOptionRecord,
   ProductRecord,
-} from "@voyantjs/inventory-react"
-import { useProductCategories, useProductOptions, useProducts } from "@voyantjs/inventory-react"
-import type { AvailabilitySlotRecord } from "@voyantjs/operations-react/availability"
-import { useSlots } from "@voyantjs/operations-react/availability"
-import type { OrganizationRecord, PersonRecord } from "@voyantjs/relationships-react"
-import { useOrganizations, usePeople } from "@voyantjs/relationships-react"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+} from "@voyant-travel/inventory-react"
+import {
+  useProductCategories,
+  useProductOptions,
+  useProducts,
+} from "@voyant-travel/inventory-react"
+import type { AvailabilitySlotRecord } from "@voyant-travel/operations-react/availability"
+import { useSlots } from "@voyant-travel/operations-react/availability"
+import type { OrganizationRecord, PersonRecord } from "@voyant-travel/relationships-react"
+import { useOrganizations, usePeople } from "@voyant-travel/relationships-react"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { DateRangePicker } from "@voyant-travel/ui/components/date-picker"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { ListFilter, X } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

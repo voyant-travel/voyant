@@ -1,4 +1,4 @@
-# @voyantjs/react
+# @voyant-travel/react
 
 ## 0.104.1
 
@@ -520,4 +520,4 @@
 
 ### Minor Changes
 
-- e57725d: Flatten frontend provider wiring around a shared `@voyantjs/react` config provider so module react packages can share one app-level Voyant context.
+- e57725d: Flatten frontend provider wiring around a shared `@voyant-travel/react` config provider so module react packages can share one app-level Voyant context.

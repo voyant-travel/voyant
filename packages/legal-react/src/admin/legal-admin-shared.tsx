@@ -8,7 +8,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import { useEffect, useMemo, useState } from "react"
 
 /** A searchable-select option: stable id + label, optional secondary line. */

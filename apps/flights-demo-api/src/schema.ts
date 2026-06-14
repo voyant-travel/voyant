@@ -1,10 +1,10 @@
-import type { FlightOrder, FlightOrderStatus } from "@voyantjs/flights/contract/types"
+import type { FlightOrder, FlightOrderStatus } from "@voyant-travel/flights/contract/types"
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 /**
  * Persistence for the demo flight adapter. Real GDS / NDC connectors don't
  * own the orders DB — the upstream provider is the source of truth. The
- * demo connector ships with the operator template and needs somewhere to
+ * demo connector ships with the operator starter and needs somewhere to
  * keep orders across worker restarts so the `/flights/orders` list is
  * useful, so it gets its own table here.
  *

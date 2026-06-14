@@ -1,5 +1,5 @@
-import type { KeyRef, KmsProvider } from "@voyantjs/utils"
-import { decryptOptionalJsonEnvelope, encryptOptionalJsonEnvelope } from "@voyantjs/utils"
+import type { KeyRef, KmsProvider } from "@voyant-travel/utils"
+import { decryptOptionalJsonEnvelope, encryptOptionalJsonEnvelope } from "@voyant-travel/utils"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -36,7 +36,7 @@ export interface UpsertBookingTravelerTravelDetailInput {
 /**
  * Plaintext fields a booking-traveler can pre-fill from the
  * traveler's Relationships person record on creation. Mirrors
- * `PersonTravelSnapshot` in `@voyantjs/relationships` so the two stay in sync.
+ * `PersonTravelSnapshot` in `@voyant-travel/relationships` so the two stay in sync.
  */
 export interface BookingTravelerSnapshot {
   dateOfBirth?: string | null

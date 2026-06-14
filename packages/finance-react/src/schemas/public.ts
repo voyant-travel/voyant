@@ -11,7 +11,7 @@ import {
   publicStartPaymentSessionSchema,
   publicValidateVoucherSchema,
   publicVoucherValidationSchema,
-} from "@voyantjs/finance/public-validation"
+} from "@voyant-travel/finance/public-validation"
 import type { z } from "zod"
 
 import { singleEnvelope } from "./common.js"

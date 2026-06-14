@@ -1,4 +1,4 @@
-// @voyantjs/workflows
+// @voyant-travel/workflows
 //
 // Authoring SDK for Voyant Workflows. Full contract in:
 //   docs/sdk-surface.md §2–§8

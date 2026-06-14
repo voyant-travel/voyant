@@ -1,12 +1,12 @@
-import { bookingItems, type bookings } from "@voyantjs/bookings/schema"
-import type { SourceAdapter, SourceAdapterContext } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import { bookingItems, type bookings } from "@voyant-travel/bookings/schema"
+import type { SourceAdapter, SourceAdapterContext } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   channelBookingLinks,
   channelContracts,
   channelProductMappings,
   type channels,
-} from "@voyantjs/distribution/schema"
+} from "@voyant-travel/distribution/schema"
 import { and, asc, eq, lte, or, sql } from "drizzle-orm"
 
 import type { RateLimitConfig } from "../rate-limit.js"

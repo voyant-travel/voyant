@@ -1,7 +1,7 @@
 ---
-"@voyantjs/bookings": patch
-"@voyantjs/schema-kit": patch
-"@voyantjs/trip-composer": patch
+"@voyant-travel/bookings": patch
+"@voyant-travel/schema-kit": patch
+"@voyant-travel/trips": patch
 ---
 
-Add Trip Composer reservation plans and route active plan submission through Bookings.
+Add Trips reservation plans and route active plan submission through Bookings.

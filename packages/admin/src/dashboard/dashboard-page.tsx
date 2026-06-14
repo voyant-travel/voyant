@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useVoyantReactContext } from "@voyantjs/react"
+import { useVoyantReactContext } from "@voyant-travel/react"
 import {
   Badge,
   Card,
@@ -10,14 +10,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@voyantjs/ui/components/chart"
+} from "@voyant-travel/ui/components/chart"
 import { CalendarCheck, CalendarPlus, DollarSign, Package, PackagePlus, Users } from "lucide-react"
 import {
   Area,

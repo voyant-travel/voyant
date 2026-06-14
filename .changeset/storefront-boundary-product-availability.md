@@ -1,5 +1,5 @@
 ---
-"@voyantjs/storefront": patch
+"@voyant-travel/storefront": patch
 ---
 
 Remove Storefront runtime dependencies on Product and Availability packages.

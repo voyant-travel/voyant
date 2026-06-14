@@ -4,7 +4,7 @@ import {
   createCircuitBreaker,
   type RetryOptions,
   resilientFetch,
-} from "@voyantjs/utils/resilience"
+} from "@voyant-travel/utils/resilience"
 
 import type { PayloadDocBody, PayloadFetch } from "./types.js"
 

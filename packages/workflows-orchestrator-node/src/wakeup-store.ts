@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { findEarliestWakeAt } from "./sleep-alarm-manager.js"
 
 export interface WakeupRecord {

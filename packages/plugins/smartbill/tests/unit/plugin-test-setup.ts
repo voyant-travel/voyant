@@ -11,6 +11,6 @@ export const financeServiceMock = {
   ensureExternalInvoiceNumberSeries: vi.fn(),
 }
 
-vi.doMock("@voyantjs/finance", () => ({
+vi.doMock("@voyant-travel/finance", () => ({
   financeService: financeServiceMock,
 }))

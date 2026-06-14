@@ -42,7 +42,7 @@ vi.mock("../../src/index.js", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/finance-react", () => ({
+vi.mock("@voyant-travel/finance-react", () => ({
   financeQueryKeys: {
     invoices: () => ["voyant", "finance", "invoices"],
   },
@@ -75,7 +75,7 @@ vi.mock("@voyantjs/finance-react", () => ({
   useInvoices: () => ({ data: { data: [] } }),
 }))
 
-vi.mock("@voyantjs/ui/components", () => ({
+vi.mock("@voyant-travel/ui/components", () => ({
   Badge: ({ children }: { children?: ReactTypes.ReactNode }) => <span>{children}</span>,
   Button: ({ children, ...props }: ReactTypes.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button type="button" {...props}>
@@ -110,7 +110,7 @@ vi.mock("@voyantjs/ui/components", () => ({
   AlertDialogTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
 }))
 
-vi.mock("@voyantjs/ui/components/dropdown-menu", () => ({
+vi.mock("@voyant-travel/ui/components/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
   DropdownMenuItem: ({

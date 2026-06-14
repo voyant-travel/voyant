@@ -1,4 +1,4 @@
-import { createLocalStorageProvider } from "@voyantjs/storage/providers/local"
+import { createLocalStorageProvider } from "@voyant-travel/storage/providers/local"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 

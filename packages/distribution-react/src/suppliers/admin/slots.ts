@@ -9,7 +9,7 @@
 
 /**
  * Widget slot rendered as the supplier detail page's customer-payment-policy
- * card (packaged-admin RFC §4.7 cycle resolution): `@voyantjs/finance-react/ui`
+ * card (packaged-admin RFC §4.7 cycle resolution): `@voyant-travel/finance-react/ui`
  * depends on this package, so the host cannot import the finance-owned
  * payment-policy form/preview directly — instead finance's admin extension
  * contributes a widget targeting this slot and the host renders the section

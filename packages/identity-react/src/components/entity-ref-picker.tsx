@@ -1,9 +1,9 @@
 "use client"
 
-import { BookingCombobox } from "@voyantjs/bookings-react/ui"
-import { SupplierCombobox } from "@voyantjs/distribution-react/suppliers/ui"
-import { ProductCombobox } from "@voyantjs/inventory-react/ui"
-import { OrganizationCombobox, PersonCombobox } from "@voyantjs/relationships-react/ui"
+import { BookingCombobox } from "@voyant-travel/bookings-react/ui"
+import { SupplierCombobox } from "@voyant-travel/distribution-react/suppliers/ui"
+import { ProductCombobox } from "@voyant-travel/inventory-react/ui"
+import { OrganizationCombobox, PersonCombobox } from "@voyant-travel/relationships-react/ui"
 import {
   Input,
   Label,
@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 
 type KnownEntityType = "person" | "organization" | "supplier" | "booking" | "product"
 type EntityTypeOption = KnownEntityType | "custom"

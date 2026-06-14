@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
-import { type VoyantFetcher, VoyantReactProvider } from "@voyantjs/react"
+import { type VoyantFetcher, VoyantReactProvider } from "@voyant-travel/react"
 import type { AnchorHTMLAttributes, ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 

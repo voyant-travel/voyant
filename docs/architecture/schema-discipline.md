@@ -29,10 +29,10 @@ exception. That breaks the module-as-a-package boundary.
 Links keep the wiring explicit at the template (deployment) layer:
 - The source package exports a `LinkableDefinition` (e.g.
   `personLinkable`, `productLinkable`).
-- The template declares `defineLink(personLinkable, productLinkable)` in
-  `templates/<name>/src/links/`.
+- The starter declares `defineLink(personLinkable, productLinkable)` in
+  `starters/<name>/src/links/`.
 - `voyant db sync-links` materialises a pivot table whose lifecycle is
-  owned by the template, not either feature module.
+  owned by the starter, not either feature module.
 
 ### When you're adding a column
 
@@ -54,7 +54,7 @@ Links keep the wiring explicit at the template (deployment) layer:
 The audit below was produced by grepping `\.references\(.*=>.*\.id` across
 every `packages/*/src/schema*.ts` and `packages/*/src/schema/*.ts` file,
 then filtering to imports that cross package boundaries (excluding shared
-helpers like `@voyantjs/db/lib/typeid-column` and type-only imports of
+helpers like `@voyant-travel/db/lib/typeid-column` and type-only imports of
 `KmsEnvelope`).
 
 Type-only imports (`import type { ... }`) and `relations(...)`-only
@@ -80,11 +80,11 @@ methods. The default is "active rows only"; pass `includeDeleted: true`
 to opt back in (admin recycle bins, audit reports, reconciliation jobs).
 
 For ad-hoc queries that don't go through `createCrudService`, compose
-`whereActive(table)` from `@voyantjs/db/lifecycle` into the WHERE clause:
+`whereActive(table)` from `@voyant-travel/db/lifecycle` into the WHERE clause:
 
 ```ts
 import { and, eq } from "drizzle-orm"
-import { whereActive } from "@voyantjs/db/lifecycle"
+import { whereActive } from "@voyant-travel/db/lifecycle"
 
 await db
   .select()
@@ -104,7 +104,7 @@ clauses).
 
 A template's Drizzle schema set is **derived from `voyant.config.ts`**, not
 hand-listed. The manifest's `modules` + `extensions` + `additionalSchemas`
-(package closures) plus `schemas` (template-local files) are resolved into a
+(package closures) plus `schemas` (starter-local files) are resolved into a
 committed `drizzle.schemas.generated.ts` that `drizzle.config.ts` imports. See
 [`migration-resilience-rfc.md`](./migration-resilience-rfc.md) (voyant#1608).
 

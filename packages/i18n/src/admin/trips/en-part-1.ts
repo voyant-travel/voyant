@@ -114,7 +114,7 @@ export const adminTripsMessagesEnPart1 = {
     fxRatesLabel: "FX rates",
   },
   adminComposer: {
-    heading: "Trip composer",
+    heading: "Trips",
     subheading:
       "Build one customer-facing itinerary while each vertical keeps its own booking or order.",
     requestFailed: "Request failed",
@@ -174,7 +174,7 @@ export const adminTripsMessagesEnPart1 = {
     },
     travelerFallbackName: "Traveler",
     travelerFallbackLastName: "Guest",
-    markedPaidNote: "Marked paid in trip composer",
+    markedPaidNote: "Marked paid in trips",
     paidScheduleDateLabel: "date",
     paidScheduleMethodLabel: "method",
     paidScheduleReferenceLabel: "reference",

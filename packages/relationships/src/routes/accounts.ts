@@ -1,10 +1,10 @@
-import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyant-travel/hono"
 import {
   insertAddressSchema,
   insertContactPointSchema,
   updateAddressSchema,
   updateContactPointSchema,
-} from "@voyantjs/identity/validation"
+} from "@voyant-travel/identity/validation"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"

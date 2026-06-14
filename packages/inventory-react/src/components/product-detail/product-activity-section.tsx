@@ -1,4 +1,4 @@
-import { Badge, Button } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import { Activity, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import {

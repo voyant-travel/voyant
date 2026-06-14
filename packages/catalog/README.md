@@ -1,4 +1,4 @@
-# @voyantjs/catalog
+# @voyant-travel/catalog
 
 Catalog plane foundation for Voyant. The shared cross-cutting infrastructure
 that Inventory, vertical modules, resale modules, and booking add-on surfaces
@@ -15,10 +15,10 @@ See [`docs/architecture/catalog-architecture.md`](../../docs/architecture/catalo
 ## Install
 
 ```bash
-pnpm add @voyantjs/catalog
+pnpm add @voyant-travel/catalog
 ```
 
-Install `@voyantjs/catalog-contracts` instead when you only need the pure
+Install `@voyant-travel/catalog-contracts` instead when you only need the pure
 adapter payload types, adapter Zod schemas, field-policy contracts,
 provenance, drift payloads, or content locale/overlay helpers. Use this package
 when you also need Drizzle schema, Hono routes, booking-engine integration,
@@ -35,10 +35,10 @@ search services, or catalog runtime services.
 - **`./indexer/typesense`** — native Typesense implementation, the v1 default.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
 - **`./drift/events`** — drift event types for upstream change detection.
-- **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyantjs/core/events` and consumed by the existing webhook pipeline.
+- **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyant-travel/core/events` and consumed by the existing webhook pipeline.
 - **`./adapter/contract`** — public source-adapter contract. Voyant Connect, third-party providers, operator-built adapters all implement this.
 - **`./adapter/schemas`** — zod schemas for source-adapter runtime payloads. Use these at HTTP, queue, RPC, and adapter boundaries instead of re-declaring validators.
-- **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyantjs/catalog-react/booking-engine` and `@voyantjs/bookings-react/journey`.
+- **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyant-travel/catalog-react/booking-engine` and `@voyant-travel/bookings-react/journey`.
 
 ## Architectural rules
 
@@ -54,7 +54,7 @@ The catalog plane is a **contract**, not a polymorphic root. Vertical modules ke
 The catalog plane is consumed by vertical modules; templates wire it together.
 
 ```typescript
-import { defineFieldPolicy } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy } from "@voyant-travel/catalog/contract"
 
 export const productCatalogPolicy = defineFieldPolicy([
   {
@@ -80,8 +80,8 @@ See `docs/architecture/catalog-architecture.md` for the full contract and worked
 ## Source-adapter runtime validation
 
 ```typescript
-import { reserveRequestSchema } from "@voyantjs/catalog/adapter/schemas"
-import type { ReserveRequest } from "@voyantjs/catalog/adapter/contract"
+import { reserveRequestSchema } from "@voyant-travel/catalog/adapter/schemas"
+import type { ReserveRequest } from "@voyant-travel/catalog/adapter/contract"
 
 const request: ReserveRequest = reserveRequestSchema.parse(await req.json())
 ```
@@ -91,14 +91,14 @@ an `idempotency_key`; cancel results may return `status: "pending"` with
 `pending_channel` for async upstream workflows.
 
 External adapters that do not run the catalog package can import the same
-schemas and types from `@voyantjs/catalog-contracts/adapter/schemas` and
-`@voyantjs/catalog-contracts/adapter/contract`.
+schemas and types from `@voyant-travel/catalog-contracts/adapter/schemas` and
+`@voyant-travel/catalog-contracts/adapter/contract`.
 
 ## BookingJourney HTTP routes
 
-`@voyantjs/catalog` exports `createCatalogBookingHonoModule(...)` and
+`@voyant-travel/catalog` exports `createCatalogBookingHonoModule(...)` and
 `createCatalogBookingRoutes(...)` for the BookingJourney server contract. The
-same functions remain available from `@voyantjs/catalog/booking-engine` for
+same functions remain available from `@voyant-travel/catalog/booking-engine` for
 consumers that prefer the narrower subpath. The module mounts the shared quote,
 draft, hold, and book endpoints on both catalog API surfaces:
 
@@ -109,7 +109,7 @@ Templates provide the runtime dependencies instead of the package importing
 deployment code:
 
 ```typescript
-import { createCatalogBookingHonoModule } from "@voyantjs/catalog"
+import { createCatalogBookingHonoModule } from "@voyant-travel/catalog"
 
 export const catalogBookingModule = createCatalogBookingHonoModule({
   resolveDb: (c) => c.get("db"),
@@ -125,7 +125,7 @@ template.
 
 ## Catalog search HTTP routes
 
-`@voyantjs/catalog` also exports `createCatalogSearchHonoModule(...)`,
+`@voyant-travel/catalog` also exports `createCatalogSearchHonoModule(...)`,
 `createCatalogSearchRoutes(...)`, and `mountCatalogSearchRoutes(...)` for the
 plain JSON catalog search endpoint used by admin and storefront UIs:
 
@@ -142,7 +142,7 @@ import {
   createCatalogSearchHonoModule,
   executeSemanticSearch,
   type EmbeddingProvider,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 
 export const catalogSearchModule = createCatalogSearchHonoModule({
   resolveRuntime: (c) => buildCatalogSearchRuntime(c),

@@ -1,9 +1,9 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminNavigate } from "@voyantjs/admin"
+import { type AdminRoutePageProps, useAdminNavigate } from "@voyant-travel/admin"
 // Type-only: binds catalog-react's `AdminDestinations` augmentation
 // (`bookingJourney.start`) into this module without pulling its runtime in.
-import type {} from "@voyantjs/catalog-react/admin"
+import type {} from "@voyant-travel/catalog-react/admin"
 import * as React from "react"
 
 import { ProductPickerSection } from "../../components/product-picker-section.js"

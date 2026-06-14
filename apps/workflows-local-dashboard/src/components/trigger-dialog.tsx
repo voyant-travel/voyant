@@ -1,8 +1,8 @@
 // "New run" modal. Searchable combobox for the workflow picker and a
 // CodeMirror-based JSON editor for the input payload.
 
-import { Alert, AlertDescription } from "@voyantjs/ui/components/alert"
-import { Button } from "@voyantjs/ui/components/button"
+import { Alert, AlertDescription } from "@voyant-travel/ui/components/alert"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Combobox,
   ComboboxCollection,
@@ -11,7 +11,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/ui/components/dialog"
+import { Label } from "@voyant-travel/ui/components/label"
 import { useMemo, useState } from "react"
 
 import { JsonEditor } from "@/components/json-editor"

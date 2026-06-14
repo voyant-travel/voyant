@@ -1,13 +1,13 @@
 # Performance Assessment & Optimization Plan for Enterprise-Scale Workloads
 
-> Companion to RFC [#1687](https://github.com/voyantjs/voyant/issues/1687). Assessed against
+> Companion to RFC [#1687](https://github.com/voyant-travel/voyant/issues/1687). Assessed against
 > `main` @ `bfae40eff` (2026-06-12). Symptom issues: #1631 (bundle/cold start), #1636 (API-graph
 > first-call hang), #1686 (uncached catalog reads → isolate collapse), #1629 (dashboard
 > aggregates), #1641 (template-port friction).
 >
 > **Platform-side work items** (Neon endpoint tiers, explicit pooler, dispatcher cache,
 > publisher bindings, Node DB lane, per-dispatch limits, namespace observability) are tracked
-> in [voyantjs/platform#458](https://github.com/voyantjs/platform/issues/458).
+> in [voyant-travel/platform#458](https://github.com/voyant-travel/platform/issues/458).
 
 ## 1. Deployment constraints (what we must design around)
 
@@ -20,7 +20,7 @@ That fixes the physics:
 | **No cross-request I/O reuse** in Workers | A WebSocket/TCP connection opened in request A cannot be used by request B ("Cannot perform I/O on behalf of a different request"). Module-scope Pool caching is not an option — only Durable Objects can hold connections across events. |
 | **~128 MB / isolate** | The module-graph baseline plus per-request payload allocation is the budget. #1686 demonstrated isolates collapsing under uncached catalog reads. |
 | **CPU-time + startup-CPU + ~1000 subrequest budgets** | Every neon-http query is one subrequest. N+1 patterns burn both latency *and* the subrequest budget. The startup-CPU ceiling already forced lazy-loading the API graph (#1636). |
-| **Single-region Neon database** (region chosen per deployment; e.g. the operator template assumes one EU DB — `templates/operator/src/api/lib/db.ts:37-41`) | Workers run in the colo nearest the *visitor*; the DB lives in one region. A visitor far from the tenant's DB region pays that RTT *per query* — 8 sequential queries × ~100ms = ~800ms floor before any compute. The penalty is per-tenant geometry, but the mitigation (edge read models, placement near DB) is the same for all. |
+| **Single-region Neon database** (region chosen per deployment; e.g. the operator starter assumes one EU DB — `starters/operator/src/api/lib/db.ts:37-41`) | Workers run in the colo nearest the *visitor*; the DB lives in one region. A visitor far from the tenant's DB region pays that RTT *per query* — 8 sequential queries × ~100ms = ~800ms floor before any compute. The penalty is per-tenant geometry, but the mitigation (edge read models, placement near DB) is the same for all. |
 | **`caches.default` is disabled for namespaced scripts** ([WfP limits](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/reference/limits/)) | Tenant workers cannot edge-cache their own HTTP responses via the Cache API. HTTP response caching belongs at the **dynamic dispatch worker**, which Cloudflare explicitly positions as the middleware layer (auth, transforms, caching, per-tenant limits). Tenant workers emit `Cache-Control`; the platform honors it. In-worker fallback: KV-backed response cache. Self-hosted (non-namespaced) workers keep full Cache API. |
 | Available primitives | KV (eventually consistent, ~60s propagation, 1 write/s/key), R2, Durable Objects (+ SQLite, unlimited namespaces on WfP), D1 (incl. read replication via Sessions API), **Analytics Engine (explicitly supported on user workers)**, Queues (not listed among WfP user-worker bindings — producers to be confirmed; **consumers cannot attach to namespaced scripts** — consume at platform level and dispatch in), Cron (not documented for namespaced scripts — Voyant Cloud schedules at platform level today). |
 | **Dispatcher = per-tenant control point** | The dispatch worker can enforce **custom CPU-time and subrequest limits per dispatch** (e.g. per plan tier) and run caching/auth/transform middleware. Logpush/tail-worker observability configured once on the dispatcher covers every user worker in the namespace. These are the platform-native primitives for bulkheads, rate limits, and fleet observability. |
@@ -36,7 +36,7 @@ Audited at `voyant-cloud` (apps/dispatcher, apps/build-publisher, apps/api/src/p
 | **Tenant Neon computes are pinned at 1 CU fixed with scale-to-zero left on** (verified live: tenant projects have `autoscaling_limit_min_cu: 1, max_cu: 1, suspend_timeout_seconds: 0` = Neon's 5-min default; internal platform projects get 0.25–8 CU autoscaling). The endpoint-update API exists (`neon.ts:331-362`) but isn't called at provisioning. | Live Neon org data (tenant projects `pro-travel-admin-database-*`, `anbtours-*`, `smallshiptravel-*`); `databases-access.ts:344-355` | Under a spike the tenant DB **cannot scale up at all** — 1 CU is the hard compute ceiling (and bounds the pooler's server-side pool at ~377). Phase 0.0: per-tier endpoint policy — autoscaling range for everyone; scale-to-zero stays on for low-usage tenants (it's a cost feature, and the resume is only a few hundred ms on first query), disabled only for high-traffic/enterprise tiers. |
 | **The dispatcher is a thin router with no caching for worker traffic.** KV hostname lookup → `env.DISPATCHER.get(workerName).fetch()`. Static assets get `Cache-Control: public, max-age=3600`; dispatched worker responses get nothing. | `apps/dispatcher/src/index.ts:86-89,191,205-206` | The platform-level cache layer proposed in Phase 0.1 does not exist yet — and the dispatcher is ours to change. |
 | **No per-dispatch limits** — `namespace.get(workerName)` is called without the limits argument; no rate limiting in the dispatcher. | `apps/dispatcher/src/index.ts:205` | WfP custom CPU/subrequest limits per tenant (Phase 3.2 bulkhead) are available but unused. |
-| **Build publisher emits only `cf_kv`, `cf_r2`, `cf_worker` bindings** (+ assets). No Durable Objects, no D1, no Analytics Engine, no Queues, no placement/limits/tail metadata, no cron triggers. | `apps/build-publisher/src/index.ts:236-253` | The operator template's `WORKFLOW_RUN_DO` binding **cannot be provisioned on Voyant Cloud today** (WfP supports DOs; the publisher just doesn't emit `durable_objects`+`migrations`). Analytics Engine (Phase 3.4) and any DO-based pattern (outbox drain, per-slot serialization, DO connection pool) need publisher support first. |
+| **Build publisher emits only `cf_kv`, `cf_r2`, `cf_worker` bindings** (+ assets). No Durable Objects, no D1, no Analytics Engine, no Queues, no placement/limits/tail metadata, no cron triggers. | `apps/build-publisher/src/index.ts:236-253` | The operator starter's `WORKFLOW_RUN_DO` binding **cannot be provisioned on Voyant Cloud today** (WfP supports DOs; the publisher just doesn't emit `durable_objects`+`migrations`). Analytics Engine (Phase 3.4) and any DO-based pattern (outbox drain, per-slot serialization, DO connection pool) need publisher support first. |
 | **Cron runs platform-side**: the platform parses tenant workflow manifests and dispatches schedules into tenant workers via fetch. Queues are used platform-internally (webhook delivery + DLQ, connect sync). | `apps/api/.../workflow-schedules.ts`, `apps/api/wrangler.jsonc:10-26` | The "platform-level consumer dispatching into the namespace" pattern (Phase 3.2) is already how Voyant Cloud works — extend it rather than invent it. |
 | Read-replica provisioning code already exists (`POST /endpoints` with `type: "read_only"` + per-replica connection URIs). | `neon.ts:380-401`, `databases-access.ts:851-862` | Phase 2.3 needs no new control-plane machinery. |
 
@@ -61,7 +61,7 @@ Still unverified: whether **Smart Placement** can be set on dispatch-namespace u
 Every request constructs a fresh `new Pool(...)` (TCP + TLS + WebSocket upgrade + Postgres
 auth — several RTTs before the first query) and disposes it after the response:
 
-- `templates/operator/src/api/lib/db.ts:34` → `createServerlessDbClient` → `packages/db/src/index.ts:140` (`new Pool(...)`)
+- `starters/operator/src/api/lib/db.ts:34` → `createServerlessDbClient` → `packages/db/src/index.ts:140` (`new Pool(...)`)
 - Disposed via `executionCtx.waitUntil` in `packages/hono/src/middleware/db.ts:101`
 
 Worse, **authenticated requests open two pools**: the auth middleware constructs its own client
@@ -125,7 +125,7 @@ recomputed per request, against the 128 MB ceiling. **This is also the path that
 ### T5 — HIGH: one worker, whole module graph = memory baseline, cold start, single failure domain
 
 - The operator API app composes **27 modules + 7 extensions + 7 plugin bundles**
-  (`templates/operator/src/api/composition.ts:132-170`); first `/api/*` call per isolate paid
+  (`starters/operator/src/api/composition.ts:132-170`); first `/api/*` call per isolate paid
   ~2.4s instantiating it (#1636). The lean-auth split + background warm-up
   (`packages/worker-runtime/src/api-dispatch.ts:86-99`) mitigates but does not change the model:
   storefront reads, checkout writes, admin, SSR, and workflows still share one isolate's memory
@@ -192,7 +192,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > routing with `dbTransactional`/`dbTransactionalPaths` + `DB_FORCE_TRANSACTIONAL` escape
 > hatch; transaction-reachability audit applied: catalog-authoring extension + bookings/crm/
 > finance/availability/legal/notifications/transactions surfaces, storefront covered via the
-> bookings public prefix, catalog booking-engine + trip-composer via template paths),
+> bookings public prefix, catalog booking-engine + trips via template paths),
 > 1.2 (Better Auth cookieCache default-on + API-key KV cache), 1.3 (index migration 0061:
 > trigram GIN for ILIKE columns, finance partial indexes, rollup btrees; bookings/products
 > partial indexes N/A — no `deleted_at` on those tables; CRM `archived_at` is never queried —
@@ -218,7 +218,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 > reaches worker secrets). Remaining platform ops: backfill --apply, Node-runner DB env wiring,
 > namespace logpush, Smart Placement test.
 > **Phase 3 foundations (perf/phase-3-foundations):** 3.3 resilience primitives
-> (@voyantjs/utils/resilience: resilientFetch — 10s timeout, jittered idempotent-safe retries,
+> (@voyant-travel/utils/resilience: resilientFetch — 10s timeout, jittered idempotent-safe retries,
 > per-isolate circuit breaker; adopted in plugin HTTP clients), 3.4 in-worker metrics middleware
 > (env.METRICS AE dataset: method/route/surface/cache-status blobs, duration/status/db-query-count
 > doubles — complements DISPATCH_METRICS), 3.5 k6 suite (storefront-firehose, payday-spike,
@@ -236,12 +236,12 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 | # | Work item | Where | Effect |
 |---|---|---|---|
 | 0.0 | **Per-tier Neon endpoint policy at provisioning + make the pooler explicit.** Tenant computes are currently pinned at 1 CU fixed (verified live) — replace with a tier matrix: standard tenants get an autoscaling range (e.g. min 0.25–1 / max 2–4 CU) **keeping scale-to-zero on** (it's a deliberate cost feature for low-usage tenants; the few-hundred-ms first-query resume is acceptable, and once 0.1/2.2 land their storefront traffic doesn't wake the DB anyway); enterprise/high-traffic tenants get a higher range (min 1 / max 8 CU) with suspend disabled so spikes never start cold. Pass `pooled: true` explicitly when resolving tenant connection URIs instead of relying on Neon's response default. | voyant-cloud (`databases-access.ts`, `neon.ts:331-362`) | DB compute can actually scale under a spike (today 1 CU is a hard ceiling, bounding the server-side pool at ~377); small tenants keep their cost profile; pooled endpoint guaranteed by construction. |
-| 0.1 | `Cache-Control: public, s-maxage=60–300, stale-while-revalidate` on all `/v1/public/*` GETs (opt-out per route), plus a cache middleware that uses the Cache API **where available** (self-hosted/non-namespaced workers) and falls back to a KV response cache on Voyant Cloud (`caches.default` is disabled in namespaced scripts). In parallel: Voyant Cloud's **dispatch worker** (verified: currently a thin router with zero caching for worker traffic, `apps/dispatcher/src/index.ts:205`) gains a cache step that honors tenant `Cache-Control` — the WfP-native design. | `@voyantjs/hono` middleware + voyant-cloud dispatcher | Absorbs the #1686 read firehose at the edge |
+| 0.1 | `Cache-Control: public, s-maxage=60–300, stale-while-revalidate` on all `/v1/public/*` GETs (opt-out per route), plus a cache middleware that uses the Cache API **where available** (self-hosted/non-namespaced workers) and falls back to a KV response cache on Voyant Cloud (`caches.default` is disabled in namespaced scripts). In parallel: Voyant Cloud's **dispatch worker** (verified: currently a thin router with zero caching for worker traffic, `apps/dispatcher/src/index.ts:205`) gains a cache step that honors tenant `Cache-Control` — the WfP-native design. | `@voyant-travel/hono` middleware + voyant-cloud dispatcher | Absorbs the #1686 read firehose at the edge |
 | 0.2 | Trim list payloads: list = card fields only, richtext only on detail; enforce pagination caps (max `limit`, default 20) | products/catalog public routes | Memory per request ↓, bandwidth ↓ |
-| 0.3 | **Single shared per-request DB client**: lazy `getDb()` on context; auth, requirePermission, and db middleware reuse it; one dispose | `@voyantjs/hono` middleware | Halves Neon handshakes immediately |
-| 0.4 | `statement_timeout` (e.g. 10s) + verify/enforce `-pooler` endpoint in connection-string validation | `@voyantjs/db` | Slow query can't pin an isolate; protects Neon slots |
+| 0.3 | **Single shared per-request DB client**: lazy `getDb()` on context; auth, requirePermission, and db middleware reuse it; one dispose | `@voyant-travel/hono` middleware | Halves Neon handshakes immediately |
+| 0.4 | `statement_timeout` (e.g. 10s) + verify/enforce `-pooler` endpoint in connection-string validation | `@voyant-travel/db` | Slow query can't pin an isolate; protects Neon slots |
 | 0.5 | Memoize CORS allowlist parse/regex per env value | `middleware/cors.ts` | Removes per-request CPU waste |
-| 0.6 | Run event subscribers via `waitUntil` after response (opt-in flag per subscriber for the few that must complete in-request), parallelize independent handlers, add per-handler timeout | `@voyantjs/hono` app + core events | Booking confirm stops waiting on SmartBill/CMS HTTP |
+| 0.6 | Run event subscribers via `waitUntil` after response (opt-in flag per subscriber for the few that must complete in-request), parallelize independent handlers, add per-handler timeout | `@voyant-travel/hono` app + core events | Booking confirm stops waiting on SmartBill/CMS HTTP |
 
 ### Phase 1 — Request-path efficiency (1–2 weeks)
 
@@ -271,7 +271,7 @@ package-delivered (per #1641: fixes must arrive via version bumps, not template 
 |---|---|---|
 | 3.1 | **Bounded-context workers — DEFERRED, last-resort by decision (2026-06-12).** Phases 0–2 removed the pressures this was designed for: public reads no longer enter the isolate (dispatcher cache + KV read models), payloads/timeouts bound memory, per-plan dispatch limits give budget isolation, and the lean-auth split already covers cold-start's worst case. Decomposition's underweighted cost: event subscribers live per-worker, so the outbox drain needs the full subscriber graph — the "small" workers either pull the graph back in or stop being independent failure domains for the write path. **Revisit only when metrics say so**: sustained isolate memory pressure or cold-start p95 visibly limiting a real tenant in DISPATCH_METRICS / the in-worker AE dataset / k6 baselines — and then start with the smallest cut (a public-read script) justified by that data. | Avoided: multi-script publisher+dispatcher routing complexity, deploy version skew, subscriber-graph duplication |
 | 3.2 | **Queued write pipeline for spikes.** Booking/payment intents enqueued via outbox table or platform queue → platform-level consumer dispatching back into the namespace (Voyant Cloud already runs this exact pattern for webhook delivery and workflow schedules — extend it, don't invent it); controlled concurrency; idempotent processing; backpressure returns 202 + status polling instead of thundering herd. The per-slot DO serialization pattern is the escalation path for ultra-hot inventory (requires publisher DO-binding support). Pair with **per-dispatch CPU/subrequest limits** — available in WfP, currently unused (`dispatcher/src/index.ts:205` calls `namespace.get()` without limits) — as the platform-level bulkhead. | Payday spike survives by design |
-| 3.3 | **Resilience primitives in the platform client.** `@voyantjs` fetch/client defaults: timeouts, retry+jitter, circuit breaker, bulkhead config; per-subscriber timeouts (from 0.6) hardened into contract. | Slow dependency degrades, never cascades |
+| 3.3 | **Resilience primitives in the platform client.** `@voyant-travel` fetch/client defaults: timeouts, retry+jitter, circuit breaker, bulkhead config; per-subscriber timeouts (from 0.6) hardened into contract. | Slow dependency degrades, never cascades |
 | 3.4 | **Observability as a primitive.** Per-request structured metrics (duration, db time, query count, payload size) → Analytics Engine (supported on WfP user workers, but the build publisher must learn to emit the binding); platform fleet view via logpush/tail worker configured once on the dispatcher — covers every user worker in the namespace (none configured today); request-id tracing across worker hops; SLOs + alerts; Neon `pg_stat_statements` review cadence. | We can see the next #1686 before users do |
 | 3.5 | **Load testing in CI.** k6 scenario suite: storefront firehose (read), payday spike (write), mixed; run against a staging tenant per release; assert SLO budgets. *Delivered:* `scripts/load/` (see its README) + `.github/workflows/load-test.yml` (`workflow_dispatch`, threshold breach fails the job). | The "enterprise-ready" claim becomes a regression test |
 

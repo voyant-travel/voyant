@@ -1,8 +1,8 @@
 "use client"
 
-import { Card, CardContent } from "@voyantjs/ui/components"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { Field, FieldLabel } from "@voyantjs/ui/components/field"
+import { Card, CardContent } from "@voyant-travel/ui/components"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { Field, FieldLabel } from "@voyant-travel/ui/components/field"
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

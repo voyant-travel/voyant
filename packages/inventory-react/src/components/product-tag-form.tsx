@@ -1,8 +1,8 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

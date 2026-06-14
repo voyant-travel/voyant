@@ -1,6 +1,6 @@
 "use client"
 
-import { useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type InvoiceAttachmentRecord,
   useInvoice,
@@ -9,7 +9,7 @@ import {
   useInvoiceMutation,
   useInvoicePayments,
   useVoyantFinanceContext,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import {
   Button,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowRightLeft, ArrowUpRight, Download, FileText, Loader2 } from "lucide-react"
 import { useState } from "react"
 

@@ -28,7 +28,7 @@ part of `pnpm verify:architecture`.
 
 ## Why
 
-The operator template can install enough Voyant modules, schemas, workflows,
+The operator starter can install enough Voyant modules, schemas, workflows,
 and local API routes that eagerly importing the API graph pushes Cloudflare
 startup validation over the CPU limit. Lazy-loading keeps the first SSR
 entrypoint small while preserving warm-isolate caching for API and workflow
@@ -36,15 +36,15 @@ requests.
 
 ## Measurement Lane
 
-For the operator template, use Wrangler's startup profiler before and after
+For the operator starter, use Wrangler's startup profiler before and after
 entrypoint changes:
 
 ```sh
-pnpm -C templates/operator check:startup
-pnpm -C templates/operator measure:startup
+pnpm -C starters/operator check:startup
+pnpm -C starters/operator measure:startup
 ```
 
-Both scripts rebuild the operator template first. That keeps startup evidence
+Both scripts rebuild the operator starter first. That keeps startup evidence
 tied to the current source instead of a stale `dist/server` artifact.
 `check:startup` is the direct Wrangler lane. `measure:startup` stores the Chrome
 CPU profile under `.wrangler/startup-profiles/worker-startup.cpuprofile` and

@@ -76,12 +76,12 @@ The current gap is no longer “invent the surface model”. The gap is:
 
 Transport taxonomy note:
 
-- `@voyantjs/hono` is the default HTTP transport adapter for Voyant, not a
+- `@voyant-travel/hono` is the default HTTP transport adapter for Voyant, not a
   plugin package in the same sense as Netopia or SmartBill
-- the current `HonoPlugin` / `@voyantjs/hono/plugin` naming is legacy
+- the current `HonoPlugin` / `@voyant-travel/hono/plugin` naming is legacy
   bundle-contribution terminology inside the Hono transport and should be
   revisited in a future taxonomy cleanup, likely toward a `HonoBundle` /
-  `@voyantjs/hono/bundle` style surface
+  `@voyant-travel/hono/bundle` style surface
 
 This document reflects the source tree on `main` as of 2026-04-14 and calls
 out where the latest published npm train still lags behind source.
@@ -92,12 +92,12 @@ out where the latest published npm train still lags behind source.
 
 Resolved in source and published through the `0.3.1` npm train:
 
-- `@voyantjs/finance` exports the public finance schemas and service helpers
-  used by `@voyantjs/finance-react`
-- `@voyantjs/inventory` exports `publicProductsService`
-- `@voyantjs/bookings` exports `publicBookingsService` and public booking route
+- `@voyant-travel/finance` exports the public finance schemas and service helpers
+  used by `@voyant-travel/finance-react`
+- `@voyant-travel/inventory` exports `publicProductsService`
+- `@voyant-travel/bookings` exports `publicBookingsService` and public booking route
   helpers
-- `@voyantjs/inventory-react` exports the day, version, and media hooks and
+- `@voyant-travel/inventory-react` exports the day, version, and media hooks and
   query helpers from the package root
 - CI/release now smoke-test runtime exports in addition to tarball contents
 
@@ -111,7 +111,7 @@ Still release-sensitive after `0.3.1`:
 
 Resolved upstream for contracts, partially resolved for reusable UI:
 
-- `@voyantjs/auth-react` covers current user, workspace, status, active
+- `@voyant-travel/auth-react` covers current user, workspace, status, active
   organization, members, invitations, invite, remove, cancel, and role update
   flows
 - Voyant still does not ship reusable staff team-management registry UI
@@ -121,9 +121,9 @@ Resolved upstream for contracts, partially resolved for reusable UI:
 Resolved upstream for the base platform contract, adoption still incomplete in
   downstream apps:
 
-- `@voyantjs/storefront/customer-portal` and
-  `@voyantjs/storefront-react/customer-portal` own the portal runtime and
-  React surface; the beta `@voyantjs/customer-portal` package names are not
+- `@voyant-travel/storefront/customer-portal` and
+  `@voyant-travel/storefront-react/customer-portal` own the portal runtime and
+  React surface; the beta `@voyant-travel/customer-portal` package names are not
   part of the v1 workspace package surface
 - public/authenticated routes now cover bootstrap, profile, companions,
   booking list/detail, documents, marketing consent, email contact-exists, and
@@ -160,7 +160,7 @@ Partially resolved:
 
 - public catalog routes now cover product search/filter/sort, category listing,
   tag listing, product detail, localized slug/SEO fields, and slug lookup
-- `@voyantjs/inventory` now exposes a reusable internal `catalogProductsService`
+- `@voyant-travel/inventory` now exposes a reusable internal `catalogProductsService`
   for localized product hydration and locale-aware search-document generation,
   so background jobs do not need to reimplement product/category/tag/media/
   translation joins on top of raw tables
@@ -180,12 +180,12 @@ Still missing:
 Partially resolved:
 
 - public pricing and availability routes now cover snapshot-style reads
-- `@voyantjs/storefront` now exposes first-class public departure list/detail
+- `@voyant-travel/storefront` now exposes first-class public departure list/detail
   reads plus departure price preview over slots, pricing, and extras
-- `@voyantjs/storefront` now also exposes product extensions and departure
+- `@voyant-travel/storefront` now also exposes product extensions and departure
   itinerary reads so storefront booking flows do not need app-local wrappers
   for those payloads
-- `@voyantjs/commerce/promotions` now exposes storefront promotional-offer
+- `@voyant-travel/commerce/promotions` now exposes storefront promotional-offer
   resolvers over Commerce-owned promotional offers, giving apps a first-class
   way to plug native product/departure promo applicability into the storefront
   contract without inventing their own resolver shape
@@ -211,11 +211,11 @@ Partially resolved:
 - storefront repricing now exists at
   `/v1/public/bookings/sessions/:sessionId/reprice` with preview mode and
   explicit `applyToSession` support
-- matching React helpers now exist in `@voyantjs/bookings-react` for public
+- matching React helpers now exist in `@voyant-travel/bookings-react` for public
   session read, state read/write, and repricing flows
-- `@voyantjs/finance/checkout` now exposes a module-based checkout surface with typed
+- `@voyant-travel/finance/checkout` now exposes a module-based checkout surface with typed
   collection-plan and initiate-collection contracts
-- `@voyantjs/finance/checkout` now also exposes a unified
+- `@voyant-travel/finance/checkout` now also exposes a unified
   `/v1/public/finance/checkout/collections/bootstrap` contract that can start exact-amount
   collection from either a `bookingId` or a `sessionId`, covering booking-
   backed and session-backed storefront flows through one request shape
@@ -224,17 +224,17 @@ Partially resolved:
 - bookings now expose a first-class admin overview lookup route and service
   helper that can resolve by booking id / booking number / booking code without
   requiring the public `bookingNumber + email` contract
-- `@voyantjs/storefront-react` now exposes typed operations, query helpers, and
+- `@voyant-travel/storefront-react` now exposes typed operations, query helpers, and
   hooks for the public storefront contract over settings, departures, pricing
   preview, itinerary, extensions, and promotional offers
-- `@voyantjs/storefront-sdk` now provides the framework-agnostic TypeScript
+- `@voyant-travel/storefront-sdk` now provides the framework-agnostic TypeScript
   facade for custom storefronts, wrapping existing public storefront, booking
   session, and checkout collection contracts with derived booking-engine state
   helpers
 
 Still missing:
 
-- migrate React storefront helpers to delegate to `@voyantjs/storefront-sdk`
+- migrate React storefront helpers to delegate to `@voyant-travel/storefront-sdk`
   instead of maintaining parallel fetch wrappers
 - lifecycle contracts for legal previews, explicit payment result polling, and
   finalized checkout side effects still need backend route support before the
@@ -271,14 +271,14 @@ Now covered through checkout:
 - customer-safe bank transfer instructions returned by checkout when a bank
   transfer resolver is configured
 - invoice-backed due reminders for unpaid bank-transfer collection documents
-  via `@voyantjs/notifications`
+  via `@voyant-travel/notifications`
 
 Now covered through finance + provider adapters:
 
 - first-class invoice/proforma settlement polling and reconciliation through
   `POST /v1/admin/finance/invoices/:id/poll-settlement`
 - provider-driven settlement sync via configurable pollers, including a
-  SmartBill adapter in `@voyantjs/plugin-smartbill`
+  SmartBill adapter in `@voyant-travel/plugin-smartbill`
 
 ### Legal and finance document workflows
 
@@ -337,11 +337,11 @@ Now covered across finance + notifications:
 
 Resolved upstream in source after `0.3.1`:
 
-- first-class storefront settings contract via `@voyantjs/storefront`
+- first-class storefront settings contract via `@voyant-travel/storefront`
 - generic email/SMS verification challenge flow via
-  `@voyantjs/storefront-verification`
+  `@voyant-travel/storefront/verification`
 - transport requirements for passport/document rules via
-  `@voyantjs/bookings/requirements`
+  `@voyant-travel/bookings/requirements`
 
 App-owned for now:
 
@@ -357,10 +357,10 @@ Optional future upstream candidates:
 
 Now covered as a pluggable storefront contract:
 
-- `@voyantjs/storefront` can expose product/departure-applicable promotional
+- `@voyant-travel/storefront` can expose product/departure-applicable promotional
   offers and slug-based offer detail through injected resolvers, without
   forcing Voyant core to adopt a CMS-specific promo schema
-- `@voyantjs/commerce/promotions` now ships a shared resolver factory and
+- `@voyant-travel/commerce/promotions` now ships a shared resolver factory and
   metadata schema for that contract, so apps can back storefront promotional
   offers with native Commerce offers instead of custom resolver plumbing
 
@@ -376,7 +376,7 @@ Resolved upstream in source:
   `GET /v1/public/products/:id/brochure`
 - public catalog product detail now exposes `brochure` separately from the
   normal media gallery
-- `@voyantjs/inventory/tasks` now includes
+- `@voyant-travel/inventory/tasks` now includes
   `generateAndStoreProductBrochure()` so apps can generate a product PDF,
   persist it through a Voyant storage provider, and register it as the
   canonical current brochure without an app-local `product_media(document)`
@@ -431,13 +431,13 @@ Completed in the current source tree:
 - legal default active contract-template selector with language fallback
 - legal public template preview route
 - public catalog localized slug/SEO fields and slug lookup route
-- storefront settings via `@voyantjs/storefront`
+- storefront settings via `@voyant-travel/storefront`
 - storefront departure list/detail and departure price preview via
-  `@voyantjs/storefront`
+  `@voyant-travel/storefront`
 - storefront product extensions and departure itinerary via
-  `@voyantjs/storefront`
-- storefront verification via `@voyantjs/storefront-verification`
-- transport requirements via `@voyantjs/bookings/requirements`
+  `@voyant-travel/storefront`
+- storefront verification via `@voyant-travel/storefront/verification`
+- transport requirements via `@voyant-travel/bookings/requirements`
 - booking-session state storage and repricing
 - public finance booking documents
 - checkout module formalization and admin reminder tracking
@@ -474,7 +474,7 @@ Completed in source:
 
 - invoice/proforma generate/regenerate workflow with ready rendition
   persistence
-- booking document bundle/list and send workflow via `@voyantjs/notifications`
+- booking document bundle/list and send workflow via `@voyant-travel/notifications`
   for contract attachments and invoice/proforma renditions
 - unpaid bank-transfer reminder and polling workflows through invoice reminder
   targets and finance settlement polling

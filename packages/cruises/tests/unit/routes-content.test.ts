@@ -1,4 +1,4 @@
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { encodeSourceRef, makeExternalSourceKey } from "../../src/lib/key.js"
 import { createCruiseContentRoutes, parseAcceptLanguage } from "../../src/routes-content.js"

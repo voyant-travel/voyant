@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { ApiKeyPermissions } from "@voyantjs/types/api-keys"
+import type { ApiKeyPermissions } from "@voyant-travel/types/api-keys"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantAuthContext } from "../provider.js"

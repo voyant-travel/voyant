@@ -85,14 +85,14 @@ turn on disk-level encryption on their underlying Postgres.
 
 ## How to apply this in route code
 
-Use the helpers from `@voyantjs/voyant-bookings`:
+Use the helpers from `@voyant-travel/voyant-bookings`:
 
 ```ts
 import {
   redactBookingContact,
   redactTravelerIdentity,
   shouldRevealBookingPii,
-} from "@voyantjs/voyant-bookings"
+} from "@voyant-travel/voyant-bookings"
 
 const reveal = shouldRevealBookingPii({
   actor: c.get("actor"),

@@ -2,17 +2,17 @@
 
 Voyant is an open-source framework for OTAs, tour operators, and DMCs. It ships starter apps, durable workflow orchestration, and a wide set of headless domain modules - catalog, commerce, inventory, operations, relationships, quotes, bookings, finance, distribution, legal, charters, cruises, accommodation resale, and more - that you can compose into your own travel platform.
 
-#### [CLI](./packages/cli/README.md) | [Operator Template](./templates/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
+#### [CLI](./packages/cli/README.md) | [Operator Starter](./starters/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
 
 ## Get started
 
 ### 1. Install the CLI
 
 ```bash
-npm install -g @voyantjs/cli
+npm install -g @voyant-travel/cli
 ```
 
-You can also use `pnpm add -g @voyantjs/cli`.
+You can also use `pnpm add -g @voyant-travel/cli`.
 
 ### 2. Scaffold a project from a starter
 
@@ -39,13 +39,13 @@ pnpm db:migrate
 pnpm dev
 ```
 
-## Starter templates
+## Starters
 
 Voyant ships one first-party starter:
 
 | Starter | Purpose | Stack |
 | --- | --- | --- |
-| [`templates/operator`](./templates/operator/README.md) | Tour operator workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
+| [`starters/operator`](./starters/operator/README.md) | Tour operator workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
 
 ## What you get
 
@@ -68,28 +68,28 @@ hotel-operations system; see
 
 ### Core platform
 
-- [`@voyantjs/core`](./packages/core/README.md), [`@voyantjs/db`](./packages/db/README.md), [`@voyantjs/hono`](./packages/hono/README.md), [`@voyantjs/react`](./packages/react)
-- [`@voyantjs/auth`](./packages/auth/README.md), [`@voyantjs/auth-react`](./packages/auth-react/README.md), [`@voyantjs/types`](./packages/types/README.md), [`@voyantjs/utils`](./packages/utils/README.md), [`@voyantjs/voyant-test-utils`](./packages/test-utils/README.md)
-- [`@voyantjs/cli`](./packages/cli/README.md), [`@voyantjs/storage`](./packages/storage/README.md), [`@voyantjs/i18n`](./packages/i18n)
+- [`@voyant-travel/core`](./packages/core/README.md), [`@voyant-travel/db`](./packages/db/README.md), [`@voyant-travel/hono`](./packages/hono/README.md), [`@voyant-travel/react`](./packages/react)
+- [`@voyant-travel/auth`](./packages/auth/README.md), [`@voyant-travel/auth-react`](./packages/auth-react/README.md), [`@voyant-travel/types`](./packages/types/README.md), [`@voyant-travel/utils`](./packages/utils/README.md), [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md)
+- [`@voyant-travel/cli`](./packages/cli/README.md), [`@voyant-travel/storage`](./packages/storage/README.md), [`@voyant-travel/i18n`](./packages/i18n)
 
 ### Travel domain modules
 
-- [`@voyantjs/catalog`](./packages/catalog/README.md), [`@voyantjs/commerce`](./packages/commerce/README.md), [`@voyantjs/inventory`](./packages/inventory), [`@voyantjs/operations`](./packages/operations)
-- [`@voyantjs/bookings`](./packages/bookings/README.md), [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/legal`](./packages/legal/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md)
-- [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/relationships`](./packages/relationships/README.md), [`@voyantjs/quotes`](./packages/quotes/README.md), [`@voyantjs/trip-composer`](./packages/trip-composer)
-- [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/storefront`](./packages/storefront), [`@voyantjs/storefront-verification`](./packages/storefront-verification)
-- [`@voyantjs/accommodations`](./packages/accommodations), [`@voyantjs/charters`](./packages/charters/README.md), [`@voyantjs/cruises`](./packages/cruises/README.md), [`@voyantjs/flights`](./packages/flights), [`@voyantjs/octo`](./packages/octo)
+- [`@voyant-travel/catalog`](./packages/catalog/README.md), [`@voyant-travel/commerce`](./packages/commerce/README.md), [`@voyant-travel/inventory`](./packages/inventory), [`@voyant-travel/operations`](./packages/operations)
+- [`@voyant-travel/bookings`](./packages/bookings/README.md), [`@voyant-travel/finance`](./packages/finance/README.md), [`@voyant-travel/legal`](./packages/legal/README.md), [`@voyant-travel/notifications`](./packages/notifications/README.md)
+- [`@voyant-travel/distribution`](./packages/distribution/README.md), [`@voyant-travel/relationships`](./packages/relationships/README.md), [`@voyant-travel/quotes`](./packages/quotes/README.md), [`@voyant-travel/trips`](./packages/trips)
+- [`@voyant-travel/identity`](./packages/identity/README.md), [`@voyant-travel/storefront`](./packages/storefront)
+- [`@voyant-travel/accommodations`](./packages/accommodations), [`@voyant-travel/charters`](./packages/charters/README.md), [`@voyant-travel/cruises`](./packages/cruises/README.md), [`@voyant-travel/flights`](./packages/flights), [`@voyant-travel/octo`](./packages/octo)
 
 ### Workflows (durable orchestration)
 
 Step-based workflows with durable state, retries, and a shared wire protocol — runnable on Cloudflare Workers + Durable Objects, Node, or Voyant Cloud.
 
-- [`@voyantjs/workflows`](./packages/workflows) — authoring SDK
-- [`@voyantjs/workflows-orchestrator`](./packages/workflows-orchestrator) — reference orchestrator core
-- [`@voyantjs/workflows-orchestrator-cloudflare`](./packages/workflows-orchestrator-cloudflare) and [`@voyantjs/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — runtime adapters
-- `@voyantjs/workflows/bindings`, `@voyantjs/workflows/config`, and `@voyantjs/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
-- [`@voyantjs/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
-- [`@voyantjs/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI
+- [`@voyant-travel/workflows`](./packages/workflows) — authoring SDK
+- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — reference orchestrator core
+- [`@voyant-travel/workflows-orchestrator-cloudflare`](./packages/workflows-orchestrator-cloudflare) and [`@voyant-travel/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — runtime adapters
+- `@voyant-travel/workflows/bindings`, `@voyant-travel/workflows/config`, and `@voyant-travel/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
+- [`@voyant-travel/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
+- [`@voyant-travel/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI
 
 Reference apps under [`apps/`](./apps) compose these into deployable shapes — `workflows-orchestrator-worker`, `workflows-tenant-worker`, `workflows-selfhost-cloudflare-worker`, `workflows-selfhost-node-server`, `workflows-node-step-container`, and `workflows-local-dashboard`.
 
@@ -98,22 +98,22 @@ Reference apps under [`apps/`](./apps) compose these into deployable shapes — 
 Reusable frontend surfaces live in the matching `-react` package for each
 domain module. Those packages own hooks, clients, providers, query keys,
 view-model helpers, reusable components, and `./ui` owner paths where needed -
-for example [`@voyantjs/relationships-react`](./packages/relationships-react/README.md),
-[`@voyantjs/quotes-react`](./packages/quotes-react/README.md),
-[`@voyantjs/inventory-react`](./packages/inventory-react),
-[`@voyantjs/commerce-react`](./packages/commerce-react), and
-[`@voyantjs/bookings-react`](./packages/bookings-react). Bookings requirements
-live under `@voyantjs/bookings-react/requirements`; checkout UI lives under
-`@voyantjs/finance-react/checkout-ui`. The shared admin shell lives in
-[`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in
+for example [`@voyant-travel/relationships-react`](./packages/relationships-react/README.md),
+[`@voyant-travel/quotes-react`](./packages/quotes-react/README.md),
+[`@voyant-travel/inventory-react`](./packages/inventory-react),
+[`@voyant-travel/commerce-react`](./packages/commerce-react), and
+[`@voyant-travel/bookings-react`](./packages/bookings-react). Bookings requirements
+live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
+`@voyant-travel/finance-react/checkout-ui`. The shared admin shell lives in
+[`@voyant-travel/admin`](./packages/admin/README.md); cross-cutting primitives in
 [`packages/ui`](./packages/ui/README.md).
 
 ### Plugins
 
-- [`@voyantjs/plugin-netopia`](./packages/plugins/netopia) — Netopia payments
-- [`@voyantjs/plugin-smartbill`](./packages/plugins/smartbill/README.md) — SmartBill e-invoicing (Romanian tax compliance)
-- [`@voyantjs/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) — Payload CMS sync
-- [`@voyantjs/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) — Sanity CMS sync
+- [`@voyant-travel/plugin-netopia`](./packages/plugins/netopia) — Netopia payments
+- [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) — SmartBill e-invoicing (Romanian tax compliance)
+- [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) — Payload CMS sync
+- [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) — Sanity CMS sync
 
 ## For contributors
 
@@ -123,7 +123,7 @@ This repository is the workspace that powers the framework, starters, runners, a
 | --- | --- |
 | [`packages/*`](./packages) | Reusable business logic, schemas, services, transport adapters, and integrations |
 | [`packages/plugins/*`](./packages/plugins) | First-party plugin bundles (payments, invoicing, CMS sync) |
-| [`templates/*`](./templates) | First-party starter apps |
+| [`starters/*`](./starters) | First-party starter apps |
 | [`apps/workflows-*`](./apps) | Reference orchestrator/tenant/self-host workers and the local workflows dashboard |
 | [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
 
@@ -138,7 +138,7 @@ This repository is the workspace that powers the framework, starters, runners, a
 | `pnpm test:bookings:integration` | Start or reuse the Docker test Postgres, ensure the bookings test schema, and run the bookings integration files serially |
 | `pnpm lint` | Run Biome checks across the repo |
 | `pnpm generate:schema-docs` | Regenerate [`SCHEMA.md`](./SCHEMA.md) from the Drizzle table definitions |
-| `pnpm -F operator dev` | Start the operator template on port `3300` |
+| `pnpm -F operator dev` | Start the operator starter on port `3300` |
 
 ### Integration test database
 
@@ -154,14 +154,14 @@ For the bookings package, contributors can use:
 pnpm test:bookings:integration
 ```
 
-That helper starts or reuses the Docker test DB, applies template migrations, ensures the current additive bookings-session table exists, and runs the bookings DB-backed integration files serially to avoid deadlocks from concurrent table truncation.
+That helper starts or reuses the Docker test DB, applies starter migrations, ensures the current additive bookings-session table exists, and runs the bookings DB-backed integration files serially to avoid deadlocks from concurrent table truncation.
 
 ## Architecture
 
 Voyant keeps a strict boundary:
 
 - `packages/*` hold reusable business logic, schemas, services, routes, adapters, and contracts
-- `templates/*` and app shells own UI, auth wiring, deployment shape, and runtime-specific configuration
+- `starters/*` and app shells own UI, auth wiring, deployment shape, and runtime-specific configuration
 - Core packages stay framework-agnostic even when first-party starters use React, TanStack Start, Hono, Better Auth, and Cloudflare Workers
 - Transport adapters stay thin and call shared domain services rather than owning business logic
 - Workflow business logic ships as plain SDK packages; orchestrator/runner apps wrap them for a given runtime

@@ -6,10 +6,10 @@ import {
   useAdminBreadcrumbs,
   useAdminHref,
   useAdminNavigate,
-} from "@voyantjs/admin"
-import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
-import { getProductsQueryOptions } from "@voyantjs/inventory-react"
-import { getSlotsQueryOptions } from "@voyantjs/operations-react/availability"
+} from "@voyant-travel/admin"
+import { getBookingsQueryOptions } from "@voyant-travel/bookings-react"
+import { getProductsQueryOptions } from "@voyant-travel/inventory-react"
+import { getSlotsQueryOptions } from "@voyant-travel/operations-react/availability"
 
 import {
   type SupplierInvoiceAttachmentUpload,
@@ -32,7 +32,7 @@ function openInNewTab(url: string): void {
  * `$id` param onto {@link SupplierInvoiceDetailPage} and carries the wiring
  * the operator route file used to hand-supply —
  *
- * - attachment uploads post to the template-level `/v1/uploads` route
+ * - attachment uploads post to the starter-level `/v1/uploads` route
  *   through the shared finance provider context (`baseUrl` + credentialed
  *   fetcher), the same path `BookingInvoicesWidget` uses;
  * - the allocation dialog's cross-domain target search composes the

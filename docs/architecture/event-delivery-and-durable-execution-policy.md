@@ -25,7 +25,7 @@ current event bus is already a durable queue.
 
 Voyant event consumers should share one canonical envelope shape.
 
-The current baseline already exists in [`@voyantjs/core/events`](../../packages/core/src/events.ts):
+The current baseline already exists in [`@voyant-travel/core/events`](../../packages/core/src/events.ts):
 
 - `name`
 - `data`
@@ -72,7 +72,7 @@ business fact or an internal process signal.
 ### 3. Treat the current event bus as in-process fire-and-forget delivery
 
 The current default `EventBus` implementation in
-[`@voyantjs/core/events`](../../packages/core/src/events.ts) is in-process.
+[`@voyant-travel/core/events`](../../packages/core/src/events.ts) is in-process.
 
 Its semantics are explicit:
 
@@ -134,8 +134,8 @@ it should move to the `JobRunner` / workflow side, not stay on the plain event
 bus.
 
 Voyant already has the right boundary for this in
-[`@voyantjs/core/orchestration`](../../packages/core/src/orchestration.ts) and
-[`@voyantjs/core/workflows`](../../packages/core/src/workflows.ts).
+[`@voyant-travel/core/orchestration`](../../packages/core/src/orchestration.ts) and
+[`@voyant-travel/core/workflows`](../../packages/core/src/workflows.ts).
 
 Rule:
 
@@ -275,7 +275,7 @@ Policy outcome:
 
 When adding or reviewing event behavior in Voyant:
 
-1. Use the shared event envelope from `@voyantjs/core/events`.
+1. Use the shared event envelope from `@voyant-travel/core/events`.
 2. Mark the event as `domain` or `internal` intentionally.
 3. Emit the event after the durable state change it describes.
 4. Keep subscriber work outside the correctness boundary.

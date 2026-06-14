@@ -2,12 +2,12 @@ import {
   type ContentOverlay,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 import {
   type CharterContent,
   charterContentSchema,
   validateCharterContent,
-} from "@voyantjs/charters-contracts/content-shape"
+} from "@voyant-travel/charters-contracts/content-shape"
 
 export {
   CHARTERS_CONTENT_SCHEMA_VERSION,
@@ -26,7 +26,7 @@ export {
   charterVoyageSchema,
   charterYachtSchema,
   validateCharterContent,
-} from "@voyantjs/charters-contracts/content-shape"
+} from "@voyant-travel/charters-contracts/content-shape"
 
 export function mergeOverlaysIntoCharterContent(
   payload: CharterContent,

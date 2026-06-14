@@ -1,4 +1,4 @@
-import { financeService, type Invoice, invoiceNumberSeries, invoices } from "@voyantjs/finance"
+import { financeService, type Invoice, invoiceNumberSeries, invoices } from "@voyant-travel/finance"
 import { and, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

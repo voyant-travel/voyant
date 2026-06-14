@@ -1,9 +1,9 @@
 /**
- * Promotion-evaluation contract types — the seam between `@voyantjs/catalog`
+ * Promotion-evaluation contract types — the seam between `@voyant-travel/catalog`
  * and any promotion implementation.
  *
  * Catalog defines the input/output shape so it stays decoupled from
- * `@voyantjs/commerce`: the implementation is wired in by templates as
+ * `@voyant-travel/commerce`: the implementation is wired in by templates as
  * an optional dependency on `QuoteEntityDeps.evaluatePromotions`.
  *
  * The shapes mirror Commerce's promotion evaluator

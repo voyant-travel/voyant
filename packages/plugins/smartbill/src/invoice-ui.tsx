@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchWithValidation, useVoyantFinanceContext } from "@voyantjs/finance-react"
+import { fetchWithValidation, useVoyantFinanceContext } from "@voyant-travel/finance-react"
 import {
   Badge,
   Button,
@@ -11,8 +11,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowRightLeft, ExternalLink, FileText, Loader2, RefreshCw, Send } from "lucide-react"
 import type { ReactNode } from "react"
 import { z } from "zod"

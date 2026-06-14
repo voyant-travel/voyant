@@ -6,7 +6,7 @@ import {
   type PaymentStatus,
   useAdminBookingPayments,
   usePublicBookingPayments,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +16,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { ArrowUpRight, CreditCard, Eye, Pencil, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

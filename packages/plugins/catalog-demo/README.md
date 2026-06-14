@@ -1,4 +1,4 @@
-# `@voyantjs/plugin-catalog-demo`
+# `@voyant-travel/plugin-catalog-demo`
 
 Thin `SourceAdapter` HTTP client for the catalog booking engine.
 
@@ -6,7 +6,7 @@ This package contains zero state and zero business logic — every method
 round-trips to the standalone [`catalog-demo-api`](../../../apps/catalog-demo-api)
 service. Drop or swap the plugin to point at a real upstream (Voyant
 Connect peer, TUI direct API, Hotelbeds, GDS) without touching any
-template tables. Mirrors the shape of `@voyantjs/plugin-flights-demo`
+template tables. Mirrors the shape of `@voyant-travel/plugin-flights-demo`
 for `flights`.
 
 ## What it provides
@@ -26,8 +26,8 @@ calls; concurrency is the caller's concern.
 ## Usage
 
 ```ts
-import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
-import { createSourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
+import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
+import { createSourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 
 const registry = createSourceAdapterRegistry()
 registry.register(createDemoCatalogAdapter({ baseUrl: process.env.CATALOG_DEMO_API_URL }))

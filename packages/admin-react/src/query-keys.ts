@@ -1,4 +1,4 @@
-import type { AnyOperation, InferInput, InferParams } from "@voyantjs/admin-client"
+import type { AnyOperation, InferInput, InferParams } from "@voyant-travel/admin-client"
 
 /** Root prefix for every admin-react query cache entry. */
 export const ADMIN_QUERY_ROOT = "voyant-admin" as const

@@ -1,11 +1,11 @@
-import { createKmsProviderFromEnv, type KmsProvider } from "@voyantjs/utils"
+import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
 
 export const RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY = "runtime.relationships.routes"
 
 /**
  * Hook for apps that source KMS keys from somewhere other than env
  * vars / wrangler secrets. Mirrors the same hook in
- * `@voyantjs/bookings`.
+ * `@voyant-travel/bookings`.
  */
 export type ResolveRelationshipsKmsProvider = (
   env: Record<string, string | undefined>,

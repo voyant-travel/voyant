@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/quotes-react",
+  "name": "@voyant-travel/quotes-react",
   "version": "0.119.2",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/quotes-react"
   },
   "type": "module",
@@ -32,31 +32,31 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/quotes": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     }
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/utils": "workspace:^"
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/utils": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/quotes": "workspace:^",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

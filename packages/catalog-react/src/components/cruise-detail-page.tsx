@@ -1,7 +1,7 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import { Anchor, Check, Ship, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"

@@ -2,8 +2,8 @@
  * Re-export drizzle-orm operators to ensure type compatibility
  * when used with tables from this package.
  *
- * Always import operators from this file (or @voyantjs/db/operators)
- * when using them with @voyantjs/db tables to avoid type conflicts.
+ * Always import operators from this file (or @voyant-travel/db/operators)
+ * when using them with @voyant-travel/db tables to avoid type conflicts.
  */
 export {
   and,

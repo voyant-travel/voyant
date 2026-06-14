@@ -135,7 +135,7 @@ describe("createNodeSelfHostDeps validation", () => {
       await writeFile(
         entryFile,
         [
-          'import { workflow } from "@voyantjs/workflows";',
+          'import { workflow } from "@voyant-travel/workflows";',
           'workflow({ id: "service_probe", async run(_input, ctx) {',
           '  const catalog = ctx.services.resolve("catalog:indexer");',
           "  return { serviceName: catalog.name, optional: ctx.services.has('missing') };",
@@ -199,7 +199,7 @@ describe("createNodeSelfHostDeps validation", () => {
       await writeFile(
         entryFile,
         [
-          'import { workflow } from "@voyantjs/workflows";',
+          'import { workflow } from "@voyant-travel/workflows";',
           'workflow({ id: "resume_probe", async run(input, ctx) {',
           '  const a = await ctx.step("a", () => {',
           "    globalThis.__voyantResumeProbeA = (globalThis.__voyantResumeProbeA ?? 0) + 1;",

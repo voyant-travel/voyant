@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   ConfirmActionButton,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ExternalLink, FileText, Pencil, Plus } from "lucide-react"
 import { useFinanceUiI18nOrDefault, useFinanceUiMessagesOrDefault } from "../../i18n/index.js"
 import type {

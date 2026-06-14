@@ -1,4 +1,4 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import {
@@ -63,7 +63,7 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
         { and, asc, eq },
         { issueInvoiceFromBooking, issueProformaFromBooking },
       ] = await Promise.all([
-        import("@voyantjs/bookings/schema"),
+        import("@voyant-travel/bookings/schema"),
         import("./schema.js"),
         import("drizzle-orm"),
         import("./service-issue.js"),

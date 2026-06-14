@@ -40,8 +40,8 @@ import type {
   ReserveResult,
   SourceAdapter,
   SourceAdapterContext,
-} from "@voyantjs/catalog"
-import type { Provenance } from "@voyantjs/catalog/provenance"
+} from "@voyant-travel/catalog"
+import type { Provenance } from "@voyant-travel/catalog/provenance"
 
 import { CRUISES_CONTENT_SCHEMA_VERSION, type CruiseContent } from "../content-shape.js"
 import { decodeSourceRef, encodeSourceRef } from "../lib/key.js"

@@ -7,7 +7,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ChevronDown, Loader2, RotateCw } from "lucide-react"
 import { useEffect, useState } from "react"
 

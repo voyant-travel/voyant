@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: distribution-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge, Button } from "@voyantjs/ui/components"
-import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
+import { Badge, Button } from "@voyant-travel/ui/components"
+import { DataTableColumnHeader } from "@voyant-travel/ui/components/data-table-column-header"
 import { ExternalLink } from "lucide-react"
 import type { MouseEvent } from "react"
 import type { DistributionUiMessages } from "../i18n/index.js"

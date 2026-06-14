@@ -14,7 +14,7 @@ import {
   productsOperations,
 } from "./index.js"
 
-describe("@voyantjs/admin-contracts operation descriptors", () => {
+describe("@voyant-travel/admin-contracts operation descriptors", () => {
   it("applies defineOperation defaults (inputLocation / envelope / idempotent)", () => {
     const get = bookingsOperations.get
     expect(get.inputLocation).toBe("query") // GET → query
@@ -89,7 +89,7 @@ describe("@voyantjs/admin-contracts operation descriptors", () => {
   })
 })
 
-describe("@voyantjs/admin-contracts registry", () => {
+describe("@voyant-travel/admin-contracts registry", () => {
   it("flattens every domain operation and looks them up by id", () => {
     const ids = allOperations.map((op) => op.id)
     // Spot-check representative ids per domain rather than a brittle exact list

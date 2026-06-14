@@ -1,1 +1,4 @@
-export { type ProductGraphSpec, productGraphSpecSchema } from "@voyantjs/inventory/authoring/spec"
+export {
+  type ProductGraphSpec,
+  productGraphSpecSchema,
+} from "@voyant-travel/inventory/authoring/spec"

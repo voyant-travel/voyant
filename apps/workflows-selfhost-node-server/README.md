@@ -23,17 +23,17 @@ surface used by the local dashboard.
 
 ```bash
 # 1. Build the self-host app runtime.
-pnpm --filter @voyantjs/workflows-selfhost-node-server build
+pnpm --filter @voyant-travel/workflows-selfhost-node-server build
 
 # 2. Build + stage your workflow bundle for the Docker target.
 voyant workflows deploy --target docker --file ./src/workflows.ts
 
 # 3. If you are using PostgreSQL, apply the committed migrations.
 DATABASE_URL='<postgres connection string>' \
-  pnpm --filter @voyantjs/workflows-selfhost-node-server migrate:runtime
+  pnpm --filter @voyant-travel/workflows-selfhost-node-server migrate:runtime
 
 # 4. Start the self-host server.
-pnpm --filter @voyantjs/workflows-selfhost-node-server start -- --file ./dist/bundle.mjs
+pnpm --filter @voyant-travel/workflows-selfhost-node-server start -- --file ./dist/bundle.mjs
 ```
 
 By default the server listens on `127.0.0.1:3232`.
@@ -53,7 +53,7 @@ host-provided service resolver. For those, either start the server from code
 with `startNodeSelfHostServer({ services })`, or prefer the app-integrated
 Node path with `createApp({ workflows: { driver: () =>
 createNodeStandaloneDriver({ db }) } })`. See
-[`@voyantjs/workflows-orchestrator-node`](../../packages/workflows-orchestrator-node/README.md#service-backed-package-workflows)
+[`@voyant-travel/workflows-orchestrator-node`](../../packages/workflows-orchestrator-node/README.md#service-backed-package-workflows)
 for an example using the promotions catalog reindex workflow.
 
 Operational endpoints:
@@ -158,14 +158,14 @@ Apply them before starting the server:
 
 ```bash
 DATABASE_URL='<postgres connection string>' \
-  pnpm --filter @voyantjs/workflows-selfhost-node-server migrate:runtime
+  pnpm --filter @voyant-travel/workflows-selfhost-node-server migrate:runtime
 ```
 
 To generate a new migration after changing
 [`packages/workflows-orchestrator-node/src/postgres-schema.ts`](../../packages/workflows-orchestrator-node/src/postgres-schema.ts):
 
 ```bash
-pnpm --filter @voyantjs/workflows-orchestrator-node db:generate -- --name your_change_name
+pnpm --filter @voyant-travel/workflows-orchestrator-node db:generate -- --name your_change_name
 ```
 
 ## Status

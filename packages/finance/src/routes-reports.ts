@@ -1,4 +1,4 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { csvDownload, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"

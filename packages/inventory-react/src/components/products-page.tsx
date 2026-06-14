@@ -1,4 +1,4 @@
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
 import type { ProductRecord } from "../index.js"
 import { ProductList } from "./product-list.js"

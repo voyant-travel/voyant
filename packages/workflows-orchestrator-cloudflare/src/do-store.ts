@@ -8,7 +8,7 @@
 // through the global run index (lives in voyant-cloud's Postgres,
 // not here).
 
-import type { RunRecord, RunRecordStore } from "@voyantjs/workflows-orchestrator"
+import type { RunRecord, RunRecordStore } from "@voyant-travel/workflows-orchestrator"
 import type { DurableObjectStorageLike } from "./types.js"
 
 const RECORD_KEY = "record"

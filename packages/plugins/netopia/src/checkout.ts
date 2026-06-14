@@ -1,4 +1,4 @@
-import type { CheckoutPaymentStarter } from "@voyantjs/finance/checkout"
+import type { CheckoutPaymentStarter } from "@voyant-travel/finance/checkout"
 
 import { startPaymentSession } from "./service-start.js"
 import type { NetopiaRuntimeOptions } from "./types.js"

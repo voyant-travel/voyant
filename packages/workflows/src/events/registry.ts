@@ -6,7 +6,7 @@
 // forwarder.
 //
 // Backed by `globalThis` so bundles that inline their own copy of
-// `@voyantjs/workflows` still share the registry with the loader's copy
+// `@voyant-travel/workflows` still share the registry with the loader's copy
 // — same pattern `getWorkflow()` uses for the workflow registry.
 //
 // Architecture: docs/architecture/workflows-runtime-architecture.md §12.

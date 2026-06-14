@@ -1,4 +1,4 @@
-import { parseQuery } from "@voyantjs/hono"
+import { parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 

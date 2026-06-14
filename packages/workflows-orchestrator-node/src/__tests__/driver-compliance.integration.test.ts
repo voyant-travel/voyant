@@ -1,5 +1,5 @@
 // Mode 2 driver compliance — runs the parameterized suite from
-// `@voyantjs/workflows-orchestrator/testing` against `createNodeStandaloneDriver`.
+// `@voyant-travel/workflows-orchestrator/testing` against `createNodeStandaloneDriver`.
 //
 // Gated on `TEST_DATABASE_URL`. Mirrors the pattern from
 // `postgres-integration.test.ts`: applies migrations once, truncates
@@ -8,7 +8,7 @@
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { runDriverComplianceSuite } from "@voyantjs/workflows-orchestrator/testing"
+import { runDriverComplianceSuite } from "@voyant-travel/workflows-orchestrator/testing"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe } from "vitest"
 

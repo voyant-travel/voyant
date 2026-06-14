@@ -185,13 +185,13 @@ describe("validateVoyantConfig", () => {
   it("accepts additionalSchemas as module-style entries", () => {
     const result = validateVoyantConfig({
       modules: ["crm"],
-      additionalSchemas: ["@voyantjs/catalog", { resolve: "@voyantjs/accommodations" }],
+      additionalSchemas: ["@voyant-travel/catalog", { resolve: "@voyant-travel/accommodations" }],
     })
     expect(result.ok).toBe(true)
   })
 
   it("rejects additionalSchemas that are not an array", () => {
-    const result = validateVoyantConfig({ additionalSchemas: "@voyantjs/catalog" })
+    const result = validateVoyantConfig({ additionalSchemas: "@voyant-travel/catalog" })
     expect(result.ok).toBe(false)
     expect(result.issues).toContainEqual({
       path: "additionalSchemas",
@@ -201,7 +201,7 @@ describe("validateVoyantConfig", () => {
 
   it("rejects duplicate additionalSchemas entries", () => {
     const result = validateVoyantConfig({
-      additionalSchemas: ["@voyantjs/catalog", "@voyantjs/catalog"],
+      additionalSchemas: ["@voyant-travel/catalog", "@voyant-travel/catalog"],
     })
     expect(result.ok).toBe(false)
     expect(result.issues.some((i) => i.path === "additionalSchemas[1]")).toBe(true)
@@ -210,20 +210,20 @@ describe("validateVoyantConfig", () => {
   it("accepts extensions as module-style entries", () => {
     const result = validateVoyantConfig({
       modules: ["crm"],
-      extensions: ["@voyantjs/catalog-authoring", { resolve: "@voyantjs/inventory" }],
+      extensions: ["@voyant-travel/catalog-authoring", { resolve: "@voyant-travel/inventory" }],
     })
     expect(result.ok).toBe(true)
   })
 
   it("rejects extensions that are not an array", () => {
-    const result = validateVoyantConfig({ extensions: "@voyantjs/catalog-authoring" })
+    const result = validateVoyantConfig({ extensions: "@voyant-travel/catalog-authoring" })
     expect(result.ok).toBe(false)
     expect(result.issues).toContainEqual({ path: "extensions", message: "Expected an array." })
   })
 
   it("rejects duplicate extension entries", () => {
     const result = validateVoyantConfig({
-      extensions: ["@voyantjs/catalog-authoring", "@voyantjs/catalog-authoring"],
+      extensions: ["@voyant-travel/catalog-authoring", "@voyant-travel/catalog-authoring"],
     })
     expect(result.ok).toBe(false)
     expect(result.issues.some((i) => i.path === "extensions[1]")).toBe(true)

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { pickBestCachedLocale, type SourceAdapter, sourceAdapterSchema } from "./index.js"
 
-describe("@voyantjs/catalog-contracts public surface", () => {
+describe("@voyant-travel/catalog-contracts public surface", () => {
   it("validates source adapter payload surfaces without runtime dependencies", () => {
     const adapter = {
       kind: "test-feed",

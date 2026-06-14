@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Input } from "@voyantjs/ui/components"
+import { Badge, Input } from "@voyant-travel/ui/components"
 import { X } from "lucide-react"
 import { type KeyboardEvent, useState } from "react"
 

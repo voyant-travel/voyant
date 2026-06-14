@@ -1,4 +1,4 @@
-import type { CabinClass, PassengerCounts } from "@voyantjs/flights/contract/types"
+import type { CabinClass, PassengerCounts } from "@voyant-travel/flights/contract/types"
 import type { TripType } from "./flight-search-form.js"
 import type { PopularRoute } from "./popular-routes.js"
 

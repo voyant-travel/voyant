@@ -1,12 +1,12 @@
-import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
-import type { BookingPiiService, bookingsService } from "@voyantjs/bookings"
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import type { BookingPiiService, bookingsService } from "@voyant-travel/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { ContractLifecycleHook } from "./lifecycle.js"
 import type { ContractDocumentGenerator } from "./service-documents.js"
 
 /**
- * Event shape emitted by `@voyantjs/bookings` on confirm. Duplicated here so
+ * Event shape emitted by `@voyant-travel/bookings` on confirm. Duplicated here so
  * legal doesn't have to import the bookings service just for the interface —
  * the concrete `bookingsService` lookup happens inside the handler.
  */
@@ -26,7 +26,7 @@ export interface BookingConfirmedLikeEvent {
  * auto-generation time. Anything we can't fill from the persisted booking
  * row (acceptance fingerprint, operator info, line items breakdown,
  * vertical-specific schedule details) is emitted as an empty default — the
- * operator template's `resolveVariables` callback overrides them.
+ * operator starter's `resolveVariables` callback overrides them.
  */
 export interface OperatorContextVariables {
   name: string
@@ -395,7 +395,7 @@ export interface AutoGenerateContractOptions {
 
 export interface AutoGenerateContractRuntime {
   generator: ContractDocumentGenerator
-  eventBus?: import("@voyantjs/core").EventBus
+  eventBus?: import("@voyant-travel/core").EventBus
   lifecycleHooks?: readonly ContractLifecycleHook[]
   /**
    * Optional sensitive booking-traveler reader. When supplied, the default

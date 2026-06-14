@@ -1,6 +1,6 @@
 "use client"
 
-import { Label } from "@voyantjs/ui/components"
+import { Label } from "@voyant-travel/ui/components"
 import { FileText, Upload } from "lucide-react"
 import type { DragEvent, RefObject } from "react"
 

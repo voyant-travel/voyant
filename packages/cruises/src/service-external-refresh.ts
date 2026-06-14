@@ -6,13 +6,13 @@
  * catalog search slices. The service never imports a concrete provider.
  */
 
-import type { DocumentBuilder, FieldPolicyRegistry, IndexerService } from "@voyantjs/catalog"
+import type { DocumentBuilder, FieldPolicyRegistry, IndexerService } from "@voyant-travel/catalog"
 import {
   type SourceAdapterRegistry,
   type SyncProgressEvent,
   type SyncSourcesSummary,
   syncSources,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { listCruiseAdapters } from "./adapters/registry.js"

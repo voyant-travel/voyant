@@ -1,10 +1,10 @@
-import { identityService } from "@voyantjs/identity/service"
+import { identityService } from "@voyant-travel/identity/service"
 import type {
   InsertContactPointForEntity,
   InsertNamedContactForEntity,
   UpdateContactPoint as UpdateIdentityContactPoint,
   UpdateNamedContact as UpdateIdentityNamedContact,
-} from "@voyantjs/identity/validation"
+} from "@voyant-travel/identity/validation"
 import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

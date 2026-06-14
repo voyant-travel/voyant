@@ -3,8 +3,8 @@ import type {
   AncillarySelection,
   FlightOffer,
   SeatMap,
-} from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
+} from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
 import type { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import type { FlightItinerarySelection, LedgerLineItem } from "./flight-booking-ledger.js"
 import {

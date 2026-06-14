@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

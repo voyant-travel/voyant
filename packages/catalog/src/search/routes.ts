@@ -1,5 +1,5 @@
-import { parseJsonBody } from "@voyantjs/hono"
-import type { HonoModule } from "@voyantjs/hono/module"
+import { parseJsonBody } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context, Hono as HonoApp } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
@@ -153,13 +153,13 @@ export interface CatalogSearchRoutesOptions {
   resolveRuntime(c: Context): CatalogSearchRuntime
   /**
    * Optional semantic/hybrid executor. Templates that use
-   * `@voyantjs/catalog/search/semantic` should pass `executeSemanticSearch` here.
+   * `@voyant-travel/catalog/search/semantic` should pass `executeSemanticSearch` here.
    * Without this hook, the route delegates directly to `adapter.search`.
    */
   executeSearch?(input: CatalogSearchExecuteInput): Promise<SearchResults>
   /**
    * Retry semantic/hybrid requests as keyword when embedding generation or
-   * vector search fails. Defaults to true to preserve the operator template's
+   * vector search fails. Defaults to true to preserve the operator starter's
    * "best available search mode" behavior.
    */
   fallbackToKeywordOnSearchError?: boolean | ((input: CatalogSearchFallbackInput) => boolean)

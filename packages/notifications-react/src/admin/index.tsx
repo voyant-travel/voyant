@@ -1,4 +1,8 @@
-import { type AdminExtension, adminRoutePageModule, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyant-travel/admin"
 
 /**
  * Semantic destinations the notifications admin surfaces navigate to
@@ -7,7 +11,7 @@ import { type AdminExtension, adminRoutePageModule, defineAdminExtension } from 
  * (the per-rule "Manage stages" link and the stage editor's back link).
  * All shapes are closed, so they are declared here directly.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The notification templates list page. */
     "notificationTemplate.list": Record<string, never>
@@ -48,12 +52,12 @@ export interface CreateNotificationsAdminExtensionOptions {
 
 /**
  * The notifications admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Notifications nav group (templates,
  * reminder rules, deliveries, reminder runs, preview, settings) is part of
  * the BASE operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing nav entries here would duplicate
+ * `@voyant-travel/admin` — so contributing nav entries here would duplicate
  * them. If the base nav ever drops the notifications group, this extension
  * is where the entries move.
  *

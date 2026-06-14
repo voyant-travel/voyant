@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/components"
+import { cn } from "@voyant-travel/ui/components"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { PersonRecord } from "../index.js"
 import { PersonList } from "./person-list.js"

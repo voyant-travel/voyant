@@ -1,6 +1,6 @@
-import { createEventBus } from "@voyantjs/core"
-import { newId } from "@voyantjs/db/lib/typeid"
-import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { createEventBus } from "@voyant-travel/core"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { products } from "../../../../inventory/src/schema.js"
 

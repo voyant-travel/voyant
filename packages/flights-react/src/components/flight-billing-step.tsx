@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import {
   Command,
   CommandEmpty,
@@ -9,14 +9,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@voyantjs/ui/components/command"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { PhoneInput } from "@voyantjs/ui/components/phone-input"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/command"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Building2, ChevronDown, User, Users } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { flightsUiEn } from "../i18n/en.js"

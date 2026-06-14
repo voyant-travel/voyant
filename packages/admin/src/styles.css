@@ -1,9 +1,9 @@
 /* Tailwind v4 source-detection helper.
  *
- * Templates that consume this package should `@import` this CSS so Tailwind
+ * Starters that consume this package should `@import` this CSS so Tailwind
  * scans these component files for utility classes:
  *
- *   @import "@voyantjs/admin/styles.css";
+ *   @import "@voyant-travel/admin/styles.css";
  *
  * Without it, classes that only appear inside this package (e.g. sidebar and
  * navigation layout utilities) won't be compiled into the final bundle.

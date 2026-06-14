@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: charters; existing route module stays co-located until a dedicated split preserves behavior and tests.
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
@@ -35,7 +35,7 @@ type Env = {
     db: PostgresJsDatabase
     userId?: string
     /**
-     * Optional injection of `@voyantjs/legal`'s contractsService — set by
+     * Optional injection of `@voyant-travel/legal`'s contractsService — set by
      * the template at app boot so MYBA generation routes can run without
      * charters taking a hard dep on legal. When unset, the
      * `/bookings/:bookingId/myba` endpoint returns 501.

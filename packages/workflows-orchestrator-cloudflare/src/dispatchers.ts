@@ -15,7 +15,7 @@
 //
 // See issue #528 + docs/architecture/workflows-runtime-architecture.md §8.
 
-import { createHttpStepHandler, type StepHandler } from "@voyantjs/workflows-orchestrator"
+import { createHttpStepHandler, type StepHandler } from "@voyant-travel/workflows-orchestrator"
 
 /**
  * Context the run DO supplies when asking a dispatcher for a
@@ -103,7 +103,7 @@ export function createServiceBindingDispatcher(
  * Inline dispatcher. Returns the supplied StepHandler directly — used
  * when workflow code lives in the SAME Worker as the orchestrator
  * (single-Worker self-host). No HTTP, no DO traversal, just a function
- * call. Pair with `handleStepRequest` from `@voyantjs/workflows/handler`
+ * call. Pair with `handleStepRequest` from `@voyant-travel/workflows/handler`
  * for the typical setup.
  */
 export function createInlineDispatcher(handler: StepHandler): StepDispatcher {

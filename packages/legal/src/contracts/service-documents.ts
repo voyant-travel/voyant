@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: legal; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import type { EventBus } from "@voyantjs/core"
-import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
-import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"
+import type { EventBus } from "@voyant-travel/core"
+import type { StorageProvider, StorageUploadBody } from "@voyant-travel/storage"
+import { renderPdfDocument } from "@voyant-travel/utils/pdf-renderer"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ContractLifecycleHook } from "./lifecycle.js"

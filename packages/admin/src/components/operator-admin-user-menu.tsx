@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { BadgeCheck, Check, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react"
 
 import { getDisplayName, getInitials } from "../lib/initials.js"

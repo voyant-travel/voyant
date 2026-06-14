@@ -1,16 +1,16 @@
-# @voyantjs/bookings-react
+# @voyant-travel/bookings-react
 
 The bookings client tier: headless data hooks/clients plus the styled UI
-components and page-level compositions (formerly `@voyantjs/bookings-ui`).
+components and page-level compositions (formerly `@voyant-travel/bookings-ui`).
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
 live under `./ui`, `./components/*`, `./journey`, `./admin`, `./i18n`, and
-`./styles.css`, whose heavier peers (`@voyantjs/ui`, `@voyantjs/admin`,
+`./styles.css`, whose heavier peers (`@voyant-travel/ui`, `@voyant-travel/admin`,
 `@tanstack/react-table`, `lucide-react`, the other modules' `*-react`/`*-ui`
 packages) are optional and only needed when you import those subpaths.
 
-`@voyantjs/bookings-react` provides React Query hooks and provider utilities for Voyant bookings.
+`@voyant-travel/bookings-react` provides React Query hooks and provider utilities for Voyant bookings.
 
 It now includes public storefront flow helpers alongside the admin hooks:
 
@@ -30,10 +30,10 @@ Importable React UI components for Voyant bookings. Bundler-consumed (Vite, Next
 ### Install
 
 ```bash
-pnpm add @voyantjs/bookings-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyant-travel/bookings-react @voyant-travel/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/ui` provides the design-system primitives; the data-layer hooks ship
+`@voyant-travel/ui` provides the design-system primitives; the data-layer hooks ship
 from this package's root and `./hooks` subpaths.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
@@ -52,7 +52,7 @@ that spacing when a shell owns the page chrome.
 
 `BookingDetailPage` is the canonical multi-tab booking surface (Overview,
 Travelers, Payments, Suppliers, Documents, Activity, plus optional `Invoices`
-and `Ledger` tabs). Templates inject template-owned cards via the `slots`
+and `Ledger` tabs). Starters inject starter-owned cards via the `slots`
 prop and wire router navigation through `onBack`, `onPersonOpen`,
 `onOrganizationOpen`, `onCollectPayment`, and `onRecordPayment` callbacks:
 
@@ -81,7 +81,7 @@ Components render English by default. To localize them, wrap your UI in
 `BookingsUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/ui"
-import { bookingsUiEn } from "@voyantjs/bookings-react/i18n/en"
-import { bookingsUiRo } from "@voyantjs/bookings-react/i18n/ro"
+import { BookingsUiMessagesProvider } from "@voyant-travel/bookings-react/ui"
+import { bookingsUiEn } from "@voyant-travel/bookings-react/i18n/en"
+import { bookingsUiRo } from "@voyant-travel/bookings-react/i18n/ro"
 ```

@@ -1,10 +1,10 @@
-import { type ActionLedgerEntry, actionLedgerService } from "@voyantjs/action-ledger"
+import { type ActionLedgerEntry, actionLedgerService } from "@voyant-travel/action-ledger"
 import {
   type ActionLedgerTargetTimelinePage,
   actionLedgerTargetTimelineQuerySchema,
   buildActionLedgerTargetTimelinePage,
-} from "@voyantjs/action-ledger/timeline"
-import { parseQuery } from "@voyantjs/hono"
+} from "@voyant-travel/action-ledger/timeline"
+import { parseQuery } from "@voyant-travel/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 import type { z } from "zod"

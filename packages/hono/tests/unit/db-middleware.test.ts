@@ -1,4 +1,4 @@
-import { VOYANT_DB_SUPPORTS_TRANSACTIONS } from "@voyantjs/db/transaction-capability"
+import { VOYANT_DB_SUPPORTS_TRANSACTIONS } from "@voyant-travel/db/transaction-capability"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 

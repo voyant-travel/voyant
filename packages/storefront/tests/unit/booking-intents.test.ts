@@ -9,7 +9,7 @@ const { writeIntents, bootstrapBookingSession } = vi.hoisted(() => ({
   },
   bootstrapBookingSession: vi.fn(),
 }))
-vi.mock("@voyantjs/db/write-intents", () => writeIntents)
+vi.mock("@voyant-travel/db/write-intents", () => writeIntents)
 vi.mock("../../src/service.js", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../src/service.js")>()
   return {

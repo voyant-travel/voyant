@@ -3,8 +3,8 @@ import type {
   CommitOwnedRequest,
   OwnedHandlerContext,
   ProductVariantOption,
-} from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

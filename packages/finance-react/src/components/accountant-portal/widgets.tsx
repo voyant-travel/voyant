@@ -1,5 +1,5 @@
-import { Card, CardDescription, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Card, CardDescription, CardHeader, CardTitle } from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type { DepartureProfitabilityReport } from "../../index.js"
 
 const PIE_COLORS = [

@@ -3,9 +3,9 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
 import type { AnyPgTable } from "drizzle-orm/pg-core"
 
-// `booleanQueryParam` now lives in @voyantjs/schema-kit (pure, below the data
-// layer). Re-exported here to keep the @voyantjs/db/helpers import path stable.
-export { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
+// `booleanQueryParam` now lives in @voyant-travel/schema-kit (pure, below the data
+// layer). Re-exported here to keep the @voyant-travel/db/helpers import path stable.
+export { booleanQueryParam } from "@voyant-travel/schema-kit/query-params"
 
 /**
  * A more readable alias for Drizzle's InferSelectModel.

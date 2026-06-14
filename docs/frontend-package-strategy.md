@@ -9,16 +9,16 @@
 
 Voyant separates frontend acceleration into three layers:
 
-1. `@voyantjs/<module>`
+1. `@voyant-travel/<module>`
    Domain and runtime logic. These packages stay transport- and framework-agnostic where possible.
 2. Framework-agnostic SDK packages when a cross-module public workflow needs a
-   stable client facade, for example `@voyantjs/storefront-sdk`.
-3. `@voyantjs/<module>-react`
+   stable client facade, for example `@voyant-travel/storefront-sdk`.
+3. `@voyant-travel/<module>-react`
    React runtime helpers and reusable module UI for a module. These packages
    provide hooks, query keys, typed clients, providers, frontend view-model
    helpers, and reusable components that are not specific to one app shell.
 
-`admin`, `storefront`, and app/template packages own shell composition,
+`admin`, `storefront`, and app/starter packages own shell composition,
 navigation, page assembly, and deployment-specific presentation.
 
 ## Why This Split Exists
@@ -27,17 +27,17 @@ Starter apps should not force developers to build every screen from the raw doma
 
 1. install the domain module
 2. install the React runtime package for that module
-3. compose final pages inside `admin`, `storefront`, or the app/template
+3. compose final pages inside `admin`, `storefront`, or the app/starter
 
 That gives Voyant a better product shape than a monolithic starter-only UI and avoids turning every backend/domain package into a React-specific dependency.
 
 ## Naming Rules
 
-- Domain/runtime packages keep simple names like `@voyantjs/relationships`, `@voyantjs/quotes`, `@voyantjs/bookings`, `@voyantjs/inventory`, and `@voyantjs/operations`.
-- React packages use `-react`, for example `@voyantjs/relationships-react`.
+- Domain/runtime packages keep simple names like `@voyant-travel/relationships`, `@voyant-travel/quotes`, `@voyant-travel/bookings`, `@voyant-travel/inventory`, and `@voyant-travel/operations`.
+- React packages use `-react`, for example `@voyant-travel/relationships-react`.
   They own hooks, clients, providers, view-model helpers, and reusable module
   components.
-- Shared physical-place UI should use `@voyantjs/operations-react` and
+- Shared physical-place UI should use `@voyant-travel/operations-react` and
   place-first names such as `PlaceCombobox` / `PlaceBadge`. `facilityId`
   remains a table-era field name where existing schemas require it.
 - Do not create new `*-ui` packages. If a historical `*-ui` package exists,
@@ -68,23 +68,23 @@ the surface/app package until a reusable component Interface exists.
 ## Tailwind v4 Package Styles
 
 Packages that render Tailwind classes from shipped component code must expose a
-CSS helper at `@voyantjs/<package>/styles.css`. Consumers should import only the
+CSS helper at `@voyant-travel/<package>/styles.css`. Consumers should import only the
 helpers for packages they install, for example:
 
 ```css
-@import "@voyantjs/ui/styles.css";
-@import "@voyantjs/admin/styles.css";
-@import "@voyantjs/bookings-react/styles.css";
+@import "@voyant-travel/ui/styles.css";
+@import "@voyant-travel/admin/styles.css";
+@import "@voyant-travel/bookings-react/styles.css";
 ```
 
-`@voyantjs/ui/styles.css` is the canonical base import and includes the shared
+`@voyant-travel/ui/styles.css` is the canonical base import and includes the shared
 Voyant UI globals. Domain UI helpers such as
-`@voyantjs/bookings-react/styles.css` and `@voyantjs/operations-react/styles.css`
+`@voyant-travel/bookings-react/styles.css` and `@voyant-travel/operations-react/styles.css`
 only expose Tailwind source-detection directives for package components.
 
 ## What Does Not Belong In `-react`
 
-- core business rules already owned by `@voyantjs/<module>`
+- core business rules already owned by `@voyant-travel/<module>`
 - deployment-specific route trees
 - app shell navigation
 - starter-specific theming and layout
@@ -93,9 +93,9 @@ only expose Tailwind source-detection directives for package components.
 
 The old combined customer-and-sales surface is split before v1:
 
-- `@voyantjs/relationships` and `@voyantjs/relationships-react` own people,
+- `@voyant-travel/relationships` and `@voyant-travel/relationships-react` own people,
   organizations, activities, profile context, documents, and customer signals.
-- `@voyantjs/quotes` and `@voyantjs/quotes-react` own pipelines, stages,
+- `@voyant-travel/quotes` and `@voyant-travel/quotes-react` own pipelines, stages,
   quotes, quote versions, and proposal lifecycle UI.
 
 Future module candidates should add `-react` only when they justify reusable
@@ -103,12 +103,12 @@ React runtime helpers or reusable module components. Not every Module needs a
 React package immediately.
 
 Inventory is one of those justified module React packages:
-`@voyantjs/inventory-react` is the operated product authoring UI target for
+`@voyant-travel/inventory-react` is the operated product authoring UI target for
 Product structure, Product Versions, product-internal components, and owned
 publication lifecycle. Operated-authoring surfaces should be added under
 Inventory React.
 
-Commerce follows the same v1 owner-path rule: `@voyantjs/commerce-react` owns
+Commerce follows the same v1 owner-path rule: `@voyant-travel/commerce-react` owns
 the reusable Markets, Pricing, Promotions, and Sellability React/admin source
 under Commerce React. The old split commercial React package names are removed
 from the v1 workspace surface.

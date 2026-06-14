@@ -1,4 +1,4 @@
-import { createKmsProviderFromEnv, type KmsProvider } from "@voyantjs/utils"
+import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
 
 export interface CustomerPortalRouteRuntime {
   getOptionalKmsProvider(): KmsProvider | null

@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import {
   Combobox,
   ComboboxCollection,
@@ -10,8 +10,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { Input } from "@voyantjs/ui/components/input"
+} from "@voyant-travel/ui/components/combobox"
+import { Input } from "@voyant-travel/ui/components/input"
 import { CheckCircle2, Clock, Search, X, XCircle } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 

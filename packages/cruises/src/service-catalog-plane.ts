@@ -23,8 +23,8 @@ import {
   type ResolvedView,
   type ResolverScope,
   resolveEntityView,
-} from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { cruiseCatalogPolicy } from "./catalog-policy.js"

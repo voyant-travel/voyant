@@ -18,7 +18,7 @@
  * enforced at the service layer.
  */
 
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
   boolean,

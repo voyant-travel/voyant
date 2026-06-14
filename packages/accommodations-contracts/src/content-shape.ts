@@ -18,12 +18,12 @@
  *
  * This module is the pure content contract: schemas, types, version, and
  * the validator. The `mergeOverlaysIntoAccommodationContent` overlay
- * composition stays in the `@voyantjs/accommodations` runtime package.
+ * composition stays in the `@voyant-travel/accommodations` runtime package.
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */
 
-import { boardBasisSchema } from "@voyantjs/catalog-contracts/content"
+import { boardBasisSchema } from "@voyant-travel/catalog-contracts/content"
 import { z } from "zod"
 
 export const ACCOMMODATION_CONTENT_SCHEMA_VERSION = "accommodations/v1"
@@ -127,7 +127,7 @@ export {
   type BoardBasis,
   type BoardBasisShortCode,
   boardBasisSchema,
-} from "@voyantjs/catalog-contracts/content"
+} from "@voyant-travel/catalog-contracts/content"
 
 export function validateAccommodationContent(
   payload: unknown,

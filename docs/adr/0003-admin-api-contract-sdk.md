@@ -1,7 +1,7 @@
 # ADR-0003: Admin API contract + SDK for non-web admin clients
 
 - **Status:** Proposed (2026-06-01)
-- **Relates to:** [#1411](https://github.com/voyantjs/voyant/issues/1411)
+- **Relates to:** [#1411](https://github.com/voyant-travel/voyant/issues/1411)
 - **Builds on:** [ADR-0002](./0002-contract-packages.md) (the `*-contracts` pattern), [ADR-0001](./0001-tenant-scoping.md) (deployment = tenancy boundary)
 
 ## Context
@@ -37,9 +37,9 @@ attribution drift four ways. #1411 asks for a shared **Admin API contract** and
   extended per-module). `/v1/admin/*` requires `staff`
   (`require-actor.ts`).
 - **Scopes:** API keys carry `resource:action` scopes
-  (`@voyantjs/types/api-keys`) — 18 resources × {read, write, delete, trigger,
+  (`@voyant-travel/types/api-keys`) — 18 resources × {read, write, delete, trigger,
   relay, search}, with wildcards and presets.
-- **Audit:** `@voyantjs/action-ledger` records every mutation with a principal
+- **Audit:** `@voyant-travel/action-ledger` records every mutation with a principal
   type (`user | api_key | agent | workflow | system`), action kind, evaluated
   risk, approvals, and causation/correlation IDs.
 - **Confirmation gates:** status mutations (confirm/cancel/override/…) are
@@ -47,7 +47,7 @@ attribution drift four ways. #1411 asks for a shared **Admin API contract** and
   **approval** — returning `202` with an approval payload instead of performing
   the action. This is exactly the "requires confirmation" semantics #1411 wants.
 - **Conventions:** offset pagination `{ data, total, limit, offset }`; error
-  shape `{ error, code?, requestId?, details? }` (`@voyantjs/types`); zod input
+  shape `{ error, code?, requestId?, details? }` (`@voyant-travel/types`); zod input
   validation per package; `Idempotency-Key` on mutations.
 - **Gap:** there is **no capability-discovery endpoint** — nothing surfaces
   enabled modules, supported operations, deployment version, or required scopes
@@ -55,7 +55,7 @@ attribution drift four ways. #1411 asks for a shared **Admin API contract** and
 
 ## Decision
 
-**Ship a dedicated `@voyantjs/admin-*` package family that defines admin
+**Ship a dedicated `@voyant-travel/admin-*` package family that defines admin
 operations as typed, versioned, transport-agnostic descriptors, plus a
 framework-neutral client that executes them. Web, Expo, Max tools, and brokers
 all consume the same descriptors, so permission and audit semantics are
@@ -63,7 +63,7 @@ identical across callers.**
 
 ### Package family
 
-- **`@voyantjs/admin-contracts`** — the contract layer. Pure, `zod`-only (plus
+- **`@voyant-travel/admin-contracts`** — the contract layer. Pure, `zod`-only (plus
   the relevant `*-contracts` domain packages for payload shapes). Owns:
   - shared envelopes: error, offset + cursor pagination, the approval/`202`
     result, idempotency semantics;
@@ -78,13 +78,13 @@ identical across callers.**
   - the per-domain operation catalogues (`bookings.*`, `finance.*`, …),
     referencing domain payload types from the `*-contracts` packages rather
     than redeclaring them.
-- **`@voyantjs/admin-client`** — a framework-neutral TypeScript client.
+- **`@voyant-travel/admin-client`** — a framework-neutral TypeScript client.
   `createAdminClient({ baseUrl, auth, fetch? })` returns typed operation
   namespaces built from the descriptors. Handles base URL, auth header
   injection (API key **or** bearer/session), typed errors, pagination,
   idempotency keys, and capability discovery. **No React, no web-UI, no
   framework runtime deps** — runs in Expo, Node, Workers, and Max tools.
-- **`@voyantjs/admin-react`** *(optional, follow-up)* — React Query hooks over
+- **`@voyant-travel/admin-react`** *(optional, follow-up)* — React Query hooks over
   `admin-client` for React UIs. TanStack Query is renderer-agnostic, so the one
   package serves the web admin **and** a React Native / Expo app.
 
@@ -108,7 +108,7 @@ const confirmBooking = defineOperation({
   method: "POST",
   path: (p: { id: string }) => `/v1/admin/bookings/${p.id}/confirm`,
   input: confirmBookingInput,          // zod
-  output: bookingOutput,               // zod, references @voyantjs/bookings shapes
+  output: bookingOutput,               // zod, references @voyant-travel/bookings shapes
   classification: "requires_confirmation",
   scopes: ["bookings:write"],          // resource:action, matches API-key scopes
   capabilityKey: "booking.status.confirm",
@@ -127,7 +127,7 @@ small built-in `GET /v1/admin/_meta/capabilities` route (under the staff guard)
 that returns: enabled modules, the operation ids available on this deployment,
 the deployment/contract version, and the caller's resolved actor + scopes.
 Clients call `client.capabilities()` to adapt to module availability and version
-— no hard-coding which modules a given deployment runs. To keep `@voyantjs/hono`
+— no hard-coding which modules a given deployment runs. To keep `@voyant-travel/hono`
 decoupled from `admin-contracts`, the deployment injects the catalogue via
 `createApp({ adminMeta: { contractVersion, operations } })` (from
 `admin-contracts`' `ADMIN_CONTRACT_VERSION` + `operationCapabilities()`); when
@@ -188,7 +188,7 @@ route, and the React/Expo/Max adapters are explicit follow-ups (see Roadmap).
 
 ## Alternatives considered
 
-### Alternative A: one mega `@voyantjs/admin` package (contract + client + hooks)
+### Alternative A: one mega `@voyant-travel/admin` package (contract + client + hooks)
 
 Reject — it forces an Expo or Node caller to pull React Query and web concerns,
 and couples the framework-neutral client to UI adapter churn. The
@@ -224,7 +224,7 @@ The descriptor approach is a thin typed layer over what already ships.
    `createApp({ adminMeta })`.
 2. Expand the operation catalogue beyond the first slice (CRM, legal, products,
    workflows, settings) per #1411's priority list.
-3. An optional `@voyantjs/admin-react` (React Query hooks) for React UIs —
+3. An optional `@voyant-travel/admin-react` (React Query hooks) for React UIs —
    serves both the web admin and a React Native / Expo app (no separate Expo
    adapter; TanStack Query is renderer-agnostic).
 4. CI guard asserting descriptor ↔ route consistency.
@@ -240,8 +240,8 @@ broker) is Cloud's.
 ## How to apply this decision
 
 When exposing an admin operation to non-web clients, **add an
-`OperationDescriptor` to `@voyantjs/admin-contracts`** (input/output zod,
+`OperationDescriptor` to `@voyant-travel/admin-contracts`** (input/output zod,
 `classification`, `scopes`, `capabilityKey`) rather than writing bespoke fetch
 code in the client. Reference payload types from the relevant `*-contracts`
 package. Consumers (mobile, Max, brokers, web) get the operation for free
-through `@voyantjs/admin-client`; do not hand-roll a parallel integration layer.
+through `@voyant-travel/admin-client`; do not hand-roll a parallel integration layer.

@@ -1,6 +1,13 @@
 "use client"
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components"
 import { Link2, Unlink, Users } from "lucide-react"
 import * as React from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

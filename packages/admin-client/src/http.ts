@@ -10,7 +10,7 @@ import {
   type InferOutput,
   type InferParams,
   toAdminError,
-} from "@voyantjs/admin-contracts"
+} from "@voyant-travel/admin-contracts"
 
 import { type AdminAuth, authHeaders } from "./auth.js"
 
@@ -46,7 +46,7 @@ export interface AdminClientConfig {
 function resolveFetch(config: AdminClientConfig): FetchLike {
   const impl = config.fetch ?? (globalThis as { fetch?: FetchLike }).fetch
   if (!impl) {
-    throw new Error("@voyantjs/admin-client: no fetch implementation; pass config.fetch")
+    throw new Error("@voyant-travel/admin-client: no fetch implementation; pass config.fetch")
   }
   return impl
 }

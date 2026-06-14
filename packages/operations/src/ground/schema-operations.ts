@@ -1,5 +1,5 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { identityAddresses } from "@voyantjs/identity/schema"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
+import { identityAddresses } from "@voyant-travel/identity/schema"
 import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 import { groundDispatches } from "./schema-dispatch.js"

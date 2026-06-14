@@ -1,5 +1,5 @@
 /**
- * Zod schemas mirroring the flight contract types from `@voyantjs/flights`.
+ * Zod schemas mirroring the flight contract types from `@voyant-travel/flights`.
  * Used to validate API responses at the network boundary.
  *
  * Drift policy: when the contract types change (additive only — see

@@ -5,11 +5,11 @@ import { adminRootHead as adminRootHeadShim } from "../src/root.js"
 import { createAdminQueryClient as createAdminQueryClientShim } from "../src/router.js"
 import { createAdminWorkspaceBeforeLoad as createAdminWorkspaceBeforeLoadShim } from "../src/workspace.js"
 
-describe("@voyantjs/admin-app compatibility exports", () => {
+describe("@voyant-travel/admin-app compatibility exports", () => {
   it("re-exports the admin app shell surface", async () => {
-    const { adminRootHead } = await import("@voyantjs/admin/app/root")
-    const { createAdminQueryClient } = await import("@voyantjs/admin/app/router")
-    const { createAdminWorkspaceBeforeLoad } = await import("@voyantjs/admin/app/workspace")
+    const { adminRootHead } = await import("@voyant-travel/admin/app/root")
+    const { createAdminQueryClient } = await import("@voyant-travel/admin/app/router")
+    const { createAdminWorkspaceBeforeLoad } = await import("@voyant-travel/admin/app/workspace")
 
     expect(adminRootHeadShim).toBe(adminRootHead)
     expect(createAdminQueryClientShim).toBe(createAdminQueryClient)
@@ -24,7 +24,7 @@ describe("@voyantjs/admin-app compatibility exports", () => {
 })
 
 describe("createAdminCoreExtension", async () => {
-  const { adminExtensionChildRoutes } = await import("@voyantjs/admin/app/extension-routes")
+  const { adminExtensionChildRoutes } = await import("@voyant-travel/admin/app/extension-routes")
   const { createRootRoute } = await import("@tanstack/react-router")
 
   it("ships dashboard, account, and the settings tree by default", () => {

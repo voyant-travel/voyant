@@ -1,4 +1,4 @@
-import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
+import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
 import type { MiddlewareHandler } from "hono"
 
 import { type DbSource, isDbFactorySelector, type VoyantBindings, type VoyantDb } from "../types.js"

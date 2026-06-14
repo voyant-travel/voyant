@@ -4,7 +4,7 @@ Status: active rule
 Audience: catalog adapter authors, Connect implementers, SDK authors, storefront/admin UI authors
 
 This note defines the provider-facing catalog contracts that sit underneath
-the generic source-adapter surface in `@voyantjs/catalog`.
+the generic source-adapter surface in `@voyant-travel/catalog`.
 
 The immediate driver is cruise-source alignment: some providers expose
 category-level availability, promotion rows, and sale prices, but do not expose

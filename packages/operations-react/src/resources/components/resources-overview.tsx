@@ -1,4 +1,4 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Card,
@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { CalendarDays, ExternalLink, Search, Users, Wrench } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils.js"

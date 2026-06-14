@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowLeft, CalendarDays, Package, Trash2 } from "lucide-react"
 import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 import {

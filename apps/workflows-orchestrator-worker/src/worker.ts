@@ -1,6 +1,6 @@
 // Voyant Workflows reference orchestrator Worker.
 //
-// Wraps `@voyantjs/workflows-orchestrator-cloudflare` into a deployable
+// Wraps `@voyant-travel/workflows-orchestrator-cloudflare` into a deployable
 // Cloudflare Worker + Durable Object pair. The Worker exposes the
 // public `/api/runs/*` surface; each run lives in a dedicated
 // `WorkflowRunDO` instance whose storage holds the journal + status
@@ -33,7 +33,7 @@
 //     queries need an external index (e.g. a Postgres mirror).
 
 import { Container } from "@cloudflare/containers"
-import { parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
+import { parseTokenList, resolveRequestVerifier } from "@voyant-travel/workflows/auth"
 import {
   createKvManifestStore,
   createKvScheduleStateStore,
@@ -41,7 +41,7 @@ import {
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 export interface Env {
   WORKFLOW_RUN_DO: DurableObjectNamespace

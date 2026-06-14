@@ -9,7 +9,7 @@ import {
   useBookingPaymentSchedules,
   useInvoiceMutation,
   useInvoices,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +20,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+} from "@voyant-travel/ui/components/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { CalendarClock, FileText, Loader2, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 import * as React from "react"
 import { toast } from "sonner"

@@ -1,23 +1,23 @@
-# @voyantjs/cruises-react
+# @voyant-travel/cruises-react
 
 The cruises client tier: headless data hooks/clients plus the styled UI
-components (formerly `@voyantjs/cruises-ui`).
+components (formerly `@voyant-travel/cruises-ui`).
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
 live under `./ui`, `./components/*`, `./i18n`, and `./styles.css`, whose
-heavier peers (`@voyantjs/ui`, `@voyantjs/catalog-react`) are optional and
+heavier peers (`@voyant-travel/ui`, `@voyant-travel/catalog-react`) are optional and
 only needed when you import those subpaths.
 
 React Query hooks + Zod-validated fetch client for the Voyant cruises module.
 
-Mirrors the convention used by `@voyantjs/relationships-react` and `@voyantjs/inventory-react`.
+Mirrors the convention used by `@voyant-travel/relationships-react` and `@voyant-travel/inventory-react`.
 
 ## Quickstart
 
 ```tsx
-import { VoyantCruisesProvider } from "@voyantjs/cruises-react/provider"
-import { useStorefrontCruises } from "@voyantjs/cruises-react"
+import { VoyantCruisesProvider } from "@voyant-travel/cruises-react/provider"
+import { useStorefrontCruises } from "@voyant-travel/cruises-react"
 
 function App() {
   return (
@@ -47,10 +47,10 @@ Importable React UI components for Voyant cruises. Bundler-consumed (Vite, Next.
 ### Install
 
 ```bash
-pnpm add @voyantjs/cruises-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyant-travel/cruises-react @voyant-travel/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/ui` provides the design-system primitives and is required when you
+`@voyant-travel/ui` provides the design-system primitives and is required when you
 import the styled subpaths (`./ui`, `./components/*`).
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
@@ -61,9 +61,9 @@ Components render English by default. To localize them, wrap your UI in
 `CruisesUiMessagesProvider` and import only the locales your app supports.
 
 ```tsx
-import { CruisesUiMessagesProvider } from "@voyantjs/cruises-react/ui"
-import { cruisesUiEn } from "@voyantjs/cruises-react/i18n/en"
-import { cruisesUiRo } from "@voyantjs/cruises-react/i18n/ro"
+import { CruisesUiMessagesProvider } from "@voyant-travel/cruises-react/ui"
+import { cruisesUiEn } from "@voyant-travel/cruises-react/i18n/en"
+import { cruisesUiRo } from "@voyant-travel/cruises-react/i18n/ro"
 ```
 
 English-only apps should import only `./i18n/en`. Bilingual apps can import

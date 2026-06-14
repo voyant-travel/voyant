@@ -1,6 +1,6 @@
 "use client"
 
-import type { AdminRoutePageProps } from "@voyantjs/admin"
+import type { AdminRoutePageProps } from "@voyant-travel/admin"
 import { useMemo } from "react"
 
 import { BookingJourneyHost } from "../booking-journey-host.js"

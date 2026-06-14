@@ -30,7 +30,7 @@ import type {
   ComputeQuoteResult,
   OwnedBookingHandler,
   OwnedHandlerContext,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 
 import type { CruiseContent } from "../content-shape.js"
 import { buildCruiseDraftShape } from "../draft-shape.js"
@@ -98,7 +98,7 @@ export interface CruiseHandlerLoaders {
 /**
  * Subset of `cruisesBookingService.createCruiseBooking`'s input —
  * structural so the handler stays free of an
- * `@voyantjs/cruises/service-bookings` import (no workspace cycle).
+ * `@voyant-travel/cruises/service-bookings` import (no workspace cycle).
  */
 export interface CruiseCommitBridgeInput {
   sailingId: string

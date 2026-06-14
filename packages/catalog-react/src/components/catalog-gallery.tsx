@@ -1,7 +1,7 @@
 "use client"
 
-import { Dialog, DialogContent } from "@voyantjs/ui/components/dialog"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Dialog, DialogContent } from "@voyant-travel/ui/components/dialog"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Maximize2, X } from "lucide-react"
 import { useEffect } from "react"
 

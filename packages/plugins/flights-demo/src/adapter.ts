@@ -19,8 +19,8 @@ import type {
   FlightPriceRequest,
   FlightPriceResponse,
   FlightSearchResponse,
-} from "@voyantjs/flights/contract/adapter"
-import { requireCapability } from "@voyantjs/flights/contract/adapter"
+} from "@voyant-travel/flights/contract/adapter"
+import { requireCapability } from "@voyant-travel/flights/contract/adapter"
 import type {
   AncillaryRequest,
   AncillaryResponse,
@@ -39,7 +39,7 @@ import type {
   SeatSelectionResponse,
   SsrRequest,
   SsrResponse,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 
 const CAPABILITIES: FlightAdapterCapabilities = {
   provider: "demo",

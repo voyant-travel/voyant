@@ -1,1 +1,1 @@
-export * from "@voyantjs/flights-contracts/reference/static-bundle"
+export * from "@voyant-travel/flights-contracts/reference/static-bundle"

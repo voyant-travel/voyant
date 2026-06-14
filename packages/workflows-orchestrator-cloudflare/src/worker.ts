@@ -18,7 +18,7 @@ import {
   buildSeededResumeJournal,
   type RunRecord,
   type WaitpointInjection,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 import { handleIngestEvent } from "./event-handler.js"
 import { handleGetManifest, handleRegisterManifest } from "./manifest-handler.js"

@@ -38,9 +38,9 @@ import type { EventFilterRuntimeEntry } from "./events/registry.js"
  */
 export interface EventFilterDeclaration<T> {
   target: WorkflowHandle<T, unknown>
-  /** Structured predicate; see `@voyantjs/workflows/events` `PredicateExpr`. */
+  /** Structured predicate; see `@voyant-travel/workflows/events` `PredicateExpr`. */
   where?: PredicateExpr
-  /** Structured input projection; see `@voyantjs/workflows/events` `InputMapper`. */
+  /** Structured input projection; see `@voyant-travel/workflows/events` `InputMapper`. */
   input?: InputMapper
 }
 

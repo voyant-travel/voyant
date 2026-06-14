@@ -1,6 +1,6 @@
 # Storefront Settings
 
-`@voyantjs/storefront` exposes public settings reads and admin settings
+`@voyant-travel/storefront` exposes public settings reads and admin settings
 read/update routes for operator storefront configuration.
 
 ## Routes
@@ -33,17 +33,17 @@ transfer settings contain display details only.
 
 ## React And UI
 
-Use `@voyantjs/storefront-react` for admin settings hooks:
+Use `@voyant-travel/storefront-react` for admin settings hooks:
 
 ```tsx
 const settings = useAdminStorefrontSettings()
 const mutation = useAdminStorefrontSettingsMutation()
 ```
 
-Use `@voyantjs/storefront-react/ui` for the operator-facing settings page:
+Use `@voyant-travel/storefront-react/ui` for the operator-facing settings page:
 
 ```tsx
-import { StorefrontSettingsPage } from "@voyantjs/storefront-react/ui"
+import { StorefrontSettingsPage } from "@voyant-travel/storefront-react/ui"
 
 export function SettingsRoute() {
   return <StorefrontSettingsPage />

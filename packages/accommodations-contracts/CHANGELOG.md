@@ -1,18 +1,18 @@
-# @voyantjs/accommodations-contracts
+# @voyant-travel/accommodations-contracts
 
 ## 0.105.2
 
 ### Patch Changes
 
 - Updated dependencies [e3fa849]
-  - @voyantjs/catalog-contracts@0.107.0
+  - @voyant-travel/catalog-contracts@0.107.0
 
 ## 0.105.1
 
 ### Patch Changes
 
 - Updated dependencies [7122c2a]
-  - @voyantjs/catalog-contracts@0.106.0
+  - @voyant-travel/catalog-contracts@0.106.0
 
 ## 0.105.0
 
@@ -23,7 +23,7 @@
 ### Patch Changes
 
 - Updated dependencies [921f4fc]
-  - @voyantjs/catalog-contracts@0.105.0
+  - @voyant-travel/catalog-contracts@0.105.0
 
 ## 0.104.1
 
@@ -54,17 +54,17 @@
 - 465fb31: Extend the lightweight contract-package pattern to the remaining content
   verticals.
 
-  `@voyantjs/accommodations-contracts`, `@voyantjs/products-contracts`,
-  `@voyantjs/extras-contracts`, and `@voyantjs/charters-contracts` now own their
+  `@voyant-travel/accommodations-contracts`, `@voyant-travel/products-contracts`,
+  `@voyant-travel/extras-contracts`, and `@voyant-travel/charters-contracts` now own their
   respective `<vertical>/v1` rich content schema, version constant, types, and
   validator as zod-only packages, so external consumers (Voyant Connect, adapter
   authors, the Admin API SDK) can validate content payloads without installing the
   framework runtime.
 
-  The runtime `@voyantjs/accommodations`, `@voyantjs/products`,
-  `@voyantjs/extras`, and `@voyantjs/charters` packages re-export their content
+  The runtime `@voyant-travel/accommodations`, `@voyant-travel/products`,
+  `@voyant-travel/extras`, and `@voyant-travel/charters` packages re-export their content
   shape from the matching contract package, so existing
-  `@voyantjs/<vertical>/content-shape` import paths are unchanged. The
+  `@voyant-travel/<vertical>/content-shape` import paths are unchanged. The
   `mergeOverlaysInto<Vertical>Content` overlay composition stays in the runtime
   package.
 

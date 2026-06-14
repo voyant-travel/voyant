@@ -1,4 +1,4 @@
-import { createCircuitBreaker, resilientFetch } from "@voyantjs/utils/resilience"
+import { createCircuitBreaker, resilientFetch } from "@voyant-travel/utils/resilience"
 
 import {
   SmartbillApiError,

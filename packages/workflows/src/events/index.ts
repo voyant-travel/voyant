@@ -1,4 +1,4 @@
-// `@voyantjs/workflows/events` — the events runtime: structured `where`
+// `@voyant-travel/workflows/events` — the events runtime: structured `where`
 // predicate + `input` mapper, event-filter registry, manifest builder.
 //
 // Authoritative architecture: docs/architecture/workflows-runtime-architecture.md

@@ -13,7 +13,7 @@ afterEach(() => {
   )
 })
 
-describe("@voyantjs/workflows/client", () => {
+describe("@voyant-travel/workflows/client", () => {
   test("posts trigger calls to the managed Cloud run endpoint", async () => {
     const requests: Request[] = []
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -185,7 +185,7 @@ function testManifest(versionId: string) {
     projectId: "operator",
     versionId,
     builtAt: 1_700_000_000_000,
-    builderVersion: "@voyantjs/workflows@manifest-builder",
+    builderVersion: "@voyant-travel/workflows@manifest-builder",
     capabilities: {
       trigger: true,
       events: true,

@@ -15,10 +15,10 @@
 // starts converge on the same versionId — repeated publishes are
 // no-ops after the first.
 
-import { __listRegisteredWorkflows } from "@voyantjs/workflows"
-import { buildManifest, getEventFilterRegistry } from "@voyantjs/workflows/events"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
-import type { CfManifestStore } from "@voyantjs/workflows-orchestrator-cloudflare"
+import { __listRegisteredWorkflows } from "@voyant-travel/workflows"
+import { buildManifest, getEventFilterRegistry } from "@voyant-travel/workflows/events"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
+import type { CfManifestStore } from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 const ALLOWED_ENVS = new Set<WorkflowEnvironment>(["production", "preview", "development"])
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { VoyantReactProvider, type VoyantReactProviderProps } from "@voyantjs/react"
+import { VoyantReactProvider, type VoyantReactProviderProps } from "@voyant-travel/react"
 import type * as React from "react"
 
 import { AdminProvider, type AdminProviderProps } from "./admin-provider.js"

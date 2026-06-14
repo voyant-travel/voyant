@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminNavigate } from "@voyantjs/admin"
+import { useAdminNavigate } from "@voyant-travel/admin"
 import { lazy, Suspense } from "react"
 
 import { TemplateDetailPage } from "../components/template-detail-page.js"

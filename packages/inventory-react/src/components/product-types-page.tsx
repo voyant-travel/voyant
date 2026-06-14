@@ -18,9 +18,9 @@ import {
   SheetTitle,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"

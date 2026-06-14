@@ -1,10 +1,10 @@
-# @voyantjs/workflows-node-step-container
+# @voyant-travel/workflows-node-step-container
 
 Reference Cloudflare Container server that executes workflow steps
 declared with `runtime: "node"`. The orchestrator (running as a Worker
 + Durable Object) dispatches individual step invocations to a container
 running this package via `createCfContainerStepRunner` from
-`@voyantjs/workflows-orchestrator-cloudflare`.
+`@voyant-travel/workflows-orchestrator-cloudflare`.
 
 Voyant Cloud consumes this package from its shared
 `voyant-step-runner` fleet and from platform-operated per-org dedicated
@@ -46,7 +46,7 @@ Response is a `StepJournalEntry`:
 ## Package use
 
 ```bash
-pnpm add @voyantjs/workflows-node-step-container
+pnpm add @voyant-travel/workflows-node-step-container
 ```
 
 The package entry point starts the HTTP server:
@@ -58,7 +58,7 @@ voyant-workflows-node-step-container
 Container images can also run the built module directly:
 
 ```bash
-node node_modules/@voyantjs/workflows-node-step-container/dist/server.js
+node node_modules/@voyant-travel/workflows-node-step-container/dist/server.js
 ```
 
 ## Wiring
@@ -66,8 +66,8 @@ node node_modules/@voyantjs/workflows-node-step-container/dist/server.js
 ### Orchestrator side (Worker + DO)
 
 ```ts
-import { createCfContainerStepRunner } from "@voyantjs/workflows-orchestrator-cloudflare";
-import { createStepHandler } from "@voyantjs/workflows/handler";
+import { createCfContainerStepRunner } from "@voyant-travel/workflows-orchestrator-cloudflare";
+import { createStepHandler } from "@voyant-travel/workflows/handler";
 
 export default {
   fetch(req, env) {

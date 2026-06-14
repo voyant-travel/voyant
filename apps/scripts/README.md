@@ -1,6 +1,6 @@
 # Operator Seeder
 
-`apps/scripts/src/seed-operator.ts` generates realistic operator data with Gemini and Unsplash, then writes it into the operator template database.
+`apps/scripts/src/seed-operator.ts` generates realistic operator data with Gemini and Unsplash, then writes it into the operator starter database.
 
 ## Usage
 
@@ -26,8 +26,8 @@ The script loads env vars from:
 
 1. `.env`
 2. `.env.local`
-3. `templates/operator/.env`
-4. `templates/operator/.env.local`
+3. `starters/operator/.env`
+4. `starters/operator/.env.local`
 
 Required variables:
 

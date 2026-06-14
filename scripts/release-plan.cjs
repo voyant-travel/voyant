@@ -132,7 +132,7 @@ async function getReleaseState() {
     hasReleasableChangesets: plannedReleases.length > 0,
     pendingPackages,
     pendingPackageNames,
-    starterReleaseNeeded: pendingPackageNames.includes("@voyantjs/cli"),
+    starterReleaseNeeded: pendingPackageNames.includes("@voyant-travel/cli"),
     plannedReleases: plannedReleases.map((release) => ({
       name: release.name,
       type: release.type,
