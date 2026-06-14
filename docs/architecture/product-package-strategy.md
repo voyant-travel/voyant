@@ -1134,6 +1134,17 @@ the current manifest closure from the retail-spine package candidates, reports
 hard runtime blockers with package paths and dependency edges, and keeps
 optional adapter/shim exceptions as edge-specific allowlist entries.
 
+Temporary wrapper cleanup is also a normal architecture gate.
+`pnpm verify:architecture` runs `pnpm verify:v1-package-cleanup`. Normal mode
+keeps every temporary compatibility package, orphan wrapper, and old owner-path
+subpath export on an explicit inventory, rejects unclassified old owner-path
+subpath exports and retired package re-entry, and verifies that the legacy
+`@voyantjs/extras` schema table names exactly match the relocated
+Inventory/Bookings extras owner tables. The final v1 public-surface cut must
+pass `pnpm verify:v1-package-cleanup:strict` after templates and internal
+callers stop importing the compatibility package names and the temporary owner
+subpaths are removed or reclassified by an accepted architecture decision.
+
 ## 8. Migration Strategy
 
 1. File the required migration issues before broad package moves: retail-spine
@@ -1254,6 +1265,11 @@ Migration contract:
 - Temporary facades may exist inside the migration branch to keep intermediate
   commits verifiable, but they must be removed before the v1 public package
   surface unless explicitly retained as adapters/contracts.
+- Temporary wrappers and broad owner-path subpath exports must remain listed in
+  the v1 package cleanup gate while they exist. New temporary package names or
+  temporary subpath exports require updating that gate with owner/removal
+  rationale, and the final v1 public-surface cut must pass the strict cleanup
+  gate.
 - While temporary facades exist, they must keep enough `voyant.schema` metadata,
   package exports, and `voyant.config.ts` compatibility for affected templates
   to resolve the same schema closure.
