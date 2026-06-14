@@ -5,6 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./availability": "./src/availability/index.ts",
+    "./resources": "./src/resources/index.ts",
+    "./ground": "./src/ground/index.ts",
+    "./places": "./src/places/index.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts"
@@ -42,6 +46,26 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./availability": {
+        "types": "./dist/availability/index.d.ts",
+        "import": "./dist/availability/index.js",
+        "default": "./dist/availability/index.js"
+      },
+      "./resources": {
+        "types": "./dist/resources/index.d.ts",
+        "import": "./dist/resources/index.js",
+        "default": "./dist/resources/index.js"
+      },
+      "./ground": {
+        "types": "./dist/ground/index.d.ts",
+        "import": "./dist/ground/index.js",
+        "default": "./dist/ground/index.js"
+      },
+      "./places": {
+        "types": "./dist/places/index.d.ts",
+        "import": "./dist/places/index.js",
+        "default": "./dist/places/index.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
