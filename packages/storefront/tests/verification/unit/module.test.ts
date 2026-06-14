@@ -7,7 +7,7 @@ import {
   createStorefrontVerificationHonoModule,
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
   storefrontVerificationChallenges,
-} from "../../src/index.js"
+} from "../../../src/verification/index.js"
 
 describe("createStorefrontVerificationHonoModule.bootstrap", () => {
   it("registers the resolved sender bundle once", async () => {
@@ -57,7 +57,7 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
 
   it("publishes the schema entrypoint required by explicit Drizzle schema arrays", () => {
     const packageJson = JSON.parse(
-      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+      readFileSync(new URL("../../../package.json", import.meta.url), "utf8"),
     ) as {
       exports: Record<string, string>
       publishConfig: { exports: Record<string, unknown> }
@@ -67,13 +67,13 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
     expect(getTableName(storefrontVerificationChallenges)).toBe(
       "storefront_verification_challenges",
     )
-    expect(packageJson.exports["./schema"]).toBe("./src/schema.ts")
-    expect(packageJson.publishConfig.exports["./schema"]).toMatchObject({
-      import: "./dist/schema.js",
-      types: "./dist/schema.d.ts",
+    expect(packageJson.exports["./verification/schema"]).toBe("./src/verification/schema.ts")
+    expect(packageJson.publishConfig.exports["./verification/schema"]).toMatchObject({
+      import: "./dist/verification/schema.js",
+      types: "./dist/verification/schema.d.ts",
     })
     expect(packageJson.voyant).toEqual({
-      schema: "./schema",
+      schema: "./verification/schema",
       requiresSchemas: ["@voyant-travel/db"],
     })
   })

@@ -3,7 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createStorefrontVerificationPublicRoutes } from "../../src/routes-public.js"
+import { createStorefrontVerificationPublicRoutes } from "../../../src/verification/routes-public.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 

@@ -77,7 +77,7 @@ hotel-operations system; see
 - [`@voyant-travel/catalog`](./packages/catalog/README.md), [`@voyant-travel/commerce`](./packages/commerce/README.md), [`@voyant-travel/inventory`](./packages/inventory), [`@voyant-travel/operations`](./packages/operations)
 - [`@voyant-travel/bookings`](./packages/bookings/README.md), [`@voyant-travel/finance`](./packages/finance/README.md), [`@voyant-travel/legal`](./packages/legal/README.md), [`@voyant-travel/notifications`](./packages/notifications/README.md)
 - [`@voyant-travel/distribution`](./packages/distribution/README.md), [`@voyant-travel/relationships`](./packages/relationships/README.md), [`@voyant-travel/quotes`](./packages/quotes/README.md), [`@voyant-travel/trips`](./packages/trips)
-- [`@voyant-travel/identity`](./packages/identity/README.md), [`@voyant-travel/storefront`](./packages/storefront), [`@voyant-travel/storefront-verification`](./packages/storefront-verification)
+- [`@voyant-travel/identity`](./packages/identity/README.md), [`@voyant-travel/storefront`](./packages/storefront)
 - [`@voyant-travel/accommodations`](./packages/accommodations), [`@voyant-travel/charters`](./packages/charters/README.md), [`@voyant-travel/cruises`](./packages/cruises/README.md), [`@voyant-travel/flights`](./packages/flights), [`@voyant-travel/octo`](./packages/octo)
 
 ### Workflows (durable orchestration)

@@ -75,7 +75,7 @@ Three compounding facts:
 **Fix:** A distributed limiter (Cloudflare Rate Limiting binding or Durable-Object counter) keyed by `cf-connecting-ip` + route, mounted by default in `createApp` and applied to `/auth/*` and all anonymous write endpoints; configure Better Auth `rateLimit` against KV/DO secondary storage; layer Cloudflare WAF/Rate-Limiting rules at the edge.
 
 ### C3 — SMS toll fraud / email bombing via anonymous verification start
-**`packages/storefront-verification/src/routes-public.ts:110,135`, `starters/operator/src/api/composition.ts:305-309`, `service.ts:172-189`**
+**`packages/storefront/src/verification/routes-public.ts`, `starters/operator/src/api/composition.ts`, `packages/storefront/src/verification/service.ts`**
 
 `POST /v1/public/storefront-verification/sms/start` and `/email/start` are in `publicPaths` and, in the operator, wired to **live Voyant Cloud SMS + email providers**. The destination is attacker-supplied; there is **no rate limit, no captcha, and no resend throttle**. `startChallenge` re-sends on every call to a pending challenge — it records `lastSentAt` but never uses it to gate resends.
 

@@ -18,8 +18,7 @@
     [
       "@voyant-travel/storefront",
       "@voyant-travel/storefront-react",
-      "@voyant-travel/storefront-sdk",
-      "@voyant-travel/storefront-verification"
+      "@voyant-travel/storefront-sdk"
     ],
     ["@voyant-travel/trips", "@voyant-travel/trips-react"],
     [

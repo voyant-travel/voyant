@@ -34,7 +34,7 @@ export default defineVoyantConfig({
     // module.
     "@voyant-travel/flights",
     "@voyant-travel/legal",
-    "@voyant-travel/storefront-verification",
+    "@voyant-travel/storefront",
     "@voyant-travel/trips",
   ],
   plugins: ["@voyant-travel/plugin-smartbill"],

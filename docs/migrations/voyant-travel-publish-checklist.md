@@ -83,7 +83,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/storage`
 - `@voyant-travel/storefront-react`
 - `@voyant-travel/storefront-sdk`
-- `@voyant-travel/storefront-verification`
 - `@voyant-travel/storefront`
 - `@voyant-travel/suppliers-contracts`
 - `@voyant-travel/templating`

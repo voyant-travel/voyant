@@ -64,7 +64,7 @@ import * as quotesSalesSchema from "../packages/quotes/src/schema-sales.ts"
 import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"
 import * as relationshipsActivitiesSchema from "../packages/relationships/src/schema-activities.ts"
 import * as relationshipsSignalsSchema from "../packages/relationships/src/schema-signals.ts"
-import * as storefrontVerificationSchema from "../packages/storefront-verification/src/schema.ts"
+import * as storefrontVerificationSchema from "../packages/storefront/src/verification/schema.ts"
 
 type ImportedModule = Record<string, unknown>
 

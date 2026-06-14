@@ -92,7 +92,6 @@
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/storefront": "workspace:^",
-    "@voyant-travel/storefront-verification": "workspace:^",
     "@voyant-travel/trips": "workspace:^",
     "@voyant-travel/trips-react": "workspace:^",
     "@voyant-travel/types": "workspace:^",

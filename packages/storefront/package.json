@@ -13,7 +13,18 @@
     "./public-routes": "./src/routes-public.ts",
     "./service": "./src/service.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./verification": "./src/verification/index.ts",
+    "./verification/schema": "./src/verification/schema.ts",
+    "./verification/public-routes": "./src/verification/routes-public.ts",
+    "./verification/service": "./src/verification/service.ts",
+    "./verification/validation": "./src/verification/validation.ts"
+  },
+  "voyant": {
+    "schema": "./verification/schema",
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -28,6 +39,7 @@
     "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/crm-contracts": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
@@ -52,7 +64,6 @@
     }
   },
   "devDependencies": {
-    "@voyant-travel/db": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/legal": "workspace:^",
@@ -117,6 +128,31 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./verification": {
+        "types": "./dist/verification/index.d.ts",
+        "import": "./dist/verification/index.js",
+        "default": "./dist/verification/index.js"
+      },
+      "./verification/schema": {
+        "types": "./dist/verification/schema.d.ts",
+        "import": "./dist/verification/schema.js",
+        "default": "./dist/verification/schema.js"
+      },
+      "./verification/public-routes": {
+        "types": "./dist/verification/routes-public.d.ts",
+        "import": "./dist/verification/routes-public.js",
+        "default": "./dist/verification/routes-public.js"
+      },
+      "./verification/service": {
+        "types": "./dist/verification/service.d.ts",
+        "import": "./dist/verification/service.js",
+        "default": "./dist/verification/service.js"
+      },
+      "./verification/validation": {
+        "types": "./dist/verification/validation.d.ts",
+        "import": "./dist/verification/validation.js",
+        "default": "./dist/verification/validation.js"
       }
     },
     "main": "./dist/index.js",

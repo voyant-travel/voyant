@@ -1,12 +1,12 @@
 import type { ModuleContainer } from "@voyant-travel/core"
 import { clientIpKey, enforceRateLimit, parseJsonBody } from "@voyant-travel/hono"
-import type { NotificationProvider } from "@voyant-travel/notifications"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import {
   createStorefrontVerificationSendersFromProviders,
   createStorefrontVerificationService,
   StorefrontVerificationError,
+  type StorefrontVerificationNotificationProvider,
   type StorefrontVerificationProviderOptions,
   type StorefrontVerificationSenders,
   type StorefrontVerificationServiceOptions,
@@ -32,8 +32,10 @@ export interface StorefrontVerificationRoutesOptions
     StorefrontVerificationProviderOptions {
   sendEmailChallenge?: StorefrontVerificationSenders["sendEmailChallenge"]
   sendSmsChallenge?: StorefrontVerificationSenders["sendSmsChallenge"]
-  providers?: ReadonlyArray<NotificationProvider>
-  resolveProviders?: (bindings: Record<string, unknown>) => ReadonlyArray<NotificationProvider>
+  providers?: ReadonlyArray<StorefrontVerificationNotificationProvider>
+  resolveProviders?: (
+    bindings: Record<string, unknown>,
+  ) => ReadonlyArray<StorefrontVerificationNotificationProvider>
 }
 
 export const STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY =

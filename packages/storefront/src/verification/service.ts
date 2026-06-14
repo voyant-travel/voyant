@@ -1,5 +1,3 @@
-import type { NotificationProvider } from "@voyant-travel/notifications"
-import { createNotificationService } from "@voyant-travel/notifications"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -23,6 +21,31 @@ export interface StorefrontVerificationServiceOptions {
 export interface StorefrontVerificationDeliveryResult {
   id?: string
   provider?: string
+}
+
+export type StorefrontVerificationNotificationChannel = "email" | "sms" | (string & {})
+
+export interface StorefrontVerificationNotificationPayload {
+  to: string
+  channel: StorefrontVerificationNotificationChannel
+  provider?: string
+  template: string
+  data?: unknown
+  subject?: string
+  text?: string
+}
+
+export interface StorefrontVerificationNotificationResult {
+  id?: string
+  provider: string
+}
+
+export interface StorefrontVerificationNotificationProvider {
+  readonly name: string
+  readonly channels: ReadonlyArray<StorefrontVerificationNotificationChannel>
+  send(
+    payload: StorefrontVerificationNotificationPayload,
+  ): Promise<StorefrontVerificationNotificationResult>
 }
 
 export interface StorefrontVerificationEmailSendInput {
@@ -283,10 +306,35 @@ async function confirmChallenge(
 }
 
 export function createStorefrontVerificationSendersFromProviders(
-  providers: ReadonlyArray<NotificationProvider>,
+  providers: ReadonlyArray<StorefrontVerificationNotificationProvider>,
   options: StorefrontVerificationProviderOptions = {},
 ): StorefrontVerificationSenders {
-  const dispatcher = createNotificationService([...providers])
+  const byChannel = new Map<
+    StorefrontVerificationNotificationChannel,
+    StorefrontVerificationNotificationProvider
+  >()
+  const byName = new Map<string, StorefrontVerificationNotificationProvider>()
+
+  for (const provider of providers) {
+    byName.set(provider.name, provider)
+    for (const channel of provider.channels) {
+      byChannel.set(channel, provider)
+    }
+  }
+
+  async function send(payload: StorefrontVerificationNotificationPayload) {
+    const provider = payload.provider
+      ? byName.get(payload.provider)
+      : byChannel.get(payload.channel)
+    if (!provider) {
+      throw new StorefrontVerificationError(
+        `No verification notification provider registered for channel "${payload.channel}"`,
+        "sender_not_configured",
+      )
+    }
+
+    return provider.send(payload)
+  }
 
   return {
     async sendEmailChallenge(input) {
@@ -295,7 +343,7 @@ export function createStorefrontVerificationSendersFromProviders(
           ? options.email.subject(input)
           : options.email?.subject
 
-      const result = await dispatcher.send({
+      const result = await send({
         to: input.email,
         channel: "email",
         provider: options.email?.provider,
@@ -313,7 +361,7 @@ export function createStorefrontVerificationSendersFromProviders(
       return { id: result.id, provider: result.provider }
     },
     async sendSmsChallenge(input) {
-      const result = await dispatcher.send({
+      const result = await send({
         to: input.phone,
         channel: "sms",
         provider: options.sms?.provider,

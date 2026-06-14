@@ -1,8 +1,13 @@
-import type { NotificationProvider } from "@voyant-travel/notifications"
 import { describe, expect, it, vi } from "vitest"
-import { createStorefrontVerificationSendersFromProviders } from "../../src/service.js"
+import {
+  createStorefrontVerificationSendersFromProviders,
+  type StorefrontVerificationNotificationProvider,
+} from "../../../src/verification/service.js"
 
-function fakeProvider(name: string, channels: string[]): NotificationProvider {
+function fakeProvider(
+  name: string,
+  channels: string[],
+): StorefrontVerificationNotificationProvider {
   return {
     name,
     channels,

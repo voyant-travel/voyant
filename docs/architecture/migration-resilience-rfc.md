@@ -183,11 +183,11 @@ the templates actually migrate. Comparing each template's `voyant.config.ts`
 schema list:
 
 - **DMC** resolver output would **miss**: `action-ledger`, `accommodations`,
-  `legal`, `catalog`, `storefront-verification`.
+  `legal`, `catalog`, `storefront`.
 - **Operator** would miss even more: `action-ledger`, `catalog-authoring`,
   `legal`, `promotions`, `cruises`, `charters`, `accommodations`,
   `trips`, `flights`, `catalog`, `workflow-runs`,
-  `storefront-verification` (plus its starter-local `./src/db/schema.ts`).
+  `storefront` verification schema (plus its starter-local `./src/db/schema.ts`).
 - **apps/dev** has a `drizzle.config.ts` but **no `voyant.config.ts`** — there is
   no manifest to resolve from, so it needs a manifest-creation step before it can
   consume generated output.
@@ -370,7 +370,7 @@ defer runtime derivation (the hard part) to last.
   `src/reference/local-postgres.ts`).
 - Complete each template's `voyant.config.ts` so `modules` covers everything its
   Drizzle list migrates (DMC: + `action-ledger`, `accommodations`, `legal`,
-  `catalog`, `storefront-verification`; operator: the longer list in §3.1).
+  `catalog`, `storefront`; operator: the longer list in §3.1).
 - Create a `voyant.config.ts` for `apps/dev`.
 - **Exit criterion:** `resolveSchemas(config)` output is set-equal to each
   template's current hand list. **No arrays replaced yet.**

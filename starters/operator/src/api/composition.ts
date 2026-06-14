@@ -61,7 +61,7 @@ import { createQuotesHonoModule, quotesBookingExtension } from "@voyant-travel/q
 import { createRelationshipsHonoModule, relationshipsService } from "@voyant-travel/relationships"
 import { createStorefrontHonoModule } from "@voyant-travel/storefront"
 import { createCustomerPortalHonoModule } from "@voyant-travel/storefront/customer-portal"
-import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront-verification"
+import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront/verification"
 import { createTripsHonoModule } from "@voyant-travel/trips"
 import { Hono } from "hono"
 
@@ -233,7 +233,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/notifications",
     "@voyant-travel/storefront",
     "@voyant-travel/storefront/customer-portal",
-    "@voyant-travel/storefront-verification",
+    "@voyant-travel/storefront/verification",
     "@voyant-travel/trips",
   ],
   extensions: [
@@ -437,7 +437,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveDocumentDownloadUrl: (bindings, storageKey) =>
           capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
       }),
-    "@voyant-travel/storefront-verification": ({ capabilities }) =>
+    "@voyant-travel/storefront/verification": ({ capabilities }) =>
       createStorefrontVerificationHonoModule({
         resolveProviders: capabilities.resolveNotificationProviders,
         email: { subject: "Your verification code" },

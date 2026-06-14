@@ -302,8 +302,8 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyant-travel/storefront-verification",
-    entry: "packages/storefront-verification/dist/index.js",
+    packageName: "@voyant-travel/storefront/verification",
+    entry: "packages/storefront/dist/verification/index.js",
     requiredExports: [
       "createStorefrontVerificationHonoModule",
       "createStorefrontVerificationPublicRoutes",

@@ -31,6 +31,10 @@ export {
 export type {
   StorefrontVerificationDeliveryResult,
   StorefrontVerificationEmailSendInput,
+  StorefrontVerificationNotificationChannel,
+  StorefrontVerificationNotificationPayload,
+  StorefrontVerificationNotificationProvider,
+  StorefrontVerificationNotificationResult,
   StorefrontVerificationProviderOptions,
   StorefrontVerificationSenders,
   StorefrontVerificationServiceOptions,

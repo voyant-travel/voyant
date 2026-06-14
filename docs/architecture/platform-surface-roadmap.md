@@ -339,7 +339,7 @@ Resolved upstream in source after `0.3.1`:
 
 - first-class storefront settings contract via `@voyant-travel/storefront`
 - generic email/SMS verification challenge flow via
-  `@voyant-travel/storefront-verification`
+  `@voyant-travel/storefront/verification`
 - transport requirements for passport/document rules via
   `@voyant-travel/bookings/requirements`
 
@@ -436,7 +436,7 @@ Completed in the current source tree:
   `@voyant-travel/storefront`
 - storefront product extensions and departure itinerary via
   `@voyant-travel/storefront`
-- storefront verification via `@voyant-travel/storefront-verification`
+- storefront verification via `@voyant-travel/storefront/verification`
 - transport requirements via `@voyant-travel/bookings/requirements`
 - booking-session state storage and repricing
 - public finance booking documents
