@@ -2,7 +2,7 @@ import {
   customerSignalKindSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
-} from "@voyant-travel/crm-contracts/validation"
+} from "@voyant-travel/relationships-contracts/validation"
 import { z } from "zod"
 
 import { languageTagSchema } from "../validation-settings.js"

@@ -30,9 +30,6 @@ export {
   communicationDirectionSchema,
   customFieldTypeSchema,
   entityTypeSchema,
-  participantRoleSchema,
-  quoteStatusSchema,
-  quoteVersionStatusSchema,
   recordStatusSchema,
   relationTypeSchema,
 } from "./validation/common.js"
@@ -107,36 +104,4 @@ export {
   personRelationshipListQuerySchema,
   updatePersonRelationshipSchema,
 } from "./validation/person-relationships.js"
-export {
-  insertPipelineSchema,
-  insertStageSchema,
-  pipelineCoreSchema,
-  pipelineListQuerySchema,
-  stageCoreSchema,
-  stageListQuerySchema,
-  updatePipelineSchema,
-  updateStageSchema,
-} from "./validation/pipelines.js"
-export {
-  acceptQuoteVersionSchema,
-  applyTripSnapshotQuoteVersionLineSchema,
-  applyTripSnapshotToQuoteVersionSchema,
-  declineQuoteVersionSchema,
-  expireQuoteVersionsSchema,
-  insertQuoteParticipantSchema,
-  insertQuoteProductSchema,
-  insertQuoteSchema,
-  insertQuoteVersionLineSchema,
-  insertQuoteVersionSchema,
-  quoteCoreSchema,
-  quoteListQuerySchema,
-  quoteVersionCoreSchema,
-  quoteVersionLineCoreSchema,
-  quoteVersionListQuerySchema,
-  sendQuoteVersionSchema,
-  updateQuoteProductSchema,
-  updateQuoteSchema,
-  updateQuoteVersionLineSchema,
-  updateQuoteVersionSchema,
-} from "./validation/quotes.js"
 export { insertSegmentSchema } from "./validation/segments.js"

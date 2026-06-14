@@ -1,4 +1,4 @@
-# @voyant-travel/crm-contracts
+# @voyant-travel/relationships-contracts
 
 ## 0.106.1
 

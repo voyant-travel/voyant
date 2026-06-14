@@ -1,5 +1,5 @@
 {
-  "name": "@voyant-travel/crm-contracts",
+  "name": "@voyant-travel/quotes-contracts",
   "version": "0.106.1",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,7 +36,6 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyant-travel/schema-kit": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -47,6 +46,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/voyant-travel/voyant.git",
-    "directory": "packages/crm-contracts"
+    "directory": "packages/quotes-contracts"
   }
 }

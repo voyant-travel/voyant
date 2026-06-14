@@ -22,7 +22,7 @@
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/core": "workspace:^",
-    "@voyant-travel/crm-contracts": "workspace:^",
+    "@voyant-travel/relationships-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",

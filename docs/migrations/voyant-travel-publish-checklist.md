@@ -40,7 +40,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/commerce-react`
 - `@voyant-travel/commerce`
 - `@voyant-travel/core`
-- `@voyant-travel/crm-contracts`
 - `@voyant-travel/cruises-contracts`
 - `@voyant-travel/cruises-react`
 - `@voyant-travel/cruises`
@@ -74,9 +73,11 @@ Publishable workspace package names at this point:
 - `@voyant-travel/plugin-sanity-cms`
 - `@voyant-travel/plugin-smartbill`
 - `@voyant-travel/products-contracts`
+- `@voyant-travel/quotes-contracts`
 - `@voyant-travel/quotes-react`
 - `@voyant-travel/quotes`
 - `@voyant-travel/react`
+- `@voyant-travel/relationships-contracts`
 - `@voyant-travel/relationships-react`
 - `@voyant-travel/relationships`
 - `@voyant-travel/schema-kit`

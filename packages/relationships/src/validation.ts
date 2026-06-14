@@ -13,7 +13,7 @@ export type {
   ResolveCustomerSignalInput,
   UpdatePersonPaymentMethodInput,
   UpdatePersonProfilePiiInput,
-} from "@voyant-travel/crm-contracts"
+} from "@voyant-travel/relationships-contracts"
 export {
   activityCoreSchema,
   activityLinkRoleSchema,
@@ -80,4 +80,4 @@ export {
   updatePersonRelationshipSchema,
   updatePersonSchema,
   upsertCustomFieldValueSchema,
-} from "@voyant-travel/crm-contracts"
+} from "@voyant-travel/relationships-contracts"

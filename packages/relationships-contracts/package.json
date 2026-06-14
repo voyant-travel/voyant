@@ -1,10 +1,11 @@
 {
-  "name": "@voyant-travel/admin-contracts",
-  "version": "0.104.4",
+  "name": "@voyant-travel/relationships-contracts",
+  "version": "0.106.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./validation": "./src/validation.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -24,17 +25,18 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./validation": {
+        "types": "./dist/validation.d.ts",
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyant-travel/bookings-contracts": "workspace:^",
-    "@voyant-travel/relationships-contracts": "workspace:^",
-    "@voyant-travel/finance-contracts": "workspace:^",
-    "@voyant-travel/legal-contracts": "workspace:^",
-    "@voyant-travel/products-contracts": "workspace:^",
+    "@voyant-travel/schema-kit": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -45,6 +47,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/voyant-travel/voyant.git",
-    "directory": "packages/admin-contracts"
+    "directory": "packages/relationships-contracts"
   }
 }
