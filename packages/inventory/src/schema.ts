@@ -1,4 +1,5 @@
 export { bookingItemProductDetails, bookingProductDetails } from "./booking-extension.js"
+export * from "./extras/schema.js"
 export * from "./schema-core.js"
 export * from "./schema-itinerary.js"
 export * from "./schema-relations.js"

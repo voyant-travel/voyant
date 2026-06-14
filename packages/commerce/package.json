@@ -61,7 +61,6 @@
     "./sellability": "./src/sellability/index.ts",
     "./sellability/routes": "./src/sellability/routes.ts",
     "./sellability/schema": "./src/sellability/schema.ts",
-    "./sellability/service-construct-offer": "./src/sellability/service-construct-offer.ts",
     "./sellability/service-records": "./src/sellability/service-records.ts",
     "./sellability/service-resolve": "./src/sellability/service-resolve.ts",
     "./sellability/service-shared": "./src/sellability/service-shared.ts",
@@ -387,11 +386,6 @@
         "types": "./dist/sellability/schema.d.ts",
         "import": "./dist/sellability/schema.js",
         "default": "./dist/sellability/schema.js"
-      },
-      "./sellability/service-construct-offer": {
-        "types": "./dist/sellability/service-construct-offer.d.ts",
-        "import": "./dist/sellability/service-construct-offer.js",
-        "default": "./dist/sellability/service-construct-offer.js"
       },
       "./sellability/service-records": {
         "types": "./dist/sellability/service-records.d.ts",

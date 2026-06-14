@@ -204,12 +204,13 @@ Policy outcome:
 - this should remain database-first unless numbering ever has to cross
   databases or runtimes
 
-### 11. Offer and payment bundles: transaction first, no extra lock by default
+### 11. Quote, booking, and payment bundles: transaction first, no extra lock by default
 
 Query and write path:
 
-- [`createOfferBundle(...)`](../../packages/transactions/src/service-offers.ts)
-  uses one transaction to create the offer, participants, items, and item links
+- legacy Transactions Offer bundle creation is retired before v1; current
+  quote, booking, and trip-composer handoffs should use one database
+  transaction for each coherent bundle of related rows
 - [`completePaymentSession(...)`](../../packages/finance/src/service.ts) uses a
   transaction to create authorization/capture/payment rows and update invoice
   state together

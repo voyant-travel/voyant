@@ -1,12 +1,7 @@
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-import {
-  createSellabilityService,
-  type SellabilityServiceOptions,
-  sellabilityService,
-} from "./service.js"
-import { SellabilityOfferWriterNotConfiguredError } from "./service-construct-offer.js"
+import { sellabilityService } from "./service.js"
 import {
   insertOfferExpirationEventSchema,
   insertOfferRefreshRunSchema,
@@ -15,7 +10,6 @@ import {
   insertSellabilityPolicySchema,
   offerExpirationEventListQuerySchema,
   offerRefreshRunListQuerySchema,
-  sellabilityConstructOfferSchema,
   sellabilityExplanationListQuerySchema,
   sellabilityPersistSnapshotSchema,
   sellabilityPolicyListQuerySchema,
@@ -37,16 +31,12 @@ type Env = {
   }
 }
 
-export interface SellabilityRoutesOptions extends SellabilityServiceOptions {
+export interface SellabilityRoutesOptions {
   service?: typeof sellabilityService
 }
 
 export function createSellabilityRoutes(options: SellabilityRoutesOptions = {}) {
-  const service =
-    options.service ??
-    (options.offerWriter
-      ? createSellabilityService({ offerWriter: options.offerWriter })
-      : sellabilityService)
+  const service = options.service ?? sellabilityService
 
   return new Hono<Env>()
     .post("/resolve", async (c) => {
@@ -56,22 +46,6 @@ export function createSellabilityRoutes(options: SellabilityRoutesOptions = {}) 
     .post("/resolve-and-persist", async (c) => {
       const input = await parseJsonBody(c, sellabilityPersistSnapshotSchema)
       return c.json(await service.persistSnapshot(c.get("db"), input), 201)
-    })
-    .post("/construct-offer", async (c) => {
-      const input = await parseJsonBody(c, sellabilityConstructOfferSchema)
-      let result: Awaited<ReturnType<typeof service.constructOffer>>
-      try {
-        result = await service.constructOffer(c.get("db"), input)
-      } catch (error) {
-        if (error instanceof SellabilityOfferWriterNotConfiguredError) {
-          return c.json({ error: error.message }, 501)
-        }
-        throw error
-      }
-      if (!result) {
-        return c.json({ error: "Sellable candidate not found" }, 404)
-      }
-      return c.json({ data: result }, 201)
     })
     .get("/snapshots", async (c) => {
       const query = parseQuery(c, sellabilitySnapshotListQuerySchema)

@@ -9,6 +9,7 @@ import type { DistributionRoutes } from "@voyantjs/distribution/routes"
 import type { SupplierRoutes } from "@voyantjs/distribution/suppliers/routes"
 import type { FinanceRoutes } from "@voyantjs/finance/routes"
 import type { IdentityRoutes } from "@voyantjs/identity/routes"
+import type { InventoryExtrasRoutes } from "@voyantjs/inventory/extras"
 import type { ProductRoutes } from "@voyantjs/inventory/routes"
 import type { AvailabilityRoutes } from "@voyantjs/operations/availability/routes"
 import type { ResourcesRoutes } from "@voyantjs/operations/resources/routes"
@@ -31,7 +32,7 @@ type ApiRoutes = Hono & {
   "/v1/identity": IdentityRoutes
   "/v1/external-refs": ExternalRefsRoutes
   "/v1/booking-requirements": BookingRequirementsRoutes
-  "/v1/extras": BookingsExtrasRoutes
+  "/v1/extras": InventoryExtrasRoutes & BookingsExtrasRoutes
   "/v1/pricing": PricingRoutes
   "/v1/markets": MarketsRoutes
   "/v1/resources": ResourcesRoutes

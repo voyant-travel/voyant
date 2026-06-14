@@ -1,15 +1,10 @@
-/**
- * Inventory-owned extras facade.
- *
- * The current extras tables still live in the legacy package during the v1
- * migration because authoring rows and booking-selection rows share an FK
- * graph. This subpath is the supported Inventory target for operated add-on
- * authoring/configuration while the physical schema split is deferred.
- */
+import type { Module } from "@voyantjs/core"
+import type { HonoModule } from "@voyantjs/hono/module"
 
-import { extrasService } from "@voyantjs/extras"
+import { inventoryExtrasRoutes } from "./extras/routes.js"
+import { inventoryExtrasService } from "./extras/service.js"
 
-export { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
+export { extrasCatalogPolicy } from "./extras/catalog-policy.js"
 export {
   EXTRAS_CONTENT_SCHEMA_VERSION,
   type ExtraContent,
@@ -24,17 +19,18 @@ export {
   extraSummarySchema,
   mergeOverlaysIntoExtraContent,
   validateExtraContent,
-} from "@voyantjs/extras/content-shape"
+} from "./extras/content-shape.js"
 export {
   type BuildExtraDraftShapeOptions,
   buildExtraDraftShape,
-} from "@voyantjs/extras/draft-shape"
+} from "./extras/draft-shape.js"
+export type { InventoryExtrasRoutes } from "./extras/routes.js"
 export type {
   NewOptionExtraConfig,
   NewProductExtra,
   OptionExtraConfig,
   ProductExtra,
-} from "@voyantjs/extras/schema"
+} from "./extras/schema.js"
 export {
   EXTRAS_CONTENT_MARKET_ANY,
   extraCollectionModeEnum,
@@ -47,7 +43,7 @@ export {
   productExtras,
   productExtrasRelations,
   type SelectExtrasSourcedContent,
-} from "@voyantjs/extras/schema"
+} from "./extras/schema.js"
 export {
   buildExtraSnapshotInput,
   type CaptureSnapshotInput,
@@ -66,19 +62,19 @@ export {
   productExtraRowToProjection,
   type ResolvedView,
   type ResolverScope,
-} from "@voyantjs/extras/service-catalog-plane"
+} from "./extras/service-catalog-plane.js"
 export {
   type ExtraContentScope,
   type GetExtraContentOptions,
   getExtraContent,
   type ResolvedExtraContent,
-} from "@voyantjs/extras/service-content"
+} from "./extras/service-content.js"
 export {
   type SynthesizedExtraContent,
   type SynthesizeExtraContentOptions,
   synthesizeExtraContent,
   synthesizeExtraContentFromDb,
-} from "@voyantjs/extras/service-content-synthesizer"
+} from "./extras/service-content-synthesizer.js"
 export {
   extraCollectionModeSchema,
   extraPricingModeSchema,
@@ -91,19 +87,16 @@ export {
   productExtraListQuerySchema,
   updateOptionExtraConfigSchema,
   updateProductExtraSchema,
-} from "@voyantjs/extras/validation"
-
-export const inventoryExtrasService = {
-  listProductExtras: extrasService.listProductExtras,
-  getProductExtraById: extrasService.getProductExtraById,
-  createProductExtra: extrasService.createProductExtra,
-  updateProductExtra: extrasService.updateProductExtra,
-  deleteProductExtra: extrasService.deleteProductExtra,
-  listOptionExtraConfigs: extrasService.listOptionExtraConfigs,
-  getOptionExtraConfigById: extrasService.getOptionExtraConfigById,
-  createOptionExtraConfig: extrasService.createOptionExtraConfig,
-  updateOptionExtraConfig: extrasService.updateOptionExtraConfig,
-  deleteOptionExtraConfig: extrasService.deleteOptionExtraConfig,
-}
+} from "./extras/validation.js"
+export { inventoryExtrasRoutes, inventoryExtrasService }
 
 export const operatedExtrasService = inventoryExtrasService
+
+export const inventoryExtrasModule: Module = {
+  name: "extras",
+}
+
+export const inventoryExtrasHonoModule: HonoModule = {
+  module: inventoryExtrasModule,
+  routes: inventoryExtrasRoutes,
+}

@@ -1,6 +1,5 @@
 // agent-quality: file-size exception -- owner: storefront; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 
-import { productExtras } from "@voyantjs/bookings/extras"
 import {
   departurePriceOverrides,
   extraPriceRules,
@@ -10,6 +9,7 @@ import {
 } from "@voyantjs/commerce/pricing/schema"
 import { createEventBus } from "@voyantjs/core"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { productExtras } from "@voyantjs/inventory/extras"
 import {
   optionUnits,
   productDayServices,

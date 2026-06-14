@@ -61,12 +61,6 @@ export {
 export type { SellabilityServiceOptions } from "./service.js"
 export { createSellabilityService, sellabilityService } from "./service.js"
 export {
-  type SellabilityOfferBundleInput,
-  type SellabilityOfferBundleResult,
-  type SellabilityOfferWriter,
-  SellabilityOfferWriterNotConfiguredError,
-} from "./service-construct-offer.js"
-export {
   insertOfferExpirationEventSchema,
   insertOfferRefreshRunSchema,
   insertSellabilityExplanationSchema,
@@ -76,10 +70,8 @@ export {
   offerExpirationEventStatusSchema,
   offerRefreshRunListQuerySchema,
   offerRefreshRunStatusSchema,
-  sellabilityConstructOfferSchema,
   sellabilityExplanationListQuerySchema,
   sellabilityExplanationTypeSchema,
-  sellabilityOfferParticipantSchema,
   sellabilityPersistSnapshotSchema,
   sellabilityPolicyListQuerySchema,
   sellabilityPolicyResultListQuerySchema,

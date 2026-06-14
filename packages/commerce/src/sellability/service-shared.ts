@@ -8,7 +8,6 @@ import type {
   insertSellabilityPolicySchema,
   offerExpirationEventListQuerySchema,
   offerRefreshRunListQuerySchema,
-  SellabilityConstructOfferInput,
   SellabilityResolveQuery,
   sellabilityExplanationListQuerySchema,
   sellabilityPolicyListQuerySchema,
@@ -238,52 +237,6 @@ export function toNumeric(value: string | number | null | undefined) {
 
 export function compactObject<T extends Record<string, unknown>>(value: T) {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T
-}
-
-export function formatSequenceNumber(prefix: string) {
-  const now = new Date()
-  const year = now.getUTCFullYear()
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0")
-  const day = String(now.getUTCDate()).padStart(2, "0")
-  const time =
-    String(now.getUTCHours()).padStart(2, "0") + String(now.getUTCMinutes()).padStart(2, "0")
-  const random = Math.random().toString(36).slice(2, 6).toUpperCase()
-  return `${prefix}-${year}${month}${day}-${time}${random}`
-}
-
-export function buildDefaultOfferTitle(candidate: {
-  product: { name: string }
-  option: { name: string }
-  slot: { dateLocal: string | null }
-}) {
-  if (candidate.slot.dateLocal) {
-    return `${candidate.product.name} · ${candidate.option.name} · ${candidate.slot.dateLocal}`
-  }
-  return `${candidate.product.name} · ${candidate.option.name}`
-}
-
-export function isAssignableParticipantType(participantType: string) {
-  return participantType === "traveler" || participantType === "occupant"
-}
-
-export function defaultItemParticipantRole(
-  participant: SellabilityConstructOfferInput["participants"][number],
-) {
-  if (participant.itemParticipantRole) return participant.itemParticipantRole
-  if (participant.participantType === "occupant") return "occupant"
-  if (participant.participantType === "staff") return "service_assignee"
-  return "traveler"
-}
-
-export function offerItemTypeForComponent(component: ResolvedPriceComponent) {
-  if (component.kind === "pickup") return "transport" as const
-  if (component.kind === "start_time_adjustment") {
-    return component.sellAmountCents < 0 ? ("discount" as const) : ("adjustment" as const)
-  }
-  if (component.kind === "base") return "service" as const
-  if (component.unitType === "room") return "accommodation" as const
-  if (component.unitType === "vehicle") return "transport" as const
-  return "unit" as const
 }
 
 export async function paginate<T extends object>(

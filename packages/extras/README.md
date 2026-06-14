@@ -6,19 +6,19 @@ New first-party code should import operated add-on authoring/configuration from
 `@voyantjs/inventory/extras`, and booking extra lines, participant selections,
 and slot manifests from `@voyantjs/bookings/extras`.
 
-The physical Drizzle schema still lives here while `product_extras`,
-`option_extra_configs`, `booking_extras`, and `extra_participant_selections`
-share one FK graph. Templates may keep this package as a schema-only migration
-entry until that table graph is split safely.
+The physical Drizzle schema no longer lives here. Inventory owns
+`product_extras`, `option_extra_configs`, and extras content/projection helpers.
+Bookings owns `booking_extras`, `extra_participant_selections`, and slot
+manifest behavior. Templates should not keep this package as a schema entry.
 
 ## Exports
 
 | Entry | Description |
 | --- | --- |
-| `.` | Legacy module export; prefer `@voyantjs/bookings/extras` for runtime wiring |
-| `./schema` | Legacy Drizzle table location used by the migration shim |
+| `.` | Legacy module export; prefer owner paths for runtime wiring |
+| `./schema` | Legacy compatibility export over Inventory and Bookings extras schemas |
 | `./validation` | Legacy Zod schema location |
-| `./routes` | Legacy `/v1/extras` routes re-exported by Bookings extras |
+| `./routes` | Legacy `/v1/extras` routes composed from Inventory and Bookings extras |
 
 ## License
 

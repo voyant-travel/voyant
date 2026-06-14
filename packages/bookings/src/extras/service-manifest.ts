@@ -1,5 +1,4 @@
 import { newId } from "@voyantjs/db/lib/typeid"
-import { extraParticipantSelections, productExtras } from "@voyantjs/extras/schema"
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -12,6 +11,8 @@ import {
   bookings,
   bookingTravelers,
 } from "../schema.js"
+import { productExtrasRef } from "./product-extra-ref.js"
+import { extraParticipantSelections } from "./schema.js"
 import type {
   slotExtraCollectionBulkSchema,
   slotExtraManifestQuerySchema,
@@ -65,18 +66,18 @@ export const bookingsExtrasManifestService = {
 
     if (!slot) return { status: "slot_not_found" as const }
 
-    const extraConditions = [eq(productExtras.productId, slot.productId)]
+    const extraConditions = [eq(productExtrasRef.productId, slot.productId)]
     if (!query.includeInactiveExtras) {
-      extraConditions.push(eq(productExtras.active, true))
-      extraConditions.push(eq(productExtras.showOnSlotManifest, true))
+      extraConditions.push(eq(productExtrasRef.active, true))
+      extraConditions.push(eq(productExtrasRef.showOnSlotManifest, true))
     }
 
     const [extras, travelers] = await Promise.all([
       db
         .select()
-        .from(productExtras)
+        .from(productExtrasRef)
         .where(and(...extraConditions))
-        .orderBy(asc(productExtras.sortOrder), asc(productExtras.name)),
+        .orderBy(asc(productExtrasRef.sortOrder), asc(productExtrasRef.name)),
       db
         .selectDistinct({
           id: bookingTravelers.id,
@@ -379,9 +380,12 @@ async function validateSlotSelection(
 
   const [extra] = await db
     .select()
-    .from(productExtras)
+    .from(productExtrasRef)
     .where(
-      and(eq(productExtras.id, input.productExtraId), eq(productExtras.productId, slot.productId)),
+      and(
+        eq(productExtrasRef.id, input.productExtraId),
+        eq(productExtrasRef.productId, slot.productId),
+      ),
     )
     .limit(1)
   if (!extra) return { status: "extra_not_found" as const }
@@ -440,7 +444,7 @@ async function createBookingTotalExtraItem(
     travelerId: string
     productId: string
     optionId: string | null
-    extra: typeof productExtras.$inferSelect
+    extra: typeof productExtrasRef.$inferSelect
     optionExtraConfigId: string | null
     sellCurrency: string
     unitSellAmountCents: number | null

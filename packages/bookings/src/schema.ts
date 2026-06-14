@@ -1,3 +1,4 @@
+export * from "./extras/schema.js"
 export * from "./requirements/schema.js"
 export * from "./schema/travel-details.js"
 export * from "./schema-core.js"

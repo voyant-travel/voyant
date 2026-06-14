@@ -13,6 +13,6 @@
 "@voyantjs/storefront": patch
 ---
 
-Expose extras through Inventory and Bookings owner subpaths. Keep the legacy
-extras runtime and React packages as temporary compatibility shims while
+Move extras runtime and React source behind Inventory and Bookings owner
+subpaths. The legacy extras packages now act as compatibility shims while
 first-party imports move to the owner paths.

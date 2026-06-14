@@ -3,13 +3,13 @@
  * catalog search module and app-local runtime helpers.
  */
 
-import { getResolvedExtraById } from "@voyantjs/bookings/extras"
 import type {
   EmbeddingProvider,
   IndexerAdapter,
   ResolverScope,
   Visibility,
 } from "@voyantjs/catalog"
+import { getResolvedExtraById } from "@voyantjs/inventory/extras"
 import { getResolvedProductById } from "@voyantjs/inventory/service-catalog-plane"
 import type { Context } from "hono"
 

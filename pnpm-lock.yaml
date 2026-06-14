@@ -1072,9 +1072,6 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/extras':
-        specifier: workspace:^
-        version: link:../extras
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -1162,9 +1159,6 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
-      '@voyantjs/extras-react':
-        specifier: workspace:^
-        version: link:../extras-react
       '@voyantjs/finance-react':
         specifier: workspace:^
         version: link:../finance-react
@@ -1263,9 +1257,6 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/extras':
-        specifier: workspace:^
-        version: link:../extras
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -2013,6 +2004,9 @@ importers:
 
   packages/extras:
     dependencies:
+      '@voyantjs/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyantjs/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -2028,6 +2022,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyantjs/inventory':
+        specifier: workspace:^
+        version: link:../inventory
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -2088,12 +2085,18 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/bookings':
+        specifier: workspace:^
+        version: link:../bookings
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
-      '@voyantjs/extras':
+      '@voyantjs/inventory':
         specifier: workspace:^
-        version: link:../extras
+        version: link:../inventory
       '@voyantjs/inventory-react':
         specifier: workspace:^
         version: link:../inventory-react
@@ -2669,9 +2672,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
-      '@voyantjs/extras':
+      '@voyantjs/extras-contracts':
         specifier: workspace:^
-        version: link:../extras
+        version: link:../extras-contracts
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono
@@ -2761,9 +2764,6 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
-      '@voyantjs/extras-react':
-        specifier: workspace:^
-        version: link:../extras-react
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../finance
@@ -5088,12 +5088,6 @@ importers:
       '@voyantjs/external-refs':
         specifier: workspace:^
         version: link:../../packages/external-refs
-      '@voyantjs/extras':
-        specifier: workspace:^
-        version: link:../../packages/extras
-      '@voyantjs/extras-react':
-        specifier: workspace:^
-        version: link:../../packages/extras-react
       '@voyantjs/finance':
         specifier: workspace:^
         version: link:../../packages/finance

@@ -1,8 +1,8 @@
-import { productExtras } from "@voyantjs/bookings/extras"
 import { sellabilityService } from "@voyantjs/commerce/sellability"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { productExtrasRef } from "./product-extra-ref.js"
 import { getStorefrontSlotResourceAvailability } from "./service-boundary-sql.js"
 import {
   buildAvailabilityState,
@@ -256,17 +256,17 @@ async function buildExtraImpacts(args: {
   )
   const extras = await args.db
     .select({
-      id: productExtras.id,
-      name: productExtras.name,
-      selectionType: productExtras.selectionType,
-      pricingMode: productExtras.pricingMode,
-      pricedPerPerson: productExtras.pricedPerPerson,
-      defaultQuantity: productExtras.defaultQuantity,
-      minQuantity: productExtras.minQuantity,
+      id: productExtrasRef.id,
+      name: productExtrasRef.name,
+      selectionType: productExtrasRef.selectionType,
+      pricingMode: productExtrasRef.pricingMode,
+      pricedPerPerson: productExtrasRef.pricedPerPerson,
+      defaultQuantity: productExtrasRef.defaultQuantity,
+      minQuantity: productExtrasRef.minQuantity,
     })
-    .from(productExtras)
-    .where(and(eq(productExtras.productId, args.productId), eq(productExtras.active, true)))
-    .orderBy(asc(productExtras.sortOrder), asc(productExtras.name))
+    .from(productExtrasRef)
+    .where(and(eq(productExtrasRef.productId, args.productId), eq(productExtrasRef.active, true)))
+    .orderBy(asc(productExtrasRef.sortOrder), asc(productExtrasRef.name))
 
   const ruleByExtraId = new Map(
     args.context.extraRules

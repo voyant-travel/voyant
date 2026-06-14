@@ -53,7 +53,6 @@
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
@@ -81,9 +80,6 @@
       "optional": true
     },
     "@voyantjs/relationships-react": {
-      "optional": true
-    },
-    "@voyantjs/extras-react": {
       "optional": true
     },
     "@voyantjs/finance-react": {
@@ -130,7 +126,6 @@
     "@voyantjs/catalog-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",

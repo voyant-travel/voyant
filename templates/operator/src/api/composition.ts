@@ -18,7 +18,7 @@
 // Singleton modules (no template-specific options).
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
-import { bookingsExtrasHonoModule } from "@voyantjs/bookings/extras"
+import { bookingsExtrasRoutes } from "@voyantjs/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
 import {
   createCatalogSearchHonoModule,
@@ -39,9 +39,11 @@ import type {
 } from "@voyantjs/finance/checkout"
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
+import type { HonoModule } from "@voyantjs/hono/module"
 import { identityHonoModule } from "@voyantjs/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyantjs/inventory"
 import { inventoryAuthoringExtension } from "@voyantjs/inventory/authoring/extension"
+import { inventoryExtrasRoutes } from "@voyantjs/inventory/extras"
 import { createLegalHonoModule } from "@voyantjs/legal"
 import {
   createDefaultBookingDocumentAttachment,
@@ -58,6 +60,7 @@ import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createCustomerPortalHonoModule } from "@voyantjs/storefront/customer-portal"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { createTripComposerHonoModule } from "@voyantjs/trip-composer"
+import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
@@ -81,6 +84,11 @@ import {
 } from "./payment-config"
 import { createRelationshipsStorefrontIntakePersistence } from "./storefront-intake-runtime"
 import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
+
+const operatorExtrasHonoModule: HonoModule = {
+  module: { name: "extras" },
+  routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
+}
 
 type NotificationDeliveryLike = {
   id: string
@@ -182,7 +190,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/operations/availability",
     "@voyantjs/identity",
     "@voyantjs/distribution/external-refs",
-    "@voyantjs/bookings/extras",
+    "@voyantjs/inventory/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
     "@voyantjs/operations/resources",
@@ -219,7 +227,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/operations/availability": () => availabilityHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
     "@voyantjs/distribution/external-refs": () => externalRefsHonoModule,
-    "@voyantjs/bookings/extras": () => bookingsExtrasHonoModule,
+    "@voyantjs/inventory/extras": () => operatorExtrasHonoModule,
     "@voyantjs/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
         publicRoutes: {

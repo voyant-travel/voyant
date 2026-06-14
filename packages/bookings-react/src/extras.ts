@@ -1,35 +1,23 @@
-/**
- * Bookings React extras facade for booking-time add-on selection and slot
- * manifests.
- */
+"use client"
 
-export type {
-  ProductExtraRecord,
-  ProductExtrasListFilters,
-  SlotExtraCollectionBulkInput,
-  SlotExtraManifest,
-  SlotExtraManifestSelection,
-  SlotExtraManifestTraveler,
-  SlotExtraSelectionBulkInput,
-  SlotExtraSelectionPatchInput,
-  UseProductExtrasOptions,
-} from "@voyantjs/extras-react"
 export {
   defaultFetcher,
-  extrasQueryKeys as bookingsExtrasQueryKeys,
   fetchWithValidation,
-  getProductExtrasQueryOptions,
-  getSlotExtraManifestQueryOptions,
+  VoyantApiError,
+  type VoyantFetcher,
+} from "./extras/client.js"
+export { SlotExtrasManifestPanel } from "./extras/components/slot-extras-manifest-panel.js"
+export {
+  useProductExtra,
   useProductExtras,
   useSlotExtraManifest,
   useSlotExtraManifestMutation,
-  useVoyantExtrasContext as useVoyantBookingsExtrasContext,
-  VoyantApiError,
-  type VoyantExtrasContextValue as VoyantBookingsExtrasContextValue,
-  VoyantExtrasProvider as VoyantBookingsExtrasProvider,
-  type VoyantExtrasProviderProps as VoyantBookingsExtrasProviderProps,
-  type VoyantFetcher,
-} from "@voyantjs/extras-react"
+} from "./extras/hooks/index.js"
+export type {
+  SlotExtraCollectionBulkInput,
+  SlotExtraSelectionBulkInput,
+  SlotExtraSelectionPatchInput,
+} from "./extras/hooks/use-slot-extra-manifest-mutation.js"
 export {
   type ExtrasUiMessageOverrides,
   type ExtrasUiMessages,
@@ -39,9 +27,34 @@ export {
   extrasUiRo,
   getExtrasUiI18n,
   resolveExtrasUiMessages,
-  SlotExtrasManifestPanel,
   useExtrasUiI18n,
   useExtrasUiI18nOrDefault,
   useExtrasUiMessages,
   useExtrasUiMessagesOrDefault,
-} from "@voyantjs/extras-react/ui"
+} from "./extras/i18n/index.js"
+export {
+  useVoyantExtrasContext as useVoyantBookingsExtrasContext,
+  type VoyantExtrasContextValue as VoyantBookingsExtrasContextValue,
+  VoyantExtrasProvider as VoyantBookingsExtrasProvider,
+  type VoyantExtrasProviderProps as VoyantBookingsExtrasProviderProps,
+} from "./extras/provider.js"
+export {
+  extrasQueryKeys as bookingsExtrasQueryKeys,
+  type ProductExtrasListFilters,
+} from "./extras/query-keys.js"
+export {
+  getProductExtraQueryOptions,
+  getProductExtrasQueryOptions,
+  getSlotExtraManifestQueryOptions,
+} from "./extras/query-options.js"
+export {
+  type ProductExtraRecord,
+  productExtraListResponse,
+  productExtraRecordSchema,
+  type SlotExtraManifest,
+  type SlotExtraManifestSelection,
+  type SlotExtraManifestTraveler,
+  slotExtraManifestMutationResponse,
+  slotExtraManifestResponse,
+  slotExtraManifestSchema,
+} from "./extras/schemas.js"

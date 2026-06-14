@@ -1761,8 +1761,8 @@ Constraints:
 |--------|------|
 | `id` | text • PK • not null • default |
 | `booking_id` (`bookingId`) | text • not null |
-| `product_extra_id` (`productExtraId`) | text • FK -> product_extras.id • nullable |
-| `option_extra_config_id` (`optionExtraConfigId`) | text • FK -> option_extra_configs.id • nullable |
+| `product_extra_id` (`productExtraId`) | text • nullable |
+| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
 | `name` | text • not null |
 | `description` | text • nullable |
 | `status` | booking_extra_status • not null • default "draft" |
@@ -2002,8 +2002,8 @@ Constraints:
 | `booking_id` (`bookingId`) | text • not null |
 | `booking_item_id` (`bookingItemId`) | text • nullable |
 | `traveler_id` (`travelerId`) | text • not null |
-| `product_extra_id` (`productExtraId`) | text • FK -> product_extras.id • not null |
-| `option_extra_config_id` (`optionExtraConfigId`) | text • FK -> option_extra_configs.id • nullable |
+| `product_extra_id` (`productExtraId`) | text • not null |
+| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
 | `status` | extra_participant_selection_status • not null • default "selected" |
 | `collection_mode` (`collectionMode`) | extra_collection_mode • not null • default "booking_total" |
 | `collection_status` (`collectionStatus`) | extra_collection_status • not null • default "not_required" |

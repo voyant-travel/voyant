@@ -33,8 +33,10 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
+    "@voyantjs/bookings": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/extras": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
@@ -46,7 +48,16 @@
     "@tanstack/react-table": {
       "optional": true
     },
+    "@voyantjs/bookings": {
+      "optional": true
+    },
+    "@voyantjs/bookings-react": {
+      "optional": true
+    },
     "@voyantjs/catalog-react": {
+      "optional": true
+    },
+    "@voyantjs/inventory": {
       "optional": true
     },
     "@voyantjs/inventory-react": {
@@ -68,9 +79,11 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/bookings": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/extras": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
     "@voyantjs/ui": "workspace:^",

@@ -1,5 +1,4 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { constructOffer, type SellabilityOfferWriter } from "./service-construct-offer.js"
 import * as records from "./service-records.js"
 import { resolve } from "./service-resolve.js"
 import {
@@ -8,20 +7,12 @@ import {
   listSnapshots,
   persistSnapshot,
 } from "./service-snapshots.js"
-import type {
-  SellabilityConstructOfferInput,
-  SellabilityPersistSnapshotInput,
-} from "./validation.js"
+import type { SellabilityPersistSnapshotInput } from "./validation.js"
 
-export interface SellabilityServiceOptions {
-  offerWriter?: SellabilityOfferWriter
-}
+export type SellabilityServiceOptions = Record<string, never>
 
-export function createSellabilityService(options: SellabilityServiceOptions = {}) {
+export function createSellabilityService(_options: SellabilityServiceOptions = {}) {
   const service = {
-    constructOffer(db: PostgresJsDatabase, input: SellabilityConstructOfferInput) {
-      return constructOffer(db, input, service.resolve, options.offerWriter)
-    },
     persistSnapshot(db: PostgresJsDatabase, input: SellabilityPersistSnapshotInput) {
       return persistSnapshot(db, input, service.resolve)
     },

@@ -1,30 +1,49 @@
-/**
- * Inventory React extras facade for operated add-on authoring.
- *
- * The implementation delegates to the legacy extras React package during the
- * facade-first migration. Import new authoring UI from this subpath.
- */
+"use client"
 
-export type {
-  CreateProductExtraInput,
-  ProductExtraRecord,
-  ProductExtrasListFilters,
-  UpdateProductExtraInput,
-  UseProductExtrasOptions,
-} from "@voyantjs/extras-react"
 export {
   defaultFetcher,
   fetchWithValidation,
-  getProductExtraQueryOptions,
-  getProductExtrasQueryOptions,
+  VoyantApiError,
+  type VoyantFetcher,
+} from "./extras/client.js"
+export { ProductCombobox } from "./extras/components/product-combobox.js"
+export {
   useProductExtra,
   useProductExtraMutation,
   useProductExtras,
+} from "./extras/hooks/index.js"
+export type {
+  CreateProductExtraInput,
+  UpdateProductExtraInput,
+} from "./extras/hooks/use-product-extra-mutation.js"
+export {
+  type ExtrasUiMessageOverrides,
+  type ExtrasUiMessages,
+  ExtrasUiMessagesProvider,
+  extrasUiEn,
+  extrasUiMessageDefinitions,
+  extrasUiRo,
+  getExtrasUiI18n,
+  resolveExtrasUiMessages,
+  useExtrasUiI18n,
+  useExtrasUiI18nOrDefault,
+  useExtrasUiMessages,
+  useExtrasUiMessagesOrDefault,
+} from "./extras/i18n/index.js"
+export {
   useVoyantExtrasContext as useVoyantInventoryExtrasContext,
-  VoyantApiError,
   type VoyantExtrasContextValue as VoyantInventoryExtrasContextValue,
   VoyantExtrasProvider as VoyantInventoryExtrasProvider,
   type VoyantExtrasProviderProps as VoyantInventoryExtrasProviderProps,
-  type VoyantFetcher,
-} from "@voyantjs/extras-react"
-export { ProductCombobox } from "@voyantjs/extras-react/ui"
+} from "./extras/provider.js"
+export { extrasQueryKeys, type ProductExtrasListFilters } from "./extras/query-keys.js"
+export {
+  getProductExtraQueryOptions,
+  getProductExtrasQueryOptions,
+} from "./extras/query-options.js"
+export {
+  type ProductExtraRecord,
+  productExtraListResponse,
+  productExtraRecordSchema,
+  productExtraSingleResponse,
+} from "./extras/schemas.js"

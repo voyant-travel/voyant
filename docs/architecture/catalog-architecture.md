@@ -11,8 +11,8 @@ experiences, OCTO-aligned), `packages/cruises` (see
 [`cruises-module.md`](./cruises-module.md)), accommodation resale
 surfaces (hotel/lodging catalog inventory, room options, board/rate choices,
 and stay booking lines), `packages/charters` (yacht charters, see
-[`charters-module.md`](./charters-module.md)), and `packages/extras` (booking
-add-ons). It is not itself a vertical module.
+[`charters-module.md`](./charters-module.md)), and extras as owner paths under
+Inventory and Bookings. It is not itself a vertical module.
 
 Accommodation is in scope here as resale, sourced inventory, or trip
 composition. Hotel/property operations are out of scope for first-party
@@ -193,8 +193,8 @@ Extras represent booking add-ons (optional line items on a booked parent), not
 independently-sellable inventory. They are exposed through
 `@voyantjs/inventory/extras` for operated authoring/catalog projection and
 `@voyantjs/bookings/extras` for booking-time selections. The legacy
-`packages/extras` schema remains a temporary migration shim while the shared FK
-graph is split. Extras are a borderline case for the catalog contract:
+`packages/extras` package is a temporary compatibility shim, not the schema
+owner. Extras are a borderline case for the catalog contract:
 
 - It does need provenance (extras can be sourced from upstream alongside their parent product).
 - It does need snapshot capture (a refund needs to know the extra was a $50 spa credit, not just "a line item").
@@ -1133,7 +1133,7 @@ The flight-vertical artifacts ship as part of Phase 3 (`packages/flights`); see
 
 Once products' adoption proves the contract, the remaining in-scope surfaces
 adopt in parallel: `packages/cruises`, accommodation resale,
-`packages/charters`, and `packages/extras`. Each full adoption is structurally
+`packages/charters`, and the Inventory/Bookings extras owner paths. Each full adoption is structurally
 the same as products' (write the catalog-policy file, wire provenance, wire
 overlay reads, wire snapshot capture, wire the indexer adapter). Cruises is
 already designed in alignment with this contract (see
@@ -1158,7 +1158,7 @@ Coordinating five vertical adoptions inside one release is more upfront work tha
 
 **Bounded exception: `extras`.** Per §3.3.1, `extras` ships with overlays and indexer participation deferred — that's its intended Phase 1 scope, not a transitional gap. Each vertical's intended scope is fully live at release; varied participation depths across verticals are explicit and documented, not in flight.
 
-The existing operational schemas are untouched. Catalog adoption is additive — no destructive migration on `products`, `cruises`, `accommodations`, `charters`, or `extras`.
+The existing operational schemas are untouched. Catalog adoption is additive — no destructive migration on `products`, `cruises`, `accommodations`, `charters`, or the Inventory/Bookings extras owner paths.
 
 ### 9.3. After v1
 

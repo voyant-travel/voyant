@@ -28,7 +28,6 @@ export const schema = [
   "../../packages/inventory/src/schema.ts",
   "../../packages/commerce/src/schema.ts",
   "../../packages/operations/src/schema.ts",
-  "../../packages/extras/src/schema.ts",
   "../../packages/catalog-authoring/src/schema.ts",
   "../../packages/workflow-runs/src/schema.ts",
   "../../packages/accommodations/src/schema.ts",

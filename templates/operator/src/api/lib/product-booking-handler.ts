@@ -1,4 +1,3 @@
-import { productExtras } from "@voyantjs/bookings/extras"
 import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
 import type {
   AddonOffer,
@@ -18,6 +17,7 @@ import {
 } from "@voyantjs/commerce/pricing"
 import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import { createProductsBookingHandler } from "@voyantjs/inventory/booking-engine"
+import { productExtras } from "@voyantjs/inventory/extras"
 import { optionUnits, productOptions } from "@voyantjs/inventory/schema"
 import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import {

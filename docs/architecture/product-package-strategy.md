@@ -277,9 +277,10 @@ Ownership rule:
   adapters. Runtime consolidation does not collapse that contract package.
 
 During the v1 migration branch, `@voyantjs/extras` and
-`@voyantjs/extras-react` may remain as temporary compatibility shims because
-the physical Drizzle tables still share one FK graph. First-party imports should
-move to the owner paths above.
+`@voyantjs/extras-react` may remain as temporary compatibility shims. The
+physical Drizzle tables are owner-split between Inventory and Bookings; the
+legacy packages should not appear in template schema manifests or first-party
+runtime imports.
 
 ## 5. Concrete Consolidation Candidates
 
@@ -371,11 +372,11 @@ Prerequisite cleanup:
 - Do not expose `pricing`, `markets`, `sellability`, `promotions`, and `fx`
   as package exports for the normal public choreography. Public subpaths are
   allowed only for deliberate extension Interfaces.
-- `@voyantjs/commerce/sellability/service-construct-offer`,
-  `SellabilityOfferWriter`, and `POST /construct-offer` are migration
-  compatibility only. They must be removed or retargeted to
-  `evaluateCommercialDecision`, Quote Versions, booking drafts, or Trip Composer
-  snapshots before Commerce is considered a clean v1 public surface.
+- Remove `@voyantjs/commerce/sellability/service-construct-offer`,
+  `SellabilityOfferWriter`, and `POST /construct-offer` from the v1 public
+  surface. Sellability stops at commercial resolution and persisted decision
+  snapshots; Quote Versions, booking drafts, or Trip Composer snapshots own
+  downstream materialization.
 - Invert the current `promotions` -> `storefront` edge before Commerce lands.
   Storefront should consume Commerce display contracts/events; Commerce should
   not import Storefront or the merged Module creates a `commerce` <-> `storefront`
@@ -1282,7 +1283,7 @@ migration issue rather than reopening the package move implicitly.
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
 | Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. `@voyantjs/products` and `@voyantjs/products-react` remain compatibility packages. Keep `@voyantjs/catalog-authoring` only as a compatibility package unless a real Catalog overlay/source-governance surface is split out. Move generated manifests and template schema specifiers only through explicit parity work. |
-| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Build the Commerce Interface before moving callers. Stop Sellability from constructing Transactions Offers and migrate callers to commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. Old public subpaths and construct-offer routes are compatibility-only until removed before v1. |
+| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Build the Commerce Interface before moving callers. Sellability no longer constructs Transactions Offers; callers use commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. Old public subpaths remain compatibility-only until removed before v1. |
 | CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside the migration branch. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |
@@ -1308,7 +1309,7 @@ stay unchanged.
 | `@voyantjs/cruises`, `@voyantjs/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |
 | `@voyantjs/charters`, `@voyantjs/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
 | `@voyantjs/flights`, `@voyantjs/flights-react` | Keep as a vertical/source runtime package. | Flights are live-offer/source-adapter driven and intentionally do not behave like owned product inventory. |
-| `@voyantjs/extras`, `@voyantjs/extras-react` | Temporary compatibility shims. New imports use `@voyantjs/inventory/extras`, `@voyantjs/inventory-react/extras`, `@voyantjs/bookings/extras`, and `@voyantjs/bookings-react/extras`. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. Physical table movement is deferred until the shared FK graph can be split safely. |
+| `@voyantjs/extras`, `@voyantjs/extras-react` | Temporary compatibility shims. New imports use `@voyantjs/inventory/extras`, `@voyantjs/inventory-react/extras`, `@voyantjs/bookings/extras`, and `@voyantjs/bookings-react/extras`. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. Inventory owns product extras, option configs, content/projection helpers, and authoring UI; Bookings owns booking extras, participant selections, slot manifests, and booking-time UI. |
 | `@voyantjs/octo` | Keep as an adapter/API compatibility package unless it grows into a first-class product seam. | OCTO should project from Bookings, booking origin/provenance, Catalog snapshots, and vertical/source refs after Transactions retirement. |
 
 ### 10.2 Commercial Runtime Packages

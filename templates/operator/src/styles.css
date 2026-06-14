@@ -17,7 +17,6 @@
 @source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/commerce-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/relationships-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/extras-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/finance-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/legal-react/dist/**/*.{js,mjs}";
@@ -36,7 +35,6 @@
 @source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
 @source "../../../packages/commerce-react/src/**/*.{ts,tsx}";
 @source "../../../packages/relationships-react/src/**/*.{ts,tsx}";
-@source "../../../packages/extras-react/src/**/*.{ts,tsx}";
 @source "../../../packages/finance-react/src/**/*.{ts,tsx}";
 @source "../../../packages/flights-react/src/**/*.{ts,tsx}";
 @source "../../../packages/legal-react/src/**/*.{ts,tsx}";
@@ -57,8 +55,6 @@
 @import "@voyantjs/distribution-react/suppliers/styles.css";
 @import "@voyantjs/operations-react/resources/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
-/* Temporary shim: bookings-react/extras delegates to extras-react until the UI files move. */
-@import "@voyantjs/extras-react/styles.css";
 @import "@voyantjs/flights-react/styles.css";
 
 @custom-variant dark (&:is(.dark *));

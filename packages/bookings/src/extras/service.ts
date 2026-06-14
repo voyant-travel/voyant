@@ -1,9 +1,8 @@
-import { bookingExtras } from "@voyantjs/extras/schema"
 import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { bookingsExtrasAuthoringService } from "./service-authoring.js"
+import { bookingExtras } from "./schema.js"
 import { bookingsExtrasManifestService } from "./service-manifest.js"
 import type {
   bookingExtraListQuerySchema,
@@ -26,8 +25,6 @@ async function paginate<T extends object>(
 }
 
 export const bookingsExtrasService = {
-  ...bookingsExtrasAuthoringService,
-
   async listBookingExtras(db: PostgresJsDatabase, query: BookingExtraListQuery) {
     const conditions = []
     if (query.bookingId) conditions.push(eq(bookingExtras.bookingId, query.bookingId))

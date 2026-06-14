@@ -68,8 +68,6 @@
     "@voyantjs/distribution": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/external-refs": "workspace:^",
-    "@voyantjs/extras": "workspace:^",
-    "@voyantjs/extras-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/flights": "workspace:^",
