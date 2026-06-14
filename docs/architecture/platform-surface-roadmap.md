@@ -376,7 +376,7 @@ Resolved upstream in source:
   `GET /v1/public/products/:id/brochure`
 - public catalog product detail now exposes `brochure` separately from the
   normal media gallery
-- `@voyantjs/inventory` now includes
+- `@voyantjs/inventory/tasks` now includes
   `generateAndStoreProductBrochure()` so apps can generate a product PDF,
   persist it through a Voyant storage provider, and register it as the
   canonical current brochure without an app-local `product_media(document)`

@@ -14,7 +14,7 @@ import {
   updateProductDayTranslationSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
-} from "@voyantjs/inventory"
+} from "@voyantjs/inventory/validation"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

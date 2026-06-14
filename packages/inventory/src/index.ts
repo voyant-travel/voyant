@@ -20,18 +20,6 @@ export { publicProductRoutes } from "./routes-public.js"
 export { productsService } from "./service.js"
 export { catalogProductsService } from "./service-catalog.js"
 export { publicProductsService } from "./service-public.js"
-export {
-  createBasicPdfProductBrochurePrinter,
-  createCloudflareBrowserProductBrochurePrinter,
-  createCloudflareBrowserProductBrochurePrinterFromEnv,
-  createDefaultProductBrochureTemplate,
-  type GenerateAndStoreProductBrochureOptions,
-  generateAndStoreProductBrochure,
-  loadProductBrochureTemplateContext,
-  type ProductBrochurePrinter,
-  type ProductBrochureTemplateDefinition,
-  renderProductBrochureTemplate,
-} from "./tasks/index.js"
 
 export const productLinkable: LinkableDefinition = {
   module: "products",
