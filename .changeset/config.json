@@ -44,7 +44,7 @@
     ],
     ["@voyantjs/suppliers", "@voyantjs/suppliers-react"],
     ["@voyantjs/transactions", "@voyantjs/transactions-react"],
-    ["@voyantjs/travel-composer", "@voyantjs/travel-composer-react"],
+    ["@voyantjs/trip-composer", "@voyantjs/trip-composer-react"],
     [
       "@voyantjs/workflow-runs",
       "@voyantjs/workflows",

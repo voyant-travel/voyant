@@ -21,6 +21,7 @@ import {
   products,
 } from "@voyantjs/inventory/schema"
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations/availability/schema"
+import { relationshipsService } from "@voyantjs/relationships"
 import { customerSignals } from "@voyantjs/relationships/schema"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
@@ -28,6 +29,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { exchangeRates, fxRateSets } from "../../../markets/src/schema.js"
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
+import type { StorefrontIntakePersistence, StorefrontRequestContext } from "../../src/service.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
@@ -40,6 +42,44 @@ const app = new Hono()
     await next()
   })
   .route("/", createStorefrontPublicRoutes())
+
+function requireIntakeDb(context: StorefrontRequestContext) {
+  if (!context.db) {
+    throw new Error("Storefront intake test requires a request database")
+  }
+  return context.db
+}
+
+const relationshipsIntakePersistence: StorefrontIntakePersistence = {
+  async findSignal({ context, kind, sourceSubmissionId }) {
+    const [row] = await requireIntakeDb(context)
+      .select()
+      .from(customerSignals)
+      .where(
+        and(
+          eq(customerSignals.kind, kind),
+          eq(customerSignals.sourceSubmissionId, sourceSubmissionId),
+        ),
+      )
+      .limit(1)
+    return row ?? null
+  },
+  createPerson({ context, data }) {
+    return relationshipsService.createPerson(requireIntakeDb(context), data)
+  },
+  createCustomerSignal({ context, data }) {
+    return relationshipsService.createCustomerSignal(requireIntakeDb(context), data)
+  },
+  updateCustomerSignal({ context, id, data }) {
+    return relationshipsService.updateCustomerSignal(requireIntakeDb(context), id, data)
+  },
+  deleteCustomerSignal({ context, id }) {
+    return relationshipsService.deleteCustomerSignal(requireIntakeDb(context), id)
+  },
+  deletePerson({ context, id }) {
+    return relationshipsService.deletePerson(requireIntakeDb(context), id)
+  },
+}
 
 describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
   beforeEach(async () => {
@@ -58,7 +98,12 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         c.set("eventBus" as never, eventBus)
         await next()
       })
-      .route("/", createStorefrontPublicRoutes())
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          intake: { persistence: relationshipsIntakePersistence },
+        }),
+      )
 
     const res = await intakeApp.request("/leads", {
       method: "POST",
@@ -136,7 +181,12 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         c.set("db" as never, db)
         await next()
       })
-      .route("/", createStorefrontPublicRoutes())
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          intake: { persistence: relationshipsIntakePersistence },
+        }),
+      )
 
     const payload = {
       kind: "request_offer",
@@ -200,7 +250,10 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       .route(
         "/",
         createStorefrontPublicRoutes({
-          intake: { requestNewsletterDoubleOptIn },
+          intake: {
+            persistence: relationshipsIntakePersistence,
+            requestNewsletterDoubleOptIn,
+          },
         }),
       )
 

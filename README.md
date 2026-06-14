@@ -74,12 +74,11 @@ hotel-operations system; see
 
 ### Travel domain modules
 
-- [`@voyantjs/relationships`](./packages/relationships/README.md), [`@voyantjs/quotes`](./packages/quotes/README.md), [`@voyantjs/suppliers`](./packages/suppliers/README.md), [`@voyantjs/products`](./packages/products/README.md), [`@voyantjs/availability`](./packages/availability/README.md)
-- [`@voyantjs/bookings/requirements`](./packages/bookings/README.md), [`@voyantjs/resources`](./packages/resources/README.md), [`@voyantjs/transactions`](./packages/transactions/README.md), [`@voyantjs/bookings`](./packages/bookings/README.md)
-- [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md), [`@voyantjs/checkout`](./packages/checkout), [`@voyantjs/legal`](./packages/legal/README.md)
-- [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/markets`](./packages/markets/README.md), [`@voyantjs/pricing`](./packages/pricing/README.md), [`@voyantjs/inventory`](./packages/inventory), [`@voyantjs/sellability`](./packages/sellability/README.md)
-- [`@voyantjs/facilities`](./packages/facilities/README.md), [`@voyantjs/ground`](./packages/ground/README.md), [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/external-refs`](./packages/external-refs/README.md), [`@voyantjs/octo`](./packages/octo)
-- [`@voyantjs/charters`](./packages/charters/README.md), [`@voyantjs/cruises`](./packages/cruises/README.md), [`@voyantjs/storefront`](./packages/storefront), [`@voyantjs/customer-portal`](./packages/customer-portal), [`@voyantjs/storefront-verification`](./packages/storefront-verification)
+- [`@voyantjs/catalog`](./packages/catalog/README.md), [`@voyantjs/commerce`](./packages/commerce/README.md), [`@voyantjs/inventory`](./packages/inventory), [`@voyantjs/operations`](./packages/operations)
+- [`@voyantjs/bookings`](./packages/bookings/README.md), [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/legal`](./packages/legal/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md)
+- [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/relationships`](./packages/relationships/README.md), [`@voyantjs/quotes`](./packages/quotes/README.md), [`@voyantjs/trip-composer`](./packages/trip-composer)
+- [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/places`](./packages/places), [`@voyantjs/storefront`](./packages/storefront), [`@voyantjs/storefront-verification`](./packages/storefront-verification)
+- [`@voyantjs/accommodations`](./packages/accommodations), [`@voyantjs/charters`](./packages/charters/README.md), [`@voyantjs/cruises`](./packages/cruises/README.md), [`@voyantjs/flights`](./packages/flights), [`@voyantjs/octo`](./packages/octo)
 
 ### Workflows (durable orchestration)
 

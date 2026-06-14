@@ -28,12 +28,7 @@ const retailSpineRoots = [
   },
   {
     area: "Finance",
-    packages: [
-      "@voyantjs/finance",
-      "@voyantjs/finance-react",
-      "@voyantjs/checkout",
-      "@voyantjs/checkout-react",
-    ],
+    packages: ["@voyantjs/finance", "@voyantjs/finance-react"],
   },
   {
     area: "Distribution",
@@ -41,12 +36,7 @@ const retailSpineRoots = [
   },
   {
     area: "Storefront",
-    packages: [
-      "@voyantjs/storefront",
-      "@voyantjs/storefront-react",
-      "@voyantjs/storefront-sdk",
-      "@voyantjs/storefront-verification",
-    ],
+    packages: ["@voyantjs/storefront", "@voyantjs/storefront-react", "@voyantjs/storefront-sdk"],
   },
   {
     area: "Admin surfaces",
@@ -70,6 +60,12 @@ const forbiddenPackages = new Map([
   ["@voyantjs/operations", "operated Operations runtime"],
   ["@voyantjs/operations-react", "operated Operations UI"],
   ["@voyantjs/allocation-ui", "operated Availability allocation UI"],
+  ["@voyantjs/relationships", "mode-optional Relationships runtime"],
+  ["@voyantjs/relationships-react", "mode-optional Relationships UI"],
+  ["@voyantjs/quotes", "mode-optional Quotes runtime"],
+  ["@voyantjs/quotes-react", "mode-optional Quotes UI"],
+  ["@voyantjs/crm", "retired CRM runtime package"],
+  ["@voyantjs/crm-react", "retired CRM UI package"],
   ["@voyantjs/transactions", "retired runtime Transactions package"],
   ["@voyantjs/transactions-react", "retired runtime Transactions UI"],
 ])
@@ -110,6 +106,13 @@ const optionalEdgeAllowlist = [
       "Distribution React external-reference owner-path components can attach operated Inventory pickers when a host installs them",
   },
   {
+    from: "@voyantjs/distribution-react",
+    type: "peerDependencies",
+    to: "@voyantjs/relationships-react",
+    reason:
+      "Distribution React admin components can attach Relationships context when a host installs it",
+  },
+  {
     from: "@voyantjs/bookings-react",
     type: "peerDependencies",
     to: "@voyantjs/operations-react",
@@ -122,6 +125,12 @@ const optionalEdgeAllowlist = [
     to: "@voyantjs/inventory-react",
     reason:
       "booking admin components can attach operated Inventory summaries when a host installs them",
+  },
+  {
+    from: "@voyantjs/bookings-react",
+    type: "peerDependencies",
+    to: "@voyantjs/relationships-react",
+    reason: "booking admin components can attach Relationships context when a host installs it",
   },
   {
     from: "@voyantjs/finance-react",

@@ -16,8 +16,13 @@ import {
 } from "./service-departures.js"
 import {
   createStorefrontLeadSignal,
+  type StorefrontCustomerSignalCreatedEvent,
   type StorefrontIntakeGuard,
   type StorefrontIntakeOptions,
+  type StorefrontIntakePersistence,
+  type StorefrontIntakePersistenceResolver,
+  type StorefrontIntakePerson,
+  type StorefrontIntakeSignal,
   subscribeStorefrontNewsletter,
 } from "./service-intake.js"
 import { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
@@ -602,7 +607,7 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     },
     checkIntakeGuard,
     createLead(input: { body: StorefrontLeadIntakeInput; context: StorefrontRequestContext }) {
-      return createStorefrontLeadSignal(input)
+      return createStorefrontLeadSignal({ ...input, intake: options?.intake })
     },
     subscribeNewsletter(input: {
       body: StorefrontNewsletterSubscribeInput
@@ -610,10 +615,19 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     }) {
       return subscribeStorefrontNewsletter({
         ...input,
+        intake: options?.intake,
         requestDoubleOptIn: options?.intake?.requestNewsletterDoubleOptIn,
       })
     },
   }
 }
 
-export type { StorefrontIntakeGuard, StorefrontIntakeOptions }
+export type {
+  StorefrontCustomerSignalCreatedEvent,
+  StorefrontIntakeGuard,
+  StorefrontIntakeOptions,
+  StorefrontIntakePersistence,
+  StorefrontIntakePersistenceResolver,
+  StorefrontIntakePerson,
+  StorefrontIntakeSignal,
+}

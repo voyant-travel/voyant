@@ -79,6 +79,7 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
+import { createRelationshipsStorefrontIntakePersistence } from "./storefront-intake-runtime"
 import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
 
 type NotificationDeliveryLike = {
@@ -376,6 +377,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         // voyant#1687 §3.2) — the handler runs on the app bus with
         // outbox-grade retries; the */2min cron sweeps stale intents.
         bookingIntents: { resolveDb: capabilities.resolveDb },
+        intake: {
+          persistence: createRelationshipsStorefrontIntakePersistence(),
+        },
       }),
     "@voyantjs/customer-portal": ({ capabilities }) =>
       createCustomerPortalHonoModule({
