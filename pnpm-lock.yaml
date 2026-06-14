@@ -3376,7 +3376,7 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/trip-composer:
+  packages/trips:
     dependencies:
       '@voyantjs/catalog':
         specifier: workspace:^
@@ -3410,7 +3410,7 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/trip-composer-react:
+  packages/trips-react:
     dependencies:
       '@voyantjs/i18n':
         specifier: workspace:^
@@ -3452,9 +3452,9 @@ importers:
       '@voyantjs/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
-      '@voyantjs/trip-composer':
+      '@voyantjs/trips':
         specifier: workspace:^
-        version: link:../trip-composer
+        version: link:../trips
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -4100,12 +4100,12 @@ importers:
       '@voyantjs/storefront-verification':
         specifier: workspace:^
         version: link:../../packages/storefront-verification
-      '@voyantjs/trip-composer':
+      '@voyantjs/trips':
         specifier: workspace:^
-        version: link:../../packages/trip-composer
-      '@voyantjs/trip-composer-react':
+        version: link:../../packages/trips
+      '@voyantjs/trips-react':
         specifier: workspace:^
-        version: link:../../packages/trip-composer-react
+        version: link:../../packages/trips-react
       '@voyantjs/types':
         specifier: workspace:^
         version: link:../../packages/types

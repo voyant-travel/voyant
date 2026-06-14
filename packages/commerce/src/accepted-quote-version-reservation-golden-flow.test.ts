@@ -8,11 +8,11 @@ import {
   recordCommercialSnapshot,
 } from "./index.js"
 
-type ModuleOwner = "Quotes" | "TripComposer" | "Commerce" | "Bookings" | "Finance" | "Legal"
+type ModuleOwner = "Quotes" | "Trips" | "Commerce" | "Bookings" | "Finance" | "Legal"
 
 type ModuleInterfaceName =
   | "Quotes.acceptQuoteVersion"
-  | "TripComposer.prepareReservationPlanForAcceptedQuoteVersion"
+  | "Trips.prepareReservationPlanForAcceptedQuoteVersion"
   | "Commerce.evaluateCommercialDecision"
   | "Commerce.recordCommercialSnapshot"
   | "Bookings.submitReservationPlan"
@@ -50,7 +50,7 @@ const eur = (amountMinor: number) => ({ amountMinor, currency: "EUR" })
 
 const expectedModuleInterfaces: ModuleInterfaceName[] = [
   "Quotes.acceptQuoteVersion",
-  "TripComposer.prepareReservationPlanForAcceptedQuoteVersion",
+  "Trips.prepareReservationPlanForAcceptedQuoteVersion",
   "Commerce.evaluateCommercialDecision",
   "Commerce.recordCommercialSnapshot",
   "Bookings.submitReservationPlan",
@@ -61,7 +61,7 @@ const expectedModuleInterfaces: ModuleInterfaceName[] = [
 const expectedDurableOwnerRecords = [
   "Quotes:quote_versions.status",
   "Quotes:quotes.acceptedVersionId",
-  "TripComposer:trip_reservation_plans",
+  "Trips:trip_reservation_plans",
   "Commerce:commercial_snapshots",
   "Bookings:booking_origins",
   "Bookings:bookings",
@@ -173,12 +173,12 @@ describe("accepted Quote Version reservation golden flow", () => {
       quoteId,
       quoteVersionId: acceptedQuoteVersionId,
       tripSnapshotRef: {
-        owner: "TripComposer",
+        owner: "Trips",
         id: frozenTripSnapshotId,
       },
     })
 
-    expect(flow.tripComposerReservedInventoryDirectly).toBe(false)
+    expect(flow.tripsReservedInventoryDirectly).toBe(false)
     expect(flow.reservationPlan).toMatchObject({
       id: reservationPlanId,
       origin: "accepted_quote_version",
@@ -284,7 +284,7 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
         quoteId: quote.id,
         quoteVersionId: accepted.id,
         tripSnapshotRef: {
-          owner: "TripComposer" as const,
+          owner: "Trips" as const,
           id: accepted.tripSnapshotId,
         },
       }
@@ -294,14 +294,14 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
   const evaluator = createCommercialDecisionEvaluator({ adapters: [sourceAdapter] })
   const repository = createSnapshotRepository(durableRecords)
 
-  const tripComposer = {
+  const trips = {
     reservedInventoryDirectly: false,
     async prepareReservationPlanForAcceptedQuoteVersion(
       handoff: ReturnType<typeof quotes.acceptQuoteVersion>,
     ) {
-      calls.push({ interfaceName: "TripComposer.prepareReservationPlanForAcceptedQuoteVersion" })
+      calls.push({ interfaceName: "Trips.prepareReservationPlanForAcceptedQuoteVersion" })
       durableRecords.push({
-        owner: "TripComposer",
+        owner: "Trips",
         record: "trip_reservation_plans",
       })
 
@@ -352,7 +352,7 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
   const bookings = {
     supportedReservationOrigins: ["direct_b2c", "accepted_quote_version"] as const,
     submitReservationPlan(
-      plan: Awaited<ReturnType<typeof tripComposer.prepareReservationPlanForAcceptedQuoteVersion>>,
+      plan: Awaited<ReturnType<typeof trips.prepareReservationPlanForAcceptedQuoteVersion>>,
     ) {
       calls.push({ interfaceName: "Bookings.submitReservationPlan" })
       const origin = {
@@ -435,7 +435,7 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
   }
 
   const handoff = quotes.acceptQuoteVersion(acceptedQuoteVersionId)
-  const reservationPlan = await tripComposer.prepareReservationPlanForAcceptedQuoteVersion(handoff)
+  const reservationPlan = await trips.prepareReservationPlanForAcceptedQuoteVersion(handoff)
   const booking = bookings.submitReservationPlan(reservationPlan)
   const financeCollectionTarget = finance.startCollection({
     bookingId: booking.bookingId,
@@ -453,7 +453,7 @@ async function runAcceptedQuoteVersionReservationGoldenFlow() {
     quote,
     handoff,
     reservationPlan,
-    tripComposerReservedInventoryDirectly: tripComposer.reservedInventoryDirectly,
+    tripsReservedInventoryDirectly: trips.reservedInventoryDirectly,
     bookings: {
       supportedReservationOrigins: bookings.supportedReservationOrigins,
       origin: booking.origin,

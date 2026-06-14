@@ -142,7 +142,7 @@ function createOperationsExtension(messages: AdminExtensionNavMessages) {
 }
 
 // App-owned header action on the package-delivered bookings list: composing
-// a trip is an operator concept (the trip-composer pages are app-custom),
+// a trip is an operator concept (the trips pages are app-custom),
 // so the button rides in through the extension factory's
 // `indexHeaderActions` option instead of a host route file.
 function ComposeTripButton() {
@@ -362,14 +362,14 @@ function createProductsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Trip composer is package-delivered (packaged-admin RFC Phase 2): nav AND
-// the route implementations come from @voyantjs/trip-composer-react/admin —
+// Trips is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementations come from @voyantjs/trips-react/admin —
 // the Trips group (spliced after Bookings via `insertAfter`, with All trips /
 // New trip sub-items), the trips list, and the detail page whose Edit mode
-// lazy-mounts the packaged trip composer. The app only supplies the localized
+// lazy-mounts the packaged trips. The app only supplies the localized
 // labels and the icon.
-function createTripComposerExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.tripComposer({
+function createTripsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.trips({
     labels: {
       trips: messages.trips,
       allTrips: messages.allTrips,
@@ -445,7 +445,7 @@ export function createOperatorAdminExtensions(
     createLegalExtension(messages),
     createNotificationsExtension(messages),
     createPromotionsExtension(messages),
-    createTripComposerExtension(messages),
+    createTripsExtension(messages),
     createActionLedgerExtension(messages),
   )
 }

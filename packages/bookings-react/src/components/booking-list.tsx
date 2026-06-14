@@ -98,7 +98,7 @@ export interface BookingListProps {
   /**
    * Extra action(s) rendered next to the primary "New booking" button in
    * the filter bar. Templates use this to surface adjacent flows such as
-   * the trip composer without forking the component.
+   * the trips without forking the component.
    */
   headerActions?: React.ReactNode
   /**

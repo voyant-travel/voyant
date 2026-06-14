@@ -647,21 +647,21 @@ export const RelationshipsOrganizationsDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
-// trip-composer
+// trips
 // ---------------------------------------------------------------------------
 
-const tripComposerExtension = extension("trip-composer")
+const tripsExtension = extension("trips")
 
-export const TripComposerIndexRoute = createRoute({
+export const TripsIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/trips",
-  ...adminExtensionRouteOptions(tripComposerExtension, "trip-composer-index", runtime),
+  ...adminExtensionRouteOptions(tripsExtension, "trips-index", runtime),
 })
 
-export const TripComposerDetailRoute = createRoute({
+export const TripsDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/trips/$id",
-  ...adminExtensionRouteOptions(tripComposerExtension, "trip-composer-detail", runtime),
+  ...adminExtensionRouteOptions(tripsExtension, "trips-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -737,8 +737,8 @@ export const adminExtensionRoutes = [
   RelationshipsPeopleDetailRoute,
   RelationshipsOrganizationsIndexRoute,
   RelationshipsOrganizationsDetailRoute,
-  TripComposerIndexRoute,
-  TripComposerDetailRoute,
+  TripsIndexRoute,
+  TripsDetailRoute,
 ]
 
 export interface AdminExtensionRoutesByFullPath {
@@ -820,8 +820,8 @@ export interface AdminExtensionRoutesByFullPath {
   "/people/$id": typeof RelationshipsPeopleDetailRoute
   "/organizations": typeof RelationshipsOrganizationsIndexRoute
   "/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
-  "/trips": typeof TripComposerIndexRoute
-  "/trips/$id": typeof TripComposerDetailRoute
+  "/trips": typeof TripsIndexRoute
+  "/trips/$id": typeof TripsDetailRoute
 }
 
 export interface AdminExtensionRoutesByTo {
@@ -902,8 +902,8 @@ export interface AdminExtensionRoutesByTo {
   "/people/$id": typeof RelationshipsPeopleDetailRoute
   "/organizations": typeof RelationshipsOrganizationsIndexRoute
   "/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
-  "/trips": typeof TripComposerIndexRoute
-  "/trips/$id": typeof TripComposerDetailRoute
+  "/trips": typeof TripsIndexRoute
+  "/trips/$id": typeof TripsDetailRoute
 }
 
 export interface AdminExtensionRoutesById {
@@ -985,6 +985,6 @@ export interface AdminExtensionRoutesById {
   "/_workspace/people/$id": typeof RelationshipsPeopleDetailRoute
   "/_workspace/organizations": typeof RelationshipsOrganizationsIndexRoute
   "/_workspace/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
-  "/_workspace/trips": typeof TripComposerIndexRoute
-  "/_workspace/trips/$id": typeof TripComposerDetailRoute
+  "/_workspace/trips": typeof TripsIndexRoute
+  "/_workspace/trips/$id": typeof TripsDetailRoute
 }

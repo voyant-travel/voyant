@@ -21,7 +21,7 @@
       "@voyantjs/storefront-sdk",
       "@voyantjs/storefront-verification"
     ],
-    ["@voyantjs/trip-composer", "@voyantjs/trip-composer-react"],
+    ["@voyantjs/trips", "@voyantjs/trips-react"],
     [
       "@voyantjs/workflow-runs",
       "@voyantjs/workflows",

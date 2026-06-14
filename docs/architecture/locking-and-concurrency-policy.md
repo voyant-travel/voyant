@@ -209,7 +209,7 @@ Policy outcome:
 Query and write path:
 
 - legacy Transactions Offer bundle creation is retired before v1; current
-  quote, booking, and trip-composer handoffs should use one database
+  quote, booking, and trips handoffs should use one database
   transaction for each coherent bundle of related rows
 - [`completePaymentSession(...)`](../../packages/finance/src/service.ts) uses a
   transaction to create authorization/capture/payment rows and update invoice

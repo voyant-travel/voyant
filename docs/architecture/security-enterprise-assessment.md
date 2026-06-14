@@ -181,7 +181,7 @@ No HSTS, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, CSP, or 
 ### M4 — MCP mutating tools callable by any actor
 **`templates/operator/src/api/mcp.ts:31-64`**
 Historical note: the v1 package-structure branch retires the public catalog MCP
-surface and keeps only app-local admin trip-composer tools. Catalog-capable
+surface and keeps only app-local admin trips tools. Catalog-capable
 agents should call catalog HTTP APIs directly. If any runtime reintroduces
 public tool wrappers, it must preserve the same API auth, visibility,
 rate-limit, audit, and tenant controls.

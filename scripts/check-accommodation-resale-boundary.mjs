@@ -144,15 +144,15 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer/src/validation.ts",
+    file: "packages/trips/src/validation.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer/src/service-trips.ts",
+    file: "packages/trips/src/service-trips.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/operations.ts",
+    file: "packages/trips-react/src/operations.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
@@ -160,15 +160,15 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/admin/admin-trip-composer-page.tsx",
+    file: "packages/trips-react/src/admin/admin-trips-page.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/trip-composer-react/src/admin/admin-trip-composer-panels.tsx",
+    file: "packages/trips-react/src/admin/admin-trips-panels.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/trip-composer/storefront-composer-block.tsx",
+    file: "templates/operator/src/components/voyant/trips/storefront-composer-block.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {

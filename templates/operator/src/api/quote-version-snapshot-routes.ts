@@ -6,11 +6,11 @@ import {
   quotesService,
 } from "@voyantjs/quotes"
 import {
-  TripComposerInvariantError,
   type TripSnapshot,
   type TripSnapshotProposalLine,
-  tripComposerService,
-} from "@voyantjs/trip-composer"
+  TripsInvariantError,
+  tripsService,
+} from "@voyantjs/trips"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
@@ -38,7 +38,7 @@ export function mountOperatorQuoteVersionSnapshotRoutes(
   hono: Hono<OperatorQuoteVersionSnapshotRouteEnv>,
 ): void {
   hono.post(
-    "/v1/admin/trip-composer/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot",
+    "/v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot",
     handleFreezeQuoteVersionSnapshot,
   )
 }
@@ -62,7 +62,7 @@ export async function handleFreezeQuoteVersionSnapshot(
     }
 
     const userId = c.get("userId")
-    const snapshot = await tripComposerService.freezeTripSnapshot(db, {
+    const snapshot = await tripsService.freezeTripSnapshot(db, {
       envelopeId,
       createdBy: typeof userId === "string" ? userId : (body.createdBy ?? undefined),
     })
@@ -85,7 +85,7 @@ export async function handleFreezeQuoteVersionSnapshot(
       201,
     )
   } catch (error) {
-    if (error instanceof TripComposerInvariantError) {
+    if (error instanceof TripsInvariantError) {
       return c.json({ error: error.message }, error.message.includes("was not found") ? 404 : 409)
     }
     if (error instanceof QuoteVersionConflictError) {

@@ -76,7 +76,7 @@ hotel-operations system; see
 
 - [`@voyantjs/catalog`](./packages/catalog/README.md), [`@voyantjs/commerce`](./packages/commerce/README.md), [`@voyantjs/inventory`](./packages/inventory), [`@voyantjs/operations`](./packages/operations)
 - [`@voyantjs/bookings`](./packages/bookings/README.md), [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/legal`](./packages/legal/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md)
-- [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/relationships`](./packages/relationships/README.md), [`@voyantjs/quotes`](./packages/quotes/README.md), [`@voyantjs/trip-composer`](./packages/trip-composer)
+- [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/relationships`](./packages/relationships/README.md), [`@voyantjs/quotes`](./packages/quotes/README.md), [`@voyantjs/trips`](./packages/trips)
 - [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/storefront`](./packages/storefront), [`@voyantjs/storefront-verification`](./packages/storefront-verification)
 - [`@voyantjs/accommodations`](./packages/accommodations), [`@voyantjs/charters`](./packages/charters/README.md), [`@voyantjs/cruises`](./packages/cruises/README.md), [`@voyantjs/flights`](./packages/flights), [`@voyantjs/octo`](./packages/octo)
 

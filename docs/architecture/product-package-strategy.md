@@ -165,7 +165,7 @@ and extension Interfaces, not domain records.
 | `commerce` | commercial decision orchestration for Catalog Items: markets, pricing rules, quote-time FX, promotions, sellability decisions, buyer/channel/audience rules, and commercial snapshots | vertical-native live fare/offer engines, invoices, payments, operated availability/resource truth, catalog indexing |
 | `relationships` | Person, Organization, relationship/account records, customer profile context, segments, signals, support activities, quote-linked activity references | auth/session identity, Quote / Quote Version records and state transitions, bookings, finance ledger state |
 | `quotes` | Quote, Quote Version, proposal lifecycle, B2B quote pipeline, send/view/accept decisions, accept-to-reserve handoff | Person/Organization master records, Trip Envelope editing internals, legacy transactions Offer/Order records, final financial documents, operational fulfillment |
-| `trip-composer` | Trip Envelope draft workspace, component ordering, manual placeholders, catalog-backed component references, traveler party, pricing snapshots, reservation plans, and checkout handoff handles | catalog projection/search, Quote / Quote Version records and send/view/accept state, legacy transactions Offer/Order records, final bookings/payments, active reservation orchestration |
+| `trips` | Trip Envelope draft workspace, component ordering, manual placeholders, catalog-backed component references, traveler party, pricing snapshots, reservation plans, and checkout handoff handles | catalog projection/search, Quote / Quote Version records and send/view/accept state, legacy transactions Offer/Order records, final bookings/payments, active reservation orchestration |
 | `bookings` | booking sessions, reservation orchestration, booking requirements, travelers, booking items, allocations as commitment records, fulfillment/redemption, customer-safe booking state | slot/resource truth, price-rule authoring |
 | `operations` | operated execution: availability, resources, allocation resources, places, ground logistics, guides, vehicles, Room Resource Holds, and Space Resource Holds | sourced catalog discovery, invoices/payments, Quote / Quote Version records and state transitions |
 | `mice` | MICE Program lifecycle, program requirements, agenda/sessions, delegate/attendee roster, rooming manifest, RFP/bid workflow, Program Room Blocks, Program Space Blocks, program-level status, and links to bookings, quotes, contracts, and invoices | low-level availability/resource/space truth, Room Resource Hold / Space Resource Hold execution, Quote / Quote Version lifecycle, booking commitment records, invoices/payments/ledger state, supplier/channel identity |
@@ -190,7 +190,7 @@ and deleting it only moves the same decisions into every caller.
 | Posture | Modules | Rule |
 | --- | --- | --- |
 | Retail commerce spine | `catalog`, `commerce`, `bookings`, `finance`, `distribution`, plus `storefront` / `admin` surfaces where the product assembly needs them | This is a target posture, not the current package closure. A reseller/OTA can omit operated Inventory only after the retail-spine closure gate in §8 passes. |
-| Mode-gated domain Modules | `inventory`, `operations`, `relationships`, `quotes`, `trip-composer`, `legal`, `mice` | Installed only when the implementation mode needs their durable behavior: owned authoring, local execution, account/support depth, bespoke quote pursuit, composition workspace, contracts/signatures, or group-business Programs. |
+| Mode-gated domain Modules | `inventory`, `operations`, `relationships`, `quotes`, `trips`, `legal`, `mice` | Installed only when the implementation mode needs their durable behavior: owned authoring, local execution, account/support depth, bespoke quote pursuit, composition workspace, contracts/signatures, or group-business Programs. |
 | Vertical/source Modules | `cruises`, `charters`, `flights`, accommodation resale, source adapters, provider plugins | Kept separate when pricing topology, booking semantics, source contracts, or operational behavior differ enough to justify their own Interface. |
 | Infrastructure Modules | `core`, `db`, `hono`, `auth`, `identity`, `workflows`, `storage`, `notifications`, `action-ledger`, shared React/UI/type/build packages | Installed as required by runtime wiring, not by travel-domain mode. |
 
@@ -353,7 +353,7 @@ Prerequisite cleanup:
 
 - Stop constructing `transactions` Offers from sellability.
 - Feed catalog price/availability responses, Quote Versions, booking drafts, or
-  trip-composer price snapshots instead.
+  trips price snapshots instead.
 - Decouple offer-oriented sellability state before moving the package seam.
 - Make `sellability_policies` real by evaluating them, or remove/defer them.
 - Keep snapshots only if they provide audit evidence for what was buyable and
@@ -367,7 +367,7 @@ Prerequisite cleanup:
 - Remove `@voyantjs/commerce/sellability/service-construct-offer`,
   `SellabilityOfferWriter`, and `POST /construct-offer` from the v1 public
   surface. Sellability stops at commercial resolution and persisted decision
-  snapshots; Quote Versions, booking drafts, or Trip Composer snapshots own
+  snapshots; Quote Versions, booking drafts, or Trips snapshots own
   downstream materialization.
 - Invert the current `promotions` -> `storefront` edge before Commerce lands.
   Storefront should consume Commerce display contracts/events; Commerce should
@@ -452,8 +452,8 @@ Candidate packages:
 
 Adjacent packages to integrate through an explicit Interface, not fold blindly:
 
-- `@voyantjs/trip-composer`
-- `@voyantjs/trip-composer-react`
+- `@voyantjs/trips`
+- `@voyantjs/trips-react`
 
 Adjacent legacy packages to decouple and retire through a dedicated ADR:
 
@@ -547,7 +547,7 @@ The deletion test says `transactions` is no longer deep enough as a Module. If
 deleted, its useful behavior reappears in existing deeper Modules:
 
 - proposal lifecycle belongs in Quotes and Quote Versions
-- quote-time commercial snapshots belong in Commerce and Trip Composer
+- quote-time commercial snapshots belong in Commerce and Trips
 - promotional offers belong in Commerce/Promotions
 - booking commitments, travelers, items, allocations, fulfillment, and
   booking-origin/provenance belong in Bookings
@@ -560,7 +560,7 @@ deleted, its useful behavior reappears in existing deeper Modules:
 
 Keeping a renamed `orders` or `commitments` Module would mostly preserve the
 same shallow pass-through seam under a less confusing name. It would also force
-Bookings, Finance, Legal, Quotes, Trip Composer, and source adapters to keep
+Bookings, Finance, Legal, Quotes, Trips, and source adapters to keep
 coordinating through a generic record even when their local records already
 carry the durable truth.
 
@@ -580,9 +580,9 @@ Move the current responsibilities as follows:
 
 - Transactions Offer creation from sellability moves to Commerce outputs:
   catalog price/availability responses, sellability snapshots, Quote Versions,
-  booking drafts, or Trip Composer price snapshots.
+  booking drafts, or Trips price snapshots.
 - Bespoke proposal state moves to Quotes and Quote Versions.
-- Trip composition and reservation planning stays in Trip Composer; active
+- Trip composition and reservation planning stays in Trips; active
   reservation orchestration belongs in Bookings so direct B2C storefront and
   accepted Quote Version flows use the same reservation path.
 - Order-like commitment references become either Booking-owned origin/provenance
@@ -594,7 +594,7 @@ Move the current responsibilities as follows:
 - `order_terms` move to Legal policy acceptance / contract terms, with payment
   terms modeled in Finance where they affect collection.
 - Transaction contact/staff assignment snapshots move to Relationships,
-  Bookings, Quotes, or Trip Composer depending on lifecycle.
+  Bookings, Quotes, or Trips depending on lifecycle.
 - Transaction PII access logging is replaced by the existing Booking/Quote PII
   and action-ledger patterns.
 - Storefront promotional-offer metadata moves to Commerce/Promotions.
@@ -653,12 +653,12 @@ ADR acceptance checklist:
 - Old transactions route/unit/integration tests are either ported to the owning
   Modules' Interface tests or removed with documented coverage replacement.
 
-### 5.5 Trip Composer / Proposal Workspace
+### 5.5 Trips / Proposal Workspace
 
 Candidate packages:
 
-- `@voyantjs/trip-composer`
-- `@voyantjs/trip-composer-react`
+- `@voyantjs/trips`
+- `@voyantjs/trips-react`
 
 Problem:
 
@@ -673,7 +673,7 @@ of that workspace. But the workspace and the quote pursuit are different
 concerns: staff or automation may compose, reprice, and reserve before or after a
 Quote Version exists.
 
-Renaming Trip Composer to `offers` would make the vocabulary worse. ADR-0004
+Renaming Trips to `offers` would make the vocabulary worse. ADR-0004
 preserves `transactions` Offer as a separate primitive, and vertical/source
 packages already use offer nouns for live supplier responses such as flight
 offers. The composer output should become a Quote Version snapshot, booking
@@ -681,9 +681,9 @@ draft, reservation, or checkout flow, not another generic Offer.
 
 Solution:
 
-The public package names are `@voyantjs/trip-composer` and
-`@voyantjs/trip-composer-react`. Keep the composer as a distinct standalone
-workspace Module, not a `quotes` subpath. `trip-composer` is precise because the
+The public package names are `@voyantjs/trips` and
+`@voyantjs/trips-react`. Keep the composer as a distinct standalone
+workspace Module, not a `quotes` subpath. `trips` is precise because the
 Module owns the Trip Envelope workspace, and it avoids the vocabulary collision
 that `offers` would create. Let Quotes reference frozen composer snapshots
 through a narrow Interface; let Catalog provide source/search/price-availability
@@ -706,12 +706,12 @@ Proposal-to-reserve trace:
 
 1. Quotes records that a Quote Version was accepted. It owns the accepted-version
    state and closes the Quote won.
-2. Quotes calls the Trip Composer Interface with the accepted Quote Version's
+2. Quotes calls the Trips Interface with the accepted Quote Version's
    frozen Trip snapshot reference. Quotes does not reserve inventory directly.
-3. Trip Composer asks Commerce to re-evaluate each priced line through the
+3. Trips asks Commerce to re-evaluate each priced line through the
    Commerce Interface. Commerce returns commercial snapshots and provider or
    adapter quote handles where applicable.
-4. Trip Composer submits a reservation plan to the Bookings Interface. Bookings
+4. Trips submits a reservation plan to the Bookings Interface. Bookings
    owns active reservation orchestration for both direct B2C storefront flows
    and accepted Quote Version / Trip Envelope flows. Catalog-backed sourced lines
    reserve through Catalog/vertical adapters; operated lines reserve through
@@ -719,7 +719,7 @@ Proposal-to-reserve trace:
    confirmation workflow.
 5. Bookings owns the durable commitment records: booking origin/provenance,
    booking session or booking items, traveler records, fulfillment state, and
-   customer-safe booking status. Trip Composer may keep reservation-plan refs and
+   customer-safe booking status. Trips may keep reservation-plan refs and
    component refs, but not final booking truth.
 6. Finance starts collection against Booking, Invoice, Payment Session,
    Schedule, or Guarantee targets. It does not require a generic Transactions
@@ -1138,7 +1138,7 @@ temporary owner subpath exports remain.
 5. Migrate `pricing`, `markets`, `sellability`, and promotions under commerce
    subpaths/packages as a breaking v1 package move.
 6. Rework sellability to feed catalog price/availability responses, booking
-   drafts, Quote Versions, or trip-composer price snapshots instead of
+   drafts, Quote Versions, or trips price snapshots instead of
    transactions Offers.
 7. Create the optional `inventory` target Interface and classify
    `catalog-authoring`; then move `products` and dependent extras toward
@@ -1150,11 +1150,11 @@ temporary owner subpath exports remain.
    Bookings, Finance, Distribution, Relationships, and Legal.
 10. Retire `@voyantjs/transactions` and `@voyantjs/transactions-react` as
    public v1 runtime packages per ADR-0005. Move each
-   durable concern into Quotes, Commerce, Trip Composer, Bookings, Finance,
+   durable concern into Quotes, Commerce, Trips, Bookings, Finance,
    Legal, Relationships, Distribution, or vertical adapters as described in
    §5.4.
-11. Keep standalone `@voyantjs/trip-composer` and
-   `@voyantjs/trip-composer-react` as the public v1 package names; do not expose
+11. Keep standalone `@voyantjs/trips` and
+   `@voyantjs/trips-react` as the public v1 package names; do not expose
    the composer as a `quotes` subpath and do not rename it to `offers`.
 12. Fold suppliers and external-refs into distribution as the external
    counterparty/integration Module, while preserving Supplier and Channel as
@@ -1222,7 +1222,7 @@ Schema and package moves:
 - [#1799: legal: replace order terms and transaction refs with target-linked legal records](https://github.com/voyantjs/voyant/issues/1799)
 - [#1800: distribution: fold suppliers and external refs into Distribution](https://github.com/voyantjs/voyant/issues/1800)
 - [#1801: operations: consolidate availability, resources, allocation, ground, and places](https://github.com/voyantjs/voyant/issues/1801)
-- [#1802: trip-composer: rename Travel Composer and own reservation plans](https://github.com/voyantjs/voyant/issues/1802)
+- [#1802: trips: rename Travel Composer and own reservation plans](https://github.com/voyantjs/voyant/issues/1802)
 
 Existing package-scope issues that now fit this strategy:
 
@@ -1271,12 +1271,12 @@ migration issue rather than reopening the package move implicitly.
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
 | Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. The old Products runtime package names are removed from v1; template schema specifiers use Inventory directly. Keep `@voyantjs/catalog-authoring` only if a real Catalog overlay/source-governance surface is split out. |
-| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Commerce owns the public commercial runtime surface. Sellability no longer constructs Transactions Offers; callers use commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. Old public subpath exports are removed from v1. |
+| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Commerce owns the public commercial runtime surface. Sellability no longer constructs Transactions Offers; callers use commerce outputs, Quote Versions, booking drafts, or trips price snapshots. Old public subpath exports are removed from v1. |
 | CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside intermediate migration commits. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |
 | Catalog Item | Use canonical Catalog Item terminology in docs and product language while preserving the actual Catalog Projection Interface where that is the supported code contract. | Do not invent a `CatalogEntry` compatibility alias; reconcile docs/comments and any stray `CatalogItem` identifiers with `CatalogProjection` intentionally. |
-| Trip Composer | Use standalone `trip-composer`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Keep package names, route prefixes, admin extension ids, tests, and template manifests on the Trip Composer vocabulary. |
+| Trips | Use standalone `trips`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Keep package names, route prefixes, admin extension ids, tests, and template manifests on the Trips vocabulary. |
 | Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`. Keep `transactions-contracts` only as legacy contracts if external consumers still need those zod schemas. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
 
 ## 10. Current Package Disposition
@@ -1311,8 +1311,8 @@ stay unchanged.
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
 | `@voyantjs/relationships`, `@voyantjs/relationships-react`, `@voyantjs/quotes`, `@voyantjs/quotes-react` | Keep as the split Relationships and Quotes runtime surfaces for v1. | ADR-0004 moves supported proposal language to Quote. Customer/account records belong to Relationships; quote pursuit belongs to Quotes. |
-| `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trip Composer, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
-| `@voyantjs/trip-composer`, `@voyantjs/trip-composer-react` | Keep as the standalone Trip Composer packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
+| `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trips, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
+| `@voyantjs/trips`, `@voyantjs/trips-react` | Keep as the standalone Trips packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | retired beta Booking Requirements packages | Removed from the v1 workspace surface. | Requirements define what must be collected to commit a booking; runtime and React imports use Bookings owner paths. |
 | `@voyantjs/checkout`, `@voyantjs/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published beta names should be npm-deprecated to the Finance owner paths. |

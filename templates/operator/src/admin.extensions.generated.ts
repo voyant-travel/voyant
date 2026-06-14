@@ -14,7 +14,7 @@ import { createOperationsAdminExtension } from "@voyantjs/operations-react/admin
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
 import { createFlightsAdminExtension } from "@voyantjs/flights-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
-import { createTripComposerAdminExtension } from "@voyantjs/trip-composer-react/admin"
+import { createTripsAdminExtension } from "@voyantjs/trips-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -34,5 +34,5 @@ export const generatedAdminExtensionFactories = {
   notifications: createNotificationsAdminExtension,
   flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,
-  tripComposer: createTripComposerAdminExtension,
+  trips: createTripsAdminExtension,
 } as const

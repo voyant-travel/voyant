@@ -97,7 +97,7 @@ export interface BookingCreateBridgeInput {
   /**
    * Status the booking lands in. When omitted, `@voyantjs/finance`'s
    * `createBooking` defaults to `"draft"`. Callers that compose bookings
-   * via the catalog booking engine (e.g. trip composer reserve, journey
+   * via the catalog booking engine (e.g. trips reserve, journey
    * commit) typically want `"awaiting_payment"` so the booking shows in
    * the operator's queue with a payable balance. The handler forwards
    * whatever value is passed via `commit`'s `request.parameters.initialStatus`.

@@ -25,7 +25,7 @@ import type {} from "@voyantjs/legal-react/admin"
 import type {} from "@voyantjs/notifications-react/admin"
 import type {} from "@voyantjs/operations-react/admin"
 import type {} from "@voyantjs/relationships-react/admin"
-import type {} from "@voyantjs/trip-composer-react/admin"
+import type {} from "@voyantjs/trips-react/admin"
 
 /** Resolvers for the route-backed subset of the declared destination keys. */
 export const generatedAdminDestinations = {

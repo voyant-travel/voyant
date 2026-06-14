@@ -8,8 +8,8 @@ import {
   netopiaService,
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
-import { tripComposerService } from "@voyantjs/trip-composer"
-import { tripComponents, tripEnvelopes } from "@voyantjs/trip-composer/schema"
+import { tripsService } from "@voyantjs/trips"
+import { tripComponents, tripEnvelopes } from "@voyantjs/trips/schema"
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -225,7 +225,7 @@ export async function handlePaymentLinkTripSummary(c: OperatorContext) {
 
   if (session.status === "paid" && envelope.status !== "booked") {
     try {
-      await tripComposerService.completeTripCheckout(db, {
+      await tripsService.completeTripCheckout(db, {
         envelopeId: envelope.id,
         paymentSessionId: session.id,
         payload: {
@@ -236,7 +236,7 @@ export async function handlePaymentLinkTripSummary(c: OperatorContext) {
         },
       })
     } catch (err) {
-      console.error("[trip-composer] payment summary reconciliation failed", err)
+      console.error("[trips] payment summary reconciliation failed", err)
     }
   }
 

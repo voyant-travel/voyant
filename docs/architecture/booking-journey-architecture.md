@@ -21,7 +21,7 @@ Current implementation state, May 2026:
   internal Voyant handler when the relevant module is installed; sourced
   inventory dispatches to the source adapter. An OTA deployment can run without
   the products module and still book sourced catalog rows.
-- `@voyantjs/trip-composer` now exists as the multi-line orchestration layer
+- `@voyantjs/trips` now exists as the multi-line orchestration layer
   above this journey. It owns Trip Envelopes, Trip Components, aggregate
   pricing/reserve/finance/checkout/cancellation operations, and calls this journey's
   single-line catalog booking-engine primitives per component.
@@ -32,7 +32,7 @@ Five load-bearing rules, in order of importance:
 2. **The Catalog Item's *shape* drives the UI, not the source.** Every quote response carries a `BookingDraftShape` descriptor — which steps to show, which fields are required per passenger, occupancy bands, Extra catalog references. The same wizard renders a one-page booking for a 2h walking tour and a six-step booking for a 14-day cruise + flight package, by reading the descriptor.
 3. **Live pricing is the default, not an afterthought.** Every meaningful input change (pax count, age bands, dates, Extras, billing country for VAT) re-quotes. The total displayed in the sticky footer is always the price the system will commit to. No silent drift between display and commit.
 4. **Build the journey once; ship it on every surface.** Operator dashboard, customer storefront, partner portal, embedded white-label widgets — all consume the same wizard shell, the same React hooks, the same UI sections, and the same engine endpoints. Surface differences (CRM picker for operators vs. inline contact for customers, B2B billing default vs. B2C, payment provider hookup) live in injectable slots, not parallel codebases.
-5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [trip-composer](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
+5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [trips](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
 
 ## 0.5. Single-line journey vs. composed itinerary
 
@@ -42,7 +42,7 @@ That covers the high-volume case: a customer browsing a tour catalog and clickin
 
 > "Flight Bucharest → Budapest, Danube cruise to Vienna, 3-night stay in Vienna, flight back to Bucharest." Four lines, four verticals, one customer experience, one consolidated payment.
 
-That second case is the [trip-composer](./ai-travel-experience-composition.md)'s job. The composer:
+That second case is the [trips](./ai-travel-experience-composition.md)'s job. The composer:
 
 - Holds the user-built itinerary as a Trip Envelope with multiple Trip Components,
   one per line.
@@ -60,7 +60,7 @@ bundle because it shares one departure capacity and operational lifecycle.
 
 Customer-composed additions are different. If the same traveler books that
 group departure, then adds 3 extra hotel nights and a flight home, those added
-stay/flight commitments are sibling components under the trip composer, not
+stay/flight commitments are sibling components under the trips, not
 Extras inside the group-departure booking journey.
 
 **The journey and the composer share primitives, not UI:**
@@ -801,7 +801,7 @@ section as the current execution map.
 
 ## 11. Non-goals (v1)
 
-- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [trip-composer](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
+- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [trips](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
 - **Customer group bookings** beyond shared-room (corporate event, school trip). This is not the same as an operated group departure product. An operated group departure can still be one journey line when the product/departure owns capacity, allocations, included services, and dependent Extras.
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
 - **Partial cancellations** (cancel only some travelers from a booking).
@@ -839,7 +839,7 @@ vertical hardening or composer work.
 - [`channel-push-architecture.md`](./channel-push-architecture.md) — outbound supplier integration. The journey's commit triggers the booking-push subscriber where configured.
 - [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — the flights vertical's specialized booking flow. The wizard described here borrows shape but does not replace it; flights stays special-case.
 - [`payments-architecture.md`](./payments-architecture.md) — payment intent + schedule. The Payment step calls into the same primitives.
-- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed trip-composer module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
+- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed trips module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
 
 ### Patterns from systems we've shipped
 

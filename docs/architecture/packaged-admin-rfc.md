@@ -150,7 +150,7 @@ What we have (and is already exercised in `templates/operator`):
   `AdminExtension`, `defineAdminExtension()`, `createAdminExtensionRegistry()`,
   `resolveAdminNavigation()`, `resolveAdminWidgets()`, `AdminWidgetSlot`.
 - **Live extension usage** — `templates/operator/src/lib/admin-extensions.tsx`
-  registers three extensions (promotions, trip-composer, action-ledger).
+  registers three extensions (promotions, trips, action-ledger).
   Today they contribute **navigation only** (the route components behind
   those nav entries are still template-local route files), and 7 widget
   slots are exposed (`dashboard.header`, `dashboard.after-kpis`,

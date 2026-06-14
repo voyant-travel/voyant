@@ -44,16 +44,16 @@ vi.mock("@voyantjs/quotes", async () => {
   }
 })
 
-vi.mock("@voyantjs/trip-composer", () => {
-  class TripComposerInvariantError extends Error {
+vi.mock("@voyantjs/trips", () => {
+  class TripsInvariantError extends Error {
     constructor(message: string) {
       super(message)
-      this.name = "TripComposerInvariantError"
+      this.name = "TripsInvariantError"
     }
   }
   return {
-    TripComposerInvariantError,
-    tripComposerService: {
+    TripsInvariantError,
+    tripsService: {
       getTrip: mockRegistry.getTrip,
       getTripSnapshotById: mockRegistry.getTripSnapshotById,
       reserveTrip: mockRegistry.reserveTrip,
@@ -71,7 +71,7 @@ vi.mock("./settings", () => ({
   toPublicOperatorSettings: (settings: unknown) => settings,
 }))
 
-vi.mock("./trip-composer-runtime", () => ({
+vi.mock("./trips-runtime", () => ({
   createReserveTripDeps: () => ({ reserve: "deps" }),
   createStartCheckoutDeps: () => ({ checkout: "deps" }),
 }))

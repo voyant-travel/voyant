@@ -60,9 +60,9 @@ declare module "@voyantjs/admin" {
     /** An availability slot's detail page. */
     "availabilitySlot.detail": { slotId: string }
     /**
-     * The trip composer's "new trip" entry. Declared here because the
+     * The trips's "new trip" entry. Declared here because the
      * packaged `/bookings/compose` alias route forwards to it — the composer
-     * pages themselves live in the trip-composer area, whose admin entry
+     * pages themselves live in the trips area, whose admin entry
      * may also declare this key (interface merging requires the member shape
      * to stay identical across packages).
      */
@@ -486,7 +486,7 @@ export function createBookingsAdminExtension(
         id: "bookings-compose",
         path: `${basePath}/compose`,
         title: bookings,
-        // Alias route: forwards to the host's trip composer via the
+        // Alias route: forwards to the host's trips via the
         // `trip.create` destination (see the page module).
         page: () => import("./pages/booking-compose-page.js"),
       },

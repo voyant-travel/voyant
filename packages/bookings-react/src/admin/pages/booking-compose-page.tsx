@@ -4,7 +4,7 @@ import { useAdminNavigate } from "@voyantjs/admin"
 import * as React from "react"
 
 /**
- * Legacy alias: `/bookings/compose` → the trip composer. The composer used
+ * Legacy alias: `/bookings/compose` → the trips. The composer used
  * to live here; it moved under the trips area, and this packaged page keeps
  * the old URL working by forwarding to the `trip.create` destination (the
  * host resolves it to its composer route). `replace` keeps route-redirect

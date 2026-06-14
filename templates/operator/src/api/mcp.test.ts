@@ -13,7 +13,7 @@ function testBindings(
 const testEnv = testBindings({ TENANT_ID: "tenant_test" })
 
 describe("operator MCP routes", () => {
-  it("does not expose trip-composer mutation tools on the public surface", async () => {
+  it("does not expose trips mutation tools on the public surface", async () => {
     const app = new Hono()
     mountOperatorAgentToolRoutes(app)
 
@@ -64,7 +64,7 @@ describe("operator MCP routes", () => {
     expect(response.status).toBe(404)
   })
 
-  it("keeps trip-composer tools available on the admin surface", async () => {
+  it("keeps trips tools available on the admin surface", async () => {
     const app = new Hono()
     mountOperatorAgentToolRoutes(app)
 

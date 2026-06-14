@@ -387,7 +387,7 @@ describe("createProductsBookingHandler.commit", () => {
     )
   })
 
-  it("threads trip-composer billing and traveler records into the booking bridge", async () => {
+  it("threads trips billing and traveler records into the booking bridge", async () => {
     const createBooking = vi.fn(async () => ({
       status: "ok" as const,
       bookingId: "book_1",

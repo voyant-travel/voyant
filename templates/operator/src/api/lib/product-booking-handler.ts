@@ -101,7 +101,7 @@ export function registerProductBookingHandler(
         return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
           const db = asPostgresDb(rawDb)
           // `input.initialStatus` is plumbed from the booking-engine
-          // commit caller (e.g. trip composer reserve) so bookings land in
+          // commit caller (e.g. trips reserve) so bookings land in
           // the operator's preferred state — `awaiting_payment` for live
           // reservations, `draft` when the operator explicitly asks.
           const outcome = await createFinanceBooking(db, input, opts)
