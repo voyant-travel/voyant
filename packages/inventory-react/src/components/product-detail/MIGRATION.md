@@ -1,8 +1,8 @@
 # Product Detail Page Consolidation — Migration Handoff
 
-> Status: **OPERATOR CUTOVER COMPLETE** ✅ — `@voyantjs/products-react/ui` now owns the
+> Status: **OPERATOR CUTOVER COMPLETE** ✅ — `@voyantjs/inventory-react/ui` now owns the
 > canonical `ProductDetailPage`; the operator consumes it via `ProductDetailHostProvider`.
-> Both `@voyantjs/products-react/ui` and `operator` typecheck + lint clean. The 36 operator
+> Both `@voyantjs/inventory-react/ui` and `operator` typecheck + lint clean. The 36 operator
 > dupes are deleted. ~~Remaining: migrate `dmc` + `apps/dev` onto the same page (§5.9).~~
 > Resolved: `templates/dmc` and `apps/dev` were deleted by the packaged-admin work
 > (`docs/architecture/packaged-admin-rfc.md` §5), so §5.9 is moot.
@@ -20,7 +20,7 @@
 
 ## 1. Goal
 
-Make a **single canonical product-detail page** that lives in `@voyantjs/products-react/ui`
+Make a **single canonical product-detail page** that lives in `@voyantjs/inventory-react/ui`
 and is consumed by every template, instead of the current situation where each
 template maintains its **own fork**.
 
@@ -29,7 +29,8 @@ template maintains its **own fork**.
   - `templates/operator/src/components/voyant/products/product-detail-page.tsx` (the **richest / best** — has translations, markets, channels, brochure, activity, payment policy, departures, schedules, itinerary, day sheet, etc.)
   - `templates/dmc/src/components/voyant/products/product-detail-page.tsx`
   - `apps/dev/src/components/voyant/products/product-detail-page.tsx`
-- `@voyantjs/products-react/ui` ships an **old `ProductDetailPage`** (`packages/products-react/src/components/product-detail-page.tsx`) that is **not imported by any template** — effectively dead.
+- `@voyantjs/inventory-react/ui` supersedes the old packaged Product Detail Page
+  surface that was not imported by any template.
 - Each template route renders its **local** `product-detail-page`, not the packaged one.
 
 ### User directive

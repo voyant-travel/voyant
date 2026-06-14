@@ -18,7 +18,10 @@ vi.mock("../../src/checkout-service.js", () => ({
   previewCheckoutCollection: serviceMocks.previewCheckoutCollection,
 }))
 
-import { createFinanceCheckoutRoutes } from "../../src/checkout-routes.js"
+import {
+  createFinanceCheckoutAdminRoutes,
+  createFinanceCheckoutRoutes,
+} from "../../src/checkout-routes.js"
 
 const TEST_CAPABILITY_ENV = {
   SESSION_CLAIMS_SECRET: "checkout-capability-test-secret-32chars",
@@ -190,5 +193,81 @@ describe("createFinanceCheckoutRoutes", () => {
 
     expect(res.status).toBe(200)
     expect(serviceMocks.previewCheckoutCollection).toHaveBeenCalledTimes(1)
+  })
+
+  it("lists booking reminder runs through the injected checkout reader", async () => {
+    const db = {} as never
+    const listBookingReminderRuns = vi.fn(async () => ({
+      data: [
+        {
+          id: "run_123",
+          reminderRuleId: "rule_123",
+          reminderRuleSlug: "deposit-reminder",
+          reminderRuleName: "Deposit reminder",
+          targetType: "booking_payment_schedule" as const,
+          targetId: "bps_123",
+          bookingId: "book_123",
+          paymentSessionId: "ps_123",
+          notificationDeliveryId: "del_123",
+          status: "sent" as const,
+          deliveryStatus: "sent" as const,
+          channel: "email" as const,
+          provider: "local",
+          recipient: "traveler@example.com",
+          scheduledFor: "2026-06-14T08:00:00.000Z",
+          processedAt: "2026-06-14T08:01:00.000Z",
+          errorMessage: null,
+          relativeDaysFromDueDate: null,
+          createdAt: "2026-06-14T07:59:00.000Z",
+        },
+      ],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    }))
+    const routes = createFinanceCheckoutAdminRoutes({ listBookingReminderRuns })
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("db", db)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request("/bookings/book_123/reminder-runs?status=sent")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      data: [
+        {
+          id: "run_123",
+          reminderRuleId: "rule_123",
+          reminderRuleSlug: "deposit-reminder",
+          reminderRuleName: "Deposit reminder",
+          targetType: "booking_payment_schedule",
+          targetId: "bps_123",
+          bookingId: "book_123",
+          paymentSessionId: "ps_123",
+          notificationDeliveryId: "del_123",
+          status: "sent",
+          deliveryStatus: "sent",
+          channel: "email",
+          provider: "local",
+          recipient: "traveler@example.com",
+          scheduledFor: "2026-06-14T08:00:00.000Z",
+          processedAt: "2026-06-14T08:01:00.000Z",
+          errorMessage: null,
+          relativeDaysFromDueDate: null,
+          createdAt: "2026-06-14T07:59:00.000Z",
+        },
+      ],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    })
+    expect(listBookingReminderRuns).toHaveBeenCalledWith(db, "book_123", {
+      limit: 20,
+      offset: 0,
+      status: "sent",
+    })
   })
 })

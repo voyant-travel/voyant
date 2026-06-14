@@ -40,6 +40,7 @@ import type {
   CheckoutNotificationDelivery,
   CheckoutPaymentStarter,
 } from "@voyantjs/finance/checkout"
+import type { CheckoutReminderRunRecord } from "@voyantjs/finance/checkout-validation"
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
 import type { HonoModule } from "@voyantjs/hono/module"
@@ -125,6 +126,34 @@ function toCheckoutNotificationDelivery(
     sentAt: optionalDateTime(delivery.sentAt),
     failedAt: optionalDateTime(delivery.failedAt),
     errorMessage: delivery.errorMessage,
+  }
+}
+
+type NotificationReminderRunLike = Awaited<
+  ReturnType<typeof notificationsService.listReminderRuns>
+>["data"][number]
+
+function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutReminderRunRecord {
+  return {
+    id: run.id,
+    reminderRuleId: run.reminderRuleId,
+    reminderRuleSlug: run.reminderRule.slug,
+    reminderRuleName: run.reminderRule.name,
+    targetType: run.targetType,
+    targetId: run.targetId,
+    bookingId: run.links.bookingId,
+    paymentSessionId: run.links.paymentSessionId,
+    notificationDeliveryId: run.links.notificationDeliveryId,
+    status: run.status,
+    deliveryStatus: run.delivery?.status ?? null,
+    channel: run.delivery?.channel ?? run.reminderRule.channel,
+    provider: run.delivery?.provider ?? run.reminderRule.provider ?? null,
+    recipient: run.recipient,
+    scheduledFor: run.scheduledFor,
+    processedAt: run.processedAt,
+    errorMessage: run.errorMessage,
+    relativeDaysFromDueDate: null,
+    createdAt: run.createdAt,
   }
 }
 
@@ -329,6 +358,20 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         }),
         resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
         resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+        listBookingReminderRuns: async (db, bookingId, query) => {
+          const result = await notificationsService.listReminderRuns(db, {
+            bookingId,
+            status: query.status,
+            limit: query.limit,
+            offset: query.offset,
+          })
+          return {
+            data: result.data.map(toCheckoutReminderRun),
+            total: result.total,
+            limit: result.limit,
+            offset: result.offset,
+          }
+        },
       }),
     "@voyantjs/legal": ({ capabilities }) =>
       createLegalHonoModule({
