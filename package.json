@@ -15,6 +15,7 @@
     "version-packages": "node scripts/version-packages.cjs",
     "release": "changeset publish",
     "release:plan": "node scripts/release-plan.cjs",
+    "publish:voyant-travel": "node scripts/publish-voyant-travel-workspace.mjs",
     "verify:release-config": "node scripts/verify-release-config.cjs",
     "package:starters": "node scripts/package-starters.mjs",
     "generate:schema-docs": "tsx scripts/generate-schema-docs.ts",
