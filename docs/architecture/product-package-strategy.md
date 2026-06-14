@@ -1,8 +1,10 @@
 # Product Package Strategy
 
-Status: draft. ADR-0005 and the frontend package model are settled, but target
-package moves remain proposed until the package-closure, Interface-proof,
-schema-move, and migration issues listed in §8.1 are completed.
+Status: active v1 strategy. ADR-0005, the frontend package model, and the
+package-closure, Interface-proof, schema-move, and migration issues listed in
+§8.1 are implemented on `feature/v1-package-restructure`. Compatibility
+facades and generated schema-manifest moves still follow the migration contract
+below.
 Audience: contributors changing package/module shape, starter templates,
 domain vocabulary, or first-party product positioning.
 
@@ -1105,22 +1107,19 @@ add Relationships explicitly. Contract-heavy reseller deployments should add
 Legal explicitly. The starter bundle stays lean unless those workflows are part
 of the implementation mode.
 
-Retail-spine package closure is an acceptance gate, not a current property.
-Before the `reseller` / `ota` bundle can claim to omit operated Inventory, the
-runtime closure for Catalog + Commerce + Bookings + Finance + Distribution +
-Storefront + Admin must have no hard dependency on `@voyantjs/products`,
+Retail-spine package closure is now a normal architecture gate. The
+Catalog + Commerce + Bookings + Finance + Distribution + Storefront + Admin
+runtime closure must have no hard dependency on `@voyantjs/products`,
 `@voyantjs/products-react`, operated Availability/Operations schemas,
-Relationships/Quotes runtime packages, or runtime Transactions except through deliberate optional
-adapters or compatibility packages. Current blockers include Distribution,
-Finance, Storefront, Commerce candidates, and Booking Requirements.
+Relationships/Quotes runtime packages, or runtime Transactions except through
+deliberate optional adapters or compatibility packages.
 
-Run `pnpm verify:retail-spine-closure` as the pre-v1 package-closure gate for
+`pnpm verify:architecture` runs `pnpm verify:retail-spine-closure`, the pre-v1
+package-closure gate introduced for
 [#1791](https://github.com/voyantjs/voyant/issues/1791). The command computes
 the current manifest closure from the retail-spine package candidates, reports
-hard runtime blockers with package paths and dependency edges, and keeps optional
-adapter/shim exceptions as edge-specific allowlist entries. It is a named
-pre-v1 gate rather than part of `verify:architecture` until the documented
-blockers are removed; once it passes, wire it into the normal architecture lane.
+hard runtime blockers with package paths and dependency edges, and keeps
+optional adapter/shim exceptions as edge-specific allowlist entries.
 
 ## 8. Migration Strategy
 
@@ -1202,6 +1201,9 @@ Critical path:
 
 ### 8.1 Execution Tracking
 
+The issues in this section are closed on `feature/v1-package-restructure`; the
+list remains as the implementation audit trail for the package move.
+
 Readiness gates:
 
 - [#1791: v1 packages: add retail-spine package-closure gate](https://github.com/voyantjs/voyant/issues/1791)
@@ -1258,12 +1260,12 @@ Migration contract:
   npm deprecation or final compatibility release where appropriate, and no
   silent deletion of a published import path before v1.
 
-## 9. Draft Target Recommendations
+## 9. Implemented Target Recommendations
 
 The strategic review questions raised during drafting are answered below as
-current target recommendations. They are strong enough to plan migration issues,
-but not accepted architecture until the package-closure gate, Interface
-sketches/tests, schema moves, and test-parity gates are complete.
+current target recommendations. The v1 restructure branch implements these
+decisions; later reversals should go through a follow-up ADR or explicit
+migration issue rather than reopening the package move implicitly.
 
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
