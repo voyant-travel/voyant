@@ -9,7 +9,7 @@ import type {
   TripEnvelope,
   TripListResult,
   TripSnapshot,
-} from "@voyantjs/trips"
+} from "@voyant-travel/trips"
 import { z } from "zod"
 
 export type QuoteVersionSnapshotApplyResult = {

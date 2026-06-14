@@ -1,7 +1,7 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components/badge"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import {
   Table,
   TableBody,
@@ -9,8 +9,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type * as React from "react"
 import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 import type { PriceRecord } from "../index.js"

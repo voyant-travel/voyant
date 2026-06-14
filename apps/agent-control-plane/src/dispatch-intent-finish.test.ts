@@ -13,9 +13,9 @@ import type { TickSnapshotStore } from "./tick-snapshot-store.js"
 
 const issue = {
   number: 579,
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
   title: "Test agent project intake workflow",
-  url: "https://github.com/voyantjs/voyant/issues/579",
+  url: "https://github.com/voyant-travel/voyant/issues/579",
 }
 
 const tickSnapshot = {
@@ -26,21 +26,21 @@ const tickSnapshot = {
   maxAgeDays: 1,
   project: {
     number: 1,
-    owner: "voyantjs",
+    owner: "voyant-travel",
     title: "Voyant Engineering",
-    url: "https://github.com/orgs/voyantjs/projects/1",
+    url: "https://github.com/orgs/voyant-travel/projects/1",
   },
   recommendations: [
     {
       action: "remote-bootstrap",
-      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/voyant --yes",
+      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/voyant --yes",
       issue,
       priority: 20,
       reason: "remote workspace is ready for repository bootstrap",
       state: "Ready",
     },
   ],
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
 }
 
 describe("dispatch intent finish lifecycle", () => {
@@ -87,7 +87,7 @@ describe("dispatch intent finish lifecycle", () => {
         lease: {
           holder: "supervisor:next",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
       method: "POST",
@@ -172,13 +172,13 @@ function leasedIntent(): DispatchIntentRecord {
       command: ["pnpm", "agent:queue:remote-bootstrap"],
       issue,
       reason: "leased command",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       requiresMutation: true,
     },
     source: {
       acceptedAt: "2026-05-12T05:00:00.000Z",
       recommendationCount: 1,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       type: "latest_tick_snapshot",
     },
     status: "leased",

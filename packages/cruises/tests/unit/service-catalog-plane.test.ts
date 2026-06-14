@@ -1,5 +1,5 @@
-import { createFieldPolicyRegistry } from "@voyantjs/catalog/contract"
-import { resolveOverlay } from "@voyantjs/catalog/overlay/resolver"
+import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
+import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
 import { describe, expect, it } from "vitest"
 
 import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"

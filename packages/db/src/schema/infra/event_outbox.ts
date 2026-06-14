@@ -10,7 +10,7 @@ import { typeId } from "../../lib/index.js"
  * a Worker dying mid-delivery no longer silently loses invoice syncs,
  * channel pushes, or workflow triggers. Services that need write
  * atomicity insert rows inside their own transaction (via
- * `enqueueOutboxEvents(tx, ...)` from `@voyantjs/db/outbox`); the drain
+ * `enqueueOutboxEvents(tx, ...)` from `@voyant-travel/db/outbox`); the drain
  * then delivers post-commit.
  *
  * Delivery semantics: **at-least-once**. A row is claimed with a

@@ -1,4 +1,4 @@
-# @voyantjs/admin-client
+# @voyant-travel/admin-client
 
 ## 0.111.0
 
@@ -20,7 +20,7 @@
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.104.4
+- @voyant-travel/admin-contracts@0.104.4
 
 ## 0.104.2
 
@@ -28,66 +28,66 @@
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.104.1
+- @voyant-travel/admin-contracts@0.104.1
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.104.0
+- @voyant-travel/admin-contracts@0.104.0
 
 ## 0.103.0
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.103.0
+- @voyant-travel/admin-contracts@0.103.0
 
 ## 0.102.0
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.102.0
+- @voyant-travel/admin-contracts@0.102.0
 
 ## 0.101.2
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.101.2
+- @voyant-travel/admin-contracts@0.101.2
 
 ## 0.101.1
 
 ### Patch Changes
 
-- @voyantjs/admin-contracts@0.101.1
+- @voyant-travel/admin-contracts@0.101.1
 
 ## 0.101.0
 
 ### Minor Changes
 
-- 8e7b56a: Extract products validation into the pure `@voyantjs/products-contracts` package
+- 8e7b56a: Extract products validation into the pure `@voyant-travel/products-contracts` package
   and complete the products admin SDK surface.
 
   - **products-contracts:** now owns the products validation cluster
     (`validation`, `validation-core`, `validation-public`, `validation-shared`,
     `validation-config`, `validation-content`, `validation-catalog`), moved out of
-    the runtime `@voyantjs/products` package. Its only external imports — the two
-    `@voyantjs/db` helpers — are repointed to `@voyantjs/schema-kit`, so the
+    the runtime `@voyant-travel/products` package. Its only external imports — the two
+    `@voyant-travel/db` helpers — are repointed to `@voyant-travel/schema-kit`, so the
     package stays zero-runtime (zod + schema-kit). Mirrors the
     bookings/finance/crm/legal split.
   - **products:** the moved files become one-line re-export stubs, so every
-    existing import path (`@voyantjs/products/validation`,
-    `@voyantjs/products/public-validation`, and internal `./validation-*`) keeps
+    existing import path (`@voyant-travel/products/validation`,
+    `@voyant-travel/products/public-validation`, and internal `./validation-*`) keeps
     working unchanged.
   - **admin-contracts:** products gains its write descriptors —
     `products.create`/`update`/`delete` deriving from `insertProductSchema`/
     `updateProductSchema`, and `products.list` now derives from
-    `productListQuerySchema` — all from the newly-pure `@voyantjs/products-contracts`.
+    `productListQuerySchema` — all from the newly-pure `@voyant-travel/products-contracts`.
   - **admin-client:** typed `products.create`/`update`/`delete` methods.
 
 ### Patch Changes
 
 - Updated dependencies [8e7b56a]
-  - @voyantjs/admin-contracts@0.101.0
+  - @voyant-travel/admin-contracts@0.101.0
 
 ## 0.100.0
 
@@ -99,7 +99,7 @@
     organizations CRUD, plus the PII-gated person-document reveal), legal
     (contracts CRUD + issue/void, policies CRUD + cancellation evaluation), and
     products (read surface: list/get). Inputs derive from the canonical
-    `@voyantjs/crm-contracts` / `@voyantjs/legal-contracts` route schemas; outputs
+    `@voyant-travel/crm-contracts` / `@voyant-travel/legal-contracts` route schemas; outputs
     are loose client-facing projections. Scopes follow the path+method convention
     `requireActor` enforces (GET→`:read`, POST/PATCH→`:write`, DELETE→`:delete`).
   - **admin-client:** typed `crm`, `legal`, and `products` namespaces over the new
@@ -112,14 +112,14 @@
 ### Patch Changes
 
 - Updated dependencies [061bef2]
-  - @voyantjs/admin-contracts@0.100.0
+  - @voyant-travel/admin-contracts@0.100.0
 
 ## 0.99.0
 
 ### Patch Changes
 
 - Updated dependencies [cb22020]
-  - @voyantjs/admin-contracts@0.99.0
+  - @voyant-travel/admin-contracts@0.99.0
 
 ## 0.98.0
 
@@ -127,9 +127,9 @@
 
 - 161222e: Derive admin operation inputs from the module contracts (single source of truth).
 
-  `@voyantjs/admin-contracts` now derives its operation **input** schemas from the
-  canonical route validation in `@voyantjs/bookings-contracts` and
-  `@voyantjs/finance-contracts` instead of re-declaring them:
+  `@voyant-travel/admin-contracts` now derives its operation **input** schemas from the
+  canonical route validation in `@voyant-travel/bookings-contracts` and
+  `@voyant-travel/finance-contracts` instead of re-declaring them:
 
   - `recordPaymentInput` / `createPaymentLinkInput` are now `.pick()`ed from the
     finance route schemas (removing the duplicated `PAYMENT_METHODS` enum), and
@@ -145,7 +145,7 @@
   optional for the caller rather than required.
 
 - Updated dependencies [161222e]
-  - @voyantjs/admin-contracts@0.98.0
+  - @voyant-travel/admin-contracts@0.98.0
 
 ## 0.97.0
 
@@ -153,7 +153,7 @@
 
 - aa73935: Introduce the Admin API contract + SDK (first slice).
 
-  `@voyantjs/admin-contracts` defines admin operations as typed, versioned,
+  `@voyant-travel/admin-contracts` defines admin operations as typed, versioned,
   transport-agnostic descriptors — `OperationDescriptor` + `defineOperation()`,
   action classification (`read | routine_write | destructive |
 requires_confirmation`), shared error/pagination envelopes, and a
@@ -161,7 +161,7 @@ requires_confirmation`), shared error/pagination envelopes, and a
   bookings (list/get/confirm/cancel) and finance (invoice list/get, record
   payment, create payment link). Pure and zod-only.
 
-  `@voyantjs/admin-client` is a framework-neutral client (`createAdminClient`)
+  `@voyant-travel/admin-client` is a framework-neutral client (`createAdminClient`)
   that executes those descriptors from Expo, Node, Workers, and Max/AI tools — no
   React or framework runtime deps. It handles auth (API key / bearer / custom),
   typed `AdminApiError`s, pagination, idempotency keys, and capability discovery.
@@ -174,4 +174,4 @@ requires_confirmation`), shared error/pagination envelopes, and a
 ### Patch Changes
 
 - Updated dependencies [aa73935]
-  - @voyantjs/admin-contracts@0.97.0
+  - @voyant-travel/admin-contracts@0.97.0

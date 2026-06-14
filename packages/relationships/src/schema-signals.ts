@@ -17,7 +17,7 @@
  * and bookings reference its id, not the other way around.
  */
 
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { index, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 import { people } from "./schema-accounts.js"
@@ -55,7 +55,7 @@ export const customerSignals = pgTable(
     personId: typeIdRef("person_id")
       .notNull()
       .references(() => people.id, { onDelete: "cascade" }),
-    /** Optional reference into `@voyantjs/inventory`. Plain text — no FK. */
+    /** Optional reference into `@voyant-travel/inventory`. Plain text — no FK. */
     productId: text("product_id"),
     /** Optional reference into a product's `option_units` row (the "departure"-equivalent). Plain text — no FK. */
     optionUnitId: text("option_unit_id"),

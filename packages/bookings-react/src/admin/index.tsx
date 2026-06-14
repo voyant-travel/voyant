@@ -6,11 +6,11 @@ import {
   type AdminRouteRuntime,
   type AdminWidgetContribution,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Importing the slot id also binds the crm-ui `AdminDestinations`
 // augmentation (`person.list`, `organization.list`, ...) into this program;
-// this package already peer-depends on `@voyantjs/relationships-react/ui`.
-import { personDetailBookingsTabSlot } from "@voyantjs/relationships-react/admin"
+// this package already peer-depends on `@voyant-travel/relationships-react/ui`.
+import { personDetailBookingsTabSlot } from "@voyant-travel/relationships-react/admin"
 import type { ComponentType, ReactNode } from "react"
 import * as React from "react"
 import { z } from "zod"
@@ -32,14 +32,14 @@ import type { PersonBookingsWidgetProps } from "./person-bookings-widget.js"
  * own — the CRM person/organization pages, the product editor, the finance
  * payment/invoice pages — so instead of importing a host route tree they
  * resolve these keys through `useAdminHref`/`useAdminNavigate` from
- * `@voyantjs/admin`. Hosts register one resolver per key
+ * `@voyant-travel/admin`. Hosts register one resolver per key
  * (`satisfies AdminDestinationResolvers`).
  *
  * `booking.detail`/`booking.list`/`booking.create` are declared here even
  * though bookings pages are their first consumers: other domains' packaged
  * pages navigate TO bookings through the same keys.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The bookings list page. */
     "booking.list": Record<string, never>
@@ -53,7 +53,7 @@ declare module "@voyantjs/admin" {
     "organization.detail": { organizationId: string }
     /**
      * The owned-product editor/detail page. Also declared by
-     * `@voyantjs/catalog-react/admin` — interface merging requires the member
+     * `@voyant-travel/catalog-react/admin` — interface merging requires the member
      * shape to stay identical across packages.
      */
     "product.detail": { productId: string }
@@ -73,7 +73,7 @@ declare module "@voyantjs/admin" {
     "invoice.detail": { invoiceId: string }
     /**
      * A legal contract's detail page. Also declared by
-     * `@voyantjs/legal-react/admin` — interface merging requires the member
+     * `@voyant-travel/legal-react/admin` — interface merging requires the member
      * shape to stay identical across packages. Declared here because the
      * booking Documents tab links contract rows to their detail page.
      */
@@ -89,7 +89,7 @@ declare module "@voyantjs/admin" {
 // or host component values — it is evaluated with the workspace chrome, so
 // a static host re-export would pin the heavy page modules into the entry
 // chunk. Hosts/dialogs/widgets import from their specific modules
-// (`@voyantjs/bookings-react/admin/booking-detail-host`, ...); only their
+// (`@voyant-travel/bookings-react/admin/booking-detail-host`, ...); only their
 // TYPES re-export here, plus the lean slot ids and skeletons.
 export type { BookingContractDialogProps } from "./booking-contract-dialog.js"
 export type {
@@ -297,8 +297,8 @@ export interface CreateBookingsAdminExtensionOptions {
    * it stays in its own chunk. Defaults to the packaged page wrapping
    * {@link BookingDetailHost}. The operator overrides this to compose the
    * app-owned payment/payment-link dialogs around the host — those dialogs
-   * live app-side because `@voyantjs/finance-react/ui` and
-   * `@voyantjs/finance-react/checkout-ui` depend on this package, so importing them
+   * live app-side because `@voyant-travel/finance-react/ui` and
+   * `@voyant-travel/finance-react/checkout-ui` depend on this package, so importing them
    * here would be a cycle.
    */
   detailPageComponent?: () => Promise<{
@@ -343,11 +343,11 @@ const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidg
 
 /**
  * The bookings admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Bookings nav item is part of the BASE
  * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing nav entries here would duplicate it.
+ * `@voyant-travel/admin` — so contributing nav entries here would duplicate it.
  * If the base nav ever drops the bookings item, this extension is where the
  * entry moves.
  *
@@ -372,7 +372,7 @@ const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidg
  *
  * WIDGETS: the crm-ui ↔ bookings-ui cycle resolution (RFC §4.7). The CRM
  * person detail page mounts a Bookings tab, but this package depends on
- * `@voyantjs/relationships-react/ui`, so crm-ui's host cannot import the bookings-owned
+ * `@voyant-travel/relationships-react/ui`, so crm-ui's host cannot import the bookings-owned
  * card. Instead this extension contributes {@link PersonBookingsWidget} on
  * the `person.details.bookings-tab` slot crm-ui's `PersonDetailHost`
  * exposes; the host mounts its Bookings tab whenever a contribution targets

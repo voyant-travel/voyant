@@ -17,7 +17,7 @@
  *     fields under each row.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const ACCOMMODATION_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Source pointer / provenance ─────────────────────────────────────────

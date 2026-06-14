@@ -1,7 +1,7 @@
 "use client"
 
-import { useAdminNavigate } from "@voyantjs/admin"
-import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
+import { useAdminNavigate } from "@voyant-travel/admin"
+import { useSuppliers } from "@voyant-travel/distribution-react/suppliers"
 import { useState } from "react"
 
 import { PaymentsPage } from "../../components/payments-page.js"
@@ -10,7 +10,7 @@ import { RecordPaymentDialog } from "../record-payment-dialog.js"
 /**
  * Packaged route page for the payments list (route contribution
  * `finance-payments-index`). Owns the supplier-filter search state (the
- * supplier combobox options come from `@voyantjs/distribution-react/suppliers`), renders
+ * supplier combobox options come from `@voyant-travel/distribution-react/suppliers`), renders
  * the record-payment dialog, and resolves row activation through the shared
  * `payment.detail` semantic destination (packaged-admin RFC §4.7).
  */

@@ -5,10 +5,10 @@
  * vouchers table introduced in #227. Idempotent; safe to re-run.
  *
  * Usage:
- *   DATABASE_URL=postgres://... pnpm -F @voyantjs/finance migrate:vouchers
- *   DATABASE_URL=postgres://... pnpm -F @voyantjs/finance migrate:vouchers --dry-run
+ *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:vouchers
+ *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:vouchers --dry-run
  */
-import { createDbClient } from "@voyantjs/db"
+import { createDbClient } from "@voyant-travel/db"
 
 import { migrateVouchersFromPaymentInstruments } from "../src/service-vouchers-migration.ts"
 

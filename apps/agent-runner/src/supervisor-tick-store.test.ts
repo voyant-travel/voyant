@@ -32,7 +32,7 @@ describe("supervisor tick storage", () => {
     })
     const record: SupervisorTickRecord = {
       recordedAt: "2026-05-12T12:00:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: {
         leased: false,
         reason: "dry_run",
@@ -41,11 +41,11 @@ describe("supervisor tick storage", () => {
 
     await expect(store.putLatest(record)).resolves.toMatchObject({
       historyKey:
-        "runner/supervisor-ticks/history/voyantjs%2Fvoyant/9005420667540991-2026-05-12T12%3A00%3A00.000Z.json",
-      key: "runner/supervisor-ticks/latest/voyantjs%2Fvoyant.json",
+        "runner/supervisor-ticks/history/voyant-travel%2Fvoyant/9005420667540991-2026-05-12T12%3A00%3A00.000Z.json",
+      key: "runner/supervisor-ticks/latest/voyant-travel%2Fvoyant.json",
     })
-    await expect(store.getLatest("VoyantJS/Voyant")).resolves.toEqual(record)
-    await expect(store.listRecent("VoyantJS/Voyant")).resolves.toEqual([record])
+    await expect(store.getLatest("Voyant-Travel/Voyant")).resolves.toEqual(record)
+    await expect(store.listRecent("Voyant-Travel/Voyant")).resolves.toEqual([record])
   })
 
   it("stores and lists lease-specific history separately from tick history", async () => {
@@ -88,33 +88,33 @@ describe("supervisor tick storage", () => {
     const olderLease = {
       id: "lease_old",
       leasedAt: "2026-05-10T12:00:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: { leased: true },
     }
     const currentLease = {
       id: "lease_current",
       leasedAt: "2026-05-12T12:00:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: { leased: true },
     }
 
     await store.putLatest({
       recordedAt: "2026-05-12T12:01:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: {
         leased: false,
         reason: "lease_budget_exhausted",
       },
     })
     await expect(store.putLease?.(olderLease)).resolves.toMatchObject({
-      key: expect.stringContaining("supervisor-leases/history/voyantjs%2Fvoyant"),
+      key: expect.stringContaining("supervisor-leases/history/voyant-travel%2Fvoyant"),
     })
     await store.putLease?.(currentLease)
 
     await expect(
-      store.listLeases?.("VoyantJS/Voyant", { since: "2026-05-11T12:00:00.000Z" }),
+      store.listLeases?.("Voyant-Travel/Voyant", { since: "2026-05-11T12:00:00.000Z" }),
     ).resolves.toEqual([currentLease])
-    await expect(store.listLeases?.("VoyantJS/Voyant", { limit: 1 })).resolves.toEqual([
+    await expect(store.listLeases?.("Voyant-Travel/Voyant", { limit: 1 })).resolves.toEqual([
       currentLease,
     ])
   })

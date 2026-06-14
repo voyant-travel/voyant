@@ -1,4 +1,4 @@
-# @voyantjs/notifications
+# @voyant-travel/notifications
 
 Notifications module for Voyant. It includes:
 
@@ -17,17 +17,17 @@ CRM communication history should remain a business-facing log. This module owns 
 ## Install
 
 ```bash
-pnpm add @voyantjs/notifications
+pnpm add @voyant-travel/notifications
 ```
 
 ## Usage
 
 ```typescript
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
-import { createNotificationService } from "@voyantjs/notifications"
-import { createLocalProvider } from "@voyantjs/notifications/providers/local"
-import { createVoyantCloudEmailProvider } from "@voyantjs/notifications/providers/voyant-cloud-email"
-import { createVoyantCloudSmsProvider } from "@voyantjs/notifications/providers/voyant-cloud-sms"
+import { getVoyantCloudClient } from "@voyant-travel/voyant-cloud"
+import { createNotificationService } from "@voyant-travel/notifications"
+import { createLocalProvider } from "@voyant-travel/notifications/providers/local"
+import { createVoyantCloudEmailProvider } from "@voyant-travel/notifications/providers/voyant-cloud-email"
+import { createVoyantCloudSmsProvider } from "@voyant-travel/notifications/providers/voyant-cloud-sms"
 
 const cloud = getVoyantCloudClient(env)
 const notifications = createNotificationService([
@@ -54,12 +54,12 @@ and register it in place of the cloud adapters.
 For the Hono module:
 
 ```ts
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
+import { getVoyantCloudClient } from "@voyant-travel/voyant-cloud"
 import {
   createNotificationsHonoModule,
   createVoyantCloudEmailProvider,
   createVoyantCloudSmsProvider,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 
 const notificationsModule = createNotificationsHonoModule({
   resolveProviders: (env) => {
@@ -75,7 +75,7 @@ const notificationsModule = createNotificationsHonoModule({
 For scheduled reminder sweeps:
 
 ```ts
-import { sendDueNotificationReminders } from "@voyantjs/notifications/tasks"
+import { sendDueNotificationReminders } from "@voyant-travel/notifications/tasks"
 
 await sendDueNotificationReminders(db, process.env, {
   now: "2026-04-08T09:00:00.000Z",
@@ -156,7 +156,7 @@ contents, attachment bodies, or customer data.
 Host apps can replace the entire policy with `policy`, or keep the default
 composition and override only `notificationPolicy`. Product brochures remain an
 extension point via `resolveBrochureDocuments`, so apps that install
-`@voyantjs/inventory` can add current brochure artifacts without making
+`@voyant-travel/inventory` can add current brochure artifacts without making
 notifications depend on products at runtime.
 
 ## Exports

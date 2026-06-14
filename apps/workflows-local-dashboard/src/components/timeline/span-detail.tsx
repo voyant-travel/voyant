@@ -6,12 +6,12 @@
 // The pane itself is a shadcn `Card`-like shell; the parent
 // `RunDetailPanel` wraps it in a `ResizablePanel`.
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Kbd } from "@voyantjs/ui/components/kbd"
-import { Separator } from "@voyantjs/ui/components/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Kbd } from "@voyant-travel/ui/components/kbd"
+import { Separator } from "@voyant-travel/ui/components/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Clock, Code2, FileText, type LucideIcon, RotateCcw, Waves, X, Zap } from "lucide-react"
 
 import type { StoredRun } from "@/lib/api"

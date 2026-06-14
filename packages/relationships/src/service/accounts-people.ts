@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { identityContactPoints } from "@voyantjs/identity/schema"
-import { identityService } from "@voyantjs/identity/service"
-import { toCsvRow } from "@voyantjs/utils"
+import { identityContactPoints } from "@voyant-travel/identity/schema"
+import { identityService } from "@voyant-travel/identity/service"
+import { toCsvRow } from "@voyant-travel/utils"
 import type { AnyColumn } from "drizzle-orm"
 import { and, asc, desc, eq, exists, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

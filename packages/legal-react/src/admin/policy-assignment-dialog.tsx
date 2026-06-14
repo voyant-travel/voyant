@@ -1,10 +1,10 @@
 // agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { useMarket, useMarkets } from "@voyantjs/commerce-react/markets"
-import { useChannel, useChannels } from "@voyantjs/distribution-react"
-import { useSupplier, useSuppliers } from "@voyantjs/distribution-react/suppliers"
-import { useProduct, useProducts } from "@voyantjs/inventory-react"
-import { useOrganization, useOrganizations } from "@voyantjs/relationships-react"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useMarket, useMarkets } from "@voyant-travel/commerce-react/markets"
+import { useChannel, useChannels } from "@voyant-travel/distribution-react"
+import { useSupplier, useSuppliers } from "@voyant-travel/distribution-react/suppliers"
+import { useProduct, useProducts } from "@voyant-travel/inventory-react"
+import { useOrganization, useOrganizations } from "@voyant-travel/relationships-react"
 import {
   Button,
   Dialog,
@@ -20,9 +20,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -283,7 +283,7 @@ export function PolicyAssignmentDialog({
 }
 
 /**
- * Scoped record pickers. The operator template's previous app-local
+ * Scoped record pickers. The operator starter's previous app-local
  * `EntityCombobox` hit the same list/detail endpoints through the app RPC
  * client; these bind the equivalent domain react hooks (shared Voyant
  * provider context) so the dialog ships package-clean. The selected

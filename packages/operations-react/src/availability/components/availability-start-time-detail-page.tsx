@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { ArrowLeft, Clock3, Package, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { z } from "zod"

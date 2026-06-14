@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/inventory",
+  "name": "@voyant-travel/inventory",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -43,27 +43,27 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/extras-contracts": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/commerce": "workspace:^",
-    "@voyantjs/products-contracts": "workspace:^",
-    "@voyantjs/storage": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/extras-contracts": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/commerce": "workspace:^",
+    "@voyant-travel/products-contracts": "workspace:^",
+    "@voyant-travel/storage": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "marked": "^18.0.3",
     "pdf-lib": "^1.17.1",
     "sanitize-html": "^2.17.4",
     "zod": "^4.3.6",
-    "@voyantjs/operations": "workspace:^"
+    "@voyant-travel/operations": "workspace:^"
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.1",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -224,13 +224,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/inventory"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   }
 }

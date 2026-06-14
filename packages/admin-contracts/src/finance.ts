@@ -3,13 +3,13 @@
  * create payment link).
  *
  * Output schemas are the curated client-facing projection of the finance
- * entities — not a 1:1 dump of `@voyantjs/finance`' Drizzle rows.
+ * entities — not a 1:1 dump of `@voyant-travel/finance`' Drizzle rows.
  */
 
 import {
   createPaymentSessionFromInvoiceSchema,
   insertPaymentSchema,
-} from "@voyantjs/finance-contracts"
+} from "@voyant-travel/finance-contracts"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
@@ -74,7 +74,7 @@ export const invoiceListInputSchema = pageQuerySchema.extend({
   search: z.string().optional(),
 })
 
-// Derived from the route's canonical payment schema (`@voyantjs/finance-contracts`)
+// Derived from the route's canonical payment schema (`@voyant-travel/finance-contracts`)
 // so the SDK input matches what `POST /invoices/:id/payments` accepts — single
 // source of truth, no re-declared payment-method / status enums.
 export const recordPaymentInputSchema = insertPaymentSchema.pick({

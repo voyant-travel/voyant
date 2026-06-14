@@ -1,4 +1,4 @@
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { describe, expect, it } from "vitest"
 import { createDurableObjectRunStore } from "../index.js"
 import { makeStorage, tenantMeta } from "./adapter-test-support.js"

@@ -1,4 +1,4 @@
-# @voyantjs/quotes
+# @voyant-travel/quotes
 
 Quotes owns pipelines, stages, quotes, quote versions, quote participants,
 quote products, quote version lines, proposal lifecycle decisions, and the
@@ -10,14 +10,14 @@ import Relationships schema tables or own relationship lifecycle state.
 ## Install
 
 ```bash
-pnpm add @voyantjs/quotes
+pnpm add @voyant-travel/quotes
 ```
 
 ## Usage
 
 ```typescript
-import { quotesModule } from "@voyantjs/quotes"
-import { createApp } from "@voyantjs/hono"
+import { quotesModule } from "@voyant-travel/quotes"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [quotesModule],

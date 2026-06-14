@@ -11,12 +11,12 @@ import {
 
 const tickSnapshot = {
   project: {
-    owner: "voyantjs",
+    owner: "voyant-travel",
     number: 1,
     title: "Voyant Engineering",
-    url: "https://github.com/orgs/voyantjs/projects/1",
+    url: "https://github.com/orgs/voyant-travel/projects/1",
   },
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
   maxAgeDays: 1,
   eventLog: {
     path: "/repo/.agent-runs/events.jsonl",
@@ -31,12 +31,12 @@ const tickSnapshot = {
   recommendations: [
     {
       action: "remote-bootstrap",
-      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/voyant --yes",
+      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/voyant --yes",
       issue: {
         number: 579,
         title: "Test agent project intake workflow",
-        url: "https://github.com/voyantjs/voyant/issues/579",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/579",
+        repository: "voyant-travel/voyant",
         agentBrief: "Acceptance criteria and verification lane.",
         hasAgentBrief: true,
         labels: ["agent:ready", "ui"],
@@ -49,12 +49,12 @@ const tickSnapshot = {
     {
       action: "remote-run-command",
       command:
-        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyantjs/voyant --command "<implementation-command>" --yes',
+        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyant-travel/voyant --command "<implementation-command>" --yes',
       issue: {
         number: 580,
         title: "Run implementation",
-        url: "https://github.com/voyantjs/voyant/issues/580",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/580",
+        repository: "voyant-travel/voyant",
       },
       priority: 30,
       reason: "implementation execution remains explicit",
@@ -95,18 +95,21 @@ describe("tick snapshot storage", () => {
     await expect(response.json()).resolves.toMatchObject({
       accepted: true,
       storage: {
-        key: "latest/voyantjs/voyant.json",
+        key: "latest/voyant-travel/voyant.json",
         persisted: true,
       },
     })
 
-    const latest = await app.request("/api/tick-snapshots/latest?repository=voyantjs%2Fvoyant", {
-      headers: { authorization: "Bearer secret" },
-    })
+    const latest = await app.request(
+      "/api/tick-snapshots/latest?repository=voyant-travel%2Fvoyant",
+      {
+        headers: { authorization: "Bearer secret" },
+      },
+    )
     expect(latest.status).toBe(200)
     await expect(latest.json()).resolves.toMatchObject({
       snapshot: {
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       summary: {
         dispatchableRecommendationCount: 2,
@@ -115,7 +118,7 @@ describe("tick snapshot storage", () => {
     })
 
     const recent = await app.request(
-      "/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=10",
+      "/api/tick-snapshots/recent?repository=voyant-travel%2Fvoyant&limit=10",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -125,7 +128,7 @@ describe("tick snapshot storage", () => {
       records: [
         {
           snapshot: {
-            repository: "voyantjs/voyant",
+            repository: "voyant-travel/voyant",
           },
           summary: {
             dispatchableRecommendationCount: 2,
@@ -133,7 +136,7 @@ describe("tick snapshot storage", () => {
           },
         },
       ],
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     const capabilities = await app.request("/api/capabilities", {
@@ -151,7 +154,7 @@ describe("tick snapshot storage", () => {
   it("requires repository and configured storage for persisted tick snapshots", async () => {
     const noStore = createApp({ authTokens: ["secret"] })
     const noStoreResponse = await noStore.request(
-      "/api/tick-snapshots/latest?repository=voyantjs%2Fvoyant",
+      "/api/tick-snapshots/latest?repository=voyant-travel%2Fvoyant",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -178,7 +181,7 @@ describe("tick snapshot storage", () => {
     await expect(missingRecentRepository.json()).resolves.toEqual({ error: "missing_repository" })
 
     const missingSnapshot = await app.request(
-      "/api/tick-snapshots/latest?repository=voyantjs%2Fvoyant",
+      "/api/tick-snapshots/latest?repository=voyant-travel%2Fvoyant",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -221,11 +224,11 @@ describe("tick snapshot storage", () => {
 
     await expect(store.putLatest(record)).resolves.toMatchObject({
       historyKey:
-        "supervisor/tick-snapshots/history/voyantjs%2Fvoyant/9005420692740991-2026-05-12T05%3A00%3A00.000Z.json",
-      key: "supervisor/tick-snapshots/latest/voyantjs%2Fvoyant.json",
+        "supervisor/tick-snapshots/history/voyant-travel%2Fvoyant/9005420692740991-2026-05-12T05%3A00%3A00.000Z.json",
+      key: "supervisor/tick-snapshots/latest/voyant-travel%2Fvoyant.json",
     })
-    await expect(store.getLatest("VoyantJS/Voyant")).resolves.toEqual(record)
-    await expect(store.listRecent("VoyantJS/Voyant")).resolves.toEqual([record])
+    await expect(store.getLatest("Voyant-Travel/Voyant")).resolves.toEqual(record)
+    await expect(store.listRecent("Voyant-Travel/Voyant")).resolves.toEqual([record])
   })
 
   it("stores snapshots without a leading slash when the key prefix is empty", async () => {
@@ -244,7 +247,7 @@ describe("tick snapshot storage", () => {
     })
 
     await expect(store.putLatest(buildTickSnapshotRecord(tickSnapshot))).resolves.toMatchObject({
-      key: "tick-snapshots/latest/voyantjs%2Fvoyant.json",
+      key: "tick-snapshots/latest/voyant-travel%2Fvoyant.json",
     })
   })
 
@@ -290,27 +293,28 @@ describe("tick snapshot storage", () => {
         command: ["pnpm", "agent:queue:remote-bootstrap"],
         issue: tickSnapshot.recommendations[0]!.issue,
         reason: "remote workspace is ready for repository bootstrap",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         requiresMutation: true as const,
       },
       source: {
         acceptedAt: "2026-05-12T05:00:00.000Z",
         recommendationCount: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot" as const,
       },
       status: "leased" as const,
     }
 
     await expect(store.putIntent(intent)).resolves.toEqual({
-      activeKey: "supervisor/dispatch-intents/active/voyantjs%2Fvoyant/579/remote-bootstrap.json",
+      activeKey:
+        "supervisor/dispatch-intents/active/voyant-travel%2Fvoyant/579/remote-bootstrap.json",
       key: "supervisor/dispatch-intents/by-id/intent_579.json",
     })
     await expect(
       store.getActive({
         action: "remote-bootstrap",
         issueNumber: 579,
-        repository: "VoyantJS/Voyant",
+        repository: "Voyant-Travel/Voyant",
       }),
     ).resolves.toEqual(intent)
 
@@ -374,7 +378,8 @@ describe("tick snapshot storage", () => {
     ).resolves.toMatchObject({
       acquired: true,
       write: {
-        activeKey: "supervisor/dispatch-intents/active/voyantjs%2Fvoyant/579/remote-bootstrap.json",
+        activeKey:
+          "supervisor/dispatch-intents/active/voyant-travel%2Fvoyant/579/remote-bootstrap.json",
         key: "supervisor/dispatch-intents/by-id/intent_580.json",
       },
     })

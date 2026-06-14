@@ -14,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+} from "@voyant-travel/ui/components"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"

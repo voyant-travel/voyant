@@ -1,18 +1,18 @@
-# @voyantjs/types
+# @voyant-travel/types
 
 Shared TypeScript types and Zod schemas for Voyant. Cross-package contracts that don't belong to any single domain module.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/types
+pnpm add @voyant-travel/types
 ```
 
 ## Usage
 
 ```typescript
-import type { ApiKey } from "@voyantjs/types/api-keys"
-import { apiErrorSchema } from "@voyantjs/types/schemas/api-error"
+import type { ApiKey } from "@voyant-travel/types/api-keys"
+import { apiErrorSchema } from "@voyant-travel/types/schemas/api-error"
 ```
 
 ## Exports

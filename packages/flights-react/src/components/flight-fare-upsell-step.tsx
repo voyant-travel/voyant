@@ -6,10 +6,10 @@ import type {
   FlightOffer,
   FlightPassenger,
   PassengerCounts,
-} from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Briefcase, Check, Crown, Luggage, Sparkles, X } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

@@ -1,10 +1,10 @@
 "use client"
 
-import type { FareBreakdown, FlightOffer } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Separator } from "@voyantjs/ui/components/separator"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { FareBreakdown, FlightOffer } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Separator } from "@voyant-travel/ui/components/separator"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import { FlightItinerary } from "./flight-itinerary.js"
 

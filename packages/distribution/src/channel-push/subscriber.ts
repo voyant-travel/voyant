@@ -10,7 +10,7 @@
  * Per docs/architecture/channel-push-architecture.md §4.1.
  */
 
-import type { EventEnvelope, Subscriber } from "@voyantjs/core"
+import type { EventEnvelope, Subscriber } from "@voyant-travel/core"
 
 import {
   processAvailabilityPushIntents,

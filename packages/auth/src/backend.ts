@@ -1,4 +1,4 @@
-import { signSessionClaims, verifySessionClaims } from "@voyantjs/utils/session-claims"
+import { signSessionClaims, verifySessionClaims } from "@voyant-travel/utils/session-claims"
 
 export type VerifyTokenOptions = {
   secretKey: string

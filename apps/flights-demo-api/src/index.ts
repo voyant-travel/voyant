@@ -5,7 +5,7 @@ import { createApp } from "./app.js"
 import { createDb } from "./db.js"
 
 // Only load this app's own `.env`. Don't fall through to the repo root —
-// that's the operator template's territory and would let the demo
+// that's the operator starter's territory and would let the demo
 // silently inherit the operator's `DATABASE_URL`.
 config({ path: ".env" })
 

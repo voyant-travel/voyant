@@ -2,7 +2,7 @@ import {
   type ActionLedgerRequestContextValues,
   type BuildActionLedgerMutationInput,
   buildIdempotencyFingerprint,
-} from "@voyantjs/action-ledger"
+} from "@voyant-travel/action-ledger"
 import type { z } from "zod"
 
 import type { bookingGuarantees, bookingPaymentSchedules } from "./schema.js"

@@ -1,4 +1,4 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"

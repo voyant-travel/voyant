@@ -7,11 +7,11 @@ import {
   useAddressMutation,
   useContactPointMutation,
   useContactPoints,
-} from "@voyantjs/identity-react"
-import { Button } from "@voyantjs/ui/components/button"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/identity-react"
+import { Button } from "@voyant-travel/ui/components/button"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"

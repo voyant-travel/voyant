@@ -1,7 +1,7 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { Button } from "@voyantjs/ui/components/button"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { Button } from "@voyant-travel/ui/components/button"
 import { ScrollText } from "lucide-react"
 import { useMemo } from "react"
 import type { TimelineEvent } from "../components/booking-activity-timeline.js"

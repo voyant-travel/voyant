@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: finance-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Card,
@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   type ChartConfig,
   ChartContainer,
@@ -23,9 +23,9 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@voyantjs/ui/components/chart"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/chart"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Download, Share2 } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"

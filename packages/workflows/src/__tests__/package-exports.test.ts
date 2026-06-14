@@ -34,7 +34,7 @@ const publicSubpaths = [
   "./http-ingest",
 ]
 
-describe("@voyantjs/workflows package exports", () => {
+describe("@voyant-travel/workflows package exports", () => {
   it("publishes the events subpath with resolver-compatible conditions", () => {
     expect(packageJson.publishConfig.exports["./events"]).toEqual({
       types: "./dist/events/index.d.ts",

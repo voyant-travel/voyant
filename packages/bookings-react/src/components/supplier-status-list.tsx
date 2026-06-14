@@ -1,8 +1,8 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+import { Button } from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { Package, Pencil, Plus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

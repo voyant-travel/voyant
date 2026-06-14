@@ -1,6 +1,6 @@
 import { type DehydratedState, dehydrate, hydrate, QueryClient } from "@tanstack/react-query"
 import { type AnyRoute, createRouter as createTanStackRouter, Link } from "@tanstack/react-router"
-import { buttonVariants } from "@voyantjs/ui/components/button"
+import { buttonVariants } from "@voyant-travel/ui/components/button"
 import {
   Empty,
   EmptyContent,
@@ -8,7 +8,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@voyantjs/ui/components/empty"
+} from "@voyant-travel/ui/components/empty"
 import { SearchX } from "lucide-react"
 import type { ReactNode } from "react"
 

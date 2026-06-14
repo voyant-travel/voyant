@@ -4,7 +4,7 @@
 //
 // Wraps the existing pure orchestrator functions (trigger / resume / cancel)
 // with `createInMemoryRunStore` for state and an in-process `StepHandler`
-// glue (`handleStepRequest` from `@voyantjs/workflows/handler`). Manifests
+// glue (`handleStepRequest` from `@voyant-travel/workflows/handler`). Manifests
 // live in a `Map<environment, { manifest, versionId }>`.
 //
 // State lives in the closure returned by `createInMemoryDriver` — every
@@ -19,7 +19,7 @@ import type {
   RunDetail,
   RunSummary,
   TriggerOptions,
-} from "@voyantjs/workflows"
+} from "@voyant-travel/workflows"
 import {
   type DriverFactory,
   type DriverFactoryDeps,
@@ -29,10 +29,10 @@ import {
   ManifestNotRegisteredError,
   type WorkflowAdmin,
   type WorkflowDriver,
-} from "@voyantjs/workflows/driver"
-import { deriveStableEventId } from "@voyantjs/workflows/events"
-import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+} from "@voyant-travel/workflows/driver"
+import { deriveStableEventId } from "@voyant-travel/workflows/events"
+import { handleStepRequest, type WorkflowStepRequest } from "@voyant-travel/workflows/handler"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 
 import {
   createInProcessConcurrencyCoordinator,

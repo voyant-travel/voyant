@@ -1,7 +1,7 @@
 "use client"
 
-import { useOrganizations, usePeople } from "@voyantjs/relationships-react"
-import { Button } from "@voyantjs/ui/components/button"
+import { useOrganizations, usePeople } from "@voyant-travel/relationships-react"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Command,
   CommandEmpty,
@@ -9,8 +9,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@voyantjs/ui/components/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+} from "@voyant-travel/ui/components/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import { Building2, ChevronDown, Users } from "lucide-react"
 import { useState } from "react"
 

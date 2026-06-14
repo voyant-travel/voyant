@@ -1,8 +1,8 @@
 import {
   bookingTravelerBedPreferenceSchema,
   travelerAllocationMapSchema,
-} from "@voyantjs/bookings-contracts/traveler-schemas"
-import { type KmsEnvelope, kmsEnvelopeSchema } from "@voyantjs/db/schema/iam"
+} from "@voyant-travel/bookings-contracts/traveler-schemas"
+import { type KmsEnvelope, kmsEnvelopeSchema } from "@voyant-travel/db/schema/iam"
 import { sql } from "drizzle-orm"
 import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { z } from "zod"
@@ -66,8 +66,8 @@ export const bookingTravelerAccessibilitySchema = z.object({
   accessibilityNeeds: z.string().optional().nullable(),
 })
 
-// Defined in @voyantjs/bookings-contracts (pure); re-exported so existing
-// @voyantjs/bookings/schema/travel-details import paths keep working.
+// Defined in @voyant-travel/bookings-contracts (pure); re-exported so existing
+// @voyant-travel/bookings/schema/travel-details import paths keep working.
 export { bookingTravelerBedPreferenceSchema, travelerAllocationMapSchema }
 
 const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
@@ -145,10 +145,10 @@ export const bookingTravelerTravelDetails = pgTable(
 const bookingTravelerTravelDetailRecordCoreSchema = z.object({
   travelerId: z.string().min(1),
   // `z.lazy(() => …)` defers schema dereferencing until first use so the
-  // cross-package binding (`kmsEnvelopeSchema` from `@voyantjs/db`) is
+  // cross-package binding (`kmsEnvelopeSchema` from `@voyant-travel/db`) is
   // resolved at parse time, not at this module's top-level evaluation.
   // Without `z.lazy`, bundlers that split this file into a separate chunk
-  // from its `@voyantjs/db` producer can hit the producer's TDZ here.
+  // from its `@voyant-travel/db` producer can hit the producer's TDZ here.
   // See #501.
   identityEncrypted: z
     .lazy(() => kmsEnvelopeSchema)

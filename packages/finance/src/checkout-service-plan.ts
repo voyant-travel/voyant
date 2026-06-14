@@ -1,4 +1,4 @@
-import type { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings"
+import type { bookingItems, bookings, bookingTravelers } from "@voyant-travel/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
   BootstrapCheckoutCollectionInput,

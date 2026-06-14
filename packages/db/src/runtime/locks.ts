@@ -1,4 +1,4 @@
-import type { ExecutionLockManager } from "@voyantjs/core"
+import type { ExecutionLockManager } from "@voyant-travel/core"
 import postgres from "postgres"
 
 type AdvisoryLockRow = { locked: boolean }

@@ -1,4 +1,4 @@
-# @voyantjs/plugin-flights-demo
+# @voyant-travel/plugin-flights-demo
 
 Demo `FlightConnectorAdapter` implementation for the standalone
 `apps/flights-demo-api` service.

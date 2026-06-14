@@ -1,4 +1,4 @@
-import { newId } from "@voyantjs/schema-kit/typeid"
+import { newId } from "@voyant-travel/schema-kit/typeid"
 import { eq, sql } from "drizzle-orm"
 
 import { eventOutboxTable } from "./schema/infra/event_outbox.js"

@@ -24,11 +24,11 @@ vi.mock("@better-auth/api-key", () => ({
   apiKey: vi.fn((options: Record<string, unknown>) => ({ id: "apiKey", options })),
 }))
 
-vi.mock("@voyantjs/db", () => ({
+vi.mock("@voyant-travel/db", () => ({
   getDb: vi.fn(() => ({ id: "default-db" })),
 }))
 
-vi.mock("@voyantjs/db/schema/iam", () => ({
+vi.mock("@voyant-travel/db/schema/iam", () => ({
   apikeyTable: { name: "apikey" },
   authAccount: { name: "account" },
   authSession: { name: "session" },

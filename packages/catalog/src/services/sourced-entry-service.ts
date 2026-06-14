@@ -27,7 +27,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §2.5.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm"
 
 import type { CatalogProjection } from "../adapter/contract.js"

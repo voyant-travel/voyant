@@ -1,11 +1,11 @@
 {
-  "name": "@voyantjs/workflows-node-step-container",
+  "name": "@voyant-travel/workflows-node-step-container",
   "version": "0.107.10",
   "description": "Reference Node container image for executing `runtime: \"node\"` steps. Deployed alongside the orchestrator as a Cloudflare Container.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "apps/workflows-node-step-container"
   },
   "homepage": "https://voyant.cloud/workflows",
@@ -37,11 +37,11 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2"
   },
   "publishConfig": {

@@ -2,7 +2,7 @@
 // the Overview tab. Each row is an event tick with an absolute time
 // and a relative delta from the prior tick.
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { formatDuration, formatTime } from "@/lib/utils"
 
 export interface Milestone {

@@ -6,7 +6,7 @@ import {
   useAdminExtensions,
   useAdminNavigate,
   useLocale,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import { SupplierDetailPage } from "../components/supplier-detail-page.js"
 import type { Supplier, UpdateSupplierInput } from "../index.js"
 import { supplierDetailPaymentPolicySlot } from "./slots.js"

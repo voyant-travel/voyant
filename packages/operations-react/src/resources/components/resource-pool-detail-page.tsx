@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Package, Users, Wrench } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatResourceSlotLabel } from "../i18n/utils.js"

@@ -1,4 +1,4 @@
-import { normalizeApiKeyPermissions, permissionsToStrings } from "@voyantjs/types/api-keys"
+import { normalizeApiKeyPermissions, permissionsToStrings } from "@voyant-travel/types/api-keys"
 import { z } from "zod"
 
 export const currentUserSchema = z.object({

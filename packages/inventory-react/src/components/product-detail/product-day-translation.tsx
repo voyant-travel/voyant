@@ -1,5 +1,5 @@
-import { Input, Label } from "@voyantjs/ui/components"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+import { Input, Label } from "@voyant-travel/ui/components"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   type ProductDayTranslationRecord,

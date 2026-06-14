@@ -3,7 +3,7 @@ import {
   productBookingModeSchema,
   productCapacityModeSchema,
   productOptionStatusSchema,
-} from "@voyantjs/products-contracts/validation"
+} from "@voyant-travel/products-contracts/validation"
 import { z } from "zod"
 
 import {

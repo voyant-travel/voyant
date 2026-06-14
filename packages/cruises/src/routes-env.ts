@@ -1,5 +1,5 @@
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { EventBus } from "@voyantjs/core"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { EventBus } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export type CruiseRoutesEnv = {

@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
 import { z } from "zod"
 
@@ -175,7 +175,7 @@ export interface CatalogBookingRoutesOptions {
   /**
    * Resolve a per-request `evaluatePromotions` hook. Returning `undefined`
    * skips promotion evaluation. Templates typically wire
-   * `createCatalogPromotionEvaluator(db)` from `@voyantjs/commerce`.
+   * `createCatalogPromotionEvaluator(db)` from `@voyant-travel/commerce`.
    *
    * Per docs/architecture/promotions-architecture.md §3.6 + §7.1.
    */

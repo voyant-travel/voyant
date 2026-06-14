@@ -13,42 +13,42 @@ describe("agent runner run ledger store", () => {
 
     await store.recordSupervisorLease({
       leasedAt: "2026-05-12T12:00:00.000Z",
-      repository: "VoyantJS/Voyant",
+      repository: "Voyant-Travel/Voyant",
       result: leasedResult(),
       supervisorLeaseId: "lease_1",
     })
     await store.recordSupervisorTick({
       recordedAt: "2026-05-12T12:00:01.000Z",
-      repository: "VoyantJS/Voyant",
+      repository: "Voyant-Travel/Voyant",
       result: leasedResult(),
     })
 
-    await expect(store.getStatus("voyantjs/voyant")).resolves.toMatchObject({
+    await expect(store.getStatus("voyant-travel/voyant")).resolves.toMatchObject({
       configured: true,
       recentLeaseCount: 1,
       recentRunCount: 1,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       runCountsByStatus: {
         leased: 1,
       },
     })
-    await expect(store.listRecentLeases("voyantjs/voyant")).resolves.toMatchObject([
+    await expect(store.listRecentLeases("voyant-travel/voyant")).resolves.toMatchObject([
       {
         action: "sync-pr",
         holder: "runner:cloudflare",
         id: "lease_1",
         intentId: "intent_579",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         status: "leased",
       },
     ])
-    await expect(store.listRecentRuns("voyantjs/voyant")).resolves.toMatchObject([
+    await expect(store.listRecentRuns("voyant-travel/voyant")).resolves.toMatchObject([
       {
         action: "sync-pr",
         id: "intent_579",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         status: "leased",
       },
     ])
@@ -64,26 +64,31 @@ describe("agent runner run ledger store", () => {
     await store.ensureSchema?.()
     await store.recordSupervisorLease({
       leasedAt: "2026-05-12T12:00:00.000Z",
-      repository: "VoyantJS/Voyant",
+      repository: "Voyant-Travel/Voyant",
       result: leasedResult(),
       supervisorLeaseId: "lease_1",
     })
     await store.recordSupervisorTick({
       recordedAt: "2026-05-12T12:00:01.000Z",
-      repository: "VoyantJS/Voyant",
+      repository: "Voyant-Travel/Voyant",
       result: leasedResult(),
     })
 
     expect(database.execCalls).toEqual([agentRunnerLedgerSchemaSql])
     expect(database.runCalls).toHaveLength(3)
     expect(database.runCalls[0]?.values).toEqual(
-      expect.arrayContaining(["intent_579", "voyantjs/voyant", 579, "sync-pr", "leased"]),
+      expect.arrayContaining(["intent_579", "voyant-travel/voyant", 579, "sync-pr", "leased"]),
     )
     expect(database.runCalls[1]?.values).toEqual(
-      expect.arrayContaining(["lease_1", "intent_579", "voyantjs/voyant", "runner:cloudflare"]),
+      expect.arrayContaining([
+        "lease_1",
+        "intent_579",
+        "voyant-travel/voyant",
+        "runner:cloudflare",
+      ]),
     )
     expect(database.runCalls[2]?.values).toEqual(
-      expect.arrayContaining(["intent_579", "voyantjs/voyant", 579, "sync-pr"]),
+      expect.arrayContaining(["intent_579", "voyant-travel/voyant", 579, "sync-pr"]),
     )
   })
 })

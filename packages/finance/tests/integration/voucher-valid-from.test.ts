@@ -27,10 +27,10 @@ async function resetTables(
 }
 
 describe.skipIf(!DB_AVAILABLE)("voucher validFrom + seriesCode", () => {
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await resetTables(db)
   })
@@ -38,7 +38,7 @@ describe.skipIf(!DB_AVAILABLE)("voucher validFrom + seriesCode", () => {
     await resetTables(db)
   })
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

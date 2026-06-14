@@ -4,7 +4,7 @@ import type {
   OrchestratorRunStatus,
   RunRecord,
   RunRecordStore,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 export interface FsRunRecordStoreOptions {
   /** Root directory (`.voyant/workflows-orchestrator/runs/` under cwd by default). */

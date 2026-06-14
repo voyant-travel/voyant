@@ -1,5 +1,5 @@
 ---
-"@voyantjs/admin-app": patch
+"@voyant-travel/admin-app": patch
 "operator": patch
 ---
 

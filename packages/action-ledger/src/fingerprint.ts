@@ -73,7 +73,7 @@ function getCrypto(): Crypto {
   const crypto = (globalThis as { crypto?: Crypto }).crypto
   if (!crypto?.subtle) {
     throw new Error(
-      "@voyantjs/action-ledger: globalThis.crypto.subtle is required for idempotency fingerprints.",
+      "@voyant-travel/action-ledger: globalThis.crypto.subtle is required for idempotency fingerprints.",
     )
   }
   return crypto

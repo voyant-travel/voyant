@@ -9,22 +9,22 @@
           {
             "paths": [
               {
-                "name": "@voyantjs/db/src",
-                "message": "Import from @voyantjs/db/schema/* or @voyantjs/db/* public exports instead of /src"
+                "name": "@voyant-travel/db/src",
+                "message": "Import from @voyant-travel/db/schema/* or @voyant-travel/db/* public exports instead of /src"
               },
               {
-                "name": "@voyantjs/db/src/schema",
-                "message": "Use @voyantjs/db/schema/* public subpath exports"
+                "name": "@voyant-travel/db/src/schema",
+                "message": "Use @voyant-travel/db/schema/* public subpath exports"
               }
             ],
             "patterns": [
               {
-                "group": ["@voyantjs/db/src/*"],
-                "message": "Use @voyantjs/db/* public exports"
+                "group": ["@voyant-travel/db/src/*"],
+                "message": "Use @voyant-travel/db/* public exports"
               },
               {
-                "group": ["@voyantjs/db/src/schema/*"],
-                "message": "Use @voyantjs/db/schema/* public subpath exports"
+                "group": ["@voyant-travel/db/src/schema/*"],
+                "message": "Use @voyant-travel/db/schema/* public subpath exports"
               }
             ]
           }

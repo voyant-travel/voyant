@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import {
   getSuppliersQueryOptions,
   useSupplierMutation,
-} from "@voyantjs/distribution-react/suppliers"
+} from "@voyant-travel/distribution-react/suppliers"
 
 import type { AsyncComboboxOption } from "../components/async-combobox.js"
 import { useVoyantFinanceContext } from "../provider.js"

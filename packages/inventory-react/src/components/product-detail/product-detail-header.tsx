@@ -1,4 +1,4 @@
-import { Badge, Button, DropdownMenuItem } from "@voyantjs/ui/components"
+import { Badge, Button, DropdownMenuItem } from "@voyant-travel/ui/components"
 import { CalendarPlus, Copy, Pencil, Trash2 } from "lucide-react"
 import { useEffect } from "react"
 import { useProductDetailHost, useProductDetailMessages } from "./host.js"

@@ -33,7 +33,7 @@
  *     locale-specific slugs are a follow-up if marketing needs them.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const PRODUCT_DESTINATIONS_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Locale-aware destination labels ──────────────────────────────────────

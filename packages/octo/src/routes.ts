@@ -5,8 +5,8 @@ import {
   extendBookingHoldSchema,
   recordBookingRedemptionSchema,
   reserveBookingSchema,
-} from "@voyantjs/bookings"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+} from "@voyant-travel/bookings"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 

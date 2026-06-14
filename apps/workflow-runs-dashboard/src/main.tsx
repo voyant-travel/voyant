@@ -1,5 +1,5 @@
-import "@voyantjs/ui/globals.css"
-import "@voyantjs/workflows-react/styles.css"
+import "@voyant-travel/ui/globals.css"
+import "@voyant-travel/workflows-react/styles.css"
 
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"

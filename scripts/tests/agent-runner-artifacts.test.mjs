@@ -56,7 +56,7 @@ describe("agent runner artifact publishing", () => {
         issueNumber: 651,
         publisher,
         reference: "docs/agent-evidence/browser/651-task/2026-05-11T10-30-11-222Z",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       })
 
       assert.equal(publication.indexUrl.endsWith("/index.md"), true)
@@ -65,7 +65,7 @@ describe("agent runner artifact publishing", () => {
       assert.match(requests[0].url, /^https:\/\/account-id\.r2\.cloudflarestorage\.com\//)
       assert.match(
         requests[0].url,
-        /agent-artifacts\/runs\/voyantjs\/voyant\/docs\/agent-evidence\/browser\/651-task/,
+        /agent-artifacts\/runs\/voyant-travel\/voyant\/docs\/agent-evidence\/browser\/651-task/,
       )
       assert.equal(
         requests.some((request) => request.init.headers.Authorization),
@@ -111,16 +111,16 @@ describe("agent runner artifact publishing", () => {
       issueNumber: 579,
       publisher,
       reference: "docs/agent-evidence/active/579-test.md",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(
       publication.url,
-      "https://artifacts.example.com/agent-evidence/voyantjs/voyant/docs/agent-evidence/active/579-test.md",
+      "https://artifacts.example.com/agent-evidence/voyant-travel/voyant/docs/agent-evidence/active/579-test.md",
     )
     assert.equal(publication.contentType, "text/markdown; charset=utf-8")
     assert.equal(requests.length, 1)
-    assert.match(requests[0].url, /agent-artifacts\/agent-evidence\/voyantjs\/voyant/)
+    assert.match(requests[0].url, /agent-artifacts\/agent-evidence\/voyant-travel\/voyant/)
     assert.equal(requests[0].init.headers["x-amz-meta-issue"], "579")
   })
 

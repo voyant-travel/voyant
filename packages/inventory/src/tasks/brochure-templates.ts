@@ -1,7 +1,7 @@
 import {
   renderStructuredTemplate,
   type StructuredTemplateBodyFormat,
-} from "@voyantjs/utils/template-renderer"
+} from "@voyant-travel/utils/template-renderer"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

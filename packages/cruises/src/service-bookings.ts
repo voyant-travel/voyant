@@ -1,4 +1,4 @@
-import { bookingGroupsService, bookingsService } from "@voyantjs/bookings"
+import { bookingGroupsService, bookingsService } from "@voyant-travel/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { SourceRef } from "./adapters/index.js"

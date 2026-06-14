@@ -117,7 +117,7 @@ describe.skipIf(!DB_AVAILABLE)("Product routes", () => {
   }
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     const db = createTestDb()
     await ensureDestinationTables(db)
     await ensureItineraryTables(db)
@@ -133,7 +133,7 @@ describe.skipIf(!DB_AVAILABLE)("Product routes", () => {
   })
 
   beforeEach(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     const db = createTestDb()
     await ensureDestinationTables(db)
     await ensureItineraryTables(db)

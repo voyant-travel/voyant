@@ -1,4 +1,4 @@
-import type { IndexerSlice } from "@voyantjs/catalog"
+import type { IndexerSlice } from "@voyant-travel/catalog"
 import { type SQL, sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -130,7 +130,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () =>
   }
 
   beforeAll(async () => {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await ensureProductsTable(db)
     await ensureTaxonomyTables(db)

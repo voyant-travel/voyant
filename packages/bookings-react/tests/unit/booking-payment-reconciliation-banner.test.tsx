@@ -2,7 +2,7 @@ import type {
   BookingPaymentScheduleRecord,
   InvoiceRecord,
   PublicFinanceBookingPaymentRecord,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -13,7 +13,7 @@ const financeState = vi.hoisted(() => ({
   schedules: [] as BookingPaymentScheduleRecord[],
 }))
 
-vi.mock("@voyantjs/finance-react", () => ({
+vi.mock("@voyant-travel/finance-react", () => ({
   useAdminBookingPayments: () => ({
     data: { data: { payments: financeState.payments } },
     isLoading: false,
@@ -28,7 +28,7 @@ vi.mock("@voyantjs/finance-react", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/ui/components", () => ({
+vi.mock("@voyant-travel/ui/components", () => ({
   Badge: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
   cn: (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" "),
 }))

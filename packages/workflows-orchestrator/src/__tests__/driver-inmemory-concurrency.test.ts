@@ -1,4 +1,4 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { WorkflowConcurrencyRejectedError } from "../concurrency.js"

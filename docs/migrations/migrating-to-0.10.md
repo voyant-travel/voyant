@@ -44,7 +44,7 @@ If the migration fails, the offending rows have an amount without a currency —
 
 ## Removed exports
 
-### `@voyantjs/bookings`
+### `@voyant-travel/bookings`
 
 | Removed | Replacement |
 |---|---|
@@ -93,7 +93,7 @@ draft → on_hold → confirmed → in_progress → completed
 
 Replace any `db.update(bookings).set({ status: ... })` in caller code with `transitionBooking(bookingId, nextStatus, ctx)`, which enforces `BOOKING_TRANSITIONS` and emits an activity log row per transition.
 
-> **Note**: as of `@voyantjs/bookings@0.11`, `transitionBooking` itself is no longer exported — the lifecycle laws live behind named verb routes / service methods. See [migrating-to-0.11.md](./migrating-to-0.11.md). If you're long-jumping from `0.9` to `0.11+`, you can skip the `transitionBooking()` step and go straight to the verb endpoints.
+> **Note**: as of `@voyant-travel/bookings@0.11`, `transitionBooking` itself is no longer exported — the lifecycle laws live behind named verb routes / service methods. See [migrating-to-0.11.md](./migrating-to-0.11.md). If you're long-jumping from `0.9` to `0.11+`, you can skip the `transitionBooking()` step and go straight to the verb endpoints.
 
 ### Encrypted accessibility data — read/write contract change
 
@@ -137,7 +137,7 @@ Anything that filtered on `BookingStatus === "redeemed"` should now look at `"co
 - **`bookingsService.recomputeBookingTotal(db, bookingId)`** — auto-rolls up the parent total from `booking_items` on `createItem` / `updateItem` / `deleteItem`, each wrapped in `db.transaction`. Also exposed publicly for ad-hoc invocation (saga compensation, fix-up scripts). Base-currency totals are NOT recomputed by this rollup — that's the FX rollup, see below.
 - **FX rollup for `base_*_amount_cents`** — re-derives `baseSellAmountCents` / `baseCostAmountCents` from per-item totals when the booking declares a `baseCurrency` and `fxRateSetId`. Handles single-currency (no-op), multi-currency with valid FX, missing rate (short-circuits with `fxStatus: "missing_rate"`), and skipped (no `fxRateSetId`).
 - **`refundBooking` saga** — atomic credit-note + hold-release + supplier-reverse + notify, built on the existing `createWorkflow` primitive. Side-effect dependencies are injected (no compile-time pull on finance / transactions / notifications) so the package stays slim; templates wire the deps. Exports `refundBooking(input, deps)` and `buildRefundBookingWorkflow(deps)`.
-- **`idempotencyKey({ scope, required? })` middleware** in `@voyantjs/hono` — see Added routes above. Pair with `purgeExpiredIdempotencyKeys()` for daily-cron cleanup.
+- **`idempotencyKey({ scope, required? })` middleware** in `@voyant-travel/hono` — see Added routes above. Pair with `purgeExpiredIdempotencyKeys()` for daily-cron cleanup.
 
 ---
 
@@ -145,7 +145,7 @@ Anything that filtered on `BookingStatus === "redeemed"` should now look at `"co
 
 For full detail, including patch-level changes and dependency updates not listed here:
 
-- [`@voyantjs/bookings@0.10.0`](../../packages/bookings/CHANGELOG.md)
-- [`@voyantjs/hono@0.10.0`](../../packages/hono/CHANGELOG.md)
-- [`@voyantjs/db@0.10.0`](../../packages/db/CHANGELOG.md)
-- [`@voyantjs/core@0.10.0`](../../packages/core/CHANGELOG.md)
+- [`@voyant-travel/bookings@0.10.0`](../../packages/bookings/CHANGELOG.md)
+- [`@voyant-travel/hono@0.10.0`](../../packages/hono/CHANGELOG.md)
+- [`@voyant-travel/db@0.10.0`](../../packages/db/CHANGELOG.md)
+- [`@voyant-travel/core@0.10.0`](../../packages/core/CHANGELOG.md)

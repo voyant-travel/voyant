@@ -1,4 +1,4 @@
-import { parseQuery } from "@voyantjs/hono"
+import { parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { type Env, notFound } from "./routes-shared.js"
 import { publicPricingService } from "./service-public.js"

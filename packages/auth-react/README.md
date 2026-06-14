@@ -1,12 +1,12 @@
-# @voyantjs/auth-react
+# @voyant-travel/auth-react
 
 The auth client tier: headless data hooks/clients plus the styled UI
-components and page surfaces (formerly `@voyantjs/auth-ui`).
+components and page surfaces (formerly `@voyant-travel/auth-ui`).
 
 Headless consumers import from the root, `./hooks`, `./client`, or
 `./query-keys` — these pull no styling peers. Styled surfaces live under
 `./ui`, `./components/*`, `./account`, `./organization-members`, `./i18n`,
-and `./styles.css`, whose heavier peers (`@voyantjs/ui`, `@voyantjs/admin`,
+and `./styles.css`, whose heavier peers (`@voyant-travel/ui`, `@voyant-travel/admin`,
 `lucide-react`) are optional and only needed when you import those subpaths.
 
 React runtime package for Voyant authentication and optional workspace state.
@@ -86,10 +86,10 @@ await updateProfile.mutateAsync({
 })
 ```
 
-Apps can mount `handleAccountProfileRequest(...)` from `@voyantjs/auth/server`
+Apps can mount `handleAccountProfileRequest(...)` from `@voyant-travel/auth/server`
 to provide this route without depending on a specific template. The mounted
 route validates the session, calls `updateCurrentUserProfile(...)` from
-`@voyantjs/auth/workspace`, and returns the updated current-user shape.
+`@voyant-travel/auth/workspace`, and returns the updated current-user shape.
 
 Password and email changes call the mounted Better Auth API:
 
@@ -207,7 +207,7 @@ providing `/auth/workspace/current` or `/auth/organization/*` endpoints.
 
 The API-token hooks call Voyant's `/auth/api-tokens` facade, not Better Auth's
 raw `/auth/api-key/*` plugin routes. Mount
-`handleApiTokenManagementRequest(...)` from `@voyantjs/auth/server` before
+`handleApiTokenManagementRequest(...)` from `@voyant-travel/auth/server` before
 falling through to `auth.handler(request)` so the shared UI can manage
 permissioned `voy_` service tokens.
 
@@ -219,10 +219,10 @@ Importable React UI components for Voyant auth surfaces. Bundler-consumed
 ### Install
 
 ```bash
-pnpm add @voyantjs/auth-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyant-travel/auth-react @voyant-travel/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/ui` provides the design-system primitives. `@voyantjs/auth-react`
+`@voyant-travel/ui` provides the design-system primitives. `@voyant-travel/auth-react`
 provides the data-layer hooks. Both are required peers.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or
@@ -243,7 +243,7 @@ accepts slot/render-prop panels for app-specific account sections such as API
 tokens, sessions, or MFA enrollment.
 
 ```tsx
-import { AccountPage } from "@voyantjs/auth-react/account"
+import { AccountPage } from "@voyant-travel/auth-react/account"
 
 <AccountPage
   slots={{
@@ -259,7 +259,7 @@ import {
   AccountChangeEmailForm,
   AccountChangePasswordForm,
   AccountProfileForm,
-} from "@voyantjs/auth-react/ui"
+} from "@voyant-travel/auth-react/ui"
 ```
 
 `AccountProfileForm` expects the app to support `PATCH /auth/me`.
@@ -271,11 +271,11 @@ Better Auth password and Email OTP endpoints mounted under `/auth`.
 `OrganizationMembersPage` renders the reusable organization staff management
 surface with invitation, role assignment, pending invitation resend/cancel, and
 member removal controls. It uses the organization member and invitation hooks
-from `@voyantjs/auth-react`; server permissions still determine whether each
+from `@voyant-travel/auth-react`; server permissions still determine whether each
 mutation succeeds.
 
 ```tsx
-import { OrganizationMembersPage } from "@voyantjs/auth-react/organization-members"
+import { OrganizationMembersPage } from "@voyant-travel/auth-react/organization-members"
 
 <OrganizationMembersPage
   availableRoles={[
@@ -292,11 +292,11 @@ the page uses the active organization from `useCurrentWorkspace()`.
 ### Sign-in
 
 `SignInPage` provides the shared email/password sign-in surface. It uses
-`useSignIn()` from `@voyantjs/auth-react`, which posts to the mounted Better
+`useSignIn()` from `@voyant-travel/auth-react`, which posts to the mounted Better
 Auth email endpoint and refreshes Voyant auth queries after success.
 
 ```tsx
-import { SignInPage } from "@voyantjs/auth-react/ui"
+import { SignInPage } from "@voyant-travel/auth-react/ui"
 
 <SignInPage
   redirectTo="/"
@@ -328,11 +328,11 @@ they need router and provider-plugin wiring:
 ### Sign-up
 
 `SignUpPage` provides the shared email/password registration surface. It uses
-`useSignUp()` from `@voyantjs/auth-react`, renders without a card wrapper, and
+`useSignUp()` from `@voyant-travel/auth-react`, renders without a card wrapper, and
 leaves redirects and post-sign-up behavior to the host app.
 
 ```tsx
-import { SignUpPage } from "@voyantjs/auth-react/ui"
+import { SignUpPage } from "@voyant-travel/auth-react/ui"
 
 <SignUpPage
   redirectTo="/"
@@ -386,7 +386,7 @@ card-less and router-agnostic: apps own the surrounding auth layout and decide
 where to navigate after `onCompleted`.
 
 ```tsx
-import { OnboardingPage } from "@voyantjs/auth-react/ui"
+import { OnboardingPage } from "@voyant-travel/auth-react/ui"
 
 <OnboardingPage
   initialProfile={user}
@@ -409,7 +409,7 @@ render a token input. Signed-out and new-user flows stay app-owned through
 callbacks or links so apps can wire their own sign-in and sign-up routes.
 
 ```tsx
-import { AcceptInvitationPage } from "@voyantjs/auth-react/ui"
+import { AcceptInvitationPage } from "@voyant-travel/auth-react/ui"
 
 <AcceptInvitationPage
   token={search.id}
@@ -441,7 +441,7 @@ for plain anchors, callbacks for router navigation, and message overrides for
 app copy.
 
 ```tsx
-import { ForgotPasswordPage, ResetPasswordPage } from "@voyantjs/auth-react/ui"
+import { ForgotPasswordPage, ResetPasswordPage } from "@voyant-travel/auth-react/ui"
 
 <ForgotPasswordPage
   redirectTo="https://operator.example/reset-password"
@@ -464,13 +464,13 @@ endpoint so emailed links can return to the app reset route.
 ### Email verification
 
 `VerifyEmailPage` provides the shared card-less email verification surface. It
-uses `useVerifyEmail()` from `@voyantjs/auth-react` and supports both Better
+uses `useVerifyEmail()` from `@voyant-travel/auth-react` and supports both Better
 Auth token verification links and the email OTP flow mounted by the templates.
 The page is router-agnostic: pass hrefs for plain links, callbacks for app-owned
 navigation, and `onResendVerification` when the app wires the email OTP client.
 
 ```tsx
-import { VerifyEmailPage } from "@voyantjs/auth-react/ui"
+import { VerifyEmailPage } from "@voyant-travel/auth-react/ui"
 
 <VerifyEmailPage
   email={search.email}

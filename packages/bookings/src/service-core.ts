@@ -2,10 +2,10 @@
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
-} from "@voyantjs/action-ledger"
-import type { EventBus } from "@voyantjs/core"
-import { newId } from "@voyantjs/db/lib/typeid"
-import { authUser } from "@voyantjs/db/schema/iam"
+} from "@voyant-travel/action-ledger"
+import type { EventBus } from "@voyant-travel/core"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import { authUser } from "@voyant-travel/db/schema/iam"
 import {
   and,
   asc,
@@ -380,7 +380,7 @@ async function appendBookingStatusMutationLedger(
 
 /**
  * Payload shape for `availability.slot.changed`. Mirrors the canonical
- * `AvailabilitySlotChangedEvent` from `@voyantjs/operations` — defined
+ * `AvailabilitySlotChangedEvent` from `@voyant-travel/operations` — defined
  * locally to avoid a runtime dep on operations (we already mirror its
  * schema via `availabilitySlotsRef` for the same reason). Subscribers
  * (e.g. channel-push) can import the canonical type directly.
@@ -1391,8 +1391,8 @@ async function adjustSlotCapacity(
  * `resource_capacity_exhausted` citing the offending resource so
  * the caller can surface a useful error to the client.
  *
- * Implemented with raw SQL because @voyantjs/bookings deliberately
- * has no runtime dep on @voyantjs/operations (see the module-
+ * Implemented with raw SQL because @voyant-travel/bookings deliberately
+ * has no runtime dep on @voyant-travel/operations (see the module-
  * decoupling notes in CLAUDE.md / MEMORY.md). The schema is stable —
  * `allocation_resources` and `booking_traveler_travel_details.allocations`
  * are migration-frozen.

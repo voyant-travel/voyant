@@ -1,8 +1,8 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import type { SeatLayoutCell, SeatLayoutSpec } from "@voyantjs/operations-react/availability"
-import { Badge, Button, cn } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import type { SeatLayoutCell, SeatLayoutSpec } from "@voyant-travel/operations-react/availability"
+import { Badge, Button, cn } from "@voyant-travel/ui/components"
 import { DoorOpen, Minus, Plus, RotateCcw, Square, X } from "lucide-react"
 import { useMemo } from "react"
 

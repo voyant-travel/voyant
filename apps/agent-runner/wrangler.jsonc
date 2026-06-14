@@ -27,7 +27,7 @@
     "AGENT_RUNNER_LEASE_TTL_SECONDS": "900",
     "AGENT_RUNNER_MAX_DAILY_LEASES": "6",
     "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "900",
-    "AGENT_RUNNER_REPOSITORY": "voyantjs/voyant",
+    "AGENT_RUNNER_REPOSITORY": "voyant-travel/voyant",
     "AGENT_RUNNER_TICK_KEY_PREFIX": "prod",
     "AGENT_SPRITE_POOL": "voyant-agent-01:2,voyant-agent-02:2,voyant-agent-03:2"
   },

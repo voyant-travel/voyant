@@ -1,8 +1,8 @@
-# @voyantjs/plugin-catalog-demo
+# @voyant-travel/plugin-catalog-demo
 
 ## 0.21.0
 
 ### Patch Changes
 
 - Updated dependencies [6427bad]
-  - @voyantjs/catalog@0.21.0
+  - @voyant-travel/catalog@0.21.0

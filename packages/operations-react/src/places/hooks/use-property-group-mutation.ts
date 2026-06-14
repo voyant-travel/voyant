@@ -1,7 +1,10 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { insertPropertyGroupSchema, updatePropertyGroupSchema } from "@voyantjs/operations"
+import type {
+  insertPropertyGroupSchema,
+  updatePropertyGroupSchema,
+} from "@voyant-travel/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

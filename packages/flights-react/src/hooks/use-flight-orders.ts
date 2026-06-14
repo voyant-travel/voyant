@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import type { FlightOrderStatus } from "@voyantjs/flights/contract/types"
+import type { FlightOrderStatus } from "@voyant-travel/flights/contract/types"
 
 import { fetchWithValidation, type QueryParamValue, withQueryParams } from "../client.js"
 import { useVoyantFlightsContext } from "../provider.js"

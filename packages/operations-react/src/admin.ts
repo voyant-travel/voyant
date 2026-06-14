@@ -4,8 +4,8 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
-import type {} from "@voyantjs/bookings-react/admin"
+} from "@voyant-travel/admin"
+import type {} from "@voyant-travel/bookings-react/admin"
 
 import { defaultFetcher as availabilityDefaultFetcher } from "./availability/client.js"
 import {
@@ -32,7 +32,7 @@ export {
   createResourcesAdminExtension,
 } from "./resources/admin/index.js"
 
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The availability landing page (slots list + calendar). */
     "availabilitySlot.list": Record<string, never>

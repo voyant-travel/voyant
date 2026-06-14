@@ -1,4 +1,4 @@
-import type { PricingBreakdownV1 } from "@voyantjs/catalog/booking-engine"
+import type { PricingBreakdownV1 } from "@voyant-travel/catalog/booking-engine"
 
 import { isCatalogBackedTripComponent } from "./catalog-component-adapter.js"
 import type { NewTripComponent, TripComponent, TripEnvelope } from "./schema.js"

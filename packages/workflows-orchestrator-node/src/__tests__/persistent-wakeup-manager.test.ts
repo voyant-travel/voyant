@@ -1,4 +1,4 @@
-import { emptyJournal, type RunRecord } from "@voyantjs/workflows-orchestrator"
+import { emptyJournal, type RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { describe, expect, it, vi } from "vitest"
 import { createPersistentWakeupManager } from "../persistent-wakeup-manager.js"
 import type { WakeupStore } from "../wakeup-store.js"

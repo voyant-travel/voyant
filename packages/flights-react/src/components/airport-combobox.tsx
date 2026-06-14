@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Command,
   CommandEmpty,
@@ -8,9 +8,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@voyantjs/ui/components/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronDown, MapPin } from "lucide-react"
 import { useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

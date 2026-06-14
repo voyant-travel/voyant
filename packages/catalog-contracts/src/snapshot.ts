@@ -5,8 +5,8 @@ import type { AppliedOffer } from "./booking-engine/promotions-contract.js"
  * finance, invoicing, and refund engines can query it without parsing.
  *
  * Pure contract shape — the runtime `bookingCatalogSnapshotTable` and the
- * `captureSnapshot` service in `@voyantjs/catalog` consume it, and so do
- * vertical snapshot builders (e.g. flights) via `@voyantjs/catalog-contracts`.
+ * `captureSnapshot` service in `@voyant-travel/catalog` consume it, and so do
+ * vertical snapshot builders (e.g. flights) via `@voyant-travel/catalog-contracts`.
  */
 export interface PricingBasis {
   base_amount: number

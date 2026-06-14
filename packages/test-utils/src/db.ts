@@ -1,9 +1,9 @@
 /**
- * Database test helpers. Wraps `@voyantjs/db/test-utils` with
+ * Database test helpers. Wraps `@voyant-travel/db/test-utils` with
  * availability probing and vitest describe helpers.
  */
 
-import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe } from "vitest"
@@ -81,7 +81,7 @@ export function buildDescribeIf(available: boolean): typeof describe {
 
 /**
  * Truncates all public-schema tables in the test database. Thin alias for
- * `cleanupTestDb` from `@voyantjs/db/test-utils`, re-exported here so
+ * `cleanupTestDb` from `@voyant-travel/db/test-utils`, re-exported here so
  * callers can depend on a single package.
  */
 export async function resetTestDb(db: PostgresJsDatabase): Promise<void> {

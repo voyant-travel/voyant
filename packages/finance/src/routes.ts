@@ -1,8 +1,8 @@
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
-} from "@voyantjs/db/aggregate-snapshots"
-import { parseQuery } from "@voyantjs/hono"
+} from "@voyant-travel/db/aggregate-snapshots"
+import { parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 
 import { financeBookingBillingRoutes } from "./routes-booking-billing.js"

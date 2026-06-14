@@ -38,8 +38,8 @@ COPY packages/typescript-config/package.json packages/typescript-config/package.
 COPY packages/typescript-config/*.json packages/typescript-config/
 
 RUN pnpm install --frozen-lockfile \
-  && pnpm --filter @voyantjs/workflows-selfhost-node-server build \
-  && pnpm --filter @voyantjs/workflows-selfhost-node-server deploy /opt/app \
+  && pnpm --filter @voyant-travel/workflows-selfhost-node-server build \
+  && pnpm --filter @voyant-travel/workflows-selfhost-node-server deploy /opt/app \
   && chmod +x /opt/app/scripts/docker-entrypoint.sh
 
 FROM node:20-bookworm-slim AS runtime

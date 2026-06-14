@@ -1,5 +1,5 @@
-import { workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
+import { workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { describe, expect, it } from "vitest"
 import {
   createInlineDispatcher,
@@ -109,7 +109,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     const deps = {
       storage,
       dispatcher: createInlineDispatcher(
-        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+        async (req: import("@voyant-travel/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
       ),
       now: () => clock,
@@ -161,7 +161,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     const deps = {
       storage,
       dispatcher: createInlineDispatcher(
-        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+        async (req: import("@voyant-travel/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
       ),
       now: () => clock,
@@ -200,7 +200,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     const deps = {
       storage,
       dispatcher: createInlineDispatcher(
-        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+        async (req: import("@voyant-travel/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
       ),
     }

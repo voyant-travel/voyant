@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Button, cn } from "@voyantjs/ui/components"
+import { Badge, Button, cn } from "@voyant-travel/ui/components"
 import { Package, Wrench } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import {

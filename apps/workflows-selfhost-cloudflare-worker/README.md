@@ -34,7 +34,7 @@ voyant workflows doctor --target cloudflare --check-cloudflare
 voyant workflows deploy --target cloudflare --file ./src/workflows.ts --apply
 ```
 
-`--apply` wraps `pnpm --filter @voyantjs/workflows-selfhost-cloudflare-worker deploy`.
+`--apply` wraps `pnpm --filter @voyant-travel/workflows-selfhost-cloudflare-worker deploy`.
 Without it, the CLI only builds and stages `src/bundle.mjs`.
 
 `doctor --target cloudflare` now also checks for the account-specific

@@ -23,9 +23,9 @@
  *     write time; a cache layer would just complicate invalidation).
  */
 
-import type { ProvenanceReadResult } from "@voyantjs/catalog"
-import { fetchOverlaysForEntity, mergeOverlaysIntoContent } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { ProvenanceReadResult } from "@voyant-travel/catalog"
+import { fetchOverlaysForEntity, mergeOverlaysIntoContent } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
   PRODUCTS_CONTENT_SCHEMA_VERSION,

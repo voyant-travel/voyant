@@ -1,4 +1,4 @@
-import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings"
+import { bookingItems, bookings, bookingTravelers } from "@voyant-travel/bookings"
 import { and, asc, desc, eq, gt, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {

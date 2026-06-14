@@ -1,8 +1,8 @@
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
-} from "@voyantjs/db/aggregate-snapshots"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+} from "@voyant-travel/db/aggregate-snapshots"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import {
   batchIdsSchema,

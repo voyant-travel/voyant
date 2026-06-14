@@ -2,14 +2,17 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useOperatorAdminMessages as useAdminMessages, useAdminNavigate } from "@voyantjs/admin"
-import { formatMessage } from "@voyantjs/i18n"
-import type { Trip, TripEnvelopeStatus, TripsListSortField } from "@voyantjs/trips"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import {
+  useOperatorAdminMessages as useAdminMessages,
+  useAdminNavigate,
+} from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/i18n"
+import type { Trip, TripEnvelopeStatus, TripsListSortField } from "@voyant-travel/trips"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -17,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 

@@ -10,9 +10,9 @@ import type { DispatchIntentStore } from "./dispatch-intent-store.js"
 
 const issue = {
   number: 579,
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
   title: "Test agent project intake workflow",
-  url: "https://github.com/voyantjs/voyant/issues/579",
+  url: "https://github.com/voyant-travel/voyant/issues/579",
 }
 
 describe("active dispatch intent reads", () => {
@@ -26,7 +26,7 @@ describe("active dispatch intent reads", () => {
     await intentStore.putIntent(leasedIntent({ id: "active_intent" }))
 
     const response = await app.request(
-      "/api/dispatch-intents/active?repository=VoyantJS/Voyant&issue=579&action=remote-bootstrap",
+      "/api/dispatch-intents/active?repository=Voyant-Travel/Voyant&issue=579&action=remote-bootstrap",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -60,7 +60,7 @@ describe("active dispatch intent reads", () => {
     await intentStore.putIntent(leasedIntent({ id: "expired_intent" }))
 
     const response = await app.request(
-      "/api/dispatch-intents/active?repository=voyantjs/voyant&issueNumber=579&action=remote-bootstrap",
+      "/api/dispatch-intents/active?repository=voyant-travel/voyant&issueNumber=579&action=remote-bootstrap",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -82,7 +82,7 @@ describe("active dispatch intent reads", () => {
     })
 
     const invalid = await app.request(
-      "/api/dispatch-intents/active?repository=voyantjs/voyant&issue=579&action=inspect-stale",
+      "/api/dispatch-intents/active?repository=voyant-travel/voyant&issue=579&action=inspect-stale",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -93,7 +93,7 @@ describe("active dispatch intent reads", () => {
     })
 
     const missing = await app.request(
-      "/api/dispatch-intents/active?repository=voyantjs/voyant&issue=579&action=remote-bootstrap",
+      "/api/dispatch-intents/active?repository=voyant-travel/voyant&issue=579&action=remote-bootstrap",
       {
         headers: { authorization: "Bearer secret" },
       },
@@ -118,13 +118,13 @@ function leasedIntent({ id }: { id: string }): DispatchIntentRecord {
       command: ["pnpm", "agent:queue:remote-bootstrap"],
       issue,
       reason: "existing lease",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       requiresMutation: true,
     },
     source: {
       acceptedAt: "2026-05-12T05:00:00.000Z",
       recommendationCount: 2,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       type: "latest_tick_snapshot",
     },
     status: "leased",

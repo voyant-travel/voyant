@@ -3,7 +3,7 @@
 > Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
 
 Status: active
-Issue: https://github.com/voyantjs/voyant/issues/977
+Issue: https://github.com/voyant-travel/voyant/issues/977
 
 ## Product Decision
 
@@ -87,7 +87,7 @@ resale contracts from hotel-operations surfaces.
    `hospitality-react`, and `hospitality-ui` READMEs; the checker now blocks
    new install or mount examples for the legacy package docs.
 8. Add the retained accommodation resale package and repoint active resale
-   consumers. Completed initial `@voyantjs/accommodations` package for content,
+   consumers. Completed initial `@voyant-travel/accommodations` package for content,
    catalog policy/projection, draft shape, content routes, and the booking
    engine descriptor. Operator and DMC resale consumers now use
    `accommodations` routes/imports instead of `hospitality`; the old
@@ -110,7 +110,7 @@ resale contracts from hotel-operations surfaces.
 12. Remove the legacy hospitality package family. Completed for
     `packages/hospitality`, `packages/hospitality-react`, and
     `packages/hospitality-ui` after retained resale contracts moved to
-    `@voyantjs/accommodations`; the lockfile was refreshed and the boundary
+    `@voyant-travel/accommodations`; the lockfile was refreshed and the boundary
     checker now treats those package paths as forbidden.
 
 ## Verification Plan

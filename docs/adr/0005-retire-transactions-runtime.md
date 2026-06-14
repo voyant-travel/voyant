@@ -29,7 +29,7 @@ a generic record even when their local records already carry the durable truth.
 
 ## Decision
 
-Retire `@voyantjs/transactions` and `@voyantjs/transactions-react` as public v1
+Retire `@voyant-travel/transactions` and `@voyant-travel/transactions-react` as public v1
 runtime packages.
 
 Do not replace them with a new first-party `orders` or `commitments` Module.
@@ -55,7 +55,7 @@ Commerce returns commercial decisions, price/availability responses, commercial
 snapshots, quote-version pricing inputs, booking drafts, or Trips price
 snapshots depending on the caller.
 
-`@voyantjs/transactions-contracts` may remain only as a temporary legacy contract
+`@voyant-travel/transactions-contracts` may remain only as a temporary legacy contract
 package if external consumers still depend on those zod schemas. It must not be
 part of default v1 bundles.
 
@@ -126,8 +126,8 @@ part of default v1 bundles.
 
 Before removing the runtime package from templates:
 
-- no non-legacy runtime package imports `@voyantjs/transactions` or
-  `@voyantjs/transactions-react`
+- no non-legacy runtime package imports `@voyant-travel/transactions` or
+  `@voyant-travel/transactions-react`
 - default templates no longer mount `transactionsHonoModule`,
   `transactionsBookingExtension`, or transactions link tables
 - Sellability no longer constructs or persists Transactions Offers

@@ -6,7 +6,7 @@ import {
   type InferInput,
   legalOperations,
   productsOperations,
-} from "@voyantjs/admin-contracts"
+} from "@voyant-travel/admin-contracts"
 
 import { type AdminClientConfig, createExecutor, fetchCapabilities } from "./http.js"
 

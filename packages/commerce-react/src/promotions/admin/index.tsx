@@ -4,7 +4,7 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 export { PromotionDialog, type PromotionDialogProps } from "../promotion-dialog.js"
 export {

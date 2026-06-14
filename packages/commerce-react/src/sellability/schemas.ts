@@ -2,7 +2,7 @@ import {
   insertSellabilityPolicySchema,
   sellabilityPolicyScopeSchema,
   sellabilityPolicyTypeSchema,
-} from "@voyantjs/commerce"
+} from "@voyant-travel/commerce"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

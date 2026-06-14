@@ -2,18 +2,18 @@
 // the same RunRecord/Store shapes underpin the in-memory test store,
 // the Durable-Object-backed production store, and any future adapters.
 
-import type { RunTrigger, WaitpointKind } from "@voyantjs/workflows"
+import type { RunTrigger, WaitpointKind } from "@voyant-travel/workflows"
 import type {
   StepHandlerError,
   WorkflowStepRequest,
   WorkflowStepResponse,
-} from "@voyantjs/workflows/handler"
+} from "@voyant-travel/workflows/handler"
 import type {
   CompensationJournalEntry,
   JournalSlice,
   StepJournalEntry,
   WaitpointResolutionEntry,
-} from "@voyantjs/workflows/protocol"
+} from "@voyant-travel/workflows/protocol"
 
 export type {
   CompensationJournalEntry,
@@ -170,7 +170,7 @@ export interface RunRecordStore {
 
 /**
  * The tenant-side step handler. In-process for tests / local dev via
- * `handleStepRequest` from @voyantjs/workflows/handler; HTTP in
+ * `handleStepRequest` from @voyant-travel/workflows/handler; HTTP in
  * production (via a fetch to the tenant Worker). The optional
  * per-invocation `signal` aborts in-flight step bodies when the run
  * is cancelled mid-execution.

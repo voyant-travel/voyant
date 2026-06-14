@@ -231,18 +231,18 @@ async function collectOptInRoots() {
     }
   }
 
-  // Templates opt in to the scan via their admin-i18n shim. We only walk
+  // Starters opt in to the scan via their admin-i18n shim. We only walk
   // `components/voyant/**` — custom voyant components are pure UI. Server
   // routes (api/, workflows.ts), shadcn ui/ copies, the api-client lib, and
   // TanStack Router page files mix non-UI concerns and would produce noise.
-  const templatesDir = path.join(rootDir, "templates")
-  const templateNames = await readdir(templatesDir).catch(() => [])
+  const startersDir = path.join(rootDir, "starters")
+  const starterNames = await readdir(startersDir).catch(() => [])
 
-  for (const templateName of templateNames) {
-    const adminI18nEntry = path.join(templatesDir, templateName, "src", "lib", "admin-i18n.tsx")
+  for (const starterName of starterNames) {
+    const adminI18nEntry = path.join(startersDir, starterName, "src", "lib", "admin-i18n.tsx")
     if (!(await exists(adminI18nEntry))) continue
 
-    const voyantComponents = path.join(templatesDir, templateName, "src", "components", "voyant")
+    const voyantComponents = path.join(startersDir, starterName, "src", "components", "voyant")
     if (await exists(voyantComponents)) {
       roots.push(voyantComponents)
     }
@@ -254,11 +254,11 @@ async function collectOptInRoots() {
 /**
  * Files inside opted-in roots that still contain hardcoded English copy and
  * haven't been threaded through the i18n bundle yet. Listed here so the
- * scanner gates new drift in the rest of the operator template while we work
+ * scanner gates new drift in the rest of the operator starter while we work
  * through the backlog. Remove entries as each file is translated.
  *
  * The list is dominated by surfaces that pre-date the i18n migration in the
- * operator template — settings dialogs, the trips, resource detail
+ * operator starter — settings dialogs, the trips, resource detail
  * pages — and by `.ts` query helpers whose `queryFn: () => api.get<Type>(...)`
  * shape produces false positives from the JSX-text heuristic. Translate the
  * UI strings and rerun the scanner to confirm before removing an entry.

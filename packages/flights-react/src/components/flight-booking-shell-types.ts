@@ -3,7 +3,7 @@ import type {
   FlightBookRequest,
   FlightOrder,
   PassengerCounts,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 import type React from "react"
 import type { BillingValue } from "./flight-billing-step.js"
 import type { FlightItinerarySelection } from "./flight-booking-ledger.js"

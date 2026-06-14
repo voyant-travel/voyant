@@ -1,20 +1,20 @@
 // HTTP handler for `POST /api/events` — the synchronous event-ingest
 // endpoint. Loads the registered manifest from KV, runs the pure
-// `routeEvent` from `@voyantjs/workflows-orchestrator`, and forwards
+// `routeEvent` from `@voyant-travel/workflows-orchestrator`, and forwards
 // each match into the existing `/trigger` DO surface with a derived
 // idempotencyKey.
 //
 // Response shape mirrors `IngestEventResponse` from
-// `@voyantjs/workflows/driver`:
+// `@voyant-travel/workflows/driver`:
 //
 //   { ok: true,  eventId, matches: [...] }
 //   { ok: false, reason: "manifest_not_registered" | ... }
 //
 // Architecture: docs/architecture/workflows-runtime-architecture.md §15.
 
-import { deriveStableEventId } from "@voyantjs/workflows/events"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
-import { routeEvent } from "@voyantjs/workflows-orchestrator"
+import { deriveStableEventId } from "@voyant-travel/workflows/events"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
+import { routeEvent } from "@voyant-travel/workflows-orchestrator"
 
 import type { CfManifestStore } from "./manifest-kv-store.js"
 import type { DurableObjectNamespaceLike } from "./worker.js"
@@ -357,7 +357,7 @@ function validateBody(
 
 // ---- Internal helpers ----
 
-// Fallback id derivation lives in `@voyantjs/workflows/events`'s
+// Fallback id derivation lives in `@voyant-travel/workflows/events`'s
 // `deriveStableEventId` and is used inline above — content-derived so
 // external callers (HTTP retries, third-party webhooks) dedupe naturally
 // across re-deliveries (architecture doc §15.2).

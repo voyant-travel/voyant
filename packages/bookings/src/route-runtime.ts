@@ -1,4 +1,4 @@
-import { createKmsProviderFromEnv, type KmsProvider } from "@voyantjs/utils"
+import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { BookingTravelerSnapshot } from "./pii.js"
@@ -94,7 +94,7 @@ export interface BookingRouteRuntime {
  * env vars / wrangler secrets — e.g. Voyant Cloud Vault. Receives the same
  * resolved bindings the default env-driven provider would, returns the
  * provider (sync or async). When omitted, falls back to
- * `createKmsProviderFromEnv` so existing template wiring keeps working.
+ * `createKmsProviderFromEnv` so existing starter wiring keeps working.
  */
 export type ResolveBookingKmsProvider = (
   env: Record<string, string | undefined>,

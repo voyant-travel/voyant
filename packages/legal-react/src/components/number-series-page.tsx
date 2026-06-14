@@ -1,5 +1,5 @@
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge, Button } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"

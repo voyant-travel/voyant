@@ -1,6 +1,6 @@
 # Voyant Workflows Monorepo Migration Plan
 
-> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical. The initially imported workflow config, error, and bindings compatibility wrappers were also folded into `@voyantjs/workflows` subpaths and removed after the migration.
+> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical. The initially imported workflow config, error, and bindings compatibility wrappers were also folded into `@voyant-travel/workflows` subpaths and removed after the migration.
 
 This document defines the migration path for merging the current
 `voyant-workflows` repository into the main `voyant` monorepo.
@@ -32,7 +32,7 @@ and one binary that still has to coordinate cross-repo changes.
 
 This migration does **not** mean:
 
-- domain packages in `@voyantjs/*` should directly depend on the concrete
+- domain packages in `@voyant-travel/*` should directly depend on the concrete
   orchestrator implementation
 - Hatchet or other runtimes must become impossible
 - every workflows repo path should be imported unchanged
@@ -45,7 +45,7 @@ boundaries.
 ### Product shape
 
 - `voyant` remains the main repo
-- `@voyantjs/cli` remains the only CLI package and still provides the
+- `@voyant-travel/cli` remains the only CLI package and still provides the
   `voyant` binary
 - Voyant Workflows becomes the default first-party runtime for templates and
   examples
@@ -109,21 +109,21 @@ instead of preserving temporary naming debt.
 
 | Current in `voyant-workflows` | Target in `voyant` |
 | --- | --- |
-| `@voyant/workflows` | `@voyantjs/workflows` |
-| `@voyant/workflows-react` | `@voyantjs/workflows-react` |
-| `@voyant/config` | `@voyantjs/workflows/config` |
-| `@voyant/errors` | `@voyantjs/workflows/errors` |
-| `@voyant/bindings` | `@voyantjs/workflows/bindings` |
-| `@voyant/orchestrator` | `@voyantjs/workflows-orchestrator` |
-| `@voyant/orchestrator-cloudflare` | `@voyantjs/workflows-orchestrator-cloudflare` |
-| `@voyant/orchestrator-node` | `@voyantjs/workflows-orchestrator-node` |
-| `@voyant/cli` | merge into `@voyantjs/cli` |
-| `@voyant/ui` | merge into `@voyantjs/ui` |
-| `@voyant/tsconfig` | merge into `@voyantjs/voyant-typescript-config` |
+| `@voyant/workflows` | `@voyant-travel/workflows` |
+| `@voyant/workflows-react` | `@voyant-travel/workflows-react` |
+| `@voyant/config` | `@voyant-travel/workflows/config` |
+| `@voyant/errors` | `@voyant-travel/workflows/errors` |
+| `@voyant/bindings` | `@voyant-travel/workflows/bindings` |
+| `@voyant/orchestrator` | `@voyant-travel/workflows-orchestrator` |
+| `@voyant/orchestrator-cloudflare` | `@voyant-travel/workflows-orchestrator-cloudflare` |
+| `@voyant/orchestrator-node` | `@voyant-travel/workflows-orchestrator-node` |
+| `@voyant/cli` | merge into `@voyant-travel/cli` |
+| `@voyant/ui` | merge into `@voyant-travel/ui` |
+| `@voyant/tsconfig` | merge into `@voyant-travel/voyant-typescript-config` |
 
 Reasoning:
 
-- one scope is cleaner than mixed `@voyant/*` and `@voyantjs/*`
+- one scope is cleaner than mixed `@voyant/*` and `@voyant-travel/*`
 - `config`, `errors`, and `bindings` are too generic to live in the monorepo
   without the `workflows-` prefix
 - the CLI should not split by product
@@ -222,7 +222,7 @@ Rename package identities immediately after promotion.
 
 Tasks:
 
-- change all imported package names to the `@voyantjs/*` targets listed above
+- change all imported package names to the `@voyant-travel/*` targets listed above
 - rename internal references in source, tests, READMEs, and examples
 - update repository URLs in imported `package.json` files
 - align imported packages with the main repo license strategy where needed
@@ -243,7 +243,7 @@ Instead, fold its command surface into `packages/cli`.
 
 Keep:
 
-- current `@voyantjs/cli`
+- current `@voyant-travel/cli`
 - current `voyant` binary entry
 
 Add:
@@ -273,7 +273,7 @@ Add:
 
 Do not replace the existing CLI package with the workflows CLI package.
 
-The right move is additive merge into `@voyantjs/cli`, not package swap.
+The right move is additive merge into `@voyant-travel/cli`, not package swap.
 
 ## Phase 5: Unify UI
 
@@ -286,14 +286,14 @@ Use `packages/ui` in the main repo as the canonical UI surface.
 1. diff the component sets between the two repos
 2. add any missing primitives needed by the workflows dashboard into the main
    repo `packages/ui`
-3. adapt the workflows dashboard app to import from `@voyantjs/ui`
+3. adapt the workflows dashboard app to import from `@voyant-travel/ui`
 4. delete the imported workflows `packages/ui` copy
 
 ### Important rule
 
 Avoid a long-lived state where both of these exist:
 
-- `@voyantjs/ui`
+- `@voyant-travel/ui`
 - a second workflows-only UI package
 
 If the dashboard truly needs dashboard-specific presentation helpers, create a
@@ -311,7 +311,7 @@ Normalize onto the main repo tooling:
 - root `turbo.json`
 - root `pnpm` version
 - root linting and formatting strategy
-- `@voyantjs/voyant-typescript-config`
+- `@voyant-travel/voyant-typescript-config`
 
 Tasks:
 
@@ -323,7 +323,7 @@ Tasks:
 
 ## Phase 7: Default Runtime Wiring In Templates and Apps
 
-Once packages, CLI, and UI are merged, switch first-party apps and templates to
+Once packages, CLI, and UI are merged, switch first-party apps and starters to
 Voyant Workflows as the default runtime.
 
 ### What “default” means
@@ -335,7 +335,7 @@ Voyant Workflows as the default runtime.
 
 ### What “replaceable” means
 
-- runtime choice stays at the app/template wiring layer
+- runtime choice stays at the app/starter wiring layer
 - domain packages do not import the concrete orchestrator packages
 - alternative runtimes can still be plugged in by changing runtime adapters
 
@@ -358,13 +358,13 @@ The exact folder matters less than the dependency direction:
 
 ## Phase 8: Replace Hatchet In First-Party Apps
 
-Current first-party app/template workers still use Hatchet directly.
+Current first-party app/starter workers still use Hatchet directly.
 
 Migration order:
 
 1. `apps/dev`
 2. `templates/dmc`
-3. `templates/operator`
+3. `starters/operator`
 
 For each:
 
@@ -398,7 +398,7 @@ This is the lowest-risk order.
 5. merge workflows CLI into `packages/cli`
 6. merge workflows UI needs into `packages/ui`
 7. normalize TS config, pnpm, turbo, linting
-8. make templates/apps default to Voyant Workflows
+8. make starters/apps default to Voyant Workflows
 9. replace Hatchet in first-party apps/templates
 10. update docs and delete the old repo
 

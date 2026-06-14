@@ -8,7 +8,7 @@ describe("agent runner CI repair drill", () => {
     const report = buildCiRepairDrillReport({
       date: new Date("2026-05-12T12:00:00.000Z"),
       repoRoot: "/repo",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.deepEqual(

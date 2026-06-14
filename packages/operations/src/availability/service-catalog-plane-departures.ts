@@ -1,9 +1,9 @@
 /**
  * Projection extension that aggregates `availability_slots` rows into the
  * departure-facet fields declared by `productDeparturesCatalogPolicy`
- * (in `@voyantjs/inventory/catalog-policy-departures`).
+ * (in `@voyant-travel/inventory/catalog-policy-departures`).
  *
- * Lives in `@voyantjs/operations` because:
+ * Lives in `@voyant-travel/operations` because:
  *   - The data lives here.
  *   - `availability` already depends on `products` for the `productsRef`
  *     schema; importing the `ProductProjectionExtension` contract type
@@ -36,8 +36,8 @@
  * already-fetched product row.
  */
 
-import type { IndexerSlice } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, asc, eq, gt, lt } from "drizzle-orm"
 
 import { availabilitySlots } from "./schema.js"
@@ -70,7 +70,7 @@ export interface DepartureProjectionOptions {
   now?: () => Date
   /**
    * Resolve the product's `bookingMode` so anytime products short-circuit
-   * to an empty projection. Templates inject this — keeping the loader
+   * to an empty projection. Starters inject this — keeping the loader
    * pluggable lets tests stub a product with a specific mode without
    * needing the full products schema in the test DB.
    *

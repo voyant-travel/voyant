@@ -8,7 +8,7 @@ The goal is straightforward:
 - keep module data models explicit and easy to reason about
 - keep cross-module coupling low
 - make schema patterns repeatable across packages
-- keep migrations owned by the app/template layer
+- keep migrations owned by the app/starter layer
 
 Voyant should stay Drizzle-first. The cleanup here is about consistency and
 discipline, not replacing the underlying tooling.
@@ -229,14 +229,14 @@ instead of inventing package-local rules ad hoc.
 
 ### 10. Templates and apps own migrations
 
-Voyant packages define schemas. Apps and starter templates own migration
+Voyant packages define schemas. Apps and starters own migration
 generation and application.
 
 That means:
 
 - packages export schema
-- templates/apps own `drizzle.config.ts`
-- templates/apps own the actual migration directories and generated SQL
+- starters/apps own `drizzle.config.ts`
+- starters/apps own the actual migration directories and generated SQL
 
 This keeps final app composition in one place and avoids package-level migration
  collisions when multiple modules are assembled together.
@@ -258,7 +258,7 @@ When adding or changing schema in a Voyant module:
 6. Export inferred row/input types from the schema file.
 7. Add only the indexes and constraints that match real invariants and query
    patterns.
-8. Keep migration generation in the app/template layer.
+8. Keep migration generation in the app/starter layer.
 
 If the index or constraint needs more than a one-line rationale, record the
 shape against the active policy in

@@ -1,4 +1,4 @@
-import { createWorkflow, type EventBus, step } from "@voyantjs/core"
+import { createWorkflow, type EventBus, step } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/charters",
+  "name": "@voyant-travel/charters",
   "version": "0.117.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,19 +27,19 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/charters-contracts": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/charters-contracts": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-test-utils": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-test-utils": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.0.0"
   },
@@ -120,13 +120,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/charters"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   }
 }

@@ -1,20 +1,20 @@
-# @voyantjs/workflows-react
+# @voyant-travel/workflows-react
 
 The workflows client tier: headless hooks and API clients plus the styled
-workflow-run admin UI (formerly `@voyantjs/workflows-ui`).
+workflow-run admin UI (formerly `@voyant-travel/workflows-ui`).
 
 Headless consumers import from the root, `./workflow-runs`,
 `./workflow-runs-client`, or `./workflow-schedules-client` — these pull no
 styling peers. Styled surfaces live under `./ui`, `./components/*`, `./client`,
-`./i18n`, and `./styles.css`, whose heavier peers (`@voyantjs/ui`,
+`./i18n`, and `./styles.css`, whose heavier peers (`@voyant-travel/ui`,
 `lucide-react`) are optional and only needed when you import those subpaths.
 
 React hooks for triggering Voyant Workflows and subscribing to runs in
 real time. The package also includes admin workflow-run observability hooks for
-the `/v1/admin/workflow-runs` routes exposed by `@voyantjs/workflow-runs`.
+the `/v1/admin/workflow-runs` routes exposed by `@voyant-travel/workflow-runs`.
 
 ```tsx
-import { useTriggerWorkflow, useRealtimeRun } from "@voyantjs/workflows-react";
+import { useTriggerWorkflow, useRealtimeRun } from "@voyant-travel/workflows-react";
 
 export function GenerateContractButton() {
   const { trigger, run } = useTriggerWorkflow("generate-contract", {
@@ -31,7 +31,7 @@ See [`docs/sdk-surface.md`](../../docs/sdk-surface.md) §8.
 ## Workflow run admin hooks
 
 Operator apps can also query the workflow-run admin routes shipped by
-`@voyantjs/workflow-runs`.
+`@voyant-travel/workflow-runs`.
 
 ```tsx
 import {
@@ -40,7 +40,7 @@ import {
   useRerunMutation,
   useResumeMutation,
   VoyantWorkflowsProvider,
-} from "@voyantjs/workflows-react";
+} from "@voyant-travel/workflows-react";
 
 function WorkflowRunsTable() {
   const runs = useWorkflowRuns({ limit: 50 });
@@ -75,12 +75,12 @@ is running. Both stop polling in background tabs.
 ## UI components
 
 Importable React UI for the workflow run admin API exposed by
-`@voyantjs/workflow-runs`.
+`@voyant-travel/workflow-runs`.
 
 ```tsx
-import "@voyantjs/workflows-react/styles.css"
+import "@voyant-travel/workflows-react/styles.css"
 
-import { createWorkflowRunsApiClient, WorkflowRunsPage } from "@voyantjs/workflows-react/ui"
+import { createWorkflowRunsApiClient, WorkflowRunsPage } from "@voyant-travel/workflows-react/ui"
 
 const workflowsApi = createWorkflowRunsApiClient({
   apiBase: "/api",
@@ -102,5 +102,5 @@ Route-owning apps can wire deep links by controlling the selected run id:
 />
 ```
 
-`@voyantjs/workflows-react/ui` is the public workflows-facing import path for
+`@voyant-travel/workflows-react/ui` is the public workflows-facing import path for
 these surfaces. Older workflow runs UI wrapper imports should migrate here.

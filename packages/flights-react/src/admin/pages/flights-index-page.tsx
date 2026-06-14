@@ -1,6 +1,6 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminNavigate } from "@voyantjs/admin"
+import { type AdminRoutePageProps, useAdminNavigate } from "@voyant-travel/admin"
 
 import { FlightsPage } from "../../components/flights-page.js"
 import type { FlightsIndexSearchParams } from "../index.js"

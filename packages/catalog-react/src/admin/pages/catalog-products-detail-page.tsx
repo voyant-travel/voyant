@@ -1,6 +1,6 @@
 "use client"
 
-import type { AdminRoutePageProps } from "@voyantjs/admin"
+import type { AdminRoutePageProps } from "@voyant-travel/admin"
 
 import type { ProductDetailSearchParams } from "../index.js"
 import { ProductDetailHost } from "../product-detail-host.js"

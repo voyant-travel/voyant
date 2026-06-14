@@ -1,18 +1,18 @@
-# @voyantjs/cruises-contracts
+# @voyant-travel/cruises-contracts
 
 ## 0.105.2
 
 ### Patch Changes
 
 - Updated dependencies [e3fa849]
-  - @voyantjs/catalog-contracts@0.107.0
+  - @voyant-travel/catalog-contracts@0.107.0
 
 ## 0.105.1
 
 ### Patch Changes
 
 - Updated dependencies [7122c2a]
-  - @voyantjs/catalog-contracts@0.106.0
+  - @voyant-travel/catalog-contracts@0.106.0
 
 ## 0.105.0
 
@@ -23,7 +23,7 @@
 ### Patch Changes
 
 - Updated dependencies [921f4fc]
-  - @voyantjs/catalog-contracts@0.105.0
+  - @voyant-travel/catalog-contracts@0.105.0
 
 ## 0.104.2
 
@@ -47,11 +47,11 @@
 
 - 26c6908: Fix sourced cruises rendering blank in the catalog (#1466).
 
-  - `@voyantjs/cruises`: the catalog source-adapter shim (`toCatalogProjection`) now emits the field-policy keys the indexer and catalog UI expect (`cruiseType`, `nights`, `status`, `heroImageUrl`/`thumbnailUrl`, `lowestPriceCached`, `lineSupplierId`/`defaultShipId`, `source.kind`/`source.ref`) instead of unrecognized snake*case keys that were silently dropped — so sourced cruises carry Type/Nights/Status/Supplier/Ship/Price/Source into the index. `CruiseSearchProjectionEntry` gains `lineExternalId`/`shipExternalId` (surfaced by `@voyantjs/connect-cruises` ≥0.3.1). The content route (`GET /:key/content`) and `parseUnifiedKey` now accept the catalog sourced entity-id form (`crus_sr*<base64>`) via the new `isEncodedSourceEntityId`helper, and dispatch sourced ids without the owned-key opt-in — previously they returned`400 invalid_key`, leaving the detail sheet empty. Adds `getCruiseSailingPricing`+ a`GET /:key/sailings/:sailingExternalId/pricing`content route serving live per-cabin pricing for sourced sailings (volatile-live, fetched fresh — never cached). The source-adapter shim now drops a sailing's`lowest_price_cents`/`currency` unless both are present (the content schema requires both-or-neither) so an adapter that surfaces a price without its currency can't fail content validation.
-  - `@voyantjs/catalog-ui`: `createCatalogEnrichmentFetchers` routes the detail-content fetch per vertical via `contentBasePathByVertical`, and `CatalogPage` wires `onLoadDetail` on every vertical tab (not just products) so non-product detail sheets (cruises, etc.) actually fetch their enrichment from the correct content route. Adds `loadDeparturePricing` (lazy per-cabin pricing fetched on departure-row expand, matched to cabins by code → per-cabin price + availability). The detail sheet labels the cruise options tab "Cabins", renders the entity id as a compact copyable chip, falls back the Itinerary tab to the first sailing's stops, and sanitizes cabin names + descriptions (strips HTML tags and decodes entities like `&nbsp;`). Cabin cards are redesigned as a photo gallery (new `MediaGallery` — a carousel thumbnail that opens a full-screen lightbox carousel on click) alongside size (sqft), capacity, description, and de-duplicated amenity chips. The Overview drops the canonical-geography id columns (`country_iso`/`region_ids`/`port_ids`/`waterway_ids`) and empty array rows, and adds a media gallery (cruise cover + cabin photos) when imagery is available.
-  - `@voyantjs/catalog-ui`: the cruise detail sheet gains a **Ship** tab showing the vessel the cruise sails on — gallery (carousel + lightbox), name/type, key specs (capacity, decks, year built) and description.
-  - `@voyantjs/catalog-ui`: for the cruises vertical the detail sheet's **Departures** tab is relabeled **Sailings** (industry term), along with its empty-state and filtered no-results copy — other verticals keep "Departures".
-  - `@voyantjs/cruises-contracts`: the cabin-category content shape gains `images` + `square_feet` so cabin photos and size flow end-to-end (the cruise shim maps them from the adapter's `images`/`floorplanImages`/`squareFeet`; the data was previously dropped). The ship content shape gains `ship_type` + `gallery` so the vessel's class and photos reach the Ship tab.
+  - `@voyant-travel/cruises`: the catalog source-adapter shim (`toCatalogProjection`) now emits the field-policy keys the indexer and catalog UI expect (`cruiseType`, `nights`, `status`, `heroImageUrl`/`thumbnailUrl`, `lowestPriceCached`, `lineSupplierId`/`defaultShipId`, `source.kind`/`source.ref`) instead of unrecognized snake*case keys that were silently dropped — so sourced cruises carry Type/Nights/Status/Supplier/Ship/Price/Source into the index. `CruiseSearchProjectionEntry` gains `lineExternalId`/`shipExternalId` (surfaced by `@voyant-travel/connect-cruises` ≥0.3.1). The content route (`GET /:key/content`) and `parseUnifiedKey` now accept the catalog sourced entity-id form (`crus_sr*<base64>`) via the new `isEncodedSourceEntityId`helper, and dispatch sourced ids without the owned-key opt-in — previously they returned`400 invalid_key`, leaving the detail sheet empty. Adds `getCruiseSailingPricing`+ a`GET /:key/sailings/:sailingExternalId/pricing`content route serving live per-cabin pricing for sourced sailings (volatile-live, fetched fresh — never cached). The source-adapter shim now drops a sailing's`lowest_price_cents`/`currency` unless both are present (the content schema requires both-or-neither) so an adapter that surfaces a price without its currency can't fail content validation.
+  - `@voyant-travel/catalog-ui`: `createCatalogEnrichmentFetchers` routes the detail-content fetch per vertical via `contentBasePathByVertical`, and `CatalogPage` wires `onLoadDetail` on every vertical tab (not just products) so non-product detail sheets (cruises, etc.) actually fetch their enrichment from the correct content route. Adds `loadDeparturePricing` (lazy per-cabin pricing fetched on departure-row expand, matched to cabins by code → per-cabin price + availability). The detail sheet labels the cruise options tab "Cabins", renders the entity id as a compact copyable chip, falls back the Itinerary tab to the first sailing's stops, and sanitizes cabin names + descriptions (strips HTML tags and decodes entities like `&nbsp;`). Cabin cards are redesigned as a photo gallery (new `MediaGallery` — a carousel thumbnail that opens a full-screen lightbox carousel on click) alongside size (sqft), capacity, description, and de-duplicated amenity chips. The Overview drops the canonical-geography id columns (`country_iso`/`region_ids`/`port_ids`/`waterway_ids`) and empty array rows, and adds a media gallery (cruise cover + cabin photos) when imagery is available.
+  - `@voyant-travel/catalog-ui`: the cruise detail sheet gains a **Ship** tab showing the vessel the cruise sails on — gallery (carousel + lightbox), name/type, key specs (capacity, decks, year built) and description.
+  - `@voyant-travel/catalog-ui`: for the cruises vertical the detail sheet's **Departures** tab is relabeled **Sailings** (industry term), along with its empty-state and filtered no-results copy — other verticals keep "Departures".
+  - `@voyant-travel/cruises-contracts`: the cabin-category content shape gains `images` + `square_feet` so cabin photos and size flow end-to-end (the cruise shim maps them from the adapter's `images`/`floorplanImages`/`squareFeet`; the data was previously dropped). The ship content shape gains `ship_type` + `gallery` so the vessel's class and photos reach the Ship tab.
 
 ## 0.101.0
 
@@ -69,18 +69,18 @@
 
 - 2d8d59b: Add lightweight catalog and cruises contract packages for external consumers.
 
-  `@voyantjs/catalog-contracts` now owns the pure catalog adapter contracts,
+  `@voyant-travel/catalog-contracts` now owns the pure catalog adapter contracts,
   adapter Zod schemas, field-policy contracts, provenance, drift event payloads,
-  and pure content locale/overlay helpers. `@voyantjs/cruises-contracts` now owns
+  and pure content locale/overlay helpers. `@voyant-travel/cruises-contracts` now owns
   the `cruises/v1` rich content schema (including the cabin feature, bed,
   accessibility, and view-type facet vocabularies), version, types, and validator.
 
   The pure content primitives (`isStale`, `pickBestCachedLocale`, the JSON-pointer
   overlay applier, and `mergeOverlaysIntoContent`) now have a single source of
-  truth in `@voyantjs/catalog-contracts`; `@voyantjs/catalog`'s content service
+  truth in `@voyant-travel/catalog-contracts`; `@voyant-travel/catalog`'s content service
   re-exports them and retains only the runtime-bound (Drizzle/Postgres) primitives.
-  The cruise cabin facet vocabularies likewise live in `@voyantjs/cruises-contracts`
-  and are re-exported from `@voyantjs/cruises`.
+  The cruise cabin facet vocabularies likewise live in `@voyant-travel/cruises-contracts`
+  and are re-exported from `@voyant-travel/cruises`.
 
-  The existing `@voyantjs/catalog` and `@voyantjs/cruises` contract import paths
+  The existing `@voyant-travel/catalog` and `@voyant-travel/cruises` contract import paths
   remain available through compatibility re-exports.

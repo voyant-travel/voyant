@@ -1,6 +1,6 @@
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { emptyJournal, type RunRecord } from "@voyantjs/workflows-orchestrator"
+import { emptyJournal, type RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { runPostgresMigrations } from "../migrate.js"

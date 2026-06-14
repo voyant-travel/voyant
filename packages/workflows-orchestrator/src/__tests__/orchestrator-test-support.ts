@@ -1,5 +1,5 @@
-import { __resetRegistry } from "@voyantjs/workflows"
-import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
+import { __resetRegistry } from "@voyant-travel/workflows"
+import { handleStepRequest, type WorkflowStepRequest } from "@voyant-travel/workflows/handler"
 import { beforeEach } from "vitest"
 import type { StepHandler } from "../index.js"
 

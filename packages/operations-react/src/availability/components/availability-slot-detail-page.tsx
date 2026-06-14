@@ -22,7 +22,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { BookOpen, CalendarDays, Package, Pencil, Truck } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { useAvailabilityUiI18nOrDefault } from "../i18n/index.js"
@@ -82,12 +82,12 @@ export interface AvailabilitySlotDetailPageProps {
   /**
    * Content for the Allocation tab. Hosts mount their allocation
    * manager here (for example, `SlotAllocationPage` from
-   * `@voyantjs/operations-react/availability/allocation` in `embed` mode).
+   * `@voyant-travel/operations-react/availability/allocation` in `embed` mode).
    * When omitted, the tab shows a stub message instead.
    */
   renderAllocation?: (context: { slotId: string; productId: string | null }) => ReactNode
   /**
-   * Content for the Extras tab. Hosts that mount `@voyantjs/bookings/extras` can
+   * Content for the Extras tab. Hosts that mount `@voyant-travel/bookings/extras` can
    * render a slot-level operations manifest here without making
    * availability-ui depend on booking extras UI.
    */

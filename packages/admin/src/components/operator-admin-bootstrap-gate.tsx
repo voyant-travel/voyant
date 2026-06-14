@@ -15,7 +15,7 @@ export interface OperatorAdminBootstrapGateProps<TUser, TWorkspace = unknown> {
     | React.ReactNode
     | ((state: OperatorAdminBootstrapRenderState<TUser, TWorkspace>) => React.ReactNode)
   /**
-   * Voyant first-party templates are single-tenant per deployment. In that
+   * Voyant first-party starters are single-tenant per deployment. In that
    * baseline, current-user readiness is the only shell bootstrap dependency.
    * Use "organization" only when an app explicitly owns workspace switching.
    */

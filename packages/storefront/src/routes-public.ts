@@ -3,15 +3,15 @@ import {
   checkoutCapabilityActions,
   checkoutCapabilityCookie,
   issueCheckoutCapability,
-} from "@voyantjs/bookings/checkout-capability"
-import { enqueueWriteIntent, getWriteIntent } from "@voyantjs/db/write-intents"
+} from "@voyant-travel/bookings/checkout-capability"
+import { enqueueWriteIntent, getWriteIntent } from "@voyant-travel/db/write-intents"
 import {
   idempotencyKey,
   parseJsonBody,
   parseQuery,
   type VoyantBindings,
   type VoyantVariables,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -44,7 +44,7 @@ import { storefrontTransportEligibilityInputSchema } from "./validation-transpor
 /**
  * Shared-cache marker for non-personalized catalog reads (departure
  * detail/list, itineraries). Same data for every visitor; the framework
- * cache layer (`publicResponseCache` in @voyantjs/hono) and the platform
+ * cache layer (`publicResponseCache` in @voyant-travel/hono) and the platform
  * dispatcher only cache responses explicitly marked like this. Applied
  * to success responses only.
  */

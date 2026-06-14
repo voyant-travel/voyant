@@ -4,7 +4,7 @@ import {
   channelInventoryAllotmentTargets,
   channelInventoryReleaseRules,
   channels,
-} from "@voyantjs/distribution/schema"
+} from "@voyant-travel/distribution/schema"
 import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {

@@ -1,11 +1,11 @@
-# @voyantjs/operations-react
+# @voyant-travel/operations-react
 
 React owner package for operated execution workflows.
 
 Use subpaths for the detailed surfaces:
 
-- `@voyantjs/operations-react/availability`
-- `@voyantjs/operations-react/availability/allocation`
-- `@voyantjs/operations-react/resources`
-- `@voyantjs/operations-react/ground`
-- `@voyantjs/operations-react/places`
+- `@voyant-travel/operations-react/availability`
+- `@voyant-travel/operations-react/availability/allocation`
+- `@voyant-travel/operations-react/resources`
+- `@voyant-travel/operations-react/ground`
+- `@voyant-travel/operations-react/places`

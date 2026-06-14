@@ -5,7 +5,7 @@ import {
   useProduct,
   useProductOptions,
   useProducts,
-} from "@voyantjs/inventory-react"
+} from "@voyant-travel/inventory-react"
 import {
   Label,
   Select,
@@ -13,7 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -22,7 +22,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { productMatchesPickerSearch } from "./booking-create-utils.js"

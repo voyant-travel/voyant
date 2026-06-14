@@ -182,7 +182,7 @@ export const adminFinanceMessages = {
         cancel: "Cancel",
         submit: "Create Credit Note",
       },
-      // invoiceDialog: removed — owned by `@voyantjs/finance-react/ui` via
+      // invoiceDialog: removed — owned by `@voyant-travel/finance-react/ui` via
       // <FinanceUiMessagesProvider>.
       paymentDialog: {
         title: "Record Payment",
@@ -205,7 +205,7 @@ export const adminFinanceMessages = {
         cancel: "Cancel",
         submit: "Record Payment",
       },
-      // supplierPaymentDialog: removed — owned by `@voyantjs/finance-react/ui` via
+      // supplierPaymentDialog: removed — owned by `@voyant-travel/finance-react/ui` via
       // <FinanceUiMessagesProvider>.
       paymentDetail: {
         backToPayments: "Back to Payments",

@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/relationships",
+  "name": "@voyant-travel/relationships",
   "version": "0.119.2",
   "license": "Apache-2.0",
   "type": "module",
@@ -20,19 +20,19 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/crm-contracts": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/identity": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/crm-contracts": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/identity": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [
@@ -77,13 +77,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/relationships"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   }
 }

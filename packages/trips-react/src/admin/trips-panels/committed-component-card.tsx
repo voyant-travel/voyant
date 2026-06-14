@@ -1,12 +1,12 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { PaymentScheduleSection, type PaymentScheduleValue } from "@voyantjs/bookings-react/ui"
-import type { TripComponent } from "@voyantjs/trips"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { Label } from "@voyantjs/ui/components/label"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { PaymentScheduleSection, type PaymentScheduleValue } from "@voyant-travel/bookings-react/ui"
+import type { TripComponent } from "@voyant-travel/trips"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { Label } from "@voyant-travel/ui/components/label"
 import { CalendarClock, CircleAlert, Loader2, Trash2 } from "lucide-react"
 
 import {

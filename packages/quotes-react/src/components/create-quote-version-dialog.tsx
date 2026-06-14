@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -15,9 +15,9 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components/combobox"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"

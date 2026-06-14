@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: trips; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"

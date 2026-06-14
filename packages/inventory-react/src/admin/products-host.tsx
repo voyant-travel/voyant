@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminNavigate } from "@voyantjs/admin"
+import { useAdminNavigate } from "@voyant-travel/admin"
 
 import { ProductsPage } from "../components/products-page.js"
 

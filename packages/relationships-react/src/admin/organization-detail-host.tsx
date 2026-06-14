@@ -5,7 +5,7 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import { OrganizationDetailPage } from "../components/organization-detail-page.js"
 import { useOrganization } from "../index.js"
 

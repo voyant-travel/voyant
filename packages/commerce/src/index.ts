@@ -1,4 +1,4 @@
-import type { Module } from "@voyantjs/core"
+import type { Module } from "@voyant-travel/core"
 
 export const commerceModule: Module = {
   name: "commerce",

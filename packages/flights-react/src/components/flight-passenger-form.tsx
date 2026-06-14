@@ -5,19 +5,19 @@ import type {
   PassengerCounts,
   PassengerType,
   TravelDocument,
-} from "@voyantjs/flights/contract/types"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/flights/contract/types"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { CircleAlert, IdCard } from "lucide-react"
 import { type ReactNode, useEffect, useMemo } from "react"
 import { flightsUiEn } from "../i18n/en.js"

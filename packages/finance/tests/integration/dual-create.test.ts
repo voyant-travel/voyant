@@ -1,6 +1,6 @@
-import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
-import { bookingGroupMembers, bookingGroups, bookings } from "@voyantjs/bookings/schema"
-import { createEventBus } from "@voyantjs/core"
+import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
+import { bookingGroupMembers, bookingGroups, bookings } from "@voyant-travel/bookings/schema"
+import { createEventBus } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -54,10 +54,10 @@ function seqId(prefix: string) {
 }
 
 describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await resetTables(db)
   })
@@ -65,7 +65,7 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
     await resetTables(db)
   })
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import { createEventBus } from "@voyantjs/core"
+import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { createEventBus } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -116,7 +116,7 @@ async function cleanupFinanceTestData(
 
 describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
   const settlementEvents: Array<Record<string, unknown>> = []
   const paymentCompletedEvents: Array<Record<string, unknown>> = []
   const schedulePaidEvents: Array<Record<string, unknown>> = []
@@ -127,7 +127,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupFinanceTestData(db)
     await db.execute(sql`
@@ -337,7 +337,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     process.env.TEST_DATABASE_URL = ORIGINAL_TEST_DATABASE_URL
     await closeTestDb()
   })

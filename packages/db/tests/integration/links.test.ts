@@ -1,4 +1,4 @@
-import { defineLink, type LinkableDefinition } from "@voyantjs/core"
+import { defineLink, type LinkableDefinition } from "@voyant-travel/core"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"

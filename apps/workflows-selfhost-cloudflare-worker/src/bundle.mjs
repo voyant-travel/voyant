@@ -21,7 +21,7 @@ var _workflows = new Proxy(
     get(_, method) {
       return () => {
         throw new Error(
-          `@voyantjs/workflows: workflows.${method}() requires the Voyant Cloud client. Install + configure it via @voyantjs/client, or see docs/sdk-surface.md \xA76.`,
+          `@voyant-travel/workflows: workflows.${method}() requires the Voyant Cloud client. Install + configure it via @voyant-travel/client, or see docs/sdk-surface.md \xA76.`,
         )
       }
     },

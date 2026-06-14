@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query"
 import type {
   CheckoutCollectionPlanRecord,
   PreviewCheckoutCollectionInput,
-} from "@voyantjs/finance/checkout"
+} from "@voyant-travel/finance/checkout"
 
 import { useVoyantFinanceContext } from "../provider.js"
 

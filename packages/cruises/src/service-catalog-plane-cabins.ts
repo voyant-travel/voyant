@@ -6,8 +6,8 @@
  * cruise search document.
  */
 
-import type { IndexerSlice } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, eq } from "drizzle-orm"
 
 import { cruiseCabinCategories, cruiseCabins, cruiseDecks } from "./schema-cabins.js"

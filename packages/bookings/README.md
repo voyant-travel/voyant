@@ -1,18 +1,18 @@
-# @voyantjs/bookings
+# @voyant-travel/bookings
 
 Bookings module for Voyant. Manages booking lifecycle with travelers, supplier statuses, activity log, and notes. Uses `personId` + `organizationId` from CRM as client snapshot.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/bookings
+pnpm add @voyant-travel/bookings
 ```
 
 ## Usage
 
 ```typescript
-import { bookingsModule } from "@voyantjs/bookings"
-import { createApp } from "@voyantjs/hono"
+import { bookingsModule } from "@voyant-travel/bookings"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [bookingsModule],
@@ -52,7 +52,7 @@ approval policy inputs, so replaying the key with different input returns a
 conflict.
 
 After an approval is approved, execute the same status mutation again with the
-`ACTION_LEDGER_APPROVAL_ID_HEADER` header from `@voyantjs/action-ledger`. The
+`ACTION_LEDGER_APPROVAL_ID_HEADER` header from `@voyant-travel/action-ledger`. The
 route validates that the approval is approved, unexpired, linked to the same
 requested action and current principal, and command-equivalent to the original
 request before it mutates the booking. Approved execution ledger fields are

@@ -7,7 +7,7 @@ import {
   validateProductContent,
 } from "./index.js"
 
-describe("@voyantjs/products-contracts content shape", () => {
+describe("@voyant-travel/products-contracts content shape", () => {
   it("validates the products/v1 rich content payload", () => {
     const content = productContentSchema.parse({
       product: { id: "prod_abc", name: "Sahara Desert Trek" },

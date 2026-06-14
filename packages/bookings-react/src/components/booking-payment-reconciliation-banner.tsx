@@ -7,8 +7,8 @@ import {
   useAdminBookingPayments,
   useBookingPaymentSchedules,
   useInvoices,
-} from "@voyantjs/finance-react"
-import { Badge, cn } from "@voyantjs/ui/components"
+} from "@voyant-travel/finance-react"
+import { Badge, cn } from "@voyant-travel/ui/components"
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

@@ -9,10 +9,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { DateRangePicker } from "@voyant-travel/ui/components/date-picker"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Table,
   TableBody,
@@ -20,8 +20,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ListFilter, Plus, Search, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

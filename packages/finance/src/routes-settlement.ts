@@ -1,5 +1,5 @@
-import type { EventBus, ModuleContainer } from "@voyantjs/core"
-import { parseOptionalJsonBody } from "@voyantjs/hono"
+import type { EventBus, ModuleContainer } from "@voyant-travel/core"
+import { parseOptionalJsonBody } from "@voyant-travel/hono"
 import { Hono } from "hono"
 
 import {

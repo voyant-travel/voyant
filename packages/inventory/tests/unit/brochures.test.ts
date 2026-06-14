@@ -1,4 +1,4 @@
-import { createLocalStorageProvider } from "@voyantjs/storage/providers/local"
+import { createLocalStorageProvider } from "@voyant-travel/storage/providers/local"
 import { describe, expect, it, vi } from "vitest"
 
 vi.mock("../../src/tasks/generate-pdf.js", () => ({

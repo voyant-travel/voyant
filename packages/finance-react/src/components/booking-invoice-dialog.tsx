@@ -17,10 +17,10 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2, Paperclip, Plus, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

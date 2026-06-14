@@ -1,4 +1,4 @@
-import type { Plugin, Subscriber } from "@voyantjs/core"
+import type { Plugin, Subscriber } from "@voyant-travel/core"
 import { ZodError } from "zod"
 
 import type { PayloadClientOptions } from "./client.js"

@@ -136,7 +136,7 @@ line between history and active product surface:
 - generated schema docs and registry JSON must be regenerated after active
   schema or registry inputs change
 - mechanical checks should block hotel-ops package references from re-entering
-  starter templates and generated registries, while allowing legitimate
+  starters and generated registries, while allowing legitimate
   accommodation resale vocabulary in catalog, booking, storefront, supplier, and
   migration-history contexts
 

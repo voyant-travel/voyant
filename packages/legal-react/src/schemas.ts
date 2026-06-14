@@ -6,7 +6,7 @@ import {
   insertContractSignatureSchema,
   insertContractTemplateSchema,
   insertContractTemplateVersionSchema,
-} from "@voyantjs/legal/contracts/validation"
+} from "@voyant-travel/legal/contracts/validation"
 import {
   insertPolicyAssignmentSchema,
   insertPolicyRuleSchema,
@@ -15,11 +15,11 @@ import {
   policyAcceptanceMethodSchema,
   policyRefundTypeSchema,
   policyVersionStatusSchema,
-} from "@voyantjs/legal/policies/validation"
+} from "@voyant-travel/legal/policies/validation"
 import {
   legalTermAcceptanceStatusSchema,
   legalTermTypeSchema,
-} from "@voyantjs/legal/terms/validation"
+} from "@voyant-travel/legal/terms/validation"
 import { z } from "zod"
 
 const legalTargetKindSchema = z.enum([

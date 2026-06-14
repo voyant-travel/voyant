@@ -10,8 +10,8 @@ import type {
   LinkService,
   LinkSpec,
   ResolvedLinkSpec,
-} from "@voyantjs/core"
-import { generateLinkTableSql, resolveLinkFromSpec } from "@voyantjs/core"
+} from "@voyant-travel/core"
+import { generateLinkTableSql, resolveLinkFromSpec } from "@voyant-travel/core"
 import { sql } from "drizzle-orm"
 
 import { newIdFromPrefix } from "./lib/typeid.js"

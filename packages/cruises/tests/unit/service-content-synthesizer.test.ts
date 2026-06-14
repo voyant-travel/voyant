@@ -1,4 +1,4 @@
-import type { ProvenanceReadResult } from "@voyantjs/catalog"
+import type { ProvenanceReadResult } from "@voyant-travel/catalog"
 import { describe, expect, it } from "vitest"
 
 import { CRUISES_CONTENT_SCHEMA_VERSION } from "../../src/content-shape.js"

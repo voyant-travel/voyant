@@ -1,5 +1,8 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { ActionLedgerGetResponse, ActionLedgerListResponse } from "@voyantjs/action-ledger"
+import type {
+  ActionLedgerGetResponse,
+  ActionLedgerListResponse,
+} from "@voyant-travel/action-ledger"
 
 import type { VoyantActionLedgerContextValue } from "../provider.js"
 import { actionLedgerQueryKeys } from "./query-keys.js"
@@ -67,7 +70,7 @@ export function getActionLedgerEntry(
   return getJson<ActionLedgerGetResponse>(client, `/v1/admin/action-ledger/entries/${id}`)
 }
 
-/** Summary row of the template-level workflow-runs admin surface — the
+/** Summary row of the starter-level workflow-runs admin surface — the
  * filters popover lets operators scope the ledger to one run. */
 export interface WorkflowRunSummary {
   id: string

@@ -20,11 +20,11 @@ describe("agent runner dispatch helpers", () => {
           },
           number: 581,
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       recommendQueueAction(workItem({ number: 579 }), {
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
       recommendQueueAction(
         workItem({
@@ -34,7 +34,7 @@ describe("agent runner dispatch helpers", () => {
           },
           number: 580,
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
     ]
 
@@ -48,16 +48,16 @@ describe("agent runner dispatch helpers", () => {
   it("builds pnpm command args with repository scope", () => {
     const recommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,
-      repository: "voyantjs/other",
+      repository: "voyant-travel/other",
     })
 
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:start",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -68,19 +68,19 @@ describe("agent runner dispatch helpers", () => {
         fields: {
           "Agent State": "CI Repair",
           "Last Heartbeat": new Date().toISOString().slice(0, 10),
-          PR: "https://github.com/voyantjs/voyant/pull/626",
+          PR: "https://github.com/voyant-travel/voyant/pull/626",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:collect-ci",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -93,20 +93,20 @@ describe("agent runner dispatch helpers", () => {
           Workspace: "sandbox:sprite:task-579",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.equal(
       selectDispatchRecommendation([recommendation]).recommendation.action,
       "remote-bootstrap",
     )
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:remote-bootstrap",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -120,20 +120,20 @@ describe("agent runner dispatch helpers", () => {
           Workspace: "sandbox:sprite:task-579",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.equal(
       selectDispatchRecommendation([recommendation]).recommendation.action,
       "remote-publish-evidence",
     )
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:remote-publish-evidence",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -146,20 +146,20 @@ describe("agent runner dispatch helpers", () => {
           Workspace: "sandbox:sprite:task-579",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.equal(
       selectDispatchRecommendation([recommendation]).recommendation.action,
       "remote-cleanup",
     )
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:remote-cleanup",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -173,20 +173,20 @@ describe("agent runner dispatch helpers", () => {
           Workspace: "sandbox:sprite:task-579",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.equal(
       selectDispatchRecommendation([recommendation]).recommendation.action,
       "remote-open-pr",
     )
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:remote-open-pr",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })
@@ -194,13 +194,13 @@ describe("agent runner dispatch helpers", () => {
   it("passes custom event logs to nested dispatch commands", () => {
     const recommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,
-      repository: "voyantjs/other",
+      repository: "voyant-travel/other",
     })
 
     assert.deepEqual(
       dispatchCommandArgs(recommendation, {
         eventLog: ".agent-runs/supervisor.jsonl",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
       [
         "agent:queue:start",
@@ -208,7 +208,7 @@ describe("agent runner dispatch helpers", () => {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/other",
+        "voyant-travel/other",
         "--yes",
         "--event-log",
         ".agent-runs/supervisor.jsonl",
@@ -221,15 +221,15 @@ describe("agent runner dispatch helpers", () => {
       workItem({
         fields: {
           "Agent State": "Human Review",
-          PR: "https://github.com/voyantjs/voyant/pull/626",
+          PR: "https://github.com/voyant-travel/voyant/pull/626",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.deepEqual(
       dispatchCommandArgs(syncRecommendation, {
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
         updateBody: true,
       }),
       [
@@ -238,7 +238,7 @@ describe("agent runner dispatch helpers", () => {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/other",
+        "voyant-travel/other",
         "--yes",
         "--update-body",
       ],
@@ -246,12 +246,12 @@ describe("agent runner dispatch helpers", () => {
 
     const startRecommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,
-      repository: "voyantjs/other",
+      repository: "voyant-travel/other",
     })
 
     assert.equal(
       dispatchCommandArgs(startRecommendation, {
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
         updateBody: true,
       }).includes("--update-body"),
       false,
@@ -265,7 +265,7 @@ describe("agent runner dispatch helpers", () => {
           "Agent State": "Running",
         },
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.deepEqual(selectDispatchRecommendation([running]), {
@@ -286,7 +286,7 @@ describe("agent runner dispatch helpers", () => {
       selectDispatchRecommendation([
         recommendQueueAction(uiItem, {
           maxAgeDays: 1,
-          repository: "voyantjs/other",
+          repository: "voyant-travel/other",
         }),
       ]),
       {
@@ -308,7 +308,7 @@ describe("agent runner dispatch helpers", () => {
       selectDispatchRecommendation([
         recommendQueueAction(remoteUiItem, {
           maxAgeDays: 1,
-          repository: "voyantjs/other",
+          repository: "voyant-travel/other",
         }),
       ]),
       {
@@ -322,7 +322,7 @@ describe("agent runner dispatch helpers", () => {
     const recommendations = [
       recommendQueueAction(workItem(), {
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
     ]
 
@@ -344,7 +344,7 @@ describe("agent runner dispatch helpers", () => {
       "--issue",
       "579",
       "--repo",
-      "voyantjs/voyant",
+      "voyant-travel/voyant",
       "--yes",
     ])
 
@@ -409,7 +409,7 @@ describe("agent runner dispatch helpers", () => {
               "--issue",
               "579",
               "--repo",
-              "voyantjs/voyant",
+              "voyant-travel/voyant",
             ],
           }),
         ),
@@ -426,7 +426,7 @@ describe("agent runner dispatch helpers", () => {
               "--issue",
               "580",
               "--repo",
-              "voyantjs/voyant",
+              "voyant-travel/voyant",
               "--yes",
             ],
           }),
@@ -444,7 +444,7 @@ describe("agent runner dispatch helpers", () => {
               "--issue",
               "579",
               "--repo",
-              "voyantjs/other",
+              "voyant-travel/other",
               "--yes",
             ],
           }),
@@ -469,17 +469,17 @@ function dispatchIntent({ action = "start", command } = {}) {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--yes",
       ],
       issue: {
         number: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         title: "Test issue",
-        url: "https://github.com/voyantjs/voyant/issues/579",
+        url: "https://github.com/voyant-travel/voyant/issues/579",
       },
       reason: "ready",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       requiresMutation: true,
     },
     status: "leased",

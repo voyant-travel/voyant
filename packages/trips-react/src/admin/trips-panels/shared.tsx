@@ -1,23 +1,23 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import type { Draft } from "@voyantjs/bookings-react/journey"
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import type { Draft } from "@voyant-travel/bookings-react/journey"
+import type { CatalogSearchHit } from "@voyant-travel/catalog-react"
 import type {
   AncillaryCatalog,
   AncillarySelection,
   CabinClass,
   FlightOffer,
-} from "@voyantjs/flights/contract/types"
-import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
-import { Button } from "@voyantjs/ui/components/button"
+} from "@voyant-travel/flights/contract/types"
+import { Alert, AlertDescription, AlertTitle } from "@voyant-travel/ui/components/alert"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components/dropdown-menu"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/ui/components/dropdown-menu"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   BedDouble,
   Check,

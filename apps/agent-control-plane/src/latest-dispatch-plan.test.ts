@@ -6,12 +6,12 @@ import type { TickSnapshotStore } from "./tick-snapshot-store.js"
 
 const tickSnapshot = {
   project: {
-    owner: "voyantjs",
+    owner: "voyant-travel",
     number: 1,
     title: "Voyant Engineering",
-    url: "https://github.com/orgs/voyantjs/projects/1",
+    url: "https://github.com/orgs/voyant-travel/projects/1",
   },
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
   maxAgeDays: 1,
   eventLog: {
     path: "/repo/.agent-runs/events.jsonl",
@@ -20,12 +20,12 @@ const tickSnapshot = {
   recommendations: [
     {
       action: "remote-bootstrap",
-      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/voyant --yes",
+      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/voyant --yes",
       issue: {
         number: 579,
         title: "Test agent project intake workflow",
-        url: "https://github.com/voyantjs/voyant/issues/579",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/579",
+        repository: "voyant-travel/voyant",
       },
       priority: 20,
       reason: "remote workspace is ready for repository bootstrap",
@@ -34,12 +34,12 @@ const tickSnapshot = {
     {
       action: "remote-run-command",
       command:
-        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyantjs/voyant --command "<implementation-command>" --yes',
+        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyant-travel/voyant --command "<implementation-command>" --yes',
       issue: {
         number: 580,
         title: "Run implementation",
-        url: "https://github.com/voyantjs/voyant/issues/580",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/580",
+        repository: "voyant-travel/voyant",
       },
       priority: 30,
       reason: "implementation execution remains explicit",
@@ -70,7 +70,7 @@ describe("latest dispatch planning", () => {
         options: {
           eventLog: ".agent-runs/supervisor.jsonl",
         },
-        repository: "VoyantJS/Voyant",
+        repository: "Voyant-Travel/Voyant",
       }),
     })
 
@@ -80,7 +80,7 @@ describe("latest dispatch planning", () => {
       source: {
         acceptedAt: "2026-05-12T05:00:00.000Z",
         recommendationCount: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
       plan: {
@@ -92,14 +92,14 @@ describe("latest dispatch planning", () => {
           "--issue",
           "579",
           "--repo",
-          "VoyantJS/Voyant",
+          "Voyant-Travel/Voyant",
           "--yes",
           "--event-log",
           ".agent-runs/supervisor.jsonl",
         ],
         issue: tickSnapshot.recommendations[0]?.issue,
         reason: "remote workspace is ready for repository bootstrap",
-        repository: "VoyantJS/Voyant",
+        repository: "Voyant-Travel/Voyant",
         requiresMutation: true,
       },
     })
@@ -118,7 +118,7 @@ describe("latest dispatch planning", () => {
         filters: {
           action: "remote-run-command",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -127,7 +127,7 @@ describe("latest dispatch planning", () => {
       reason: "remote-run-command requires remote implementation command",
       plan: null,
       source: {
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
     })
@@ -142,7 +142,7 @@ describe("latest dispatch planning", () => {
         options: {
           remoteImplementationCommand: "agent-exec remote smoke",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -158,7 +158,7 @@ describe("latest dispatch planning", () => {
           "--issue",
           "580",
           "--repo",
-          "voyantjs/voyant",
+          "voyant-travel/voyant",
           "--command",
           "agent-exec remote smoke",
           "--yes",
@@ -172,7 +172,7 @@ describe("latest dispatch planning", () => {
     const noStoreResponse = await noStore.request("/api/dispatch-plans/latest", {
       method: "POST",
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
-      body: JSON.stringify({ repository: "voyantjs/voyant" }),
+      body: JSON.stringify({ repository: "voyant-travel/voyant" }),
     })
     expect(noStoreResponse.status).toBe(503)
     await expect(noStoreResponse.json()).resolves.toEqual({
@@ -196,7 +196,7 @@ describe("latest dispatch planning", () => {
     const missingSnapshot = await app.request("/api/dispatch-plans/latest", {
       method: "POST",
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
-      body: JSON.stringify({ repository: "voyantjs/voyant" }),
+      body: JSON.stringify({ repository: "voyant-travel/voyant" }),
     })
     expect(missingSnapshot.status).toBe(404)
     await expect(missingSnapshot.json()).resolves.toEqual({ error: "tick_snapshot_not_found" })

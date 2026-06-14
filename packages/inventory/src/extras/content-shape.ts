@@ -2,12 +2,12 @@ import {
   type ContentOverlay,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 import {
   type ExtraContent,
   extraContentSchema,
   validateExtraContent,
-} from "@voyantjs/extras-contracts/content-shape"
+} from "@voyant-travel/extras-contracts/content-shape"
 
 export {
   EXTRAS_CONTENT_SCHEMA_VERSION,
@@ -22,7 +22,7 @@ export {
   extraPolicySchema,
   extraSummarySchema,
   validateExtraContent,
-} from "@voyantjs/extras-contracts/content-shape"
+} from "@voyant-travel/extras-contracts/content-shape"
 
 export function mergeOverlaysIntoExtraContent(
   payload: ExtraContent,

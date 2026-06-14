@@ -1,4 +1,4 @@
-# @voyantjs/storefront-verification
+# @voyant-travel/storefront-verification
 
 Public email and SMS verification challenges for storefront and checkout flows.
 
@@ -6,19 +6,19 @@ The package ships:
 
 - a Hono public route module for `/v1/public/storefront-verification`
 - a service for issuing, sending, and confirming verification challenges
-- provider adapters that reuse `@voyantjs/notifications` providers
+- provider adapters that reuse `@voyant-travel/notifications` providers
 - a Drizzle schema for persisted verification challenge state
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/storefront-verification
+pnpm add @voyant-travel/storefront-verification
 ```
 
 ## Usage
 
 ```ts
-import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
+import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront-verification"
 
 const storefrontVerification = createStorefrontVerificationHonoModule({
   resolveProviders: (bindings) => [
@@ -60,12 +60,12 @@ For package-based tooling, the published package declares:
 {
   "voyant": {
     "schema": "./schema",
-    "requiresSchemas": ["@voyantjs/db"]
+    "requiresSchemas": ["@voyant-travel/db"]
   }
 }
 ```
 
-The first-party DMC and operator templates include this schema and ship a
+The first-party DMC and operator starters include this schema and ship a
 migration for the challenge table. Downstream apps that mount the route module
 should do the same; otherwise the first verification request will fail when the
 service tries to read or write `storefront_verification_challenges`.

@@ -1,4 +1,4 @@
-import { kmsEnvelopeSchema } from "@voyantjs/schema-kit/kms"
+import { kmsEnvelopeSchema } from "@voyant-travel/schema-kit/kms"
 import { z } from "zod"
 
 import { paginationSchema } from "./common.js"

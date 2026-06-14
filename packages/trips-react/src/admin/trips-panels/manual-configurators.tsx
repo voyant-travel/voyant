@@ -1,18 +1,18 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
-import { DateTimeField } from "@voyantjs/ui/components/date-time-field"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DateTimeField } from "@voyant-travel/ui/components/date-time-field"
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@voyantjs/ui/components/empty"
-import { Input } from "@voyantjs/ui/components/input"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/ui/components/empty"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Route as RouteIcon } from "lucide-react"
 
 import { formatMoney } from "./display.js"

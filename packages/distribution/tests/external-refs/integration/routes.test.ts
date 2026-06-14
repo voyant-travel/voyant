@@ -1,4 +1,4 @@
-import { externalRefsRoutes } from "@voyantjs/distribution"
+import { externalRefsRoutes } from "@voyant-travel/distribution"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -16,10 +16,10 @@ function nextExternalId() {
 
 describe.skipIf(!DB_AVAILABLE)("External Refs routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -33,7 +33,7 @@ describe.skipIf(!DB_AVAILABLE)("External Refs routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 

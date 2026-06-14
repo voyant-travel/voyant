@@ -1,16 +1,16 @@
 "use client"
 
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
-import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+import { ConfirmActionButton, SelectionActionBar } from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { TabsContent } from "@voyantjs/ui/components/tabs"
+} from "@voyant-travel/ui/components/select"
+import { TabsContent } from "@voyant-travel/ui/components/tabs"
 import type { ReactNode } from "react"
 import { useAvailabilityUiMessagesOrDefault } from "../../i18n/index.js"
 import type { AvailabilitySlotRow, ProductOption } from "../../index.js"

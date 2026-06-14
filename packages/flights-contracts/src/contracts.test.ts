@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { flightSearchRequestSchema, moneySchema } from "./index.js"
 
-describe("@voyantjs/flights-contracts barrel", () => {
+describe("@voyant-travel/flights-contracts barrel", () => {
   it("parses a minimal valid flight search request", () => {
     const value = {
       slices: [{ origin: "LHR", destination: "JFK", departureDate: "2026-10-15" }],

@@ -6,7 +6,7 @@ import {
   type PersonRelationshipRecord,
   usePerson,
   usePersonRelationships,
-} from "@voyantjs/relationships-react"
+} from "@voyant-travel/relationships-react"
 import {
   Button,
   Label,
@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Trash2, UserPlus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -92,15 +92,15 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
 
 // Re-export `computeAgeYears` from the canonical assignment module so
 // existing consumers of `travelers-section`'s public surface keep
-// working. The implementation lives in `@voyantjs/bookings/pricing-assignment`.
-export { computeAgeYears } from "@voyantjs/bookings/pricing-assignment"
+// working. The implementation lives in `@voyant-travel/bookings/pricing-assignment`.
+export { computeAgeYears } from "@voyant-travel/bookings/pricing-assignment"
 
 import {
   computeAgeYears as _computeAgeYears,
   matchUnitByDob as matchAssignmentUnitByDob,
   matchUnitByRoleHint as matchAssignmentUnitByRoleHint,
   type PricingAssignmentUnit,
-} from "@voyantjs/bookings/pricing-assignment"
+} from "@voyant-travel/bookings/pricing-assignment"
 
 /**
  * Derive the age-banded traveler role from DOB. Falls back to `adult`
@@ -170,7 +170,7 @@ export function matchPricingCategoryForTraveler(
 /**
  * Adapter from this file's `RoomGroupUnit` shape (UI-side, uses
  * `unitId`) to the canonical `PricingAssignmentUnit` shape (uses
- * `optionUnitId`). Phase 1 of voyantjs/voyant#1267 will collapse these
+ * `optionUnitId`). Phase 1 of voyant-travel/voyant#1267 will collapse these
  * by renaming the UI shape.
  */
 function roomGroupUnitsAsAssignmentUnits(
@@ -419,7 +419,7 @@ export function TravelersSection({
   // Note: there is no hydration effect any more. Travelers attached
   // before the option-units queries resolve get null assignment ids
   // and `*UnitSource: "auto"`; the resolver in
-  // `@voyantjs/bookings/pricing-assignment` re-derives them at every
+  // `@voyant-travel/bookings/pricing-assignment` re-derives them at every
   // preview/submit pass, and respects `"none"` (explicit No room) /
   // `"manual"` (operator click) when set. Operator intent is now
   // declarative on the row, not implicit in a one-shot effect.

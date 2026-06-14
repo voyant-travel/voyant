@@ -109,7 +109,7 @@ Request the next plan from the latest stored snapshot with:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:plan-dispatch -- --repo voyantjs/voyant
+pnpm agent:queue:plan-dispatch -- --repo voyant-travel/voyant
 ```
 
 Use `--json` when a supervisor needs the response shape directly. Use `--issue`,
@@ -121,7 +121,7 @@ Inspect recent stored snapshots with:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:history -- --source control-plane --repo voyantjs/voyant
+pnpm agent:queue:history -- --source control-plane --repo voyant-travel/voyant
 ```
 
 Create a leased dispatch intent from the latest stored snapshot with:
@@ -129,7 +129,7 @@ Create a leased dispatch intent from the latest stored snapshot with:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:lease-dispatch -- --repo voyantjs/voyant --holder supervisor:local
+pnpm agent:queue:lease-dispatch -- --repo voyant-travel/voyant --holder supervisor:local
 ```
 
 This records the lease and prints the command to run. It does not execute the
@@ -140,7 +140,7 @@ Inspect an active lease when a supervisor reports lease contention:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:active-dispatch -- --repo voyantjs/voyant --issue 579 --action remote-bootstrap
+pnpm agent:queue:active-dispatch -- --repo voyant-travel/voyant --issue 579 --action remote-bootstrap
 ```
 
 Validate deployed control-plane and runner capabilities before enabling Cron:
@@ -156,7 +156,7 @@ pnpm agent:queue:deployment-doctor -- --json
 The doctor calls both `/api/capabilities` endpoints, reads
 `/api/supervisor/status` from the runner app, and reports persistence and
 execution mode without printing token values.
-After a queue snapshot exists, add `--smoke-tick --repo voyantjs/voyant` to
+After a queue snapshot exists, add `--smoke-tick --repo voyant-travel/voyant` to
 verify that the deployed runner can call `POST /api/dispatch-plans/latest`
 through its dry-run supervisor tick without leasing work.
 
@@ -174,7 +174,7 @@ Release an expired active dispatch intent without copying its holder manually:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:release-dispatch -- --issue 579 --action sync-pr --repo voyantjs/voyant
+pnpm agent:queue:release-dispatch -- --issue 579 --action sync-pr --repo voyant-travel/voyant
 ```
 
 Run the full local supervisor path for one dispatchable item:
@@ -182,7 +182,7 @@ Run the full local supervisor path for one dispatchable item:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:run-dispatch-intent -- --repo voyantjs/voyant --holder supervisor:local --yes
+pnpm agent:queue:run-dispatch-intent -- --repo voyant-travel/voyant --holder supervisor:local --yes
 ```
 
 This leases the next intent, validates that the leased command is an allowed
@@ -194,7 +194,7 @@ Run a bounded supervisor loop against the control plane with:
 ```bash
 AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
-pnpm agent:queue:control-plane-loop -- --repo voyantjs/voyant --holder supervisor:local --iterations 3 --yes
+pnpm agent:queue:control-plane-loop -- --repo voyant-travel/voyant --holder supervisor:local --iterations 3 --yes
 ```
 
 Each iteration submits a fresh tick snapshot, leases one dispatch intent from

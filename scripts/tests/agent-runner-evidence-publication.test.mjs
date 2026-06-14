@@ -13,7 +13,7 @@ describe("agent runner evidence publication helpers", () => {
       evidenceMarker({
         evidenceReference: "docs/agent-evidence/active/579-test.md",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
       "<!-- voyant-agent-evidence:dm95YW50anMvdm95YW50IzU3OTpkb2NzL2FnZW50LWV2aWRlbmNlL2FjdGl2ZS81NzktdGVzdC5tZA -->",
     )

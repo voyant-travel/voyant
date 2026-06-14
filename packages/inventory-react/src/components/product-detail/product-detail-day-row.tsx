@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyant-travel/ui/components"
 import { ChevronDown, ChevronRight, Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { ActionMenu } from "./product-detail-sections.js"

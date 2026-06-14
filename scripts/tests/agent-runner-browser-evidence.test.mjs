@@ -120,7 +120,7 @@ describe("agent runner browser evidence helpers", () => {
       artifactPlan,
       branch: item.dryRunPlan.branch,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(env.VOYANT_AGENT_DEV_SERVER_PORT, "4879")
@@ -155,7 +155,7 @@ describe("agent runner browser evidence helpers", () => {
       command: "pnpm verify:fast",
       exitCode: 0,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       startedAt: new Date("2026-05-10T12:34:56.000Z"),
       stoppedAt: new Date("2026-05-10T12:35:56.000Z"),
     })

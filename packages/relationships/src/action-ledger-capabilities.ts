@@ -1,4 +1,4 @@
-import type { ActionLedgerCapabilityDefinition } from "@voyantjs/action-ledger"
+import type { ActionLedgerCapabilityDefinition } from "@voyant-travel/action-ledger"
 
 export const PERSON_DOCUMENT_REVEAL_CAPABILITY = {
   id: "relationships-pii:read:person-document",

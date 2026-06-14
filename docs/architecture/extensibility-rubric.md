@@ -20,7 +20,7 @@ Voyant should ship:
 - orchestration layers for cross-module flows
 - shared runtime packages
 - source-installable UI blocks
-- starter templates
+- starters
 - explicit extension seams
 
 Voyant should not try to ship:

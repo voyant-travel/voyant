@@ -12,7 +12,7 @@ import {
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
   upsertResourceTemplateSchema,
-} from "@voyantjs/operations"
+} from "@voyant-travel/operations"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
@@ -345,7 +345,7 @@ export const slotAllocationManifestResponse = singleEnvelope(slotAllocationManif
 
 /**
  * 2D seat layout for vehicle_seat templates. Mirrors `seatLayoutSpecSchema`
- * in @voyantjs/operations; the schemas are kept in sync by intent because
+ * in @voyant-travel/operations; the schemas are kept in sync by intent because
  * availability-react can't depend on the server-side package.
  */
 export const seatLayoutCellSchema = z.enum(["seat", "aisle", "door", "void"])

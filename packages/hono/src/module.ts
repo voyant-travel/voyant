@@ -1,4 +1,4 @@
-import type { Extension, Module } from "@voyantjs/core"
+import type { Extension, Module } from "@voyant-travel/core"
 import type { Hono } from "hono"
 
 export interface HonoModule {

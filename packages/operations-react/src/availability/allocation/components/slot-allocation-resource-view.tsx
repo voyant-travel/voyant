@@ -3,8 +3,8 @@
 import type {
   AllocationManifestTraveler,
   AllocationResource,
-} from "@voyantjs/operations-react/availability"
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components"
+} from "@voyant-travel/operations-react/availability"
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@voyant-travel/ui/components"
 import { Users } from "lucide-react"
 import { type ReactNode, useState } from "react"
 

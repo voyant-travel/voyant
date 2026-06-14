@@ -158,7 +158,7 @@ The registry is intentionally not a dependency-injection container — it's a `M
 
 ## 5. The demo: separate app + thin plugin
 
-The demo follows the same posture as the flights vertical (`apps/flights-demo-api` + `@voyantjs/plugin-flights-demo`): a standalone HTTP service simulates the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing — operator templates ship **zero demo state**. No demo tables in the operator's DB, no demo seed in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely an env-var change.
+The demo follows the same posture as the flights vertical (`apps/flights-demo-api` + `@voyant-travel/plugin-flights-demo`): a standalone HTTP service simulates the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing — operator starters ship **zero demo state**. No demo tables in the operator's DB, no demo seed in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely an env-var change.
 
 ### 5.1. `apps/catalog-demo-api` — standalone upstream simulator
 
@@ -171,7 +171,7 @@ Hono Node service with its own Postgres. Owns:
 
 The service is launched separately (`pnpm -F catalog-demo-api dev`) and listens on `:3330` by default. A real upstream (TUI's API, Voyant Connect's edge) plays the same role — it just happens to live in a different repo and run on different infrastructure. The contract is the same.
 
-### 5.2. `@voyantjs/plugin-catalog-demo` — thin HTTP client
+### 5.2. `@voyant-travel/plugin-catalog-demo` — thin HTTP client
 
 Pure `SourceAdapter` implementation, zero state. `createDemoCatalogAdapter({ baseUrl })` returns an adapter whose lifecycle methods all round-trip to `apps/catalog-demo-api`:
 
@@ -181,14 +181,14 @@ Pure `SourceAdapter` implementation, zero state. `createDemoCatalogAdapter({ bas
 - `reserve` POSTs to `/reserve`.
 - `cancel` POSTs to `/cancel`.
 
-The plugin contains no business logic. Replacing it with `@voyantjs/plugin-voyant-connect` or `@voyantjs/plugin-hotelbeds` is the typical upgrade path — same shape, different upstream.
+The plugin contains no business logic. Replacing it with `@voyant-travel/plugin-voyant-connect` or `@voyant-travel/plugin-hotelbeds` is the typical upgrade path — same shape, different upstream.
 
 ### 5.3. Why this split matters
 
-Three reasons the demo is structured this way rather than embedded in the operator template:
+Three reasons the demo is structured this way rather than embedded in the operator starter:
 
 1. **Adapter authors get a target.** Building a real adapter against an in-process demo with shared DB tables is misleading — the actual upstream is over a network and owns its own state. The demo-api models the real shape so the gap between demo and prod is just URLs and credentials.
-2. **Templates stay clean.** Adding a vertical's demo to the operator template means schemas, migrations, seed code, and dependencies leak into every operator deployment that doesn't actually want the demo. With the app-and-plugin split, the demo simply isn't deployed unless the operator wants it.
+2. **Starters stay clean.** Adding a vertical's demo to the operator starter means schemas, migrations, seed code, and dependencies leak into every operator deployment that doesn't actually want the demo. With the app-and-plugin split, the demo simply isn't deployed unless the operator wants it.
 3. **The contract gets exercised over the wire.** A demo that bypasses HTTP can satisfy the type signature without satisfying the actual operational shape (timeouts, partial responses, JSON parsing). The standalone service forces every contract change to hold up over real HTTP.
 
 The demo doubles as the integration test fixture: booking-engine integration tests boot the demo-api against a test Postgres, register the plugin pointing at it, and exercise the full lifecycle without mocking.
@@ -235,7 +235,7 @@ apps/catalog-demo-api/           standalone upstream simulator
   README.md
 ```
 
-Templates that want the booking engine register `@voyantjs/catalog/booking-engine` routes and conditionally register adapters based on env. The operator template registers `@voyantjs/plugin-catalog-demo` if `CATALOG_DEMO_API_URL` is set, otherwise the booking engine reports `NO_ADAPTER_REGISTERED` for any `demo` row — the operator's primary DB stays clean either way.
+Starters that want the booking engine register `@voyant-travel/catalog/booking-engine` routes and conditionally register adapters based on env. The operator starter registers `@voyant-travel/plugin-catalog-demo` if `CATALOG_DEMO_API_URL` is set, otherwise the booking engine reports `NO_ADAPTER_REGISTERED` for any `demo` row — the operator's primary DB stays clean either way.
 
 ## 8. Open questions
 
@@ -260,7 +260,7 @@ Once that tracer is clickable end-to-end (an operator can open the Catalog page,
 - **Booking engine** — the cross-vertical lifecycle layer (`quoteEntity`, `bookEntity`, `cancelEntity`) that sits on top of the `SourceAdapter` contract.
 - **Owned inventory** — a catalog row with `source.kind: "owned"`. Lives in the operator's own DB; the engine dispatches the lifecycle to the vertical's local service layer.
 - **Sourced inventory** — a catalog row with any non-`owned` `source.kind`. The engine dispatches the lifecycle to the registered `SourceAdapter` for that kind.
-- **Demo adapter** — `@voyantjs/catalog-demo-adapter`, the reference `SourceAdapter` implementation. Backs its data in its own Postgres tables. Operator template registers it for the demo flow.
+- **Demo adapter** — `@voyant-travel/catalog-demo-adapter`, the reference `SourceAdapter` implementation. Backs its data in its own Postgres tables. Operator starter registers it for the demo flow.
 - **`SourceAdapterRegistry`** — process-local map keyed by `source.kind` that the engine consults to find the right adapter for a given row.
 - **`NO_ADAPTER_REGISTERED`** — stable error code returned when the engine encounters a `source.kind` with no registered adapter. Analogous to `CAPABILITY_NOT_SUPPORTED`.
 

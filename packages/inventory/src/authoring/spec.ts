@@ -1,4 +1,4 @@
-import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyantjs/commerce"
+import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyant-travel/commerce"
 import { z } from "zod"
 import {
   optionUnitTypeEnum,
@@ -26,7 +26,7 @@ import {
  * NOTE: `availability_slots` (departures) are intentionally absent — they are
  * date-specific and added separately after the graph exists.
  *
- * Home of this type is under review (here vs `@voyantjs/products-contracts`).
+ * Home of this type is under review (here vs `@voyant-travel/products-contracts`).
  */
 
 const money = z.number().int()

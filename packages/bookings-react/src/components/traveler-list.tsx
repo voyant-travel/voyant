@@ -2,7 +2,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { usePerson } from "@voyantjs/relationships-react"
+import { usePerson } from "@voyant-travel/relationships-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,15 +13,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components/sheet"
+} from "@voyant-travel/ui/components/sheet"
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -620,7 +620,7 @@ function formatDateValue(value: string | null | undefined): string | null {
 
 /**
  * Heuristic check for redaction markers used by `redactTravelerIdentity`
- * on the API. We can't import the redactor from `@voyantjs/bookings`
+ * on the API. We can't import the redactor from `@voyant-travel/bookings`
  * at the UI layer (would pull in a server dep), so probe for the
  * canonical patterns the redactor produces (`***`, `*@`, `***1234`).
  */

@@ -15,14 +15,14 @@
  *        cloudClient, htmlWrapper?, pdfOptions?
  *      })` and pass it to `createStorageBackedContractDocumentGenerator`.
  *
- * The Cloud SDK isn't a hard dep of `@voyantjs/legal`: we type only
+ * The Cloud SDK isn't a hard dep of `@voyant-travel/legal`: we type only
  * the shape we need (`{ browser: { pdf: ({ html, pdfOptions }) =>
  * Promise<Uint8Array> } }`), so the legal package stays decoupled
  * from any specific HTTP transport. Operators wire their cloud
  * client at template level.
  */
 
-import { hardenRenderedHtmlDocument } from "@voyantjs/utils/template-renderer"
+import { hardenRenderedHtmlDocument } from "@voyant-travel/utils/template-renderer"
 
 import type {
   ContractDocumentGeneratorContext,
@@ -31,7 +31,7 @@ import type {
 } from "./service-documents.js"
 
 /**
- * Subset of `@voyantjs/cloud-sdk`'s client surface we depend on. Kept
+ * Subset of `@voyant-travel/cloud-sdk`'s client surface we depend on. Kept
  * structural so the legal package doesn't pull in the SDK transitively.
  */
 export interface CloudBrowserRenderClient {
@@ -148,7 +148,7 @@ function escapeHtmlAttr(input: string): string {
 export interface CreateBrowserRenderedPdfContractDocumentSerializerOptions {
   /**
    * Cloud client used to invoke `/browser/v1/pdf`. Operators pass an
-   * instantiated `@voyantjs/cloud-sdk` client; the legal package
+   * instantiated `@voyant-travel/cloud-sdk` client; the legal package
    * doesn't import the SDK directly to keep the dep optional.
    */
   cloudClient: CloudBrowserRenderClient

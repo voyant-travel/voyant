@@ -1,4 +1,4 @@
-import { parseJsonBody, parseOptionalJsonBody, requireUserId } from "@voyantjs/hono"
+import { parseJsonBody, parseOptionalJsonBody, requireUserId } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"

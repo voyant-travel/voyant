@@ -226,7 +226,7 @@ current Cloud membership.
 
 ### 11. Templates should compose the auth surface, not redefine it
 
-Starter templates may:
+Starters may:
 
 - choose auth UI
 - decide how the auth runtime is mounted

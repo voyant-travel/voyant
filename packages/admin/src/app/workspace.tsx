@@ -154,7 +154,7 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
  * The authenticated workspace shell: bootstrap gate (current-user readiness
  * is the only shell dependency), per-user message overrides, locale
  * preference sync, and the workspace layout with router-aware links — the
- * composition every Voyant admin previously copied from the template.
+ * composition every Voyant admin previously copied from the starter.
  */
 export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   user,

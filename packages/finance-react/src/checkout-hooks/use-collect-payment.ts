@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   InitiateCheckoutCollectionInput,
   InitiatedCheckoutCollectionRecord,
-} from "@voyantjs/finance/checkout"
+} from "@voyant-travel/finance/checkout"
 import type { PaymentChoice } from "../checkout-types.js"
 import { useVoyantFinanceContext } from "../provider.js"
 
@@ -147,7 +147,7 @@ function mapChoiceToRequest(
         cancelUrl: ctx.cancelUrl ?? undefined,
       },
       // No auto-email by design — the admin shares the link manually.
-      // Templates that want auto-email back can call
+      // Starters that want auto-email back can call
       // `useInitiateCheckoutCollection` directly with `paymentSessionNotification`.
       notes: ctx.notes ?? undefined,
     }

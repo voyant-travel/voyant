@@ -19,10 +19,10 @@ function nextSeq() {
 
 export function createExtrasTestContext() {
   let app!: Hono
-  let db!: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db!: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -36,7 +36,7 @@ export function createExtrasTestContext() {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
@@ -59,7 +59,7 @@ export function createExtrasTestContext() {
   }
 
   async function seedBooking() {
-    const { bookings } = await import("@voyantjs/bookings/schema")
+    const { bookings } = await import("@voyant-travel/bookings/schema")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(bookings)
       .values({ bookingNumber: `BK-${nextSeq()}`, sellCurrency: "USD" })
@@ -91,7 +91,7 @@ export function createExtrasTestContext() {
     overrides: Record<string, unknown> = {},
   ) {
     const { bookingAllocations, bookingItems, bookingTravelers, bookings } = await import(
-      "@voyantjs/bookings/schema"
+      "@voyant-travel/bookings/schema"
     )
     const bookingNumber = (overrides.bookingNumber as string | undefined) ?? `BK-${nextSeq()}`
     const [booking] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)

@@ -1,18 +1,18 @@
 // agent-quality: file-size exception -- owner: workflows-cloud-adapter; existing module stays co-located until a dedicated split preserves behavior and tests.
-// @voyantjs/workflows-cloud-adapter
+// @voyant-travel/workflows-cloud-adapter
 //
 // Tenant Worker adapter for Voyant Cloud's workflows runtime. The package
 // keeps tenant entrypoints small while preserving the same Cloudflare
 // Durable Object run model used by the lower-level orchestrator adapter.
 
-import { createBearerVerifier, createHmacSigner } from "@voyantjs/workflows/auth"
+import { createBearerVerifier, createHmacSigner } from "@voyant-travel/workflows/auth"
 import {
   handleStepRequest,
   type StepJournalEntry,
   type StepRunner,
-} from "@voyantjs/workflows/handler"
-import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
-import type { StepHandler } from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows/handler"
+import { createInMemoryRateLimiter } from "@voyant-travel/workflows/rate-limit"
+import type { StepHandler } from "@voyant-travel/workflows-orchestrator"
 import {
   type CfManifestStore,
   type ContainerNamespaceLike,
@@ -28,7 +28,7 @@ import {
   type KvNamespaceLike,
   type StepDispatcher,
   type WorkerFetchDeps,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 import { type AutoPublishContext, scheduleAutoPublishManifest } from "./auto-publish.js"
 
@@ -99,7 +99,7 @@ export interface CloudOrchestratorOptions<Env extends CloudWorkflowsEnv = CloudW
   idGenerator?: WorkerFetchDeps["idGenerator"]
   now?: () => number
   tenantMeta?: WorkerFetchDeps["tenantMeta"]
-  services?: import("@voyantjs/workflows/driver").ServiceResolver
+  services?: import("@voyant-travel/workflows/driver").ServiceResolver
   resolveEnv?: (env: Env) => Env
   /**
    * Opt out of the cold-start auto-publish of the in-process workflow
@@ -403,7 +403,9 @@ async function createHttpNodeStepRunner<Env extends CloudWorkflowsEnv>(
 ): Promise<StepRunner> {
   const serviceUrl = env.VOYANT_WORKFLOW_NODE_RUNNER_URL?.replace(/\/+$/, "")
   if (!serviceUrl) {
-    throw new Error("@voyantjs/workflows-cloud-adapter: VOYANT_WORKFLOW_NODE_RUNNER_URL is empty")
+    throw new Error(
+      "@voyant-travel/workflows-cloud-adapter: VOYANT_WORKFLOW_NODE_RUNNER_URL is empty",
+    )
   }
   const key = env.VOYANT_WORKFLOW_BUNDLE_KEY
   const hash = env.VOYANT_WORKFLOW_BUNDLE_HASH
@@ -413,7 +415,7 @@ async function createHttpNodeStepRunner<Env extends CloudWorkflowsEnv>(
   ].filter(([, value]) => typeof value !== "string" || value.length === 0)
   if (missing.length > 0) {
     throw new Error(
-      `@voyantjs/workflows-cloud-adapter: Cloud Run node runner is configured but bundle env is incomplete: ${missing
+      `@voyant-travel/workflows-cloud-adapter: Cloud Run node runner is configured but bundle env is incomplete: ${missing
         .map(([name]) => name)
         .join(", ")}`,
     )
@@ -597,7 +599,7 @@ function resolveBundleConfig(env: CloudWorkflowsEnv): {
   if (!bucket) missing.push(["VOYANT_WORKFLOW_BUNDLE_R2_BUCKET", bucket])
   if (missing.length > 0) {
     throw new Error(
-      `@voyantjs/workflows-cloud-adapter: STEP_RUNNER is configured but bundle env is incomplete: ${missing
+      `@voyant-travel/workflows-cloud-adapter: STEP_RUNNER is configured but bundle env is incomplete: ${missing
         .map(([name]) => name)
         .join(", ")}`,
     )
@@ -606,7 +608,7 @@ function resolveBundleConfig(env: CloudWorkflowsEnv): {
   const expiresIn = Number(env.VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS ?? 300)
   if (!Number.isFinite(expiresIn) || expiresIn < 1 || expiresIn > 604_800) {
     throw new Error(
-      "@voyantjs/workflows-cloud-adapter: VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS must be 1..604800",
+      "@voyant-travel/workflows-cloud-adapter: VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS must be 1..604800",
     )
   }
 
@@ -655,7 +657,7 @@ function resolveBoundEnv<Env extends CloudWorkflowsEnv>(
   const env = requestEnv ?? boundEnv
   if (!env) {
     throw new Error(
-      "@voyantjs/workflows-cloud-adapter: env must be passed to fetch(request, env) or createCloudOrchestrator(workflows, env)",
+      "@voyant-travel/workflows-cloud-adapter: env must be passed to fetch(request, env) or createCloudOrchestrator(workflows, env)",
     )
   }
   return options.resolveEnv?.(env) ?? env

@@ -21,7 +21,7 @@ describe("agent runner supervisor history", () => {
         controlPlaneUrl: "https://control.example.com",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       now: () => new Date("2026-05-12T12:00:00.000Z"),
       supervisorTickStore,
@@ -37,16 +37,19 @@ describe("agent runner supervisor history", () => {
     })
     expect(tick.status).toBe(200)
 
-    const latest = await app.request("/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant", {
-      headers: {
-        authorization: "Bearer token",
+    const latest = await app.request(
+      "/api/supervisor/ticks/latest?repository=voyant-travel%2Fvoyant",
+      {
+        headers: {
+          authorization: "Bearer token",
+        },
       },
-    })
+    )
 
     expect(latest.status).toBe(200)
     await expect(latest.json()).resolves.toMatchObject({
       recordedAt: "2026-05-12T12:00:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: {
         leased: false,
         reason: "dry_run",
@@ -54,7 +57,7 @@ describe("agent runner supervisor history", () => {
     })
 
     const recent = await app.request(
-      "/api/supervisor/ticks/recent?repository=voyantjs%2Fvoyant&limit=5",
+      "/api/supervisor/ticks/recent?repository=voyant-travel%2Fvoyant&limit=5",
       {
         headers: {
           authorization: "Bearer token",
@@ -67,18 +70,18 @@ describe("agent runner supervisor history", () => {
       records: [
         {
           recordedAt: "2026-05-12T12:00:00.000Z",
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
           result: {
             leased: false,
             reason: "dry_run",
           },
         },
       ],
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     const leases = await app.request(
-      "/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant&limit=5",
+      "/api/supervisor/leases/recent?repository=voyant-travel%2Fvoyant&limit=5",
       {
         headers: {
           authorization: "Bearer token",
@@ -89,11 +92,11 @@ describe("agent runner supervisor history", () => {
     expect(leases.status).toBe(200)
     await expect(leases.json()).resolves.toMatchObject({
       records: [],
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     const defaultLimited = await app.request(
-      "/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant",
+      "/api/supervisor/leases/recent?repository=voyant-travel%2Fvoyant",
       {
         headers: {
           authorization: "Bearer token",
@@ -113,13 +116,13 @@ describe("agent runner supervisor history", () => {
       config: {
         controlPlaneConfigured: true,
         enabled: true,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       supervisorTickStore,
     })
 
     const response = await app.request(
-      "/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=2",
+      "/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=2",
       {
         headers: {
           authorization: "Bearer token",
@@ -147,7 +150,7 @@ describe("agent runner supervisor history", () => {
   it("requires storage and repository before reading persisted supervisor history", async () => {
     const noStore = createApp({ authTokens: ["token"] })
     const noStoreResponse = await noStore.request(
-      "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
+      "/api/supervisor/ticks/latest?repository=voyant-travel%2Fvoyant",
       {
         headers: {
           authorization: "Bearer token",
@@ -160,7 +163,7 @@ describe("agent runner supervisor history", () => {
     })
 
     const noLeaseStoreResponse = await noStore.request(
-      "/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant",
+      "/api/supervisor/leases/recent?repository=voyant-travel%2Fvoyant",
       {
         headers: {
           authorization: "Bearer token",
@@ -201,7 +204,7 @@ describe("agent runner supervisor history", () => {
     await expect(missingLeaseRepository.json()).resolves.toEqual({ error: "missing_repository" })
 
     const invalidSince = await app.request(
-      "/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant&since=not-a-date",
+      "/api/supervisor/leases/recent?repository=voyant-travel%2Fvoyant&since=not-a-date",
       {
         headers: {
           authorization: "Bearer token",
@@ -212,7 +215,7 @@ describe("agent runner supervisor history", () => {
     await expect(invalidSince.json()).resolves.toEqual({ error: "invalid_since" })
 
     const missingTick = await app.request(
-      "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
+      "/api/supervisor/ticks/latest?repository=voyant-travel%2Fvoyant",
       {
         headers: {
           authorization: "Bearer token",
@@ -266,7 +269,7 @@ function leaseRecord(): SupervisorLeaseRecord {
   return {
     id: "lease_579",
     leasedAt: "2026-05-12T12:00:00.000Z",
-    repository: "voyantjs/voyant",
+    repository: "voyant-travel/voyant",
     result: {
       intent: {
         id: "intent_579",

@@ -16,7 +16,7 @@ Per invocation:
    header against `VOYANT_DISPATCH_SECRET` — rejects any request that
    didn't come from a trusted orchestrator.
 3. **Routes** `POST /__voyant/workflow-step` through
-   `@voyantjs/workflows/handler`'s `createStepHandler`.
+   `@voyant-travel/workflows/handler`'s `createStepHandler`.
 4. **Dispatches** `runtime: "node"` steps to the orchestrator's
    `NodeStepContainer` DO via `createCfContainerStepRunner`.
 5. **Resolves** bundles to R2 URLs at dispatch time via

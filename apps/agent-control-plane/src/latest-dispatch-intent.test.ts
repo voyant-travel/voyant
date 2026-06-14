@@ -13,12 +13,12 @@ import type { TickSnapshotStore } from "./tick-snapshot-store.js"
 
 const tickSnapshot = {
   project: {
-    owner: "voyantjs",
+    owner: "voyant-travel",
     number: 1,
     title: "Voyant Engineering",
-    url: "https://github.com/orgs/voyantjs/projects/1",
+    url: "https://github.com/orgs/voyant-travel/projects/1",
   },
-  repository: "voyantjs/voyant",
+  repository: "voyant-travel/voyant",
   maxAgeDays: 1,
   eventLog: {
     path: "/repo/.agent-runs/events.jsonl",
@@ -27,12 +27,12 @@ const tickSnapshot = {
   recommendations: [
     {
       action: "remote-bootstrap",
-      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/voyant --yes",
+      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/voyant --yes",
       issue: {
         number: 579,
         title: "Test agent project intake workflow",
-        url: "https://github.com/voyantjs/voyant/issues/579",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/579",
+        repository: "voyant-travel/voyant",
       },
       priority: 20,
       reason: "remote workspace is ready for repository bootstrap",
@@ -41,12 +41,12 @@ const tickSnapshot = {
     {
       action: "remote-run-command",
       command:
-        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyantjs/voyant --command "<implementation-command>" --yes',
+        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyant-travel/voyant --command "<implementation-command>" --yes',
       issue: {
         number: 580,
         title: "Run implementation",
-        url: "https://github.com/voyantjs/voyant/issues/580",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/580",
+        repository: "voyant-travel/voyant",
       },
       priority: 30,
       reason: "implementation execution remains explicit",
@@ -85,7 +85,7 @@ describe("latest dispatch intents", () => {
         options: {
           eventLog: ".agent-runs/supervisor.jsonl",
         },
-        repository: "VoyantJS/Voyant",
+        repository: "Voyant-Travel/Voyant",
       }),
     })
 
@@ -95,11 +95,11 @@ describe("latest dispatch intents", () => {
       source: {
         acceptedAt: "2026-05-12T05:00:00.000Z",
         recommendationCount: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
       storage: {
-        activeKey: "active/voyantjs/voyant/579/remote-bootstrap.json",
+        activeKey: "active/voyant-travel/voyant/579/remote-bootstrap.json",
         key: "intent_579.json",
         persisted: true,
       },
@@ -121,20 +121,20 @@ describe("latest dispatch intents", () => {
             "--issue",
             "579",
             "--repo",
-            "VoyantJS/Voyant",
+            "Voyant-Travel/Voyant",
             "--yes",
             "--event-log",
             ".agent-runs/supervisor.jsonl",
           ],
           issue: tickSnapshot.recommendations[0]?.issue,
           reason: "remote workspace is ready for repository bootstrap",
-          repository: "VoyantJS/Voyant",
+          repository: "Voyant-Travel/Voyant",
           requiresMutation: true,
         },
         source: {
           acceptedAt: "2026-05-12T05:00:00.000Z",
           recommendationCount: 2,
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
           type: "latest_tick_snapshot",
         },
         status: "leased",
@@ -160,7 +160,7 @@ describe("latest dispatch intents", () => {
         lease: {
           holder: "supervisor:test",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -169,7 +169,7 @@ describe("latest dispatch intents", () => {
       intent: null,
       reason: "remote-run-command requires remote implementation command",
       source: {
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
     })
@@ -187,7 +187,7 @@ describe("latest dispatch intents", () => {
         options: {
           remoteImplementationCommand: "agent-exec remote smoke",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -204,7 +204,7 @@ describe("latest dispatch intents", () => {
             "--issue",
             "580",
             "--repo",
-            "voyantjs/voyant",
+            "voyant-travel/voyant",
             "--command",
             "agent-exec remote smoke",
             "--yes",
@@ -238,13 +238,13 @@ describe("latest dispatch intents", () => {
         command: ["pnpm", "agent:queue:remote-bootstrap"],
         issue: tickSnapshot.recommendations[0]!.issue,
         reason: "existing lease",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         requiresMutation: true,
       },
       source: {
         acceptedAt: "2026-05-12T05:00:00.000Z",
         recommendationCount: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
       status: "leased",
@@ -257,7 +257,7 @@ describe("latest dispatch intents", () => {
         lease: {
           holder: "supervisor:test",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -293,13 +293,13 @@ describe("latest dispatch intents", () => {
         command: ["pnpm", "agent:queue:remote-bootstrap"],
         issue: tickSnapshot.recommendations[0]!.issue,
         reason: "expired lease",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         requiresMutation: true,
       },
       source: {
         acceptedAt: "2026-05-12T05:00:00.000Z",
         recommendationCount: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "latest_tick_snapshot",
       },
       status: "leased",
@@ -312,7 +312,7 @@ describe("latest dispatch intents", () => {
         lease: {
           holder: "supervisor:test",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 
@@ -340,7 +340,7 @@ describe("latest dispatch intents", () => {
         lease: {
           holder: "supervisor:test",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
     expect(noIntentStoreResponse.status).toBe(503)
@@ -357,7 +357,7 @@ describe("latest dispatch intents", () => {
       method: "POST",
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
       body: JSON.stringify({
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
     expect(invalid.status).toBe(400)
@@ -372,7 +372,7 @@ describe("latest dispatch intents", () => {
         lease: {
           holder: "supervisor:test",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
     expect(missingSnapshot.status).toBe(404)

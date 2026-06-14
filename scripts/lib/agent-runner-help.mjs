@@ -1,5 +1,5 @@
 export const projectOptions = [
-  ["--owner <org>", "GitHub organization that owns the Project. Defaults to voyantjs."],
+  ["--owner <org>", "GitHub organization that owns the Project. Defaults to voyant-travel."],
   [
     "--project <number>",
     "GitHub Project number. Defaults from VOYANT_ENGINEERING_PROJECT_URL or 1.",

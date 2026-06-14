@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -7,7 +7,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 
 export function AvailabilityBodySkeleton() {

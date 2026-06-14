@@ -1,4 +1,4 @@
-import type { KVStore } from "@voyantjs/utils/cache"
+import type { KVStore } from "@voyant-travel/utils/cache"
 
 /**
  * KV-backed read model for the public product detail surface (RFC

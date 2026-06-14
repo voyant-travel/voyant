@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
+import { useAdminHref, useAdminNavigate } from "@voyant-travel/admin"
 import {
   Badge,
   Button,
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Layers, Loader2, Pencil, Plus, Search } from "lucide-react"
 import { useState } from "react"
 import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

@@ -11,7 +11,7 @@
  * Per docs/architecture/channel-push-architecture.md §4 + §10 (Phase D).
  */
 
-import { definePlugin, type Plugin } from "@voyantjs/core"
+import { definePlugin, type Plugin } from "@voyant-travel/core"
 
 import { type ChannelPushSubscribersOptions, createChannelPushSubscribers } from "./subscriber.js"
 

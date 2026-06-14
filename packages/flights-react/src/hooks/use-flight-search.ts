@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import type { FlightSearchRequest } from "@voyantjs/flights/contract/types"
+import type { FlightSearchRequest } from "@voyant-travel/flights/contract/types"
 
 import { useVoyantFlightsContext } from "../provider.js"
 import { getFlightSearchQueryOptions } from "../query-options.js"

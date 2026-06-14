@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: distribution-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import type { RowSelectionState } from "@tanstack/react-table"
-import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Tabs, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useDistributionUiI18nOrDefault } from "../i18n/index.js"

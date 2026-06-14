@@ -39,7 +39,7 @@ describe("agent runner event helpers", () => {
       eventLogPath,
       event: {
         type: "dispatch.started",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       now: new Date("2026-05-10T12:00:00.000Z"),
     })
@@ -47,7 +47,7 @@ describe("agent runner event helpers", () => {
     assert.deepEqual(entry, {
       timestamp: "2026-05-10T12:00:00.000Z",
       type: "dispatch.started",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
     assert.equal(`${JSON.stringify(entry)}\n`, readFileSync(eventLogPath, "utf8"))
   })
@@ -64,7 +64,7 @@ describe("agent runner event helpers", () => {
       eventLogPath,
       event: {
         type: "claim.completed",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       warn: (message) => warnings.push(message),
     })
@@ -117,7 +117,7 @@ describe("agent runner event helpers", () => {
   it("extracts stable recommendation details for logs", () => {
     const recommendation = recommendQueueAction(workItem({ number: 579 }), {
       maxAgeDays: 1,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.deepEqual(recommendationEventDetails(recommendation), {
@@ -126,8 +126,8 @@ describe("agent runner event helpers", () => {
       issue: {
         number: 579,
         title: "Test agent project intake workflow",
-        url: "https://github.com/voyantjs/voyant/issues/579",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/579",
+        repository: "voyant-travel/voyant",
       },
     })
   })
@@ -138,8 +138,8 @@ describe("agent runner event helpers", () => {
     assert.deepEqual(issueEventDetails(item), {
       number: 579,
       title: "Test agent project intake workflow",
-      url: "https://github.com/voyantjs/voyant/issues/579",
-      repository: "voyantjs/voyant",
+      url: "https://github.com/voyant-travel/voyant/issues/579",
+      repository: "voyant-travel/voyant",
     })
     assert.deepEqual(issueEventDetails(item.issue), issueEventDetails(item))
   })
@@ -149,37 +149,37 @@ describe("agent runner event helpers", () => {
       {
         timestamp: "2026-05-10T12:00:00.000Z",
         type: "dispatch.started",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         recommendation: {
           action: "start",
           issue: {
             number: 579,
             title: "Test agent project intake workflow",
-            url: "https://github.com/voyantjs/voyant/issues/579",
-            repository: "voyantjs/voyant",
+            url: "https://github.com/voyant-travel/voyant/issues/579",
+            repository: "voyant-travel/voyant",
           },
         },
       },
       {
         timestamp: "2026-05-10T12:01:00.000Z",
         type: "claim.completed",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         issue: {
           number: 580,
           title: "Other task",
-          url: "https://github.com/voyantjs/voyant/issues/580",
-          repository: "voyantjs/voyant",
+          url: "https://github.com/voyant-travel/voyant/issues/580",
+          repository: "voyant-travel/voyant",
         },
       },
       {
         timestamp: "2026-05-10T12:02:00.000Z",
         type: "claim.completed",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
         issue: {
           number: 579,
           title: "Other repo task",
-          url: "https://github.com/voyantjs/other/issues/579",
-          repository: "voyantjs/other",
+          url: "https://github.com/voyant-travel/other/issues/579",
+          repository: "voyant-travel/other",
         },
       },
     ]
@@ -193,7 +193,7 @@ describe("agent runner event helpers", () => {
     assert.deepEqual(
       filterAgentRunnerEvents(events, {
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         type: "dispatch.started",
       }),
       [events[0]],

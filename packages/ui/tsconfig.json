@@ -1,11 +1,11 @@
 {
-  "extends": "@voyantjs/voyant-typescript-config/react.json",
+  "extends": "@voyant-travel/voyant-typescript-config/react.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@voyantjs/ui/*": ["./src/*"],
+      "@voyant-travel/ui/*": ["./src/*"],
       "@/*": ["./src/*"]
     }
   },

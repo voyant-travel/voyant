@@ -9,15 +9,15 @@ import {
   useInvoiceAttachments,
   useInvoices,
   useVoyantFinanceContext,
-} from "@voyantjs/finance-react"
+} from "@voyant-travel/finance-react"
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
   useLegalContractAttachments,
   useLegalContracts,
   useVoyantLegalContext,
-} from "@voyantjs/legal-react"
-import { useOrganization, usePerson } from "@voyantjs/relationships-react"
+} from "@voyant-travel/legal-react"
+import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
 import {
   Badge,
   Button,
@@ -31,7 +31,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   ArrowRight,
   Building2,

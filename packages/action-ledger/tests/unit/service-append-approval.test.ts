@@ -1,8 +1,8 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   type DbTransactionCapability,
   VOYANT_DB_SUPPORTS_TRANSACTIONS,
-} from "@voyantjs/db/transaction-capability"
+} from "@voyant-travel/db/transaction-capability"
 import { describe, expect, test } from "vitest"
 
 import {

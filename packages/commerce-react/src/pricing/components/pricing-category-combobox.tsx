@@ -8,7 +8,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import * as React from "react"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { type PricingCategoryRecord, usePricingCategories } from "../index.js"

@@ -21,8 +21,8 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import type { FormEvent } from "react"
 import { useEffect, useState } from "react"

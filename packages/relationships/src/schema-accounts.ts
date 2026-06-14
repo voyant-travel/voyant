@@ -1,5 +1,5 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import type { KmsEnvelope } from "@voyantjs/db/schema/iam/kms"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
+import type { KmsEnvelope } from "@voyant-travel/db/schema/iam/kms"
 import { sql } from "drizzle-orm"
 import {
   boolean,

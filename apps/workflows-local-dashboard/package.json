@@ -1,7 +1,7 @@
 {
-  "name": "@voyantjs/workflows-local-dashboard",
+  "name": "@voyant-travel/workflows-local-dashboard",
   "version": "0.0.3",
-  "description": "Local dev dashboard served by `voyant workflows serve` / `voyant dev`. Embeds @voyantjs/workflows-react/ui against the local run store API.",
+  "description": "Local dev dashboard served by `voyant workflows serve` / `voyant dev`. Embeds @voyant-travel/workflows-react/ui against the local run store API.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -20,9 +20,9 @@
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@uiw/react-codemirror": "^4.23.6",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/workflows": "workspace:^",
-    "@voyantjs/workflows-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
+    "@voyant-travel/workflows-react": "workspace:^",
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11",

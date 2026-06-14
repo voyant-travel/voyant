@@ -41,7 +41,7 @@ export interface ProjectConfig {
  * Settings for `voyant admin generate --routes` — the generated thin route
  * files that bind zero-prop extension route contributions into the host's
  * file-based route tree (packaged-admin RFC §4.2). All fields are optional;
- * defaults match the operator template's conventions.
+ * defaults match the operator starter's conventions.
  */
 export interface AdminRoutesConfig {
   /**
@@ -94,7 +94,7 @@ export type ModuleEntry =
 
 /**
  * A plugin declaration — mirrors {@link ModuleEntry} but references
- * distributable plugin bundles (see `@voyantjs/core/plugin`).
+ * distributable plugin bundles (see `@voyant-travel/core/plugin`).
  */
 export type PluginEntry =
   | string
@@ -162,8 +162,8 @@ export interface VoyantConfig {
  *
  * @example
  * ```ts
- * // templates/operator/voyant.config.ts
- * import { defineVoyantConfig } from "@voyantjs/core/config"
+ * // starters/operator/voyant.config.ts
+ * import { defineVoyantConfig } from "@voyant-travel/core/config"
  *
  * export default defineVoyantConfig({
  *   modules: ["crm", "bookings", "products", "finance", "suppliers"],

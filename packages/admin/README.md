@@ -1,28 +1,28 @@
-# @voyantjs/admin
+# @voyant-travel/admin
 
 Packaged staff shell, admin extension surface, and reusable admin dashboard
-primitives for Voyant templates.
+primitives for Voyant starters.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/admin
+pnpm add @voyant-travel/admin
 ```
 
 ## Usage
 
 ```typescript
-import { AdminProvider } from "@voyantjs/admin/providers/admin-provider"
-import { OperatorAdminShellProvider } from "@voyantjs/admin/providers/operator-admin-shell"
-import { ThemeProvider, useTheme } from "@voyantjs/admin/providers/theme"
-import { makeQueryClient } from "@voyantjs/admin/providers/query-client"
-import { getInitials, getDisplayName } from "@voyantjs/admin/lib/initials"
-import { OperatorAdminWorkspaceLayout } from "@voyantjs/admin/components/operator-admin-sidebar"
+import { AdminProvider } from "@voyant-travel/admin/providers/admin-provider"
+import { OperatorAdminShellProvider } from "@voyant-travel/admin/providers/operator-admin-shell"
+import { ThemeProvider, useTheme } from "@voyant-travel/admin/providers/theme"
+import { makeQueryClient } from "@voyant-travel/admin/providers/query-client"
+import { getInitials, getDisplayName } from "@voyant-travel/admin/lib/initials"
+import { OperatorAdminWorkspaceLayout } from "@voyant-travel/admin/components/operator-admin-sidebar"
 import {
   createAdminExtensionRegistry,
   defineAdminExtension,
   resolveAdminNavigation,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 function App() {
   return (
@@ -67,7 +67,7 @@ Use `defineAdminExtension(...)` to declare shared admin contributions and keep
 the extension surface explicit:
 
 ```ts
-import { defineAdminExtension } from "@voyantjs/admin"
+import { defineAdminExtension } from "@voyant-travel/admin"
 
 export const financeExtension = defineAdminExtension({
   id: "finance-tools",
@@ -80,21 +80,21 @@ export const financeExtension = defineAdminExtension({
 })
 ```
 
-Templates can merge those contributions into their base navigation with
+Starters can merge those contributions into their base navigation with
 `resolveAdminNavigation(...)` and expose widget slots with
-`resolveAdminWidgets(...)`. When a template wants one explicit source-controlled
+`resolveAdminWidgets(...)`. When a starter wants one explicit source-controlled
 registry, compose it with `createAdminExtensionRegistry(...)`.
 
-The packaged app shell lives under `@voyantjs/admin/app/*`. First-party
-templates should import shell/router helpers from those subpaths. The
-domain-backed core extension remains in `@voyantjs/admin-app/core-extension`
+The packaged app shell lives under `@voyant-travel/admin/app/*`. First-party
+starters should import shell/router helpers from those subpaths. The
+domain-backed core extension remains in `@voyant-travel/admin-app/core-extension`
 because it imports first-party domain React packages that depend on the admin
 extension surface.
 
-Render widgets from a template-owned registry with `AdminWidgetSlotRenderer`:
+Render widgets from a starter-owned registry with `AdminWidgetSlotRenderer`:
 
 ```tsx
-import { AdminWidgetSlotRenderer, createAdminExtensionRegistry } from "@voyantjs/admin"
+import { AdminWidgetSlotRenderer, createAdminExtensionRegistry } from "@voyant-travel/admin"
 
 const adminExtensions = createAdminExtensionRegistry(financeExtension)
 
@@ -109,7 +109,7 @@ function DashboardHeader({ dashboard }) {
 }
 ```
 
-The operator template currently exposes these stable slots:
+The operator starter currently exposes these stable slots:
 `dashboard.header`, `dashboard.after-kpis`, `dashboard.footer`,
 `booking.details.header`, `booking.details.after-summary`,
 `invoice.details.header`, and `invoice.details.after-summary`.
@@ -125,8 +125,8 @@ and optional domain UI message providers that accept `{ locale, children }`.
 import {
   type AdminDomainMessagesProvider,
   OperatorAdminShellProvider,
-} from "@voyantjs/admin"
-import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/i18n"
+} from "@voyant-travel/admin"
+import { BookingsUiMessagesProvider } from "@voyant-travel/bookings-react/i18n"
 
 const domainMessageProviders = [
   BookingsUiMessagesProvider,
@@ -150,7 +150,7 @@ keeping app-owned routing and sign-out behavior explicit:
 
 ```tsx
 import { Link, useRouterState } from "@tanstack/react-router"
-import { OperatorAdminWorkspaceLayout } from "@voyantjs/admin"
+import { OperatorAdminWorkspaceLayout } from "@voyant-travel/admin"
 
 const AdminLink = ({ children, href, onClick, target }) => (
   <Link to={href} onClick={onClick} target={target}>
@@ -175,7 +175,7 @@ function Workspace({ children, user }) {
 ```
 
 `OperatorAdminShellProvider` and `OperatorAdminWorkspaceLayout` do not fetch or
-require Better Auth organizations. First-party Voyant templates are
+require Better Auth organizations. First-party Voyant starters are
 single-tenant per deployment: load the current authenticated user first, then
 render the shell with the `user` prop.
 
@@ -199,7 +199,7 @@ workspace layout's fallback trigger header so the page shell owns the route
 header:
 
 ```tsx
-import { OperatorAdminPageShell, OperatorAdminWorkspaceLayout } from "@voyantjs/admin"
+import { OperatorAdminPageShell, OperatorAdminWorkspaceLayout } from "@voyant-travel/admin"
 
 function Workspace({ children }) {
   return (
@@ -233,7 +233,7 @@ Apps can override detail routes that are not represented by navigation items
 with `useAdminPageHead`:
 
 ```tsx
-import { useAdminPageHead } from "@voyantjs/admin"
+import { useAdminPageHead } from "@voyant-travel/admin"
 
 function ProductDetailPage({ product }) {
   useAdminPageHead({
@@ -258,7 +258,7 @@ that intentionally implement workspace switching can opt into
 `mode="organization"` and pass their own workspace readiness state.
 
 `TeamSettingsPage` provides the reusable team invitation page for operator
-templates. It uses `OperatorAdminShellProvider`'s `VoyantReactProvider` for API
+starters. It uses `OperatorAdminShellProvider`'s `VoyantReactProvider` for API
 base URL/fetcher resolution and the operator admin message provider for labels;
 pass the `api` prop only when an app needs a custom invitation transport.
 

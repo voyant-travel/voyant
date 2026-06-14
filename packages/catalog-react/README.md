@@ -1,12 +1,12 @@
-# @voyantjs/catalog-react
+# @voyant-travel/catalog-react
 
 The catalog client tier: headless data hooks/clients plus the styled UI
-primitives and page-level compositions (formerly `@voyantjs/catalog-ui`).
+primitives and page-level compositions (formerly `@voyant-travel/catalog-ui`).
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./booking-engine` — these pull no styling peers. Styled
 surfaces live under `./ui`, `./components/*`, `./admin`, `./i18n`, and
-`./styles.css`, whose heavier peers (`@voyantjs/ui`, `@voyantjs/admin`,
+`./styles.css`, whose heavier peers (`@voyant-travel/ui`, `@voyant-travel/admin`,
 `@tanstack/react-table`, `sonner`) are optional and only needed when you
 import those subpaths.
 
@@ -32,5 +32,5 @@ slot in their own contact picker via `renderContactPicker`.
 ## I18n
 
 The package exports `CatalogUiMessagesProvider`, `catalogUiEn`, and
-`catalogUiRo` from `@voyantjs/catalog-react/i18n`. Components fall back to English
+`catalogUiRo` from `@voyant-travel/catalog-react/i18n`. Components fall back to English
 when no provider is mounted.

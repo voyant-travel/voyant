@@ -51,7 +51,7 @@ export function useGenerateMybaContract() {
       return result.data
     },
     onSuccess: () => {
-      // Bookings own the canonical detail; templates that mount @voyantjs/bookings-react
+      // Bookings own the canonical detail; templates that mount @voyant-travel/bookings-react
       // will see the contract id propagate via their own invalidation. Charters'
       // own caches don't include per-booking detail so nothing to invalidate here
       // beyond a generic charters wipe (kept minimal to avoid waste).

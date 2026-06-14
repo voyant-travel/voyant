@@ -28,7 +28,7 @@ the Project only after the maintainer-applied `agent:ready` label is present.
 Required repository configuration:
 
 - variable `VOYANT_ENGINEERING_PROJECT_URL`:
-  `https://github.com/orgs/voyantjs/projects/<project-number>`
+  `https://github.com/orgs/voyant-travel/projects/<project-number>`
 - secret `ADD_TO_PROJECT_PAT`: a GitHub App token, classic PAT, or fine-grained
   PAT with Projects write access. For the pilot, a fine-grained PAT needs
   organization Projects `read & write`, repository Issues `read-only`, and
@@ -168,7 +168,7 @@ Use `remote-bootstrap` to clone or update the repository inside the remote
 workspace before running real commands:
 
 ```bash
-pnpm agent:queue:remote-bootstrap -- --workspace sandbox:sprite:<id> --repo voyantjs/voyant --branch feature/123-task --yes
+pnpm agent:queue:remote-bootstrap -- --workspace sandbox:sprite:<id> --repo voyant-travel/voyant --branch feature/123-task --yes
 ```
 
 For issue-scoped work, `--issue <number>` derives the branch from the execution

@@ -28,7 +28,7 @@ import type { AdminRouterContext } from "./router.js"
  * contribution into a code-based `createRoute(...)` grafted under the
  * workspace layout via {@link attachAdminExtensionRoutes}. This module is
  * the binding layer between the transport-agnostic contribution contract
- * (`@voyantjs/admin`) and TanStack Router:
+ * (`@voyant-travel/admin`) and TanStack Router:
  *
  * - {@link adminExtensionRouteOptions} resolves a contribution by id and
  *   returns the router-facing route options — component (lazy, with intent

@@ -397,7 +397,7 @@ async function main() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
     throw new Error(
-      "DATABASE_URL is required. The script reads it from templates/operator/.env or your shell.",
+      "DATABASE_URL is required. The script reads it from starters/operator/.env or your shell.",
     )
   }
 
@@ -473,8 +473,8 @@ function loadEnvFiles() {
   const envFiles = [
     path.join(repoRoot, ".env"),
     path.join(repoRoot, ".env.local"),
-    path.join(repoRoot, "templates/operator/.env"),
-    path.join(repoRoot, "templates/operator/.env.local"),
+    path.join(repoRoot, "starters/operator/.env"),
+    path.join(repoRoot, "starters/operator/.env.local"),
   ]
 
   for (const file of envFiles) {

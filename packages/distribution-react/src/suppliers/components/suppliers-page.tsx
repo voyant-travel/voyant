@@ -13,9 +13,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowDown, ArrowUp, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"

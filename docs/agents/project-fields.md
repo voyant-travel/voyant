@@ -66,7 +66,7 @@ Runner commands require these status values:
 Set repository variable `VOYANT_ENGINEERING_PROJECT_URL` to the Project URL:
 
 ```text
-https://github.com/orgs/voyantjs/projects/<project-number>
+https://github.com/orgs/voyant-travel/projects/<project-number>
 ```
 
 Set repository secret `ADD_TO_PROJECT_PAT` to a token with Projects v2 write

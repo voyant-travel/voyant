@@ -1,7 +1,7 @@
 "use client"
 
-import { Label } from "@voyantjs/ui/components"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { Label } from "@voyant-travel/ui/components"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import {
   Select,
   SelectContent,
@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import type { ProductOption, SupplierOption } from "../index.js"
 import type { ResourcesPageActiveFilter, ResourcesPageTab } from "./resources-page.js"

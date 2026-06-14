@@ -1,9 +1,9 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@voyantjs/ui/components/avatar"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Card, CardContent } from "@voyantjs/ui/components/card"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@voyant-travel/ui/components/avatar"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Card, CardContent } from "@voyant-travel/ui/components/card"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Camera, Compass, GraduationCap, Mic, ScrollText, Sparkles } from "lucide-react"
 import type * as React from "react"
 import { useCruisesUiI18nOrDefault } from "../i18n/index.js"

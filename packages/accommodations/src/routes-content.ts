@@ -9,8 +9,8 @@
  * fallback.
  */
 
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

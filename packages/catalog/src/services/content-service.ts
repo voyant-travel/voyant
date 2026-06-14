@@ -6,10 +6,10 @@
  *
  * The pure, dependency-free primitives — `isStale`, `pickBestCachedLocale`,
  * `parseJsonPointer` / `applyJsonPointerOverlay`, and
- * `mergeOverlaysIntoContent` — now live in `@voyantjs/catalog-contracts`
+ * `mergeOverlaysIntoContent` — now live in `@voyant-travel/catalog-contracts`
  * so external adapter authors can compose and validate content payloads
  * without the catalog runtime. They are re-exported here so existing
- * `@voyantjs/catalog` import paths stay stable.
+ * `@voyant-travel/catalog` import paths stay stable.
  *
  * What remains defined here are the runtime-bound primitives that need a
  * Drizzle/Postgres connection and therefore cannot live in the contracts
@@ -25,14 +25,14 @@
  * §3.5.4.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, type SQL, sql } from "drizzle-orm"
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core"
 
 import type { ContentDriftEvent } from "../drift/events.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pure content primitives — single source of truth in @voyantjs/catalog-contracts
+// Pure content primitives — single source of truth in @voyant-travel/catalog-contracts
 // ─────────────────────────────────────────────────────────────────────────────
 
 export {
@@ -46,7 +46,7 @@ export {
   mergeOverlaysIntoContent,
   parseJsonPointer,
   pickBestCachedLocale,
-} from "@voyantjs/catalog-contracts/content"
+} from "@voyant-travel/catalog-contracts/content"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cross-worker singleflight via Postgres advisory lock

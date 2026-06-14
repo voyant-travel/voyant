@@ -17,10 +17,10 @@ function nextSeq() {
 
 describe.skipIf(!DB_AVAILABLE)("Ground routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -34,7 +34,7 @@ describe.skipIf(!DB_AVAILABLE)("Ground routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
@@ -50,7 +50,7 @@ describe.skipIf(!DB_AVAILABLE)("Ground routes", () => {
   }
 
   async function seedBooking(overrides: Record<string, unknown> = {}) {
-    const { bookings } = await import("@voyantjs/bookings/schema")
+    const { bookings } = await import("@voyant-travel/bookings/schema")
     const [row] = await db
       .insert(bookings)
       .values({ bookingNumber: `BK-${nextSeq()}`, sellCurrency: "USD", ...overrides })

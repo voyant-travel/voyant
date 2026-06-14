@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/core"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
   ContractTemplateAuthoringHelp,
@@ -17,15 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+} from "@voyant-travel/ui/components"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import {
   insertPlainText,
   insertVariableToken,
-} from "@voyantjs/ui/components/rich-text-variable-extension"
-import { Switch } from "@voyantjs/ui/components/switch"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
-import { languages } from "@voyantjs/utils"
+} from "@voyant-travel/ui/components/rich-text-variable-extension"
+import { Switch } from "@voyant-travel/ui/components/switch"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
+import { languages } from "@voyant-travel/utils"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -64,7 +64,7 @@ type TemplateDialogProps = {
 
 /**
  * Language picker options derived from the canonical ISO 639-1 list
- * shipped by `@voyantjs/utils`. Sorted alphabetically by the English
+ * shipped by `@voyant-travel/utils`. Sorted alphabetically by the English
  * display name for predictable scanning. Lifted to module scope so
  * the array reference is stable across re-renders (otherwise the
  * Select primitive's `items` identity changes every render and

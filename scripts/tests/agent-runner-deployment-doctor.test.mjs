@@ -106,7 +106,7 @@ describe("agent runner deployment doctor helpers", () => {
       },
       request: {
         dryRun: true,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         validateControlPlane: true,
       },
       token: "tok",
@@ -122,7 +122,7 @@ describe("agent runner deployment doctor helpers", () => {
       calls[0].init.body,
       JSON.stringify({
         dryRun: true,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         validateControlPlane: true,
       }),
     )
@@ -141,7 +141,7 @@ describe("agent runner deployment doctor helpers", () => {
                 mode: "lease-only",
               },
             },
-            repository: "voyantjs/voyant",
+            repository: "voyant-travel/voyant",
             service: "agent-runner",
             supervisorTicks: {
               latest: {
@@ -167,7 +167,7 @@ describe("agent runner deployment doctor helpers", () => {
         )
       },
       limit: 5,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       token: "tok",
       url: "https://runner.example.com/",
     })
@@ -175,7 +175,7 @@ describe("agent runner deployment doctor helpers", () => {
     assert.equal(response.service, "agent-runner")
     assert.equal(
       calls[0].url,
-      "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=5",
+      "https://runner.example.com/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=5",
     )
     assert.equal(calls[0].init.method, "GET")
     assert.equal(calls[0].init.headers.authorization, "Bearer tok")
@@ -194,13 +194,13 @@ describe("agent runner deployment doctor helpers", () => {
                 leasedAt: "2026-05-12T12:00:00.000Z",
               },
             ],
-            repository: "voyantjs/voyant",
+            repository: "voyant-travel/voyant",
           }),
           { status: 200 },
         )
       },
       limit: 5,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       since: "2026-05-11T12:00:00.000Z",
       token: "tok",
       url: "https://runner.example.com/",
@@ -209,7 +209,7 @@ describe("agent runner deployment doctor helpers", () => {
     assert.equal(response.records[0].id, "lease_579")
     assert.equal(
       calls[0].url,
-      "https://runner.example.com/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant&limit=5&since=2026-05-11T12%3A00%3A00.000Z",
+      "https://runner.example.com/api/supervisor/leases/recent?repository=voyant-travel%2Fvoyant&limit=5&since=2026-05-11T12%3A00%3A00.000Z",
     )
     assert.equal(calls[0].init.method, "GET")
     assert.equal(calls[0].init.headers.authorization, "Bearer tok")
@@ -308,7 +308,7 @@ describe("agent runner deployment doctor helpers", () => {
             enabled: true,
           },
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         runLedger: {
           status: {
             recentLeaseCount: 1,
@@ -339,7 +339,7 @@ describe("agent runner deployment doctor helpers", () => {
       }),
       {
         detail:
-          "repository: voyantjs/voyant; tick persistence: latest; lease persistence: history; run ledger: d1; ledger runs: 2; ledger leases: 1; latest: dry_run; recent: 1; recent leases: 1",
+          "repository: voyant-travel/voyant; tick persistence: latest; lease persistence: history; run ledger: d1; ledger runs: 2; ledger leases: 1; latest: dry_run; recent: 1; recent leases: 1",
         ok: true,
       },
     )

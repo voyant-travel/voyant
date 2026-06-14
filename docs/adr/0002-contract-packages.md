@@ -1,7 +1,7 @@
 # ADR-0002: Pure framework contracts ship as standalone `*-contracts` packages
 
 - **Status:** Accepted (2026-05-31)
-- **Relates to:** [#1400](https://github.com/voyantjs/voyant/issues/1400), [#1411](https://github.com/voyantjs/voyant/issues/1411)
+- **Relates to:** [#1400](https://github.com/voyant-travel/voyant/issues/1400), [#1411](https://github.com/voyant-travel/voyant/issues/1411)
 
 ## Context
 
@@ -27,8 +27,8 @@ External consumers increasingly need (1) without (2):
   "depends on #1400 for the reusable contract-package pattern."
 
 Before this ADR, importing `cruiseContentSchema` meant depending on
-`@voyantjs/cruises` — and transitively on `@voyantjs/catalog`,
-`@voyantjs/db`, `@voyantjs/hono`, Drizzle, and Hono. The pure contract was
+`@voyant-travel/cruises` — and transitively on `@voyant-travel/catalog`,
+`@voyant-travel/db`, `@voyant-travel/hono`, Drizzle, and Hono. The pure contract was
 real but not *reachable* without the runtime.
 
 ## Decision
@@ -40,21 +40,21 @@ from it; the dependency arrow only ever points runtime → contracts.**
 Concretely:
 
 - The shared source-adapter contract surface lives in
-  **`@voyantjs/catalog-contracts`** (adapter contracts, adapter Zod schemas,
+  **`@voyant-travel/catalog-contracts`** (adapter contracts, adapter Zod schemas,
   field-policy contracts, provenance, drift event payloads, and the pure
   content locale/overlay primitives).
 - Each vertical with a `<vertical>/v1` rich-content aggregate ships
-  **`@voyantjs/<vertical>-contracts`** owning that aggregate: the
+  **`@voyant-travel/<vertical>-contracts`** owning that aggregate: the
   `*_CONTENT_SCHEMA_VERSION` constant, every content schema, the inferred
   types, the `validate<Vertical>Content` validator, and any pure facet
   vocabularies (e.g. the cruise cabin bed/accessibility/view enums).
-- The runtime `@voyantjs/<vertical>` package keeps a `content-shape.ts` that
+- The runtime `@voyant-travel/<vertical>` package keeps a `content-shape.ts` that
   **re-exports** the whole contract surface, so existing
-  `@voyantjs/<vertical>/content-shape` and `@voyantjs/<vertical>` import paths
+  `@voyant-travel/<vertical>/content-shape` and `@voyant-travel/<vertical>` import paths
   are unchanged.
 - `*-contracts` packages depend on **`zod` only** (plus, at most,
-  `@voyantjs/catalog-contracts`, which is itself zod-only). They never depend
-  on `@voyantjs/db`, `@voyantjs/hono`, `drizzle-orm`, `hono`, or any runtime
+  `@voyant-travel/catalog-contracts`, which is itself zod-only). They never depend
+  on `@voyant-travel/db`, `@voyant-travel/hono`, `drizzle-orm`, `hono`, or any runtime
   package.
 
 ### What is "pure" (goes in `*-contracts`)
@@ -71,9 +71,9 @@ Concretely:
 - The **overlay-merge composition** `mergeOverlaysInto<Vertical>Content`. It
   composes the catalog overlay applier with the vertical validator and is a
   read-path concern; keeping it in the runtime lets the contract package stay
-  strictly zod-only and free of any `@voyantjs/catalog*` dependency. (The pure
+  strictly zod-only and free of any `@voyant-travel/catalog*` dependency. (The pure
   overlay applier itself, `mergeOverlaysIntoContent`, lives in
-  `@voyantjs/catalog-contracts`; the runtime composition is the thin wrapper.)
+  `@voyant-travel/catalog-contracts`; the runtime composition is the thin wrapper.)
 
 ### Coverage as of this ADR
 
@@ -87,13 +87,13 @@ change.
 ### Positive
 
 - **External consumers depend on a small, stable surface.** Connect, adapter
-  authors, and the future Admin SDK import `@voyantjs/<vertical>-contracts`
+  authors, and the future Admin SDK import `@voyant-travel/<vertical>-contracts`
   (zod + the schema) instead of the full runtime tree.
 - **One source of truth.** The schema is defined once in the contracts package
   and re-exported; there is no second copy to drift. (This ADR's rollout also
   collapsed a duplicated copy of the catalog content primitives.)
 - **Import paths are preserved.** Internal code and existing dependants keep
-  importing from `@voyantjs/<vertical>` unchanged — the runtime re-export
+  importing from `@voyant-travel/<vertical>` unchanged — the runtime re-export
   stub is API-compatible.
 - **Contract versioning is explicit.** The `<vertical>/v1` constant and schema
   ship in a package whose version and changelog are about the contract, not
@@ -125,12 +125,12 @@ change.
 
 ### Alternative A: Keep contracts inside runtime packages (status quo ante)
 
-Leave schemas in `@voyantjs/<vertical>` and ask consumers to depend on the
+Leave schemas in `@voyant-travel/<vertical>` and ask consumers to depend on the
 runtime package. **Rejected** — it forces Connect and adapter authors to pull
 Drizzle/Hono/DB into environments that never run the framework, and makes the
 Admin SDK (#1411) impossible to build without the same bloat.
 
-### Alternative B: One mega `@voyantjs/contracts` package
+### Alternative B: One mega `@voyant-travel/contracts` package
 
 Put every vertical's contracts in a single package. **Rejected** — it couples
 unrelated verticals into one version/changelog, and a consumer that only needs
@@ -141,17 +141,17 @@ reason about.
 ### Alternative C: Put the overlay-merge composition in the contracts package
 
 Move `mergeOverlaysInto<Vertical>Content` into `*-contracts` too, making the
-contract package depend on `@voyantjs/catalog-contracts`. **Rejected for now**
+contract package depend on `@voyant-travel/catalog-contracts`. **Rejected for now**
 — it widens the contract package's dependency beyond zod for a helper that is a
 read-path concern, not a payload contract. The pure overlay applier is already
-available from `@voyantjs/catalog-contracts` for any consumer that wants to
+available from `@voyant-travel/catalog-contracts` for any consumer that wants to
 apply overlays itself. Revisit if an external consumer needs the composed
 helper without the runtime.
 
 ## How to apply this decision
 
 When a vertical introduces (or already has) a `<vertical>/v1` content
-aggregate, ship `@voyantjs/<vertical>-contracts` alongside it:
+aggregate, ship `@voyant-travel/<vertical>-contracts` alongside it:
 
 1. Create `packages/<vertical>-contracts/` mirroring any existing
    `*-contracts` package: `package.json` (zod-only deps, `.` + `./content-shape`
@@ -159,14 +159,14 @@ aggregate, ship `@voyantjs/<vertical>-contracts` alongside it:
    `src/index.ts` (`export * from "./content-shape.js"`).
 2. Move the **pure** content into `src/content-shape.ts`: the version constant,
    schemas, types, validator, and any pure facet vocabularies. No
-   `@voyantjs/catalog` import; `zod` only.
+   `@voyant-travel/catalog` import; `zod` only.
 3. Add a `src/content-shape.test.ts` smoke test (version constant + a valid and
    an invalid payload).
 4. Replace the runtime `packages/<vertical>/src/content-shape.ts` with a
    re-export stub: re-export the whole surface from
-   `@voyantjs/<vertical>-contracts/content-shape`, keep
+   `@voyant-travel/<vertical>-contracts/content-shape`, keep
    `mergeOverlaysInto<Vertical>Content` defined locally.
-5. Add `"@voyantjs/<vertical>-contracts": "workspace:^"` to the runtime
+5. Add `"@voyant-travel/<vertical>-contracts": "workspace:^"` to the runtime
    package's dependencies.
 
 When you are tempted to import a schema from a runtime package into an external

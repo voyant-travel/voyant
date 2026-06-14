@@ -4,7 +4,7 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
-} from "@voyantjs/ui/components/empty"
+} from "@voyant-travel/ui/components/empty"
 import { Inbox } from "lucide-react"
 
 export function EmptyDetail(): React.ReactElement {

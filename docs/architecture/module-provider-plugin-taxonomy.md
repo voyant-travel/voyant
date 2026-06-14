@@ -225,10 +225,10 @@ Prefer names that reveal whether the package is:
 
 Examples:
 
-- `@voyantjs/bookings`
-- `@voyantjs/storefront-react`
-- `@voyantjs/admin`
-- `@voyantjs/plugin-netopia`
+- `@voyant-travel/bookings`
+- `@voyant-travel/storefront-react`
+- `@voyant-travel/admin`
+- `@voyant-travel/plugin-netopia`
 
 The package name does not have to carry the full taxonomy, but it should not
 hide the package’s role either.

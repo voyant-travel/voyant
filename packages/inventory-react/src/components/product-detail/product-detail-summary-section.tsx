@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { DropdownMenuItem, ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components"
+import { DropdownMenuItem, ToggleGroup, ToggleGroupItem } from "@voyant-travel/ui/components"
 import { Pencil } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useProductTranslations } from "../../index.js"

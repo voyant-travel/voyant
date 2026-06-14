@@ -1,5 +1,5 @@
-import { parseQuery } from "@voyantjs/hono"
-import type { KVStore } from "@voyantjs/utils/cache"
+import { parseQuery } from "@voyant-travel/hono"
+import type { KVStore } from "@voyant-travel/utils/cache"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
@@ -42,7 +42,7 @@ function readModelKv(c: Context<Env>): KVStore | undefined {
  * not personalized (they never read the authenticated identity), so short
  * shared caching keeps storefront list traffic off Worker isolates (#1686).
  * Applied per-handler on successful responses only — a framework-level
- * cache middleware lives in `@voyantjs/hono` and supersedes this later.
+ * cache middleware lives in `@voyant-travel/hono` and supersedes this later.
  */
 const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
 

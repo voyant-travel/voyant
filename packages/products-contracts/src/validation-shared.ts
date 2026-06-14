@@ -1,5 +1,5 @@
-import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
-import { typeIdSchema } from "@voyantjs/schema-kit/typeid"
+import { booleanQueryParam } from "@voyant-travel/schema-kit/query-params"
+import { typeIdSchema } from "@voyant-travel/schema-kit/typeid"
 import { z } from "zod"
 
 export { booleanQueryParam, typeIdSchema, z }

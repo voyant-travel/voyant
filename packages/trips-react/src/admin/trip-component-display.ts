@@ -1,4 +1,4 @@
-import type { TripComponent } from "@voyantjs/trips"
+import type { TripComponent } from "@voyant-travel/trips"
 
 export function readComponentSchedule(component: TripComponent): {
   start: string | null

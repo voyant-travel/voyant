@@ -1,5 +1,5 @@
-import { createContainer } from "@voyantjs/core"
-import { financeService } from "@voyantjs/finance"
+import { createContainer } from "@voyant-travel/core"
+import { financeService } from "@voyant-travel/finance"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 

@@ -1,5 +1,5 @@
 /**
- * @voyantjs/admin — shared admin-dashboard shell for Voyant templates.
+ * @voyant-travel/admin — shared admin-dashboard shell for Voyant starters.
  *
  * Exports:
  * - Theme provider: zero-dependency ThemeProvider + useTheme that toggles
@@ -89,7 +89,7 @@ export type {
 // DashboardPage pulls recharts (~390 KB) — intentionally NOT re-exported
 // here so consumers of this barrel for non-dashboard concerns (sidebar,
 // providers, hooks) don't transitively pull the chart bundle. Import
-// directly from "@voyantjs/admin/dashboard/dashboard-page" instead.
+// directly from "@voyant-travel/admin/dashboard/dashboard-page" instead.
 export {
   type BookingsAggregates,
   bookingStatusConfig,

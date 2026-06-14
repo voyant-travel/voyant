@@ -1,6 +1,6 @@
 "use client"
 
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
 import { type Supplier, useSupplier, useSuppliers } from "../index.js"

@@ -4,8 +4,8 @@ import type {
   AncillarySelection,
   FlightPassenger,
   PaymentIntent,
-} from "@voyantjs/flights/contract/types"
-import { Button } from "@voyantjs/ui/components/button"
+} from "@voyant-travel/flights/contract/types"
+import { Button } from "@voyant-travel/ui/components/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/distribution` — outbound channel-push pipeline.
+ * `@voyant-travel/distribution` — outbound channel-push pipeline.
  *
  * Per docs/architecture/channel-push-architecture.md.
  */
@@ -64,8 +64,8 @@ export {
   setChannelPushDeps,
 } from "./types.js"
 // Importing this module registers all three durable workflows in the
-// process-local @voyantjs/workflows registry. Hosts that don't run an
-// orchestrator (e.g. the operator template's inline drain) can still
+// process-local @voyant-travel/workflows registry. Hosts that don't run an
+// orchestrator (e.g. the operator starter's inline drain) can still
 // import safely — registration is a no-op without a runtime to dispatch.
 export {
   channelAvailabilityPushWorkflow,

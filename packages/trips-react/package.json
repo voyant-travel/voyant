@@ -1,10 +1,10 @@
 {
-  "name": "@voyantjs/trips-react",
+  "name": "@voyant-travel/trips-react",
   "version": "0.110.2",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/trips-react"
   },
   "type": "module",
@@ -27,47 +27,47 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/flights": "workspace:^",
-    "@voyantjs/flights-react": "workspace:^",
-    "@voyantjs/trips": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/bookings-react": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/catalog-react": "workspace:^",
+    "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/flights": "workspace:^",
+    "@voyant-travel/flights-react": "workspace:^",
+    "@voyant-travel/trips": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@voyantjs/admin": {
+    "@voyant-travel/admin": {
       "optional": true
     },
-    "@voyantjs/bookings-react": {
+    "@voyant-travel/bookings-react": {
       "optional": true
     },
-    "@voyantjs/catalog": {
+    "@voyant-travel/catalog": {
       "optional": true
     },
-    "@voyantjs/catalog-react": {
+    "@voyant-travel/catalog-react": {
       "optional": true
     },
-    "@voyantjs/relationships-react": {
+    "@voyant-travel/relationships-react": {
       "optional": true
     },
-    "@voyantjs/finance": {
+    "@voyant-travel/finance": {
       "optional": true
     },
-    "@voyantjs/flights": {
+    "@voyant-travel/flights": {
       "optional": true
     },
-    "@voyantjs/flights-react": {
+    "@voyant-travel/flights-react": {
       "optional": true
     },
-    "@voyantjs/ui": {
+    "@voyant-travel/ui": {
       "optional": true
     }
   },
@@ -75,19 +75,19 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/admin": "workspace:^",
-    "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
-    "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/relationships-react": "workspace:^",
-    "@voyantjs/finance": "workspace:^",
-    "@voyantjs/flights": "workspace:^",
-    "@voyantjs/flights-react": "workspace:^",
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^",
-    "@voyantjs/trips": "workspace:^",
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/bookings-react": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/catalog-react": "workspace:^",
+    "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/flights": "workspace:^",
+    "@voyant-travel/flights-react": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/trips": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -96,8 +96,8 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/react": "workspace:^"
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^"
   },
   "files": [
     "dist"

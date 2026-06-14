@@ -1,8 +1,8 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent } from "@voyantjs/ui/components/card"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent } from "@voyant-travel/ui/components/card"
 import { AlertTriangle, CalendarClock, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 

@@ -1,15 +1,15 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components/dialog"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import * as React from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 

@@ -6,7 +6,7 @@ import type {
   FlightSegment,
   FlightSlice,
   Itinerary,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 
 import {
   AIRCRAFT_TYPES,

@@ -3,7 +3,7 @@
  *
  * Wraps the inline-callable processors (`processBookingPush`,
  * `processAvailabilityPushIntents`, `processContentPushIntents`) in
- * `@voyantjs/workflows` definitions so retries, sleeps, and resumption
+ * `@voyant-travel/workflows` definitions so retries, sleeps, and resumption
  * survive worker restarts. Importing this module registers the
  * workflows in the global registry — Voyant Cloud orchestrator picks
  * them up automatically.
@@ -13,7 +13,7 @@
  * the orchestrator's Node container reads from the same global since
  * it runs in the same isolate that loaded the user bundle.
  *
- * Dev / single-process deployments (e.g. the operator template's
+ * Dev / single-process deployments (e.g. the operator starter's
  * inline drain) don't need to register these — the subscriber calls the
  * processors directly. Production deployments with the Voyant Cloud
  * orchestrator wired import this module to opt into durability.
@@ -21,7 +21,7 @@
  * Per docs/architecture/channel-push-architecture.md §4.2 + §12.
  */
 
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 
 import {
   CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,

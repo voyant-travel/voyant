@@ -1,4 +1,4 @@
-import type { getDb } from "@voyantjs/db"
+import type { getDb } from "@voyant-travel/db"
 
 import {
   type ApiTokenRotationOptions,

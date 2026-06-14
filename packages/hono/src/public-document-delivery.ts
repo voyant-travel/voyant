@@ -1,9 +1,9 @@
 import type {
   InsertInfraPublicDocumentDeliveryGrant,
   SelectInfraPublicDocumentDeliveryGrant,
-} from "@voyantjs/db/schema/infra"
-import { infraPublicDocumentDeliveryGrantsTable } from "@voyantjs/db/schema/infra"
-import type { StorageProvider } from "@voyantjs/storage"
+} from "@voyant-travel/db/schema/infra"
+import { infraPublicDocumentDeliveryGrantsTable } from "@voyant-travel/db/schema/infra"
+import type { StorageProvider } from "@voyant-travel/storage"
 import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"

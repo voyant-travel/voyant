@@ -26,7 +26,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §5.1.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import type {
   GetContentRequest,

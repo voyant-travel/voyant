@@ -8,7 +8,7 @@
 //
 // See docs/runtime-protocol.md §2 + §5 for the wire semantics.
 
-import { PROTOCOL_VERSION } from "@voyantjs/workflows/protocol"
+import { PROTOCOL_VERSION } from "@voyant-travel/workflows/protocol"
 import type {
   JournalSlice,
   PendingWaitpoint,
@@ -146,7 +146,7 @@ export async function driveUntilPaused(rec: RunRecord, opts: DriveOptions): Prom
             code: "child_runs_unsupported",
             message:
               "workflow used ctx.invoke but the driver has no triggerChild hook wired. " +
-              "Use orchestrator.trigger() from @voyantjs/workflows-orchestrator, which wires children automatically.",
+              "Use orchestrator.trigger() from @voyant-travel/workflows-orchestrator, which wires children automatically.",
           }
           rec.completedAt = now()
           break
@@ -380,7 +380,10 @@ function injectionKey(inj: WaitpointInjection): string {
 }
 
 type ChildResolution =
-  | { kind: "resolved"; entry: import("@voyantjs/workflows/protocol").WaitpointResolutionEntry }
+  | {
+      kind: "resolved"
+      entry: import("@voyant-travel/workflows/protocol").WaitpointResolutionEntry
+    }
   | { kind: "deferred" }
 
 async function resolveChildRun(

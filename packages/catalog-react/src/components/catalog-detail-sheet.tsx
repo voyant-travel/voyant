@@ -1,15 +1,15 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Sheet,
   SheetContent,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@voyantjs/ui/components/sheet"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/sheet"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { type ReactNode, useEffect, useState } from "react"
 
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
@@ -43,7 +43,7 @@ export interface CatalogDetailAction {
 }
 
 // `CatalogDetailEnrichment` (the on-demand detail view-model) now lives in the
-// data layer (`@voyantjs/catalog-react`) alongside the content client that
+// data layer (`@voyant-travel/catalog-react`) alongside the content client that
 // produces it; re-exported here for back-compat with the catalog-ui surface.
 export type { CatalogDetailEnrichment }
 

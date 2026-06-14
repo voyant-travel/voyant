@@ -91,7 +91,7 @@ export interface SubscribeOptions {
 
 /**
  * Per-emit options. Call sites normally omit this; runtime adapters
- * (e.g. `@voyantjs/hono`'s request-scoped bus) supply `schedule` so
+ * (e.g. `@voyant-travel/hono`'s request-scoped bus) supply `schedule` so
  * deferrable handlers run after the HTTP response instead of blocking
  * it.
  */
@@ -117,7 +117,7 @@ export interface EmitOptions {
 
 /**
  * Minimal persistence contract the event bus needs for durable emits.
- * `@voyantjs/db/outbox` provides the Postgres implementation; the bus
+ * `@voyant-travel/db/outbox` provides the Postgres implementation; the bus
  * itself stays storage-agnostic.
  */
 export interface OutboxEventStore {

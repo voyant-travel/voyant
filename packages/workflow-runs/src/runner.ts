@@ -1,7 +1,7 @@
 /**
  * Workflow runner registry — the missing piece that makes "click to
  * rerun" work in the dashboard. Saga workflows defined in
- * `@voyantjs/core/workflows` are pure logic; running one needs
+ * `@voyant-travel/core/workflows` are pure logic; running one needs
  * closures over `db`, `eventBus`, and per-bundle services. The
  * recorded `workflow_runs.input` row only captures the workflow
  * payload, not those closures.

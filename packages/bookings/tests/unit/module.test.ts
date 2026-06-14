@@ -1,5 +1,5 @@
-import { createContainer, createEventBus } from "@voyantjs/core"
-import type { KmsProvider } from "@voyantjs/utils"
+import { createContainer, createEventBus } from "@voyant-travel/core"
+import type { KmsProvider } from "@voyant-travel/utils"
 import { describe, expect, it, vi } from "vitest"
 
 import {

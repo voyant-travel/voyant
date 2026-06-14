@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
   cn,
-} from "@voyantjs/ui/components"
-import { buttonVariants } from "@voyantjs/ui/components/button"
+} from "@voyant-travel/ui/components"
+import { buttonVariants } from "@voyant-travel/ui/components/button"
 import {
   BriefcaseBusiness,
   Calendar,

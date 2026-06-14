@@ -17,7 +17,7 @@
  *      job, releasing any associated soft holds first.
  */
 
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 export const bookingDraftsTable = pgTable(

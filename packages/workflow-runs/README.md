@@ -1,24 +1,24 @@
-# @voyantjs/workflow-runs
+# @voyant-travel/workflow-runs
 
 Workflow run recording, admin routes, and rerun/resume dispatch primitives for Voyant operator apps.
 
 ## Install
 
 ```sh
-pnpm add @voyantjs/workflow-runs
+pnpm add @voyant-travel/workflow-runs
 ```
 
 The package is independently published with the rest of the workflows release cohort.
 
 For the matching importable React admin surface, install
-`@voyantjs/workflows-react/ui` and point its API client at the routes mounted by
+`@voyant-travel/workflows-react/ui` and point its API client at the routes mounted by
 this package:
 
 ```tsx
 import {
   createWorkflowRunsApiClient,
   WorkflowRunsPage,
-} from "@voyantjs/workflows-react/ui"
+} from "@voyant-travel/workflows-react/ui"
 
 const workflowRunsApi = createWorkflowRunsApiClient({ apiBase: "/api" })
 
@@ -32,8 +32,8 @@ export function WorkflowsRoute() {
 `mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`, plus an explicit trigger endpoint at `POST /v1/admin/workflows/:name/runs`.
 
 ```ts
-import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
-import { createNodeSelfHostWorkflowClient } from "@voyantjs/workflows-orchestrator-node"
+import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import { createNodeSelfHostWorkflowClient } from "@voyant-travel/workflows-orchestrator-node"
 
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const workflowServer = createNodeSelfHostWorkflowClient({
@@ -126,7 +126,7 @@ The route returns `202 Accepted` with the queued run id:
 
 For self-hosted workflow services, keep runner registration close to the code that mounts the workflow service. The registry should dispatch to your external workflow server instead of importing worker-only runtime code into the admin API process. The resume path sends `ctx.resumeFromStep` plus `ctx.seedResults`; the self-host server starts a new run, pre-populates the journal with the seeded step outputs, and executes from the failed step onward.
 
-## Record `@voyantjs/workflows` executions
+## Record `@voyant-travel/workflows` executions
 
 Use `recordedWorkflow` as a drop-in replacement for `workflow(...)` when a
 workflow should appear in the workflow runs admin UI. The helper records start,
@@ -134,7 +134,7 @@ success, and failure rows in `workflow_runs` without repeating recorder
 boilerplate in every workflow body.
 
 ```ts
-import { recordedWorkflow } from "@voyantjs/workflow-runs"
+import { recordedWorkflow } from "@voyant-travel/workflow-runs"
 
 export const generatePdfWorkflow = recordedWorkflow({
   id: "products.generate-pdf",

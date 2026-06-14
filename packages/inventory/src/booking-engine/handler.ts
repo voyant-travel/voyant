@@ -13,7 +13,7 @@
  *     wizard's step descriptor.
  *   - An injected `createBooking` function for the commit path
  *     — keeps the Inventory-owned Product handler from depending on
- *     `@voyantjs/finance` (no workspace cycle).
+ *     `@voyant-travel/finance` (no workspace cycle).
  *
  * Phase A scope (deliberately narrow):
  *   - Price = product.sellAmountCents × pax_count, no taxes / addons /
@@ -44,7 +44,7 @@ import {
   type ProductVariantOption,
   paxBandsAllowedTotalFrom,
   type TravelerFieldRequirement,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 
 import {
   applyAddonSelections,
@@ -66,7 +66,7 @@ import {
 
 // ─────────────────────────────────────────────────────────────────
 // Bridged commit path — caller-supplied so the Inventory package
-// doesn't depend on @voyantjs/finance.
+// doesn't depend on @voyant-travel/finance.
 // ─────────────────────────────────────────────────────────────────
 
 /**
@@ -95,7 +95,7 @@ export interface BookingCreateBridgeInput {
    */
   sellAmountCentsOverride?: number | null
   /**
-   * Status the booking lands in. When omitted, `@voyantjs/finance`'s
+   * Status the booking lands in. When omitted, `@voyant-travel/finance`'s
    * `createBooking` defaults to `"draft"`. Callers that compose bookings
    * via the catalog booking engine (e.g. trips reserve, journey
    * commit) typically want `"awaiting_payment"` so the booking shows in
@@ -241,7 +241,7 @@ export interface DraftLike {
 export interface BuildOwnedProductDraftShapeOptions {
   /**
    * Per-traveler field requirements pulled from
-   * `@voyantjs/bookings/requirements` for this product. Caller-supplied
+   * `@voyant-travel/bookings/requirements` for this product. Caller-supplied
    * so the Inventory package doesn't depend on booking requirements.
    */
   travelerFields?: ReadonlyArray<TravelerFieldRequirement>
@@ -361,7 +361,7 @@ export interface ResolvedTaxRate {
 export interface OwnedProductsShapeLoaders {
   /**
    * Resolve per-traveler field requirements from
-   * @voyantjs/bookings/requirements. Called per-quote so the descriptor
+   * @voyant-travel/bookings/requirements. Called per-quote so the descriptor
    * reflects current configuration.
    */
   loadTravelerFields?: (
@@ -439,7 +439,7 @@ export interface OwnedProductsShapeLoaders {
    * handler then falls back to `product.sellAmountCents × pax`.
    *
    * Caller-supplied so Inventory does not import
-   * `@voyantjs/commerce` (the dependency direction is commerce →
+   * `@voyant-travel/commerce` (the dependency direction is commerce →
    * inventory, not the reverse).
    */
   loadResolvedOptionPrice?: (
@@ -456,7 +456,7 @@ export interface OwnedProductsShapeLoaders {
   /**
    * Look up the local date of a departure slot (`availability_slots`).
    * Caller-supplied so the Inventory package does not import
-   * `@voyantjs/operations`. Returns null when the slot is missing.
+   * `@voyant-travel/operations`. Returns null when the slot is missing.
    *
    * Used together with `loadResolvedOptionPrice` to convert a draft's
    * `departureSlotId` into a date the resolver can match against.
@@ -466,7 +466,7 @@ export interface OwnedProductsShapeLoaders {
 
 /**
  * Caller-supplied availability-hold bridge — keeps the products
- * package free of an `@voyantjs/operations` dependency. When
+ * package free of an `@voyant-travel/operations` dependency. When
  * wired, the handler's `placeHold/extendHold/releaseHold` route
  * through `availability_holds` (real inventory locks). When
  * omitted, the handler falls back to stamping no-ops.
@@ -495,7 +495,7 @@ export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeL
   /**
    * Caller-supplied bridge to `bookingsCreate`. Wired by the
    * template at boot, since Inventory does not import
-   * `@voyantjs/finance`.
+   * `@voyant-travel/finance`.
    */
   createBooking: BookingCreateBridge
   /**

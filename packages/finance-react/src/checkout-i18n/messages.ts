@@ -1,4 +1,4 @@
-import type { PublicPaymentSession } from "@voyantjs/finance/public-validation"
+import type { PublicPaymentSession } from "@voyant-travel/finance/public-validation"
 
 export type CheckoutPaymentTargetType = PublicPaymentSession["targetType"]
 

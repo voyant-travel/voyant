@@ -10,8 +10,8 @@
  * run `drizzle-kit push --force` against the test database first.
  */
 
-import { newId } from "@voyantjs/db/lib/typeid"
-import { createTestDb } from "@voyantjs/db/test-utils"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import { createTestDb } from "@voyant-travel/db/test-utils"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"

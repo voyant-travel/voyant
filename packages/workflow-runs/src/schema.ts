@@ -1,10 +1,10 @@
 /**
- * `@voyantjs/workflow-runs` — schema for the lightweight observability
+ * `@voyant-travel/workflow-runs` — schema for the lightweight observability
  * surface that records in-process workflow lifecycles (saga steps the
- * `@voyantjs/core/workflows` primitive runs, plus any other "I'm a
+ * `@voyant-travel/core/workflows` primitive runs, plus any other "I'm a
  * workflow" code path that opts in via `recordWorkflowRun`).
  *
- * Distinct from the durable `@voyantjs/workflows` SDK's
+ * Distinct from the durable `@voyant-travel/workflows` SDK's
  * `voyant_snapshot_runs` schema — that one needs an orchestrator
  * process to drive it, which doesn't fit the Cloudflare Workers
  * deployment shape. This schema is edge-compatible (postgres-js or
@@ -16,7 +16,7 @@
  * tag with `bookingId:<id>`, `paymentSessionId:<id>`, etc.
  */
 
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 

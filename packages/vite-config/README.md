@@ -1,4 +1,4 @@
-# @voyantjs/vite-config
+# @voyant-travel/vite-config
 
 Versioned Vite build preset for Voyant TanStack Start apps: vendor chunking
 (cold-start tuning), SSR dependency pre-bundling, the route-file ignore
@@ -21,7 +21,7 @@ import {
   createAnalyzePlugin,
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   voyantStartViteConfig,
-} from "@voyantjs/vite-config"
+} from "@voyant-travel/vite-config"
 import { defineConfig } from "vite"
 
 export default defineConfig(

@@ -18,7 +18,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §E.
  */
 
-import { boardBasisSchema } from "@voyantjs/catalog-contracts/content"
+import { boardBasisSchema } from "@voyant-travel/catalog-contracts/content"
 import { z } from "zod"
 
 import {
@@ -155,7 +155,7 @@ export {
   type BoardBasis,
   type BoardBasisShortCode,
   boardBasisSchema,
-} from "@voyantjs/catalog-contracts/content"
+} from "@voyant-travel/catalog-contracts/content"
 
 export function validateCruiseContent(
   payload: unknown,

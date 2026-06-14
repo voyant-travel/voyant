@@ -8,7 +8,7 @@
  *  - rows are emitted per currency and never summed across currencies
  */
 
-import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookings, bookingTravelers } from "@voyant-travel/bookings/schema"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -80,19 +80,19 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
   })
 
   beforeEach(async () => {
     seq = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 
@@ -386,7 +386,7 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
 
   it("rolls up into the accounting base (RON), converting legacy residuals at the fallback rate", async () => {
     await seedBaseScenario()
-    // 1 RON = 0.2 EUR, so EUR→RON = 5. fx_rate_sets lives in @voyantjs/commerce
+    // 1 RON = 0.2 EUR, so EUR→RON = 5. fx_rate_sets lives in @voyant-travel/commerce
     // (seed via raw SQL). The scenario's supplier costs were created BEFORE this
     // rate existed, so EUR rows have no base snapshot → they take the fallback.
     await db.execute(

@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { runActionLedgerCanary } from "../../src/canary.js"
 import type { ActionLedgerEntry, ActionLedgerRelayOutbox } from "../../src/schema.js"

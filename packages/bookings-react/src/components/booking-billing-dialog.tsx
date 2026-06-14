@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { useAddresses } from "@voyantjs/identity-react"
+import { useAddresses } from "@voyant-travel/identity-react"
 import {
   type OrganizationRecord,
   type PersonRecord,
@@ -9,7 +9,7 @@ import {
   useOrganizations,
   usePeople,
   usePerson,
-} from "@voyantjs/relationships-react"
+} from "@voyant-travel/relationships-react"
 import {
   Button,
   ButtonGroup,
@@ -21,7 +21,7 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -30,10 +30,10 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { PhoneInput } from "@voyantjs/ui/components/phone-input"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components/combobox"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Building2, Loader2, Search, User } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"

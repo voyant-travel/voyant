@@ -1,7 +1,7 @@
 # ADR-0004: Quotes are the travel-native sales artifact
 
 - **Status:** Accepted (2026-06-08)
-- **Relates to:** [#1541](https://github.com/voyantjs/voyant/issues/1541), [AI travel experience composition](../architecture/ai-travel-experience-composition.md), [trips implementation plan](../architecture/trips-implementation-plan.md), [ADR-0005](./0005-retire-transactions-runtime.md)
+- **Relates to:** [#1541](https://github.com/voyant-travel/voyant/issues/1541), [AI travel experience composition](../architecture/ai-travel-experience-composition.md), [trips implementation plan](../architecture/trips-implementation-plan.md), [ADR-0005](./0005-retire-transactions-runtime.md)
 - **Builds on:** [ADR-0001](./0001-tenant-scoping.md) (deployment = tenancy boundary), [ADR-0002](./0002-contract-packages.md) (contract/runtime package split)
 
 ## Context
@@ -113,8 +113,8 @@ The implementation order is:
    migrations, Trip snapshot freezing, send/view/accept lifecycle, and
    accept-to-reserve wiring.
 
-Migrations remain template-owned. The package schema changes are exported by
-the package; `templates/operator` (and, before its deletion, `templates/dmc`) owns migration generation
+Migrations remain starter-owned. The package schema changes are exported by
+the package; `starters/operator` (and, before its deletion, `templates/dmc`) owns migration generation
 and application.
 
 ## Alternatives considered

@@ -16,8 +16,8 @@ export const paymentStatusSchema = z.enum(["pending", "completed", "failed", "re
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>
 
 // Mirrors the backend's `paymentMethodSchema` from
-// `@voyantjs/finance/validation-shared`. Kept inline rather than
-// re-imported from `@voyantjs/finance` so the browser bundle doesn't
+// `@voyant-travel/finance/validation-shared`. Kept inline rather than
+// re-imported from `@voyant-travel/finance` so the browser bundle doesn't
 // drag in drizzle and the rest of the server-only package.
 export const paymentMethodSchema = z.enum([
   "bank_transfer",
@@ -405,7 +405,7 @@ export const paymentSessionListResponse = paginatedEnvelope(paymentSessionRecord
 export const paymentSessionSingleResponse = singleEnvelope(paymentSessionRecordSchema)
 
 // Customer payment policy — structural mirror of `PaymentPolicy` /
-// `PaymentPolicySource` from `@voyantjs/finance/payment-policy`, kept
+// `PaymentPolicySource` from `@voyant-travel/finance/payment-policy`, kept
 // inline for the same browser-bundle reason as the enums above.
 export const financeDepositRuleSchema = z.object({
   kind: z.enum(["none", "percent", "fixed_cents"]),

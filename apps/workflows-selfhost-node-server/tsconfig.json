@@ -1,5 +1,5 @@
 {
-  "extends": "@voyantjs/voyant-typescript-config/library.json",
+  "extends": "@voyant-travel/voyant-typescript-config/library.json",
   "compilerOptions": {
     "types": ["node"],
     "outDir": "dist",

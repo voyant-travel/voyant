@@ -1,4 +1,4 @@
-import { createEventBus, registerPlugins } from "@voyantjs/core"
+import { createEventBus, registerPlugins } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import { sanityCmsPlugin } from "../../src/plugin.js"

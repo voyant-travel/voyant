@@ -5,7 +5,7 @@ import type {
   insertNotificationReminderRuleStageSchema,
   reorderReminderRuleStagesSchema,
   updateNotificationReminderRuleStageSchema,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

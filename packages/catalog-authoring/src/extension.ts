@@ -3,4 +3,4 @@ export {
   catalogAuthoringRoutes,
   inventoryAuthoringExtension,
   inventoryAuthoringRoutes,
-} from "@voyantjs/inventory/authoring/extension"
+} from "@voyant-travel/inventory/authoring/extension"

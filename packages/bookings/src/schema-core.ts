@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
   boolean,
@@ -72,7 +72,7 @@ export const bookings = pgTable(
      * booking's payment schedule uses these terms instead of the
      * cascade default. Wins over listing / category / supplier /
      * operator default. Shape mirrors `PaymentPolicy` from
-     * `@voyantjs/finance`.
+     * `@voyant-travel/finance`.
      *
      * `null` means "use the resolved cascade policy" — most bookings
      * never set this; it's reserved for ops adjustments where a

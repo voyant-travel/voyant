@@ -29,10 +29,10 @@ describe("agent runner deployed status helpers", () => {
       activeDispatchRequest: {
         action: "remote-bootstrap",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       limit: 2,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(report.ok, true)
@@ -53,7 +53,7 @@ describe("agent runner deployed status helpers", () => {
       ok: true,
       requiresActionFilter: true,
     })
-    assert.equal(report.runner.supervisorStatus.repository, "voyantjs/voyant")
+    assert.equal(report.runner.supervisorStatus.repository, "voyant-travel/voyant")
     assert.deepEqual(
       report.checks.map((check) => [check.name, check.ok]),
       [
@@ -73,17 +73,17 @@ describe("agent runner deployed status helpers", () => {
       [
         ["https://runner.example.com/api/capabilities", "Bearer runner-token"],
         [
-          "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=2",
+          "https://runner.example.com/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=2",
           "Bearer runner-token",
         ],
         ["https://control.example.com/api/capabilities", "Bearer control-token"],
         [
-          "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2",
+          "https://control.example.com/api/tick-snapshots/recent?repository=voyant-travel%2Fvoyant&limit=2",
           "Bearer control-token",
         ],
         ["https://control.example.com/api/dispatch-plans/latest", "Bearer control-token"],
         [
-          "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
+          "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyant-travel%2Fvoyant",
           "Bearer control-token",
         ],
       ],
@@ -92,7 +92,7 @@ describe("agent runner deployed status helpers", () => {
       filters: {
         action: "remote-bootstrap",
       },
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
   })
 
@@ -113,7 +113,7 @@ describe("agent runner deployed status helpers", () => {
         return jsonResponse(responseForUrl(url))
       },
       limit: 2,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(report.ok, true)
@@ -143,10 +143,10 @@ describe("agent runner deployed status helpers", () => {
       activeDispatchRequest: {
         action: "remote-bootstrap",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       limit: 2,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(report.ok, true)
@@ -165,7 +165,7 @@ describe("agent runner deployed status helpers", () => {
         calls.push({ init, url })
         return jsonResponse({})
       },
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(report.ok, false)
@@ -233,7 +233,7 @@ describe("agent runner deployed status helpers", () => {
   it("builds dispatch plan requests from deployed runner defaults", () => {
     assert.deepEqual(
       dispatchPlanRequestForDeployedRunner({
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         runnerCapabilities: {
           defaults: {
             action: "sync-pr",
@@ -244,13 +244,13 @@ describe("agent runner deployed status helpers", () => {
         filters: {
           action: "sync-pr",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
     )
 
     assert.deepEqual(
       dispatchPlanRequestForDeployedRunner({
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         runnerCapabilities: {
           defaults: {
             action: null,
@@ -258,7 +258,7 @@ describe("agent runner deployed status helpers", () => {
         },
       }),
       {
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
     )
   })
@@ -284,7 +284,7 @@ function responseForUrl(url) {
 
   if (
     url ===
-    "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2"
+    "https://control.example.com/api/tick-snapshots/recent?repository=voyant-travel%2Fvoyant&limit=2"
   ) {
     return {
       records: [
@@ -295,7 +295,7 @@ function responseForUrl(url) {
           recommendationCount: 3,
         }),
       ],
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     }
   }
 
@@ -311,7 +311,7 @@ function responseForUrl(url) {
 
   if (
     url ===
-    "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant"
+    "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyant-travel%2Fvoyant"
   ) {
     return {
       active: true,
@@ -350,7 +350,7 @@ function responseForUrl(url) {
   }
 
   if (
-    url === "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=2"
+    url === "https://runner.example.com/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=2"
   ) {
     return {
       capabilities: {
@@ -359,7 +359,7 @@ function responseForUrl(url) {
           mode: "lease-only",
         },
       },
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       runLedger: {
         recentLeases: [
           {

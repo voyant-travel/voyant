@@ -1,56 +1,56 @@
-# @voyantjs/admin-app
+# @voyant-travel/admin-app
 
 ## 0.10.0
 
 ### Patch Changes
 
-- @voyantjs/pricing-react@0.119.0
-- @voyantjs/products-react@0.119.0
-- @voyantjs/ui@0.106.1
-- @voyantjs/finance-react@0.119.0
-- @voyantjs/auth-react@0.113.2
-- @voyantjs/distribution-react@0.109.5
+- @voyant-travel/pricing-react@0.119.0
+- @voyant-travel/products-react@0.119.0
+- @voyant-travel/ui@0.106.1
+- @voyant-travel/finance-react@0.119.0
+- @voyant-travel/auth-react@0.113.2
+- @voyant-travel/distribution-react@0.109.5
 
 ## 0.9.0
 
 ### Patch Changes
 
-- @voyantjs/products-react@0.118.0
-- @voyantjs/finance-react@0.118.0
-- @voyantjs/pricing-react@0.118.0
-- @voyantjs/distribution-react@0.109.4
+- @voyant-travel/products-react@0.118.0
+- @voyant-travel/finance-react@0.118.0
+- @voyant-travel/pricing-react@0.118.0
+- @voyant-travel/distribution-react@0.109.4
 
 ## 0.8.0
 
 ### Patch Changes
 
-- @voyantjs/auth-react@0.113.0
-- @voyantjs/distribution-react@0.109.2
-- @voyantjs/finance-react@0.117.0
-- @voyantjs/pricing-react@0.117.0
-- @voyantjs/products-react@0.117.0
+- @voyant-travel/auth-react@0.113.0
+- @voyant-travel/distribution-react@0.109.2
+- @voyant-travel/finance-react@0.117.0
+- @voyant-travel/pricing-react@0.117.0
+- @voyant-travel/products-react@0.117.0
 
 ## 0.7.0
 
 ### Patch Changes
 
-- @voyantjs/products-react@0.116.0
-- @voyantjs/finance-react@0.116.0
-- @voyantjs/pricing-react@0.116.0
-- @voyantjs/auth-react@0.112.1
-- @voyantjs/distribution-react@0.109.1
+- @voyant-travel/products-react@0.116.0
+- @voyant-travel/finance-react@0.116.0
+- @voyant-travel/pricing-react@0.116.0
+- @voyant-travel/auth-react@0.112.1
+- @voyant-travel/distribution-react@0.109.1
 
 ## 0.6.0
 
 ### Minor Changes
 
 - 41b08db: Packaged-admin final sweep: the CORE admin pages ship from
-  `@voyantjs/admin-app` as a built-in extension, and index redirects become
+  `@voyant-travel/admin-app` as a built-in extension, and index redirects become
   contribution-driven. The operator deleted its last 18 core route files
   (12 settings files, `/account`, the dashboard host, and the 4 domain index
   redirects) plus the superseded settings/account components.
 
-  - `@voyantjs/admin`: `AdminUiRouteContribution` grows `redirectTo?: string`
+  - `@voyant-travel/admin`: `AdminUiRouteContribution` grows `redirectTo?: string`
     (a redirect contribution counts as implemented on its own — host binders
     emit a before-load redirect, which also covers SSR) and `children?:
 AdminUiRouteContribution[]` (nested child contributions under a layout
@@ -58,7 +58,7 @@ AdminUiRouteContribution[]` (nested child contributions under a layout
     `findAdminRouteContribution` does the depth-first lookup;
     `requireImplementedAdminRoute` accepts redirect contributions and
     resolves nested children.
-  - `@voyantjs/admin-app`: new `createAdminCoreExtension(options)` (exported
+  - `@voyant-travel/admin-app`: new `createAdminCoreExtension(options)` (exported
     from the root and `./core-extension`) — the `core` extension contributing
     `/` (the dashboard page behind a lazy chunk; hosts supply an SSR
     aggregates loader via `dashboard.loader`), `/account` (auth-react's
@@ -76,8 +76,8 @@ AdminUiRouteContribution[]` (nested child contributions under a layout
     statically. The new domain peers (auth/distribution/finance/pricing/
     products react) are optional and only loaded by the lazy page/loader
     chunks.
-  - `@voyantjs/catalog-react` / `@voyantjs/finance-react` /
-    `@voyantjs/legal-react` / `@voyantjs/notifications-react`: the admin
+  - `@voyant-travel/catalog-react` / `@voyant-travel/finance-react` /
+    `@voyant-travel/legal-react` / `@voyant-travel/notifications-react`: the admin
     extensions contribute their index redirect (`/catalog` →
     `/catalog/products`, `/finance` → `/finance/invoices`, `/legal` →
     `/legal/contracts`, `/notifications` → `/notifications/templates`),
@@ -92,12 +92,12 @@ AdminUiRouteContribution[]` (nested child contributions under a layout
 
 - Updated dependencies [41b08db]
 - Updated dependencies [6d496d0]
-  - @voyantjs/admin@0.111.0
-  - @voyantjs/finance-react@0.115.0
-  - @voyantjs/products-react@0.115.0
-  - @voyantjs/auth-react@0.112.0
-  - @voyantjs/distribution-react@0.109.0
-  - @voyantjs/pricing-react@0.115.0
+  - @voyant-travel/admin@0.111.0
+  - @voyant-travel/finance-react@0.115.0
+  - @voyant-travel/products-react@0.115.0
+  - @voyant-travel/auth-react@0.112.0
+  - @voyant-travel/distribution-react@0.109.0
+  - @voyant-travel/pricing-react@0.115.0
 
 ## 0.5.0
 
@@ -112,14 +112,14 @@ AdminUiRouteContribution[]` (nested child contributions under a layout
 ### Patch Changes
 
 - Updated dependencies [9c909e2]
-  - @voyantjs/admin@0.110.0
+  - @voyant-travel/admin@0.110.0
 
 ## 0.4.0
 
 ### Patch Changes
 
 - Updated dependencies [faec538]
-  - @voyantjs/admin@0.109.0
+  - @voyant-travel/admin@0.109.0
 
 ## 0.3.0
 
@@ -131,7 +131,7 @@ AdminUiRouteContribution[]` (nested child contributions under a layout
   route tree for extension routes is assembled in code from the contributions
   and grafted under the file-based workspace layout, with typed links intact.
 
-  - `@voyantjs/admin`: `AdminUiRouteContribution` grows `page?: () =>
+  - `@voyant-travel/admin`: `AdminUiRouteContribution` grows `page?: () =>
 Promise<AdminRoutePageModule>` — a lazy page-module loader (pages stay
     code-split, hover/intent preloading fetches the chunk ahead of
     navigation). The resolved component receives `AdminRoutePageProps`
@@ -141,7 +141,7 @@ Promise<AdminRoutePageModule>` — a lazy page-module loader (pages stay
     `requireImplementedAdminRoute` (loud failure at module evaluation when a
     bound contribution loses its implementation) and `adminRoutePageModule`
     (adapter for zero-prop / all-optional-prop hosts).
-  - `@voyantjs/admin-app`: new binder — `adminExtensionRouteOptions(extension,
+  - `@voyant-travel/admin-app`: new binder — `adminExtensionRouteOptions(extension,
 routeId, runtime)` returns router-facing route options (lazy component,
     loader bound to `{ queryClient, runtime, params }`, per-route `ssr`,
     boundaries) ready to spread into a code-based `createRoute({...})`, and
@@ -169,14 +169,14 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [478aa7c]
-  - @voyantjs/admin@0.108.0
+  - @voyant-travel/admin@0.108.0
 
 ## 0.2.0
 
 ### Patch Changes
 
 - Updated dependencies [eeb23df]
-  - @voyantjs/admin@0.107.0
+  - @voyant-travel/admin@0.107.0
 
 ## 0.1.0
 
@@ -186,20 +186,20 @@ routeId, runtime)` returns router-facing route options (lazy component,
   admin pages navigate to routes they don't own (booking journey, supplier
   detail, product editor) without importing a host route tree.
 
-  - `@voyantjs/admin`: new `AdminDestinations` interface (augmented by domain
-    packages via `declare module "@voyantjs/admin"`), `AdminNavigationProvider`,
+  - `@voyant-travel/admin`: new `AdminDestinations` interface (augmented by domain
+    packages via `declare module "@voyant-travel/admin"`), `AdminNavigationProvider`,
     and `useAdminHref`/`useAdminNavigate`. Unresolvable keys warn once per key
     and degrade to `"#"`/no-op — never a throw in render paths.
-  - `@voyantjs/admin-app`: `AdminWorkspaceShell` accepts a `destinations`
+  - `@voyant-travel/admin-app`: `AdminWorkspaceShell` accepts a `destinations`
     resolver map (`satisfies AdminDestinationResolvers` for exhaustiveness) and
     mounts the provider wired to the app router via `router.navigate({ href })`.
-  - `@voyantjs/catalog-ui`: declares the catalog destination keys
+  - `@voyant-travel/catalog-ui`: declares the catalog destination keys
     (`bookingJourney.start`, `catalog.browse`, `catalog.detail`,
     `product.detail`, `supplier.detail`) covering every cross-route target the
     operator's catalog wrappers navigate to.
 
 - db98e90: New package — Phase 1 of the packaged-admin RFC (#1643): the admin
-  application composition ships as a versioned package; `@voyantjs/admin` stays
+  application composition ships as a versioned package; `@voyant-travel/admin` stays
   the primitives layer.
 
   - `createAdminRouter` / `createAdminQueryClient` — TanStack Router +
@@ -226,5 +226,5 @@ routeId, runtime)` returns router-facing route options (lazy component,
 - Updated dependencies [3bd66e9]
 - Updated dependencies [ee5b530]
 - Updated dependencies [344e7b6]
-  - @voyantjs/admin@0.106.0
-  - @voyantjs/ui@0.106.0
+  - @voyant-travel/admin@0.106.0
+  - @voyant-travel/ui@0.106.0

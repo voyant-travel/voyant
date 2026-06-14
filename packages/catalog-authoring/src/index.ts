@@ -1,7 +1,7 @@
-import type { Module } from "@voyantjs/core"
+import type { Module } from "@voyant-travel/core"
 
 export const catalogAuthoringModule: Module = {
   name: "catalog-authoring",
 }
 
-export * from "@voyantjs/inventory/authoring"
+export * from "@voyant-travel/inventory/authoring"

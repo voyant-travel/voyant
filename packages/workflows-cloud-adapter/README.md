@@ -1,4 +1,4 @@
-# @voyantjs/workflows-cloud-adapter
+# @voyant-travel/workflows-cloud-adapter
 
 Tenant Worker adapter for Voyant Cloud Workflows projects. It wraps the
 lower-level Cloudflare orchestrator primitives so a workflow Worker can
@@ -10,10 +10,10 @@ fallback behavior.
 
 ```ts
 import "./workflows";
-import { createCloudOrchestrator } from "@voyantjs/workflows-cloud-adapter";
+import { createCloudOrchestrator } from "@voyant-travel/workflows-cloud-adapter";
 
 export default createCloudOrchestrator();
-export { WorkflowRunDO } from "@voyantjs/workflows-cloud-adapter";
+export { WorkflowRunDO } from "@voyant-travel/workflows-cloud-adapter";
 ```
 
 If your build exports a workflow bundle value, passing it is harmless;
@@ -21,7 +21,7 @@ workflow registration still happens through module imports:
 
 ```ts
 import workflows from "./workflows";
-import { createCloudOrchestrator } from "@voyantjs/workflows-cloud-adapter";
+import { createCloudOrchestrator } from "@voyant-travel/workflows-cloud-adapter";
 
 export const { fetch, WorkflowRunDO } = createCloudOrchestrator(workflows);
 ```
@@ -39,7 +39,7 @@ existing routes:
 ```ts
 import { Hono } from "hono";
 import "./workflows";
-import { mountWorkflows } from "@voyantjs/workflows-cloud-adapter";
+import { mountWorkflows } from "@voyant-travel/workflows-cloud-adapter";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -47,7 +47,7 @@ app.get("/health", (c) => c.json({ ok: true }));
 mountWorkflows(app);
 
 export default app;
-export { WorkflowRunDO } from "@voyantjs/workflows-cloud-adapter";
+export { WorkflowRunDO } from "@voyant-travel/workflows-cloud-adapter";
 ```
 
 `mountWorkflows(app)` registers `/api/*` when the app exposes

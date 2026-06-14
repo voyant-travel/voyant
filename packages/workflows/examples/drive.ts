@@ -1,11 +1,11 @@
 // Spike driver. Runs the booking-reminder workflow end-to-end through
 // the testing harness and prints what happened.
 //
-//   pnpm --filter @voyantjs/workflows build
-//   pnpm --filter @voyantjs/workflows build:examples
+//   pnpm --filter @voyant-travel/workflows build
+//   pnpm --filter @voyant-travel/workflows build:examples
 //   node packages/workflows/examples-dist/drive.js
 
-import { runWorkflowForTest } from "@voyantjs/workflows/testing"
+import { runWorkflowForTest } from "@voyant-travel/workflows/testing"
 import { sendBookingReminder } from "./booking-reminder.js"
 
 async function main(): Promise<void> {

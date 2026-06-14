@@ -1,4 +1,4 @@
-import { parseJsonBody } from "@voyantjs/hono"
+import { parseJsonBody } from "@voyant-travel/hono"
 import type { Hono } from "hono"
 import { z } from "zod"
 

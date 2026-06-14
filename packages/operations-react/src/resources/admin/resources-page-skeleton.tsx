@@ -1,8 +1,8 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 
 const TABLE_COLUMNS = [
   { id: "name", width: "w-40" },

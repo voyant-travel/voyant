@@ -25,7 +25,7 @@
  * `syncSources` is a one-shot bulk pass driven by a CLI or cron job.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import type { SourceAdapter, SourceAdapterContext } from "../adapter/contract.js"
 import type { FieldPolicyRegistry } from "../contract.js"
@@ -75,7 +75,7 @@ export interface SyncSourcesOptions {
   buildAdapterContext?: (adapter: SourceAdapter) => SourceAdapterContext
   /**
    * Optional wrapper around the per-projection `DocumentBuilder` — used
-   * to attach embeddings via `withEmbedding` (the operator template's
+   * to attach embeddings via `withEmbedding` (the operator starter's
    * helper) without coupling this orchestrator to any embedding
    * provider.
    */

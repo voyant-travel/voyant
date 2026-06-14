@@ -1,16 +1,16 @@
 "use client"
 
-import { useAdminHref, useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
-import { useMarketLocales, useMarkets } from "@voyantjs/commerce-react/markets"
-import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
-import { useProductMutation } from "@voyantjs/inventory-react"
+import { useAdminHref, useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useMarketLocales, useMarkets } from "@voyant-travel/commerce-react/markets"
+import { useSuppliers } from "@voyant-travel/distribution-react/suppliers"
+import { useProductMutation } from "@voyant-travel/inventory-react"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { useMemo } from "react"
 import { toast } from "sonner"
 import type { CatalogVerticalPageId } from "../catalog-surfaces.js"

@@ -5,11 +5,11 @@ import type { LinkableDefinition } from "./links.js"
 /**
  * Minimum structural shape of a workflow registration as exposed by a module
  * or plugin. Defined here in core so `Module` doesn't have to import the
- * concrete `WorkflowDefinition` from `@voyantjs/workflows` — that would
+ * concrete `WorkflowDefinition` from `@voyant-travel/workflows` — that would
  * couple core to the workflows package and risk an import cycle (workflows
  * already depends on core for `ModuleContainer` and similar primitives).
  *
- * `@voyantjs/workflows`'s concrete `WorkflowDefinition` satisfies this
+ * `@voyant-travel/workflows`'s concrete `WorkflowDefinition` satisfies this
  * descriptor via TypeScript structural compat. Core treats workflows as
  * opaque beyond `id`; the workflows runtime owns the rest.
  *
@@ -26,7 +26,7 @@ export interface WorkflowDescriptor {
  * module or plugin. Defined here in core for the same reason as
  * {@link WorkflowDescriptor}.
  *
- * `@voyantjs/workflows`'s concrete `EventFilterRuntimeEntry` (added in PR2)
+ * `@voyant-travel/workflows`'s concrete `EventFilterRuntimeEntry` (added in PR2)
  * satisfies this descriptor via structural compat.
  */
 export interface EventFilterDescriptor {
@@ -95,7 +95,7 @@ export interface Module {
    * registered with the configured workflow driver.
    *
    * Concrete entries are produced by `workflow({ id, run })` in
-   * `@voyantjs/workflows`; the field type here is the structural
+   * `@voyant-travel/workflows`; the field type here is the structural
    * {@link WorkflowDescriptor} so core stays workflow-agnostic.
    */
   workflows?: readonly WorkflowDescriptor[]
@@ -106,7 +106,7 @@ export interface Module {
    * `driver.ingestEvent(...)` time.
    *
    * Concrete entries are produced by `trigger.on(eventName, { ... })` in
-   * `@voyantjs/workflows`; the field type here is the structural
+   * `@voyant-travel/workflows`; the field type here is the structural
    * {@link EventFilterDescriptor} for the same cycle-avoidance reason as
    * {@link workflows} above.
    */

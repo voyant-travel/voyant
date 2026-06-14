@@ -57,7 +57,7 @@ function camelCaseArg(rawKey) {
 }
 
 export function projectConfigFromArgs(args) {
-  const owner = args.owner ?? process.env.VOYANT_ENGINEERING_PROJECT_OWNER ?? "voyantjs"
+  const owner = args.owner ?? process.env.VOYANT_ENGINEERING_PROJECT_OWNER ?? "voyant-travel"
   const projectNumber = Number(
     args.project ??
       args.projectNumber ??

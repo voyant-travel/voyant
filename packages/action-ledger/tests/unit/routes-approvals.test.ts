@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { __test__ } from "../../src/routes.js"

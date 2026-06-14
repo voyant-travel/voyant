@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { Loader2, Lock } from "lucide-react"
 import type * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"

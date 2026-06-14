@@ -1,13 +1,19 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { deriveTravelerRoleFromDob } from "@voyantjs/bookings-react/components/travelers-section"
-import { usePerson, usePersonRelationships } from "@voyantjs/relationships-react"
-import { PersonCombobox, PersonForm } from "@voyantjs/relationships-react/ui"
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { deriveTravelerRoleFromDob } from "@voyant-travel/bookings-react/components/travelers-section"
+import { usePerson, usePersonRelationships } from "@voyant-travel/relationships-react"
+import { PersonCombobox, PersonForm } from "@voyant-travel/relationships-react/ui"
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { Info, Pencil, Trash2, UserPlus } from "lucide-react"
 import * as React from "react"
 

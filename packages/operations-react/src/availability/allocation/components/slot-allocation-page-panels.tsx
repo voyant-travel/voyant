@@ -3,7 +3,7 @@
 import type {
   AllocationManifestBooking,
   AllocationManifestTraveler,
-} from "@voyantjs/operations-react/availability"
+} from "@voyant-travel/operations-react/availability"
 import {
   Badge,
   Table,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Accessibility, Crown, Users, UtensilsCrossed } from "lucide-react"
 import type { ReactNode } from "react"
 

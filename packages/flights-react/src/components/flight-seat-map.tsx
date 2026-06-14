@@ -1,14 +1,14 @@
 "use client"
 
-import type { Seat, SeatMap } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
+import type { Seat, SeatMap } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@voyantjs/ui/components/tooltip"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/tooltip"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Plane } from "lucide-react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 

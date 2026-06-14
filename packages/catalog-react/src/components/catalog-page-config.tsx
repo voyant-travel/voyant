@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@voyantjs/ui/components/badge"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import { Image as ImageIcon } from "lucide-react"
 
 import type { useCatalogUiMessagesOrDefault } from "../i18n/index.js"

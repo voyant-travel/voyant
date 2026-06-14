@@ -8,7 +8,7 @@
 // `cancel()` closes out a run without running compensations (they
 // must come from the tenant handler, not the orchestrator).
 
-import type { Duration } from "@voyantjs/workflows"
+import type { Duration } from "@voyant-travel/workflows"
 
 import { registerRunAbort, signalRunAbort, unregisterRunAbort } from "./abort-registry.js"
 import { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"

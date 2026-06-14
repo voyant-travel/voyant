@@ -1,8 +1,8 @@
 "use client"
 
-import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
-import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
-import { type Supplier, useSuppliers } from "@voyantjs/distribution-react/suppliers"
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { type BookingRecord, useBookings } from "@voyant-travel/bookings-react"
+import { type Supplier, useSuppliers } from "@voyant-travel/distribution-react/suppliers"
 import {
   Button,
   Dialog,
@@ -19,10 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import {

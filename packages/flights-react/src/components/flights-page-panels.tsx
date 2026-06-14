@@ -1,7 +1,7 @@
 "use client"
 
-import type { FlightOffer } from "@voyantjs/flights/contract/types"
-import { Button } from "@voyantjs/ui/components/button"
+import type { FlightOffer } from "@voyant-travel/flights/contract/types"
+import { Button } from "@voyant-travel/ui/components/button"
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import type { FlightFiltersValue } from "./flight-filters-bar.js"

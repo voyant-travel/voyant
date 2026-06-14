@@ -8,7 +8,7 @@ import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
  *
  * `key` is a semantic cache key, NOT a typeid — e.g.
  * `finance:aggregates:<paramsHash>`. Callers build it with
- * `aggregateSnapshotKey(...)` from `@voyantjs/db/aggregate-snapshots`,
+ * `aggregateSnapshotKey(...)` from `@voyant-travel/db/aggregate-snapshots`,
  * which folds query params into the key so distinct param sets get
  * distinct snapshots.
  *

@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components/dialog"
+} from "@voyant-travel/ui/components/dialog"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import type { PricingCategoryRecord } from "../index.js"
 import { PricingCategoryForm } from "./pricing-category-form.js"

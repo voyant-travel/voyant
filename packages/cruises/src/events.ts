@@ -6,7 +6,7 @@
  * before updating catalog/search projections.
  */
 
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 
 /** Stable string identifier for local cruise creation. */
 export const CRUISE_CREATED_EVENT = "cruise.created" as const

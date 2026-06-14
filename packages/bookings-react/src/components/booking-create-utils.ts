@@ -1,4 +1,4 @@
-import type { ProductRecord } from "@voyantjs/inventory-react"
+import type { ProductRecord } from "@voyant-travel/inventory-react"
 import type { BookingCreateItemLineInput } from "../index.js"
 
 export type ProductPickerSearchRecord = Pick<ProductRecord, "description" | "name" | "sellCurrency">

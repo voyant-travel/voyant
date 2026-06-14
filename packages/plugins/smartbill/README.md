@@ -1,4 +1,4 @@
-# @voyantjs/plugin-smartbill
+# @voyant-travel/plugin-smartbill
 
 SmartBill e-invoicing sync adapter bundle for Voyant.
 
@@ -14,14 +14,14 @@ SmartBill REST API for Romanian tax compliance.
 ## Install
 
 ```bash
-pnpm add @voyantjs/plugin-smartbill
+pnpm add @voyant-travel/plugin-smartbill
 ```
 
 ## Usage
 
 ```typescript
-import { smartbillPlugin } from "@voyantjs/plugin-smartbill"
-import { createApp } from "@voyantjs/hono"
+import { smartbillPlugin } from "@voyant-travel/plugin-smartbill"
+import { createApp } from "@voyant-travel/hono"
 
 const smartbillSync = smartbillPlugin({
   username: env.SMARTBILL_USERNAME,
@@ -52,7 +52,7 @@ status on SmartBill. All error handling is fire-and-forget per the EventBus
 contract.
 
 When `artifacts.db` is configured, successful invoice/proforma creation also
-registers the SmartBill external reference through `@voyantjs/finance`. When
+registers the SmartBill external reference through `@voyant-travel/finance`. When
 `artifacts.documentStorage` is configured, the plugin downloads the generated
 SmartBill PDF, uploads it to document storage, and records both a ready
 `invoice_renditions` row and a `smartbill_pdf` `invoice_attachments` row. The
@@ -81,10 +81,10 @@ booking, line items, and tax metadata, maps them through the configured
 SmartBill options, reuses an existing non-error SmartBill ref when present, and
 persists external refs/PDF artifacts through the configured artifact runtime.
 
-Apps that use `@voyantjs/hono` can mount the packaged admin module:
+Apps that use `@voyant-travel/hono` can mount the packaged admin module:
 
 ```typescript
-import { createSmartbillAdminModule } from "@voyantjs/plugin-smartbill/hono"
+import { createSmartbillAdminModule } from "@voyant-travel/plugin-smartbill/hono"
 
 const app = createApp({
   plugins: [smartbillSync],
@@ -114,12 +114,12 @@ without issuing a new document.
 
 The optional `./invoice-ui` entry ships React helpers for invoice detail pages.
 It reads SmartBill refs from `/v1/finance/invoices/:id/external-refs` using the
-`@voyantjs/finance-react` provider context and can be mounted in
+`@voyant-travel/finance-react` provider context and can be mounted in
 `InvoiceDetailPage`'s integration slot.
 
 ```tsx
-import { InvoiceDetailPage } from "@voyantjs/finance-react/ui"
-import { SmartbillInvoicePanel } from "@voyantjs/plugin-smartbill/invoice-ui"
+import { InvoiceDetailPage } from "@voyant-travel/finance-react/ui"
+import { SmartbillInvoicePanel } from "@voyant-travel/plugin-smartbill/invoice-ui"
 
 export function InvoicePage({ invoiceId }: { invoiceId: string }) {
   return (
@@ -149,14 +149,14 @@ defaults. For custom layouts, use `useSmartbillInvoiceRef(invoiceId)` together w
 
 The package also ships scheduler-agnostic workflow factories for recurring
 SmartBill maintenance. They return async functions that can be called from
-`@voyantjs/workflows`, a Cloudflare cron handler, Trigger.dev, Hatchet, or any
+`@voyant-travel/workflows`, a Cloudflare cron handler, Trigger.dev, Hatchet, or any
 other job runner.
 
 ```typescript
 import {
   createSmartbillDriftReconciler,
   createSmartbillProformaConversionPoller,
-} from "@voyantjs/plugin-smartbill"
+} from "@voyant-travel/plugin-smartbill"
 
 const pollProformas = createSmartbillProformaConversionPoller({
   db,
@@ -233,7 +233,7 @@ import {
   createSmartbillClient,
   SmartbillRateLimitCircuitOpenError,
   SmartbillRateLimitError,
-} from "@voyantjs/plugin-smartbill/client"
+} from "@voyant-travel/plugin-smartbill/client"
 
 const client = createSmartbillClient({
   username,
@@ -269,8 +269,8 @@ For in-process tests, pass the mock `fetch` implementation and any local
 `apiUrl`:
 
 ```typescript
-import { createSmartbillClient } from "@voyantjs/plugin-smartbill/client"
-import { createSmartbillMockServer } from "@voyantjs/plugin-smartbill/mock"
+import { createSmartbillClient } from "@voyant-travel/plugin-smartbill/client"
+import { createSmartbillMockServer } from "@voyant-travel/plugin-smartbill/mock"
 
 const smartbill = createSmartbillMockServer()
 const client = createSmartbillClient({

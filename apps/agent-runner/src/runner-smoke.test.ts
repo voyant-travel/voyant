@@ -12,7 +12,7 @@ describe("agent runner smoke ticks", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url, init) => {
         calls.push({
@@ -62,7 +62,7 @@ describe("agent runner smoke ticks", () => {
           options: {
             eventLog: ".agent-runs/cloudflare.jsonl",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         headers: expect.any(Headers),
         method: "POST",
@@ -99,7 +99,7 @@ describe("agent runner smoke ticks", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       request: {
         action: "sync-pr",
@@ -123,7 +123,7 @@ describe("agent runner smoke ticks", () => {
           filters: {
             action: "sync-pr",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         headers: expect.any(Headers),
         method: "POST",
@@ -141,7 +141,7 @@ describe("agent runner smoke ticks", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async () =>
         new Response(JSON.stringify({ error: "tick_snapshot_not_found" }), {
@@ -173,7 +173,7 @@ describe("agent runner smoke ticks", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url) => {
         calls.push(String(url))
@@ -215,7 +215,7 @@ describe("agent runner smoke ticks", () => {
         defaultAction: action,
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url, init) => {
         calls.push({
@@ -261,7 +261,7 @@ describe("agent runner smoke ticks", () => {
           lease: {
             holder: "runner:cloudflare",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         url: "https://control.example.com/api/dispatch-intents/latest",
       },

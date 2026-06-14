@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import { useNotificationDelivery } from "../index.js"

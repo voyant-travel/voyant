@@ -1,4 +1,4 @@
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 import { describe, expect, it } from "vitest"
 import { createInMemoryRunStore, trigger } from "../index.js"
 import { handler, tenantMeta } from "./orchestrator-test-support.js"

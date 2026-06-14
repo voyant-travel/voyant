@@ -1,5 +1,5 @@
-import type { Actor } from "@voyantjs/core"
-import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyantjs/types/api-keys"
+import type { Actor } from "@voyant-travel/core"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import type { MiddlewareHandler } from "hono"
 
 import type { VoyantBindings, VoyantVariables } from "../types.js"

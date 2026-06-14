@@ -22,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
   Switch,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxContent,
@@ -30,10 +30,10 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { cn } from "@voyantjs/ui/lib/utils"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
-import { currencies } from "@voyantjs/utils/currencies"
+} from "@voyant-travel/ui/components/combobox"
+import { cn } from "@voyant-travel/ui/lib/utils"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
+import { currencies } from "@voyant-travel/utils/currencies"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"

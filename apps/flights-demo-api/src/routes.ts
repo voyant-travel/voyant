@@ -1,6 +1,6 @@
 /**
  * REST surface for the demo flight service. Mirrors the methods on
- * `FlightConnectorAdapter` so the plugin client (`@voyantjs/plugin-flights-demo`)
+ * `FlightConnectorAdapter` so the plugin client (`@voyant-travel/plugin-flights-demo`)
  * is a thin fetch wrapper. Each endpoint maps 1:1 to an adapter call.
  *
  *   POST   /search                       searchFlights
@@ -22,7 +22,7 @@ import type {
   FlightSearchRequest,
   SeatMapRequest,
   SeatSelectionRequest,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 import { Hono } from "hono"
 
 import type { DemoFlightsDb } from "./db.js"
@@ -39,7 +39,7 @@ import {
 
 interface PriceRequest {
   offerId: string
-  offer?: import("@voyantjs/flights/contract/types").FlightOffer
+  offer?: import("@voyant-travel/flights/contract/types").FlightOffer
 }
 
 const DEFAULT_PAGE_SIZE = 20

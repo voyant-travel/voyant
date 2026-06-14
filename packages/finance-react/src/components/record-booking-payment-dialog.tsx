@@ -1,6 +1,6 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -16,10 +16,10 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

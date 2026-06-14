@@ -6,7 +6,7 @@
  * Skips locally if `TEST_DATABASE_URL` is unset or the connection fails.
  */
 
-import { createTestDb } from "@voyantjs/db/test-utils"
+import { createTestDb } from "@voyant-travel/db/test-utils"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"

@@ -2,7 +2,7 @@ import {
   renderStructuredTemplate,
   type TemplateSyntaxIssue,
   validateStructuredTemplateSyntax,
-} from "@voyantjs/utils/template-renderer"
+} from "@voyant-travel/utils/template-renderer"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -210,7 +210,7 @@ export async function allocateContractNumber(
     // `neon-serverless`. Casting straight to `Array<T>` worked on the
     // first driver and silently returned `undefined` on the others —
     // which is why contracts auto-issued under the node-pg/Neon-WS
-    // operator template came out without a number. Normalise the shape.
+    // operator starter came out without a number. Normalise the shape.
     const row = toResultRows<Record<string, unknown>>(rows)[0]
     if (!row) return null
 

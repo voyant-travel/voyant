@@ -3,7 +3,7 @@ import {
   identityAddresses,
   identityContactPoints,
   identityNamedContacts,
-} from "@voyantjs/identity/schema"
+} from "@voyant-travel/identity/schema"
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

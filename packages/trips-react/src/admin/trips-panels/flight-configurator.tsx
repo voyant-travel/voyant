@@ -1,23 +1,23 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
 import type {
   CabinClass,
   FlightOffer,
   FlightPassenger,
   PassengerCounts,
-} from "@voyantjs/flights/contract/types"
-import { useFlightAncillaries, useFlightSearch } from "@voyantjs/flights-react"
+} from "@voyant-travel/flights/contract/types"
+import { useFlightAncillaries, useFlightSearch } from "@voyant-travel/flights-react"
 import {
   AirportCombobox,
   FlightBaggageStep,
   FlightFareUpsellStep,
   FlightOfferRow,
   FlightServicesStep,
-} from "@voyantjs/flights-react/ui"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/flights-react/ui"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2, X } from "lucide-react"
 import * as React from "react"
 

@@ -1,14 +1,14 @@
 /**
- * Admin routes for promotions — mounted by the operator template at
+ * Admin routes for promotions — mounted by the operator starter at
  * `/v1/admin/promotions/*` (staff-actor-gated by the parent app's
  * middleware chain).
  *
  * PR1 ships CRUD only. Public storefront routes are exposed via the
  * existing `/v1/public/products/:productId/offers` endpoints in
- * `@voyantjs/storefront` once the storefront resolver is wired in PR4.
+ * `@voyant-travel/storefront` once the storefront resolver is wired in PR4.
  */
 
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
 
 import { type Env, notFound } from "./routes-shared.js"

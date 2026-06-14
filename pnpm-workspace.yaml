@@ -1,6 +1,6 @@
 packages:
   - "packages/*"
   - "packages/plugins/*"
-  - "templates/operator"
+  - "starters/operator"
   - "apps/*"
   - "examples/*"

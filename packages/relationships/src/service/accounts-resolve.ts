@@ -1,4 +1,4 @@
-import { identityContactPoints } from "@voyantjs/identity/schema"
+import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

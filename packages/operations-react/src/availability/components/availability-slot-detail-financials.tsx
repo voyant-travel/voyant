@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Card, CardContent, cn } from "@voyantjs/ui/components"
+import { Badge, Card, CardContent, cn } from "@voyant-travel/ui/components"
 import type { ReactNode } from "react"
 import type { AllocationManifestBooking, AvailabilitySlotRow } from "../index.js"
 

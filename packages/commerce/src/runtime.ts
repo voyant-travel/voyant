@@ -1,4 +1,4 @@
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { marketsHonoModule } from "./markets/index.js"
 import { pricingHonoModule } from "./pricing/index.js"
 import { promotionsHonoModule } from "./promotions/index.js"

@@ -2,7 +2,7 @@
 // dashboard (recharts), account, and the settings pages — resolves through
 // dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
 // thunks, so the heavy chunks load on navigation, not with workspace chrome.
-import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
+import { DashboardSkeleton } from "@voyant-travel/admin/dashboard/skeleton"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -10,7 +10,7 @@ import {
   type AdminUiRouteContribution,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin/extensions"
+} from "@voyant-travel/admin/extensions"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
@@ -30,21 +30,21 @@ export type {
  * The CORE admin extension (packaged-admin RFC §4.2/§4.8): the pages every
  * Voyant admin ships regardless of mounted domains — the dashboard host,
  * the account page, and the settings area (layout + built-in pages). These
- * were the last template-owned operator pages; they now arrive as
+ * were the last starter-owned operator pages; they now arrive as
  * extension route contributions bound through the host's code-assembled
  * route tree, exactly like the domain extensions.
  *
  * NAVIGATION: deliberately none — Dashboard and Settings are part of the
  * BASE operator navigation (`createOperatorAdminNavigation` in
- * `@voyantjs/admin`), and Account is linked from the user menu.
+ * `@voyant-travel/admin`), and Account is linked from the user menu.
  *
  * ROUTES:
- * - `/` — the dashboard (`DashboardPage` from `@voyantjs/admin/dashboard`,
+ * - `/` — the dashboard (`DashboardPage` from `@voyant-travel/admin/dashboard`,
  *   kept behind a lazy page module because it pulls recharts). Data comes
  *   from the page's own client-side queries; hosts with SSR aggregates
  *   supply a loader via {@link AdminCoreDashboardOptions.loader} (the
  *   loader and the page share the dashboard query keys).
- * - `/account` — `AccountPage` from `@voyantjs/auth-react`. Localized when
+ * - `/account` — `AccountPage` from `@voyant-travel/auth-react`. Localized when
  *   the host mounts `AuthUiMessagesProvider` (e.g. through the shell's
  *   `domainMessageProviders`); otherwise English defaults.
  * - `/settings` — layout route (grouped sub-nav + outlet) with nested
@@ -72,7 +72,7 @@ export interface AdminCoreDashboardOptions {
   /**
    * App-supplied data loader (e.g. server-function aggregates that read the
    * database directly during SSR). Must populate the dashboard query keys
-   * (`dashboardQueryKeys` from `@voyantjs/admin/dashboard/query-options`);
+   * (`dashboardQueryKeys` from `@voyant-travel/admin/dashboard/query-options`);
    * without it the page fetches client-side through the admin API.
    */
   loader?: (ctx: AdminRouteLoaderContext) => unknown
@@ -154,7 +154,7 @@ export function createAdminCoreExtension(
       // DashboardPage pulls recharts — the lazy page module keeps it out of
       // the workspace-chrome chunk that evaluates this factory.
       page: () =>
-        import("@voyantjs/admin/dashboard").then((module) =>
+        import("@voyant-travel/admin/dashboard").then((module) =>
           adminRoutePageModule(module.DashboardPage),
         ),
       loader: dashboard.loader,
@@ -169,7 +169,7 @@ export function createAdminCoreExtension(
       title: "Account",
       ssr: account.ssr,
       page: async () => {
-        const { AccountPage } = await import("@voyantjs/auth-react/account")
+        const { AccountPage } = await import("@voyant-travel/auth-react/account")
         // The workspace inset header already renders the sidebar trigger —
         // suppress the page shell's own to avoid doubling it.
         function CoreAccountPage() {
@@ -250,7 +250,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
       return {
         ...base,
         page: () =>
-          import("@voyantjs/admin/components/team-settings-page").then((module) =>
+          import("@voyant-travel/admin/components/team-settings-page").then((module) =>
             adminRoutePageModule(module.TeamSettingsPage),
           ),
       }
@@ -258,7 +258,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
       return {
         ...base,
         page: () =>
-          import("@voyantjs/auth-react/components/service-api-keys-page").then((module) =>
+          import("@voyant-travel/auth-react/components/service-api-keys-page").then((module) =>
             adminRoutePageModule(module.ApiTokensPage),
           ),
       }
@@ -267,14 +267,14 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/distribution-react/components/channels-page").then((module) =>
+          import("@voyant-travel/distribution-react/components/channels-page").then((module) =>
             adminRoutePageModule(module.ChannelsPage),
           ),
         // Dynamic import on purpose: the query options pull the domain data
         // layer (client + response schemas), and a static import here would
         // pin it into the workspace-chrome chunk evaluating this factory.
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getChannelsQueryOptions } = await import("@voyantjs/distribution-react")
+          const { getChannelsQueryOptions } = await import("@voyant-travel/distribution-react")
           return ctx.queryClient.ensureQueryData(
             getChannelsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )
@@ -284,7 +284,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
       return {
         ...base,
         page: () =>
-          import("@voyantjs/finance-react/components/taxes-page").then((module) =>
+          import("@voyant-travel/finance-react/components/taxes-page").then((module) =>
             adminRoutePageModule(module.TaxesPage),
           ),
       }
@@ -292,7 +292,7 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
       return {
         ...base,
         page: () =>
-          import("@voyantjs/finance-react/components/cost-categories-page").then((module) =>
+          import("@voyant-travel/finance-react/components/cost-categories-page").then((module) =>
             adminRoutePageModule(module.CostCategoriesPage),
           ),
       }
@@ -301,12 +301,12 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/commerce-react/pricing/components/pricing-categories-page").then(
+          import("@voyant-travel/commerce-react/pricing/components/pricing-categories-page").then(
             (module) => adminRoutePageModule(module.PricingCategoriesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
           const { getPricingCategoriesQueryOptions } = await import(
-            "@voyantjs/commerce-react/pricing"
+            "@voyant-travel/commerce-react/pricing"
           )
           return ctx.queryClient.ensureQueryData(
             getPricingCategoriesQueryOptions(coreClient(ctx), { limit: 25, active: undefined }),
@@ -318,11 +318,13 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/commerce-react/pricing/components/price-catalogs-page").then((module) =>
-            adminRoutePageModule(module.PriceCatalogsPage),
+          import("@voyant-travel/commerce-react/pricing/components/price-catalogs-page").then(
+            (module) => adminRoutePageModule(module.PriceCatalogsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getPriceCatalogsQueryOptions } = await import("@voyantjs/commerce-react/pricing")
+          const { getPriceCatalogsQueryOptions } = await import(
+            "@voyant-travel/commerce-react/pricing"
+          )
           return ctx.queryClient.ensureQueryData(
             getPriceCatalogsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )
@@ -333,11 +335,11 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/inventory-react/components/product-types-page").then((module) =>
+          import("@voyant-travel/inventory-react/components/product-types-page").then((module) =>
             adminRoutePageModule(module.ProductTypesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getProductTypesQueryOptions } = await import("@voyantjs/inventory-react")
+          const { getProductTypesQueryOptions } = await import("@voyant-travel/inventory-react")
           return ctx.queryClient.ensureQueryData(
             getProductTypesQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )
@@ -348,11 +350,11 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/inventory-react/components/product-tags-page").then((module) =>
+          import("@voyant-travel/inventory-react/components/product-tags-page").then((module) =>
             adminRoutePageModule(module.ProductTagsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getProductTagsQueryOptions } = await import("@voyantjs/inventory-react")
+          const { getProductTagsQueryOptions } = await import("@voyant-travel/inventory-react")
           return ctx.queryClient.ensureQueryData(
             getProductTagsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )

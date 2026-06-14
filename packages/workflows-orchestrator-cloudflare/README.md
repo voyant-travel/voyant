@@ -1,7 +1,7 @@
-# @voyantjs/workflows-orchestrator-cloudflare
+# @voyant-travel/workflows-orchestrator-cloudflare
 
 Cloudflare Worker + Durable Object adapter for
-[`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes
+[`@voyant-travel/workflows-orchestrator`](../workflows-orchestrator). Composes
 the protocol-agnostic state machine with DO-backed storage and a
 pluggable **step dispatcher** that delivers step requests to wherever
 workflow code lives.
@@ -31,7 +31,7 @@ import {
   handleDurableObjectRequest,
   handleDurableObjectAlarm,
   createServiceBindingDispatcher,
-} from "@voyantjs/workflows-orchestrator-cloudflare";
+} from "@voyant-travel/workflows-orchestrator-cloudflare";
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {

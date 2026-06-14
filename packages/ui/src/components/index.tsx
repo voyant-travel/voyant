@@ -91,7 +91,7 @@ export * from "./calendar.js"
 export * from "./card.js"
 export * from "./carousel.js"
 // chart + dashboard-widgets pull recharts (~390 KB). Import from
-// "@voyantjs/ui/components/chart" / "/dashboard-widgets" directly.
+// "@voyant-travel/ui/components/chart" / "/dashboard-widgets" directly.
 export * from "./checkbox.js"
 export * from "./collapsible.js"
 export * from "./combobox.js"
@@ -127,7 +127,7 @@ export * from "./navigation-menu.js"
 // Heavy passthroughs intentionally NOT re-exported here — they statically
 // pull tiptap/prosemirror (rich-text-editor) or
 // libphonenumber-js (phone-input). Import directly from
-// "@voyantjs/ui/components/<subpath>" instead. Keeping them out of the
+// "@voyant-travel/ui/components/<subpath>" instead. Keeping them out of the
 // barrel lets every consumer that imports `Button` etc. tree-shake them.
 export * from "./overview-metric.js"
 export * from "./pagination.js"

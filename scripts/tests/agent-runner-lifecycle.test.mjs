@@ -305,11 +305,11 @@ describe("agent runner lifecycle helpers", () => {
       artifactPlan,
       branch: item.dryRunPlan.branch,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
     assert.equal(env.VOYANT_AGENT_ISSUE, "579")
     assert.equal(env.VOYANT_AGENT_BRANCH, "task/579-test-agent-project-intake-workflow")
-    assert.equal(env.VOYANT_AGENT_REPOSITORY, "voyantjs/voyant")
+    assert.equal(env.VOYANT_AGENT_REPOSITORY, "voyant-travel/voyant")
     assert.equal(env.VOYANT_AGENT_VERIFICATION_LANE, "verify:fast")
     assert.equal(env.VOYANT_AGENT_WORKSPACE_ID, "579-test-agent-project-intake-workflow")
     assert.equal(env.VOYANT_AGENT_WORKSPACE_KIND, "local-worktree")
@@ -340,7 +340,7 @@ describe("agent runner lifecycle helpers", () => {
       artifactPlan,
       branch: item.dryRunPlan.branch,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(
@@ -373,7 +373,7 @@ describe("agent runner lifecycle helpers", () => {
       artifactPlan,
       branch: item.dryRunPlan.branch,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(
@@ -401,7 +401,7 @@ describe("agent runner lifecycle helpers", () => {
       command: "pnpm verify:fast",
       exitCode: 0,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       startedAt: new Date("2026-05-10T12:34:56.000Z"),
       stoppedAt: new Date("2026-05-10T12:35:56.000Z"),
     })
@@ -432,7 +432,7 @@ describe("agent runner lifecycle helpers", () => {
       command: "pnpm verify:fast",
       exitCode: 0,
       item,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       startedAt: new Date("2026-05-10T12:34:56.000Z"),
       stoppedAt: new Date("2026-05-10T12:35:56.000Z"),
     })
@@ -456,10 +456,10 @@ describe("agent runner lifecycle helpers", () => {
     })
 
     assert.match(plan, /^# Test agent project intake workflow/)
-    assert.match(plan, /Issue: https:\/\/github\.com\/voyantjs\/voyant\/issues\/579/)
+    assert.match(plan, /Issue: https:\/\/github\.com\/voyant-travel\/voyant\/issues\/579/)
     assert.match(plan, /Branch: task\/579-test-agent-project-intake-workflow/)
     assert.match(plan, /- Project item: item-579/)
-    assert.match(plan, /- Repository: voyantjs\/voyant/)
+    assert.match(plan, /- Repository: voyant-travel\/voyant/)
     assert.match(plan, /- Verification lane: verify:fast/)
     assert.match(
       plan,

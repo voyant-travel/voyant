@@ -1,7 +1,7 @@
 "use client"
 
-import { OperatorAdminPageShell } from "@voyantjs/admin"
-import { cn } from "@voyantjs/ui/components"
+import { OperatorAdminPageShell } from "@voyant-travel/admin"
+import { cn } from "@voyant-travel/ui/components"
 import { type ReactNode, useMemo } from "react"
 import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 import { type CurrentUser, useCurrentUser } from "../index.js"

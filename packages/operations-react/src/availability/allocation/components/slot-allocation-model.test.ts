@@ -1,4 +1,4 @@
-import type { AllocationResource } from "@voyantjs/operations-react/availability"
+import type { AllocationResource } from "@voyant-travel/operations-react/availability"
 import { describe, expect, it } from "vitest"
 
 import {

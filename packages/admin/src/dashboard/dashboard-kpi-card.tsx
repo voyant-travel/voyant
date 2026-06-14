@@ -1,13 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@voyantjs/ui/components/tooltip"
+} from "@voyant-travel/ui/components/tooltip"
 import { ArrowDownRight, ArrowUpRight } from "lucide-react"
 import type { ReactNode } from "react"
 

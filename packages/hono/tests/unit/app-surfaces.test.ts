@@ -4,8 +4,8 @@ import {
   defineLink,
   type EntityFetcher,
   type LinkService,
-} from "@voyantjs/core"
-import { VOYANT_DB_DISPOSE } from "@voyantjs/db/transaction-capability"
+} from "@voyant-travel/core"
+import { VOYANT_DB_DISPOSE } from "@voyant-travel/db/transaction-capability"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 

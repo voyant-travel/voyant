@@ -188,7 +188,7 @@ async function main() {
     }
   }
 
-  const migrate = spawnSync("pnpm", ["-C", "templates/operator", "db:migrate"], {
+  const migrate = spawnSync("pnpm", ["-C", "starters/operator", "db:migrate"], {
     cwd: repoRoot,
     stdio: "inherit",
     env: {

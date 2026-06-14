@@ -2,15 +2,15 @@
 // detail pane via `onSelectRun`. Search matches run id / workflow id
 // / tags; status filter is a single-select pill.
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Input } from "@voyantjs/ui/components/input"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Input } from "@voyant-travel/ui/components/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import {
   Table,
   TableBody,
@@ -18,8 +18,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/table"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Search, X } from "lucide-react"
 import { useMemo, useState } from "react"
 

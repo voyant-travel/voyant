@@ -1,6 +1,6 @@
 "use client"
 
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
 

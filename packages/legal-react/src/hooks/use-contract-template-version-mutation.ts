@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { insertContractTemplateVersionSchema } from "@voyantjs/legal/contracts/validation"
+import type { insertContractTemplateVersionSchema } from "@voyant-travel/legal/contracts/validation"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

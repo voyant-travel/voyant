@@ -1,6 +1,9 @@
-import type { Module, ModuleContainer } from "@voyantjs/core"
-import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "@voyantjs/finance"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { Module, ModuleContainer } from "@voyant-travel/core"
+import {
+  FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
+  type FinanceRouteRuntime,
+} from "@voyant-travel/finance"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 

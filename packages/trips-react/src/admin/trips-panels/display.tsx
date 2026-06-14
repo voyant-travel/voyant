@@ -1,9 +1,9 @@
 "use client"
 
-import { emptyPaymentScheduleValue } from "@voyantjs/bookings-react/components/payment-schedule-section"
-import type { PaymentScheduleValue, PersonPickerValue } from "@voyantjs/bookings-react/ui"
-import type { AncillarySelection, FlightOffer } from "@voyantjs/flights/contract/types"
-import type { TripComponent } from "@voyantjs/trips"
+import { emptyPaymentScheduleValue } from "@voyant-travel/bookings-react/components/payment-schedule-section"
+import type { PaymentScheduleValue, PersonPickerValue } from "@voyant-travel/bookings-react/ui"
+import type { AncillarySelection, FlightOffer } from "@voyant-travel/flights/contract/types"
+import type { TripComponent } from "@voyant-travel/trips"
 import { BedDouble, ExternalLink, Landmark, Plane, Route as RouteIcon } from "lucide-react"
 
 import type { AvailabilitySlot, PanelsMessages, PendingComponent } from "./shared.js"

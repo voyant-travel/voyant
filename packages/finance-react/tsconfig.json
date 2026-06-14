@@ -1,5 +1,5 @@
 {
-  "extends": "@voyantjs/voyant-typescript-config/react-library.json",
+  "extends": "@voyant-travel/voyant-typescript-config/react-library.json",
   "compilerOptions": {
     "composite": false,
     "module": "ESNext",

@@ -9,7 +9,7 @@ function getPublishablePackages(packages, config) {
 
     return (
       typeof name === "string" &&
-      name.startsWith("@voyantjs/") &&
+      name.startsWith("@voyant-travel/") &&
       !isPrivate &&
       !config.ignore.includes(name)
     )

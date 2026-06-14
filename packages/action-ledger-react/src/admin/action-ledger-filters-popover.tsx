@@ -1,28 +1,28 @@
 // agent-quality: file-size exception -- owner: action-ledger-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
-import { type ProductRecord, useProducts } from "@voyantjs/inventory-react"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { type BookingRecord, useBookings } from "@voyant-travel/bookings-react"
+import { type ProductRecord, useProducts } from "@voyant-travel/inventory-react"
 import {
   type OrganizationRecord,
   type PersonRecord,
   useOrganizations,
   usePeople,
-} from "@voyantjs/relationships-react"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+} from "@voyant-travel/relationships-react"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { ListFilter } from "lucide-react"
 import * as React from "react"
 

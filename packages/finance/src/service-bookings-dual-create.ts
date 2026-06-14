@@ -1,5 +1,5 @@
-import { bookingGroupsService } from "@voyantjs/bookings"
-import type { BookingGroup, BookingGroupMember } from "@voyantjs/bookings/schema"
+import { bookingGroupsService } from "@voyant-travel/bookings"
+import type { BookingGroup, BookingGroupMember } from "@voyant-travel/bookings/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 

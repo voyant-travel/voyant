@@ -1,8 +1,8 @@
 // agent-quality: file-size exception -- owner: legal; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import type { BookingPiiService } from "@voyantjs/bookings"
-import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
-import { createEventBus } from "@voyantjs/core"
-import { bookingPaymentSchedules, invoices, payments } from "@voyantjs/finance/schema"
+import type { BookingPiiService } from "@voyant-travel/bookings"
+import { bookingItems, bookings, bookingTravelers } from "@voyant-travel/bookings/schema"
+import { createEventBus } from "@voyant-travel/core"
+import { bookingPaymentSchedules, invoices, payments } from "@voyant-travel/finance/schema"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -30,18 +30,18 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
   let db: PostgresJsDatabase
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

@@ -2,10 +2,10 @@ import {
   type ActionLedgerRequestContextValues,
   evaluateActionLedgerCapabilityAccess,
   ledgerSensitiveRead,
-} from "@voyantjs/action-ledger"
-import type { ModuleContainer } from "@voyantjs/core"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
-import { encryptOptionalJsonEnvelope } from "@voyantjs/utils"
+} from "@voyant-travel/action-ledger"
+import type { ModuleContainer } from "@voyant-travel/core"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { encryptOptionalJsonEnvelope } from "@voyant-travel/utils"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"

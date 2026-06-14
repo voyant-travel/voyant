@@ -5,7 +5,7 @@ import {
   resolveAdminWidgets,
   useAdminExtensions,
   useAdminNavigate,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 
 import { PersonDetailPage } from "../components/person-detail-page.js"
 import { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot } from "./slots.js"

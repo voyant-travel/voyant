@@ -1,8 +1,8 @@
 "use client"
 
-import type { CabinClass, FlightSearchRequest } from "@voyantjs/flights/contract/types"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { CabinClass, FlightSearchRequest } from "@voyant-travel/flights/contract/types"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { flightsUiEn } from "../i18n/en.js"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

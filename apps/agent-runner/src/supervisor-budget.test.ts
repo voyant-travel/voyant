@@ -19,7 +19,7 @@ describe("agent runner supervisor lease budget", () => {
         enabled: true,
         holder: "runner:cloudflare",
         maxDailyLeases: 3,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url) => {
         calls.push(String(url))
@@ -68,7 +68,7 @@ describe("agent runner supervisor lease budget", () => {
         enabled: true,
         holder: "runner:cloudflare",
         maxDailyLeases: 1,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url) => {
         calls.push(String(url))
@@ -80,7 +80,7 @@ describe("agent runner supervisor lease budget", () => {
           {
             id: "lease_1",
             leasedAt: "2026-05-12T11:30:00.000Z",
-            repository: "voyantjs/voyant",
+            repository: "voyant-travel/voyant",
             result: {
               leased: true,
               reason: "leased",
@@ -89,7 +89,7 @@ describe("agent runner supervisor lease budget", () => {
         ],
         ticks: Array.from({ length: 50 }, (_, index) => ({
           recordedAt: `2026-05-12T11:${String(index).padStart(2, "0")}:00.000Z`,
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
           result: {
             leased: false,
             reason: "lease_budget_exhausted",
@@ -138,7 +138,7 @@ describe("agent runner supervisor lease budget", () => {
         enabled: true,
         holder: "runner:cloudflare",
         maxDailyLeases: 2,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async () =>
         new Response(
@@ -181,11 +181,11 @@ describe("agent runner supervisor lease budget", () => {
       },
     })
     await expect(
-      store.listLeases?.("voyantjs/voyant", { since: "2026-05-11T12:00:00.000Z" }),
+      store.listLeases?.("voyant-travel/voyant", { since: "2026-05-11T12:00:00.000Z" }),
     ).resolves.toMatchObject([
       {
         leasedAt: "2026-05-12T12:00:00.000Z",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
     ])
   })

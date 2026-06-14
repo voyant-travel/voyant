@@ -18,8 +18,8 @@ import {
   fetchOverlaysForEntity,
   mergeOverlaysIntoContent,
   type ProvenanceReadResult,
-} from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
   ACCOMMODATION_CONTENT_SCHEMA_VERSION,

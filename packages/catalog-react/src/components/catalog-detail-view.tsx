@@ -1,6 +1,6 @@
 "use client"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { Loader2 } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"

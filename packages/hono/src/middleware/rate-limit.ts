@@ -1,4 +1,4 @@
-import type { KVStore } from "@voyantjs/utils/cache"
+import type { KVStore } from "@voyant-travel/utils/cache"
 import type { MiddlewareHandler } from "hono"
 
 /**

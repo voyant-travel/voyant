@@ -2,13 +2,13 @@
 export {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
-} from "@voyantjs/action-ledger"
-export { actionMutationDetails } from "@voyantjs/action-ledger/schema"
-export { bookingItems, bookings } from "@voyantjs/bookings/schema"
-export type { EventBus } from "@voyantjs/core"
-export type { AnyDrizzleDb } from "@voyantjs/db"
-export { newId } from "@voyantjs/db/lib/typeid"
-export { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
+} from "@voyant-travel/action-ledger"
+export { actionMutationDetails } from "@voyant-travel/action-ledger/schema"
+export { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+export type { EventBus } from "@voyant-travel/core"
+export type { AnyDrizzleDb } from "@voyant-travel/db"
+export { newId } from "@voyant-travel/db/lib/typeid"
+export { renderStructuredTemplate } from "@voyant-travel/utils/template-renderer"
 export {
   and,
   asc,
@@ -59,12 +59,12 @@ export {
 export type { InvoiceSettledEvent } from "./service-settlement.js"
 export { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 
-import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
-import { actionMutationDetails } from "@voyantjs/action-ledger/schema"
-import { bookings } from "@voyantjs/bookings/schema"
-import type { EventBus } from "@voyantjs/core"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import { actionMutationDetails } from "@voyant-travel/action-ledger/schema"
+import { bookings } from "@voyant-travel/bookings/schema"
+import type { EventBus } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { renderStructuredTemplate } from "@voyant-travel/utils/template-renderer"
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -1155,7 +1155,7 @@ export interface RawUnifiedPaymentRow {
 /**
  * Normalize `db.execute(sql)` results across drizzle drivers.
  * `drizzle-orm/postgres-js` returns rows directly (an array), while
- * `drizzle-orm/node-postgres` (used by the operator template against a
+ * `drizzle-orm/node-postgres` (used by the operator starter against a
  * local pg server) and `drizzle-orm/neon-serverless` return pg's
  * `QueryResult<T>` wrapper with `.rows`. Casting to `Array<T>` and
  * calling `.map` blows up under the wrapper shape — surface the rows

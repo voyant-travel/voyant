@@ -18,7 +18,7 @@
  * the codebase for cross-module behavior (workflow → ctx.services.resolve).
  */
 
-import { trigger, workflow } from "@voyantjs/workflows"
+import { trigger, workflow } from "@voyant-travel/workflows"
 
 import { PROMOTION_CHANGED_EVENT, type PromotionChangedSource } from "./events.js"
 import { BULK_REINDEX_SERVICE_KEY, type BulkReindexProductsService } from "./workflow-runtime.js"

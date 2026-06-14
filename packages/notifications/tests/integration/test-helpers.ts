@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: notifications; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 import { sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, vi } from "vitest"
@@ -42,11 +42,11 @@ async function cleanupNotificationsTestData(
 
 export function createNotificationsTestContext(options?: { eventBus?: EventBus }) {
   let app!: Hono
-  let db!: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  let db!: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
   const sink = vi.fn()
 
   beforeAll(async () => {
-    const { createTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
 
     await db.execute(sql`
@@ -509,7 +509,7 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
     await closeTestDb()
   })
 

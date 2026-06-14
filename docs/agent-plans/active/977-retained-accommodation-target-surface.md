@@ -17,10 +17,10 @@ Create a narrow accommodation resale surface for retained contracts. Use
 
 Target package family:
 
-- `@voyantjs/accommodations`
-- `@voyantjs/accommodations-react`, only if retained client hooks are still
+- `@voyant-travel/accommodations`
+- `@voyant-travel/accommodations-react`, only if retained client hooks are still
   needed after route split
-- no first-party `@voyantjs/accommodations-ui` package until there is a
+- no first-party `@voyant-travel/accommodations-ui` package until there is a
   non-admin resale UI need
 
 Target route family:
@@ -44,7 +44,7 @@ Migration stance:
 
 ### Catalog And Content
 
-Owner: `@voyantjs/accommodations`
+Owner: `@voyant-travel/accommodations`
 
 Move or recreate these retained contracts:
 
@@ -65,8 +65,8 @@ surface should make clear that this is sourced/resold accommodation.
 
 ### Booking Journey
 
-Owner: `@voyantjs/accommodations`, with stable integration points in
-`@voyantjs/catalog/booking-engine` and `@voyantjs/bookings`.
+Owner: `@voyant-travel/accommodations`, with stable integration points in
+`@voyant-travel/catalog/booking-engine` and `@voyant-travel/bookings`.
 
 Move or recreate:
 
@@ -102,8 +102,8 @@ Do not retain:
 
 ### Pricing And Payment Policy
 
-Owner: `@voyantjs/accommodations` for accommodation-specific rate-plan policy;
-`@voyantjs/commerce` and `@voyantjs/finance` remain the cross-cutting engines.
+Owner: `@voyant-travel/accommodations` for accommodation-specific rate-plan policy;
+`@voyant-travel/commerce` and `@voyant-travel/finance` remain the cross-cutting engines.
 
 Move or recreate:
 
@@ -120,7 +120,7 @@ as hotel staff inventory management.
 ### Storefront And Public Detail Pages
 
 Owner: operator template/storefront code, consuming
-`@voyantjs/accommodations/content-shape`.
+`@voyant-travel/accommodations/content-shape`.
 
 Keep the current customer-facing behavior:
 
@@ -170,7 +170,7 @@ hotel's own rooms or in-stay operations.
 
 - `templates/operator/src/api/lib/booking-engine-runtime.ts`
   - Current: imports the accommodation booking handler and content service from
-    `@voyantjs/accommodations`. The legacy stay-booking commit bridge was not
+    `@voyant-travel/accommodations`. The legacy stay-booking commit bridge was not
     retained.
 
 - `templates/operator/src/api/lib/catalog-runtime.ts`
@@ -193,7 +193,7 @@ hotel's own rooms or in-stay operations.
 
 - `templates/operator/src/api/booking-schedule.ts`
   - Current: reads the retained accommodation booking-line and rate-plan tables
-    from `@voyantjs/accommodations/schema`.
+    from `@voyant-travel/accommodations/schema`.
 
 - `templates/dmc/src/api/mcp.ts`
   - Current: resolves `accommodations` via the accommodation catalog-plane
@@ -240,7 +240,7 @@ changes.
 
 ## Package Shape
 
-Initial `@voyantjs/accommodations` exports should be narrow:
+Initial `@voyant-travel/accommodations` exports should be narrow:
 
 - `.`
   - module metadata only if needed
@@ -265,14 +265,14 @@ until a retained resale route surface is intentionally designed.
 
 1. Remove registry/admin exposure first. It is the clearest hotel-ops product
    surface and does not block accommodation resale.
-2. Add `@voyantjs/accommodations` and move retained content/catalog/booking
+2. Add `@voyant-travel/accommodations` and move retained content/catalog/booking
    contracts.
 3. Repoint operator storefront/catalog/booking consumers to the new package,
    without keeping hospitality compatibility aliases.
 4. Remove `/v1/hospitality` starter mounts from dev and DMC.
 5. Split or migrate schema after routes and consumers no longer require the
    mixed package. Completed for active drizzle/schema-doc inputs: dev, DMC, and
-   operator now point at `@voyantjs/accommodations/schema`.
+   operator now point at `@voyant-travel/accommodations/schema`.
 6. Regenerate registry and schema artifacts after source removal/move. Registry
    regeneration is complete for removed UI entries; `SCHEMA.md` is regenerated
    against the retained accommodations schema.

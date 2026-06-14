@@ -6,9 +6,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@voyantjs/ui/components/accordion"
-import { Card, CardContent } from "@voyantjs/ui/components/card"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components/accordion"
+import { Card, CardContent } from "@voyant-travel/ui/components/card"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 

@@ -20,7 +20,7 @@
  *   ])
  *
  * and wire `createProductPricingProjectionExtension` (from
- * `@voyantjs/commerce` pricing projection support) into
+ * `@voyant-travel/commerce` pricing projection support) into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
  * Why a separate field instead of reusing the existing `sellAmountCents`
@@ -45,7 +45,7 @@
  *     `product.updated`. Tracked separately.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const PRODUCT_PRICING_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Aggregated "price from" amount ───────────────────────────────────────

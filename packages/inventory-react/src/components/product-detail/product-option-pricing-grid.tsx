@@ -2,8 +2,8 @@
 "use client"
 
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useOptionUnitMutation, useVoyantProductsContext } from "../../index.js"

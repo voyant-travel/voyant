@@ -21,7 +21,7 @@ export function createResourcesTestContext() {
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     const { resourcesRoutes } = await import("../../../src/resources/routes.js")
 
     db = createTestDb()
@@ -38,7 +38,7 @@ export function createResourcesTestContext() {
 
   beforeEach(async () => {
     seq = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 

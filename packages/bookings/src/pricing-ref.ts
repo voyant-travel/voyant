@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 export const priceCatalogsRef = pgTable("price_catalogs", {

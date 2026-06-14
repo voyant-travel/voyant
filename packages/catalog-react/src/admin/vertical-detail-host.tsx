@@ -5,8 +5,8 @@ import {
   useAdminHref,
   useAdminNavigate,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
-import { useSuppliers } from "@voyantjs/distribution-react/suppliers"
+} from "@voyant-travel/admin"
+import { useSuppliers } from "@voyant-travel/distribution-react/suppliers"
 import { useMemo, useState } from "react"
 
 import { type CatalogDetailSurface, catalogSurfaceVertical } from "../catalog-surfaces.js"

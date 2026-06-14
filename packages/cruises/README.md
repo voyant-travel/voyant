@@ -1,4 +1,4 @@
-# @voyantjs/cruises
+# @voyant-travel/cruises
 
 Opt-in cruises module for OTA, tour-operator, and DMC deployments. Provides the
 canonical schema, services, and admin/storefront/booking integration for cruise
@@ -16,14 +16,14 @@ for external adapter implementation requirements.
 
 ## External Adapter Contract
 
-`@voyantjs/cruises` exports the provider-neutral `CruiseAdapter` contract from
-`@voyantjs/cruises/adapters`. Adapter packages register at application startup
+`@voyant-travel/cruises` exports the provider-neutral `CruiseAdapter` contract from
+`@voyant-travel/cruises/adapters`. Adapter packages register at application startup
 and keep upstream clients, credentials, and provider-specific mappings outside
 the framework package.
 
-Install `@voyantjs/cruises-contracts` when an external adapter or validation
+Install `@voyant-travel/cruises-contracts` when an external adapter or validation
 package only needs the `cruises/v1` rich content schema, schema version, Zod
-validator, and inferred content types. Use `@voyantjs/cruises` when you also
+validator, and inferred content types. Use `@voyant-travel/cruises` when you also
 need Drizzle schema, routes, services, booking integration, adapter registry
 helpers, or runtime content resolution.
 
@@ -38,7 +38,7 @@ Early development. Phase 1 (canonical schema + core service for self-managed cru
 
 ## Domain Events
 
-`@voyantjs/cruises` exports stable cruise lifecycle event constants for catalog
+`@voyant-travel/cruises` exports stable cruise lifecycle event constants for catalog
 and search subscribers:
 
 - `CRUISE_CREATED_EVENT` = `cruise.created`

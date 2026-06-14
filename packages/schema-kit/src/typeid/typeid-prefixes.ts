@@ -389,12 +389,12 @@ export const PREFIXES = {
 
   // Workflow runs — observability for in-process workflows (the
   // catalog-checkout finalize spine, follow-up scheduled jobs, etc).
-  // Lives outside the durable @voyantjs/workflows orchestrator so
+  // Lives outside the durable @voyant-travel/workflows orchestrator so
   // edge-compatible templates can record runs without spinning up
   // a separate Node process.
   workflow_runs: "wfrn",
   workflow_run_steps: "wfrs",
-  // --- Operator-template-local settings ---
+  // --- Operator-starter-local settings ---
   operator_settings: "opset",
   operator_profile: "oppf",
   operator_payment_instructions: "opin",

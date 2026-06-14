@@ -258,7 +258,7 @@ Goal:
 - `packages/ui`
 - `apps/registry`
 - `apps/dev`
-- `templates/operator`
+- `starters/operator`
 - `templates/dmc`
 
 ### High-signal file groups
@@ -512,7 +512,7 @@ Goal:
 - customer portal projections
 - notifications template variables and recipient rules
 - storefront configuration and validation
-- generated registries and operator templates
+- generated registries and operator starters
 
 ### Important rule
 

@@ -1,5 +1,5 @@
-import type { QuoteResponseV1 } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { QuoteResponseV1 } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"

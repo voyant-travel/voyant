@@ -2,7 +2,7 @@ import type * as React from "react"
 
 /**
  * Minimal user shape the admin shell needs to render its user menu.
- * Templates can pass their own richer user object — only these fields matter.
+ * Starters can pass their own richer user object — only these fields matter.
  */
 export interface AdminUser {
   id?: string
@@ -22,7 +22,7 @@ export type NavItemStatus = typeof COMING_SOON | typeof BETA
 
 /**
  * Nav tree item. Icons are passed as React components (from `lucide-react`
- * or elsewhere) so templates control the icon set.
+ * or elsewhere) so starters control the icon set.
  */
 export interface NavItem {
   /** Stable identifier for extension merging and UI keys. */
@@ -47,8 +47,8 @@ export interface NavSubItem {
 }
 
 /**
- * Actions the admin shell delegates back to the template's auth layer.
- * Templates wire these up to their chosen auth stack (Better Auth, etc).
+ * Actions the admin shell delegates back to the starter's auth layer.
+ * Starters wire these up to their chosen auth stack (Better Auth, etc).
  */
 export interface AuthActions {
   /** Fired when the user clicks "Log out" in the user menu. */

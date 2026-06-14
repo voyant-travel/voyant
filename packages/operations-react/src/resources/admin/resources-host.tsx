@@ -1,8 +1,8 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
-import { formatMessage } from "@voyantjs/i18n"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/i18n"
 import { useState } from "react"
 import { toast } from "sonner"
 import {

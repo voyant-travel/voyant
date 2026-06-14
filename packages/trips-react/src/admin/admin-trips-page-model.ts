@@ -1,13 +1,13 @@
-import type { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { emptyPersonPickerValue } from "@voyantjs/bookings-react/components/person-picker-section"
-import { emptyVoucherPickerValue } from "@voyantjs/bookings-react/components/voucher-picker-section"
+import type { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { emptyPersonPickerValue } from "@voyant-travel/bookings-react/components/person-picker-section"
+import { emptyVoucherPickerValue } from "@voyant-travel/bookings-react/components/voucher-picker-section"
 import type {
   PaymentScheduleValue,
   PersonPickerValue,
   VoucherPickerValue,
-} from "@voyantjs/bookings-react/ui"
-import { formatMessage } from "@voyantjs/i18n"
-import type { TripComponent } from "@voyantjs/trips"
+} from "@voyant-travel/bookings-react/ui"
+import { formatMessage } from "@voyant-travel/i18n"
+import type { TripComponent } from "@voyant-travel/trips"
 
 import type { VoyantApiError } from "../client.js"
 import type { AddTripComponentBody } from "../operations.js"

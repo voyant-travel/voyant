@@ -31,9 +31,9 @@
  * same way.
  */
 
-import type { ContentLocaleMatchKind } from "@voyantjs/catalog"
-import { pickBestCachedLocale } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { ContentLocaleMatchKind } from "@voyant-travel/catalog"
+import { pickBestCachedLocale } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, asc, eq, inArray, sql } from "drizzle-orm"
 
 import {
@@ -272,7 +272,7 @@ function pickDayHeroImage(
 
 /**
  * Map future availability_slots → ProductDeparture[]. Raw SQL keeps the
- * products module from depending on `@voyantjs/operations` (cross-
+ * products module from depending on `@voyant-travel/operations` (cross-
  * module schema coupling is avoided per the workspace's separation).
  */
 async function readOwnedProductDepartures(

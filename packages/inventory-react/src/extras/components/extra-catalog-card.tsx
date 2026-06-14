@@ -1,9 +1,9 @@
 "use client"
 
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Card, CardContent } from "@voyantjs/ui/components/card"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { CatalogSearchHit } from "@voyant-travel/catalog-react"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Card, CardContent } from "@voyant-travel/ui/components/card"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { useExtrasUiI18nOrDefault } from "../i18n/index.js"
 
 export interface ExtraCatalogCardProps {

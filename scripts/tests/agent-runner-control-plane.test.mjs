@@ -100,24 +100,24 @@ describe("agent runner control plane client", () => {
                 "--issue",
                 "579",
                 "--repo",
-                "voyantjs/voyant",
+                "voyant-travel/voyant",
                 "--yes",
               ],
               issue: {
                 number: 579,
-                repository: "voyantjs/voyant",
+                repository: "voyant-travel/voyant",
                 title: "Test issue",
-                url: "https://github.com/voyantjs/voyant/issues/579",
+                url: "https://github.com/voyant-travel/voyant/issues/579",
               },
               reason: "ready",
-              repository: "voyantjs/voyant",
+              repository: "voyant-travel/voyant",
               requiresMutation: true,
             },
             reason: "matched",
             source: {
               acceptedAt: "2026-05-12T12:00:00.000Z",
               recommendationCount: 1,
-              repository: "voyantjs/voyant",
+              repository: "voyant-travel/voyant",
               type: "latest_tick_snapshot",
             },
           }),
@@ -132,7 +132,7 @@ describe("agent runner control plane client", () => {
         options: {
           eventLog: ".agent-runs/events.jsonl",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       token: "tok",
       url: "https://control.example.com/",
@@ -154,7 +154,7 @@ describe("agent runner control plane client", () => {
         options: {
           eventLog: ".agent-runs/events.jsonl",
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     )
   })
@@ -166,7 +166,7 @@ describe("agent runner control plane client", () => {
           new Response(JSON.stringify({ error: "latest_tick_snapshot_not_found" }), {
             status: 404,
           }),
-        request: { repository: "voyantjs/voyant" },
+        request: { repository: "voyant-travel/voyant" },
         token: "tok",
         url: "https://control.example.com",
       }),
@@ -246,23 +246,23 @@ describe("agent runner control plane client", () => {
                   "--issue",
                   "579",
                   "--repo",
-                  "voyantjs/voyant",
+                  "voyant-travel/voyant",
                   "--yes",
                 ],
                 issue: {
                   number: 579,
-                  repository: "voyantjs/voyant",
+                  repository: "voyant-travel/voyant",
                   title: "Test issue",
-                  url: "https://github.com/voyantjs/voyant/issues/579",
+                  url: "https://github.com/voyant-travel/voyant/issues/579",
                 },
                 reason: "ready",
-                repository: "voyantjs/voyant",
+                repository: "voyant-travel/voyant",
                 requiresMutation: true,
               },
               source: {
                 acceptedAt: "2026-05-12T11:59:00.000Z",
                 recommendationCount: 1,
-                repository: "voyantjs/voyant",
+                repository: "voyant-travel/voyant",
                 type: "latest_tick_snapshot",
               },
               status: "leased",
@@ -281,7 +281,7 @@ describe("agent runner control plane client", () => {
           holder: "supervisor:test",
           ttlSeconds: 900,
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       token: "tok",
       url: "https://control.example.com/",
@@ -303,7 +303,7 @@ describe("agent runner control plane client", () => {
           holder: "supervisor:test",
           ttlSeconds: 900,
         },
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     )
   })
@@ -329,7 +329,7 @@ describe("agent runner control plane client", () => {
           ),
         request: {
           lease: { holder: "supervisor:test" },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         token: "tok",
         url: "https://control.example.com",
@@ -369,7 +369,7 @@ describe("agent runner control plane client", () => {
       request: {
         action: "remote-bootstrap",
         issueNumber: 579,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       token: "tok",
       url: "https://control.example.com/",
@@ -378,7 +378,7 @@ describe("agent runner control plane client", () => {
     assert.equal(response.intent.id, "intent_579")
     assert.equal(
       calls[0].url,
-      "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
+      "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyant-travel%2Fvoyant",
     )
     assert.equal(calls[0].init.method, "GET")
     assert.equal(calls[0].init.headers.authorization, "Bearer tok")
@@ -394,7 +394,7 @@ describe("agent runner control plane client", () => {
         request: {
           action: "remote-bootstrap",
           issueNumber: 579,
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         token: "tok",
         url: "https://control.example.com",

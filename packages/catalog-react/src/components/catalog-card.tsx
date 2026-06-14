@@ -1,8 +1,8 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card } from "@voyantjs/ui/components/card"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card } from "@voyant-travel/ui/components/card"
 import { Image as ImageIcon } from "lucide-react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogSearchHit } from "../index.js"

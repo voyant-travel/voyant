@@ -1,5 +1,5 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

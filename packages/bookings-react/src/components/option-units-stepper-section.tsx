@@ -7,9 +7,9 @@ import {
   type ProductOptionRecord,
   useProductOptions,
   useVoyantProductsContext,
-} from "@voyantjs/inventory-react"
-import { useSlotUnitAvailability } from "@voyantjs/operations-react/availability"
-import { Button, Label } from "@voyantjs/ui/components"
+} from "@voyant-travel/inventory-react"
+import { useSlotUnitAvailability } from "@voyant-travel/operations-react/availability"
+import { Button, Label } from "@voyant-travel/ui/components"
 import { Minus, Plus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"

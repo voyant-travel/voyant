@@ -14,7 +14,7 @@
  * rule from `schema-discipline.md`.
  */
 
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { boolean, index, jsonb, numeric, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 import type { AppliedOffer } from "./promotions-contract.js"

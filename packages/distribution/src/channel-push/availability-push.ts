@@ -16,9 +16,9 @@ import {
   AdapterRateLimitedError,
   type PushAvailabilityRequest,
   type SourceAdapterContext,
-} from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+} from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, asc, eq, inArray, sql } from "drizzle-orm"
 import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import {

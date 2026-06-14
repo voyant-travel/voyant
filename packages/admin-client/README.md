@@ -1,7 +1,7 @@
-# @voyantjs/admin-client
+# @voyant-travel/admin-client
 
 A framework-neutral TypeScript client for the Voyant Admin API. Built on the
-typed operation descriptors in [`@voyantjs/admin-contracts`](../admin-contracts/README.md),
+typed operation descriptors in [`@voyant-travel/admin-contracts`](../admin-contracts/README.md),
 it runs in **Expo, Node, Cloudflare Workers, and Max/AI tools** — no React, no
 web-UI, no framework runtime dependencies.
 
@@ -10,7 +10,7 @@ See [`docs/adr/0003-admin-api-contract-sdk.md`](../../docs/adr/0003-admin-api-co
 ## Usage
 
 ```ts
-import { createAdminClient } from "@voyantjs/admin-client"
+import { createAdminClient } from "@voyant-travel/admin-client"
 
 const client = createAdminClient({
   baseUrl: "https://acme.voyant.app",

@@ -1,4 +1,4 @@
-# @voyantjs/plugin-sanity-cms
+# @voyant-travel/plugin-sanity-cms
 
 Sanity CMS sync adapter bundle for Voyant.
 
@@ -14,14 +14,14 @@ by a `voyantId` field.
 ## Install
 
 ```bash
-pnpm add @voyantjs/plugin-sanity-cms
+pnpm add @voyant-travel/plugin-sanity-cms
 ```
 
 ## Usage
 
 ```typescript
-import { sanityCmsPlugin } from "@voyantjs/plugin-sanity-cms"
-import { createApp } from "@voyantjs/hono"
+import { sanityCmsPlugin } from "@voyant-travel/plugin-sanity-cms"
+import { createApp } from "@voyant-travel/hono"
 
 const sanitySync = sanityCmsPlugin({
   projectId: env.SANITY_PROJECT_ID,

@@ -1,4 +1,4 @@
-import { type Actor, createEventBus } from "@voyantjs/core"
+import { type Actor, createEventBus } from "@voyant-travel/core"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 

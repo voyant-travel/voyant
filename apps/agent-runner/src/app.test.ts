@@ -45,7 +45,7 @@ describe("agent runner app", () => {
         controlPlaneUrl: "https://control.example.com",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       now: () => new Date("2026-05-12T11:00:00.000Z"),
     })
@@ -72,7 +72,7 @@ describe("agent runner app", () => {
             "agent:queue:control-plane-loop",
             "--",
             "--repo",
-            "voyantjs/voyant",
+            "voyant-travel/voyant",
             "--holder",
             "runner:cloudflare",
             "--iterations",
@@ -112,7 +112,7 @@ describe("agent runner app", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url, init) => {
         calls.push({
@@ -167,7 +167,7 @@ describe("agent runner app", () => {
         reason: "leased",
       },
       storage: {
-        key: "latest/voyantjs/voyant.json",
+        key: "latest/voyant-travel/voyant.json",
         persisted: true,
       },
     })
@@ -184,7 +184,7 @@ describe("agent runner app", () => {
           options: {
             eventLog: ".agent-runs/cloudflare.jsonl",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         headers: expect.any(Headers),
         method: "POST",
@@ -206,7 +206,7 @@ describe("agent runner app", () => {
         enabled: true,
         holder: "runner:cloudflare",
         maxLeaseTtlSeconds: 120,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url) => {
         calls.push(String(url))
@@ -276,7 +276,7 @@ describe("agent runner app", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
     })
 
@@ -317,7 +317,7 @@ describe("agent runner app", () => {
         defaultAction: "sync-pr",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url, init) => {
         calls.push({ body: JSON.parse(String(init?.body)), url: String(url) })
@@ -350,7 +350,7 @@ describe("agent runner app", () => {
           lease: {
             holder: "runner:cloudflare",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         url: "https://control.example.com/api/dispatch-intents/latest",
       },
@@ -371,7 +371,7 @@ describe("agent runner app", () => {
         holder: "runner:cloudflare",
         leaseTtlSeconds: 300,
         maxLeaseTtlSeconds: 300,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async (url, init) => {
         calls.push({ body: JSON.parse(String(init?.body)), url: String(url) })
@@ -405,7 +405,7 @@ describe("agent runner app", () => {
             holder: "runner:cloudflare",
             ttlSeconds: 300,
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         url: "https://control.example.com/api/dispatch-intents/latest",
       },

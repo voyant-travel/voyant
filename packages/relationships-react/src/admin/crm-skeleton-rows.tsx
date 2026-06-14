@@ -1,7 +1,7 @@
 "use client"
 
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { TableBody, TableCell, TableRow } from "@voyantjs/ui/components/table"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
+import { TableBody, TableCell, TableRow } from "@voyant-travel/ui/components/table"
 
 /** Placeholder `<TableBody>` with one skeleton line per cell. */
 export function SkeletonRows({ rows, widths }: { rows: number; widths: ReadonlyArray<string> }) {

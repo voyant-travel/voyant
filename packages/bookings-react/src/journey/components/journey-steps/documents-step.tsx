@@ -1,10 +1,10 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { Label } from "@voyantjs/ui/components/label"
-import { Separator } from "@voyantjs/ui/components/separator"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Separator } from "@voyant-travel/ui/components/separator"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import type { Draft } from "../../lib/draft-state.js"
 

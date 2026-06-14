@@ -1,5 +1,5 @@
-import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import { createTestDb } from "@voyantjs/db/test-utils"
+import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { createTestDb } from "@voyant-travel/db/test-utils"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 

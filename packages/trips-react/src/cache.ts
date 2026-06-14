@@ -1,7 +1,7 @@
 "use client"
 
 import type { QueryClient } from "@tanstack/react-query"
-import type { PriceTripResult, ReserveTripResult, StartCheckoutResult } from "@voyantjs/trips"
+import type { PriceTripResult, ReserveTripResult, StartCheckoutResult } from "@voyant-travel/trips"
 
 import { tripsQueryKeys } from "./query-keys.js"
 

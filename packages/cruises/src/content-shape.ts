@@ -2,12 +2,12 @@ import {
   type ContentOverlay,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 import {
   type CruiseContent,
   cruiseContentSchema,
   validateCruiseContent,
-} from "@voyantjs/cruises-contracts/content-shape"
+} from "@voyant-travel/cruises-contracts/content-shape"
 
 export {
   BOARD_BASIS_FROM_SHORT_CODE,
@@ -32,7 +32,7 @@ export {
   cruiseShipSchema,
   cruiseSummarySchema,
   validateCruiseContent,
-} from "@voyantjs/cruises-contracts/content-shape"
+} from "@voyant-travel/cruises-contracts/content-shape"
 
 export function mergeOverlaysIntoCruiseContent(
   payload: CruiseContent,

@@ -12,7 +12,7 @@ describe("agent runner supervisor status", () => {
         controlPlaneUrl: "https://control.example.com",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       now: () => new Date("2026-05-12T12:00:00.000Z"),
       supervisorTickStore: inMemorySupervisorTickStore(),
@@ -28,7 +28,7 @@ describe("agent runner supervisor status", () => {
     })
     expect(tick.status).toBe(200)
 
-    const response = await app.request("/api/supervisor/status?repository=voyantjs%2Fvoyant", {
+    const response = await app.request("/api/supervisor/status?repository=voyant-travel%2Fvoyant", {
       headers: {
         authorization: "Bearer token",
       },
@@ -46,7 +46,7 @@ describe("agent runner supervisor status", () => {
           persistence: "latest",
         },
       },
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       service: "agent-runner",
       supervisorTicks: {
         latest: {
@@ -77,7 +77,7 @@ describe("agent runner supervisor status", () => {
       config: {
         controlPlaneConfigured: false,
         enabled: false,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
     })
 
@@ -99,7 +99,7 @@ describe("agent runner supervisor status", () => {
           persistence: "none",
         },
       },
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       service: "agent-runner",
       supervisorTicks: {
         latest: null,

@@ -5,13 +5,13 @@ import {
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Type-only: binds the bookings-react `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, ...) into this program — the trip
 // detail page's component rows and traveler/billing cells navigate through
 // those shared keys, and `booking.detail`'s shape carries bookings-react's
 // own tab union, so re-declaring it here could not stay shape-identical.
-import type {} from "@voyantjs/bookings-react/admin"
+import type {} from "@voyant-travel/bookings-react/admin"
 
 // Lean static only: the client module (fetcher). Query options resolve via
 // dynamic import inside the loaders so the trips data layer
@@ -24,12 +24,12 @@ import { defaultFetcher } from "../client.js"
  * (packaged-admin RFC §4.7). The trips list opens the trip detail page, the
  * detail page links back to the list and across to the booking/person
  * pages — instead of importing a host route tree they resolve these keys
- * through `useAdminHref`/`useAdminNavigate` from `@voyantjs/admin`. Hosts
+ * through `useAdminHref`/`useAdminNavigate` from `@voyant-travel/admin`. Hosts
  * register one resolver per key (`satisfies AdminDestinationResolvers`).
  * Keys shared with other domains (`booking.detail`, `person.detail`) come
  * from the bookings-react augmentation bound above.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The trips list page. */
     "trip.list": Record<string, never>
@@ -65,10 +65,10 @@ export interface CreateTripsAdminExtensionOptions {
 
 /**
  * The trips admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-react/admin` convention).
+ * `@voyant-travel/<domain>-react/admin` convention).
  *
  * NAVIGATION: package-delivered. Trips is NOT part of the BASE operator
- * navigation (`createOperatorAdminNavigation` in `@voyantjs/admin`), so the
+ * navigation (`createOperatorAdminNavigation` in `@voyant-travel/admin`), so the
  * extension contributes the Trips group itself — spliced in right after
  * Bookings (both belong to the booking lifecycle) via `insertAfter`, with
  * All trips / New trip sub-items. The icon stays a host choice.

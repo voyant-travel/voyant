@@ -1,11 +1,11 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import { type AdminExtension, defineAdminExtension } from "@voyant-travel/admin"
 // Type-only on purpose: binds the bookings-ui `AdminDestinations`
 // augmentation (`booking.detail`, ...) into this program — the booking
 // wizard's post-booking navigation resolves through that shared key — without
 // pulling any bookings runtime code into the chunk that evaluates this
 // factory.
-import type {} from "@voyantjs/bookings-react/admin"
-import type { CabinClass } from "@voyantjs/flights/contract/types"
+import type {} from "@voyant-travel/bookings-react/admin"
+import type { CabinClass } from "@voyant-travel/flights/contract/types"
 import { z } from "zod"
 
 /**
@@ -13,10 +13,10 @@ import { z } from "zod"
  * (packaged-admin RFC §4.7). `booking.detail` (where the wizard lands after
  * booking) comes from the bookings-ui augmentation bound above; declared here
  * are the flights-owned keys plus `person.list`, re-declared shape-locked —
- * also declared by `@voyantjs/relationships-react/admin`, and interface merging requires
+ * also declared by `@voyant-travel/relationships-react/admin`, and interface merging requires
  * the member shape to stay identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The flight search page (the flights area's landing surface). */
     "flight.search": Record<string, never>
@@ -118,11 +118,11 @@ export interface CreateFlightsAdminExtensionOptions {
 
 /**
  * The flights admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Flights nav item is part of the BASE
  * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing a nav entry here would duplicate it.
+ * `@voyant-travel/admin` — so contributing a nav entry here would duplicate it.
  * If the base nav ever drops the flights item, this extension is where the
  * entry moves.
  *

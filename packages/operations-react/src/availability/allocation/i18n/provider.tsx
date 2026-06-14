@@ -7,7 +7,7 @@ import {
   type LocaleMessageOverrides,
   type PackageI18nValue,
   resolvePackageMessages,
-} from "@voyantjs/i18n"
+} from "@voyant-travel/i18n"
 import type { ReactNode } from "react"
 
 export type AllocationUiMessages = Record<string, unknown> & {

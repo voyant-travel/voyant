@@ -11,7 +11,7 @@ describe("agent runner coordinator durable object", () => {
     const acquired = await coordinator.fetch(
       jsonRequest("https://coordinator.test/locks/acquire", {
         holder: "runner:one",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
         ttlSeconds: 60,
       }),
     )
@@ -21,14 +21,14 @@ describe("agent runner coordinator durable object", () => {
       lock: {
         expiresAt: "2026-05-12T12:01:00.000Z",
         holder: "runner:one",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
       },
     })
 
     const rejected = await coordinator.fetch(
       jsonRequest("https://coordinator.test/locks/acquire", {
         holder: "runner:two",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
         ttlSeconds: 60,
       }),
     )
@@ -39,7 +39,7 @@ describe("agent runner coordinator durable object", () => {
     })
 
     const inspected = await coordinator.fetch(
-      new Request("https://coordinator.test/locks/voyantjs%2Fvoyant%3A579"),
+      new Request("https://coordinator.test/locks/voyant-travel%2Fvoyant%3A579"),
     )
     expect(inspected.status).toBe(200)
     await expect(inspected.json()).resolves.toMatchObject({
@@ -52,7 +52,7 @@ describe("agent runner coordinator durable object", () => {
     const released = await coordinator.fetch(
       jsonRequest("https://coordinator.test/locks/release", {
         holder: "runner:one",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
       }),
     )
     expect(released.status).toBe(200)
@@ -69,7 +69,7 @@ describe("agent runner coordinator durable object", () => {
     await coordinator.fetch(
       jsonRequest("https://coordinator.test/locks/acquire", {
         holder: "runner:one",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
         ttlSeconds: 1,
       }),
     )
@@ -78,7 +78,7 @@ describe("agent runner coordinator durable object", () => {
     const acquired = await coordinator.fetch(
       jsonRequest("https://coordinator.test/locks/acquire", {
         holder: "runner:two",
-        key: "voyantjs/voyant:579",
+        key: "voyant-travel/voyant:579",
         ttlSeconds: 60,
       }),
     )

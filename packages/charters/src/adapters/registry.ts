@@ -3,7 +3,7 @@
  *
  * Templates register adapters at app startup:
  *
- *   import { createConnectCharterAdapter } from "@voyantjs/charters-adapter-connect"
+ *   import { createConnectCharterAdapter } from "@voyant-travel/charters-adapter-connect"
  *   registerCharterAdapter(createConnectCharterAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
  *
  * The route layer resolves an adapter by `sourceProvider` (the prefix in the

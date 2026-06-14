@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxContent,
@@ -18,8 +18,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { currencies } from "@voyantjs/utils/currencies"
+} from "@voyant-travel/ui/components/combobox"
+import { currencies } from "@voyant-travel/utils/currencies"
 import { Loader2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"

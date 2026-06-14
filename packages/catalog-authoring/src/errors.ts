@@ -1,1 +1,1 @@
-export { type AuthoringIssue, AuthoringValidationError } from "@voyantjs/inventory/authoring"
+export { type AuthoringIssue, AuthoringValidationError } from "@voyant-travel/inventory/authoring"

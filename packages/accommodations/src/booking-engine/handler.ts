@@ -27,7 +27,7 @@ import type {
   OwnedBookingHandler,
   OwnedHandlerContext,
   RoomOption,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 
 import type { AccommodationContent } from "../content-shape.js"
 import { buildAccommodationDraftShape } from "../draft-shape.js"
@@ -56,7 +56,7 @@ interface DraftLike {
  * Caller-supplied loader — keeps the handler free of a hard
  * dependency on the template's content service wiring (which spans
  * sourced + owned + overlays). Templates wire this to
- * `getAccommodationContent` from `@voyantjs/accommodations/service-content`.
+ * `getAccommodationContent` from `@voyant-travel/accommodations/service-content`.
  */
 export type AccommodationContentLoader = (
   ctx: OwnedHandlerContext,

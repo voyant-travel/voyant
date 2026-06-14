@@ -32,10 +32,10 @@ describe("agent runner PR helpers", () => {
     assert.deepEqual(
       pullRequestFieldValues({
         date: new Date("2026-05-10T12:34:56.000Z"),
-        prUrl: "https://github.com/voyantjs/voyant/pull/601",
+        prUrl: "https://github.com/voyant-travel/voyant/pull/601",
       }),
       {
-        PR: "https://github.com/voyantjs/voyant/pull/601",
+        PR: "https://github.com/voyant-travel/voyant/pull/601",
         "Last Heartbeat": "2026-05-10",
       },
     )
@@ -43,7 +43,7 @@ describe("agent runner PR helpers", () => {
     const body = pullRequestBody(item, {
       evidenceBody: "# Evidence\n\nAll checks passed.",
       evidenceReference: "docs/agent-evidence/active/579-test.md",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.match(body, /Implements #579/)
@@ -56,13 +56,13 @@ describe("agent runner PR helpers", () => {
   it("formats remote evidence as a link in PR bodies", () => {
     const body = pullRequestBody(workItem(), {
       evidenceBody: "",
-      evidenceReference: "https://github.com/voyantjs/voyant/issues/579#issuecomment-1",
-      repository: "voyantjs/voyant",
+      evidenceReference: "https://github.com/voyant-travel/voyant/issues/579#issuecomment-1",
+      repository: "voyant-travel/voyant",
     })
 
-    assert.equal(isRemoteReference("https://github.com/voyantjs/voyant/issues/579"), true)
+    assert.equal(isRemoteReference("https://github.com/voyant-travel/voyant/issues/579"), true)
     assert.equal(isRemoteReference("docs/agent-evidence/active/579-test.md"), false)
-    assert.match(body, /- https:\/\/github\.com\/voyantjs\/voyant\/issues\/579#issuecomment-1/)
+    assert.match(body, /- https:\/\/github\.com\/voyant-travel\/voyant\/issues\/579#issuecomment-1/)
     assert.doesNotMatch(body, /<details>/)
   })
 
@@ -112,7 +112,7 @@ describe("agent runner PR helpers", () => {
       "PR body",
       "--draft",
     ])
-    assert.equal(args.includes("voyantjs:task/579-test-agent-project-intake-workflow"), false)
+    assert.equal(args.includes("voyant-travel:task/579-test-agent-project-intake-workflow"), false)
   })
 
   it("opens remote workspace PRs through repository-scoped gh commands", () => {
@@ -121,7 +121,7 @@ describe("agent runner PR helpers", () => {
       body: "PR body",
       branch: "task/579-test-agent-project-intake-workflow",
       draft: false,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       title: "Test agent project intake workflow",
     })
 
@@ -137,7 +137,7 @@ describe("agent runner PR helpers", () => {
       "--body",
       "PR body",
       "--repo",
-      "voyantjs/voyant",
+      "voyant-travel/voyant",
     ])
   })
 
@@ -146,16 +146,16 @@ describe("agent runner PR helpers", () => {
       pullRequestEditBodyArgs({
         body: "Updated body",
         prReference: 603,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
-      ["pr", "edit", "603", "--repo", "voyantjs/voyant", "--body", "Updated body"],
+      ["pr", "edit", "603", "--repo", "voyant-travel/voyant", "--body", "Updated body"],
     )
   })
 
   it("parses PR numbers from GitHub pull request URLs", () => {
-    assert.equal(pullRequestNumberFromUrl("https://github.com/voyantjs/voyant/pull/603"), 603)
+    assert.equal(pullRequestNumberFromUrl("https://github.com/voyant-travel/voyant/pull/603"), 603)
     assert.equal(
-      pullRequestNumberFromUrl("https://github.com/voyantjs/voyant/issues/603"),
+      pullRequestNumberFromUrl("https://github.com/voyant-travel/voyant/issues/603"),
       undefined,
     )
   })
@@ -354,7 +354,7 @@ describe("agent runner PR helpers", () => {
 
   it("moves passing non-draft PRs to merge ready", () => {
     const pr = {
-      url: "https://github.com/voyantjs/voyant/pull/603",
+      url: "https://github.com/voyant-travel/voyant/pull/603",
       state: "OPEN",
       isDraft: false,
       reviewDecision: "",
@@ -376,7 +376,7 @@ describe("agent runner PR helpers", () => {
       }),
       {
         "Agent State": "Merge Ready",
-        PR: "https://github.com/voyantjs/voyant/pull/603",
+        PR: "https://github.com/voyant-travel/voyant/pull/603",
         "Last Heartbeat": "2026-05-10",
       },
     )
@@ -384,7 +384,7 @@ describe("agent runner PR helpers", () => {
 
   it("marks merged PRs complete", () => {
     const pr = {
-      url: "https://github.com/voyantjs/voyant/pull/605",
+      url: "https://github.com/voyant-travel/voyant/pull/605",
       state: "MERGED",
     }
     const result = evaluatePullRequestCompletion(pr)
@@ -401,7 +401,7 @@ describe("agent runner PR helpers", () => {
       {
         Status: "Done",
         "Agent State": "Done",
-        PR: "https://github.com/voyantjs/voyant/pull/605",
+        PR: "https://github.com/voyant-travel/voyant/pull/605",
         "Last Heartbeat": "2026-05-10",
       },
     )
@@ -423,7 +423,7 @@ describe("agent runner PR helpers", () => {
       {
         Status: "Done",
         "Agent State": "Done",
-        PR: "https://github.com/voyantjs/voyant/pull/605",
+        PR: "https://github.com/voyant-travel/voyant/pull/605",
         "Last Heartbeat": "2026-05-10",
       },
     )
@@ -432,7 +432,7 @@ describe("agent runner PR helpers", () => {
   it("refuses to complete unmerged PRs", () => {
     assert.deepEqual(
       evaluatePullRequestCompletion({
-        url: "https://github.com/voyantjs/voyant/pull/605",
+        url: "https://github.com/voyant-travel/voyant/pull/605",
         state: "OPEN",
       }),
       {

@@ -1,10 +1,10 @@
 "use client"
 
-import type { PublicPaymentSession } from "@voyantjs/finance/public-validation"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { PublicPaymentSession } from "@voyant-travel/finance/public-validation"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import {
   Building2,
   CheckCircle2,
@@ -35,7 +35,7 @@ interface StartCardResponse {
  *
  * The parent owns:
  *   - fetching `PublicPaymentSession` from `/v1/public/payment-sessions/:id`
- *     (typically via `usePublicPaymentSession` from `@voyantjs/finance-react`)
+ *     (typically via `usePublicPaymentSession` from `@voyant-travel/finance-react`)
  *   - re-fetching after the user returns from the processor (the processor
  *     redirects back to `session.returnUrl`; the page re-mounts and the
  *     latest status is shown)

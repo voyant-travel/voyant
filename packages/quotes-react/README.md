@@ -1,22 +1,22 @@
-# @voyantjs/quotes-react
+# @voyant-travel/quotes-react
 
 React hooks, query keys, providers, and reusable UI for the Quotes module:
 pipelines, stages, quotes, quote versions, proposal lifecycle decisions, and
 quote version lines.
 
 People and organizations are represented by ids on quote records. Use
-`@voyantjs/relationships-react` for person and organization UI.
+`@voyant-travel/relationships-react` for person and organization UI.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/quotes-react @voyantjs/quotes @tanstack/react-query react react-dom zod
+pnpm add @voyant-travel/quotes-react @voyant-travel/quotes @tanstack/react-query react react-dom zod
 ```
 
 ## Usage
 
 ```tsx
-import { QuotesBoard, VoyantProvider, useQuotes, useStages } from "@voyantjs/quotes-react"
+import { QuotesBoard, VoyantProvider, useQuotes, useStages } from "@voyant-travel/quotes-react"
 
 function QuotePipeline({ pipelineId }: { pipelineId: string }) {
   const { data: stages } = useStages({ pipelineId })
@@ -32,7 +32,7 @@ function QuotePipeline({ pipelineId }: { pipelineId: string }) {
 }
 ```
 
-Styled components require the optional `@voyantjs/ui` peer.
+Styled components require the optional `@voyant-travel/ui` peer.
 
 ## License
 

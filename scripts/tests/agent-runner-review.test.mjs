@@ -87,8 +87,8 @@ describe("agent runner review repair helpers", () => {
       }),
       generatedAt: new Date("2026-05-10T12:34:56.000Z"),
       item: workItem(),
-      pr: { url: "https://github.com/voyantjs/voyant/pull/626" },
-      repository: "voyantjs/voyant",
+      pr: { url: "https://github.com/voyant-travel/voyant/pull/626" },
+      repository: "voyant-travel/voyant",
     })
 
     assert.match(body, /# Review Repair Packet/)

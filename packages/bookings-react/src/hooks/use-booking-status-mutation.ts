@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { dispatchBookingStatusChange } from "@voyantjs/bookings/status-dispatch"
+import { dispatchBookingStatusChange } from "@voyant-travel/bookings/status-dispatch"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantBookingsContext } from "../provider.js"

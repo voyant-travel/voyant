@@ -3,8 +3,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components"
-import { Separator } from "@voyantjs/ui/components/separator"
+} from "@voyant-travel/ui/components"
+import { Separator } from "@voyant-travel/ui/components/separator"
 import { MoreHorizontal } from "lucide-react"
 import type { ReactNode } from "react"
 

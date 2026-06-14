@@ -9,7 +9,7 @@
 //   * `createPostgresManifestStore`   — manifest history, against
 //      `voyant_workflow_manifests`.
 //   * In-process step handler glued to `handleStepRequest` from
-//      `@voyantjs/workflows/handler` — the workflow body executes in the
+//      `@voyant-travel/workflows/handler` — the workflow body executes in the
 //      same Node process as the driver.
 //
 // The Postgres time wheel (`createPersistentWakeupManager`) is started via
@@ -24,7 +24,7 @@ import type {
   RunDetail,
   RunSummary,
   TriggerOptions,
-} from "@voyantjs/workflows"
+} from "@voyant-travel/workflows"
 import type {
   DriverFactory,
   DriverFactoryDeps,
@@ -33,10 +33,10 @@ import type {
   IngestMatch,
   WorkflowAdmin,
   WorkflowDriver,
-} from "@voyantjs/workflows/driver"
-import { deriveStableEventId } from "@voyantjs/workflows/events"
-import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+} from "@voyant-travel/workflows/driver"
+import { deriveStableEventId } from "@voyant-travel/workflows/events"
+import { handleStepRequest, type WorkflowStepRequest } from "@voyant-travel/workflows/handler"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 import {
   createInProcessConcurrencyCoordinator,
   createScheduler,
@@ -49,7 +49,7 @@ import {
   type SchedulerHandle,
   type StepHandler,
   type TriggerArgs,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 import type { drizzle } from "drizzle-orm/node-postgres"
 
 import {

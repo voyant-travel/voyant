@@ -1,5 +1,5 @@
 import { URL } from "node:url"
-import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
+import type { WaitpointInjection } from "@voyant-travel/workflows-orchestrator"
 import { renderMetrics } from "./dashboard-metrics.js"
 import { mimeFor } from "./dashboard-static.js"
 import type { HandlerResponse, HealthReport, RequestHandlerDeps } from "./dashboard-types.js"

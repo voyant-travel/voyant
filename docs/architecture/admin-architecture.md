@@ -11,7 +11,7 @@ The goal is simple:
 - support admin localization without confusing it for business-content
   translation
 
-The admin should be a first-class framework surface, not just template-local UI.
+The admin should be a first-class framework surface, not just starter-local UI.
 
 ## Core Rules
 
@@ -30,11 +30,11 @@ being reimplemented in each template.
 Rule:
 
 The admin runtime should be framework-owned even when the final shell/layout is
-template-owned.
+starter-owned.
 
-### 2. Keep the final admin shell template-owned
+### 2. Keep the final admin shell starter-owned
 
-Starter templates should still own:
+Starters should still own:
 
 - the final admin shell composition
 - overall layout decisions
@@ -92,7 +92,7 @@ route/shell override.
 Modules, extensions, or app-owned code may need dedicated admin pages.
 
 Those should plug into the admin surface as a recognized route class rather than
-feeling like unrelated template-local pages.
+feeling like unrelated starter-local pages.
 
 Rule:
 
@@ -158,8 +158,8 @@ do not use blocks as a substitute for explicit admin extension points.
 
 Voyant should keep:
 
-- `@voyantjs/*-react`
-- `@voyantjs/admin`
+- `@voyant-travel/*-react`
+- `@voyant-travel/admin`
 - the registry/source-installed UI approach
 
 That strategy gives teams editable UI while the framework still owns the runtime
@@ -224,7 +224,7 @@ translation.
 
 When adding or reviewing an admin capability in Voyant:
 
-1. Decide whether it belongs in the shared admin runtime or the template-owned
+1. Decide whether it belongs in the shared admin runtime or the starter-owned
    shell.
 2. Use current-user readiness as the base shell bootstrap dependency.
 3. Keep workspace/organization/team-management bootstrap behind explicit

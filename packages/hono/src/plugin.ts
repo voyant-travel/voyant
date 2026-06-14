@@ -4,14 +4,14 @@ import type {
   LinkDefinition,
   Subscriber,
   WorkflowDescriptor,
-} from "@voyantjs/core"
+} from "@voyant-travel/core"
 
 import type { HonoExtension, HonoModule } from "./module.js"
 
 /**
  * Hono-flavoured bundle contribution surface.
  *
- * `@voyantjs/hono` is the default HTTP transport adapter for Voyant. The
+ * `@voyant-travel/hono` is the default HTTP transport adapter for Voyant. The
  * preferred `HonoBundle` term describes reusable packages that contribute
  * {@link HonoModule} / {@link HonoExtension} wrappers that can carry HTTP
  * routes. `HonoPlugin` remains as a compatibility alias for the same shape.
@@ -37,13 +37,13 @@ export interface HonoBundle {
   links?: LinkDefinition[]
   /**
    * Workflows contributed by the plugin. Mirrors the `Plugin.workflows`
-   * field in `@voyantjs/core` — collected at `createApp()` boot and
+   * field in `@voyant-travel/core` — collected at `createApp()` boot and
    * registered with the configured workflow driver.
    */
   workflows?: readonly WorkflowDescriptor[]
   /**
    * Event filters contributed by the plugin. Mirrors
-   * `Plugin.eventFilters` in `@voyantjs/core`.
+   * `Plugin.eventFilters` in `@voyant-travel/core`.
    */
   eventFilters?: readonly EventFilterDescriptor[]
 }

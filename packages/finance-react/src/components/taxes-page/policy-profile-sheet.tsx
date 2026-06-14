@@ -13,7 +13,7 @@ import {
   SheetTitle,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../../i18n/index.js"

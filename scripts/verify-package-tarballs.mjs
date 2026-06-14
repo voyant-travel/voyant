@@ -283,7 +283,7 @@ if (PACKAGE_FILTERS.size > 0) {
     }),
   )
   const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
-    if (!packageName.startsWith("@voyantjs/")) return false
+    if (!packageName.startsWith("@voyant-travel/")) return false
     return !foundPackageNames.has(packageName)
   })
 

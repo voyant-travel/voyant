@@ -19,11 +19,11 @@ It does not introduce a new token architecture.
 ### 1. Better Auth session cookies remain the primary user-session model
 
 Voyant's default authenticated user boundary is still Better Auth session
-cookies, resolved by template-owned auth runtime wiring.
+cookies, resolved by starter-owned auth runtime wiring.
 
 That is the current baseline across:
 
-- `@voyantjs/auth/server`
+- `@voyant-travel/auth/server`
 - template `/api/auth/*` handlers
 - shared route middleware that delegates provider session resolution through
   app-owned auth integrations
@@ -35,8 +35,8 @@ Do not replace the default session-cookie model with JWT-first architecture.
 ### 2. Shared-secret bearer tokens are a narrow runtime convenience
 
 Voyant currently exposes a second, narrower token path through
-`@voyantjs/utils/session-claims`, `@voyantjs/auth/backend`, and
-`@voyantjs/hono/auth/session-jwt`.
+`@voyant-travel/utils/session-claims`, `@voyant-travel/auth/backend`, and
+`@voyant-travel/hono/auth/session-jwt`.
 
 That path is useful for:
 
@@ -87,7 +87,7 @@ independent verifier surface that cannot safely use the current simpler model.
 
 Voyant should assume the current symmetric-secret model can continue while:
 
-- templates own the auth runtime
+- starters own the auth runtime
 - verification happens inside the same deployment boundary
 - the same trusted runtime can read the configured secret
 
@@ -118,7 +118,7 @@ resolution as the authority for user-session identity.
 
 ### 7. `session-claims` stays short-lived and symmetric
 
-`@voyantjs/utils/session-claims` currently provides:
+`@voyant-travel/utils/session-claims` currently provides:
 
 - HMAC-SHA256 signing
 - short-lived claims
@@ -191,7 +191,7 @@ shape truly requires it.
 
 Rule:
 
-Keep the auth composition story template-owned until a broader verifier
+Keep the auth composition story starter-owned until a broader verifier
 topology is actually needed.
 
 ### 12. Route and module code should consume normalized auth context only

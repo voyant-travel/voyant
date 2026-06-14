@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
   ConfirmActionButton,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowLeft, Link2, Loader2, Webhook } from "lucide-react"
 import { useDistributionUiI18nOrDefault } from "../i18n/index.js"
 import {

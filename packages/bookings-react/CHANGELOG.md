@@ -1,11 +1,11 @@
-# @voyantjs/bookings-react
+# @voyant-travel/bookings-react
 
 ## 0.119.3
 
 ### Patch Changes
 
 - Updated dependencies [658aa37]
-  - @voyantjs/bookings@0.119.3
+  - @voyant-travel/bookings@0.119.3
 
 ## 0.119.2
 
@@ -15,60 +15,60 @@
 - Updated dependencies [e6d9a61]
 - Updated dependencies [bd74fb0]
 - Updated dependencies [b66b155]
-  - @voyantjs/products-react@0.119.3
-  - @voyantjs/catalog-react@0.117.2
-  - @voyantjs/catalog-contracts@0.107.1
-  - @voyantjs/finance-react@0.119.3
-  - @voyantjs/bookings@0.119.2
+  - @voyant-travel/products-react@0.119.3
+  - @voyant-travel/catalog-react@0.117.2
+  - @voyant-travel/catalog-contracts@0.107.1
+  - @voyant-travel/finance-react@0.119.3
+  - @voyant-travel/bookings@0.119.2
 
 ## 0.119.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.119.1
-- @voyantjs/availability-react@0.116.1
-- @voyantjs/catalog-react@0.117.1
-- @voyantjs/crm-react@0.119.1
-- @voyantjs/extras-react@0.119.1
-- @voyantjs/finance-react@0.119.1
-- @voyantjs/identity-react@0.119.1
-- @voyantjs/legal-react@0.119.1
-- @voyantjs/pricing-react@0.119.1
-- @voyantjs/products-react@0.119.1
-- @voyantjs/suppliers-react@0.111.6
+- @voyant-travel/bookings@0.119.1
+- @voyant-travel/availability-react@0.116.1
+- @voyant-travel/catalog-react@0.117.1
+- @voyant-travel/crm-react@0.119.1
+- @voyant-travel/extras-react@0.119.1
+- @voyant-travel/finance-react@0.119.1
+- @voyant-travel/identity-react@0.119.1
+- @voyant-travel/legal-react@0.119.1
+- @voyant-travel/pricing-react@0.119.1
+- @voyant-travel/products-react@0.119.1
+- @voyant-travel/suppliers-react@0.111.6
 
 ## 0.119.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.119.0
-- @voyantjs/crm-react@0.119.0
-- @voyantjs/legal-react@0.119.0
-- @voyantjs/pricing-react@0.119.0
-- @voyantjs/products-react@0.119.0
-- @voyantjs/ui@0.106.1
-- @voyantjs/availability-react@0.116.0
-- @voyantjs/catalog-react@0.117.0
-- @voyantjs/extras-react@0.119.0
-- @voyantjs/finance-react@0.119.0
-- @voyantjs/identity-react@0.119.0
-- @voyantjs/suppliers-react@0.111.5
+- @voyant-travel/bookings@0.119.0
+- @voyant-travel/crm-react@0.119.0
+- @voyant-travel/legal-react@0.119.0
+- @voyant-travel/pricing-react@0.119.0
+- @voyant-travel/products-react@0.119.0
+- @voyant-travel/ui@0.106.1
+- @voyant-travel/availability-react@0.116.0
+- @voyant-travel/catalog-react@0.117.0
+- @voyant-travel/extras-react@0.119.0
+- @voyant-travel/finance-react@0.119.0
+- @voyant-travel/identity-react@0.119.0
+- @voyant-travel/suppliers-react@0.111.5
 
 ## 0.118.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.118.0
-- @voyantjs/products-react@0.118.0
-- @voyantjs/availability-react@0.115.0
-- @voyantjs/catalog-react@0.116.0
-- @voyantjs/extras-react@0.118.0
-- @voyantjs/finance-react@0.118.0
-- @voyantjs/identity-react@0.118.0
-- @voyantjs/legal-react@0.118.0
-- @voyantjs/pricing-react@0.118.0
-- @voyantjs/crm-react@0.118.0
-- @voyantjs/suppliers-react@0.111.4
+- @voyant-travel/bookings@0.118.0
+- @voyant-travel/products-react@0.118.0
+- @voyant-travel/availability-react@0.115.0
+- @voyant-travel/catalog-react@0.116.0
+- @voyant-travel/extras-react@0.118.0
+- @voyant-travel/finance-react@0.118.0
+- @voyant-travel/identity-react@0.118.0
+- @voyant-travel/legal-react@0.118.0
+- @voyant-travel/pricing-react@0.118.0
+- @voyant-travel/crm-react@0.118.0
+- @voyant-travel/suppliers-react@0.111.4
 
 ## 0.117.1
 
@@ -76,50 +76,50 @@
 
 - Updated dependencies [b7056f1]
 - Updated dependencies [b7056f1]
-  - @voyantjs/bookings@0.117.1
-  - @voyantjs/availability-react@0.114.1
-  - @voyantjs/catalog-react@0.115.1
-  - @voyantjs/crm-react@0.117.1
-  - @voyantjs/extras-react@0.117.1
-  - @voyantjs/finance-react@0.117.1
-  - @voyantjs/identity-react@0.117.1
-  - @voyantjs/legal-react@0.117.1
-  - @voyantjs/pricing-react@0.117.1
-  - @voyantjs/products-react@0.117.1
-  - @voyantjs/suppliers-react@0.111.3
+  - @voyant-travel/bookings@0.117.1
+  - @voyant-travel/availability-react@0.114.1
+  - @voyant-travel/catalog-react@0.115.1
+  - @voyant-travel/crm-react@0.117.1
+  - @voyant-travel/extras-react@0.117.1
+  - @voyant-travel/finance-react@0.117.1
+  - @voyant-travel/identity-react@0.117.1
+  - @voyant-travel/legal-react@0.117.1
+  - @voyant-travel/pricing-react@0.117.1
+  - @voyant-travel/products-react@0.117.1
+  - @voyant-travel/suppliers-react@0.111.3
 
 ## 0.117.0
 
 ### Patch Changes
 
 - Updated dependencies [7255353]
-  - @voyantjs/bookings@0.117.0
-  - @voyantjs/availability-react@0.114.0
-  - @voyantjs/catalog-react@0.115.0
-  - @voyantjs/crm-react@0.117.0
-  - @voyantjs/extras-react@0.117.0
-  - @voyantjs/finance-react@0.117.0
-  - @voyantjs/identity-react@0.117.0
-  - @voyantjs/legal-react@0.117.0
-  - @voyantjs/pricing-react@0.117.0
-  - @voyantjs/products-react@0.117.0
-  - @voyantjs/suppliers-react@0.111.2
+  - @voyant-travel/bookings@0.117.0
+  - @voyant-travel/availability-react@0.114.0
+  - @voyant-travel/catalog-react@0.115.0
+  - @voyant-travel/crm-react@0.117.0
+  - @voyant-travel/extras-react@0.117.0
+  - @voyant-travel/finance-react@0.117.0
+  - @voyant-travel/identity-react@0.117.0
+  - @voyant-travel/legal-react@0.117.0
+  - @voyant-travel/pricing-react@0.117.0
+  - @voyant-travel/products-react@0.117.0
+  - @voyant-travel/suppliers-react@0.111.2
 
 ## 0.116.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.116.0
-- @voyantjs/products-react@0.116.0
-- @voyantjs/availability-react@0.113.0
-- @voyantjs/catalog-react@0.114.0
-- @voyantjs/extras-react@0.116.0
-- @voyantjs/finance-react@0.116.0
-- @voyantjs/identity-react@0.116.0
-- @voyantjs/legal-react@0.116.0
-- @voyantjs/pricing-react@0.116.0
-- @voyantjs/crm-react@0.116.0
-- @voyantjs/suppliers-react@0.111.1
+- @voyant-travel/bookings@0.116.0
+- @voyant-travel/products-react@0.116.0
+- @voyant-travel/availability-react@0.113.0
+- @voyant-travel/catalog-react@0.114.0
+- @voyant-travel/extras-react@0.116.0
+- @voyant-travel/finance-react@0.116.0
+- @voyant-travel/identity-react@0.116.0
+- @voyant-travel/legal-react@0.116.0
+- @voyant-travel/pricing-react@0.116.0
+- @voyant-travel/crm-react@0.116.0
+- @voyant-travel/suppliers-react@0.111.1
 
 ## 0.115.0
 
@@ -127,35 +127,35 @@
 
 - Updated dependencies [41b08db]
 - Updated dependencies [6d496d0]
-  - @voyantjs/admin@0.111.0
-  - @voyantjs/catalog-react@0.113.0
-  - @voyantjs/finance-react@0.115.0
-  - @voyantjs/legal-react@0.115.0
-  - @voyantjs/products-react@0.115.0
-  - @voyantjs/availability-react@0.112.0
-  - @voyantjs/crm-react@0.115.0
-  - @voyantjs/suppliers-react@0.111.0
-  - @voyantjs/extras-react@0.115.0
-  - @voyantjs/identity-react@0.115.0
-  - @voyantjs/pricing-react@0.115.0
-  - @voyantjs/bookings@0.115.0
+  - @voyant-travel/admin@0.111.0
+  - @voyant-travel/catalog-react@0.113.0
+  - @voyant-travel/finance-react@0.115.0
+  - @voyant-travel/legal-react@0.115.0
+  - @voyant-travel/products-react@0.115.0
+  - @voyant-travel/availability-react@0.112.0
+  - @voyant-travel/crm-react@0.115.0
+  - @voyant-travel/suppliers-react@0.111.0
+  - @voyant-travel/extras-react@0.115.0
+  - @voyant-travel/identity-react@0.115.0
+  - @voyant-travel/pricing-react@0.115.0
+  - @voyant-travel/bookings@0.115.0
 
 ## 0.114.0
 
 ### Patch Changes
 
 - Updated dependencies [f7bd971]
-  - @voyantjs/finance-react@0.114.0
-  - @voyantjs/legal-react@0.114.0
-  - @voyantjs/products-react@0.114.0
-  - @voyantjs/availability-react@0.111.0
-  - @voyantjs/identity-react@0.114.0
-  - @voyantjs/catalog-react@0.112.0
-  - @voyantjs/extras-react@0.114.0
-  - @voyantjs/pricing-react@0.114.0
-  - @voyantjs/crm-react@0.114.0
-  - @voyantjs/bookings@0.114.0
-  - @voyantjs/suppliers-react@0.110.1
+  - @voyant-travel/finance-react@0.114.0
+  - @voyant-travel/legal-react@0.114.0
+  - @voyant-travel/products-react@0.114.0
+  - @voyant-travel/availability-react@0.111.0
+  - @voyant-travel/identity-react@0.114.0
+  - @voyant-travel/catalog-react@0.112.0
+  - @voyant-travel/extras-react@0.114.0
+  - @voyant-travel/pricing-react@0.114.0
+  - @voyant-travel/crm-react@0.114.0
+  - @voyant-travel/bookings@0.114.0
+  - @voyant-travel/suppliers-react@0.110.1
 
 ## 0.113.0
 
@@ -170,18 +170,18 @@
 ### Patch Changes
 
 - Updated dependencies [9c909e2]
-  - @voyantjs/admin@0.110.0
-  - @voyantjs/availability-react@0.110.0
-  - @voyantjs/finance-react@0.113.0
-  - @voyantjs/identity-react@0.113.0
-  - @voyantjs/legal-react@0.113.0
-  - @voyantjs/catalog-react@0.111.0
-  - @voyantjs/crm-react@0.113.0
-  - @voyantjs/suppliers-react@0.110.0
-  - @voyantjs/products-react@0.113.0
-  - @voyantjs/extras-react@0.113.0
-  - @voyantjs/pricing-react@0.113.0
-  - @voyantjs/bookings@0.113.0
+  - @voyant-travel/admin@0.110.0
+  - @voyant-travel/availability-react@0.110.0
+  - @voyant-travel/finance-react@0.113.0
+  - @voyant-travel/identity-react@0.113.0
+  - @voyant-travel/legal-react@0.113.0
+  - @voyant-travel/catalog-react@0.111.0
+  - @voyant-travel/crm-react@0.113.0
+  - @voyant-travel/suppliers-react@0.110.0
+  - @voyant-travel/products-react@0.113.0
+  - @voyant-travel/extras-react@0.113.0
+  - @voyant-travel/pricing-react@0.113.0
+  - @voyant-travel/bookings@0.113.0
 
 ## 0.112.0
 
@@ -190,7 +190,7 @@
 - 279f97c: Slim the admin entry barrels so the host's workspace-chrome chunk stops pinning domain data layers and page hosts (operator client entry: 3.74 MB → 1.83 MB).
 
   - Route contribution loaders now resolve query options / page-data helpers via dynamic `import()` inside the loader body, keeping clients + response schemas (and the backend validation graphs they pull) out of the eagerly evaluated entry chunk.
-  - `@voyantjs/<domain>-react/admin` barrels no longer re-export page/host/dialog/widget component **values** (packaged-admin RFC §4.8 endgame rule: specific modules, never barrels). Their prop **types** still re-export from the barrels; import component values from their specific modules instead (e.g. `@voyantjs/bookings-react/admin/booking-detail-host`). New `./admin/*` subpath exports on `@voyantjs/bookings-react` and `@voyantjs/availability-react` cover the known host-side imports.
+  - `@voyant-travel/<domain>-react/admin` barrels no longer re-export page/host/dialog/widget component **values** (packaged-admin RFC §4.8 endgame rule: specific modules, never barrels). Their prop **types** still re-export from the barrels; import component values from their specific modules instead (e.g. `@voyant-travel/bookings-react/admin/booking-detail-host`). New `./admin/*` subpath exports on `@voyant-travel/bookings-react` and `@voyant-travel/availability-react` cover the known host-side imports.
   - Widget slot ids moved into lean `admin/slots` modules (`bookings-react`, `crm-react`, `suppliers-react`); the host modules re-export them, so existing imports keep working.
   - Widget contributions (`PersonBookingsWidget`, the four finance cards) now mount through Suspense-wrapped `React.lazy` loaders, so their chunks fetch when the slot actually renders.
   - Search schemas stay synchronous: `catalogSearchSchema` re-exports from the schema-only `catalog-search-params` module instead of the catalog main barrel; the bookings search contracts already lived in the admin entry.
@@ -215,18 +215,18 @@
 
 - Updated dependencies [279f97c]
 - Updated dependencies [faec538]
-  - @voyantjs/availability-react@0.109.0
-  - @voyantjs/catalog-react@0.110.0
-  - @voyantjs/crm-react@0.112.0
-  - @voyantjs/finance-react@0.112.0
-  - @voyantjs/legal-react@0.112.0
-  - @voyantjs/suppliers-react@0.109.0
-  - @voyantjs/admin@0.109.0
-  - @voyantjs/products-react@0.112.0
-  - @voyantjs/identity-react@0.112.0
-  - @voyantjs/extras-react@0.112.0
-  - @voyantjs/pricing-react@0.112.0
-  - @voyantjs/bookings@0.112.0
+  - @voyant-travel/availability-react@0.109.0
+  - @voyant-travel/catalog-react@0.110.0
+  - @voyant-travel/crm-react@0.112.0
+  - @voyant-travel/finance-react@0.112.0
+  - @voyant-travel/legal-react@0.112.0
+  - @voyant-travel/suppliers-react@0.109.0
+  - @voyant-travel/admin@0.109.0
+  - @voyant-travel/products-react@0.112.0
+  - @voyant-travel/identity-react@0.112.0
+  - @voyant-travel/extras-react@0.112.0
+  - @voyant-travel/pricing-react@0.112.0
+  - @voyant-travel/bookings@0.112.0
 
 ## 0.111.0
 
@@ -238,7 +238,7 @@
   route tree for extension routes is assembled in code from the contributions
   and grafted under the file-based workspace layout, with typed links intact.
 
-  - `@voyantjs/admin`: `AdminUiRouteContribution` grows `page?: () =>
+  - `@voyant-travel/admin`: `AdminUiRouteContribution` grows `page?: () =>
 Promise<AdminRoutePageModule>` — a lazy page-module loader (pages stay
     code-split, hover/intent preloading fetches the chunk ahead of
     navigation). The resolved component receives `AdminRoutePageProps`
@@ -248,7 +248,7 @@ Promise<AdminRoutePageModule>` — a lazy page-module loader (pages stay
     `requireImplementedAdminRoute` (loud failure at module evaluation when a
     bound contribution loses its implementation) and `adminRoutePageModule`
     (adapter for zero-prop / all-optional-prop hosts).
-  - `@voyantjs/admin-app`: new binder — `adminExtensionRouteOptions(extension,
+  - `@voyant-travel/admin-app`: new binder — `adminExtensionRouteOptions(extension,
 routeId, runtime)` returns router-facing route options (lazy component,
     loader bound to `{ queryClient, runtime, params }`, per-route `ssr`,
     boundaries) ready to spread into a code-based `createRoute({...})`, and
@@ -276,33 +276,33 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [478aa7c]
-  - @voyantjs/admin@0.108.0
-  - @voyantjs/availability-react@0.108.0
-  - @voyantjs/catalog-react@0.109.0
-  - @voyantjs/crm-react@0.111.0
-  - @voyantjs/finance-react@0.111.0
-  - @voyantjs/legal-react@0.111.0
-  - @voyantjs/suppliers-react@0.108.0
-  - @voyantjs/products-react@0.111.0
-  - @voyantjs/identity-react@0.111.0
-  - @voyantjs/extras-react@0.111.0
-  - @voyantjs/pricing-react@0.111.0
-  - @voyantjs/bookings@0.111.0
+  - @voyant-travel/admin@0.108.0
+  - @voyant-travel/availability-react@0.108.0
+  - @voyant-travel/catalog-react@0.109.0
+  - @voyant-travel/crm-react@0.111.0
+  - @voyant-travel/finance-react@0.111.0
+  - @voyant-travel/legal-react@0.111.0
+  - @voyant-travel/suppliers-react@0.108.0
+  - @voyant-travel/products-react@0.111.0
+  - @voyant-travel/identity-react@0.111.0
+  - @voyant-travel/extras-react@0.111.0
+  - @voyant-travel/pricing-react@0.111.0
+  - @voyant-travel/bookings@0.111.0
 
 ## 0.110.1
 
 ### Patch Changes
 
-- e3fa849: Move shared booking-engine client/server types into `@voyantjs/catalog-contracts`.
+- e3fa849: Move shared booking-engine client/server types into `@voyant-travel/catalog-contracts`.
 
-  `BookingDraftShape` and the draft-shape descriptor types + defaults (`PaxBandSpec`, `PaxBandDependency`, `DEFAULT_PAX_BANDS`, `defaultDraftShapeFlags`, `defaultTravelerFields`, `defaultBookingFields`, `paxBandsAllowedTotalFrom`, …) now live at `@voyantjs/catalog-contracts/booking-engine/draft-shape`, and `BookingPaymentIntent` joins the V1 wire contracts at `@voyantjs/catalog-contracts/booking-engine/contracts`. This removes the layering leak where client packages (`@voyantjs/bookings-react`, `@voyantjs/catalog-react`) imported contract types from the backend `@voyantjs/catalog/booking-engine` entry — both now depend on `@voyantjs/catalog-contracts` instead and no longer depend on `@voyantjs/catalog` at all.
+  `BookingDraftShape` and the draft-shape descriptor types + defaults (`PaxBandSpec`, `PaxBandDependency`, `DEFAULT_PAX_BANDS`, `defaultDraftShapeFlags`, `defaultTravelerFields`, `defaultBookingFields`, `paxBandsAllowedTotalFrom`, …) now live at `@voyant-travel/catalog-contracts/booking-engine/draft-shape`, and `BookingPaymentIntent` joins the V1 wire contracts at `@voyant-travel/catalog-contracts/booking-engine/contracts`. This removes the layering leak where client packages (`@voyant-travel/bookings-react`, `@voyant-travel/catalog-react`) imported contract types from the backend `@voyant-travel/catalog/booking-engine` entry — both now depend on `@voyant-travel/catalog-contracts` instead and no longer depend on `@voyant-travel/catalog` at all.
 
-  `@voyantjs/catalog/booking-engine` re-exports all moved symbols, so existing backend importers keep working with zero changes.
+  `@voyant-travel/catalog/booking-engine` re-exports all moved symbols, so existing backend importers keep working with zero changes.
 
 - Updated dependencies [e3fa849]
-  - @voyantjs/catalog-contracts@0.107.0
-  - @voyantjs/catalog-react@0.108.1
-  - @voyantjs/bookings@0.110.1
+  - @voyant-travel/catalog-contracts@0.107.0
+  - @voyant-travel/catalog-react@0.108.1
+  - @voyant-travel/bookings@0.110.1
 
 ## 0.110.0
 
@@ -314,36 +314,36 @@ routeId, runtime)` returns router-facing route options (lazy component,
   in under new subpaths — `./ui` (the old `*-ui` root barrel), `./components/*`,
   `./admin`, `./i18n`, `./i18n/en`, `./i18n/ro`, and `./styles.css`.
 
-  Migration from `@voyantjs/<module>-ui`:
+  Migration from `@voyant-travel/<module>-ui`:
 
-  - `@voyantjs/<module>-ui` → `@voyantjs/<module>-react/ui`
-  - `@voyantjs/<module>-ui/<subpath>` → `@voyantjs/<module>-react/<subpath>`
+  - `@voyant-travel/<module>-ui` → `@voyant-travel/<module>-react/ui`
+  - `@voyant-travel/<module>-ui/<subpath>` → `@voyant-travel/<module>-react/<subpath>`
   - package.json: drop the `-ui` dependency; `-react` covers both tiers.
 
-  Styled-tier peers (`@voyantjs/ui`, `@voyantjs/admin`, `@tanstack/react-table`,
+  Styled-tier peers (`@voyant-travel/ui`, `@voyant-travel/admin`, `@tanstack/react-table`,
   `sonner`, `react-hook-form`, sibling `*-react` hooks packages) are optional
   peers — headless consumers that only import the root/`hooks`/`client` subpaths
-  do not need them. The 27 `@voyantjs/*-ui` packages are deprecated on npm in
-  favor of these subpaths; `@voyantjs/allocation-ui` and
-  `@voyantjs/workflow-runs-ui` (no `-react` sibling) are unaffected.
+  do not need them. The 27 `@voyant-travel/*-ui` packages are deprecated on npm in
+  favor of these subpaths; `@voyant-travel/allocation-ui` and
+  `@voyant-travel/workflow-runs-ui` (no `-react` sibling) are unaffected.
 
 ### Patch Changes
 
 - Updated dependencies [6c27159]
 - Updated dependencies [eeb23df]
-  - @voyantjs/availability-react@0.107.0
-  - @voyantjs/catalog-react@0.108.0
-  - @voyantjs/crm-react@0.110.0
-  - @voyantjs/extras-react@0.110.0
-  - @voyantjs/finance-react@0.110.0
-  - @voyantjs/identity-react@0.110.0
-  - @voyantjs/legal-react@0.110.0
-  - @voyantjs/pricing-react@0.110.0
-  - @voyantjs/products-react@0.110.0
-  - @voyantjs/suppliers-react@0.107.0
-  - @voyantjs/admin@0.107.0
-  - @voyantjs/bookings@0.110.0
-  - @voyantjs/catalog@0.108.0
+  - @voyant-travel/availability-react@0.107.0
+  - @voyant-travel/catalog-react@0.108.0
+  - @voyant-travel/crm-react@0.110.0
+  - @voyant-travel/extras-react@0.110.0
+  - @voyant-travel/finance-react@0.110.0
+  - @voyant-travel/identity-react@0.110.0
+  - @voyant-travel/legal-react@0.110.0
+  - @voyant-travel/pricing-react@0.110.0
+  - @voyant-travel/products-react@0.110.0
+  - @voyant-travel/suppliers-react@0.107.0
+  - @voyant-travel/admin@0.107.0
+  - @voyant-travel/bookings@0.110.0
+  - @voyant-travel/catalog@0.108.0
 
 ## 0.109.0
 
@@ -351,12 +351,12 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 8638834: Packaged-admin RFC booking-detail close-out: the operator's last
   booking-detail wrappers move into the packages, backed by new client hooks
-  for existing server endpoints. `@voyantjs/bookings-react` gains
+  for existing server endpoints. `@voyant-travel/bookings-react` gains
   `useBookingActionLedger` (cursor-paged
   `GET /v1/admin/bookings/:id/action-ledger` feed with traveler labels) and
   `useBookingContractGenerationMutation` (preview + generate modes of
   `POST /v1/admin/bookings/:id/generate-contract`).
-  `@voyantjs/finance-react` gains `usePaymentSessions`
+  `@voyant-travel/finance-react` gains `usePaymentSessions`
   (`GET /v1/admin/finance/payment-sessions` with booking/status filters),
   `usePaymentSessionMutation` (`POST …/payment-sessions/:id/complete` and
   `/cancel`) and `useBookingPaymentScheduleRegenerateMutation`
@@ -364,7 +364,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
   matching payment-session / payment-policy schemas and
   `financeQueryKeys.paymentSessions*` keys.
 
-  On top of those hooks, `@voyantjs/bookings-ui/admin` now owns the unified
+  On top of those hooks, `@voyant-travel/bookings-ui/admin` now owns the unified
   Documents tab (`BookingDocumentsTable` + `BookingContractDialog`, linking
   contract rows through a shape-locked `contract.detail` destination and the
   legal provider context's `baseUrl`) and merges the booking's central
@@ -374,114 +374,114 @@ routeId, runtime)` returns router-facing route options (lazy component,
   `booking.details.finance-start` / `booking.details.finance-end`
   (`bookingDetailFinanceStartSlot` / `bookingDetailFinanceEndSlot`) — and
   forwards a new `onGenerateLink` host prop through
-  `BookingDetailHostSlotContext`. `@voyantjs/finance-ui/admin` contributes the
+  `BookingDetailHostSlotContext`. `@voyant-travel/finance-ui/admin` contributes the
   finance-tab cards onto those slots (RFC §4.7 cycle resolution, same as the
   invoices tab): `BookingPendingPaymentSessionsWidget` (pending payment links
   with copy/mark-received/cancel) and `BookingPaymentPolicyWidget` (cascade
   trace + booking-level override + schedule regenerate). The operator's
   booking-detail wrapper shrinks to the two payment dialogs
   (`CollectPaymentDialog` / `RecordBookingPaymentDialog`), which stay
-  app-side because `@voyantjs/checkout-ui` / `@voyantjs/finance-ui` depend on
+  app-side because `@voyant-travel/checkout-ui` / `@voyant-travel/finance-ui` depend on
   `bookings-ui`; the dead `booking-catalog-source-card`,
   `booking-pricing-summary-card`, `booking-paid-payment-sessions` and
   `booking-note-dialog` wrappers are deleted.
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.109.0
+- @voyant-travel/bookings@0.109.0
 
 ## 0.108.1
 
 ### Patch Changes
 
 - Updated dependencies [92af490]
-  - @voyantjs/bookings@0.108.1
+  - @voyant-travel/bookings@0.108.1
 
 ## 0.108.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.108.0
+- @voyant-travel/bookings@0.108.0
 
 ## 0.107.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.107.1
+- @voyant-travel/bookings@0.107.1
 
 ## 0.107.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.107.0
+- @voyant-travel/bookings@0.107.0
 
 ## 0.106.2
 
 ### Patch Changes
 
 - Updated dependencies [cfa6af8]
-  - @voyantjs/bookings@0.106.2
+  - @voyant-travel/bookings@0.106.2
 
 ## 0.106.1
 
 ### Patch Changes
 
 - Updated dependencies [a0e117b]
-  - @voyantjs/bookings@0.106.1
+  - @voyant-travel/bookings@0.106.1
 
 ## 0.106.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.106.0
+- @voyant-travel/bookings@0.106.0
 
 ## 0.105.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.105.0
+- @voyant-travel/bookings@0.105.0
 
 ## 0.104.2
 
 ### Patch Changes
 
 - 75a6336: Add an overridable duplicate guard for booking create requests.
-  - @voyantjs/bookings@0.104.2
+  - @voyant-travel/bookings@0.104.2
 
 ## 0.104.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.104.1
-- @voyantjs/react@0.104.1
+- @voyant-travel/bookings@0.104.1
+- @voyant-travel/react@0.104.1
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.104.0
-- @voyantjs/react@0.104.0
+- @voyant-travel/bookings@0.104.0
+- @voyant-travel/react@0.104.0
 
 ## 0.103.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.103.0
-- @voyantjs/react@0.103.0
+- @voyant-travel/bookings@0.103.0
+- @voyant-travel/react@0.103.0
 
 ## 0.102.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.102.0
-- @voyantjs/react@0.102.0
+- @voyant-travel/bookings@0.102.0
+- @voyant-travel/react@0.102.0
 
 ## 0.101.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.101.2
-- @voyantjs/react@0.101.2
+- @voyant-travel/bookings@0.101.2
+- @voyant-travel/react@0.101.2
 
 ## 0.101.1
 
@@ -489,178 +489,178 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - f736ba5: Improve product booking configuration for room-based travel products.
 
-  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
-  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
-  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
-  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
-  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
-  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+  - `@voyant-travel/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyant-travel/bookings` and `@voyant-travel/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyant-travel/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyant-travel/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyant-travel/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyant-travel/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
 
 - Updated dependencies [f736ba5]
-  - @voyantjs/bookings@0.101.1
-  - @voyantjs/react@0.101.1
+  - @voyant-travel/bookings@0.101.1
+  - @voyant-travel/react@0.101.1
 
 ## 0.101.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.101.0
-- @voyantjs/react@0.101.0
+- @voyant-travel/bookings@0.101.0
+- @voyant-travel/react@0.101.0
 
 ## 0.100.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.100.0
-- @voyantjs/react@0.100.0
+- @voyant-travel/bookings@0.100.0
+- @voyant-travel/react@0.100.0
 
 ## 0.99.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.99.0
-- @voyantjs/react@0.99.0
+- @voyant-travel/bookings@0.99.0
+- @voyant-travel/react@0.99.0
 
 ## 0.98.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.98.0
-- @voyantjs/react@0.98.0
+- @voyant-travel/bookings@0.98.0
+- @voyant-travel/react@0.98.0
 
 ## 0.97.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.97.0
-- @voyantjs/react@0.97.0
+- @voyant-travel/bookings@0.97.0
+- @voyant-travel/react@0.97.0
 
 ## 0.96.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.96.0
-- @voyantjs/react@0.96.0
+- @voyant-travel/bookings@0.96.0
+- @voyant-travel/react@0.96.0
 
 ## 0.95.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.95.0
-- @voyantjs/react@0.95.0
+- @voyant-travel/bookings@0.95.0
+- @voyant-travel/react@0.95.0
 
 ## 0.94.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.94.0
-- @voyantjs/react@0.94.0
+- @voyant-travel/bookings@0.94.0
+- @voyant-travel/react@0.94.0
 
 ## 0.93.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.93.0
-- @voyantjs/react@0.93.0
+- @voyant-travel/bookings@0.93.0
+- @voyant-travel/react@0.93.0
 
 ## 0.92.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.92.0
-- @voyantjs/react@0.92.0
+- @voyant-travel/bookings@0.92.0
+- @voyant-travel/react@0.92.0
 
 ## 0.91.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.91.0
-- @voyantjs/react@0.91.0
+- @voyant-travel/bookings@0.91.0
+- @voyant-travel/react@0.91.0
 
 ## 0.90.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.90.0
-- @voyantjs/react@0.90.0
+- @voyant-travel/bookings@0.90.0
+- @voyant-travel/react@0.90.0
 
 ## 0.89.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.89.0
-- @voyantjs/react@0.89.0
+- @voyant-travel/bookings@0.89.0
+- @voyant-travel/react@0.89.0
 
 ## 0.88.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.88.0
-- @voyantjs/react@0.88.0
+- @voyant-travel/bookings@0.88.0
+- @voyant-travel/react@0.88.0
 
 ## 0.87.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.87.1
-- @voyantjs/react@0.87.1
+- @voyant-travel/bookings@0.87.1
+- @voyant-travel/react@0.87.1
 
 ## 0.87.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.87.0
-- @voyantjs/react@0.87.0
+- @voyant-travel/bookings@0.87.0
+- @voyant-travel/react@0.87.0
 
 ## 0.86.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.86.0
-- @voyantjs/react@0.86.0
+- @voyant-travel/bookings@0.86.0
+- @voyant-travel/react@0.86.0
 
 ## 0.85.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.85.4
-- @voyantjs/react@0.85.4
+- @voyant-travel/bookings@0.85.4
+- @voyant-travel/react@0.85.4
 
 ## 0.85.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.85.3
-- @voyantjs/react@0.85.3
+- @voyant-travel/bookings@0.85.3
+- @voyant-travel/react@0.85.3
 
 ## 0.85.2
 
 ### Patch Changes
 
 - Updated dependencies [2aac1f9]
-  - @voyantjs/bookings@0.85.2
-  - @voyantjs/react@0.85.2
+  - @voyant-travel/bookings@0.85.2
+  - @voyant-travel/react@0.85.2
 
 ## 0.85.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.85.1
-- @voyantjs/react@0.85.1
+- @voyant-travel/bookings@0.85.1
+- @voyant-travel/react@0.85.1
 
 ## 0.85.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.85.0
-- @voyantjs/react@0.85.0
+- @voyant-travel/bookings@0.85.0
+- @voyant-travel/react@0.85.0
 
 ## 0.84.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.84.4
-- @voyantjs/react@0.84.4
+- @voyant-travel/bookings@0.84.4
+- @voyant-travel/react@0.84.4
 
 ## 0.84.3
 
@@ -668,73 +668,73 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 9eadf50: Release booking billing party snapshots so existing bookings can store individual or company billing details, including VAT/tax ID, and the billing dialog can prefill from CRM people or organizations.
 - Updated dependencies [9eadf50]
-  - @voyantjs/bookings@0.84.3
-  - @voyantjs/react@0.84.3
+  - @voyant-travel/bookings@0.84.3
+  - @voyant-travel/react@0.84.3
 
 ## 0.84.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.84.2
-- @voyantjs/react@0.84.2
+- @voyant-travel/bookings@0.84.2
+- @voyant-travel/react@0.84.2
 
 ## 0.84.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.84.1
-- @voyantjs/react@0.84.1
+- @voyant-travel/bookings@0.84.1
+- @voyant-travel/react@0.84.1
 
 ## 0.84.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.84.0
-- @voyantjs/react@0.84.0
+- @voyant-travel/bookings@0.84.0
+- @voyant-travel/react@0.84.0
 
 ## 0.83.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.83.1
-- @voyantjs/react@0.83.1
+- @voyant-travel/bookings@0.83.1
+- @voyant-travel/react@0.83.1
 
 ## 0.83.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.83.0
-- @voyantjs/react@0.83.0
+- @voyant-travel/bookings@0.83.0
+- @voyant-travel/react@0.83.0
 
 ## 0.82.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.82.1
-- @voyantjs/react@0.82.1
+- @voyant-travel/bookings@0.82.1
+- @voyant-travel/react@0.82.1
 
 ## 0.82.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.82.0
-- @voyantjs/react@0.82.0
+- @voyant-travel/bookings@0.82.0
+- @voyant-travel/react@0.82.0
 
 ## 0.81.21
 
 ### Patch Changes
 
 - Updated dependencies [b9fb5b0]
-  - @voyantjs/bookings@0.81.21
-  - @voyantjs/react@0.81.21
+  - @voyant-travel/bookings@0.81.21
+  - @voyant-travel/react@0.81.21
 
 ## 0.81.20
 
 ### Patch Changes
 
 - Updated dependencies [e60a50d]
-  - @voyantjs/bookings@0.81.20
-  - @voyantjs/react@0.81.20
+  - @voyant-travel/bookings@0.81.20
+  - @voyant-travel/react@0.81.20
 
 ## 0.81.19
 
@@ -776,27 +776,27 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - Primary item label includes a muted `({count} days)` tag computed from `startsAt` / `endsAt` (added to `bookingRecordItemSummarySchema` + server projection).
   - Hand-rolled prev/next pagination replaced with the design-system `Pagination` primitives (`BookingListPagination`), with ellipsis-windowed page numbers via `computePageWindow`.
 
-  **Admin sidebar (`@voyantjs/admin`)**
+  **Admin sidebar (`@voyant-travel/admin`)**
 
   - `DefaultOperatorAdminBrand` adds `group-data-[collapsible=icon]:justify-center` so the brand mark centres correctly when the sidebar is collapsed to icon-only.
 
 - Updated dependencies [62e4be5]
-  - @voyantjs/bookings@0.81.19
-  - @voyantjs/react@0.81.19
+  - @voyant-travel/bookings@0.81.19
+  - @voyant-travel/react@0.81.19
 
 ## 0.81.18
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.18
-- @voyantjs/react@0.81.18
+- @voyant-travel/bookings@0.81.18
+- @voyant-travel/react@0.81.18
 
 ## 0.81.17
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.17
-- @voyantjs/react@0.81.17
+- @voyant-travel/bookings@0.81.17
+- @voyant-travel/react@0.81.17
 
 ## 0.81.16
 
@@ -857,54 +857,54 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - Bookings list excludeStatuses filter (string-or-array) parsed by `bookingListQuerySchema`.
   - `BookingPaymentsSummary` adds an FX equivalent column with `baseCurrency` + `baseAmountCents` plumbed through `publicFinanceBookingPaymentSchema` and the operator `useAdminBookingPayments` projection.
   - Currency combobox now correctly disables (forwards `disabled` to the inner input and hides the clear button when disabled).
-  - New shared primitives in `@voyantjs/bookings-ui`: `IconActionButton` (icon button with built-in tooltip) and `StatusBadge` (semantic tone mapping for status strings) — exported from the package root.
+  - New shared primitives in `@voyant-travel/bookings-ui`: `IconActionButton` (icon button with built-in tooltip) and `StatusBadge` (semantic tone mapping for status strings) — exported from the package root.
 
 - Updated dependencies [0a617cc]
-  - @voyantjs/bookings@0.81.16
-  - @voyantjs/react@0.81.16
+  - @voyant-travel/bookings@0.81.16
+  - @voyant-travel/react@0.81.16
 
 ## 0.81.15
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.15
-- @voyantjs/react@0.81.15
+- @voyant-travel/bookings@0.81.15
+- @voyant-travel/react@0.81.15
 
 ## 0.81.14
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.14
-- @voyantjs/react@0.81.14
+- @voyant-travel/bookings@0.81.14
+- @voyant-travel/react@0.81.14
 
 ## 0.81.13
 
 ### Patch Changes
 
 - Updated dependencies [28dca55]
-  - @voyantjs/bookings@0.81.13
-  - @voyantjs/react@0.81.13
+  - @voyant-travel/bookings@0.81.13
+  - @voyant-travel/react@0.81.13
 
 ## 0.81.12
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.12
-- @voyantjs/react@0.81.12
+- @voyant-travel/bookings@0.81.12
+- @voyant-travel/react@0.81.12
 
 ## 0.81.11
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.11
-- @voyantjs/react@0.81.11
+- @voyant-travel/bookings@0.81.11
+- @voyant-travel/react@0.81.11
 
 ## 0.81.10
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.10
-- @voyantjs/react@0.81.10
+- @voyant-travel/bookings@0.81.10
+- @voyant-travel/react@0.81.10
 
 ## 0.81.9
 
@@ -912,8 +912,8 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 1a58939: Preserve billing contact address line 2 on booking snapshots and downstream documents.
 - Updated dependencies [1a58939]
-  - @voyantjs/bookings@0.81.9
-  - @voyantjs/react@0.81.9
+  - @voyant-travel/bookings@0.81.9
+  - @voyant-travel/react@0.81.9
 
 ## 0.81.8
 
@@ -921,30 +921,30 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 688ac4f: Generalize booking traveler identity snapshots from passport-only fields to typed identity documents.
 - Updated dependencies [688ac4f]
-  - @voyantjs/bookings@0.81.8
-  - @voyantjs/react@0.81.8
+  - @voyant-travel/bookings@0.81.8
+  - @voyant-travel/react@0.81.8
 
 ## 0.81.7
 
 ### Patch Changes
 
 - Updated dependencies [410cd17]
-  - @voyantjs/bookings@0.81.7
-  - @voyantjs/react@0.81.7
+  - @voyant-travel/bookings@0.81.7
+  - @voyant-travel/react@0.81.7
 
 ## 0.81.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.6
-- @voyantjs/react@0.81.6
+- @voyant-travel/bookings@0.81.6
+- @voyant-travel/react@0.81.6
 
 ## 0.81.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.5
-- @voyantjs/react@0.81.5
+- @voyant-travel/bookings@0.81.5
+- @voyant-travel/react@0.81.5
 
 ## 0.81.4
 
@@ -952,40 +952,40 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 6daefc4: Add stable booking-create traveler keys for item and extra line traveler linkage, while keeping deprecated position-based traveler indexes as a transition fallback.
 - Updated dependencies [6daefc4]
-  - @voyantjs/bookings@0.81.4
-  - @voyantjs/react@0.81.4
+  - @voyant-travel/bookings@0.81.4
+  - @voyant-travel/react@0.81.4
 
 ## 0.81.3
 
 ### Patch Changes
 
 - Updated dependencies [f157bcd]
-  - @voyantjs/bookings@0.81.3
-  - @voyantjs/react@0.81.3
+  - @voyant-travel/bookings@0.81.3
+  - @voyant-travel/react@0.81.3
 
 ## 0.81.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.2
-- @voyantjs/react@0.81.2
+- @voyant-travel/bookings@0.81.2
+- @voyant-travel/react@0.81.2
 
 ## 0.81.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.81.1
-- @voyantjs/react@0.81.1
+- @voyant-travel/bookings@0.81.1
+- @voyant-travel/react@0.81.1
 
 ## 0.81.0
 
 ### Minor Changes
 
-- f35e63c: Separate inventory units (rooms, vehicles) from pricing tiers (Adult / Child / Infant) in the booking-create flow. RFC voyantjs/voyant#1267.
+- f35e63c: Separate inventory units (rooms, vehicles) from pricing tiers (Adult / Child / Infant) in the booking-create flow. RFC voyant-travel/voyant#1267.
 
   ## What changed
 
-  ### `@voyantjs/bookings` — new `./pricing-assignment` sub-path
+  ### `@voyant-travel/bookings` — new `./pricing-assignment` sub-path
 
   Single source of truth for traveler→option-unit mapping, transport-agnostic. The booking-create dialog (preview + submit) is the only call site today; the server-side submit validation pathway is a follow-up — but the module is now placed where that wiring is straightforward:
 
@@ -993,7 +993,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
   import {
     resolveBookingDraft,
     resolveBookingExtraLines,
-  } from "@voyantjs/bookings/pricing-assignment";
+  } from "@voyant-travel/bookings/pricing-assignment";
   ```
 
   `resolveBookingDraft` distinguishes **person-priced options** (excursions — line quantities derive from travelers) from **accommodation options** (rooms — quantities stay as the operator picked them). Returns `{ quantities, travelers, travelerIndexesByUnitId }` so submit can write `booking_item_travelers` linkage.
@@ -1009,11 +1009,11 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
   `roomUnitId` on each traveler is unchanged on the wire — current dialogs keep working without modification.
 
-  ### `@voyantjs/finance` — orchestrator links items to travelers
+  ### `@voyant-travel/finance` — orchestrator links items to travelers
 
   `POST /v1/bookings/create`: after travelers + items are inserted, the orchestrator looks up each item by its stamped `metadata.bookingCreateLineKey` and writes one `booking_item_travelers` row per requested traveler. Idempotent (dedupes by `(item_id, traveler_id)`), skips silently when the converter didn't produce an item for that key.
 
-  ### `@voyantjs/bookings-ui` — resolver-driven dialog
+  ### `@voyant-travel/bookings-ui` — resolver-driven dialog
 
   - Dropped the locally-defined `pickUnitForAge` / `redistributeByAge` (moved to the assignment module in Phase 2).
   - `displayQuantities` + submit both go through `resolveBookingDraft`. `displayExtraLines` (preview) + submit extras both go through `resolveBookingExtraLines`. No more drift.
@@ -1038,122 +1038,122 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [f35e63c]
-  - @voyantjs/bookings@0.81.0
-  - @voyantjs/react@0.81.0
+  - @voyant-travel/bookings@0.81.0
+  - @voyant-travel/react@0.81.0
 
 ## 0.80.18
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.18
-- @voyantjs/react@0.80.18
+- @voyant-travel/bookings@0.80.18
+- @voyant-travel/react@0.80.18
 
 ## 0.80.17
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.17
-- @voyantjs/react@0.80.17
+- @voyant-travel/bookings@0.80.17
+- @voyant-travel/react@0.80.17
 
 ## 0.80.16
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.16
-- @voyantjs/react@0.80.16
+- @voyant-travel/bookings@0.80.16
+- @voyant-travel/react@0.80.16
 
 ## 0.80.15
 
 ### Patch Changes
 
 - Updated dependencies [0d8d14e]
-  - @voyantjs/bookings@0.80.15
-  - @voyantjs/react@0.80.15
+  - @voyant-travel/bookings@0.80.15
+  - @voyant-travel/react@0.80.15
 
 ## 0.80.14
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.14
-- @voyantjs/react@0.80.14
+- @voyant-travel/bookings@0.80.14
+- @voyant-travel/react@0.80.14
 
 ## 0.80.13
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.13
-- @voyantjs/react@0.80.13
+- @voyant-travel/bookings@0.80.13
+- @voyant-travel/react@0.80.13
 
 ## 0.80.12
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.12
-- @voyantjs/react@0.80.12
+- @voyant-travel/bookings@0.80.12
+- @voyant-travel/react@0.80.12
 
 ## 0.80.11
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.11
-- @voyantjs/react@0.80.11
+- @voyant-travel/bookings@0.80.11
+- @voyant-travel/react@0.80.11
 
 ## 0.80.10
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.10
-- @voyantjs/react@0.80.10
+- @voyant-travel/bookings@0.80.10
+- @voyant-travel/react@0.80.10
 
 ## 0.80.9
 
 ### Patch Changes
 
 - Updated dependencies [37aa8b6]
-  - @voyantjs/bookings@0.80.9
-  - @voyantjs/react@0.80.9
+  - @voyant-travel/bookings@0.80.9
+  - @voyant-travel/react@0.80.9
 
 ## 0.80.8
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.8
-- @voyantjs/react@0.80.8
+- @voyant-travel/bookings@0.80.8
+- @voyant-travel/react@0.80.8
 
 ## 0.80.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.7
-- @voyantjs/react@0.80.7
+- @voyant-travel/bookings@0.80.7
+- @voyant-travel/react@0.80.7
 
 ## 0.80.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.6
-- @voyantjs/react@0.80.6
+- @voyant-travel/bookings@0.80.6
+- @voyant-travel/react@0.80.6
 
 ## 0.80.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.5
-- @voyantjs/react@0.80.5
+- @voyant-travel/bookings@0.80.5
+- @voyant-travel/react@0.80.5
 
 ## 0.80.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.4
-- @voyantjs/react@0.80.4
+- @voyant-travel/bookings@0.80.4
+- @voyant-travel/react@0.80.4
 
 ## 0.80.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.3
-- @voyantjs/react@0.80.3
+- @voyant-travel/bookings@0.80.3
+- @voyant-travel/react@0.80.3
 
 ## 0.80.2
 
@@ -1162,363 +1162,363 @@ routeId, runtime)` returns router-facing route options (lazy component,
 - 9d6be13: Allow booking status overrides to suppress confirmed lifecycle events while preserving audit events.
 - Updated dependencies [7a94871]
 - Updated dependencies [9d6be13]
-  - @voyantjs/bookings@0.80.2
-  - @voyantjs/react@0.80.2
+  - @voyant-travel/bookings@0.80.2
+  - @voyant-travel/react@0.80.2
 
 ## 0.80.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.1
-- @voyantjs/react@0.80.1
+- @voyant-travel/bookings@0.80.1
+- @voyant-travel/react@0.80.1
 
 ## 0.80.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.80.0
-- @voyantjs/react@0.80.0
+- @voyant-travel/bookings@0.80.0
+- @voyant-travel/react@0.80.0
 
 ## 0.79.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.79.0
-- @voyantjs/react@0.79.0
+- @voyant-travel/bookings@0.79.0
+- @voyant-travel/react@0.79.0
 
 ## 0.78.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.78.0
-- @voyantjs/react@0.78.0
+- @voyant-travel/bookings@0.78.0
+- @voyant-travel/react@0.78.0
 
 ## 0.77.13
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.13
-- @voyantjs/react@0.77.13
+- @voyant-travel/bookings@0.77.13
+- @voyant-travel/react@0.77.13
 
 ## 0.77.12
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.12
-- @voyantjs/react@0.77.12
+- @voyant-travel/bookings@0.77.12
+- @voyant-travel/react@0.77.12
 
 ## 0.77.11
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.11
-- @voyantjs/react@0.77.11
+- @voyant-travel/bookings@0.77.11
+- @voyant-travel/react@0.77.11
 
 ## 0.77.10
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.10
-- @voyantjs/react@0.77.10
+- @voyant-travel/bookings@0.77.10
+- @voyant-travel/react@0.77.10
 
 ## 0.77.9
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.9
-- @voyantjs/react@0.77.9
+- @voyant-travel/bookings@0.77.9
+- @voyant-travel/react@0.77.9
 
 ## 0.77.8
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.8
-- @voyantjs/react@0.77.8
+- @voyant-travel/bookings@0.77.8
+- @voyant-travel/react@0.77.8
 
 ## 0.77.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.7
-- @voyantjs/react@0.77.7
+- @voyant-travel/bookings@0.77.7
+- @voyant-travel/react@0.77.7
 
 ## 0.77.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.6
-- @voyantjs/react@0.77.6
+- @voyant-travel/bookings@0.77.6
+- @voyant-travel/react@0.77.6
 
 ## 0.77.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.5
-- @voyantjs/react@0.77.5
+- @voyant-travel/bookings@0.77.5
+- @voyant-travel/react@0.77.5
 
 ## 0.77.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.4
-- @voyantjs/react@0.77.4
+- @voyant-travel/bookings@0.77.4
+- @voyant-travel/react@0.77.4
 
 ## 0.77.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.3
-- @voyantjs/react@0.77.3
+- @voyant-travel/bookings@0.77.3
+- @voyant-travel/react@0.77.3
 
 ## 0.77.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.2
-- @voyantjs/react@0.77.2
+- @voyant-travel/bookings@0.77.2
+- @voyant-travel/react@0.77.2
 
 ## 0.77.1
 
 ### Patch Changes
 
 - Updated dependencies [574684d]
-  - @voyantjs/bookings@0.77.1
-  - @voyantjs/react@0.77.1
+  - @voyant-travel/bookings@0.77.1
+  - @voyant-travel/react@0.77.1
 
 ## 0.77.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.77.0
-- @voyantjs/react@0.77.0
+- @voyant-travel/bookings@0.77.0
+- @voyant-travel/react@0.77.0
 
 ## 0.76.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.76.0
-- @voyantjs/react@0.76.0
+- @voyant-travel/bookings@0.76.0
+- @voyant-travel/react@0.76.0
 
 ## 0.75.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.7
-- @voyantjs/react@0.75.7
+- @voyant-travel/bookings@0.75.7
+- @voyant-travel/react@0.75.7
 
 ## 0.75.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.6
-- @voyantjs/react@0.75.6
+- @voyant-travel/bookings@0.75.6
+- @voyant-travel/react@0.75.6
 
 ## 0.75.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.5
-- @voyantjs/react@0.75.5
+- @voyant-travel/bookings@0.75.5
+- @voyant-travel/react@0.75.5
 
 ## 0.75.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.4
-- @voyantjs/react@0.75.4
+- @voyant-travel/bookings@0.75.4
+- @voyant-travel/react@0.75.4
 
 ## 0.75.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.3
-- @voyantjs/react@0.75.3
+- @voyant-travel/bookings@0.75.3
+- @voyant-travel/react@0.75.3
 
 ## 0.75.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.2
-- @voyantjs/react@0.75.2
+- @voyant-travel/bookings@0.75.2
+- @voyant-travel/react@0.75.2
 
 ## 0.75.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.75.1
-- @voyantjs/react@0.75.1
+- @voyant-travel/bookings@0.75.1
+- @voyant-travel/react@0.75.1
 
 ## 0.75.0
 
 ### Patch Changes
 
 - Updated dependencies [1eab599]
-  - @voyantjs/bookings@0.75.0
-  - @voyantjs/react@0.75.0
+  - @voyant-travel/bookings@0.75.0
+  - @voyant-travel/react@0.75.0
 
 ## 0.74.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.74.2
-- @voyantjs/react@0.74.2
+- @voyant-travel/bookings@0.74.2
+- @voyant-travel/react@0.74.2
 
 ## 0.74.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.74.1
-- @voyantjs/react@0.74.1
+- @voyant-travel/bookings@0.74.1
+- @voyant-travel/react@0.74.1
 
 ## 0.74.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.74.0
-- @voyantjs/react@0.74.0
+- @voyant-travel/bookings@0.74.0
+- @voyant-travel/react@0.74.0
 
 ## 0.73.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.73.1
-- @voyantjs/react@0.73.1
+- @voyant-travel/bookings@0.73.1
+- @voyant-travel/react@0.73.1
 
 ## 0.73.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.73.0
-- @voyantjs/react@0.73.0
+- @voyant-travel/bookings@0.73.0
+- @voyant-travel/react@0.73.0
 
 ## 0.72.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.72.0
-- @voyantjs/react@0.72.0
+- @voyant-travel/bookings@0.72.0
+- @voyant-travel/react@0.72.0
 
 ## 0.71.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.71.0
-- @voyantjs/react@0.71.0
+- @voyant-travel/bookings@0.71.0
+- @voyant-travel/react@0.71.0
 
 ## 0.70.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.70.0
-- @voyantjs/react@0.70.0
+- @voyant-travel/bookings@0.70.0
+- @voyant-travel/react@0.70.0
 
 ## 0.69.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.69.1
-- @voyantjs/react@0.69.1
+- @voyant-travel/bookings@0.69.1
+- @voyant-travel/react@0.69.1
 
 ## 0.69.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.69.0
-- @voyantjs/react@0.69.0
+- @voyant-travel/bookings@0.69.0
+- @voyant-travel/react@0.69.0
 
 ## 0.68.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.68.0
-- @voyantjs/react@0.68.0
+- @voyant-travel/bookings@0.68.0
+- @voyant-travel/react@0.68.0
 
 ## 0.67.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.67.0
-- @voyantjs/react@0.67.0
+- @voyant-travel/bookings@0.67.0
+- @voyant-travel/react@0.67.0
 
 ## 0.66.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.66.6
-- @voyantjs/react@0.66.6
+- @voyant-travel/bookings@0.66.6
+- @voyant-travel/react@0.66.6
 
 ## 0.66.5
 
 ### Patch Changes
 
 - Updated dependencies [ee36ef5]
-  - @voyantjs/bookings@0.66.5
-  - @voyantjs/react@0.66.5
+  - @voyant-travel/bookings@0.66.5
+  - @voyant-travel/react@0.66.5
 
 ## 0.66.4
 
 ### Patch Changes
 
 - Updated dependencies [83ff2de]
-  - @voyantjs/bookings@0.66.4
-  - @voyantjs/react@0.66.4
+  - @voyant-travel/bookings@0.66.4
+  - @voyant-travel/react@0.66.4
 
 ## 0.66.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.66.3
-- @voyantjs/react@0.66.3
+- @voyant-travel/bookings@0.66.3
+- @voyant-travel/react@0.66.3
 
 ## 0.66.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.66.2
-- @voyantjs/react@0.66.2
+- @voyant-travel/bookings@0.66.2
+- @voyant-travel/react@0.66.2
 
 ## 0.66.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.66.1
-- @voyantjs/react@0.66.1
+- @voyant-travel/bookings@0.66.1
+- @voyant-travel/react@0.66.1
 
 ## 0.66.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.66.0
-- @voyantjs/react@0.66.0
+- @voyant-travel/bookings@0.66.0
+- @voyant-travel/react@0.66.0
 
 ## 0.65.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.65.0
-- @voyantjs/react@0.65.0
+- @voyant-travel/bookings@0.65.0
+- @voyant-travel/react@0.65.0
 
 ## 0.64.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.64.1
-- @voyantjs/react@0.64.1
+- @voyant-travel/bookings@0.64.1
+- @voyant-travel/react@0.64.1
 
 ## 0.64.0
 
 ### Patch Changes
 
 - Updated dependencies [6d0c8f3]
-  - @voyantjs/bookings@0.64.0
-  - @voyantjs/react@0.64.0
+  - @voyant-travel/bookings@0.64.0
+  - @voyant-travel/react@0.64.0
 
 ## 0.63.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.63.1
-- @voyantjs/react@0.63.1
+- @voyant-travel/bookings@0.63.1
+- @voyant-travel/react@0.63.1
 
 ## 0.63.0
 
@@ -1526,7 +1526,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 5bff9c3: Booking detail page becomes the canonical layout; booking items keep a catalog snapshot.
 
-  `@voyantjs/bookings-ui`
+  `@voyant-travel/bookings-ui`
 
   - `BookingDetailPage` now hosts the full operator-grade layout: action menu (edit / change status / cancel / delete), summary card (sell / cost+margin / dates / travelers / person / organization / created / updated), tabs (Overview, Travelers, Payments, optional Invoices, Suppliers, Documents, Activity, optional Ledger). New slot props `header`, `afterSummary`, `overviewStart`, `overviewEnd`, `travelersStart`, `financeStart`, `financeEnd`, `documents`, `activityEnd`, plus `invoicesTab` / `ledgerTab` (`{ label?, content }`) — templates compose template-owned cards via these slots. New callbacks `onPersonOpen`, `onOrganizationOpen`, `onRecordPayment` and a `hideBreadcrumb` flag for hosts that own their own breadcrumb chrome.
   - `BookingBillingContextCard` now hydrates from CRM (`usePerson` / `useOrganization`) when the booking's contact snapshot is empty, and renders its own `Edit` button wired to `BookingBillingDialog`.
@@ -1536,7 +1536,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - `BookingWorkspacePage` removed (no consumers; the canonical detail page now covers the same surface).
   - New: `BookingDetailTabSlot` type export.
 
-  `@voyantjs/bookings`
+  `@voyant-travel/bookings`
 
   - `booking_items` gains catalog snapshot columns (all `text`, nullable, FK-less): `product_name_snapshot`, `option_name_snapshot`, `unit_name_snapshot`, `departure_label_snapshot`, and a decoupled `availability_slot_id` reference. Snapshots are written at create time so operators can always see "what the customer bought" — even on catalog-less deployments (OTA), and even if the catalog row is later deleted or renamed.
   - `convertProductToBooking` populates the snapshot columns and slot-id from `productsRef` / `productOptionsRef` / `optionUnitsRef` / `availabilitySlotsRef`. Caller-supplied `*Snapshot` / timing values win for OTA flows that bring their own data.
@@ -1544,7 +1544,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - `listItems` returns the snapshot fields with a plain select (no JOIN). `listBookingItemsForSummaries` (powers the bookings list) now COALESCEs the snapshot over the current catalog name.
   - `BOOKING_ITEM_MUTATION_FIELDS` allowlist extended for the new columns.
 
-  `@voyantjs/bookings-react`
+  `@voyant-travel/bookings-react`
 
   - `BookingItemRecord` exposes `availabilitySlotId`, `productNameSnapshot`, `optionNameSnapshot`, `unitNameSnapshot`, `departureLabelSnapshot`.
   - `BookingsListFilters` adds `availabilitySlotId` so the list page can filter to a specific departure.
@@ -1560,78 +1560,78 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [5bff9c3]
-  - @voyantjs/bookings@0.63.0
-  - @voyantjs/react@0.63.0
+  - @voyant-travel/bookings@0.63.0
+  - @voyant-travel/react@0.63.0
 
 ## 0.62.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.62.3
-- @voyantjs/react@0.62.3
+- @voyant-travel/bookings@0.62.3
+- @voyant-travel/react@0.62.3
 
 ## 0.62.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.62.2
-- @voyantjs/react@0.62.2
+- @voyant-travel/bookings@0.62.2
+- @voyant-travel/react@0.62.2
 
 ## 0.62.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.62.1
-- @voyantjs/react@0.62.1
+- @voyant-travel/bookings@0.62.1
+- @voyant-travel/react@0.62.1
 
 ## 0.62.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.62.0
-- @voyantjs/react@0.62.0
+- @voyant-travel/bookings@0.62.0
+- @voyant-travel/react@0.62.0
 
 ## 0.61.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.61.0
-- @voyantjs/react@0.61.0
+- @voyant-travel/bookings@0.61.0
+- @voyant-travel/react@0.61.0
 
 ## 0.60.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.60.0
-- @voyantjs/react@0.60.0
+- @voyant-travel/bookings@0.60.0
+- @voyant-travel/react@0.60.0
 
 ## 0.59.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.59.0
-- @voyantjs/react@0.59.0
+- @voyant-travel/bookings@0.59.0
+- @voyant-travel/react@0.59.0
 
 ## 0.58.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.58.0
-- @voyantjs/react@0.58.0
+- @voyant-travel/bookings@0.58.0
+- @voyant-travel/react@0.58.0
 
 ## 0.57.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.57.0
-- @voyantjs/react@0.57.0
+- @voyant-travel/bookings@0.57.0
+- @voyant-travel/react@0.57.0
 
 ## 0.56.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.56.0
-- @voyantjs/react@0.56.0
+- @voyant-travel/bookings@0.56.0
+- @voyant-travel/react@0.56.0
 
 ## 0.55.1
 
@@ -1656,61 +1656,61 @@ routeId, runtime)` returns router-facing route options (lazy component,
   exports the date-time field, and i18n includes the new trip admin copy.
 
 - Updated dependencies [819c847]
-  - @voyantjs/bookings@0.55.1
-  - @voyantjs/react@0.55.1
+  - @voyant-travel/bookings@0.55.1
+  - @voyant-travel/react@0.55.1
 
 ## 0.55.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.55.0
-- @voyantjs/react@0.55.0
+- @voyant-travel/bookings@0.55.0
+- @voyant-travel/react@0.55.0
 
 ## 0.54.0
 
 ### Patch Changes
 
-- 3117d27: Extract booking sell-side tax-preview helpers and route mounting into `@voyantjs/finance`.
-  - @voyantjs/bookings@0.54.0
-  - @voyantjs/react@0.54.0
+- 3117d27: Extract booking sell-side tax-preview helpers and route mounting into `@voyant-travel/finance`.
+  - @voyant-travel/bookings@0.54.0
+  - @voyant-travel/react@0.54.0
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.53.2
-- @voyantjs/react@0.53.2
+- @voyant-travel/bookings@0.53.2
+- @voyant-travel/react@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.53.1
-- @voyantjs/react@0.53.1
+- @voyant-travel/bookings@0.53.1
+- @voyant-travel/react@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
 - Updated dependencies [a315df6]
-  - @voyantjs/bookings@0.53.0
-  - @voyantjs/react@0.53.0
+  - @voyant-travel/bookings@0.53.0
+  - @voyant-travel/react@0.53.0
 
 ## 0.52.4
 
 ### Patch Changes
 
 - Updated dependencies [5d3c119]
-  - @voyantjs/bookings@0.52.4
-  - @voyantjs/react@0.52.4
+  - @voyant-travel/bookings@0.52.4
+  - @voyant-travel/react@0.52.4
 
 ## 0.52.3
 
 ### Patch Changes
 
 - Updated dependencies [9679a57]
-  - @voyantjs/bookings@0.52.3
-  - @voyantjs/react@0.52.3
+  - @voyant-travel/bookings@0.52.3
+  - @voyant-travel/react@0.52.3
 
 ## 0.52.2
 
@@ -1718,61 +1718,61 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 3e09123: Booking create + detail flow overhaul.
 
-  - Rename `RoomsStepperSection` → `OptionUnitsStepperSection` across `@voyantjs/bookings-ui` and the `@voyantjs/ui` registry. The old name implied hospitality-only usage; the same stepper now drives any product option (rooms, cabins, vehicles, seats). Re-export kept under the new name only — consumers must update imports.
+  - Rename `RoomsStepperSection` → `OptionUnitsStepperSection` across `@voyant-travel/bookings-ui` and the `@voyant-travel/ui` registry. The old name implied hospitality-only usage; the same stepper now drives any product option (rooms, cabins, vehicles, seats). Re-export kept under the new name only — consumers must update imports.
   - Rebuild `BookingCreateDialog` around the new option-units stepper, person picker, travelers section, and price-breakdown card so room/cabin/seat selection, traveler capture, and price preview share state correctly. Travelers section gains contact-points support and consistent validation messages.
   - New `BookingBillingDialog` for editing the billing person/organization + billing address on an existing booking.
-  - New `useBookingTaxPreview` hook + `booking.taxPreview` query option for previewing tax breakdowns on draft bookings before issuing an invoice. Exposes a new `bookingTaxPreviewSchema` from `@voyantjs/bookings-react/schemas`.
+  - New `useBookingTaxPreview` hook + `booking.taxPreview` query option for previewing tax breakdowns on draft bookings before issuing an invoice. Exposes a new `bookingTaxPreviewSchema` from `@voyant-travel/bookings-react/schemas`.
   - `useBookingCreateMutation`, `useBookingMutation`, and `useBookingStatusMutation` invalidate the new tax-preview and finance keys so price/invoice cards stay in sync after status transitions.
-  - `@voyantjs/bookings` service: extend `validation` with the billing-update schema, wire `status-dispatch` to the new finance.issue payload, and add a tax-preview entrypoint consumed by the operator template.
+  - `@voyant-travel/bookings` service: extend `validation` with the billing-update schema, wire `status-dispatch` to the new finance.issue payload, and add a tax-preview entrypoint consumed by the operator template.
   - i18n: new `bookings-ui` and `i18n/admin/bookings` strings for the billing dialog, tax preview, option-units copy, and status-change confirmations (EN + RO).
 
 - Updated dependencies [3e09123]
-  - @voyantjs/bookings@0.52.2
-  - @voyantjs/react@0.52.2
+  - @voyant-travel/bookings@0.52.2
+  - @voyant-travel/react@0.52.2
 
 ## 0.52.1
 
 ### Patch Changes
 
 - Updated dependencies [335d277]
-  - @voyantjs/bookings@0.52.1
-  - @voyantjs/react@0.52.1
+  - @voyant-travel/bookings@0.52.1
+  - @voyant-travel/react@0.52.1
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.52.0
-- @voyantjs/react@0.52.0
+- @voyant-travel/bookings@0.52.0
+- @voyant-travel/react@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.51.1
-- @voyantjs/react@0.51.1
+- @voyant-travel/bookings@0.51.1
+- @voyant-travel/react@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.51.0
-- @voyantjs/react@0.51.0
+- @voyant-travel/bookings@0.51.0
+- @voyant-travel/react@0.51.0
 
 ## 0.50.8
 
 ### Patch Changes
 
 - Updated dependencies [f35014f]
-  - @voyantjs/bookings@0.50.8
-  - @voyantjs/react@0.50.8
+  - @voyant-travel/bookings@0.50.8
+  - @voyant-travel/react@0.50.8
 
 ## 0.50.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.7
-- @voyantjs/react@0.50.7
+- @voyant-travel/bookings@0.50.7
+- @voyant-travel/react@0.50.7
 
 ## 0.50.6
 
@@ -1780,148 +1780,148 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
 - Updated dependencies [c14f0a8]
-  - @voyantjs/bookings@0.50.6
-  - @voyantjs/react@0.50.6
+  - @voyant-travel/bookings@0.50.6
+  - @voyant-travel/react@0.50.6
 
 ## 0.50.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.5
-- @voyantjs/react@0.50.5
+- @voyant-travel/bookings@0.50.5
+- @voyant-travel/react@0.50.5
 
 ## 0.50.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.4
-- @voyantjs/react@0.50.4
+- @voyant-travel/bookings@0.50.4
+- @voyant-travel/react@0.50.4
 
 ## 0.50.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.3
-- @voyantjs/react@0.50.3
+- @voyant-travel/bookings@0.50.3
+- @voyant-travel/react@0.50.3
 
 ## 0.50.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.2
-- @voyantjs/react@0.50.2
+- @voyant-travel/bookings@0.50.2
+- @voyant-travel/react@0.50.2
 
 ## 0.50.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.1
-- @voyantjs/react@0.50.1
+- @voyant-travel/bookings@0.50.1
+- @voyant-travel/react@0.50.1
 
 ## 0.50.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.50.0
-- @voyantjs/react@0.50.0
+- @voyant-travel/bookings@0.50.0
+- @voyant-travel/react@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.49.0
-- @voyantjs/react@0.49.0
+- @voyant-travel/bookings@0.49.0
+- @voyant-travel/react@0.49.0
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.48.0
-- @voyantjs/react@0.48.0
+- @voyant-travel/bookings@0.48.0
+- @voyant-travel/react@0.48.0
 
 ## 0.47.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.47.0
-- @voyantjs/react@0.47.0
+- @voyant-travel/bookings@0.47.0
+- @voyant-travel/react@0.47.0
 
 ## 0.46.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.46.0
-- @voyantjs/react@0.46.0
+- @voyant-travel/bookings@0.46.0
+- @voyant-travel/react@0.46.0
 
 ## 0.45.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.45.0
-- @voyantjs/react@0.45.0
+- @voyant-travel/bookings@0.45.0
+- @voyant-travel/react@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.44.0
-- @voyantjs/react@0.44.0
+- @voyant-travel/bookings@0.44.0
+- @voyant-travel/react@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.43.0
-- @voyantjs/react@0.43.0
+- @voyant-travel/bookings@0.43.0
+- @voyant-travel/react@0.43.0
 
 ## 0.42.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.42.0
-- @voyantjs/react@0.42.0
+- @voyant-travel/bookings@0.42.0
+- @voyant-travel/react@0.42.0
 
 ## 0.41.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.41.3
-- @voyantjs/react@0.41.3
+- @voyant-travel/bookings@0.41.3
+- @voyant-travel/react@0.41.3
 
 ## 0.41.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.41.2
-- @voyantjs/react@0.41.2
+- @voyant-travel/bookings@0.41.2
+- @voyant-travel/react@0.41.2
 
 ## 0.41.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.41.1
-- @voyantjs/react@0.41.1
+- @voyant-travel/bookings@0.41.1
+- @voyant-travel/react@0.41.1
 
 ## 0.41.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.41.0
-- @voyantjs/react@0.41.0
+- @voyant-travel/bookings@0.41.0
+- @voyant-travel/react@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.40.1
-- @voyantjs/react@0.40.1
+- @voyant-travel/bookings@0.40.1
+- @voyant-travel/react@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.40.0
-- @voyantjs/react@0.40.0
+- @voyant-travel/bookings@0.40.0
+- @voyant-travel/react@0.40.0
 
 ## 0.39.0
 
@@ -1929,43 +1929,43 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - f4235ea: Finish the bookings passenger-to-traveler rename across the React/UI layer and shadcn registry.
 
-  `@voyantjs/bookings-ui` now exposes `TravelersSection` and traveler-first section value/types. `@voyantjs/bookings-react` uses traveler hooks/query helpers over the traveler endpoints. The bookings activity enum now emits `traveler_update`; dev/operator/DMC migrations rename existing `passenger_update` activity rows.
+  `@voyant-travel/bookings-ui` now exposes `TravelersSection` and traveler-first section value/types. `@voyant-travel/bookings-react` uses traveler hooks/query helpers over the traveler endpoints. The bookings activity enum now emits `traveler_update`; dev/operator/DMC migrations rename existing `passenger_update` activity rows.
 
   The shadcn registry now publishes `voyant-bookings-travelers-section` and removes the stale passenger dialog/list/section registry artifacts.
 
 ### Patch Changes
 
 - Updated dependencies [f4235ea]
-  - @voyantjs/bookings@0.39.0
-  - @voyantjs/react@0.39.0
+  - @voyant-travel/bookings@0.39.0
+  - @voyant-travel/react@0.39.0
 
 ## 0.38.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.38.2
-- @voyantjs/react@0.38.2
+- @voyant-travel/bookings@0.38.2
+- @voyant-travel/react@0.38.2
 
 ## 0.38.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.38.1
-- @voyantjs/react@0.38.1
+- @voyant-travel/bookings@0.38.1
+- @voyant-travel/react@0.38.1
 
 ## 0.38.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.38.0
-- @voyantjs/react@0.38.0
+- @voyant-travel/bookings@0.38.0
+- @voyant-travel/react@0.38.0
 
 ## 0.37.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.37.1
-- @voyantjs/react@0.37.1
+- @voyant-travel/bookings@0.37.1
+- @voyant-travel/react@0.37.1
 
 ## 0.37.0
 
@@ -1978,8 +1978,8 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - Updated dependencies [4c93561]
 - Updated dependencies [dc29b79]
-  - @voyantjs/bookings@0.37.0
-  - @voyantjs/react@0.37.0
+  - @voyant-travel/bookings@0.37.0
+  - @voyant-travel/react@0.37.0
 
 ## 0.36.0
 
@@ -1990,22 +1990,22 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [15e6953]
-  - @voyantjs/bookings@0.36.0
-  - @voyantjs/react@0.36.0
+  - @voyant-travel/bookings@0.36.0
+  - @voyant-travel/react@0.36.0
 
 ## 0.35.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.35.0
-- @voyantjs/react@0.35.0
+- @voyant-travel/bookings@0.35.0
+- @voyant-travel/react@0.35.0
 
 ## 0.34.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.34.0
-- @voyantjs/react@0.34.0
+- @voyant-travel/bookings@0.34.0
+- @voyant-travel/react@0.34.0
 
 ## 0.33.1
 
@@ -2013,235 +2013,235 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 9bee9aa: Hydrate booking list item summaries with product names and prefer those names in the Bookings list "What booked" column.
 - Updated dependencies [9bee9aa]
-  - @voyantjs/bookings@0.33.1
-  - @voyantjs/react@0.33.1
+  - @voyant-travel/bookings@0.33.1
+  - @voyant-travel/react@0.33.1
 
 ## 0.33.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.33.0
-- @voyantjs/react@0.33.0
+- @voyant-travel/bookings@0.33.0
+- @voyant-travel/react@0.33.0
 
 ## 0.32.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.32.3
-- @voyantjs/react@0.32.3
+- @voyant-travel/bookings@0.32.3
+- @voyant-travel/react@0.32.3
 
 ## 0.32.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.32.2
-- @voyantjs/react@0.32.2
+- @voyant-travel/bookings@0.32.2
+- @voyant-travel/react@0.32.2
 
 ## 0.32.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.32.1
-- @voyantjs/react@0.32.1
+- @voyant-travel/bookings@0.32.1
+- @voyant-travel/react@0.32.1
 
 ## 0.32.0
 
 ### Patch Changes
 
 - Updated dependencies [6ea6ded]
-  - @voyantjs/bookings@0.32.0
-  - @voyantjs/react@0.32.0
+  - @voyant-travel/bookings@0.32.0
+  - @voyant-travel/react@0.32.0
 
 ## 0.31.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.31.4
-- @voyantjs/react@0.31.4
+- @voyant-travel/bookings@0.31.4
+- @voyant-travel/react@0.31.4
 
 ## 0.31.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.31.3
-- @voyantjs/react@0.31.3
+- @voyant-travel/bookings@0.31.3
+- @voyant-travel/react@0.31.3
 
 ## 0.31.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.31.2
-- @voyantjs/react@0.31.2
+- @voyant-travel/bookings@0.31.2
+- @voyant-travel/react@0.31.2
 
 ## 0.31.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.31.1
-- @voyantjs/react@0.31.1
+- @voyant-travel/bookings@0.31.1
+- @voyant-travel/react@0.31.1
 
 ## 0.31.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.31.0
-- @voyantjs/react@0.31.0
+- @voyant-travel/bookings@0.31.0
+- @voyant-travel/react@0.31.0
 
 ## 0.30.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.7
-- @voyantjs/react@0.30.7
+- @voyant-travel/bookings@0.30.7
+- @voyant-travel/react@0.30.7
 
 ## 0.30.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.6
-- @voyantjs/react@0.30.6
+- @voyant-travel/bookings@0.30.6
+- @voyant-travel/react@0.30.6
 
 ## 0.30.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.5
-- @voyantjs/react@0.30.5
+- @voyant-travel/bookings@0.30.5
+- @voyant-travel/react@0.30.5
 
 ## 0.30.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.4
-- @voyantjs/react@0.30.4
+- @voyant-travel/bookings@0.30.4
+- @voyant-travel/react@0.30.4
 
 ## 0.30.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.3
-- @voyantjs/react@0.30.3
+- @voyant-travel/bookings@0.30.3
+- @voyant-travel/react@0.30.3
 
 ## 0.30.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.2
-- @voyantjs/react@0.30.2
+- @voyant-travel/bookings@0.30.2
+- @voyant-travel/react@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.1
-- @voyantjs/react@0.30.1
+- @voyant-travel/bookings@0.30.1
+- @voyant-travel/react@0.30.1
 
 ## 0.30.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.30.0
-- @voyantjs/react@0.30.0
+- @voyant-travel/bookings@0.30.0
+- @voyant-travel/react@0.30.0
 
 ## 0.29.0
 
 ### Patch Changes
 
 - Updated dependencies [3420711]
-  - @voyantjs/bookings@0.29.0
-  - @voyantjs/react@0.29.0
+  - @voyant-travel/bookings@0.29.0
+  - @voyant-travel/react@0.29.0
 
 ## 0.28.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.28.3
-- @voyantjs/react@0.28.3
+- @voyant-travel/bookings@0.28.3
+- @voyant-travel/react@0.28.3
 
 ## 0.28.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.28.2
-- @voyantjs/react@0.28.2
+- @voyant-travel/bookings@0.28.2
+- @voyant-travel/react@0.28.2
 
 ## 0.28.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.28.1
-- @voyantjs/react@0.28.1
+- @voyant-travel/bookings@0.28.1
+- @voyant-travel/react@0.28.1
 
 ## 0.28.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.28.0
-- @voyantjs/react@0.28.0
+- @voyant-travel/bookings@0.28.0
+- @voyant-travel/react@0.28.0
 
 ## 0.27.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.27.0
-- @voyantjs/react@0.27.0
+- @voyant-travel/bookings@0.27.0
+- @voyant-travel/react@0.27.0
 
 ## 0.26.9
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.9
-- @voyantjs/react@0.26.9
+- @voyant-travel/bookings@0.26.9
+- @voyant-travel/react@0.26.9
 
 ## 0.26.8
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.8
-- @voyantjs/react@0.26.8
+- @voyant-travel/bookings@0.26.8
+- @voyant-travel/react@0.26.8
 
 ## 0.26.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.7
-- @voyantjs/react@0.26.7
+- @voyant-travel/bookings@0.26.7
+- @voyant-travel/react@0.26.7
 
 ## 0.26.6
 
 ### Patch Changes
 
 - Updated dependencies [571e340]
-  - @voyantjs/bookings@0.26.6
-  - @voyantjs/react@0.26.6
+  - @voyant-travel/bookings@0.26.6
+  - @voyant-travel/react@0.26.6
 
 ## 0.26.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.5
-- @voyantjs/react@0.26.5
+- @voyant-travel/bookings@0.26.5
+- @voyant-travel/react@0.26.5
 
 ## 0.26.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.4
-- @voyantjs/react@0.26.4
+- @voyant-travel/bookings@0.26.4
+- @voyant-travel/react@0.26.4
 
 ## 0.26.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.3
-- @voyantjs/react@0.26.3
+- @voyant-travel/bookings@0.26.3
+- @voyant-travel/react@0.26.3
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.2
-- @voyantjs/react@0.26.2
+- @voyant-travel/bookings@0.26.2
+- @voyant-travel/react@0.26.2
 
 ## 0.26.1
 
@@ -2262,71 +2262,71 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - `bookingsHonoModule` and `crmHonoModule` are still exported but the env-driven default factory `createBookingsHonoModule()` / `createCrmHonoModule()` is the new recommended entry point.
 
 - Updated dependencies [c0507a6]
-  - @voyantjs/bookings@0.26.1
-  - @voyantjs/react@0.26.1
+  - @voyant-travel/bookings@0.26.1
+  - @voyant-travel/react@0.26.1
 
 ## 0.26.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.26.0
-- @voyantjs/react@0.26.0
+- @voyant-travel/bookings@0.26.0
+- @voyant-travel/react@0.26.0
 
 ## 0.25.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.25.0
-- @voyantjs/react@0.25.0
+- @voyant-travel/bookings@0.25.0
+- @voyant-travel/react@0.25.0
 
 ## 0.24.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.24.3
-- @voyantjs/react@0.24.3
+- @voyant-travel/bookings@0.24.3
+- @voyant-travel/react@0.24.3
 
 ## 0.24.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.24.2
-- @voyantjs/react@0.24.2
+- @voyant-travel/bookings@0.24.2
+- @voyant-travel/react@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.24.1
-- @voyantjs/react@0.24.1
+- @voyant-travel/bookings@0.24.1
+- @voyant-travel/react@0.24.1
 
 ## 0.24.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.24.0
-- @voyantjs/react@0.24.0
+- @voyant-travel/bookings@0.24.0
+- @voyant-travel/react@0.24.0
 
 ## 0.23.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.23.0
-- @voyantjs/react@0.23.0
+- @voyant-travel/bookings@0.23.0
+- @voyant-travel/react@0.23.0
 
 ## 0.22.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.22.0
-- @voyantjs/react@0.22.0
+- @voyant-travel/bookings@0.22.0
+- @voyant-travel/react@0.22.0
 
 ## 0.21.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.21.1
-- @voyantjs/react@0.21.1
+- @voyant-travel/bookings@0.21.1
+- @voyant-travel/react@0.21.1
 
 ## 0.21.0
 
@@ -2339,30 +2339,30 @@ routeId, runtime)` returns router-facing route options (lazy component,
 ### Patch Changes
 
 - Updated dependencies [6427bad]
-  - @voyantjs/bookings@0.21.0
-  - @voyantjs/react@0.21.0
+  - @voyant-travel/bookings@0.21.0
+  - @voyant-travel/react@0.21.0
 
 ## 0.20.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.20.0
-- @voyantjs/react@0.20.0
+- @voyant-travel/bookings@0.20.0
+- @voyant-travel/react@0.20.0
 
 ## 0.19.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.19.0
-- @voyantjs/react@0.19.0
+- @voyant-travel/bookings@0.19.0
+- @voyant-travel/react@0.19.0
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [8932f60]
-  - @voyantjs/bookings@0.18.0
-  - @voyantjs/react@0.18.0
+  - @voyant-travel/bookings@0.18.0
+  - @voyant-travel/react@0.18.0
 
 ## 0.17.0
 
@@ -2370,29 +2370,29 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 66d722d: `CreateBookingItemInput` and `UpdateBookingItemInput` are now derived from the server's `insertBookingItemSchema` / `updateBookingItemSchema` via `z.input<typeof …>` — eliminating drift between the client type and the server's accepted shape. Picks up 7 fields the hand-rolled interface had missed: `productId`, `optionId`, `optionUnitId`, `pricingCategoryId`, `sourceSnapshotId`, `sourceOfferId`, `metadata`. Consumers building "custom itinerary" admin UIs can now pass `productId` / `optionId` to `useBookingItemMutation().create.mutateAsync(...)` without a type assertion.
 - Updated dependencies [66d722d]
-  - @voyantjs/bookings@0.17.0
-  - @voyantjs/react@0.17.0
+  - @voyant-travel/bookings@0.17.0
+  - @voyant-travel/react@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.16.0
-- @voyantjs/react@0.16.0
+- @voyant-travel/bookings@0.16.0
+- @voyant-travel/react@0.16.0
 
 ## 0.15.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.15.0
-- @voyantjs/react@0.15.0
+- @voyant-travel/bookings@0.15.0
+- @voyant-travel/react@0.15.0
 
 ## 0.14.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.14.0
-- @voyantjs/react@0.14.0
+- @voyant-travel/bookings@0.14.0
+- @voyant-travel/react@0.14.0
 
 ## 0.13.0
 
@@ -2400,8 +2400,8 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - Updated dependencies [7dfbc05]
 - Updated dependencies [15dda79]
-  - @voyantjs/bookings@0.13.0
-  - @voyantjs/react@0.13.0
+  - @voyant-travel/bookings@0.13.0
+  - @voyant-travel/react@0.13.0
 
 ## 0.12.0
 
@@ -2409,8 +2409,8 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - Updated dependencies [944d244]
 - Updated dependencies [cc561ce]
-  - @voyantjs/bookings@0.12.0
-  - @voyantjs/react@0.12.0
+  - @voyant-travel/bookings@0.12.0
+  - @voyant-travel/react@0.12.0
 
 ## 0.11.0
 
@@ -2418,7 +2418,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - fe905b0: **BREAKING:** privatize the Booking state machine; add Start, Complete, and Override verbs.
 
-  The transition graph (`BOOKING_TRANSITIONS`, `canTransitionBooking`, `transitionBooking`, `BookingStatusPatch`, `BookingTransitionError`) is no longer part of the `@voyantjs/bookings` public surface. The lifecycle laws live behind the service-verb seam — callers cross it via named verbs in the ubiquitous language. `BookingStatus` stays exported (it's data).
+  The transition graph (`BOOKING_TRANSITIONS`, `canTransitionBooking`, `transitionBooking`, `BookingStatusPatch`, `BookingTransitionError`) is no longer part of the `@voyant-travel/bookings` public surface. The lifecycle laws live behind the service-verb seam — callers cross it via named verbs in the ubiquitous language. `BookingStatus` stays exported (it's data).
 
   **HTTP — verb routes replace the generic status PATCH:**
 
@@ -2436,7 +2436,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
   - `updateBookingStatusSchema` is removed; `startBookingSchema`, `completeBookingSchema`, `overrideBookingStatusSchema` are added.
   - Activity-type enum gains `booking_started`, `booking_completed`, `status_overridden`. Run `drizzle-kit push` to sync.
 
-  **React (`@voyantjs/bookings-react`):**
+  **React (`@voyant-travel/bookings-react`):**
 
   `useBookingStatusMutation` / `useBookingStatusByIdMutation` now require `currentStatus` in their input. The hook dispatches client-side to the right verb endpoint; non-adjacent jumps fall through to `/override-status`, using the operator's note as the reason. The `<StatusChangeDialog>` UX is unchanged — pass the booking's current status from props.
 
@@ -2444,15 +2444,15 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
   **Migration:**
 
-  - Remove imports of `BOOKING_TRANSITIONS` / `canTransitionBooking` / `transitionBooking` / `BookingTransitionError` / `BookingStatusPatch` from `@voyantjs/bookings` — call the service verbs instead. Internal callers (within this monorepo) had none.
+  - Remove imports of `BOOKING_TRANSITIONS` / `canTransitionBooking` / `transitionBooking` / `BookingTransitionError` / `BookingStatusPatch` from `@voyant-travel/bookings` — call the service verbs instead. Internal callers (within this monorepo) had none.
   - Replace `PATCH /v1/bookings/:id/status` calls with the matching verb endpoint, or `/override-status` with a `reason`.
   - Update calls to the React status hooks to pass `currentStatus`.
 
 ### Patch Changes
 
 - Updated dependencies [fe905b0]
-  - @voyantjs/bookings@0.11.0
-  - @voyantjs/react@0.11.0
+  - @voyant-travel/bookings@0.11.0
+  - @voyant-travel/react@0.11.0
 
 ## 0.10.0
 
@@ -2466,8 +2466,8 @@ routeId, runtime)` returns router-facing route options (lazy component,
 - Updated dependencies [29a581a]
 - Updated dependencies [29a581a]
 - Updated dependencies [29a581a]
-  - @voyantjs/bookings@0.10.0
-  - @voyantjs/react@0.10.0
+  - @voyant-travel/bookings@0.10.0
+  - @voyant-travel/react@0.10.0
 
 ## 0.9.0
 
@@ -2475,7 +2475,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 3a6a4db: **Rename**: `QuickBookDialog` → `BookingCreateDialog` across the registry, operator, and dmc templates. The dialog was originally a lightweight create alternative to a flat-form CTA, but since the composition slice landed (#264 — product / departure / rooms / person / shared-room / passengers / price breakdown / voucher / payment schedule all wired through the atomic `/quick-create` endpoint) it IS the booking-create workflow. Keeping "Quick Book" in the name actively misled operators.
 
-  **Bumped via this changeset but not code-changed on npm**: this package is on the fixed release train with everything else, so it ships the version bump alongside the others. The actual rename lives in `@voyantjs/ui` (registry, in the ignore list), `@voyantjs/i18n` (private), and the templates — consumers see the effect via fresh starter archives (`voyant new`) or the next `shadcn add`.
+  **Bumped via this changeset but not code-changed on npm**: this package is on the fixed release train with everything else, so it ships the version bump alongside the others. The actual rename lives in `@voyant-travel/ui` (registry, in the ignore list), `@voyant-travel/i18n` (private), and the templates — consumers see the effect via fresh starter archives (`voyant new`) or the next `shadcn add`.
 
   Breaking for consumers who copied the registry component earlier:
 
@@ -2489,15 +2489,15 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.9.0
-- @voyantjs/react@0.9.0
+- @voyant-travel/bookings@0.9.0
+- @voyant-travel/react@0.9.0
 
 ## 0.8.0
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.8.0
-- @voyantjs/react@0.8.0
+- @voyant-travel/bookings@0.8.0
+- @voyant-travel/react@0.8.0
 
 ## 0.7.0
 
@@ -2507,7 +2507,7 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
   **Atomic booking create (#263, #264, #265, #266)**
 
-  - `POST /v1/admin/bookings/quick-create` — one-shot endpoint that converts a product, inserts travelers + payment schedules, redeems a voucher, and creates/joins a `booking_group` inside a single DB transaction. `quickCreateBooking(db, input, { userId, runtime })` service in `@voyantjs/finance`; `useBookingQuickCreateMutation` in `@voyantjs/bookings-react`.
+  - `POST /v1/admin/bookings/quick-create` — one-shot endpoint that converts a product, inserts travelers + payment schedules, redeems a voucher, and creates/joins a `booking_group` inside a single DB transaction. `quickCreateBooking(db, input, { userId, runtime })` service in `@voyant-travel/finance`; `useBookingQuickCreateMutation` in `@voyant-travel/bookings-react`.
   - `POST /v1/admin/bookings/dual-create` — partaj flow: two bookings + one shared-room group, also atomic. `dualCreateBooking` service, `useBookingDualCreateMutation` hook.
   - `booking.quick-created` and `booking.dual-created` events emitted post-commit when a runtime eventBus is wired.
   - `QuickBookDialog` now mounts all nine picker sections (product, departure, rooms, person, shared-room, passengers, price breakdown, voucher, payment schedule) and submits via quick-create. Post-create "Confirm & notify traveler" toggle uses the new `useBookingStatusByIdMutation` to transition the fresh booking to `confirmed` — which (when `autoConfirmAndDispatch` is on) fires the doc bundle + traveler email through the existing `booking.confirmed` subscriber.
@@ -2515,14 +2515,14 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
   **Vouchers as first-class financial instruments (#262, #267)**
 
-  - One-shot data migration: `migrateVouchersFromPaymentInstruments(db, opts)` in `@voyantjs/finance` (CLI wrapper `pnpm -F @voyantjs/finance migrate:vouchers`, `--dry-run` supported). Idempotent; pulls code, currency, amount, expiry from legacy JSONB metadata into the new `vouchers` table.
+  - One-shot data migration: `migrateVouchersFromPaymentInstruments(db, opts)` in `@voyant-travel/finance` (CLI wrapper `pnpm -F @voyant-travel/finance migrate:vouchers`, `--dry-run` supported). Idempotent; pulls code, currency, amount, expiry from legacy JSONB metadata into the new `vouchers` table.
   - `vouchers.validFrom` (start-of-validity, maps to OpenTravel `Finance.Voucher.effectiveDate`) and `vouchers.seriesCode` (batch/campaign id, maps to `Finance.Voucher.seriesCode`) columns added. Redeem guard returns `voucher_not_started` when now < validFrom; the public `validateVoucher` `not_started` branch is now reachable. `seriesCode` exposed as a list filter. Migration pulls both from legacy metadata (honouring OpenTravel's `effectiveDate` alias).
 
 ### Patch Changes
 
 - Updated dependencies [96612b3]
-  - @voyantjs/bookings@0.7.0
-  - @voyantjs/react@0.7.0
+  - @voyant-travel/bookings@0.7.0
+  - @voyant-travel/react@0.7.0
 
 ## 0.6.9
 
@@ -2530,77 +2530,77 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 7619ef0: Continue the traveler-first booking contract cleanup across the published booking surfaces while preserving compatibility aliases.
 
-  - `@voyantjs/bookings`: add traveler-first public aliases for booking travel details, group traveler routes, public booking-session traveler input, and traveler-facing validation/error wording while keeping legacy participant/passenger compatibility routes and schemas.
-  - `@voyantjs/bookings-react`: make traveler hooks, query options, schemas, and exports the primary surface again; keep passenger/item-participant names as compatibility aliases instead of separate primaries.
-  - `@voyantjs/customer-portal` and `@voyantjs/customer-portal-react`: move booking import schemas, operations, and exports to traveler-first names while preserving legacy participant aliases and routes.
-  - `@voyantjs/transactions`: expose traveler-first request/response aliases and traveler route aliases for offer/order traveler and item-traveler flows while preserving legacy participant compatibility endpoints.
-  - `@voyantjs/auth-react`: add exported query keys, query options, and schemas for current workspace, organization members, and organization invitations so app surfaces can consume the auth workspace contract directly.
-  - `@voyantjs/products` and `@voyantjs/products-react`: tighten the itinerary-facing public surface and query/schema exports used by the shared product itinerary UI.
-  - `@voyantjs/legal` and `@voyantjs/notifications`: keep template authoring and Liquid exports available from the package roots while aligning the notification/template surface with the updated booking traveler contract.
+  - `@voyant-travel/bookings`: add traveler-first public aliases for booking travel details, group traveler routes, public booking-session traveler input, and traveler-facing validation/error wording while keeping legacy participant/passenger compatibility routes and schemas.
+  - `@voyant-travel/bookings-react`: make traveler hooks, query options, schemas, and exports the primary surface again; keep passenger/item-participant names as compatibility aliases instead of separate primaries.
+  - `@voyant-travel/customer-portal` and `@voyant-travel/customer-portal-react`: move booking import schemas, operations, and exports to traveler-first names while preserving legacy participant aliases and routes.
+  - `@voyant-travel/transactions`: expose traveler-first request/response aliases and traveler route aliases for offer/order traveler and item-traveler flows while preserving legacy participant compatibility endpoints.
+  - `@voyant-travel/auth-react`: add exported query keys, query options, and schemas for current workspace, organization members, and organization invitations so app surfaces can consume the auth workspace contract directly.
+  - `@voyant-travel/products` and `@voyant-travel/products-react`: tighten the itinerary-facing public surface and query/schema exports used by the shared product itinerary UI.
+  - `@voyant-travel/legal` and `@voyant-travel/notifications`: keep template authoring and Liquid exports available from the package roots while aligning the notification/template surface with the updated booking traveler contract.
   - Supporting packages and tests also picked up repo-wide import-order, lint, and small compatibility cleanups across auth, booking requirements, checkout, octo, pricing, sellability, storefront, and utilities as part of bringing the whole worktree back to a green release state.
   - Align the touched app/template compatibility wrappers with the new primary traveler and workspace surfaces, and keep repo `typecheck` / `lint` green after the broader cleanup.
 
 - Updated dependencies [7619ef0]
-  - @voyantjs/bookings@0.6.9
-  - @voyantjs/react@0.6.9
+  - @voyant-travel/bookings@0.6.9
+  - @voyant-travel/react@0.6.9
 
 ## 0.6.8
 
 ### Patch Changes
 
 - Updated dependencies [b218885]
-  - @voyantjs/bookings@0.6.8
-  - @voyantjs/react@0.6.8
+  - @voyant-travel/bookings@0.6.8
+  - @voyant-travel/react@0.6.8
 
 ## 0.6.7
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.7
-- @voyantjs/react@0.6.7
+- @voyant-travel/bookings@0.6.7
+- @voyant-travel/react@0.6.7
 
 ## 0.6.6
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.6
-- @voyantjs/react@0.6.6
+- @voyant-travel/bookings@0.6.6
+- @voyant-travel/react@0.6.6
 
 ## 0.6.5
 
 ### Patch Changes
 
 - Updated dependencies [ae9933b]
-  - @voyantjs/bookings@0.6.5
-  - @voyantjs/react@0.6.5
+  - @voyant-travel/bookings@0.6.5
+  - @voyant-travel/react@0.6.5
 
 ## 0.6.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.4
-- @voyantjs/react@0.6.4
+- @voyant-travel/bookings@0.6.4
+- @voyant-travel/react@0.6.4
 
 ## 0.6.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.3
-- @voyantjs/react@0.6.3
+- @voyant-travel/bookings@0.6.3
+- @voyant-travel/react@0.6.3
 
 ## 0.6.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.2
-- @voyantjs/react@0.6.2
+- @voyant-travel/bookings@0.6.2
+- @voyant-travel/react@0.6.2
 
 ## 0.6.1
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.1
-- @voyantjs/react@0.6.1
+- @voyant-travel/bookings@0.6.1
+- @voyant-travel/react@0.6.1
 
 ## 0.6.0
 
@@ -2612,19 +2612,19 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
   This fixes a quiet correctness regression where callers who forgot to wire `productId` silently fell back to the default cancellation policy instead of the product-scoped one.
 
-- 521147e: Add canonical booking status presentation helpers to `@voyantjs/bookings-react`:
+- 521147e: Add canonical booking status presentation helpers to `@voyant-travel/bookings-react`:
 
   - `bookingStatusBadgeVariant: Record<BookingStatus, 'default' | 'secondary' | 'outline' | 'destructive'>` — exhaustive (not `Record<string, …>`), so adding a new booking status becomes a compile error here instead of a silent UX miss in every app.
   - `formatBookingStatus(status)` — humanized label (`"in_progress"` → `"In Progress"`).
   - `bookingStatuses` / `bookingStatusOptions` — status list derived from the Zod schema, ready for Select pickers.
   - `BookingStatus` type (now exported from `./schemas`).
 
-  Registry components in `@voyantjs/ui` (`booking-list`, `booking-detail-page` copies, `status-change-dialog`) drop their duplicated local `statusVariant` / `formatStatus` / `BOOKING_STATUSES` constants and consume these instead — single source of truth.
+  Registry components in `@voyant-travel/ui` (`booking-list`, `booking-detail-page` copies, `status-change-dialog`) drop their duplicated local `statusVariant` / `formatStatus` / `BOOKING_STATUSES` constants and consume these instead — single source of truth.
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.6.0
-- @voyantjs/react@0.6.0
+- @voyant-travel/bookings@0.6.0
+- @voyant-travel/react@0.6.0
 
 ## 0.5.0
 
@@ -2632,69 +2632,69 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - ce72e29: Flesh out the operator booking workspace with React hooks for the sections that already existed on the backend.
 
-  - `@voyantjs/bookings-react`: add hooks for booking items (`useBookingItems`, `useBookingItemMutation`), item-traveler assignment (`useBookingItemTravelers` / `useBookingItemTravelerMutation`), documents (`useBookingDocuments`, `useBookingDocumentMutation`), cancellation (`useBookingCancelMutation`), and convert-from-product (`useBookingConvertMutation`).
-  - `@voyantjs/finance-react`: add hooks for booking payment schedules (`useBookingPaymentSchedules`, `useBookingPaymentScheduleMutation`) and booking guarantees (`useBookingGuarantees`, `useBookingGuaranteeMutation`).
-  - `@voyantjs/legal-react`: add policy resolution (`useResolvePolicy`) and cancellation evaluation (`useEvaluateCancellation`) hooks that power the structured booking cancellation workflow.
+  - `@voyant-travel/bookings-react`: add hooks for booking items (`useBookingItems`, `useBookingItemMutation`), item-traveler assignment (`useBookingItemTravelers` / `useBookingItemTravelerMutation`), documents (`useBookingDocuments`, `useBookingDocumentMutation`), cancellation (`useBookingCancelMutation`), and convert-from-product (`useBookingConvertMutation`).
+  - `@voyant-travel/finance-react`: add hooks for booking payment schedules (`useBookingPaymentSchedules`, `useBookingPaymentScheduleMutation`) and booking guarantees (`useBookingGuarantees`, `useBookingGuaranteeMutation`).
+  - `@voyant-travel/legal-react`: add policy resolution (`useResolvePolicy`) and cancellation evaluation (`useEvaluateCancellation`) hooks that power the structured booking cancellation workflow.
 
 - ce72e29: Add a shared-room / split-booking group model
 
   Multiple separate bookings can now intentionally share one room/accommodation while each booking keeps its own finance + traveler records. Inspired by the ProTravel v3 `sharing_groups` pattern: flat peer bookings, a lightweight `booking_groups` + `booking_group_members` schema, smart cleanup on cancellation.
 
-  `@voyantjs/bookings`: new `bookingGroups` and `bookingGroupMembers` tables (TypeID prefixes `bkgr` / `bkgm`), service functions for CRUD plus reverse lookup, unified traveler list across members, and automatic group dissolution when a cancellation leaves ≤1 active members. New routes under `/v1/bookings/groups` plus the REST-nested `GET /v1/bookings/:id/group`.
+  `@voyant-travel/bookings`: new `bookingGroups` and `bookingGroupMembers` tables (TypeID prefixes `bkgr` / `bkgm`), service functions for CRUD plus reverse lookup, unified traveler list across members, and automatic group dissolution when a cancellation leaves ≤1 active members. New routes under `/v1/bookings/groups` plus the REST-nested `GET /v1/bookings/:id/group`.
 
-  `@voyantjs/bookings-react`: hooks for `useBookingGroups`, `useBookingGroup`, `useBookingGroupForBooking`, `useBookingGroupMutation`, and `useBookingGroupMemberMutation` (stateless — accepts `groupId` per-call so create-then-add flows work with a single hook instance).
+  `@voyant-travel/bookings-react`: hooks for `useBookingGroups`, `useBookingGroup`, `useBookingGroupForBooking`, `useBookingGroupMutation`, and `useBookingGroupMemberMutation` (stateless — accepts `groupId` per-call so create-then-add flows work with a single hook instance).
 
-  `@voyantjs/db`: register TypeID prefixes `bkgr` (booking_groups) and `bkgm` (booking_group_members).
+  `@voyant-travel/db`: register TypeID prefixes `bkgr` (booking_groups) and `bkgm` (booking_group_members).
 
 ### Patch Changes
 
 - Updated dependencies [ce72e29]
-  - @voyantjs/bookings@0.5.0
-  - @voyantjs/react@0.5.0
+  - @voyant-travel/bookings@0.5.0
+  - @voyant-travel/react@0.5.0
 
 ## 0.4.5
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.4.5
-- @voyantjs/react@0.4.5
+- @voyant-travel/bookings@0.4.5
+- @voyant-travel/react@0.4.5
 
 ## 0.4.4
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.4.4
-- @voyantjs/react@0.4.4
+- @voyant-travel/bookings@0.4.4
+- @voyant-travel/react@0.4.4
 
 ## 0.4.3
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.4.3
-- @voyantjs/react@0.4.3
+- @voyant-travel/bookings@0.4.3
+- @voyant-travel/react@0.4.3
 
 ## 0.4.2
 
 ### Patch Changes
 
-- @voyantjs/bookings@0.4.2
-- @voyantjs/react@0.4.2
+- @voyant-travel/bookings@0.4.2
+- @voyant-travel/react@0.4.2
 
 ## 0.4.1
 
 ### Patch Changes
 
 - Updated dependencies [4c4ea3c]
-  - @voyantjs/bookings@0.4.1
-  - @voyantjs/react@0.4.1
+  - @voyant-travel/bookings@0.4.1
+  - @voyant-travel/react@0.4.1
 
 ## 0.4.0
 
 ### Patch Changes
 
 - Updated dependencies [e84fe0f]
-  - @voyantjs/bookings@0.4.0
-  - @voyantjs/react@0.4.0
+  - @voyant-travel/bookings@0.4.0
+  - @voyant-travel/react@0.4.0
 
 ## 0.3.1
 
@@ -2702,25 +2702,25 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 - 8566f2d: Add first-class public booking-session wizard state and storefront repricing.
 
-  `@voyantjs/bookings` now persists wizard session state in `booking_session_states`,
+  `@voyant-travel/bookings` now persists wizard session state in `booking_session_states`,
   includes that state in public session reads, exposes public state read/write
   routes, and adds `POST /v1/public/bookings/sessions/:sessionId/reprice` for
   previewing or applying room/unit repricing back onto the booking session.
 
-  `@voyantjs/bookings-react` now exports public session/state query helpers and a
+  `@voyant-travel/bookings-react` now exports public session/state query helpers and a
   mutation helper for session state updates and repricing.
 
 - Updated dependencies [8566f2d]
 - Updated dependencies [8566f2d]
-  - @voyantjs/bookings@0.3.1
-  - @voyantjs/react@0.3.1
+  - @voyant-travel/bookings@0.3.1
+  - @voyant-travel/react@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
 - 90bcdb1: Add reusable query-option builders for bookings data so TanStack route loaders can prefetch bookings pages against the shared React Query cache.
-- e57725d: Flatten frontend provider wiring around a shared `@voyantjs/react` config provider so module react packages can share one app-level Voyant context.
+- e57725d: Flatten frontend provider wiring around a shared `@voyant-travel/react` config provider so module react packages can share one app-level Voyant context.
 - Updated dependencies [e57725d]
-  - @voyantjs/bookings@0.3.0
-  - @voyantjs/react@0.3.0
+  - @voyant-travel/bookings@0.3.0
+  - @voyant-travel/react@0.3.0

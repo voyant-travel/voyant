@@ -50,7 +50,7 @@ export type UpdateTravelerWithTravelDetailsInput = Partial<CreateTravelerWithTra
 /**
  * Combined create/update for a booking traveler + their encrypted
  * travel-details snapshot. When `personId` is provided on create
- * AND the operator template has wired `resolveTravelSnapshot`, the
+ * AND the operator starter has wired `resolveTravelSnapshot`, the
  * route auto-snapshots dietary / accessibility / primary passport
  * from `crm.people`. Explicit input always wins.
  */

@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Button } from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ExternalLink, Loader2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useFinanceUiI18nOrDefault, useFinanceUiMessagesOrDefault } from "../../i18n/index.js"

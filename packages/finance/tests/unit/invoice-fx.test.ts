@@ -1,4 +1,4 @@
-import { createContainer } from "@voyantjs/core"
+import { createContainer } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {

@@ -1,6 +1,6 @@
 ---
-"@voyantjs/commerce-react": minor
-"@voyantjs/admin-app": patch
+"@voyant-travel/commerce-react": minor
+"@voyant-travel/admin-app": patch
 "operator": patch
 ---
 

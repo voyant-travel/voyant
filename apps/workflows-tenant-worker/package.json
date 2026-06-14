@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/workflows-tenant-worker",
+  "name": "@voyant-travel/workflows-tenant-worker",
   "version": "0.0.3",
   "private": true,
   "description": "Reference tenant Worker for Voyant Workflows. Wraps a user's workflow bundle with createStepHandler + nodeStepRunner + createCfContainerStepRunner so it runs behind the orchestrator's dispatch namespace.",
@@ -12,12 +12,12 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:^",
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "wrangler": "^4.86.0"
   }

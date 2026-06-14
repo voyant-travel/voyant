@@ -1,7 +1,7 @@
 # Trips Implementation Plan
 
 Status: execution plan
-Audience: engineers implementing `@voyantjs/trips` across an integration branch.
+Audience: engineers implementing `@voyant-travel/trips` across an integration branch.
 
 This plan turns [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md)
 into a PR sequence. The goal is to build the full composer on a long-lived
@@ -117,7 +117,7 @@ Scope:
   - `./testing` if test helpers are needed
 - Wire `package.json`, `tsconfig`, Vitest config, and package index exports
   using existing package patterns.
-- Do not add template wiring yet.
+- Do not add starter wiring yet.
 
 Acceptance:
 
@@ -191,7 +191,7 @@ Scope:
 
 - Add an internal adapter that maps a `trip_component` to a per-line
   `BookingDraftV1`.
-- Reuse `@voyantjs/catalog/booking-engine` services/contracts for:
+- Reuse `@voyant-travel/catalog/booking-engine` services/contracts for:
   - shape lookup
   - quote
   - per-line booking draft creation/update where needed
@@ -266,7 +266,7 @@ Branch: `tc/07-checkout-start-extraction`
 Scope:
 
 - Extract reusable logic from
-  `templates/operator/src/api/catalog-checkout.ts` into framework-owned
+  `starters/operator/src/api/catalog-checkout.ts` into framework-owned
   services.
 - Preserve template ownership of:
   - payment provider config
@@ -370,7 +370,7 @@ Branch: `tc/11-operator-runtime-adapters`
 
 Scope:
 
-- Mount `createTripsHonoModule(...)` in the operator template with
+- Mount `createTripsHonoModule(...)` in the operator starter with
   request-scoped runtime dependencies.
 - Quote composer components through `quoteEntity` with the same source
   registry, owned handler registry, promotion evaluator, and operator tax
@@ -406,17 +406,17 @@ Scope:
   - reserve/buy CTA
   - staff handoff state
 - Reuse existing UI packages and design conventions.
-- Keep it configurable enough for the operator template without making the
+- Keep it configurable enough for the operator starter without making the
   template own core behavior.
 - Add public-surface support to the composer React client and mount public
-  composer routes in the operator template for the storefront tracer.
+  composer routes in the operator starter for the storefront tracer.
 - Keep admin-only mutation/reference endpoints off the public composer route
   surface.
 
 Acceptance:
 
 - The reference block can compose product + stay and show an aggregate total.
-- Reserve/buy calls the composer services, not template-local orchestration.
+- Reserve/buy calls the composer services, not starter-local orchestration.
 - Browser verification covers desktop and mobile if the UI is mounted in a
   runnable app.
 
@@ -511,8 +511,8 @@ Acceptance:
 
 - `packages/trips/src/service.ts` drops below the agent-quality
   file-size threshold.
-- `pnpm --filter @voyantjs/trips typecheck`
-- `pnpm --filter @voyantjs/trips test`
+- `pnpm --filter @voyant-travel/trips typecheck`
+- `pnpm --filter @voyant-travel/trips test`
 - `pnpm verify:fast`
 
 ## 4. Suggested first tracer
@@ -564,7 +564,7 @@ The integration branch is ready to merge when:
 
 - Keep slice PRs targeting `feature/trips` until the final acceptance
   checklist above is true.
-- Merge `feature/trips` to `main` only after the operator template
+- Merge `feature/trips` to `main` only after the operator starter
   has been smoke-tested with the reference storefront composer route and the
   release train has a clean verification story.
 
@@ -575,22 +575,22 @@ The integration branch is ready to merge when:
 - `pnpm verify:publish-tarballs`
 - `pnpm --filter operator build`
 - Storefront smoke test: `GET /shop/composer` returns 200 from the operator
-  template dev server.
+  starter dev server.
 
 ### Full-verification blocker to resolve or explicitly waive
 
 `pnpm verify:full` includes non-report agent-quality enforcement. The current
 feature branch still has large-file and generated-route-tree findings in
 changed files. The composer-owned service-size finding has been resolved by PR
-16. The remaining findings are inherited from the operator template,
-template-local checkout/booking files, and the generated TanStack route tree;
+16. The remaining findings are inherited from the operator starter,
+starter-local checkout/booking files, and the generated TanStack route tree;
 resolve those or record deliberate review waivers with follow-up owners/issues
 before requiring `verify:full`.
 
 ### Production-hardening follow-ups
 
-- Move generic checkout-start behavior out of `templates/operator` into
-  framework-owned catalog/checkout services before non-operator templates rely
+- Move generic checkout-start behavior out of `starters/operator` into
+  framework-owned catalog/checkout services before non-operator starters rely
   on the composer package.
 - Replace hospitality/cruise placeholder or stamping holds with real supplier,
   room, cabin, or sailing inventory locks where supported.

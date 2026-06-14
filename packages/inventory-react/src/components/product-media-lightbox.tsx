@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from "@voyantjs/ui/components/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@voyant-travel/ui/components/dialog"
 import { ChevronLeft, ChevronRight, FileText, X } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

@@ -6,7 +6,7 @@ import type {
   CabinClass,
   FlightOffer,
   Itinerary,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 
 import { durationOfItinerary } from "./synthesis-common.js"
 

@@ -1,4 +1,4 @@
-import { newId } from "@voyantjs/db/lib/typeid"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"

@@ -61,7 +61,7 @@ function publishedTargetFor(exportPath: string): PublishedExport {
   }
 }
 
-describe("@voyantjs/db package schema exports", () => {
+describe("@voyant-travel/db package schema exports", () => {
   it("exposes the KMS schema through an exact published subpath for Vite/Rollup", () => {
     expect(packageJson.publishConfig.exports["./schema/iam/kms"]).toEqual(
       publishedTargetFor("./schema/iam/kms"),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { booleanQueryParam, kmsEnvelopeSchema, newId, typeIdSchema } from "./index.js"
 
-describe("@voyantjs/schema-kit", () => {
+describe("@voyant-travel/schema-kit", () => {
   it("generates and validates prefixed TypeIDs", () => {
     const id = newId("bookings")
     expect(id.startsWith("book_")).toBe(true)

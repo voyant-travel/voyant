@@ -3,7 +3,7 @@
  *
  * Templates register adapters at app startup:
  *
- *   import { registerCruiseAdapter } from "@voyantjs/cruises/adapters"
+ *   import { registerCruiseAdapter } from "@voyant-travel/cruises/adapters"
  *   import { createCruiseAdapter } from "external-cruise-adapter"
  *
  *   registerCruiseAdapter(createCruiseAdapter({ token: env.CRUISE_ADAPTER_TOKEN }))

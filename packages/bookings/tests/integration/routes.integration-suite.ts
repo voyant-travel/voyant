@@ -6,8 +6,8 @@ import {
   actionLedgerService,
   actionMutationDetails,
   actionSensitiveReadDetails,
-} from "@voyantjs/action-ledger"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/action-ledger"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -52,12 +52,12 @@ const originalKmsEnvKey = process.env.KMS_ENV_KEY
 
 describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
   let app: Hono
-  let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
-  let eventBus: ReturnType<typeof import("@voyantjs/core").createEventBus>
+  let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
+  let eventBus: ReturnType<typeof import("@voyant-travel/core").createEventBus>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
-    const { generateEnvKmsKey } = await import("@voyantjs/utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
+    const { generateEnvKmsKey } = await import("@voyant-travel/utils")
     db = createTestDb()
     await cleanupTestDb(db)
     await ensureProductReferenceTables()
@@ -290,7 +290,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     process.env.KMS_PROVIDER = "env"
     process.env.KMS_ENV_KEY = generateEnvKmsKey()
 
-    const { createEventBus } = await import("@voyantjs/core")
+    const { createEventBus } = await import("@voyant-travel/core")
     eventBus = createEventBus()
 
     app = new Hono()
@@ -305,14 +305,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
     await ensureProductReferenceTables()
     await ensureBookingOriginTables()
   })
 
   afterAll(async () => {
-    const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    const { closeTestDb } = await import("@voyant-travel/db/test-utils")
 
     if (originalKmsProvider === undefined) {
       delete process.env.KMS_PROVIDER
@@ -728,7 +728,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
     it("lists bookings when the products table is not installed", async () => {
       const booking = await seedBooking()
-      const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+      const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
 
       await db.insert(bookingItems).values({
         bookingId: booking.id,

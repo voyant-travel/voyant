@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { Hono } from "hono"
 
 import { actionLedgerAdminRoutes } from "../../src/routes.js"

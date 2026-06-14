@@ -4,7 +4,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 // Type-only: binds the bookings-ui `AdminDestinations` augmentation
 // (`booking.detail`, `product.detail`, `availabilitySlot.detail`, ...) into
 // this program — the slot detail host's booking/product quick-view sheets
@@ -13,7 +13,7 @@ import {
 // shape-identical. `availabilitySlot.detail` is bookings-ui-declared too
 // (its booking items link to slots), so this package consumes rather than
 // re-declares it.
-import type {} from "@voyantjs/bookings-react/admin"
+import type {} from "@voyant-travel/bookings-react/admin"
 // Lean static only: the client module (fetcher). The page-data helper pulls
 // the availability query options (client + response schemas), so the index
 // loader resolves it via dynamic import instead of pinning it into the
@@ -34,7 +34,7 @@ import {
  * availability-owned targets the packaged pages and breadcrumbs resolve
  * through `useAdminHref`/`useAdminNavigate`.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The availability landing page (slots list + calendar). */
     "availabilitySlot.list": Record<string, never>
@@ -51,7 +51,7 @@ declare module "@voyantjs/admin" {
 // host or panel component values — it is evaluated with the workspace
 // chrome, so a static re-export would pin the heavy availability modules
 // into the entry chunk. Consumers import them from their specific modules
-// (`@voyantjs/operations-react/availability/admin/option-resource-templates-panel`,
+// (`@voyant-travel/operations-react/availability/admin/option-resource-templates-panel`,
 // ...); only their TYPES re-export here.
 export type { OptionResourceTemplatesPanelProps } from "./option-resource-templates-panel.js"
 export type { AvailabilityRuleDetailHostProps } from "./rule-detail-host.js"
@@ -69,11 +69,11 @@ export interface CreateAvailabilityAdminExtensionOptions {
 
 /**
  * The availability admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
+ * `@voyant-travel/<domain>-ui/admin` convention).
  *
  * NAVIGATION: deliberately none. The Availability nav item is part of the
  * BASE operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing a nav entry here would duplicate it.
+ * `@voyant-travel/admin` — so contributing a nav entry here would duplicate it.
  * If the base nav ever drops the availability item, this extension is where
  * the entry moves.
  *
@@ -87,7 +87,7 @@ export interface CreateAvailabilityAdminExtensionOptions {
  * heavy page chunks load on navigation, not with workspace chrome.
  * {@link AvailabilityIndexHost} (the slots list + calendar landing page,
  * with bulk update/delete running through the typed batch mutation hooks in
- * `@voyantjs/operations-react/availability`) mounts as a zero-prop page; the detail
+ * `@voyant-travel/operations-react/availability`) mounts as a zero-prop page; the detail
  * hosts {@link AvailabilitySlotDetailHost},
  * {@link AvailabilityRuleDetailHost} and
  * {@link AvailabilityStartTimeDetailHost} read their record id from
@@ -141,7 +141,7 @@ export function createAvailabilityAdminExtension(
         id: "availability-slot-detail",
         path: `${basePath}/$id`,
         title: availability,
-        // Key declared by @voyantjs/bookings-react/admin (bound type-only above).
+        // Key declared by @voyant-travel/bookings-react/admin (bound type-only above).
         destination: "availabilitySlot.detail",
         destinationParams: { id: "slotId" },
         page: () => import("./pages/availability-slot-detail-page.js"),

@@ -1,7 +1,7 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { Button } from "@voyantjs/ui/components/button"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { Button } from "@voyant-travel/ui/components/button"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 
 import { CatalogConfigurator } from "./catalog-configurator.js"

@@ -1,4 +1,4 @@
-# @voyantjs/flights-contracts
+# @voyant-travel/flights-contracts
 
 Pure flight `SourceAdapter` contracts, schemas, and reference-data shapes for
 adapter implementers and external consumers that need to integrate flight
@@ -7,14 +7,14 @@ providers without the flights runtime.
 Use this package for the `FlightConnectorAdapter` contract, the flight contract
 types (offers, orders, segments, search, booking, post-book operations), the
 matching Zod schemas, and the `ReferenceDataProvider` reference-data shapes
-(plus the static-bundle provider). Use `@voyantjs/flights` when you also need
+(plus the static-bundle provider). Use `@voyant-travel/flights` when you also need
 the orchestration fan-out, snapshot capture, local-Postgres reference provider,
 or other runtime integration with the catalog plane.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/flights-contracts zod
+pnpm add @voyant-travel/flights-contracts zod
 ```
 
 ## Exports
@@ -36,10 +36,10 @@ pnpm add @voyantjs/flights-contracts zod
 import {
   flightSearchRequestSchema,
   type FlightConnectorAdapter,
-} from "@voyantjs/flights-contracts"
+} from "@voyant-travel/flights-contracts"
 ```
 
-`@voyantjs/flights` re-exports this contract surface, so existing
-`@voyantjs/flights/contract/*` and `@voyantjs/flights/reference/*` import paths
+`@voyant-travel/flights` re-exports this contract surface, so existing
+`@voyant-travel/flights/contract/*` and `@voyant-travel/flights/reference/*` import paths
 remain unchanged for applications that already depend on the full runtime
 package.

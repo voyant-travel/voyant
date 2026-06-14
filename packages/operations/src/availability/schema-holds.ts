@@ -1,4 +1,4 @@
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { availabilitySlots } from "./schema-core.js"
 
@@ -17,7 +17,7 @@ export const availabilityHolds = pgTable(
   "availability_holds",
   {
     id: typeId("availability_holds"),
-    /** Plain text — booking_drafts lives in @voyantjs/catalog. */
+    /** Plain text — booking_drafts lives in @voyant-travel/catalog. */
     draftId: text("draft_id").notNull(),
     /** Token returned to callers; uniquely identifies the hold for
      *  extend/release. */

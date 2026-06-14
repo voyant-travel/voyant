@@ -1,5 +1,5 @@
-import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { type SQL, type SQLWrapper, sql } from "drizzle-orm"
 
 import { invoices, paymentSessions, payments } from "./schema.js"

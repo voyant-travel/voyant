@@ -85,7 +85,7 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/operations-react/availability", () => ({
+vi.mock("@voyant-travel/operations-react/availability", () => ({
   getSlotQueryOptions: () => ({}),
   useAllocationAutomationMutation: () => ({
     autoAllocate: { isPending: false, mutateAsync: vi.fn() },
@@ -110,7 +110,7 @@ vi.mock("@voyantjs/operations-react/availability", () => ({
   useVoyantAvailabilityContext: () => ({}),
 }))
 
-vi.mock("@voyantjs/ui/components", () => {
+vi.mock("@voyant-travel/ui/components", () => {
   const Passthrough = ({ children }: { children?: ReactTypes.ReactNode }) => <>{children}</>
   return {
     Badge: ({ children }: { children?: ReactTypes.ReactNode }) => <span>{children}</span>,

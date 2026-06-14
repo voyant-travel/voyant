@@ -1,11 +1,11 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   ConfirmActionButton,
   SelectionActionBar,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import type { InvoiceBulkStatusResult } from "../index.js"
 

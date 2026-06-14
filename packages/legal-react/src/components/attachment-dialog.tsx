@@ -13,8 +13,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { FileText, Loader2, Upload } from "lucide-react"
 import type { ChangeEvent, DragEvent } from "react"
 import { useEffect, useRef, useState } from "react"

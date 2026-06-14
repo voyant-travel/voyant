@@ -1,4 +1,4 @@
-import type { bookingFulfillments, bookings } from "@voyantjs/bookings/schema"
+import type { bookingFulfillments, bookings } from "@voyant-travel/bookings/schema"
 import type {
   optionUnits,
   productFaqs,
@@ -6,8 +6,8 @@ import type {
   productLocations,
   productOptions,
   products,
-} from "@voyantjs/inventory/schema"
-import type { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
+} from "@voyant-travel/inventory/schema"
+import type { availabilitySlots, availabilityStartTimes } from "@voyant-travel/operations"
 import type { z } from "zod"
 
 import type {

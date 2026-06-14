@@ -1,7 +1,7 @@
 {
-  "name": "@voyantjs/workflows-orchestrator-worker",
+  "name": "@voyant-travel/workflows-orchestrator-worker",
   "version": "0.0.3",
-  "description": "Reference Cloudflare Worker that hosts the Voyant Workflows orchestrator. Composes @voyantjs/workflows-orchestrator-cloudflare into a deployable Worker + Durable Object.",
+  "description": "Reference Cloudflare Worker that hosts the Voyant Workflows orchestrator. Composes @voyant-travel/workflows-orchestrator-cloudflare into a deployable Worker + Durable Object.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -15,13 +15,13 @@
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.2",
-    "@voyantjs/workflows-orchestrator": "workspace:^",
-    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:^",
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/workflows-orchestrator": "workspace:^",
+    "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "vitest": "^3.2.6",
     "wrangler": "^4.86.0"

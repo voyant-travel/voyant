@@ -11,24 +11,24 @@ describe("agent runner dispatch completion helpers", () => {
       workItem({
         fields: {
           "Agent State": "Human Review",
-          PR: "https://github.com/voyantjs/voyant/pull/626",
+          PR: "https://github.com/voyant-travel/voyant/pull/626",
         },
         issueState: "CLOSED",
       }),
-      { maxAgeDays: 1, repository: "voyantjs/other" },
+      { maxAgeDays: 1, repository: "voyant-travel/other" },
     )
 
     assert.equal(
       selectDispatchRecommendation([recommendation]).recommendation.action,
       "complete-pr",
     )
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:complete-pr",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })

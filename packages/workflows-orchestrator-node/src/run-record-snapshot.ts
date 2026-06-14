@@ -1,4 +1,4 @@
-import type { JournalSlice, RunRecord } from "@voyantjs/workflows-orchestrator"
+import type { JournalSlice, RunRecord } from "@voyant-travel/workflows-orchestrator"
 
 export interface RunRecordSnapshotBase {
   entryFile?: string

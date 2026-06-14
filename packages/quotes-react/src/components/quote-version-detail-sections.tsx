@@ -1,5 +1,12 @@
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@voyantjs/ui/components"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@voyant-travel/ui/components"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"

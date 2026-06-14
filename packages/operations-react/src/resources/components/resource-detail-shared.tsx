@@ -1,8 +1,8 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
-import { Button, Card, CardContent, CardHeader, CardTitle, cn } from "@voyantjs/ui/components"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button, Card, CardContent, CardHeader, CardTitle, cn } from "@voyant-travel/ui/components"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { ArrowLeft, Loader2, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"

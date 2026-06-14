@@ -1,4 +1,4 @@
-import type { Invoice } from "@voyantjs/finance"
+import type { Invoice } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { SmartbillClientApi } from "../client.js"

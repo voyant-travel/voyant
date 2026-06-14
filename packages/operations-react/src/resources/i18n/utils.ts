@@ -1,5 +1,5 @@
-import type { PackageI18nValue } from "@voyantjs/i18n"
-import { formatMessage } from "@voyantjs/i18n"
+import type { PackageI18nValue } from "@voyant-travel/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import type { SlotOption } from "../index.js"
 import type { ResourcesUiMessages } from "./messages.js"
 

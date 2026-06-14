@@ -1,4 +1,4 @@
-import { idempotencyKey } from "@voyantjs/hono"
+import { idempotencyKey } from "@voyant-travel/hono"
 import type { Context } from "hono"
 
 import { resolveStoredDocumentDownload } from "./document-download.js"

@@ -1,4 +1,4 @@
-# @voyantjs/trips
+# @voyant-travel/trips
 
 Deterministic composition layer for customer-facing trips that group multiple
 component bookings/orders into one itinerary, pricing, reserve, checkout, and
@@ -18,7 +18,7 @@ sequence and remaining slices.
 ## Install
 
 ```bash
-pnpm add @voyantjs/trips
+pnpm add @voyant-travel/trips
 ```
 
 ## Exports

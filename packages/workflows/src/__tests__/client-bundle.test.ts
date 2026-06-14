@@ -10,7 +10,7 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { force: true, recursive: true })))
 })
 
-describe("@voyantjs/workflows/client bundle boundary", () => {
+describe("@voyant-travel/workflows/client bundle boundary", () => {
   test("app bundles can trigger workflows without pulling workflow definitions or node-only imports", async () => {
     const dir = await mkdtemp(join(process.cwd(), ".tmp-voyant-workflows-client-"))
     tempDirs.push(dir)
@@ -24,7 +24,7 @@ describe("@voyantjs/workflows/client bundle boundary", () => {
     await writeFile(
       appEntry,
       `
-        import { createCloudWorkflowsClient } from "@voyantjs/workflows/client";
+        import { createCloudWorkflowsClient } from "@voyant-travel/workflows/client";
         export const workflows = createCloudWorkflowsClient({
           baseUrl: "https://api.voyant.test",
           triggerToken: "trg_test",
@@ -51,7 +51,7 @@ describe("@voyantjs/workflows/client bundle boundary", () => {
     await writeFile(
       workflowEntry,
       `
-        import { workflow } from "@voyantjs/workflows";
+        import { workflow } from "@voyant-travel/workflows";
         import { readNodeOnlyConfig } from "./node-only";
         export const bookingNodeOnly = workflow({
           id: "booking.node-only",

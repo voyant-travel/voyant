@@ -1,23 +1,23 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
-import type { TripEnvelopeStatus } from "@voyantjs/trips"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { type CatalogSearchHit, useCatalogSearch } from "@voyant-travel/catalog-react"
+import type { TripEnvelopeStatus } from "@voyant-travel/trips"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { DateRangePicker } from "@voyant-travel/ui/components/date-picker"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
+} from "@voyant-travel/ui/components/select"
 import { ListFilter } from "lucide-react"
 import * as React from "react"
 

@@ -9,9 +9,9 @@ import {
   useAdminNavigate,
   useLocale,
   useOperatorAdminMessages,
-} from "@voyantjs/admin"
-import { useInvoices, usePaymentMutation } from "@voyantjs/finance-react"
-import { Sheet, SheetContent } from "@voyantjs/ui/components/sheet"
+} from "@voyant-travel/admin"
+import { useInvoices, usePaymentMutation } from "@voyant-travel/finance-react"
+import { Sheet, SheetContent } from "@voyant-travel/ui/components/sheet"
 import { type ReactNode, useState } from "react"
 import {
   BookingDetailPage,
@@ -55,7 +55,7 @@ export interface BookingDetailHostSlotContext {
   openInvoiceSheet: (invoiceId: string) => void
   /**
    * Opens the host app's "Generate payment link" flow (a dialog the app
-   * owns — `@voyantjs/finance-react/checkout-ui` depends on this package, so the host
+   * owns — `@voyant-travel/finance-react/checkout-ui` depends on this package, so the host
    * cannot import it without a cycle). Forwarded from
    * {@link BookingDetailHostProps.onGenerateLink}; `undefined` when the app
    * didn't wire one, in which case payment-link widgets hide the button.
@@ -94,7 +94,7 @@ export interface BookingDetailHostProps {
   onTabChange?: (tab: BookingDetailTabValue) => void
   /**
    * Opens the app's record-payment flow (a dialog owned by the host app —
-   * the payment dialogs live app-side because `@voyantjs/finance-react/ui`
+   * the payment dialogs live app-side because `@voyant-travel/finance-react/ui`
    * depends on this package, so importing it here would be a cycle).
    */
   onRecordPayment?: () => void
@@ -102,7 +102,7 @@ export interface BookingDetailHostProps {
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
    * Opens the app's "Generate payment link" flow (a dialog owned by the
-   * host app — `@voyantjs/finance-react/checkout-ui` depends on this package, so
+   * host app — `@voyant-travel/finance-react/checkout-ui` depends on this package, so
    * importing it here would be a cycle). Forwarded to slot/widget
    * contributions via {@link BookingDetailHostSlotContext.onGenerateLink}.
    */
@@ -196,7 +196,7 @@ export function BookingDetailHost({
   })
 
   // Central action-ledger entries merged into the Activity timeline —
-  // package-owned since the feed ships from `@voyantjs/bookings-react`.
+  // package-owned since the feed ships from `@voyant-travel/bookings-react`.
   const { events: actionLedgerEvents, footer: actionLedgerFooter } =
     useBookingActionLedgerEvents(id)
   const activityExtraEvents = slots?.activityExtraEvents

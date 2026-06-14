@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: finance; existing service module stays co-located until a dedicated split preserves behavior and tests.
-import { appendActionLedgerMutation } from "@voyantjs/action-ledger"
-import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
+import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/core"
-import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
   ContractTemplateAuthoringHelp,
@@ -11,13 +11,13 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@voyantjs/ui/components"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+} from "@voyant-travel/ui/components"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import {
   insertPlainText,
   insertVariableToken,
-} from "@voyantjs/ui/components/rich-text-variable-extension"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components/rich-text-variable-extension"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"

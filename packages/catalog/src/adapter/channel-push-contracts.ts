@@ -1,1 +1,1 @@
-export * from "@voyantjs/catalog-contracts/adapter/channel-push-contracts"
+export * from "@voyant-travel/catalog-contracts/adapter/channel-push-contracts"

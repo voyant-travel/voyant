@@ -1,4 +1,4 @@
-import { infraIdempotencyKeysTable } from "@voyantjs/db/schema/infra"
+import { infraIdempotencyKeysTable } from "@voyant-travel/db/schema/infra"
 import { and, eq, lt } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 import {

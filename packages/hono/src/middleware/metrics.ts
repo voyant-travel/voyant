@@ -4,7 +4,7 @@ import type { VoyantVariables } from "../types.js"
 
 /**
  * Structural shape of a Workers Analytics Engine dataset binding —
- * declared locally so `@voyantjs/hono` needs no `@cloudflare/workers-types`
+ * declared locally so `@voyant-travel/hono` needs no `@cloudflare/workers-types`
  * dependency.
  */
 export interface AnalyticsEngineDatasetLike {

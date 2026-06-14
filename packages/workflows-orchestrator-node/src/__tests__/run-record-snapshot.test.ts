@@ -1,4 +1,4 @@
-import { emptyJournal, type RunRecord } from "@voyantjs/workflows-orchestrator"
+import { emptyJournal, type RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { describe, expect, it } from "vitest"
 import { recordToSnapshot, snapshotToRecord } from "../run-record-snapshot.js"
 

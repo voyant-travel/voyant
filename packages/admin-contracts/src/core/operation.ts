@@ -20,7 +20,7 @@ export type ActionClassification =
   | "destructive"
   | "requires_confirmation"
 
-/** `resource:action` scope string, matching `@voyantjs/types` API-key scopes. */
+/** `resource:action` scope string, matching `@voyant-travel/types` API-key scopes. */
 export type Scope = string
 
 /** Where the operation's `input` travels: query string (GET) or JSON body. */

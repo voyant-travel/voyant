@@ -1,5 +1,5 @@
-import { VoyantWordmark } from "@voyantjs/admin"
-import { cn } from "@voyantjs/ui/components"
+import { VoyantWordmark } from "@voyant-travel/admin"
+import { cn } from "@voyant-travel/ui/components"
 import type { ReactNode } from "react"
 
 export interface AuthLayoutProps {

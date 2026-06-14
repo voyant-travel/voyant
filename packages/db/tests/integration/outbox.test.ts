@@ -1,4 +1,4 @@
-import { createEventBus } from "@voyantjs/core"
+import { createEventBus } from "@voyant-travel/core"
 import { sql } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 

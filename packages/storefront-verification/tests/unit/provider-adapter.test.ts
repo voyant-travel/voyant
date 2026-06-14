@@ -1,4 +1,4 @@
-import type { NotificationProvider } from "@voyantjs/notifications"
+import type { NotificationProvider } from "@voyant-travel/notifications"
 import { describe, expect, it, vi } from "vitest"
 import { createStorefrontVerificationSendersFromProviders } from "../../src/service.js"
 

@@ -1,9 +1,9 @@
 // agent-quality: file-size exception -- owner: bookings-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   Pagination,
   PaginationContent,
@@ -11,8 +11,8 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@voyantjs/ui/components/pagination"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components/pagination"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 import * as React from "react"
 import {
@@ -40,7 +40,7 @@ import { StatusBadge } from "./status-badge.js"
 
 /**
  * Serializable snapshot of the booking-list filter / sort / paging
- * state. Hosts that want shareable URLs (operator template) read this
+ * state. Hosts that want shareable URLs (operator starter) read this
  * from the URL on mount via `initialFilters` and push changes via
  * `onFiltersChange`.
  */

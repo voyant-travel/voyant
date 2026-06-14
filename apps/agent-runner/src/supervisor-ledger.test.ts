@@ -9,7 +9,7 @@ describe("agent runner supervisor ledger", () => {
     const runLedgerStore = createInMemoryAgentRunnerLedgerStore()
     await runLedgerStore.recordSupervisorLease({
       leasedAt: "2026-05-12T12:00:00.000Z",
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       result: leasedResult(),
       supervisorLeaseId: "lease_1",
     })
@@ -18,7 +18,7 @@ describe("agent runner supervisor ledger", () => {
       config: {
         controlPlaneConfigured: true,
         enabled: true,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       coordinatorConfigured: true,
       runLedgerStore,
@@ -83,7 +83,7 @@ describe("agent runner supervisor ledger", () => {
         controlPlaneUrl: "https://control.example.com",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async () => new Response(JSON.stringify(leasedResult()), { status: 201 }),
       now: () => new Date("2026-05-12T12:00:00.000Z"),
@@ -108,8 +108,8 @@ describe("agent runner supervisor ledger", () => {
         },
       },
     })
-    await expect(runLedgerStore.listRecentLeases("voyantjs/voyant")).resolves.toHaveLength(1)
-    await expect(runLedgerStore.listRecentRuns("voyantjs/voyant")).resolves.toMatchObject([
+    await expect(runLedgerStore.listRecentLeases("voyant-travel/voyant")).resolves.toHaveLength(1)
+    await expect(runLedgerStore.listRecentRuns("voyant-travel/voyant")).resolves.toMatchObject([
       {
         id: "intent_579",
         status: "leased",
@@ -119,7 +119,7 @@ describe("agent runner supervisor ledger", () => {
 
   it("requires a configured run ledger before serving ledger endpoints", async () => {
     const app = createApp({ authTokens: ["token"] })
-    const response = await app.request("/api/ledger/status?repository=voyantjs%2Fvoyant", {
+    const response = await app.request("/api/ledger/status?repository=voyant-travel%2Fvoyant", {
       headers: {
         authorization: "Bearer token",
       },

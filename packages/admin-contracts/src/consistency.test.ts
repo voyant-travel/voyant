@@ -10,7 +10,7 @@ import { type ActionClassification, allOperations, type HttpMethod } from "./ind
  *
  * The complementary route-EXISTENCE check (every descriptor resolves to a
  * mounted admin route on a live app) belongs in a deployment test where
- * `@voyantjs/hono` + the domain modules are available; this pure layer runs
+ * `@voyant-travel/hono` + the domain modules are available; this pure layer runs
  * with no cross-package wiring.
  */
 const VALID_METHODS: HttpMethod[] = ["GET", "POST", "PATCH", "PUT", "DELETE"]

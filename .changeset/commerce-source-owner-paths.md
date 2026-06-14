@@ -1,5 +1,5 @@
 ---
-"@voyantjs/commerce": minor
+"@voyant-travel/commerce": minor
 ---
 
 Move Markets, Pricing, Promotions, and Sellability runtime source behind the

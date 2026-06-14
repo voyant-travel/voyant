@@ -4,15 +4,15 @@ import {
   useAdminHref,
   useOperatorAdminMessages as useAdminMessages,
   useAdminNavigate,
-} from "@voyantjs/admin"
-import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
-import { formatMessage } from "@voyantjs/i18n"
-import { useOrganization, usePerson } from "@voyantjs/relationships-react"
-import type { Trip, TripComponent } from "@voyantjs/trips"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Separator } from "@voyantjs/ui/components/separator"
+} from "@voyant-travel/admin"
+import { buildPaymentLinkUrl } from "@voyant-travel/finance/payment-link"
+import { formatMessage } from "@voyant-travel/i18n"
+import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
+import type { Trip, TripComponent } from "@voyant-travel/trips"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import { Separator } from "@voyant-travel/ui/components/separator"
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import {
   ArrowLeft,
   BedDouble,

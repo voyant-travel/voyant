@@ -13,7 +13,7 @@
  * because the existing `service-catalog.ts` handles the products module's own
  * catalog management (categories, tags, types). The "catalog plane" is the
  * cross-vertical projection / overlay / snapshot infrastructure from
- * `@voyantjs/catalog`.
+ * `@voyant-travel/catalog`.
  *
  * See `docs/architecture/catalog-architecture.md` §9.1 for the integration
  * pattern this file establishes (replicated for cruises, accommodations, etc.
@@ -39,8 +39,8 @@ import {
   resolveEntityView,
   resolveEntityViewWithOverlays,
   type Visibility,
-} from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, eq, sql } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
@@ -511,7 +511,7 @@ function pickTranslation<T extends { languageTag: string }>(
  *
  * Cross-package boundary: queries `availability_slots` by raw table name
  * via `sql` so the products module doesn't take a hard dependency on the
- * `@voyantjs/operations` schema.
+ * `@voyant-travel/operations` schema.
  */
 async function countAvailableDepartures(db: AnyDrizzleDb, productId: string): Promise<number> {
   try {

@@ -1,7 +1,7 @@
 import {
   type ActionLedgerCapabilityDefinition,
   createActionLedgerCapabilityRegistry,
-} from "@voyantjs/action-ledger"
+} from "@voyant-travel/action-ledger"
 
 export const BOOKING_PII_READ_CAPABILITY = {
   id: "bookings-pii:read",

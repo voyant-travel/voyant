@@ -8,7 +8,7 @@ import {
   notificationTargetTypeSchema,
   previewNotificationTemplateResultSchema as notificationTemplatePreviewRecordSchema,
   notificationTemplateStatusSchema,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

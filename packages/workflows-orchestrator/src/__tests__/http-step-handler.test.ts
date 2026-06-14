@@ -1,5 +1,5 @@
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { describe, expect, it } from "vitest"
 import { createHttpStepHandler } from "../http-step-handler.js"
 

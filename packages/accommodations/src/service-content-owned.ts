@@ -1,11 +1,11 @@
-import type { ContentLocaleMatchKind } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { ContentLocaleMatchKind } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   facilities,
   facilityAddressProjections,
   facilityFeatures,
   properties,
-} from "@voyantjs/operations"
+} from "@voyant-travel/operations"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import {
   type AccommodationContent,

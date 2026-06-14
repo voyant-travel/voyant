@@ -1,5 +1,5 @@
 ---
-"@voyantjs/accommodations": patch
+"@voyant-travel/accommodations": patch
 ---
 
 Move shared place handling into Operations-owned places surfaces while

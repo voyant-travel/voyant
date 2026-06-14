@@ -1,4 +1,4 @@
-# @voyantjs/auth
+# @voyant-travel/auth
 
 Better Auth wiring for Voyant's reference template stack. Provides server-side
 auth helpers, edge runtime variants, backend utilities, and a permissions
@@ -7,7 +7,7 @@ contract.
 ## Install
 
 ```bash
-pnpm add @voyantjs/auth better-auth
+pnpm add @voyant-travel/auth better-auth
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ import {
   createBetterAuth,
   handleAccountProfileRequest,
   handleApiTokenManagementRequest,
-} from "@voyantjs/auth/server"
+} from "@voyant-travel/auth/server"
 
 const auth = createBetterAuth({
   db,
@@ -42,7 +42,7 @@ if (tokenResponse) return tokenResponse
 return auth.handler(request)
 ```
 
-Auth provider wiring is template-owned — core Voyant packages only depend on
+Auth provider wiring is starter-owned — core Voyant packages only depend on
 the normalized `{ userId, actor }` contract, not on Better Auth specifically.
 
 `createBetterAuth` forwards Better Auth's `user` options, including
@@ -77,8 +77,8 @@ Better Auth server plugins that define their own tables must pass those Drizzle
 tables through `extraSchema` so the shared Drizzle adapter can resolve them:
 
 ```typescript
-import { createBetterAuth } from "@voyantjs/auth/server"
-import { authInvitation, authMember, authOrganization } from "@voyantjs/db/schema/iam"
+import { createBetterAuth } from "@voyant-travel/auth/server"
+import { authInvitation, authMember, authOrganization } from "@voyant-travel/db/schema/iam"
 import { organization } from "better-auth/plugins"
 
 const auth = createBetterAuth({
@@ -97,13 +97,13 @@ connects existing Drizzle table definitions to Better Auth; it does not create
 or run migrations.
 
 The package also exposes a narrow shared-secret bearer-token helper surface via
-`@voyantjs/utils/session-claims` for runtime-local verification. That helper is
+`@voyant-travel/utils/session-claims` for runtime-local verification. That helper is
 not a replacement for Better Auth session cookies and does not imply a
 platform-wide JWKS/JWT-first auth model.
 
 ## Voyant Cloud Admin Auth
 
-Voyant Cloud deployments can use `@voyantjs/auth/cloud-admin-session` to keep
+Voyant Cloud deployments can use `@voyant-travel/auth/cloud-admin-session` to keep
 Better Auth as the local session and JWT/JWKS issuer while delegating identity
 and membership checks to Voyant Cloud.
 
@@ -118,8 +118,8 @@ Local/self-host development should set `VOYANT_ADMIN_AUTH_MODE=local` and keeps
 the normal Better Auth flows.
 
 ```typescript
-import { createVoyantCloudAdminAuthPlugin } from "@voyantjs/auth/cloud-admin-session"
-import { createBetterAuth } from "@voyantjs/auth/server"
+import { createVoyantCloudAdminAuthPlugin } from "@voyant-travel/auth/cloud-admin-session"
+import { createBetterAuth } from "@voyant-travel/auth/server"
 
 const auth = createBetterAuth({
   db,
@@ -204,7 +204,7 @@ through to `auth.handler` when the app wants shared onboarding or account UI to
 submit directly to the auth facade.
 
 `updateCurrentUserProfile(db, { userId, ...patch })` from
-`@voyantjs/auth/workspace` updates the Voyant profile row and returns the
+`@voyant-travel/auth/workspace` updates the Voyant profile row and returns the
 normalized `CurrentUser`.
 
 ## Exports

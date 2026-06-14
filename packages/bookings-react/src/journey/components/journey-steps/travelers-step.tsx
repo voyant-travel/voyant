@@ -1,9 +1,9 @@
 "use client"
 
-import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
-import { Separator } from "@voyantjs/ui/components"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import type { BookingDraftShape } from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
+import { Separator } from "@voyant-travel/ui/components"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { Plus } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"

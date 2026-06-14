@@ -2,7 +2,7 @@
  * CRM admin operations: people + organizations CRUD, plus the PII-gated
  * person-document reveal.
  *
- * Input schemas derive from `@voyantjs/crm-contracts` (the canonical route
+ * Input schemas derive from `@voyant-travel/crm-contracts` (the canonical route
  * validation) so the SDK can't drift from the routes. Output schemas stay loose
  * client-facing projections (ADR-0003): unknown server fields are stripped, not
  * rejected, so the contract is forward-compatible.
@@ -15,7 +15,7 @@ import {
   personListQuerySchema,
   updateOrganizationSchema,
   updatePersonSchema,
-} from "@voyantjs/crm-contracts"
+} from "@voyant-travel/crm-contracts"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"

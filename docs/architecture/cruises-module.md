@@ -12,7 +12,7 @@ It does not cover cruises. Cruises are a different product vertical with their o
 
 We have travel agencies that sell cruises and want to be on Voyant. Reverse-engineering the upstream feeds across mainstream and long-tail cruise lines (Silversea, Viking, Uniworld, Avalon, Scenic, Tauck, Windstar, Seabourn, Ponant, Oceanwide, Antarctica21, Swan Hellenic, plus the third-party aggregator layer that fronts many of them) shows the cross-line model is consistent enough to deserve a first-class module — and different enough that bolting it onto `products` would corrupt that module for everyone else.
 
-So: a new opt-in `@voyantjs/cruises` package, modeled native to Voyant's existing conventions, providing the canonical cruise schema + service layer + admin/public routes + a booking-extension table so it slots into the existing booking pipeline without forcing non-cruise tenants to inherit any of it.
+So: a new opt-in `@voyant-travel/cruises` package, modeled native to Voyant's existing conventions, providing the canonical cruise schema + service layer + admin/public routes + a booking-extension table so it slots into the existing booking pipeline without forcing non-cruise tenants to inherit any of it.
 
 The module supports two provenance modes for cruise inventory, side by side:
 
@@ -138,7 +138,7 @@ The package follows existing Voyant conventions exactly. File layout mirrors `pa
 
 ```
 packages/cruises/
-├── package.json                 # @voyantjs/cruises, exports map below
+├── package.json                 # @voyant-travel/cruises, exports map below
 ├── README.md
 ├── tsconfig.json
 ├── vitest.config.ts
@@ -725,8 +725,8 @@ Connect compatibility decisions live next to the adapter contract in
 Two registration points in a template:
 
 ```ts
-import { createApp } from "@voyantjs/hono"
-import { cruisesHonoModule, registerCruiseAdapter } from "@voyantjs/cruises"
+import { createApp } from "@voyant-travel/hono"
+import { cruisesHonoModule, registerCruiseAdapter } from "@voyant-travel/cruises"
 import { createCruiseAdapter } from "external-cruise-adapter"
 
 registerCruiseAdapter(createCruiseAdapter({ token: env.CRUISE_ADAPTER_TOKEN }))
@@ -756,7 +756,7 @@ Adapter calls are not free. Templates can wrap the adapter in a memoizing decora
 - The list of supported cruise lines. Connect's roadmap.
 - Scheduling, retries, backoff, dead-letter queues for the adapter's polling loop. Those live in Connect (or in whatever runs the custom adapter).
 - Provider authentication, rate-limiting, screen scraping. Same.
-- A workflow engine or job runner. The `@voyantjs/core/workflows` primitives exist if a custom adapter wants them, but the cruises module doesn't require them.
+- A workflow engine or job runner. The `@voyant-travel/core/workflows` primitives exist if a custom adapter wants them, but the cruises module doesn't require them.
 
 ## 11. Booking integration
 
@@ -860,7 +860,7 @@ The single-cabin helper (`createCruiseBooking`) stays as the building block. A s
 The user is right that this matters and that it's a per-tenant, per-line decision. The way it slots in:
 
 - **Booking mode** is a property of the booking, not the cruise. `mode: 'inquiry' | 'reserve'` on `createCruiseBooking`. Inquiry creates a booking in `state = 'inquiry'`; reserve creates one in `state = 'pending'` and gates payment on the next step.
-- **Whether payment is offered** is a template-level config — the same template can offer payment for `cruiseType='river'` and inquiry-only for `cruiseType='expedition'` based on which cruise lines support which workflow.
+- **Whether payment is offered** is a starter-level config — the same template can offer payment for `cruiseType='river'` and inquiry-only for `cruiseType='expedition'` based on which cruise lines support which workflow.
 - **No new payment plumbing.** The finance + transactions modules already cover invoice + payment. Cruises does not duplicate any of that.
 - **Abandoned cart / inquiry follow-up.** Use the common cruise-reseller pattern of treating "no confirmation number yet" as the "started but not finalized" flag. In Voyant terms: bookings in `'inquiry'` or `'pending'` state past N hours fire a `booking.followup.required` event; notification module handles the email. No new tables needed; this is a workflow over existing primitives.
 
@@ -940,12 +940,12 @@ Following the existing convention (`describe.skipIf(!DB_AVAILABLE)`):
 - Integration tests on routes including the party-booking happy path and the same-sailing validation
 
 **Phase 3 — adapter contract + Connect adapter wired (1-2 weeks)**
-- `CruiseAdapter` interface + `registerCruiseAdapter` registry in `@voyantjs/cruises/adapters`
+- `CruiseAdapter` interface + `registerCruiseAdapter` registry in `@voyant-travel/cruises/adapters`
 - Unified key parsing in admin routes; admin list/detail interleave local + adapter
 - External-only routes: `POST /:key/refresh`, `POST /:key/detach`
 - Booking flow extended for external sailings (`adapter.createBooking` + snapshot)
 - `MockCruiseAdapter` test fixture — exercises every method, drives integration tests for the dual-source paths
-- `@voyantjs/cruises-adapter-connect` — thin wrapper over `@voyantjs/connect-sdk` implementing the contract; depends on Connect shipping the cruise-shaped read APIs in parallel
+- `@voyant-travel/cruises-adapter-connect` — thin wrapper over `@voyant-travel/connect-sdk` implementing the contract; depends on Connect shipping the cruise-shaped read APIs in parallel
 
 **Phase 4 — search index + storefront (1 week)**
 - `cruise_search_index` table + bulk write endpoint for adapters

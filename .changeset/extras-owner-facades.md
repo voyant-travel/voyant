@@ -1,11 +1,11 @@
 ---
-"@voyantjs/inventory": minor
-"@voyantjs/inventory-react": minor
-"@voyantjs/bookings": minor
-"@voyantjs/bookings-react": minor
-"@voyantjs/extras-contracts": patch
-"@voyantjs/catalog-authoring": patch
-"@voyantjs/storefront": patch
+"@voyant-travel/inventory": minor
+"@voyant-travel/inventory-react": minor
+"@voyant-travel/bookings": minor
+"@voyant-travel/bookings-react": minor
+"@voyant-travel/extras-contracts": patch
+"@voyant-travel/catalog-authoring": patch
+"@voyant-travel/storefront": patch
 ---
 
 Move extras runtime and React source behind Inventory and Bookings owner

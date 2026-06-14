@@ -1,5 +1,5 @@
-import { bookingItems } from "@voyantjs/bookings/schema"
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { bookingItems } from "@voyant-travel/bookings/schema"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   date,
   index,

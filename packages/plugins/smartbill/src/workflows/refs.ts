@@ -1,4 +1,4 @@
-import { type InvoiceExternalRef, invoiceExternalRefs, invoices } from "@voyantjs/finance"
+import { type InvoiceExternalRef, invoiceExternalRefs, invoices } from "@voyant-travel/finance"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

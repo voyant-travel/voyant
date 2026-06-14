@@ -1,4 +1,4 @@
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 import { describe, expect, it } from "vitest"
 import { createServiceBindingDispatcher, type ServiceBindingLike } from "../index.js"
 import { inProcessBinding, tenantMeta } from "./adapter-test-support.js"

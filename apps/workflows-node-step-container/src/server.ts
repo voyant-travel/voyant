@@ -19,7 +19,7 @@
 
 import { createHash } from "node:crypto"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
-import { __resetRegistry, getWorkflow } from "@voyantjs/workflows"
+import { __resetRegistry, getWorkflow } from "@voyant-travel/workflows"
 import {
   createBundleUrlPolicy,
   createHmacBodyVerifier,
@@ -27,13 +27,13 @@ import {
   parseTokenList,
   STEP_AUTH_HEADER,
   STEP_RESPONSE_AUTH_HEADER,
-} from "@voyantjs/workflows/auth"
+} from "@voyant-travel/workflows/auth"
 import {
   type ExecuteWorkflowStepRequest,
   executeWorkflowStep,
   type StepJournalEntry,
   type StepRunner,
-} from "@voyantjs/workflows/handler"
+} from "@voyant-travel/workflows/handler"
 
 interface BundleLocation {
   url: string

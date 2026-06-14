@@ -5,7 +5,7 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
-} from "@voyantjs/commerce"
+} from "@voyant-travel/commerce"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

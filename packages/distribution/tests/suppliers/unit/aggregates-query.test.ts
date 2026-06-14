@@ -1,4 +1,4 @@
-import { supplierAggregatesQuerySchema } from "@voyantjs/distribution"
+import { supplierAggregatesQuerySchema } from "@voyant-travel/distribution"
 import { describe, expect, it } from "vitest"
 
 describe("supplierAggregatesQuerySchema", () => {

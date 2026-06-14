@@ -1,4 +1,4 @@
-import type { BookingDraftV1, QuoteResponseV1 } from "@voyantjs/catalog/booking-engine"
+import type { BookingDraftV1, QuoteResponseV1 } from "@voyant-travel/catalog/booking-engine"
 
 import type { CatalogComponentBookingDraftOverrides } from "./catalog-component-adapter.js"
 import type { TripComponent, TripEnvelope, TripReservationPlan } from "./schema.js"

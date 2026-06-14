@@ -1,4 +1,4 @@
-import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
+import { booleanQueryParam } from "@voyant-travel/schema-kit/query-params"
 import { z } from "zod"
 
 import {

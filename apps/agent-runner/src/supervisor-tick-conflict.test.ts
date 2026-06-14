@@ -12,7 +12,7 @@ describe("agent runner supervisor tick conflicts", () => {
         controlPlaneUrl: "https://control.example.com/",
         enabled: true,
         holder: "runner:cloudflare",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       fetchImpl: async () =>
         new Response(

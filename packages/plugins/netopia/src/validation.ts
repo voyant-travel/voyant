@@ -2,11 +2,11 @@ import {
   createPaymentSessionFromGuaranteeSchema,
   createPaymentSessionFromInvoiceSchema,
   createPaymentSessionFromScheduleSchema,
-} from "@voyantjs/finance"
+} from "@voyant-travel/finance"
 import {
   sendInvoiceNotificationSchema,
   sendPaymentSessionNotificationSchema,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 import { z } from "zod"
 import type { NetopiaFetch, NetopiaRuntimeOptions } from "./types.js"
 

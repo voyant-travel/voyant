@@ -24,7 +24,7 @@ describe("agent project queue helpers", () => {
         "--smoke-tick",
         "--update-body",
         "--max-age-days=2",
-        "--command=pnpm --filter=@voyantjs/db test",
+        "--command=pnpm --filter=@voyant-travel/db test",
         "-h",
       ]),
       {
@@ -35,33 +35,33 @@ describe("agent project queue helpers", () => {
         smokeTick: true,
         updateBody: true,
         maxAgeDays: "2",
-        command: "pnpm --filter=@voyantjs/db test",
+        command: "pnpm --filter=@voyant-travel/db test",
         help: true,
       },
     )
   })
 
   it("parses project numbers from GitHub Project URLs", () => {
-    assert.equal(projectNumberFromUrl("https://github.com/orgs/voyantjs/projects/42/views/1"), "42")
-    assert.equal(projectNumberFromUrl("https://github.com/orgs/voyantjs/projects/7"), "7")
-    assert.equal(projectNumberFromUrl("https://github.com/voyantjs/voyant/issues/7"), undefined)
+    assert.equal(projectNumberFromUrl("https://github.com/orgs/voyant-travel/projects/42/views/1"), "42")
+    assert.equal(projectNumberFromUrl("https://github.com/orgs/voyant-travel/projects/7"), "7")
+    assert.equal(projectNumberFromUrl("https://github.com/voyant-travel/voyant/issues/7"), undefined)
   })
 
   it("keeps single page config limits strict while scan config defaults to a full page", () => {
-    assert.deepEqual(projectConfigFromArgs({ owner: "voyantjs", project: "2" }), {
-      owner: "voyantjs",
+    assert.deepEqual(projectConfigFromArgs({ owner: "voyant-travel", project: "2" }), {
+      owner: "voyant-travel",
       projectNumber: 2,
       limit: 50,
     })
 
-    assert.deepEqual(projectScanConfigFromArgs({ owner: "voyantjs", project: "2" }), {
-      owner: "voyantjs",
+    assert.deepEqual(projectScanConfigFromArgs({ owner: "voyant-travel", project: "2" }), {
+      owner: "voyant-travel",
       projectNumber: 2,
       limit: 100,
     })
 
-    assert.deepEqual(projectScanConfigFromArgs({ owner: "voyantjs", project: "2", limit: "25" }), {
-      owner: "voyantjs",
+    assert.deepEqual(projectScanConfigFromArgs({ owner: "voyant-travel", project: "2", limit: "25" }), {
+      owner: "voyant-travel",
       projectNumber: 2,
       limit: 25,
     })
@@ -143,12 +143,12 @@ describe("agent project queue helpers", () => {
 
   it("filters evaluated items by repository case-insensitively", () => {
     const items = [
-      evaluateItem(projectItem({ number: 1, repository: "VoyantJS/Voyant" })),
-      evaluateItem(projectItem({ number: 2, repository: "VoyantJS/Docs" })),
+      evaluateItem(projectItem({ number: 1, repository: "Voyant-Travel/Voyant" })),
+      evaluateItem(projectItem({ number: 2, repository: "Voyant-Travel/Docs" })),
     ]
 
     assert.deepEqual(
-      filterItemsByRepository(items, "voyantjs/voyant").map((item) => item.issue.number),
+      filterItemsByRepository(items, "voyant-travel/voyant").map((item) => item.issue.number),
       [1],
     )
   })
@@ -156,7 +156,7 @@ describe("agent project queue helpers", () => {
   it("loads every project page before evaluating the queue", () => {
     const calls = []
     const project = loadAllEvaluatedProject({
-      owner: "voyantjs",
+      owner: "voyant-travel",
       projectNumber: 1,
       limit: 25,
       readItems: ({ after, limit, owner, projectNumber }) => {
@@ -174,8 +174,8 @@ describe("agent project queue helpers", () => {
     })
 
     assert.deepEqual(calls, [
-      { after: undefined, limit: 25, owner: "voyantjs", projectNumber: 1 },
-      { after: "cursor-1", limit: 25, owner: "voyantjs", projectNumber: 1 },
+      { after: undefined, limit: 25, owner: "voyant-travel", projectNumber: 1 },
+      { after: "cursor-1", limit: 25, owner: "voyant-travel", projectNumber: 1 },
     ])
     assert.equal(project.projectId, "project-1")
     assert.equal(project.items.length, 2)
@@ -189,7 +189,7 @@ describe("agent project queue helpers", () => {
     assert.throws(
       () =>
         loadAllEvaluatedProject({
-          owner: "voyantjs",
+          owner: "voyant-travel",
           projectNumber: 1,
           onError: (message) => {
             throw new Error(message)
@@ -220,7 +220,7 @@ function projectItem({
   body = "## Agent Brief\nCurrent behavior, desired behavior, acceptance criteria, and verification lane.",
   title = "[Task] Implement queue runner",
   state = "OPEN",
-  repository = "VoyantJS/Voyant",
+  repository = "Voyant-Travel/Voyant",
   labels = ["agent:ready"],
   fields = {
     "Agent State": "Ready",

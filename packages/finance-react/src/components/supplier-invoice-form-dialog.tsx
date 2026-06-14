@@ -1,4 +1,4 @@
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -15,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

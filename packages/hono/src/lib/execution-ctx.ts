@@ -1,6 +1,6 @@
 /**
  * Structural shape of the Cloudflare Workers `ExecutionContext`. Defined
- * locally so `@voyantjs/hono` doesn't need `@cloudflare/workers-types` —
+ * locally so `@voyant-travel/hono` doesn't need `@cloudflare/workers-types` —
  * consumers on Node, Vercel, or any other runtime can use these helpers.
  */
 export interface ExecutionContextLike {

@@ -13,7 +13,7 @@
  * either form. Owned cruises return 404 — they have no sourced-entry
  * row. Owned-cruise detail uses the existing `/:key` route.
  *
- * The catalog SourceAdapterRegistry is template-owned and resolved via
+ * The catalog SourceAdapterRegistry is starter-owned and resolved via
  * the `resolveRegistry` callback. For cruise adapters wrapped via
  * `cruiseAdapterToSourceAdapter`, registry registration alongside the
  * cruise vertical's per-vertical registry enables both detail surfaces
@@ -23,8 +23,8 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.3.
  */
 
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
 import { Hono } from "hono"
 

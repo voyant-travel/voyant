@@ -5,7 +5,7 @@
  * itinerary days, and pricing grids.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 import { CRUISE_CORE_FIELD_POLICY } from "./catalog-policy-core.js"
 import { CRUISE_STRUCTURE_FIELD_POLICY } from "./catalog-policy-structure.js"

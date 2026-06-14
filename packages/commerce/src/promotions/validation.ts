@@ -13,8 +13,8 @@ import { z } from "zod"
 
 // ---------- Scope discriminated union (§3.2) ----------
 //
-// Audience literal inlined to avoid a back-edge from @voyantjs/commerce to
-// @voyantjs/catalog (where Visibility lives). A unit test pins the literal
+// Audience literal inlined to avoid a back-edge from @voyant-travel/commerce to
+// @voyant-travel/catalog (where Visibility lives). A unit test pins the literal
 // set against catalog's Visibility export.
 
 const audienceLiteral = z.enum(["staff", "customer", "partner", "supplier"])

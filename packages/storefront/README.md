@@ -1,4 +1,4 @@
-# @voyantjs/storefront
+# @voyant-travel/storefront
 
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
@@ -56,7 +56,7 @@ uses `sourceSubmissionId` for idempotency; when omitted, the email address is
 used to derive a stable newsletter submission key.
 
 ```ts
-import { createStorefrontHonoModule } from "@voyantjs/storefront"
+import { createStorefrontHonoModule } from "@voyant-travel/storefront"
 
 createStorefrontHonoModule({
   intake: {
@@ -93,7 +93,7 @@ token for non-browser clients. When `RATE_LIMIT` KV is bound, lookups are
 throttled per client IP and booking code.
 
 ```ts
-import { createGuestBookingGuard } from "@voyantjs/storefront"
+import { createGuestBookingGuard } from "@voyant-travel/storefront"
 
 const guestBooking = createGuestBookingGuard()
 
@@ -115,7 +115,7 @@ Storefronts can check whether traveler document facts satisfy departure-level
 transport rules before checkout confirmation.
 
 ```ts
-import { createStorefrontPublicRoutes } from "@voyantjs/storefront"
+import { createStorefrontPublicRoutes } from "@voyant-travel/storefront"
 
 createStorefrontPublicRoutes({
   transportEligibilityRules: [
@@ -134,7 +134,7 @@ createStorefrontPublicRoutes({
 ```
 
 Schemas and the standalone evaluator are exported from
-`@voyantjs/storefront/transport-eligibility`.
+`@voyant-travel/storefront/transport-eligibility`.
 
 The public API is available at:
 

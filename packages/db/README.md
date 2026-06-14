@@ -1,17 +1,17 @@
-# @voyantjs/db
+# @voyant-travel/db
 
 Database layer for Voyant. Drizzle-based schemas for IAM + infra, runtime adapters for edge, serverless, and Node.js, TypeID columns, CRUD factory, and the runtime LinkService.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/db drizzle-orm
+pnpm add @voyant-travel/db drizzle-orm
 ```
 
 ## Usage
 
 ```typescript
-import { createDbClient, createServerlessDbClient } from "@voyantjs/db"
+import { createDbClient, createServerlessDbClient } from "@voyant-travel/db"
 
 // Edge reads / no interactive transactions — Neon HTTP adapter
 const db = createDbClient(url)
@@ -25,9 +25,9 @@ const nodeDb = createDbClient(url, { adapter: "node" })
 ```
 
 ```typescript
-import { createCrudService } from "@voyantjs/db/crud"
-import { createLinkService, syncLinks } from "@voyantjs/db/links"
-import { newId } from "@voyantjs/db/lib/typeid"
+import { createCrudService } from "@voyant-travel/db/crud"
+import { createLinkService, syncLinks } from "@voyant-travel/db/links"
+import { newId } from "@voyant-travel/db/lib/typeid"
 ```
 
 ## Schema Imports
@@ -35,8 +35,8 @@ import { newId } from "@voyantjs/db/lib/typeid"
 Import from exported schema namespaces, not the root barrel:
 
 ```typescript
-import { apikeyTable } from "@voyantjs/db/schema/iam"
-import { webhookSubscriptionsTable } from "@voyantjs/db/schema/infra"
+import { apikeyTable } from "@voyant-travel/db/schema/iam"
+import { webhookSubscriptionsTable } from "@voyant-travel/db/schema/infra"
 ```
 
 ## Exports

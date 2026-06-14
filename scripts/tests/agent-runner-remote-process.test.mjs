@@ -114,7 +114,7 @@ describe("agent runner remote process helpers", () => {
         date: new Date("2026-05-12T10:30:00.000Z"),
         item: workItem(),
         plan,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
       {
         command: "pnpm dev",
@@ -122,7 +122,7 @@ describe("agent runner remote process helpers", () => {
         issue: {
           number: 579,
           title: "Test agent project intake workflow",
-          url: "https://github.com/voyantjs/voyant/issues/579",
+          url: "https://github.com/voyant-travel/voyant/issues/579",
         },
         logFile:
           "/home/sprite/voyant-workspaces/task-579/repo/.agent-runs/remote-processes/dev-server/process.log",
@@ -134,7 +134,7 @@ describe("agent runner remote process helpers", () => {
         processGroupFile:
           "/home/sprite/voyant-workspaces/task-579/repo/.agent-runs/remote-processes/dev-server/process.pgid",
         processName: "dev-server",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         workspace: "/home/sprite/voyant-workspaces/task-579/repo",
         workspaceReference: "sandbox:sprite:task-579",
       },

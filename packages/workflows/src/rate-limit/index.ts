@@ -1,4 +1,4 @@
-// @voyantjs/workflows/rate-limit
+// @voyant-travel/workflows/rate-limit
 //
 // Reference rate limiter used by `ctx.step({ rateLimit: ... })`.
 //

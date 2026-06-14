@@ -31,7 +31,7 @@
  *   ])
  *
  * and wire `createProductPromotionsProjectionExtension` (from
- * `@voyantjs/commerce` promotion projection support) into
+ * `@voyant-travel/commerce` promotion projection support) into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
  * Out of scope here:
@@ -42,7 +42,7 @@
  *     contract change; deferred.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const PRODUCT_PROMOTIONS_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Best-offer existence flag ────────────────────────────────────────────

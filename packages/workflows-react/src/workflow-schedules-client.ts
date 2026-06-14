@@ -1,6 +1,6 @@
 // Client for the orchestrator's `/api/schedules/:env` aggregate view.
 // Mirrors `workflow-runs-client.ts` so the workflow-schedules UI can be
-// pointed at any worker that exposes `@voyantjs/workflows-orchestrator-cloudflare`'s
+// pointed at any worker that exposes `@voyant-travel/workflows-orchestrator-cloudflare`'s
 // schedules handler.
 
 export interface WorkflowScheduleDecl {

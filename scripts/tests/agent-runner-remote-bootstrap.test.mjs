@@ -16,13 +16,13 @@ describe("agent runner remote bootstrap helpers", () => {
       baseRef: "origin/main",
       descriptor,
       item: workItem(),
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
     })
 
     assert.equal(plan.baseRef, "main")
     assert.equal(plan.branch, "task/579-test-agent-project-intake-workflow")
     assert.equal(plan.remoteDir, "/home/sprite/voyant-workspaces/task-579/repo")
-    assert.equal(plan.repoUrl, "https://github.com/voyantjs/voyant.git")
+    assert.equal(plan.repoUrl, "https://github.com/voyant-travel/voyant.git")
     assert.match(plan.command, /git clone "\$repo_url" "\$repo_dir"/)
     assert.match(plan.command, /refs\/remotes\/origin\/\$branch/)
     assert.match(plan.command, /git checkout --track -b "\$branch" "origin\/\$branch"/)
@@ -37,7 +37,7 @@ describe("agent runner remote bootstrap helpers", () => {
       branch: "feature/579-remote-workspace",
       descriptor,
       remoteDir: "/workspace/voyant",
-      repoUrl: "https://github.com/voyantjs/voyant.git",
+      repoUrl: "https://github.com/voyant-travel/voyant.git",
     })
 
     assert.equal(plan.baseRef, "release/next")
@@ -52,7 +52,7 @@ describe("agent runner remote bootstrap helpers", () => {
         remoteBootstrapPlan({
           branch: "feature/task",
           descriptor: parseWorkspaceReference(".agent-worktrees/task", { repoRoot: "/repo" }),
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         }),
       /remote bootstrap requires a remote-sandbox reference/,
     )
@@ -61,7 +61,7 @@ describe("agent runner remote bootstrap helpers", () => {
       () =>
         remoteBootstrapPlan({
           descriptor: parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" }),
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         }),
       /remote bootstrap requires --branch/,
     )

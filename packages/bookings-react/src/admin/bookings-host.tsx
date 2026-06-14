@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminNavigate } from "@voyantjs/admin"
+import { useAdminNavigate } from "@voyant-travel/admin"
 import type { ReactNode } from "react"
 
 import type { BookingListFiltersState } from "../components/booking-list.js"

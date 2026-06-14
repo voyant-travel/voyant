@@ -12,7 +12,7 @@ import type {
   TripEnvelopeStatus,
   TripsListSortDir,
   TripsListSortField,
-} from "@voyantjs/trips"
+} from "@voyant-travel/trips"
 
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import {

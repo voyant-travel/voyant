@@ -4,7 +4,7 @@
  * `priceFromAmountCents`, `priceFromCurrency`, and `hasPricing` to the
  * product search document.
  *
- * Lives in `@voyantjs/commerce` because:
+ * Lives in `@voyant-travel/commerce` because:
  *   - The data lives here (`option_price_rules`, `option_unit_price_rules`,
  *     `price_catalogs`).
  *   - Product owns the document-builder implementation, while this package
@@ -28,8 +28,8 @@
  * once its final departure starts unless a row-level fallback remains.
  */
 
-import type { IndexerSlice } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { sql } from "drizzle-orm"
 
 interface PricingProjectionOptions {

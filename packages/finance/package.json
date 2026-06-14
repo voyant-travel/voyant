@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/finance",
+  "name": "@voyant-travel/finance",
   "version": "0.119.5",
   "license": "Apache-2.0",
   "type": "module",
@@ -28,24 +28,24 @@
     "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/core": "workspace:^",
-    "@voyantjs/data-sdk": "^0.4.0",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/finance-contracts": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/storage": "workspace:^",
-    "@voyantjs/utils": "workspace:^",
+    "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/data-sdk": "npm:@voyantjs/data-sdk@^0.4.0",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance-contracts": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/storage": "workspace:^",
+    "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "fflate": "^0.8.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/operations": "workspace:^",
-    "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/operations": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [
@@ -125,13 +125,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/finance"
   },
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyantjs/db"
+      "@voyant-travel/db"
     ]
   }
 }

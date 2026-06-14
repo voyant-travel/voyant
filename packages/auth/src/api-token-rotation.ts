@@ -1,5 +1,5 @@
-import type { getDb } from "@voyantjs/db"
-import { apikeyTable, type SelectApikey } from "@voyantjs/db/schema/iam"
+import type { getDb } from "@voyant-travel/db"
+import { apikeyTable, type SelectApikey } from "@voyant-travel/db/schema/iam"
 import { eq } from "drizzle-orm"
 
 const API_TOKEN_SECRET_PREFIX = "voy_"

@@ -1,9 +1,9 @@
 "use client"
 
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
-import type { PersonDetailBookingsTabContext } from "@voyantjs/relationships-react/admin"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
+import type { PersonDetailBookingsTabContext } from "@voyant-travel/relationships-react/admin"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { bookingStatusBadgeVariant, useBookings } from "../index.js"
 
 export type PersonBookingsWidgetProps = PersonDetailBookingsTabContext
@@ -19,7 +19,7 @@ export type PersonBookingsWidgetProps = PersonDetailBookingsTabContext
 /**
  * The person detail page's Bookings tab, contributed as a widget on
  * crm-ui's `person.details.bookings-tab` slot (packaged-admin RFC §4.7
- * cycle resolution): this package depends on `@voyantjs/relationships-react/ui`, so the
+ * cycle resolution): this package depends on `@voyant-travel/relationships-react/ui`, so the
  * person detail host cannot import this card — the contribution travels
  * the widget seam instead. Receives the slot's typed context
  * (`PersonDetailBookingsTabContext`) as props and opens rows through the

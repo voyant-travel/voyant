@@ -1,7 +1,7 @@
 ---
-"@voyantjs/admin": patch
-"@voyantjs/admin-app": patch
+"@voyant-travel/admin": patch
+"@voyant-travel/admin-app": patch
 ---
 
-Move the packaged admin app shell into `@voyantjs/admin/app/*` and keep
-`@voyantjs/admin-app` as a compatibility shim over the new exports.
+Move the packaged admin app shell into `@voyant-travel/admin/app/*` and keep
+`@voyant-travel/admin-app` as a compatibility shim over the new exports.

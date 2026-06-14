@@ -7,7 +7,7 @@ import {
   validateCruiseContent,
 } from "./index.js"
 
-describe("@voyantjs/cruises-contracts content shape", () => {
+describe("@voyant-travel/cruises-contracts content shape", () => {
   it("validates the cruises/v1 rich content payload", () => {
     const content = cruiseContentSchema.parse({
       cruise: {

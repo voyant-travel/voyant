@@ -19,14 +19,14 @@ describe("agent runner CI repair helpers", () => {
         statusCheckRollup: [
           {
             conclusion: "FAILURE",
-            detailsUrl: "https://github.com/voyantjs/voyant/actions/runs/123/job/456",
+            detailsUrl: "https://github.com/voyant-travel/voyant/actions/runs/123/job/456",
             name: "checks",
             status: "COMPLETED",
             workflowName: "CI",
           },
           {
             conclusion: "STALE",
-            detailsUrl: "https://github.com/voyantjs/voyant/actions/runs/789/job/101",
+            detailsUrl: "https://github.com/voyant-travel/voyant/actions/runs/789/job/101",
             name: "stale",
             status: "COMPLETED",
             workflowName: "CI",
@@ -38,7 +38,7 @@ describe("agent runner CI repair helpers", () => {
       [
         {
           conclusion: "FAILURE",
-          detailsUrl: "https://github.com/voyantjs/voyant/actions/runs/123/job/456",
+          detailsUrl: "https://github.com/voyant-travel/voyant/actions/runs/123/job/456",
           name: "checks",
           runId: "123",
           status: "COMPLETED",
@@ -46,7 +46,7 @@ describe("agent runner CI repair helpers", () => {
         },
         {
           conclusion: "STALE",
-          detailsUrl: "https://github.com/voyantjs/voyant/actions/runs/789/job/101",
+          detailsUrl: "https://github.com/voyant-travel/voyant/actions/runs/789/job/101",
           name: "stale",
           runId: "789",
           status: "COMPLETED",
@@ -108,7 +108,7 @@ describe("agent runner CI repair helpers", () => {
         { name: "lint", runId: "456" },
       ],
       maxLogBytes: 5,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       run: (args) => {
         calls.push(args)
         return "abcdef"
@@ -129,8 +129,8 @@ describe("agent runner CI repair helpers", () => {
       generatedAt: new Date("2026-05-10T12:34:56.000Z"),
       item: workItem(),
       logs: [{ output: "test failed", runId: "123" }],
-      pr: { url: "https://github.com/voyantjs/voyant/pull/626" },
-      repository: "voyantjs/voyant",
+      pr: { url: "https://github.com/voyant-travel/voyant/pull/626" },
+      repository: "voyant-travel/voyant",
     })
 
     assert.match(body, /# CI Repair Packet/)

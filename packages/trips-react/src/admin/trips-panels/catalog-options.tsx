@@ -1,10 +1,10 @@
 "use client"
 
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { type Draft, setAccommodation, setAddons } from "@voyantjs/bookings-react/journey"
-import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { type Draft, setAccommodation, setAddons } from "@voyant-travel/bookings-react/journey"
+import type { BookingDraftShape } from "@voyant-travel/catalog/booking-engine"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import { Minus, Plus } from "lucide-react"
 
 export function CatalogComponentOptions({

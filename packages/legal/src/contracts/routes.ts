@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: legal; existing route module stays co-located until a dedicated split preserves behavior and tests.
-import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
-import { type BookingPiiService, shouldRevealBookingPii } from "@voyantjs/bookings"
-import type { EventBus, ModuleContainer } from "@voyantjs/core"
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import { type BookingPiiService, shouldRevealBookingPii } from "@voyant-travel/bookings"
+import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import {
   createDrizzlePublicDocumentDeliveryGrantStore,
   createPublicDocumentDeliveryGrant,
@@ -10,8 +10,8 @@ import {
   parseOptionalJsonBody,
   parseQuery,
   resolveStoredDocumentDownload,
-} from "@voyantjs/hono"
-import type { StorageProvider } from "@voyantjs/storage"
+} from "@voyant-travel/hono"
+import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"

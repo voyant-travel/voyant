@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   ContractTemplateAuthoringHelp,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"

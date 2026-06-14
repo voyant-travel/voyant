@@ -1,4 +1,4 @@
-import { Badge, Button } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useBookingRequirementsUiMessagesOrDefault } from "../i18n/index.js"
 import { type BookingQuestion, type BookingQuestionOption, SELECT_TYPES } from "../index.js"

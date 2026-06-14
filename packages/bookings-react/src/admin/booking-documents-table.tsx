@@ -3,7 +3,7 @@
 
 import { useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
@@ -11,7 +11,7 @@ import {
   useLegalContractAttachments,
   useLegalContracts,
   useVoyantLegalContext,
-} from "@voyantjs/legal-react"
+} from "@voyant-travel/legal-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +23,8 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { ArrowUpRight, Download, FileText, Loader2, Plus, RotateCw, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { BookingDocumentDialog } from "../components/booking-document-dialog.js"

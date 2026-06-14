@@ -1,4 +1,4 @@
-import type { IndexerSlice } from "@voyantjs/catalog"
+import type { IndexerSlice } from "@voyant-travel/catalog"
 import { describe, expect, it, vi } from "vitest"
 
 import { productDestinationsCatalogPolicy } from "../../src/catalog-policy-destinations.js"

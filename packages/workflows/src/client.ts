@@ -124,7 +124,7 @@ let configuredClient: WorkflowsClient | undefined
 
 /**
  * Install the process-local `workflows` client implementation used by the
- * root `@voyantjs/workflows` singleton. Apps may call this during boot, or
+ * root `@voyant-travel/workflows` singleton. Apps may call this during boot, or
  * rely on deployment-injected Voyant Cloud environment variables.
  */
 export function configureWorkflowsClient(client: WorkflowsClient): void {
@@ -141,7 +141,7 @@ export const workflows: WorkflowsClient = new Proxy({} as WorkflowsClient, {
       const client = configuredClient ?? tryCreateCloudClientFromEnv()
       if (!client) {
         throw new Error(
-          `@voyantjs/workflows: workflows.${method}() requires a configured workflows client. ` +
+          `@voyant-travel/workflows: workflows.${method}() requires a configured workflows client. ` +
             `Use configureWorkflowsClient(createCloudWorkflowsClient(...)) or provide the ` +
             `VOYANT_CLOUD_WORKFLOWS_URL, VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN, ` +
             `VOYANT_CLOUD_APP_SLUG, and VOYANT_CLOUD_ENVIRONMENT deployment variables.`,
@@ -149,7 +149,7 @@ export const workflows: WorkflowsClient = new Proxy({} as WorkflowsClient, {
       }
       const fn = client[method]
       if (typeof fn !== "function") {
-        throw new Error(`@voyantjs/workflows: workflows.${method} is not implemented`)
+        throw new Error(`@voyant-travel/workflows: workflows.${method} is not implemented`)
       }
       return (fn as (...inner: unknown[]) => unknown)(...args)
     }
@@ -162,7 +162,7 @@ export function createCloudWorkflowsClient(
   const config = resolveCloudConfig(options)
   const httpFetch = options.fetch ?? globalThis.fetch
   if (typeof httpFetch !== "function") {
-    throw new Error("@voyantjs/workflows/client: global fetch is unavailable")
+    throw new Error("@voyant-travel/workflows/client: global fetch is unavailable")
   }
 
   return {
@@ -326,7 +326,7 @@ function resolveCloudConfig(options: CloudWorkflowsClientOptions): ResolvedCloud
     .map(([name]) => name)
   if (missing.length > 0) {
     throw new Error(
-      `@voyantjs/workflows/client: missing Cloud workflow configuration: ${missing.join(", ")}`,
+      `@voyant-travel/workflows/client: missing Cloud workflow configuration: ${missing.join(", ")}`,
     )
   }
 
@@ -340,7 +340,9 @@ function resolveCloudConfig(options: CloudWorkflowsClientOptions): ResolvedCloud
 
 function requireConfigValue(value: string | undefined, name: string): string {
   if (!value) {
-    throw new Error(`@voyantjs/workflows/client: missing Cloud workflow configuration: ${name}`)
+    throw new Error(
+      `@voyant-travel/workflows/client: missing Cloud workflow configuration: ${name}`,
+    )
   }
   return value
 }
@@ -414,7 +416,7 @@ function workflowIdOf(workflow: WorkflowHandle<unknown, unknown> | string): stri
 
 function unsupported(method: string): never {
   throw new Error(
-    `@voyantjs/workflows/client: workflows.${method}() is not supported by the ` +
+    `@voyant-travel/workflows/client: workflows.${method}() is not supported by the ` +
       `managed Cloud trigger client yet.`,
   )
 }
@@ -431,7 +433,7 @@ function defaultEnv(): CloudWorkflowsClientEnv {
 function parseEnvironment(value: string): EnvironmentName {
   if (value === "production" || value === "preview" || value === "development") return value
   throw new Error(
-    `@voyantjs/workflows/client: invalid environment "${value}"; expected production, preview, or development`,
+    `@voyant-travel/workflows/client: invalid environment "${value}"; expected production, preview, or development`,
   )
 }
 

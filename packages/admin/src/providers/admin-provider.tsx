@@ -45,9 +45,9 @@ export interface AdminProviderProps {
 
 /**
  * Composes the shared admin providers — QueryClient, Theme, and Locale — so
- * templates don't have to wire each one individually. Note: this does NOT include
- * `<VoyantReactProvider>` (from `@voyantjs/react`) because its API base
- * URL is template-specific. Wrap AdminProvider's children with your
+ * starters don't have to wire each one individually. Note: this does NOT include
+ * `<VoyantReactProvider>` (from `@voyant-travel/react`) because its API base
+ * URL is starter-specific. Wrap AdminProvider's children with your
  * VoyantReactProvider at the same level.
  *
  * @example

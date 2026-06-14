@@ -1,4 +1,4 @@
-import type { EventBus, EventSource } from "@voyantjs/core"
+import type { EventBus, EventSource } from "@voyant-travel/core"
 
 export const CUSTOMER_SIGNAL_CREATED_EVENT = "customer.signal.created" as const
 

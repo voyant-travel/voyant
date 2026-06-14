@@ -27,7 +27,7 @@ import {
   storefrontSettingsInputSchema,
   storefrontSettingsPatchSchema,
   storefrontSettingsSchema,
-} from "@voyantjs/storefront/validation"
+} from "@voyant-travel/storefront/validation"
 import { z } from "zod"
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })

@@ -1,6 +1,6 @@
-import type { MarketRecord } from "@voyantjs/commerce-react/markets"
-import type { ChannelDetail } from "@voyantjs/distribution-react"
-import type { ProductOptionRecord, ProductRecord } from "@voyantjs/inventory-react"
+import type { MarketRecord } from "@voyant-travel/commerce-react/markets"
+import type { ChannelDetail } from "@voyant-travel/distribution-react"
+import type { ProductOptionRecord, ProductRecord } from "@voyant-travel/inventory-react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -84,7 +84,7 @@ const option = {
   updatedAt: "2026-01-01T00:00:00.000Z",
 } satisfies ProductOptionRecord
 
-vi.mock("@voyantjs/distribution-react", () => ({
+vi.mock("@voyant-travel/distribution-react", () => ({
   useChannels: () => ({
     data: { data: [channel] },
     isPending: false,
@@ -95,7 +95,7 @@ vi.mock("@voyantjs/distribution-react", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/commerce-react/markets", () => ({
+vi.mock("@voyant-travel/commerce-react/markets", () => ({
   useMarkets: () => ({
     data: { data: [market] },
     isPending: false,
@@ -106,7 +106,7 @@ vi.mock("@voyantjs/commerce-react/markets", () => ({
   }),
 }))
 
-vi.mock("@voyantjs/inventory-react", () => ({
+vi.mock("@voyant-travel/inventory-react", () => ({
   useProducts: () => ({
     data: { data: [product] },
     isPending: false,

@@ -1,4 +1,4 @@
-# @voyantjs/distribution
+# @voyant-travel/distribution
 
 Distribution module for Voyant. Distribution owns the broader commercial
 network: channels, suppliers, source/operator links, external refs, mappings,
@@ -11,14 +11,14 @@ implementation scenario or user base.
 ## Install
 
 ```bash
-pnpm add @voyantjs/distribution
+pnpm add @voyant-travel/distribution
 ```
 
 ## Usage
 
 ```typescript
-import { distributionModule } from "@voyantjs/distribution"
-import { createApp } from "@voyantjs/hono"
+import { distributionModule } from "@voyant-travel/distribution"
+import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
   modules: [distributionModule],

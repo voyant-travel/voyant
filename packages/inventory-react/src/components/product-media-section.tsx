@@ -1,14 +1,14 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/ui/components/card"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components/card"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { GripVertical, Loader2, Plus, Upload } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

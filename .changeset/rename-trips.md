@@ -1,6 +1,6 @@
 ---
-"@voyantjs/trips": minor
-"@voyantjs/trips-react": minor
+"@voyant-travel/trips": minor
+"@voyant-travel/trips-react": minor
 "operator": patch
 ---
 

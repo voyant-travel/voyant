@@ -1,6 +1,6 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminHref } from "@voyantjs/admin"
+import { type AdminRoutePageProps, useAdminHref } from "@voyant-travel/admin"
 
 import type { CatalogSearchParams } from "../../index.js"
 import { CatalogVerticalHost } from "../catalog-vertical-host.js"

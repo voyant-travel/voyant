@@ -1,4 +1,4 @@
-import { handleApiError } from "@voyantjs/hono"
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 

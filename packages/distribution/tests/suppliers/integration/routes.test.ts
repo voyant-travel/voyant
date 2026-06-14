@@ -1,4 +1,4 @@
-import { supplierRoutes } from "@voyantjs/distribution"
+import { supplierRoutes } from "@voyant-travel/distribution"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -8,7 +8,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
   let app: Hono
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     const db = createTestDb()
     await cleanupTestDb(db)
 
@@ -22,7 +22,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
   })
 
   beforeEach(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(createTestDb())
   })
 

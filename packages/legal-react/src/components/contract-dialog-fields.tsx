@@ -1,6 +1,6 @@
 "use client"
 
-import { Input, Label, Switch } from "@voyantjs/ui/components"
+import { Input, Label, Switch } from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -9,10 +9,10 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
-import { languages } from "@voyantjs/utils/languages"
+} from "@voyant-travel/ui/components/combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
+import { languages } from "@voyant-travel/utils/languages"
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useState } from "react"
 import type { UseFormSetValue, UseFormWatch } from "react-hook-form"

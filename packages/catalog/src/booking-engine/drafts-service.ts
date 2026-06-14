@@ -3,8 +3,8 @@
  * the route layer composes. Per booking-journey-architecture §5.7.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { newId } from "@voyantjs/db/lib/typeid"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq, isNull, lt } from "drizzle-orm"
 
 import {

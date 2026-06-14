@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import type { ReactNode } from "react"
 import { useMemo } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"

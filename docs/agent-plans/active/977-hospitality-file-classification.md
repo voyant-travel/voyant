@@ -135,7 +135,7 @@ should be moved to catalog/product/storefront-owned surfaces if still needed.
 
 ### Split
 
-- `package.json`: remove `@voyantjs/hospitality` public family positioning;
+- `package.json`: remove `@voyant-travel/hospitality` public family positioning;
   retain dependencies only for a renamed accommodation resale client if needed.
 - `src/client.ts`: generic fetch/validation client; keep only if reused by a
   renamed accommodation resale client package.

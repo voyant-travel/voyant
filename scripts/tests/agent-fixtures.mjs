@@ -9,9 +9,9 @@ export function workItem({
     issue: {
       number,
       title,
-      url: `https://github.com/voyantjs/voyant/issues/${number}`,
+      url: `https://github.com/voyant-travel/voyant/issues/${number}`,
       state: issueState,
-      repository: "voyantjs/voyant",
+      repository: "voyant-travel/voyant",
       labels: ["agent:ready"],
       hasAgentBrief: true,
       agentBrief: "Current behavior, desired behavior, acceptance criteria, and verification lane.",

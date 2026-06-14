@@ -1,8 +1,8 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { formatMessage } from "@voyantjs/i18n"
-import { useOptionUnits } from "@voyantjs/inventory-react"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/i18n"
+import { useOptionUnits } from "@voyant-travel/inventory-react"
 import {
   Badge,
   Button,
@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Armchair,
   Bed,

@@ -1,7 +1,7 @@
 "use client"
 
-import type { PaymentIntent } from "@voyantjs/flights/contract/types"
-import { cn } from "@voyantjs/ui/lib/utils"
+import type { PaymentIntent } from "@voyant-travel/flights/contract/types"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Banknote, Clock, CreditCard } from "lucide-react"
 import type { ReactNode } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

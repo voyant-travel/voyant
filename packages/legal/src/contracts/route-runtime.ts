@@ -1,6 +1,6 @@
-import type { BookingPiiService } from "@voyantjs/bookings"
-import type { EventBus } from "@voyantjs/core"
-import type { StorageProvider } from "@voyantjs/storage"
+import type { BookingPiiService } from "@voyant-travel/bookings"
+import type { EventBus } from "@voyant-travel/core"
+import type { StorageProvider } from "@voyant-travel/storage"
 
 import type { ContractLifecycleHook } from "./lifecycle.js"
 import type { ContractDocumentGenerator, ContractsRouteOptions } from "./routes.js"

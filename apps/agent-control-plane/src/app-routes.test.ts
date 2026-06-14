@@ -19,7 +19,7 @@ describe("agent control plane routes", () => {
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
       body: JSON.stringify({
         recommendations,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     })
 

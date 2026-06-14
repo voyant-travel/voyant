@@ -1,6 +1,6 @@
 "use client"
 
-import { cn, Separator, SidebarTrigger } from "@voyantjs/ui/components"
+import { cn, Separator, SidebarTrigger } from "@voyant-travel/ui/components"
 import type * as React from "react"
 
 export interface OperatorAdminPageShellProps {

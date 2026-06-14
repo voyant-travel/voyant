@@ -1,6 +1,6 @@
-import type { EventBus } from "@voyantjs/core"
-import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
-import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"
+import type { EventBus } from "@voyant-travel/core"
+import type { StorageProvider, StorageUploadBody } from "@voyant-travel/storage"
+import { renderPdfDocument } from "@voyant-travel/utils/pdf-renderer"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

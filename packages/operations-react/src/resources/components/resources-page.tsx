@@ -1,8 +1,8 @@
 "use client"
 
 import type { RowSelectionState } from "@tanstack/react-table"
-import { Badge, Button, cn, Input, Label } from "@voyantjs/ui/components"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import { Badge, Button, cn, Input, Label } from "@voyant-travel/ui/components"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import {
   Select,
   SelectContent,
@@ -10,8 +10,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+} from "@voyant-travel/ui/components/select"
+import { Tabs, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { ListFilter, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"

@@ -1,11 +1,11 @@
-import { extraPricingModeSchema } from "@voyantjs/bookings/extras"
+import { extraPricingModeSchema } from "@voyant-travel/bookings/extras"
 import {
   publicBookingSessionAllocationSchema,
   publicBookingSessionRepriceSummarySchema,
   publicBookingSessionSchema,
   publicCreateBookingSessionSchema,
-} from "@voyantjs/bookings/public-validation"
-import { publicBookingPaymentScheduleSchema } from "@voyantjs/finance/public-validation"
+} from "@voyant-travel/bookings/public-validation"
+import { publicBookingPaymentScheduleSchema } from "@voyant-travel/finance/public-validation"
 import { z } from "zod"
 
 import { languageTagSchema } from "../validation-settings.js"

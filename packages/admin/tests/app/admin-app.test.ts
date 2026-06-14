@@ -196,7 +196,7 @@ describe("adminExtensionRouteOptions", () => {
 
 describe("adminExtensionRouteOptions (redirect contributions)", async () => {
   const { adminExtensionRouteOptions } = await import("../../src/app/extension-routes.js")
-  const { defineAdminExtension } = await import("@voyantjs/admin")
+  const { defineAdminExtension } = await import("@voyant-travel/admin")
 
   const extension = defineAdminExtension({
     id: "catalog",

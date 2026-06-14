@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
-import { bookingsOperations, crmOperations, type FetchLike } from "@voyantjs/admin-client"
+import { bookingsOperations, crmOperations, type FetchLike } from "@voyant-travel/admin-client"
 import type { ReactNode } from "react"
 import { describe, expect, it } from "vitest"
 

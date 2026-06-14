@@ -17,7 +17,7 @@ describe("agent runner remote workspace pool", () => {
         enabled: true,
         holder: "runner:cloudflare",
         remoteWorkspacePool: parseSpritePoolConfig("voyant-agent-01:2,voyant-agent-02:2"),
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       coordinatorService: {
         fetch: async (input) => {
@@ -98,7 +98,7 @@ describe("agent runner remote workspace pool", () => {
           options: {
             remoteWorkspace: "sandbox:sprite:voyant-agent-01-slot-1",
           },
-          repository: "voyantjs/voyant",
+          repository: "voyant-travel/voyant",
         },
         url: "https://control.example.com/api/dispatch-intents/latest",
       },
@@ -118,7 +118,7 @@ describe("agent runner remote workspace pool", () => {
         enabled: true,
         holder: "runner:cloudflare",
         remoteWorkspacePool: parseSpritePoolConfig("voyant-agent-01:2"),
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       coordinatorService: {
         fetch: async (input) => {
@@ -243,7 +243,7 @@ describe("agent runner remote workspace pool", () => {
         enabled: true,
         holder: "runner:cloudflare",
         remoteWorkspacePool: parseSpritePoolConfig("voyant-agent-01:2"),
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       },
       coordinatorService: {
         fetch: async (input) => {

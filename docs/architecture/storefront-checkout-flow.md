@@ -1,6 +1,6 @@
-# Storefront checkout flow (operator template)
+# Storefront checkout flow (operator starter)
 
-End-to-end design for the operator template's customer-facing checkout —
+End-to-end design for the operator starter's customer-facing checkout —
 from the Review step in `<BookingJourney />` through contract acceptance,
 payment, and the post-payment auto-generation of contract and invoice
 documents. Modelled on the protravel-v3 reference implementation.
@@ -195,7 +195,7 @@ unchanged).
 
 ### Phase 3 — Checkout-start endpoint + workflow definition
 
-1. `templates/operator/src/api/catalog-checkout.ts` (new) — `POST
+1. `starters/operator/src/api/catalog-checkout.ts` (new) — `POST
    /v1/public/catalog/checkout/start`. Calls `bookEntity` with
    status=`awaiting_payment`, records contract acceptance in
    `contract_signatures`, kicks off `checkout-finalize` with input
@@ -222,14 +222,14 @@ unchanged).
 
 ### Phase 4 — Card path (Netopia from booking surface)
 
-1. `templates/operator/src/api/lib/payment-sessions.ts` (new) — thin
+1. `starters/operator/src/api/lib/payment-sessions.ts` (new) — thin
    helper that creates a `payment_sessions` row targeting the
    booking, then asks the Netopia plugin's `startPaymentSession` for
    the redirect URL.
 2. `packages/plugins/netopia/src/service-callback.ts` — after
    `completePaymentSession`, emit `payment.completed` with
    `{ bookingId, paymentSessionId, amount, currency }`.
-3. `templates/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`
+3. `starters/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`
    — when `checkout-start` returns `{ redirectUrl }`,
    `window.location.assign(redirectUrl)`.
 4. `shop_.confirmation.$bookingId.tsx` — flesh out the existing stub
@@ -246,7 +246,7 @@ unchanged).
    proforma synchronously, return instructions from
    `capabilities.config.bankTransferDetails` (IBAN, beneficiary,
    reference = `BOOK-${bookingNumber}`).
-3. `templates/operator/src/components/voyant/bookings/` — add a
+3. `starters/operator/src/components/voyant/bookings/` — add a
    "Mark payment received" action on the booking detail page. Calls
    `POST /v1/admin/finance/payment-sessions/:id/mark-received`,
    which writes a payment row + emits `payment.completed`. The
@@ -286,7 +286,7 @@ relevant phase.
    Polling is uglier but works without changes.
 5. **Netopia env keys** (`NETOPIA_MERCHANT_ID`, `NETOPIA_PRIVATE_KEY`,
    `NETOPIA_NOTIFY_URL`) — assumed already provisioned for the
-   operator template. Sandbox creds available?
+   operator starter. Sandbox creds available?
 6. **Proforma → invoice conversion**: use SmartBill RO's "convert
    proforma" call (preserves the proforma number) vs issuing a fresh
    invoice and crossing them in our DB. Cleaner to use SmartBill's
@@ -403,18 +403,18 @@ Followups landed alongside Phase 6:
 
 ### Observability (now landed)
 
-`@voyantjs/workflow-runs` is the lightweight observability layer
+`@voyant-travel/workflow-runs` is the lightweight observability layer
 for in-process workflows. The catalog-checkout subscriber wraps the
 `runCheckoutFinalize` call with a recorder that writes
 `workflow_runs` + `workflow_run_steps` rows, tagged with the
 booking id, payment session id, and payment intent. The standalone
 dashboard SPA at `apps/workflow-runs-dashboard/` reads the admin
-routes (`/v1/admin/workflow-runs[/:id]`) the operator template
+routes (`/v1/admin/workflow-runs[/:id]`) the operator starter
 mounts via `additionalRoutes`. Run it alongside the operator
-(`pnpm -F @voyantjs/workflow-runs-dashboard dev`) or build the SPA
+(`pnpm -F @voyant-travel/workflow-runs-dashboard dev`) or build the SPA
 with `VITE_API_BASE` for a separate-origin deployment.
 
-This observability sits beside the durable `@voyantjs/workflows`
+This observability sits beside the durable `@voyant-travel/workflows`
 SDK + `apps/workflows-local-dashboard`. That stack remains the
 right home for *durable* workflows (anything that needs persistence
 across process restarts, fan-out, scheduling). The lightweight

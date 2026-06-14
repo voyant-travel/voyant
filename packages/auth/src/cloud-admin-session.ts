@@ -1,10 +1,10 @@
-import type { getDb } from "@voyantjs/db"
+import type { getDb } from "@voyant-travel/db"
 import {
   authAccount,
   authUser,
   cloudAuthSessionLinks,
   cloudAuthUserLinks,
-} from "@voyantjs/db/schema/iam"
+} from "@voyant-travel/db/schema/iam"
 import { createAuthEndpoint } from "better-auth/api"
 import { setSessionCookie } from "better-auth/cookies"
 import type { BetterAuthPlugin } from "better-auth/types"

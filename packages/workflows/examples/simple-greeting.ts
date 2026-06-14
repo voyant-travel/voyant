@@ -1,7 +1,7 @@
 // A no-wait demo workflow: proves `voyant workflows run` works
 // end-to-end without any fixture setup.
 
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 
 export const greet = workflow({
   id: "greet",

@@ -27,16 +27,16 @@ describe("agent runner tick helpers", () => {
     assert.deepEqual(
       recommendQueueActions([ready, humanReview, staleRunning], {
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }).map((item) => item.action),
       ["inspect-stale", "start", "publish-evidence"],
     )
     assert.equal(
       recommendQueueActions([staleRunning], {
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       })[0].command,
-      "pnpm agent:queue:watchdog -- --repo voyantjs/other",
+      "pnpm agent:queue:watchdog -- --repo voyant-travel/other",
     )
   })
 
@@ -63,7 +63,7 @@ describe("agent runner tick helpers", () => {
       recommendQueueActions([running, planning], {
         implementationCommand: "codex exec fix",
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }).map((item) => [item.issue.number, item.action, item.command, item.reason]),
       [
         [581, "wait-agent-session-capacity", null, "agent session capacity reached (1/1)"],
@@ -76,7 +76,7 @@ describe("agent runner tick helpers", () => {
         implementationCommand: "codex exec fix",
         maxAgeDays: 1,
         maxAgentSessions: 2,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       })[0].action,
       "run-command",
     )
@@ -84,10 +84,10 @@ describe("agent runner tick helpers", () => {
 
   it("maps queue tick states to the next safe runner command", () => {
     assert.deepEqual(
-      recommendQueueAction(workItem(), { maxAgeDays: 1, repository: "voyantjs/other" }),
+      recommendQueueAction(workItem(), { maxAgeDays: 1, repository: "voyant-travel/other" }),
       {
         action: "start",
-        command: "pnpm agent:queue:start -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:start -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 20,
@@ -102,10 +102,10 @@ describe("agent runner tick helpers", () => {
         workItem({
           fields: {
             "Agent State": "Human Review",
-            Evidence: "https://github.com/voyantjs/voyant/issues/579#issuecomment-1",
+            Evidence: "https://github.com/voyant-travel/voyant/issues/579#issuecomment-1",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "open-pr",
     )
@@ -115,14 +115,14 @@ describe("agent runner tick helpers", () => {
         workItem({
           fields: {
             "Agent State": "Merge Ready",
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "sync-pr",
-        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 50,
@@ -138,10 +138,10 @@ describe("agent runner tick helpers", () => {
           fields: {
             "Agent State": "Human Review",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "wait-human-review",
@@ -163,14 +163,14 @@ describe("agent runner tick helpers", () => {
         workItem({
           fields: {
             "Agent State": "Human Review",
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "sync-pr",
-        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: {
           reason: "Last Heartbeat is unset",
           stale: true,
@@ -189,14 +189,14 @@ describe("agent runner tick helpers", () => {
           fields: {
             "Agent State": "Changes Requested",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "collect-review",
-        command: "pnpm agent:queue:collect-review -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:collect-review -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -217,10 +217,10 @@ describe("agent runner tick helpers", () => {
             Evidence:
               ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "run-command",
     )
@@ -231,15 +231,15 @@ describe("agent runner tick helpers", () => {
           fields: {
             "Agent State": "Human Review",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
           issueState: "CLOSED",
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "complete-pr",
-        command: "pnpm agent:queue:complete-pr -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:complete-pr -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -258,11 +258,11 @@ describe("agent runner tick helpers", () => {
           fields: {
             "Agent State": "CI Repair",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "collect-ci",
     )
@@ -275,11 +275,11 @@ describe("agent runner tick helpers", () => {
             Evidence:
               ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "remote-run-command",
     )
@@ -290,14 +290,14 @@ describe("agent runner tick helpers", () => {
           fields: {
             "Agent State": "CI Repair",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "collect-ci",
-        command: "pnpm agent:queue:collect-ci -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:collect-ci -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -318,9 +318,9 @@ describe("agent runner tick helpers", () => {
             Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).command,
-      "pnpm agent:queue:cleanup -- --issue 579 --repo voyantjs/other --yes",
+      "pnpm agent:queue:cleanup -- --issue 579 --repo voyant-travel/other --yes",
     )
 
     assert.deepEqual(
@@ -331,15 +331,15 @@ describe("agent runner tick helpers", () => {
             Evidence:
               ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "run-command",
         command:
-          'pnpm agent:queue:run-command -- --issue 579 --repo voyantjs/other --command "<ci-repair-command>" --yes',
+          'pnpm agent:queue:run-command -- --issue 579 --repo voyant-travel/other --command "<ci-repair-command>" --yes',
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -365,12 +365,12 @@ describe("agent runner tick helpers", () => {
 
     const recommendation = recommendQueueAction(item, {
       maxAgeDays: 1,
-      repository: "voyantjs/other",
+      repository: "voyant-travel/other",
     })
     assert.equal(recommendation.action, "capture-browser")
     assert.equal(
       recommendation.command,
-      'pnpm agent:queue:capture-browser -- --issue 579 --repo voyantjs/other --dev-server-command "<dev-server-command>" --yes',
+      'pnpm agent:queue:capture-browser -- --issue 579 --repo voyant-travel/other --dev-server-command "<dev-server-command>" --yes',
     )
     assert.equal(recommendation.heartbeat.stale, false)
     assert.equal(recommendation.priority, 35)
@@ -387,7 +387,7 @@ describe("agent runner tick helpers", () => {
     transcriptItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(transcriptItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      recommendQueueAction(transcriptItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
       "capture-browser",
     )
 
@@ -402,7 +402,7 @@ describe("agent runner tick helpers", () => {
     capturedItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(capturedItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      recommendQueueAction(capturedItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
       "run-command",
     )
   })

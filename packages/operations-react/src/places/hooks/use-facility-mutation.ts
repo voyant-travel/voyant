@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { insertFacilitySchema, updateFacilitySchema } from "@voyantjs/operations"
+import type { insertFacilitySchema, updateFacilitySchema } from "@voyant-travel/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

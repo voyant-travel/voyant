@@ -85,7 +85,7 @@ The deployment uses three Cloudflare persistence surfaces:
   clamped to 1..100.
 - `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS`: optional maximum lease TTL. Defaults to
   900 seconds and is clamped to 60..3600 seconds.
-- `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyantjs/voyant`.
+- `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyant-travel/voyant`.
 - `AGENT_RUNNER_TICKS`: optional R2 binding for latest supervisor tick status
   recent supervisor tick history, and lease-budget history.
 - `AGENT_RUNNER_TICK_KEY_PREFIX`: optional R2 key prefix for supervisor ticks.
@@ -174,7 +174,7 @@ execution mode without printing token values.
 For steady-state operator checks without a smoke tick:
 
 ```bash
-pnpm agent:queue:deployed-status -- --repo voyantjs/voyant
+pnpm agent:queue:deployed-status -- --repo voyant-travel/voyant
 ```
 
 The status command uses the same environment, checks the deployed control-plane
@@ -192,7 +192,7 @@ that the deployed runner can call the control plane's read-only dispatch-plan
 path:
 
 ```bash
-pnpm agent:queue:deployment-doctor -- --smoke-tick --repo voyantjs/voyant --json
+pnpm agent:queue:deployment-doctor -- --smoke-tick --repo voyant-travel/voyant --json
 ```
 
 Inspect recent persisted runner ticks with:
@@ -200,5 +200,5 @@ Inspect recent persisted runner ticks with:
 ```bash
 AGENT_RUNNER_URL=https://agent-runner.example.workers.dev \
 AGENT_RUNNER_TOKEN=... \
-pnpm agent:queue:history -- --source runner --repo voyantjs/voyant
+pnpm agent:queue:history -- --source runner --repo voyant-travel/voyant
 ```

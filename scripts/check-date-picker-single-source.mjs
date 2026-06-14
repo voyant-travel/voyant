@@ -24,7 +24,7 @@ const forkPaths = candidateFiles.filter((file) => {
 const violations = []
 
 for (const file of forkPaths) {
-  violations.push(`${file}: import DatePicker from @voyantjs/ui/components/date-picker`)
+  violations.push(`${file}: import DatePicker from @voyant-travel/ui/components/date-picker`)
 }
 
 const canonicalSource = readFileSync(canonicalPath, "utf8")

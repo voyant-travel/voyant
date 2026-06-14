@@ -1,107 +1,107 @@
-# @voyantjs/admin-react
+# @voyant-travel/admin-react
 
 ## 0.111.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.111.0
+- @voyant-travel/admin-client@0.111.0
 
 ## 0.110.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.110.0
+- @voyant-travel/admin-client@0.110.0
 
 ## 0.109.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.109.0
+- @voyant-travel/admin-client@0.109.0
 
 ## 0.108.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.108.0
+- @voyant-travel/admin-client@0.108.0
 
 ## 0.107.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.107.0
+- @voyant-travel/admin-client@0.107.0
 
 ## 0.106.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.106.0
+- @voyant-travel/admin-client@0.106.0
 
 ## 0.105.2
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.105.2
+- @voyant-travel/admin-client@0.105.2
 
 ## 0.105.1
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.105.1
+- @voyant-travel/admin-client@0.105.1
 
 ## 0.105.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.105.0
+- @voyant-travel/admin-client@0.105.0
 
 ## 0.104.2
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.104.2
+- @voyant-travel/admin-client@0.104.2
 
 ## 0.104.1
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.104.1
+- @voyant-travel/admin-client@0.104.1
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.104.0
+- @voyant-travel/admin-client@0.104.0
 
 ## 0.103.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.103.0
+- @voyant-travel/admin-client@0.103.0
 
 ## 0.102.0
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.102.0
+- @voyant-travel/admin-client@0.102.0
 
 ## 0.101.2
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.101.2
+- @voyant-travel/admin-client@0.101.2
 
 ## 0.101.1
 
 ### Patch Changes
 
-- @voyantjs/admin-client@0.101.1
+- @voyant-travel/admin-client@0.101.1
 
 ## 0.101.0
 
 ### Patch Changes
 
 - Updated dependencies [8e7b56a]
-  - @voyantjs/admin-client@0.101.0
+  - @voyant-travel/admin-client@0.101.0
 
 ## 0.100.0
 
@@ -113,7 +113,7 @@
     organizations CRUD, plus the PII-gated person-document reveal), legal
     (contracts CRUD + issue/void, policies CRUD + cancellation evaluation), and
     products (read surface: list/get). Inputs derive from the canonical
-    `@voyantjs/crm-contracts` / `@voyantjs/legal-contracts` route schemas; outputs
+    `@voyant-travel/crm-contracts` / `@voyant-travel/legal-contracts` route schemas; outputs
     are loose client-facing projections. Scopes follow the path+method convention
     `requireActor` enforces (GET→`:read`, POST/PATCH→`:write`, DELETE→`:delete`).
   - **admin-client:** typed `crm`, `legal`, and `products` namespaces over the new
@@ -126,4 +126,4 @@
 ### Patch Changes
 
 - Updated dependencies [061bef2]
-  - @voyantjs/admin-client@0.100.0
+  - @voyant-travel/admin-client@0.100.0

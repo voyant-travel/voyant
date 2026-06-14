@@ -127,7 +127,7 @@ export function buildCiRepairDrillReport({
 export function drillWorkItem({
   fields = {},
   issueNumber = 579,
-  repository = "voyantjs/voyant",
+  repository = "voyant-travel/voyant",
   title = "[Task] Validate CI repair shepherd loop",
 } = {}) {
   const slug = "validate-ci-repair-shepherd-loop"

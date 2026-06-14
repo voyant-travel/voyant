@@ -1,7 +1,7 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useAdminNavigate } from "@voyantjs/admin"
+import { useAdminNavigate } from "@voyant-travel/admin"
 import { ResourceAllocationDetailPage } from "../components/resource-allocation-detail-page.js"
 import { ResourceAssignmentDetailPage } from "../components/resource-assignment-detail-page.js"
 import { ResourceDetailPage } from "../components/resource-detail-page.js"

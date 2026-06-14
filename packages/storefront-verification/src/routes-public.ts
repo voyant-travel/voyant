@@ -1,6 +1,6 @@
-import type { ModuleContainer } from "@voyantjs/core"
-import { clientIpKey, enforceRateLimit, parseJsonBody } from "@voyantjs/hono"
-import type { NotificationProvider } from "@voyantjs/notifications"
+import type { ModuleContainer } from "@voyant-travel/core"
+import { clientIpKey, enforceRateLimit, parseJsonBody } from "@voyant-travel/hono"
+import type { NotificationProvider } from "@voyant-travel/notifications"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import {

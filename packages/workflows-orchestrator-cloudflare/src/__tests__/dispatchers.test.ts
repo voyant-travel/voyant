@@ -4,9 +4,9 @@
 // abstraction over service binding / inline / HTTP behaves the way the
 // run DO expects — same StepHandler shape, correct fetch target.
 
-import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
-import type { StepHandler, WorkflowStepRequest } from "@voyantjs/workflows-orchestrator"
+import { __resetRegistry, workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
+import type { StepHandler, WorkflowStepRequest } from "@voyant-travel/workflows-orchestrator"
 import { afterEach, describe, expect, it } from "vitest"
 
 import {
@@ -72,7 +72,7 @@ describe("createInlineDispatcher", () => {
     expect(calls).toHaveLength(1)
   })
 
-  it("works end-to-end with handleStepRequest from @voyantjs/workflows/handler", async () => {
+  it("works end-to-end with handleStepRequest from @voyant-travel/workflows/handler", async () => {
     registerDouble()
     const dispatcher = createInlineDispatcher(async (req) => handleStepRequest(req))
     const handler = dispatcher({})

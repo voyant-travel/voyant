@@ -1,4 +1,4 @@
-import { Checkbox, Label } from "@voyantjs/ui/components"
+import { Checkbox, Label } from "@voyant-travel/ui/components"
 
 import type { NotificationsUiMessages } from "../i18n/index.js"
 import {

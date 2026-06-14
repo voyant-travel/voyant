@@ -3,7 +3,7 @@ import {
   type WorkflowContext,
   type WorkflowDefinition,
   workflow,
-} from "@voyantjs/workflows"
+} from "@voyant-travel/workflows"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -71,7 +71,7 @@ export interface RecordedWorkflowOptions<TInput, TOutput> {
 }
 
 /**
- * Declare a `@voyantjs/workflows` workflow whose run lifecycle is mirrored into
+ * Declare a `@voyant-travel/workflows` workflow whose run lifecycle is mirrored into
  * the `workflow_runs` observability tables. Recording is best-effort: database,
  * metadata, or serialization failures never change workflow execution behavior.
  */

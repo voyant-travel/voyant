@@ -16,13 +16,13 @@ describe("agent runner CI repair dispatch", () => {
           "Agent State": "CI Repair",
           Evidence: ciRepairEvidence,
           "Last Heartbeat": new Date().toISOString().slice(0, 10),
-          PR: "https://github.com/voyantjs/voyant/pull/626",
+          PR: "https://github.com/voyant-travel/voyant/pull/626",
         },
       }),
       {
         ciRepairDispatchEnabled: true,
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       },
     )
 
@@ -30,7 +30,7 @@ describe("agent runner CI repair dispatch", () => {
     assert.deepEqual(
       dispatchCommandArgs(recommendation, {
         ciRepairCommand: "pnpm verify:fast",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
       [
         "agent:queue:repair-ci",
@@ -38,7 +38,7 @@ describe("agent runner CI repair dispatch", () => {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/other",
+        "voyant-travel/other",
         "--yes",
         "--ci-repair-command",
         "pnpm verify:fast",
@@ -53,24 +53,24 @@ describe("agent runner CI repair dispatch", () => {
           "Agent State": "CI Repair",
           Evidence: ciRepairEvidence,
           "Last Heartbeat": new Date().toISOString().slice(0, 10),
-          PR: "https://github.com/voyantjs/voyant/pull/626",
+          PR: "https://github.com/voyant-travel/voyant/pull/626",
           Workspace: "sandbox:sprite:task-579",
         },
       }),
       {
         ciRepairDispatchEnabled: true,
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       },
     )
 
-    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyant-travel/other" }), [
       "agent:queue:remote-repair-ci",
       "--",
       "--issue",
       "579",
       "--repo",
-      "voyantjs/other",
+      "voyant-travel/other",
       "--yes",
     ])
   })

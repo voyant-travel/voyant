@@ -26,7 +26,7 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
     })
 
     it("merges duplicate people and repoints booking references", async () => {
-      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
       const db = createTestDb()
 
       const keepRes = await getApp().request("/people", {
@@ -184,7 +184,7 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       // `person_directory` view computes email/phone/website live, so
       // edits to `identity_contact_points` should flow through the
       // next list read with no rebuild call in between.
-      const { identityService } = await import("@voyantjs/identity/service")
+      const { identityService } = await import("@voyant-travel/identity/service")
       const createRes = await getApp().request("/people", {
         method: "POST",
         ...json({ firstName: "Live", lastName: "View", email: "first@example.com" }),
@@ -194,7 +194,7 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
 
       // Mutate the underlying contact point directly — bypassing the
       // person service's own update path on purpose.
-      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const { createTestDb } = await import("@voyant-travel/db/test-utils")
       const db = createTestDb()
       const contactPoints = await identityService.listContactPointsForEntity(
         db,

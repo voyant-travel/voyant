@@ -31,4 +31,4 @@ export {
   updateQuoteVersionLineSchema,
   updateQuoteVersionSchema,
   updateStageSchema,
-} from "@voyantjs/crm-contracts"
+} from "@voyant-travel/crm-contracts"

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@voyantjs/ui/components/alert-dialog"
+} from "@voyant-travel/ui/components/alert-dialog"
 import { Copy, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import {

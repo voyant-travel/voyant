@@ -1,4 +1,4 @@
-import { buildInvoiceIssuedEvent, financeService } from "@voyantjs/finance"
+import { buildInvoiceIssuedEvent, financeService } from "@voyant-travel/finance"
 
 import { createSmartbillSyncRuntime } from "../runtime.js"
 import type { VoyantInvoiceEvent } from "../types.js"

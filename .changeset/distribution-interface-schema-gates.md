@@ -1,7 +1,7 @@
 ---
-"@voyantjs/commerce": patch
-"@voyantjs/distribution": patch
-"@voyantjs/operations": patch
+"@voyant-travel/commerce": patch
+"@voyant-travel/distribution": patch
+"@voyant-travel/operations": patch
 ---
 
 Add owner-path schema manifest metadata for Commerce and Operations, expose the

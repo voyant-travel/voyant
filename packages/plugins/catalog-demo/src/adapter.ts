@@ -5,7 +5,7 @@
  * dropped or replaced by a real upstream connector (Voyant Connect peer,
  * TUI direct API, Hotelbeds, GDS) with no template churn.
  *
- * Mirrors the shape of `@voyantjs/plugin-flights-demo` for `flights`.
+ * Mirrors the shape of `@voyant-travel/plugin-flights-demo` for `flights`.
  */
 
 import {
@@ -30,7 +30,7 @@ import {
   type ReserveResult,
   type SourceAdapter,
   type SourceAdapterContext,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 
 /** Stable kind identifier emitted as `source.kind` on every projection. */
 export const DEMO_SOURCE_KIND = "demo"
@@ -72,7 +72,7 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
     postBookOperations: ["cancel", "status"],
     // Demo upstream now serves rich content (highlights, days,
     // options, media, policies) via /get-content — same contract as
-    // real adapters. Templates that want to demonstrate the thin-
+    // real adapters. Starters that want to demonstrate the thin-
     // synthesizer fallback can flip this and the catalog content
     // service falls through to synthesizeProductContent.
     supportsContentFetch: true,

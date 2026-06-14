@@ -8,7 +8,7 @@
  */
 
 import type { QueryClient } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -30,8 +30,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components"
-import { cn } from "@voyantjs/ui/lib/utils"
+} from "@voyant-travel/ui/components"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { ListFilter, Plus, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"

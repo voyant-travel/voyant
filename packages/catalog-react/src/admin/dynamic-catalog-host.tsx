@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminHref, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useAdminHref, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { DynamicCatalogPage as DynamicCatalogPageUi } from "../components/dynamic-catalog-page.js"
 import type { CatalogSearchParams } from "../index.js"
 import { CatalogVerticalHost } from "./catalog-vertical-host.js"

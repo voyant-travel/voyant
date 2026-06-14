@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, eq, inArray } from "drizzle-orm"
 
 import type { NewTripComponent, NewTripEnvelope, TripComponent, TripEnvelope } from "./schema.js"

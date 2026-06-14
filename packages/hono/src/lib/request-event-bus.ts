@@ -1,4 +1,4 @@
-import type { EmitOptions, EventBus, EventMetadata, OutboxEventStore } from "@voyantjs/core"
+import type { EmitOptions, EventBus, EventMetadata, OutboxEventStore } from "@voyant-travel/core"
 
 /**
  * Wrap an {@link EventBus} so emits from within a request defer their

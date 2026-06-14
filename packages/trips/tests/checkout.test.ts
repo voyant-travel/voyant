@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { describe, expect, it } from "vitest"
 import type { NewTripComponentEvent, TripComponent, TripEnvelope } from "../src/schema.js"
 import { tripComponentEvents, tripComponents, tripEnvelopes } from "../src/schema.js"

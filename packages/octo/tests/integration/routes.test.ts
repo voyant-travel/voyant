@@ -23,7 +23,7 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
   let db: any
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -38,14 +38,14 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
 
   beforeEach(async () => {
     seq = 0
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 
   async function seedProjectedProduct() {
     const { optionUnits, productCapabilities, productFeatures, productOptions, products } =
-      await import("@voyantjs/inventory/schema")
-    const { availabilityStartTimes, availabilitySlots } = await import("@voyantjs/operations")
+      await import("@voyant-travel/inventory/schema")
+    const { availabilityStartTimes, availabilitySlots } = await import("@voyant-travel/operations")
 
     const [product] = await db
       .insert(products)
@@ -126,10 +126,10 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
   }
 
   async function seedBookingProjectionData() {
-    const { availabilitySlots } = await import("@voyantjs/operations")
-    const { upsertBookingOrigin } = await import("@voyantjs/bookings")
+    const { availabilitySlots } = await import("@voyant-travel/operations")
+    const { upsertBookingOrigin } = await import("@voyant-travel/bookings")
     const { bookingFulfillments, bookingSupplierStatuses, bookings } = await import(
-      "@voyantjs/bookings/schema"
+      "@voyant-travel/bookings/schema"
     )
 
     const [slot] = await db

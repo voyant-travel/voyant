@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { createContainer, createEventBus } from "@voyantjs/core"
+import { createContainer, createEventBus } from "@voyant-travel/core"
 import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 
@@ -74,7 +74,7 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
     })
     expect(packageJson.voyant).toEqual({
       schema: "./schema",
-      requiresSchemas: ["@voyantjs/db"],
+      requiresSchemas: ["@voyant-travel/db"],
     })
   })
 })

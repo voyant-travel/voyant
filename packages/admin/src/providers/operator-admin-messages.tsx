@@ -6,7 +6,7 @@ import {
   type LocaleMessageOverrides,
   type OperatorAdminMessages,
   operatorAdminMessageDefinitions,
-} from "@voyantjs/i18n"
+} from "@voyant-travel/i18n"
 import type { ReactNode } from "react"
 
 import { DEFAULT_ADMIN_LOCALE, useLocale } from "./locale.js"

@@ -1,4 +1,4 @@
-import { priceCatalogs } from "@voyantjs/commerce"
+import { priceCatalogs } from "@voyant-travel/commerce"
 import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type BuildProductGraphResult, buildProductGraph } from "./builder.js"

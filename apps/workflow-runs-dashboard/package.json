@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/workflow-runs-dashboard",
+  "name": "@voyant-travel/workflow-runs-dashboard",
   "version": "0.0.3",
   "description": "Standalone Vite SPA for the workflow_runs admin surface. Reads /v1/admin/workflow-runs from any deployment that mounts createWorkflowRunsAdminRoutes(). Deployable same-origin or standalone via VITE_API_BASE.",
   "license": "Apache-2.0",
@@ -12,8 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@voyantjs/ui": "workspace:^",
-    "@voyantjs/workflows-react": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/workflows-react": "workspace:^",
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {
@@ -21,7 +21,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11",

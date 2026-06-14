@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/workflows-selfhost-cloudflare-worker",
+  "name": "@voyant-travel/workflows-selfhost-cloudflare-worker",
   "version": "0.0.3",
   "description": "Reference single-tenant Cloudflare Worker for self-hosting Voyant Workflows without Workers for Platforms.",
   "license": "Apache-2.0",
@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.2",
-    "@voyantjs/workflows-orchestrator": "workspace:^",
-    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:^",
-    "@voyantjs/workflows": "workspace:^"
+    "@voyant-travel/workflows-orchestrator": "workspace:^",
+    "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "wrangler": "^4.86.0"
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
+import { Badge } from "@voyant-travel/ui/components/badge"
 import { Image as ImageIcon, Plane } from "lucide-react"
 
 import type { CatalogUiMessages } from "../i18n/messages.js"

@@ -9,7 +9,7 @@
  * without traversing the ship graph at read time.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyant-travel/catalog/contract"
 
 const CUSTOMER_FACING = ["staff", "customer", "partner"] as const
 

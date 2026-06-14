@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Separator } from "@voyantjs/ui/components/separator"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Separator } from "@voyant-travel/ui/components/separator"
 import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"

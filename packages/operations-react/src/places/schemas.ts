@@ -5,7 +5,7 @@ import {
   insertPropertyGroupMemberSchema,
   insertPropertyGroupSchema,
   insertPropertySchema,
-} from "@voyantjs/operations"
+} from "@voyant-travel/operations"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

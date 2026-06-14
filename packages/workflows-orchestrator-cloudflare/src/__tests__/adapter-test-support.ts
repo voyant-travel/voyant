@@ -1,5 +1,5 @@
-import { __resetRegistry } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
+import { __resetRegistry } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { beforeEach } from "vitest"
 import {
   createServiceBindingDispatcher,

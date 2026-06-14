@@ -2,23 +2,23 @@
 
 import { useQueryClient } from "@tanstack/react-query"
 import type { RowSelectionState } from "@tanstack/react-table"
-import { Button, cn, Label } from "@voyantjs/ui/components"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { Button, cn, Label } from "@voyant-travel/ui/components"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import {
   CalendarProvider,
   CalendarView,
   type IEvent,
   type TCalendarView,
-} from "@voyantjs/ui/components/big-calendar"
-import { DateRangePicker, type DateRangeValue } from "@voyantjs/ui/components/date-picker"
+} from "@voyant-travel/ui/components/big-calendar"
+import { DateRangePicker, type DateRangeValue } from "@voyant-travel/ui/components/date-picker"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
+} from "@voyant-travel/ui/components/select"
+import { ToggleGroup, ToggleGroupItem } from "@voyant-travel/ui/components/toggle-group"
 import { CalendarDays, List, Plus } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"

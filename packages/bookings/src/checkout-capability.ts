@@ -4,7 +4,7 @@ import {
   serializePublicCapabilityCookie,
   UnauthorizedApiError,
   verifyPublicCapabilityToken,
-} from "@voyantjs/hono"
+} from "@voyant-travel/hono"
 import type { Context } from "hono"
 
 export const CHECKOUT_CAPABILITY_COOKIE = "voyant_checkout_session"

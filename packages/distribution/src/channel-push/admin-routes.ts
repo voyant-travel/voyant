@@ -18,7 +18,10 @@
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
 
-import { type InfraWebhookDelivery, infraWebhookDeliveriesTable } from "@voyantjs/db/schema/infra"
+import {
+  type InfraWebhookDelivery,
+  infraWebhookDeliveriesTable,
+} from "@voyant-travel/db/schema/infra"
 import { and, desc, eq, gte, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"

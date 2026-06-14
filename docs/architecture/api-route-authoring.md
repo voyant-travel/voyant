@@ -40,8 +40,8 @@ public surface.
 
 Voyant should keep `storefront` as the customer-facing package/runtime term:
 
-- `@voyantjs/storefront`
-- `@voyantjs/storefront-react`
+- `@voyant-travel/storefront`
+- `@voyant-travel/storefront-react`
 
 But the HTTP surface should stay under `/v1/public/*`, not
 `/v1/public/storefront/*`.

@@ -1,6 +1,6 @@
 "use client"
 
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import * as React from "react"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { type OrganizationRecord, useOrganization, useOrganizations } from "../index.js"

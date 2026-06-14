@@ -1,4 +1,10 @@
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
 import { type ProductData, ProductDetailForm } from "./product-detail-form.js"

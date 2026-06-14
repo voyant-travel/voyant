@@ -1,12 +1,15 @@
 // agent-quality: file-size exception -- owner: legal; #1730 moved the default variable assembly out of service-auto-generate, with a follow-up split by traveler/item/settlement context still warranted.
-import { type ActionLedgerRequestContextValues, ledgerSensitiveRead } from "@voyantjs/action-ledger"
+import {
+  type ActionLedgerRequestContextValues,
+  ledgerSensitiveRead,
+} from "@voyant-travel/action-ledger"
 import {
   BOOKING_PII_READ_CAPABILITY,
   type BookingPiiService,
   bookingsService,
-} from "@voyantjs/bookings"
-import { bookingPiiAccessLog } from "@voyantjs/bookings/schema"
-import { bookingPaymentSchedules, invoices, payments } from "@voyantjs/finance/schema"
+} from "@voyant-travel/bookings"
+import { bookingPiiAccessLog } from "@voyant-travel/bookings/schema"
+import { bookingPaymentSchedules, invoices, payments } from "@voyant-travel/finance/schema"
 import { and, asc, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

@@ -1,7 +1,7 @@
-import type { Module } from "@voyantjs/core"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
-import type { HonoModule } from "@voyantjs/hono/module"
+import type { Module } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { type Context, Hono } from "hono"
 import {
   type ActionApprovalListQuery,

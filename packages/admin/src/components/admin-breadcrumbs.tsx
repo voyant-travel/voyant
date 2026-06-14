@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import type * as React from "react"
 import {
   createContext,

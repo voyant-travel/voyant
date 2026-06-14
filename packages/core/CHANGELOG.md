@@ -1,4 +1,4 @@
-# @voyantjs/core
+# @voyant-travel/core
 
 ## 0.109.0
 
@@ -20,7 +20,7 @@
 
 ### Minor Changes
 
-- 418fa82: EventBus: handlers now run **in parallel** (behavior change — previously sequential in subscription order; subscribers are independent observers by contract, so one slow handler no longer serializes the rest) and each handler is bounded by a per-handler timeout (`createEventBus({ handlerTimeoutMs })`, default 15s, `false` to disable — on timeout the handler is logged and no longer awaited, not cancelled). New `SubscribeOptions` (`subscribe(event, handler, { inline: true })`) and `EmitOptions` (`emit(event, data, metadata, { schedule })`): when an emitter supplies `schedule`, non-`inline` handlers are handed to it as one promise and `emit()` resolves after the `inline` handlers only — this is how `@voyantjs/hono` defers subscriber work past the HTTP response. Plugin `Subscriber` gains the matching optional `inline` flag, threaded through `registerPlugins`. Existing call sites are source-compatible (new parameters are optional).
+- 418fa82: EventBus: handlers now run **in parallel** (behavior change — previously sequential in subscription order; subscribers are independent observers by contract, so one slow handler no longer serializes the rest) and each handler is bounded by a per-handler timeout (`createEventBus({ handlerTimeoutMs })`, default 15s, `false` to disable — on timeout the handler is logged and no longer awaited, not cancelled). New `SubscribeOptions` (`subscribe(event, handler, { inline: true })`) and `EmitOptions` (`emit(event, data, metadata, { schedule })`): when an emitter supplies `schedule`, non-`inline` handlers are handed to it as one promise and `emit()` resolves after the `inline` handlers only — this is how `@voyant-travel/hono` defers subscriber work past the HTTP response. Plugin `Subscriber` gains the matching optional `inline` flag, threaded through `registerPlugins`. Existing call sites are source-compatible (new parameters are optional).
 
 ## 0.106.0
 
@@ -29,32 +29,32 @@
 - eeb23df: Packaged-admin RFC §4.8 (route assembly, increment 1) — framework half of
   `voyant admin generate --routes`:
 
-  - `@voyantjs/admin` exports `requireAdminRoute(extension, routeId)` (plus the
+  - `@voyant-travel/admin` exports `requireAdminRoute(extension, routeId)` (plus the
     `BindableAdminRoute` type): looks up a route contribution by id and asserts
     it carries a component, so generated thin route files fail loudly at module
     evaluation when an extension stops shipping the route they bind.
     `AdminRouteRuntime.fetcher` is narrowed to the string-URL `VoyantFetcher`
     convention every `*-react` data client uses, so host fetchers (and the
     global `fetch`) bind directly into generated loaders.
-  - `@voyantjs/core` manifest grows `admin.routes` (`AdminRoutesConfig`): the
+  - `@voyant-travel/core` manifest grows `admin.routes` (`AdminRoutesConfig`): the
     host route-tree directory and the runtime-import bindings (`apiUrlModule`/
     `apiUrlExport`, `fetcherModule`/`fetcherExport`) the route generator emits,
     with operator-convention defaults. Validated by `validateVoyantConfig`.
 
   The operator's promotions index route is now generated output of the new
-  command (byte-for-byte reproducible from `@voyantjs/promotions-ui/admin`).
+  command (byte-for-byte reproducible from `@voyant-travel/promotions-ui/admin`).
 
 ## 0.105.1
 
 ### Patch Changes
 
 - 344e7b6: Packaged-admin RFC §5 deletions: the fork-and-own distribution surfaces are
-  retired now that all 10 admin domains ship as versioned packages. `@voyantjs/ui`
+  retired now that all 10 admin domains ship as versioned packages. `@voyant-travel/ui`
   drops its shadcn registry source (`registry/`, `registry.json`, generated
   `public/r/`) and the `registry:build` script — the package's published
   component/export surface is unchanged and remains the only way to consume it.
   `templates/dmc`, `apps/dev`, and the hosted registry worker (`apps/registry`)
-  are deleted from the workspace. `@voyantjs/core` and `@voyantjs/products-ui`
+  are deleted from the workspace. `@voyant-travel/core` and `@voyant-travel/products-ui`
   only see stale comment/doc references repointed from the deleted surfaces to
   `templates/operator`.
 
@@ -64,7 +64,7 @@
 
 - c2aef18: Manifest-driven migration schema resolution (#1608).
 
-  - `@voyantjs/core` `VoyantConfig` gains `additionalSchemas`, `extensions`, and `schemas` fields (with validation) so a template's migrated schema set is derived from `voyant.config.ts`.
+  - `@voyant-travel/core` `VoyantConfig` gains `additionalSchemas`, `extensions`, and `schemas` fields (with validation) so a template's migrated schema set is derived from `voyant.config.ts`.
   - `catalog`, `flights`, `travel-composer`, and `workflow-runs` declare `package.json#voyant` schema metadata so they resolve into the generated schema manifest (flights pins its non-standard `./reference/local-postgres` subpath).
 
 ## 0.104.1
@@ -319,7 +319,7 @@
 
 ### Minor Changes
 
-- 6d0c8f3: Extract `withOptionalTransaction` into `@voyantjs/db/transaction` so the soft-fallback helper that action-ledger has used since 0.62.0 can be shared by any package that needs it. Add `Module.requiresTransactionalDb` so modules whose write paths use interactive transactions declare it, and have `createApp()` assert on first request that the resolved db adapter supports `db.transaction(async (tx) => …)`. With the neon-http (edge) adapter that assertion now throws an actionable error pointing at `createServerlessDbClient` (neon-serverless / WebSocket) or `createDbClient(url, { adapter: "node" })` — instead of the cryptic "No transactions support in neon-http driver" exception thrown on first write.
+- 6d0c8f3: Extract `withOptionalTransaction` into `@voyant-travel/db/transaction` so the soft-fallback helper that action-ledger has used since 0.62.0 can be shared by any package that needs it. Add `Module.requiresTransactionalDb` so modules whose write paths use interactive transactions declare it, and have `createApp()` assert on first request that the resolved db adapter supports `db.transaction(async (tx) => …)`. With the neon-http (edge) adapter that assertion now throws an actionable error pointing at `createServerlessDbClient` (neon-serverless / WebSocket) or `createDbClient(url, { adapter: "node" })` — instead of the cryptic "No transactions support in neon-http driver" exception thrown on first write.
 
 ## 0.63.1
 

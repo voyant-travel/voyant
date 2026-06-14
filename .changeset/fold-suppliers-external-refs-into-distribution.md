@@ -1,8 +1,8 @@
 ---
-"@voyantjs/distribution": minor
-"@voyantjs/distribution-react": minor
+"@voyant-travel/distribution": minor
+"@voyant-travel/distribution-react": minor
 "operator": patch
-"@voyantjs/legal": patch
+"@voyant-travel/legal": patch
 ---
 
 Move supplier and external-reference runtime and React implementation under

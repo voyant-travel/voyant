@@ -1,13 +1,13 @@
 import { HeadContent, Scripts } from "@tanstack/react-router"
-import { Button, Toaster } from "@voyantjs/ui/components"
-import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
+import { Button, Toaster } from "@voyant-travel/ui/components"
+import { Alert, AlertDescription, AlertTitle } from "@voyant-travel/ui/components/alert"
 import {
   Empty,
   EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@voyantjs/ui/components/empty"
+} from "@voyant-travel/ui/components/empty"
 import { RefreshCcw } from "lucide-react"
 import type { ReactNode } from "react"
 

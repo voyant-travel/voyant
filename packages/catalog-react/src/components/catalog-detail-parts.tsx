@@ -1,8 +1,8 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Input } from "@voyantjs/ui/components/input"
-import { cn } from "@voyantjs/ui/lib/utils"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Input } from "@voyant-travel/ui/components/input"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { Check, Copy, ExternalLink, Loader2, Minus, Plus, X } from "lucide-react"
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react"
 

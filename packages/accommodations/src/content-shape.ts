@@ -2,12 +2,12 @@ import {
   type AccommodationContent,
   accommodationContentSchema,
   validateAccommodationContent,
-} from "@voyantjs/accommodations-contracts/content-shape"
+} from "@voyant-travel/accommodations-contracts/content-shape"
 import {
   type ContentOverlay,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
-} from "@voyantjs/catalog"
+} from "@voyant-travel/catalog"
 
 export {
   ACCOMMODATION_CONTENT_SCHEMA_VERSION,
@@ -32,7 +32,7 @@ export {
   type HotelSummary,
   hotelSummarySchema,
   validateAccommodationContent,
-} from "@voyantjs/accommodations-contracts/content-shape"
+} from "@voyant-travel/accommodations-contracts/content-shape"
 
 export function mergeOverlaysIntoAccommodationContent(
   payload: AccommodationContent,

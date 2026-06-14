@@ -1,7 +1,7 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { ChevronDown, ChevronRight, Link2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 

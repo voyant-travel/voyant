@@ -1,5 +1,5 @@
-import { ActionLedgerIdempotencyConflictError } from "@voyantjs/action-ledger"
-import { parseJsonBody } from "@voyantjs/hono"
+import { ActionLedgerIdempotencyConflictError } from "@voyant-travel/action-ledger"
+import { parseJsonBody } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"

@@ -1,15 +1,15 @@
 # `catalog-demo-api`
 
-Standalone HTTP service that mocks an upstream catalog source so templates
+Standalone HTTP service that mocks an upstream catalog source so starters
 and examples can exercise the full booking lifecycle (`quote → book →
 cancel`) without external credentials. Mirrors `SourceAdapter` 1:1 over
-REST; the `@voyantjs/plugin-catalog-demo` package is a thin fetch client
+REST; the `@voyant-travel/plugin-catalog-demo` package is a thin fetch client
 that implements the adapter interface against this service.
 
 Owns its own Postgres database — inventory and orders persist here, not
-in the operator template's primary DB. Replace it with a real upstream
+in the operator starter's primary DB. Replace it with a real upstream
 (TUI direct, Hotelbeds, a Voyant Connect peer) by swapping the plugin —
-no template tables to drop.
+no starter tables to drop.
 
 ## Run
 
@@ -20,7 +20,7 @@ pnpm db:migrate             # creates catalog_demo_inventory + catalog_demo_orde
 pnpm dev                    # listens on :3330 by default
 ```
 
-Then in your operator template (e.g. `templates/operator/.dev.vars`):
+Then in your operator starter (e.g. `starters/operator/.dev.vars`):
 
 ```
 CATALOG_DEMO_API_URL=http://localhost:3330
@@ -47,10 +47,10 @@ Each maps 1:1 to a `SourceAdapter` method.
 | GET    | `/orders/:id`              | admin: read one order |
 
 Bodies and response shapes match the catalog plane's contract types from
-`@voyantjs/catalog/adapter/contract` — `CatalogProjection`,
+`@voyant-travel/catalog/adapter/contract` — `CatalogProjection`,
 `LiveResolveRequest` / `LiveResolveResult`, `ReserveRequest` /
 `ReserveResult`, `CancelResult`. CORS is permissive so the operator
-template can call the service from a worker and ops users can hit
+starter can call the service from a worker and ops users can hit
 `/inventory` from a browser tab — production upstreams obviously lock
 this down.
 

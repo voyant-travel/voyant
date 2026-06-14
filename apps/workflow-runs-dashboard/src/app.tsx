@@ -1,4 +1,4 @@
-import { createWorkflowRunsApiClient, WorkflowRunsPage } from "@voyantjs/workflows-react/ui"
+import { createWorkflowRunsApiClient, WorkflowRunsPage } from "@voyant-travel/workflows-react/ui"
 import type { ReactElement } from "react"
 
 const API_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? "/api"

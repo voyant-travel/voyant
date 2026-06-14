@@ -7,9 +7,9 @@ import {
   Card,
   CardContent,
   CardHeader,
-} from "@voyantjs/ui/components"
-import { Separator } from "@voyantjs/ui/components/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+} from "@voyant-travel/ui/components"
+import { Separator } from "@voyant-travel/ui/components/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { Loader2, Pencil } from "lucide-react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"

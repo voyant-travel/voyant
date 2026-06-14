@@ -7,13 +7,13 @@ export default defineConfig({
       // Subpath aliases first — arrays preserve order so the more-specific
       // ./testing entry matches before the package-root alias.
       {
-        find: "@voyantjs/workflows-orchestrator/testing",
+        find: "@voyant-travel/workflows-orchestrator/testing",
         replacement: fileURLToPath(
           new URL("../workflows-orchestrator/src/testing/driver-compliance.ts", import.meta.url),
         ),
       },
       {
-        find: "@voyantjs/workflows-orchestrator",
+        find: "@voyant-travel/workflows-orchestrator",
         replacement: fileURLToPath(
           new URL("../workflows-orchestrator/src/index.ts", import.meta.url),
         ),

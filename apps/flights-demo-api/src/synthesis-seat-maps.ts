@@ -5,7 +5,7 @@ import type {
   Seat,
   SeatMap,
   SeatRow,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 
 import { hashString, mulberry32 } from "./synthesis-common.js"
 

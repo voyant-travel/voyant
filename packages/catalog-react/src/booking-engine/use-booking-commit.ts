@@ -6,7 +6,7 @@ import {
   type BookingPaymentIntent,
   type BookResponseV1,
   bookResponseV1,
-} from "@voyantjs/catalog-contracts/booking-engine/contracts"
+} from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 
 import { type BookingJourneyApiOptions, useBookingJourneyApi } from "./use-booking-journey-api.js"
 

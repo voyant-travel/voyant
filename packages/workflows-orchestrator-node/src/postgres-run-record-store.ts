@@ -1,5 +1,5 @@
 // Postgres-backed RunRecordStore — implements the orchestrator's primary
-// state-store interface (`@voyantjs/workflows-orchestrator/RunRecordStore`)
+// state-store interface (`@voyant-travel/workflows-orchestrator/RunRecordStore`)
 // against the existing `voyant_snapshot_runs` table.
 //
 // The snapshot table already carries a `run_record` JSONB column; this
@@ -18,7 +18,7 @@ import type {
   OrchestratorRunStatus,
   RunRecord,
   RunRecordStore,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 import { and, desc, eq } from "drizzle-orm"
 import type { drizzle } from "drizzle-orm/node-postgres"
 

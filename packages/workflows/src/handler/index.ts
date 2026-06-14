@@ -1,4 +1,4 @@
-// @voyantjs/workflows/handler
+// @voyant-travel/workflows/handler
 //
 // The tenant side of the runtime protocol (see docs/runtime-protocol.md §2).
 // The orchestrator invokes `POST /__voyant/workflow-step`; the tenant
@@ -54,7 +54,7 @@ export interface StepHandlerDeps {
   /**
    * Rate limiter shared across step invocations. Required when any
    * registered workflow declares `options.rateLimit` on a step; see
-   * `createInMemoryRateLimiter` in `@voyantjs/workflows/rate-limit` for
+   * `createInMemoryRateLimiter` in `@voyant-travel/workflows/rate-limit` for
    * the reference impl. One instance per Worker process is the
    * intended cardinality — state is kept in the limiter's closure.
    */
@@ -67,7 +67,7 @@ export interface StepHandlerDeps {
    * Typical impl dispatches to a separate sandboxed context:
    *   - Local dev: an in-process passthrough (same Node process).
    *   - CF production: a Cloudflare Container binding, via
-   *     `createCfContainerStepRunner` from `@voyantjs/workflows-orchestrator-cloudflare`.
+   *     `createCfContainerStepRunner` from `@voyant-travel/workflows-orchestrator-cloudflare`.
    *
    * This is bring-your-own because the right dispatch shape depends on
    * the target runtime; the executor only cares that a runner exists.

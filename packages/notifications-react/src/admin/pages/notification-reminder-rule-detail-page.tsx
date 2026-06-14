@@ -1,4 +1,4 @@
-import type { AdminRoutePageProps } from "@voyantjs/admin"
+import type { AdminRoutePageProps } from "@voyant-travel/admin"
 
 import { NotificationReminderRuleDetailHost } from "../notification-reminder-rule-detail-host.js"
 

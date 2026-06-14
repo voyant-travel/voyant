@@ -1,7 +1,7 @@
 # Evidence Packet: [Task] Validate browser harness against workflows dashboard
 
-Issue: https://github.com/voyantjs/voyant/issues/648
-Repository: voyantjs/voyant
+Issue: https://github.com/voyant-travel/voyant/issues/648
+Repository: voyant-travel/voyant
 Branch: task/648-validate-browser-harness-against-workflows-dashboard
 Workspace: /Users/mihai/builds/internal/voyant-all/voyant/.agent-worktrees/648-validate-browser-harness-against-workflows-dashboard
 Evidence: docs/agent-evidence/active/648-validate-browser-harness-against-workflows-dashboard.md
@@ -24,7 +24,7 @@ Added an opt-in empty API fallback for workflows dashboard Vite dev smoke tests 
 
 ## Verification
 
-pnpm -F @voyantjs/workflows-local-dashboard check-types: passed; pnpm -F @voyantjs/workflows-local-dashboard build: passed; pnpm agent:queue:capture-browser with 1440x900 and 390x844 viewports: passed with 0 console errors, 0 console warnings, and 0 failed requests.
+pnpm -F @voyant-travel/workflows-local-dashboard check-types: passed; pnpm -F @voyant-travel/workflows-local-dashboard build: passed; pnpm agent:queue:capture-browser with 1440x900 and 390x844 viewports: passed with 0 console errors, 0 console warnings, and 0 failed requests.
 
 ## UI Evidence
 

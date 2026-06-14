@@ -1,4 +1,4 @@
-# @voyantjs/charters
+# @voyant-travel/charters
 
 Opt-in charters module for OTA, tour-operator, and DMC deployments. Models
 small-scale or specialized charter inventory that does not fit the cruise

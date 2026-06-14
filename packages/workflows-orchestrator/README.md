@@ -1,10 +1,10 @@
-# @voyantjs/workflows-orchestrator
+# @voyant-travel/workflows-orchestrator
 
 Reference orchestrator for Voyant Workflows. Drives runs through the
 tenant step handler over the v1 wire protocol. Transport- and
 storage-agnostic: compose with a `RunRecordStore` of your choice
 (in-memory for tests, Postgres-backed for production, DO-backed via
-[`@voyantjs/workflows-orchestrator-cloudflare`](../workflows-orchestrator-cloudflare)).
+[`@voyant-travel/workflows-orchestrator-cloudflare`](../workflows-orchestrator-cloudflare)).
 
 See [`docs/runtime-protocol.md`](../../docs/runtime-protocol.md) §2 +
 §5 for the contract this implements.
@@ -16,12 +16,12 @@ import {
   cancel,
   createInMemoryRunStore,
   type StepHandler,
-} from "@voyantjs/workflows-orchestrator";
-import { handleStepRequest } from "@voyantjs/workflows/handler";
+} from "@voyant-travel/workflows-orchestrator";
+import { handleStepRequest } from "@voyant-travel/workflows/handler";
 
 // A StepHandler calls into the tenant's workflow code. In-process
 // here via `handleStepRequest`; over HTTP in production via
-// @voyantjs/workflows-orchestrator-cloudflare's dispatch-namespace adapter.
+// @voyant-travel/workflows-orchestrator-cloudflare's dispatch-namespace adapter.
 const handler: StepHandler = async (req) => handleStepRequest(req);
 
 const store = createInMemoryRunStore();
@@ -65,9 +65,9 @@ Terminal: everything except `running` / `waiting`. `driveUntilPaused`
 returns as soon as the run reaches a terminal state or parks on a
 waitpoint the tenant registered.
 
-## Why this package is separate from `@voyantjs/workflows`
+## Why this package is separate from `@voyant-travel/workflows`
 
-The authoring SDK (`@voyantjs/workflows`) describes workflows and
+The authoring SDK (`@voyant-travel/workflows`) describes workflows and
 provides the in-process executor. The orchestrator consumes that
 SDK's wire protocol — it doesn't care how the tenant runs the body,
 only about the request/response shape. Separating them keeps the

@@ -9,7 +9,7 @@ const bookingMocks = vi.hoisted(() => ({
   upsertGroupCruiseDetails: vi.fn(),
 }))
 
-vi.mock("@voyantjs/bookings", () => ({
+vi.mock("@voyant-travel/bookings", () => ({
   bookingGroupsService: {
     addGroupMember: bookingMocks.addGroupMember,
     createBookingGroup: bookingMocks.createBookingGroup,

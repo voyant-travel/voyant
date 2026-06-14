@@ -1,5 +1,5 @@
-import type { EventBus, EventEnvelope, EventMetadata, OutboxEventStore } from "@voyantjs/core"
-import { generateEventId } from "@voyantjs/core"
+import type { EventBus, EventEnvelope, EventMetadata, OutboxEventStore } from "@voyant-travel/core"
+import { generateEventId } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 
 import { type EventOutboxRow, eventOutboxTable } from "./schema/infra/event_outbox.js"

@@ -1,5 +1,5 @@
 /**
- * Catalog evaluator adapter — bridges `@voyantjs/catalog`'s
+ * Catalog evaluator adapter — bridges `@voyant-travel/catalog`'s
  * `PromotionEvaluationInput` / `PromotionEvaluationOutput` contract to
  * this package's internal evaluator.
  *
@@ -16,8 +16,8 @@
 import type {
   PromotionEvaluationInput,
   PromotionEvaluationOutput,
-} from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+} from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import { createDrizzleOfferDataSource, evaluateOffersForProduct } from "./service-evaluator.js"
 

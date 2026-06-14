@@ -1,6 +1,6 @@
 // Spike demo workflow. Exercises step replay, sleep-based waitpoint
 // yield, event waits, metadata, deterministic clock + RNG.
-import { workflow } from "@voyantjs/workflows"
+import { workflow } from "@voyant-travel/workflows"
 export const sendBookingReminder = workflow({
   id: "send-booking-reminder",
   async run(input, ctx) {

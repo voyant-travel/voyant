@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { activityTypeSchema, entityTypeSchema, quoteStatusSchema } from "./index.js"
 
-describe("@voyantjs/crm-contracts validation", () => {
+describe("@voyant-travel/crm-contracts validation", () => {
   it("accepts valid enum vocabulary values", () => {
     expect(entityTypeSchema.parse("person")).toBe("person")
     expect(quoteStatusSchema.parse("won")).toBe("won")

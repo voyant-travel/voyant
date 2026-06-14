@@ -2,7 +2,7 @@ import type {
   CommitOwnedRequest,
   ComputeQuoteRequest,
   OwnedHandlerContext,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyant-travel/catalog/booking-engine"
 import { describe, expect, it, vi } from "vitest"
 
 import {

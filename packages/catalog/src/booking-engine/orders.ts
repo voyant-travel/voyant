@@ -11,7 +11,7 @@
  * itself owns.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, desc, eq, inArray } from "drizzle-orm"
 
 import {
@@ -72,7 +72,7 @@ export async function listOrders(
 }
 
 /**
- * Fetch one snapshot row by its id. Used by the operator template's
+ * Fetch one snapshot row by its id. Used by the operator starter's
  * `GET /v1/admin/catalog/orders/:id` route. Returns `null` when absent.
  */
 export async function getOrderById(

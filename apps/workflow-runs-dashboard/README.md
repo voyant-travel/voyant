@@ -1,26 +1,26 @@
-# `@voyantjs/workflow-runs-dashboard`
+# `@voyant-travel/workflow-runs-dashboard`
 
 Standalone Vite + React SPA for the workflow_runs admin surface. The reusable
-React surface ships from `@voyantjs/workflows-react/ui`; this app is a thin host
+React surface ships from `@voyant-travel/workflows-react/ui`; this app is a thin host
 that configures the package against the mounted admin API.
 Reads the `/v1/admin/workflow-runs` endpoints exposed by
-`@voyantjs/workflow-runs/routes` (mounted in any deployment via
+`@voyant-travel/workflow-runs/routes` (mounted in any deployment via
 `mountWorkflowRunsAdminRoutes()`).
 
-Distinct from `@voyantjs/workflows-local-dashboard` — that one is
-the dashboard for the durable `@voyantjs/workflows` SDK driven by
+Distinct from `@voyant-travel/workflows-local-dashboard` — that one is
+the dashboard for the durable `@voyant-travel/workflows` SDK driven by
 the orchestrator-node Node server. This one is for the lightweight,
 edge-compatible recorder that templates can ship without running a
 separate worker process.
 
-## Run against the operator template
+## Run against the operator starter
 
 ```bash
-# Terminal 1 — the operator template (has /v1/admin/workflow-runs mounted)
+# Terminal 1 — the operator starter (has /v1/admin/workflow-runs mounted)
 pnpm -F operator dev    # default port: 3300
 
 # Terminal 2 — this dashboard
-pnpm -F @voyantjs/workflow-runs-dashboard dev    # default port: 3500
+pnpm -F @voyant-travel/workflow-runs-dashboard dev    # default port: 3500
 ```
 
 Open http://localhost:3500 — the Vite dev server proxies `/api/*`
@@ -36,7 +36,7 @@ received" → automatic).
 ## Run against a different API target
 
 ```bash
-VOYANT_API_TARGET=http://127.0.0.1:8787 pnpm -F @voyantjs/workflow-runs-dashboard dev
+VOYANT_API_TARGET=http://127.0.0.1:8787 pnpm -F @voyant-travel/workflow-runs-dashboard dev
 ```
 
 ## Deploy standalone (separate origin)
@@ -44,7 +44,7 @@ VOYANT_API_TARGET=http://127.0.0.1:8787 pnpm -F @voyantjs/workflow-runs-dashboar
 Build with `VITE_API_BASE` pointing at the API:
 
 ```bash
-VITE_API_BASE=https://operator.example.com pnpm -F @voyantjs/workflow-runs-dashboard build
+VITE_API_BASE=https://operator.example.com pnpm -F @voyant-travel/workflow-runs-dashboard build
 # Serve dist/ from any static host. The SPA's fetch calls will use
 # absolute URLs so CORS + auth need to be configured on the API side.
 ```
@@ -55,7 +55,7 @@ The `dist/` is a plain static bundle. Drop it into the operator
 template's `public/` (or wherever the platform's static assets live)
 and route `/admin/workflow-runs/*` to `index.html`. The SPA uses
 `createWorkflowRunsApiClient({ apiBase: "/api" })`, so no env var is
-needed for the operator template's default API prefix.
+needed for the operator starter's default API prefix.
 
 ## Filtering
 

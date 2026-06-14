@@ -10,8 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
  * Standalone workflow-runs dashboard.
  *
  * - In dev, the SPA proxies `/api/*` requests to the operator
- *   template (default port 3300) so same-origin assumptions hold.
- *   The operator template mounts its API behind `/api`, so the
+ *   starter (default port 3300) so same-origin assumptions hold.
+ *   The operator starter mounts its API behind `/api`, so the
  *   SPA's default API base of `/api` works as-is.
  *   Override via `VOYANT_API_TARGET` if the operator runs elsewhere.
  * - In prod, deploy the static `dist/` to any host. Pass
@@ -35,7 +35,7 @@ export default defineConfig({
     port: 3500,
     proxy: {
       // `localhost` (not 127.0.0.1) — vite often binds the operator
-      // template to IPv6 loopback only; resolving via localhost lets
+      // starter to IPv6 loopback only; resolving via localhost lets
       // Node fall back across address families.
       "/api": process.env.VOYANT_API_TARGET ?? "http://localhost:3300",
     },

@@ -7,7 +7,7 @@ import {
   sellabilityUiEn,
 } from "./i18n.js"
 
-describe("@voyantjs/commerce-react i18n facade", () => {
+describe("@voyant-travel/commerce-react i18n facade", () => {
   it("exports the composed provider and commercial message bundles", () => {
     expect(typeof CommerceUiMessagesProvider).toBe("function")
     expect(marketsUiEn).toBeTruthy()

@@ -1,5 +1,5 @@
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components"
 import { Download, FileText, RefreshCw } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"
 import { formatFileSize, Section } from "./product-detail-section-shell.js"

@@ -1,6 +1,6 @@
 # [Task] Validate browser harness against operator template
 
-Issue: https://github.com/voyantjs/voyant/issues/651
+Issue: https://github.com/voyant-travel/voyant/issues/651
 Branch: task/651-validate-browser-harness-against-operator-template
 State: active
 
@@ -11,7 +11,7 @@ Prepare an implementation workspace for the maintainer-approved issue.
 ## Current State
 
 - Project item: PVTI_lADODiwsuc4BXR16zgsXOwE
-- Repository: voyantjs/voyant
+- Repository: voyant-travel/voyant
 - Base ref: origin/main
 - Local workspace: /Users/mihai/builds/internal/voyant-all/voyant/.agent-worktrees/651-validate-browser-harness-against-operator-template
 - Risk: Low
@@ -52,7 +52,7 @@ A runner-managed operator workspace can start the Vite dev server on the issue-s
 - `templates/operator` Vite dev server and TanStack Start route shell
 - `pnpm agent:queue:capture-browser`
 - Browser evidence validation in `scripts/lib/agent-runner-browser-evidence.mjs`
-- UI package surfaces from `@voyantjs/ui`, `@voyantjs/admin`, and domain `*-ui` providers
+- UI package surfaces from `@voyant-travel/ui`, `@voyant-travel/admin`, and domain `*-ui` providers
 
 **Acceptance criteria:**
 - [ ] `templates/operator` can be served by the runner using `VOYANT_AGENT_DEV_SERVER_PORT`.

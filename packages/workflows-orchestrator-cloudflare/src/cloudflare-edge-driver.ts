@@ -26,7 +26,7 @@ import type {
   RunSummary,
   TriggerOptions,
   WorkflowDefinition,
-} from "@voyantjs/workflows"
+} from "@voyant-travel/workflows"
 import type {
   DriverFactory,
   DriverFactoryDeps,
@@ -35,15 +35,15 @@ import type {
   IngestMatch,
   WorkflowAdmin,
   WorkflowDriver,
-} from "@voyantjs/workflows/driver"
-import { deriveStableEventId } from "@voyantjs/workflows/events"
-import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
+} from "@voyant-travel/workflows/driver"
+import { deriveStableEventId } from "@voyant-travel/workflows/events"
+import type { WorkflowManifest } from "@voyant-travel/workflows/protocol"
 import {
   type RuntimeConcurrencyPolicy,
   resolveConcurrencyKey,
   routeEvent,
   WorkflowConcurrencyRejectedError,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 import {
   type CfManifestStore,
@@ -619,7 +619,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
 
 // ---- Internal helpers ----
 
-// Fallback id derivation lives in `@voyantjs/workflows/events`'s
+// Fallback id derivation lives in `@voyant-travel/workflows/events`'s
 // `deriveStableEventId` and is used inline at the call site above —
 // content-derived so external callers without a forwarder still get
 // dedup across retries (architecture doc §15.2).

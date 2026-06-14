@@ -2,7 +2,7 @@ import {
   type RunRecord,
   type RuntimeConcurrencyPolicy,
   WorkflowConcurrencyRejectedError,
-} from "@voyantjs/workflows-orchestrator"
+} from "@voyant-travel/workflows-orchestrator"
 
 import type { DurableObjectStorageLike, TriggerPayload } from "./types.js"
 import type { DurableObjectNamespaceLike } from "./worker.js"

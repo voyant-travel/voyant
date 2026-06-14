@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/workflow-runs` — passive observability for in-process
+ * `@voyant-travel/workflow-runs` — passive observability for in-process
  * workflows.
  *
  * The package gives templates two things:
@@ -11,7 +11,7 @@
  *      that serves `/v1/admin/workflow-runs[/:id]` for the standalone
  *      dashboard SPA in `apps/workflow-runs-dashboard/` to consume.
  *
- * Distinct from the durable `@voyantjs/workflows` SDK — that one is
+ * Distinct from the durable `@voyant-travel/workflows` SDK — that one is
  * the Cloud-orchestrated runtime; this one is the lightweight
  * "what just happened?" log every template can ship without a
  * separate worker process.

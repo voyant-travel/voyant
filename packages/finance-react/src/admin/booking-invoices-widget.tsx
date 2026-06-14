@@ -1,10 +1,10 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
-import { useBookingPrimaryProduct, useBookingTaxPreview } from "@voyantjs/bookings-react"
-import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-react/admin"
-import { IconActionButton, StatusBadge } from "@voyantjs/bookings-react/ui"
+import { useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useBookingPrimaryProduct, useBookingTaxPreview } from "@voyant-travel/bookings-react"
+import type { BookingDetailHostSlotContext } from "@voyant-travel/bookings-react/admin"
+import { IconActionButton, StatusBadge } from "@voyant-travel/bookings-react/ui"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +16,8 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
-} from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { ArrowRightLeft, ArrowUpRight, FileText, Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 import {
@@ -49,17 +49,17 @@ interface InvoiceRow {
  * Props of the booking invoices widget: exactly the slot context the
  * bookings detail host hands to `booking.details.invoices-tab` widget
  * contributions (see `bookingDetailInvoicesTabSlot` in
- * `@voyantjs/bookings-react/admin`).
+ * `@voyant-travel/bookings-react/admin`).
  */
 export type BookingInvoicesWidgetProps = BookingDetailHostSlotContext
 
 /**
  * Finance-owned invoices card for the booking detail page, delivered as a
  * widget contribution on `booking.details.invoices-tab` (packaged-admin RFC
- * §4.7 cycle resolution: this package depends on `@voyantjs/bookings-react/ui`, so
+ * §4.7 cycle resolution: this package depends on `@voyant-travel/bookings-react/ui`, so
  * the bookings host cannot import the card — finance contributes it instead).
  *
- * Attachment uploads post to the template-level `/v1/uploads` route through
+ * Attachment uploads post to the starter-level `/v1/uploads` route through
  * the shared finance provider context (`baseUrl` + credentialed fetcher).
  */
 export function BookingInvoicesWidget({

@@ -1,4 +1,4 @@
-import { requireActor } from "@voyantjs/hono"
+import { requireActor } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { afterEach, describe, expect, test, vi } from "vitest"

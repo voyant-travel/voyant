@@ -2,7 +2,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -18,9 +18,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
-import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"

@@ -1,5 +1,5 @@
 import { env, runInDurableObject, SELF } from "cloudflare:test"
-import type { RunRecord } from "@voyantjs/workflows-orchestrator"
+import type { RunRecord } from "@voyant-travel/workflows-orchestrator"
 import { describe, expect, it } from "vitest"
 
 // These tests exercise the real workerd Durable Object runtime. They

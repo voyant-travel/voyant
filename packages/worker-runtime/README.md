@@ -1,4 +1,4 @@
-# @voyantjs/worker-runtime
+# @voyant-travel/worker-runtime
 
 Framework-owned Cloudflare Worker entry logic for Voyant apps: API/auth/SSR
 dispatch and SSR-manifest restriction, delivered as a versioned package
@@ -28,7 +28,7 @@ fixes to this load-bearing code path arrive via a dependency bump.
 ```ts
 // src/entry.ts
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { createWorkerFetch, lazyApp, withActiveRouteSsrManifest } from "@voyantjs/worker-runtime"
+import { createWorkerFetch, lazyApp, withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
 
 const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))
 

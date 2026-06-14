@@ -1,4 +1,4 @@
-import type { SourceAdapter } from "@voyantjs/catalog"
+import type { SourceAdapter } from "@voyant-travel/catalog"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const catalogMocks = vi.hoisted(() => ({
@@ -11,7 +11,7 @@ const catalogMocks = vi.hoisted(() => ({
   withContentRefreshLock: vi.fn(async (_db: unknown, _key: unknown, fn: () => unknown) => fn()),
 }))
 
-vi.mock("@voyantjs/catalog", () => catalogMocks)
+vi.mock("@voyant-travel/catalog", () => catalogMocks)
 
 import { PRODUCTS_CONTENT_SCHEMA_VERSION } from "../../src/content-shape.js"
 import { getProductContent } from "../../src/service-content.js"

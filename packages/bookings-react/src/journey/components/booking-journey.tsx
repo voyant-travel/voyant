@@ -17,15 +17,15 @@
  * in injectable slots passed via props — same shell on every surface.
  */
 
-import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
+import type { BookingDraftShape } from "@voyant-travel/catalog-contracts/booking-engine/draft-shape"
 import {
   useBookingCommit,
   useBookingDraft,
   useBookingDraftShape,
   useBookingHold,
   useBookingQuote,
-} from "@voyantjs/catalog-react/booking-engine"
-import { Button } from "@voyantjs/ui/components/button"
+} from "@voyant-travel/catalog-react/booking-engine"
+import { Button } from "@voyant-travel/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"

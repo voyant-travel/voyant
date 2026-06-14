@@ -1,4 +1,4 @@
-// @voyantjs/workflows/protocol
+// @voyant-travel/workflows/protocol
 //
 // Wire-protocol types shared with the orchestrator. Full contract
 // in docs/runtime-protocol.md; types here are exported so callers
@@ -170,14 +170,14 @@ export interface EventFilterManifestEntry {
   /**
    * Optional structured `where` predicate. When absent, every event of the
    * matching `eventType` fires the target workflow. Concrete shape lives in
-   * `@voyantjs/workflows/events` (`PredicateExpr`); the protocol declares
+   * `@voyant-travel/workflows/events` (`PredicateExpr`); the protocol declares
    * it as an opaque object so old orchestrators that don't understand the
    * shape don't have to evaluate it.
    */
   where?: unknown
   /**
    * Optional input mapper. When absent, the workflow input = `envelope.data`.
-   * Concrete shape lives in `@voyantjs/workflows/events` (`InputMapper`).
+   * Concrete shape lives in `@voyant-travel/workflows/events` (`InputMapper`).
    */
   input?: unknown
   /** Content-derived hash of the canonicalized declaration. */

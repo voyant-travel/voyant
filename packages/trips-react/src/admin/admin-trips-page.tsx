@@ -1,18 +1,21 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
-import { useOperatorAdminMessages as useAdminMessages, useAdminNavigate } from "@voyantjs/admin"
-import { emptyPersonPickerValue } from "@voyantjs/bookings-react/components/person-picker-section"
-import { emptyVoucherPickerValue } from "@voyantjs/bookings-react/components/voucher-picker-section"
+import {
+  useOperatorAdminMessages as useAdminMessages,
+  useAdminNavigate,
+} from "@voyant-travel/admin"
+import { emptyPersonPickerValue } from "@voyant-travel/bookings-react/components/person-picker-section"
+import { emptyVoucherPickerValue } from "@voyant-travel/bookings-react/components/voucher-picker-section"
 import {
   PersonPickerSection,
   type PersonPickerValue,
   type VoucherPickerValue,
-} from "@voyantjs/bookings-react/ui"
-import { usePerson } from "@voyantjs/relationships-react"
-import type { Trip, TripComponent } from "@voyantjs/trips"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/bookings-react/ui"
+import { usePerson } from "@voyant-travel/relationships-react"
+import type { Trip, TripComponent } from "@voyant-travel/trips"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { useEffect, useMemo, useState } from "react"
 import {
   addTripComponent,

@@ -23,7 +23,7 @@ This plan is intentionally incremental. Each PR should leave the repo in a relea
 
 ## Non-Goals
 
-- Do not build a second i18n runtime beside `@voyantjs/i18n`.
+- Do not build a second i18n runtime beside `@voyant-travel/i18n`.
 - Do not keep adding ad hoc `labels?: { ... }` bags for new strings.
 - Do not centralize every reusable UI string under `packages/i18n/src/admin/*`.
 - Do not force every app to ship every locale.
@@ -32,7 +32,7 @@ This plan is intentionally incremental. Each PR should leave the repo in a relea
 
 ### Shared runtime
 
-`@voyantjs/i18n` remains the only runtime and utility module. It owns:
+`@voyant-travel/i18n` remains the only runtime and utility module. It owns:
 
 - `LocaleMessageDefinitions<T>`
 - `LocaleMessageOverrides<T>`
@@ -215,7 +215,7 @@ Make `cruises-ui` the reference implementation.
 ### Acceptance criteria
 
 - no embedded English remains in `packages/cruises-react/src/components/*` except API-provided content
-- English-only apps can import `@voyantjs/cruises-react/i18n/en` without importing `ro`
+- English-only apps can import `@voyant-travel/cruises-react/i18n/en` without importing `ro`
 
 ## PR-3: `packages/ui/registry/cruises` Alignment
 
@@ -473,8 +473,8 @@ Make the operator and DMC apps import only the locales they support.
 
 - `packages/i18n/src/admin/app-operator.ts`
 - `packages/i18n/src/admin/app-dmc.ts`
-- `templates/operator/src/lib/admin-i18n.ts`
-- `templates/operator/src/lib/admin-i18n.tsx`
+- `starters/operator/src/lib/admin-i18n.ts`
+- `starters/operator/src/lib/admin-i18n.tsx`
 - `templates/dmc/src/lib/admin-i18n.ts`
 - `templates/dmc/src/lib/admin-i18n.tsx`
 - any app-side locale bootstrap modules

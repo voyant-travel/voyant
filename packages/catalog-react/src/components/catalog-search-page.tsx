@@ -1,8 +1,8 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Input } from "@voyantjs/ui/components/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyant-travel/ui/components/tabs"
 import { Search } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
@@ -17,7 +17,7 @@ import type {
 import { type CatalogFilterSelections, CatalogTabPanel } from "./catalog-search-tab-panel.js"
 
 /**
- * Result sort options. Mirrors `CatalogSearchSort` from `@voyantjs/catalog-react`
+ * Result sort options. Mirrors `CatalogSearchSort` from `@voyant-travel/catalog-react`
  * (not re-exported there, so kept as a literal union here). The shell maps the
  * selection straight onto the search request's `sort`.
  */

@@ -1,1 +1,1 @@
-export * from "@voyantjs/admin/app/router"
+export * from "@voyant-travel/admin/app/router"

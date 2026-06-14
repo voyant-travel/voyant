@@ -9,8 +9,8 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
+} from "@voyant-travel/ui/components"
+import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

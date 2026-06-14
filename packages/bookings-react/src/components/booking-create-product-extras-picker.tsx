@@ -4,8 +4,8 @@ import { useQueries } from "@tanstack/react-query"
 import {
   getExtraPriceRulesQueryOptions,
   useVoyantPricingContext,
-} from "@voyantjs/commerce-react/pricing"
-import { Button, Label } from "@voyantjs/ui/components"
+} from "@voyant-travel/commerce-react/pricing"
+import { Button, Label } from "@voyant-travel/ui/components"
 import { type ProductExtraRecord, useProductExtras } from "../extras.js"
 import { useBookingsUiI18nOrDefault } from "../i18n/provider.js"
 import type { BookingCreateExtraLineInput } from "../index.js"

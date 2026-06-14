@@ -1,4 +1,4 @@
-import type { CabinClass, FareBundle } from "@voyantjs/flights/contract/types"
+import type { CabinClass, FareBundle } from "@voyant-travel/flights/contract/types"
 
 import type { DemoCarrier } from "./synthesis-common.js"
 

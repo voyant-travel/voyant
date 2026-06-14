@@ -3,7 +3,7 @@ import {
   type AllocationResource,
   type SeatLayoutSpec,
   seatLayoutSpecSchema,
-} from "@voyantjs/operations-react/availability"
+} from "@voyant-travel/operations-react/availability"
 
 import type { AllocationUiMessages } from "../i18n/index.js"
 

@@ -1,7 +1,7 @@
-import type { Extension } from "@voyantjs/core"
-import { typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { parseJsonBody } from "@voyantjs/hono"
-import type { HonoExtension } from "@voyantjs/hono/module"
+import type { Extension } from "@voyant-travel/core"
+import { typeIdRef } from "@voyant-travel/db/lib/typeid-column"
+import { parseJsonBody } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import {
   char,

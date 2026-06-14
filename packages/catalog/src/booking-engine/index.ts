@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/catalog/booking-engine` — cross-vertical booking lifecycle
+ * `@voyant-travel/catalog/booking-engine` — cross-vertical booking lifecycle
  * on top of the Phase 1 `SourceAdapter` contract.
  *
  * See `docs/architecture/catalog-booking-engine.md` for the full design.

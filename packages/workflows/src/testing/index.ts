@@ -1,4 +1,4 @@
-// @voyantjs/workflows/testing
+// @voyant-travel/workflows/testing
 //
 // In-process test harness with mocked steps, waits, and invokes.
 // Contract in docs/sdk-surface.md §11.

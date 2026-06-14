@@ -2,7 +2,7 @@ import {
   type ProductOptionRecord,
   useProductOption,
   useProductOptions,
-} from "@voyantjs/inventory-react"
+} from "@voyant-travel/inventory-react"
 import {
   Combobox,
   ComboboxCollection,
@@ -11,7 +11,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
+} from "@voyant-travel/ui/components/combobox"
 import * as React from "react"
 
 import { useSellabilityUiMessagesOrDefault } from "../i18n/index.js"

@@ -17,12 +17,12 @@ describe("agent runner remote tick helpers", () => {
 
     const recommendation = recommendQueueAction(item, {
       maxAgeDays: 1,
-      repository: "voyantjs/other",
+      repository: "voyant-travel/other",
     })
     assert.equal(recommendation.action, "remote-capture-browser")
     assert.equal(
       recommendation.command,
-      'pnpm agent:queue:remote-capture-browser -- --issue 579 --repo voyantjs/other --dev-server-command "<dev-server-command>" --port "<port>" --yes',
+      'pnpm agent:queue:remote-capture-browser -- --issue 579 --repo voyant-travel/other --dev-server-command "<dev-server-command>" --port "<port>" --yes',
     )
     assert.equal(recommendation.heartbeat.stale, false)
     assert.equal(recommendation.priority, 54)
@@ -35,14 +35,14 @@ describe("agent runner remote tick helpers", () => {
       fields: {
         "Agent State": "Human Review",
         "Last Heartbeat": new Date().toISOString().slice(0, 10),
-        PR: "https://github.com/voyantjs/voyant/pull/626",
+        PR: "https://github.com/voyant-travel/voyant/pull/626",
         Workspace: "sandbox:sprite:task-579",
       },
     })
     prLinkedItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(prLinkedItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      recommendQueueAction(prLinkedItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
       "remote-capture-browser",
     )
 
@@ -56,7 +56,7 @@ describe("agent runner remote tick helpers", () => {
     coveredItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(coveredItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      recommendQueueAction(coveredItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
       "remote-publish-evidence",
     )
   })
@@ -70,11 +70,11 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "remote-bootstrap",
-        command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 20,
@@ -92,12 +92,12 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "remote-run-command",
         command:
-          'pnpm agent:queue:remote-run-command -- --issue 579 --repo voyantjs/other --command "<implementation-command>" --yes',
+          'pnpm agent:queue:remote-run-command -- --issue 579 --repo voyant-travel/other --command "<implementation-command>" --yes',
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -119,7 +119,7 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "remote-publish-evidence",
     )
@@ -133,7 +133,7 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "remote-open-pr",
     )
@@ -144,11 +144,11 @@ describe("agent runner remote tick helpers", () => {
           fields: {
             "Agent State": "Human Review",
             Evidence: "docs/agent-evidence/active/579-test.md",
-            PR: "https://github.com/voyantjs/voyant/pull/626",
+            PR: "https://github.com/voyant-travel/voyant/pull/626",
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ).action,
       "sync-pr",
     )
@@ -161,11 +161,11 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "remote-cleanup",
-        command: "pnpm agent:queue:remote-cleanup -- --issue 579 --repo voyantjs/other --yes",
+        command: "pnpm agent:queue:remote-cleanup -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 90,
@@ -185,7 +185,7 @@ describe("agent runner remote tick helpers", () => {
             Workspace: "sandbox:Sprite:task-579",
           },
         }),
-        { maxAgeDays: 1, repository: "voyantjs/other" },
+        { maxAgeDays: 1, repository: "voyant-travel/other" },
       ),
       {
         action: "inspect-workspace",

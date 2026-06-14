@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminNavigate } from "@voyantjs/admin"
+import { useAdminNavigate } from "@voyant-travel/admin"
 
 import { PolicyDetailPage } from "../components/policy-detail-page.js"
 import { PolicyAssignmentDialog } from "./policy-assignment-dialog.js"

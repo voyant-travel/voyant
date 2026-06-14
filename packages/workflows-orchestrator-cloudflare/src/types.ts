@@ -2,8 +2,8 @@
 // a hard dependency on `@cloudflare/workers-types` — matching the
 // shape is enough, and tests can pass plain objects.
 
-import type { Duration, EnvironmentName, RunTrigger } from "@voyantjs/workflows"
-import type { JournalSlice, WaitpointInjection } from "@voyantjs/workflows-orchestrator"
+import type { Duration, EnvironmentName, RunTrigger } from "@voyant-travel/workflows"
+import type { JournalSlice, WaitpointInjection } from "@voyant-travel/workflows-orchestrator"
 
 /**
  * Subset of Cloudflare's `DurableObjectStorage` we actually use.

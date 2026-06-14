@@ -1,4 +1,7 @@
-import type { sellabilityPolicyScopeSchema, sellabilityPolicyTypeSchema } from "@voyantjs/commerce"
+import type {
+  sellabilityPolicyScopeSchema,
+  sellabilityPolicyTypeSchema,
+} from "@voyant-travel/commerce"
 import type { z } from "zod"
 
 export interface SellabilityPoliciesListFilters {

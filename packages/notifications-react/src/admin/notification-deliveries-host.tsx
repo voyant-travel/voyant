@@ -14,7 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
 import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

@@ -103,7 +103,7 @@ Voyant is already unusually close to an agent-friendly codebase:
 - `scripts/check-tenant-scoping.mjs` and `scripts/check-route-authoring.mjs`
   already promote repeated review feedback into mechanical checks.
 - `.github/workflows/ci.yml` splits source checks and build/package checks.
-- The `@voyantjs/workflows` and `@voyantjs/workflows-orchestrator` packages,
+- The `@voyant-travel/workflows` and `@voyant-travel/workflows-orchestrator` packages,
   plus `apps/workflows-selfhost-node-server` and
   `apps/workflows-local-dashboard`, provide useful local orchestration and
   observability patterns.

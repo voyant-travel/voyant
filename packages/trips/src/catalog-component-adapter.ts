@@ -2,7 +2,7 @@ import {
   type BookingDraftV1,
   bookingDraftV1,
   type TravelerEntryV1,
-} from "@voyantjs/catalog/booking-engine/contracts"
+} from "@voyant-travel/catalog/booking-engine/contracts"
 
 import type { TripComponent } from "./schema.js"
 import { TripsInvariantError } from "./service.js"

@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/worker-runtime",
+  "name": "@voyant-travel/worker-runtime",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -55,13 +55,13 @@
     "types": "./dist/index.d.ts"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/worker-runtime"
   }
 }

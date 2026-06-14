@@ -11,8 +11,8 @@ import {
   useProductResourceTemplates,
   useSlotAllocation,
   useVoyantAvailabilityContext,
-} from "@voyantjs/operations-react/availability"
-import { Button, cn, Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components"
+} from "@voyant-travel/operations-react/availability"
+import { Button, cn, Tabs, TabsList, TabsTrigger } from "@voyant-travel/ui/components"
 import { Armchair, ArrowLeft, Bed, BookOpen, Plus, Sparkles, Users, Wand2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 

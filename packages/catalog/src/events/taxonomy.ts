@@ -2,7 +2,7 @@
  * Catalog event taxonomy — names, payload shapes, and visibility-filtered
  * payload builders.
  *
- * Catalog events ride Voyant's existing `@voyantjs/core/events` envelope
+ * Catalog events ride Voyant's existing `@voyant-travel/core/events` envelope
  * (`name`, `data`, `metadata`, `emittedAt`) and are dispatched via the
  * existing webhook delivery pipeline (`infraWebhookSubscriptionsTable` +
  * the delivery worker). The catalog plane defines only the taxonomy and
@@ -12,7 +12,7 @@
  * See `docs/architecture/catalog-architecture.md` §5.8 for the full design.
  */
 
-import type { EventBus, EventCategory, EventMetadata } from "@voyantjs/core/events"
+import type { EventBus, EventCategory, EventMetadata } from "@voyant-travel/core/events"
 
 import type { DriftSeverity, FieldPolicyRegistry, Visibility } from "../contract.js"
 
@@ -212,7 +212,7 @@ export function filterByVisibility(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Emit a catalog event through `@voyantjs/core/events`. Stamps the metadata
+ * Emit a catalog event through `@voyant-travel/core/events`. Stamps the metadata
  * with the canonical category for the event name and adds a `source: "service"`
  * marker.
  *

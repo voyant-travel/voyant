@@ -1,6 +1,6 @@
-# @voyantjs/trips-react
+# @voyant-travel/trips-react
 
-React client utilities for `@voyantjs/trips`.
+React client utilities for `@voyant-travel/trips`.
 
 This package exposes admin/public API clients, validation-aware operations,
 TanStack Query keys/options, cache writers, provider wiring, and hooks for Trip
@@ -12,7 +12,7 @@ customer/admin object name.
 ## Install
 
 ```bash
-pnpm add @voyantjs/trips-react @voyantjs/trips
+pnpm add @voyant-travel/trips-react @voyant-travel/trips
 ```
 
 ## Exports

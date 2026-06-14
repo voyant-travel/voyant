@@ -1,6 +1,6 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/i18n"
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   API_KEY_PERMISSION_GROUPS,
   API_KEY_PERMISSION_PRESETS,
@@ -8,7 +8,7 @@ import {
   describePermissions,
   hasApiKeyPermission,
   permissionsToStrings,
-} from "@voyantjs/types/api-keys"
+} from "@voyant-travel/types/api-keys"
 import {
   Badge,
   Button,
@@ -21,7 +21,7 @@ import {
   cn,
   Input,
   Label,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import {
   Check,
   Copy,

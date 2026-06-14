@@ -8,7 +8,7 @@ import {
   type LocaleMessageOverrides,
   type PackageI18nValue,
   resolvePackageMessages,
-} from "@voyantjs/i18n"
+} from "@voyant-travel/i18n"
 import type { ReactNode } from "react"
 
 import { bookingsUiEn } from "./en.js"

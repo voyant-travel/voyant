@@ -1,4 +1,4 @@
-import { AdminApiError, AdminApprovalRequiredError } from "@voyantjs/admin-contracts"
+import { AdminApiError, AdminApprovalRequiredError } from "@voyant-travel/admin-contracts"
 import { describe, expect, it } from "vitest"
 import type { FetchLike } from "./http.js"
 import { createAdminClient } from "./index.js"
@@ -240,7 +240,7 @@ describe("createAdminClient", () => {
     expect(calls[1]?.url).toContain("/v1/admin/products?")
   })
 
-  it("creates a product (input derived from @voyantjs/products-contracts)", async () => {
+  it("creates a product (input derived from @voyant-travel/products-contracts)", async () => {
     const { fetchImpl, calls } = mockFetch(() => ({
       status: 201,
       body: { data: { id: "prod_9", name: "City Tour", status: "draft" } },

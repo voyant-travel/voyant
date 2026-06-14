@@ -11,9 +11,14 @@ import {
   CardTitle,
   cn,
   Label,
-} from "@voyantjs/ui/components"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@voyantjs/ui/components/empty"
+} from "@voyant-travel/ui/components"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@voyant-travel/ui/components/empty"
 import {
   Table,
   TableBody,
@@ -21,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/ui/components/table"
+} from "@voyant-travel/ui/components/table"
 import { AlertTriangle, Loader2, X } from "lucide-react"
 import { useState } from "react"
 import { useDistributionUiMessagesOrDefault } from "../i18n/index.js"

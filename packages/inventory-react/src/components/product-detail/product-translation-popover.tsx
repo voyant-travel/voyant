@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
-import { Button, Input, Label } from "@voyantjs/ui/components"
+import { Button, Input, Label } from "@voyant-travel/ui/components"
 import {
   Combobox,
   ComboboxContent,
@@ -7,17 +7,17 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+} from "@voyant-travel/ui/components/combobox"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@voyantjs/ui/components/tooltip"
-import { cn } from "@voyantjs/ui/lib/utils"
-import { languages } from "@voyantjs/utils/languages"
+} from "@voyant-travel/ui/components/tooltip"
+import { cn } from "@voyant-travel/ui/lib/utils"
+import { languages } from "@voyant-travel/utils/languages"
 import { Globe, Plus, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {

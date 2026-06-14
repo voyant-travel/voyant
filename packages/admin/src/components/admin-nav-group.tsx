@@ -12,7 +12,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import * as React from "react"
 
 import { type BETA, COMING_SOON, type NavItem } from "../types.js"

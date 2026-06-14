@@ -2,7 +2,7 @@
 
 ## Context
 
-Issue: https://github.com/voyantjs/voyant/issues/933
+Issue: https://github.com/voyant-travel/voyant/issues/933
 
 Goal: Cloud-hosted Voyant admin panels should let users sign in with their
 existing Voyant Cloud account, while self-hosted installs keep the current
@@ -18,7 +18,7 @@ Important follow-up from the issue comment: Cloud mode must not bypass Better
 Auth entirely inside the admin deployment. Some consumers already mount Better
 Auth plugins such as `jwt()` and rely on `/auth/token` plus `/auth/jwks` so a
 separate CMS or other relying party can verify admin-issued JWTs. Consumers also
-use `user.additionalFields` and `extraSchema` from `@voyantjs/auth` 0.50.5.
+use `user.additionalFields` and `extraSchema` from `@voyant-travel/auth` 0.50.5.
 
 Therefore the target architecture is:
 
@@ -190,7 +190,7 @@ Implemented in `issue-933-cloud-auth-broker`:
 - DMC now has the same Cloud-mode route boundary and local auth screen
   redirects as operator. It does not expose an API-token facade today, so the
   API-token revalidation work applies to operator first.
-- `@voyantjs/auth/workspace` now exposes shared profile provisioning helpers.
+- `@voyant-travel/auth/workspace` now exposes shared profile provisioning helpers.
   Local Better Auth sign-up hooks and the operator `/auth/status` fallback use
   the same profile creation path. Future Cloud mirror provisioning should call
   this helper plus the documented Cloud provisioning hook rather than relying on
@@ -200,7 +200,7 @@ Implemented in `issue-933-cloud-auth-broker`:
   accounts. Operator and DMC migrations create those tables/indexes so future
   exchange/revalidate code has a typed place to store WorkOS/platform linkage
   without leaking it through Better Auth's session response.
-- `@voyantjs/auth/cloud-broker` now centralizes the admin-owned browser state
+- `@voyant-travel/auth/cloud-broker` now centralizes the admin-owned browser state
   for the broker redirect. It creates a signed, HttpOnly, short-lived state
   cookie, generates state/nonce values, normalizes the post-login `next`
   destination to same-origin paths, builds the Voyant Cloud dashboard
@@ -209,7 +209,7 @@ Implemented in `issue-933-cloud-auth-broker`:
 - Operator and DMC `/auth/cloud/start` now perform the real broker redirect
   when `VOYANT_CLOUD_ADMIN_AUTH_START_URL` and `VOYANT_CLOUD_DEPLOYMENT_ID` are
   configured.
-- `@voyantjs/auth/cloud-broker` also includes the server-to-server exchange
+- `@voyant-travel/auth/cloud-broker` also includes the server-to-server exchange
   client and RS256/JWKS assertion verifier. Admin callbacks can now post the
   one-time code plus nonce/callback binding to Cloud, authenticate with a
   deployment client token, verify the returned assertion issuer/audience/
@@ -218,7 +218,7 @@ Implemented in `issue-933-cloud-auth-broker`:
 - Operator and DMC callbacks call the exchange path when
   `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
   and `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN` are present.
-- `@voyantjs/auth/cloud-admin-session` now exposes
+- `@voyant-travel/auth/cloud-admin-session` now exposes
   `createVoyantCloudAdminAuthPlugin`, a Better Auth-backed
   `/auth/cloud/callback` endpoint. It validates callback state, exchanges the
   one-time Cloud code, verifies the signed assertion,
@@ -547,7 +547,7 @@ Chosen strategy:
 Better Auth may not expose a public API for "create this external user and
 session from an already verified broker assertion" in exactly the shape needed
 here. Add a narrow Voyant-owned provisioning helper/endpoint in
-`@voyantjs/auth/server` that runs with Better Auth context rather than
+`@voyant-travel/auth/server` that runs with Better Auth context rather than
 hand-rolling session rows and cookies in the operator Hono route.
 
 The helper should:
@@ -762,7 +762,7 @@ local login fallback inside Cloud mode.
 - Extract reusable local user profile provisioning so local sign-up and Cloud
   mirror creation share it.
 - Add a Better Auth-backed external-user provisioning and session issuance
-  helper in `@voyantjs/auth/server`.
+  helper in `@voyant-travel/auth/server`.
 - Preserve `user.additionalFields`, `plugins`, and `extraSchema` option shape.
 - Add tests around additional fields and extra schema staying forwarded in both
   modes.
@@ -922,8 +922,8 @@ local login fallback inside Cloud mode.
 Use focused checks while iterating:
 
 ```bash
-pnpm --filter @voyantjs/auth test
-pnpm --filter @voyantjs/hono test
+pnpm --filter @voyant-travel/auth test
+pnpm --filter @voyant-travel/hono test
 pnpm --filter operator typecheck
 pnpm --filter operator test
 ```

@@ -1,14 +1,14 @@
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
-} from "@voyantjs/action-ledger/request-context"
-import { actionLedgerService } from "@voyantjs/action-ledger/service"
+} from "@voyant-travel/action-ledger/request-context"
+import { actionLedgerService } from "@voyant-travel/action-ledger/service"
 import {
   type ActionLedgerTargetTimelinePage,
   actionLedgerTargetTimelineQuerySchema,
   buildActionLedgerTargetTimelinePage,
-} from "@voyantjs/action-ledger/timeline"
-import { parseQuery } from "@voyantjs/hono"
+} from "@voyant-travel/action-ledger/timeline"
+import { parseQuery } from "@voyant-travel/hono"
 import type { Context } from "hono"
 import type { Env } from "./route-env.js"
 import type { Product } from "./schema.js"

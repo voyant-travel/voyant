@@ -1,15 +1,15 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { DataTable } from "@voyantjs/ui/components/data-table"
+import { Button } from "@voyant-travel/ui/components/button"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
+} from "@voyant-travel/ui/components/select"
+import { ToggleGroup, ToggleGroupItem } from "@voyant-travel/ui/components/toggle-group"
 import { ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import type { useCatalogUiMessagesOrDefault } from "../i18n/index.js"

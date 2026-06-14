@@ -15,12 +15,12 @@ const ext = (module: string): HonoExtension => ({ extension: { name: module, mod
 
 const registry: CompositionRegistry<Caps> = {
   modules: {
-    "@voyantjs/a": () => mod("a"),
-    "@voyantjs/b": ({ capabilities, options }) =>
+    "@voyant-travel/a": () => mod("a"),
+    "@voyant-travel/b": ({ capabilities, options }) =>
       mod(`${capabilities.prefix}:b:${options.flavor ?? "default"}`),
   },
   extensions: {
-    "@voyantjs/x/ext": () => ext("x"),
+    "@voyant-travel/x/ext": () => ext("x"),
   },
 }
 
@@ -28,8 +28,8 @@ describe("composeFromManifest", () => {
   it("derives modules + extensions in manifest order, passing caps + options", () => {
     const result = composeFromManifest(
       {
-        modules: ["@voyantjs/b", "@voyantjs/a"],
-        extensions: ["@voyantjs/x/ext"],
+        modules: ["@voyant-travel/b", "@voyant-travel/a"],
+        extensions: ["@voyant-travel/x/ext"],
       },
       registry,
       { prefix: "op" },
@@ -41,7 +41,7 @@ describe("composeFromManifest", () => {
 
   it("passes per-entry options to the factory", () => {
     const result = composeFromManifest(
-      { modules: [{ resolve: "@voyantjs/b", options: { flavor: "spicy" } }] },
+      { modules: [{ resolve: "@voyant-travel/b", options: { flavor: "spicy" } }] },
       registry,
       { prefix: "op" },
     )
@@ -51,13 +51,13 @@ describe("composeFromManifest", () => {
   it("flattens multi-module factories in manifest order", () => {
     const result = composeFromManifest(
       {
-        modules: ["@voyantjs/a", "@voyantjs/commercial-cluster", "@voyantjs/b"],
+        modules: ["@voyant-travel/a", "@voyant-travel/commercial-cluster", "@voyant-travel/b"],
       },
       {
         ...registry,
         modules: {
           ...registry.modules,
-          "@voyantjs/commercial-cluster": () => [mod("pricing"), mod("markets")],
+          "@voyant-travel/commercial-cluster": () => [mod("pricing"), mod("markets")],
         },
       },
       { prefix: "op" },
@@ -73,31 +73,33 @@ describe("composeFromManifest", () => {
 
   it("throws when a manifest module has no registered factory", () => {
     expect(() =>
-      composeFromManifest({ modules: ["@voyantjs/missing"] }, registry, { prefix: "op" }),
-    ).toThrow(/no module factory registered for "@voyantjs\/missing"/)
+      composeFromManifest({ modules: ["@voyant-travel/missing"] }, registry, { prefix: "op" }),
+    ).toThrow(/no module factory registered for "@voyant-travel\/missing"/)
   })
 
   it("throws when a manifest extension has no registered factory", () => {
     expect(() =>
-      composeFromManifest({ extensions: ["@voyantjs/missing/ext"] }, registry, { prefix: "op" }),
-    ).toThrow(/no extension factory registered for "@voyantjs\/missing\/ext"/)
+      composeFromManifest({ extensions: ["@voyant-travel/missing/ext"] }, registry, {
+        prefix: "op",
+      }),
+    ).toThrow(/no extension factory registered for "@voyant-travel\/missing\/ext"/)
   })
 })
 
 describe("diffManifestRegistry", () => {
   it("reports manifest entries with no factory and orphan factories", () => {
     const diff = diffManifestRegistry(
-      ["@voyantjs/a", "@voyantjs/missing"],
-      ["@voyantjs/a", "@voyantjs/orphan"],
+      ["@voyant-travel/a", "@voyant-travel/missing"],
+      ["@voyant-travel/a", "@voyant-travel/orphan"],
     )
-    expect(diff.missingFactories).toEqual(["@voyantjs/missing"])
-    expect(diff.orphanFactories).toEqual(["@voyantjs/orphan"])
+    expect(diff.missingFactories).toEqual(["@voyant-travel/missing"])
+    expect(diff.orphanFactories).toEqual(["@voyant-travel/orphan"])
   })
 
   it("is clean when manifest and registry match (entries normalized)", () => {
     const diff = diffManifestRegistry(
-      [{ resolve: "@voyantjs/a" }, "@voyantjs/b"],
-      ["@voyantjs/b", "@voyantjs/a"],
+      [{ resolve: "@voyant-travel/a" }, "@voyant-travel/b"],
+      ["@voyant-travel/b", "@voyant-travel/a"],
     )
     expect(diff.missingFactories).toEqual([])
     expect(diff.orphanFactories).toEqual([])

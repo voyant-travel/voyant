@@ -1,1 +1,1 @@
-export * from "@voyantjs/templating"
+export * from "@voyant-travel/templating"

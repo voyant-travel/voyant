@@ -1,11 +1,11 @@
-# @voyantjs/types
+# @voyant-travel/types
 
 ## 0.104.5
 
 ### Patch Changes
 
 - Updated dependencies [f25e790]
-  - @voyantjs/db@0.108.0
+  - @voyant-travel/db@0.108.0
 
 ## 0.104.4
 
@@ -13,7 +13,7 @@
 
 - Updated dependencies [b7056f1]
 - Updated dependencies [b7056f1]
-  - @voyantjs/db@0.107.0
+  - @voyant-travel/db@0.107.0
 
 ## 0.104.3
 
@@ -21,1230 +21,1230 @@
 
 - Updated dependencies [7255353]
 - Updated dependencies [7255353]
-  - @voyantjs/db@0.106.0
+  - @voyant-travel/db@0.106.0
 
 ## 0.104.2
 
 ### Patch Changes
 
 - Updated dependencies [418fa82]
-  - @voyantjs/db@0.105.0
+  - @voyant-travel/db@0.105.0
 
 ## 0.104.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.104.1
+- @voyant-travel/db@0.104.1
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.104.0
+- @voyant-travel/db@0.104.0
 
 ## 0.103.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.103.0
+- @voyant-travel/db@0.103.0
 
 ## 0.102.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.102.0
+- @voyant-travel/db@0.102.0
 
 ## 0.101.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.101.2
+- @voyant-travel/db@0.101.2
 
 ## 0.101.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.101.1
+- @voyant-travel/db@0.101.1
 
 ## 0.101.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.101.0
+- @voyant-travel/db@0.101.0
 
 ## 0.100.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.100.0
+- @voyant-travel/db@0.100.0
 
 ## 0.99.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.99.0
+- @voyant-travel/db@0.99.0
 
 ## 0.98.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.98.0
+- @voyant-travel/db@0.98.0
 
 ## 0.97.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.97.0
+- @voyant-travel/db@0.97.0
 
 ## 0.96.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.96.0
+- @voyant-travel/db@0.96.0
 
 ## 0.95.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.95.0
+- @voyant-travel/db@0.95.0
 
 ## 0.94.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.94.0
+- @voyant-travel/db@0.94.0
 
 ## 0.93.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.93.0
+- @voyant-travel/db@0.93.0
 
 ## 0.92.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.92.0
+- @voyant-travel/db@0.92.0
 
 ## 0.91.0
 
 ### Patch Changes
 
 - Updated dependencies [dc8554b]
-  - @voyantjs/db@0.91.0
+  - @voyant-travel/db@0.91.0
 
 ## 0.90.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.90.0
+- @voyant-travel/db@0.90.0
 
 ## 0.89.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.89.0
+- @voyant-travel/db@0.89.0
 
 ## 0.88.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.88.0
+- @voyant-travel/db@0.88.0
 
 ## 0.87.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.87.1
+- @voyant-travel/db@0.87.1
 
 ## 0.87.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.87.0
+- @voyant-travel/db@0.87.0
 
 ## 0.86.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.86.0
+- @voyant-travel/db@0.86.0
 
 ## 0.85.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.85.4
+- @voyant-travel/db@0.85.4
 
 ## 0.85.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.85.3
+- @voyant-travel/db@0.85.3
 
 ## 0.85.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.85.2
+- @voyant-travel/db@0.85.2
 
 ## 0.85.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.85.1
+- @voyant-travel/db@0.85.1
 
 ## 0.85.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.85.0
+- @voyant-travel/db@0.85.0
 
 ## 0.84.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.84.4
+- @voyant-travel/db@0.84.4
 
 ## 0.84.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.84.3
+- @voyant-travel/db@0.84.3
 
 ## 0.84.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.84.2
+- @voyant-travel/db@0.84.2
 
 ## 0.84.1
 
 ### Patch Changes
 
 - Updated dependencies [b9ef614]
-  - @voyantjs/db@0.84.1
+  - @voyant-travel/db@0.84.1
 
 ## 0.84.0
 
 ### Patch Changes
 
 - Updated dependencies [4ea42b3]
-  - @voyantjs/db@0.84.0
+  - @voyant-travel/db@0.84.0
 
 ## 0.83.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.83.1
+- @voyant-travel/db@0.83.1
 
 ## 0.83.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.83.0
+- @voyant-travel/db@0.83.0
 
 ## 0.82.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.82.1
+- @voyant-travel/db@0.82.1
 
 ## 0.82.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.82.0
+- @voyant-travel/db@0.82.0
 
 ## 0.81.21
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.21
+- @voyant-travel/db@0.81.21
 
 ## 0.81.20
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.20
+- @voyant-travel/db@0.81.20
 
 ## 0.81.19
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.19
+- @voyant-travel/db@0.81.19
 
 ## 0.81.18
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.18
+- @voyant-travel/db@0.81.18
 
 ## 0.81.17
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.17
+- @voyant-travel/db@0.81.17
 
 ## 0.81.16
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.16
+- @voyant-travel/db@0.81.16
 
 ## 0.81.15
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.15
+- @voyant-travel/db@0.81.15
 
 ## 0.81.14
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.14
+- @voyant-travel/db@0.81.14
 
 ## 0.81.13
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.13
+- @voyant-travel/db@0.81.13
 
 ## 0.81.12
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.12
+- @voyant-travel/db@0.81.12
 
 ## 0.81.11
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.11
+- @voyant-travel/db@0.81.11
 
 ## 0.81.10
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.10
+- @voyant-travel/db@0.81.10
 
 ## 0.81.9
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.9
+- @voyant-travel/db@0.81.9
 
 ## 0.81.8
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.8
+- @voyant-travel/db@0.81.8
 
 ## 0.81.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.7
+- @voyant-travel/db@0.81.7
 
 ## 0.81.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.6
+- @voyant-travel/db@0.81.6
 
 ## 0.81.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.5
+- @voyant-travel/db@0.81.5
 
 ## 0.81.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.4
+- @voyant-travel/db@0.81.4
 
 ## 0.81.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.3
+- @voyant-travel/db@0.81.3
 
 ## 0.81.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.2
+- @voyant-travel/db@0.81.2
 
 ## 0.81.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.1
+- @voyant-travel/db@0.81.1
 
 ## 0.81.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.81.0
+- @voyant-travel/db@0.81.0
 
 ## 0.80.18
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.18
+- @voyant-travel/db@0.80.18
 
 ## 0.80.17
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.17
+- @voyant-travel/db@0.80.17
 
 ## 0.80.16
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.16
+- @voyant-travel/db@0.80.16
 
 ## 0.80.15
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.15
+- @voyant-travel/db@0.80.15
 
 ## 0.80.14
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.14
+- @voyant-travel/db@0.80.14
 
 ## 0.80.13
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.13
+- @voyant-travel/db@0.80.13
 
 ## 0.80.12
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.12
+- @voyant-travel/db@0.80.12
 
 ## 0.80.11
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.11
+- @voyant-travel/db@0.80.11
 
 ## 0.80.10
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.10
+- @voyant-travel/db@0.80.10
 
 ## 0.80.9
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.9
+- @voyant-travel/db@0.80.9
 
 ## 0.80.8
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.8
+- @voyant-travel/db@0.80.8
 
 ## 0.80.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.7
+- @voyant-travel/db@0.80.7
 
 ## 0.80.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.6
+- @voyant-travel/db@0.80.6
 
 ## 0.80.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.5
+- @voyant-travel/db@0.80.5
 
 ## 0.80.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.4
+- @voyant-travel/db@0.80.4
 
 ## 0.80.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.3
+- @voyant-travel/db@0.80.3
 
 ## 0.80.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.2
+- @voyant-travel/db@0.80.2
 
 ## 0.80.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.1
+- @voyant-travel/db@0.80.1
 
 ## 0.80.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.80.0
+- @voyant-travel/db@0.80.0
 
 ## 0.79.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.79.0
+- @voyant-travel/db@0.79.0
 
 ## 0.78.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.78.0
+- @voyant-travel/db@0.78.0
 
 ## 0.77.13
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.13
+- @voyant-travel/db@0.77.13
 
 ## 0.77.12
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.12
+- @voyant-travel/db@0.77.12
 
 ## 0.77.11
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.11
+- @voyant-travel/db@0.77.11
 
 ## 0.77.10
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.10
+- @voyant-travel/db@0.77.10
 
 ## 0.77.9
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.9
+- @voyant-travel/db@0.77.9
 
 ## 0.77.8
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.8
+- @voyant-travel/db@0.77.8
 
 ## 0.77.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.7
+- @voyant-travel/db@0.77.7
 
 ## 0.77.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.6
+- @voyant-travel/db@0.77.6
 
 ## 0.77.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.5
+- @voyant-travel/db@0.77.5
 
 ## 0.77.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.4
+- @voyant-travel/db@0.77.4
 
 ## 0.77.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.3
+- @voyant-travel/db@0.77.3
 
 ## 0.77.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.2
+- @voyant-travel/db@0.77.2
 
 ## 0.77.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.1
+- @voyant-travel/db@0.77.1
 
 ## 0.77.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.77.0
+- @voyant-travel/db@0.77.0
 
 ## 0.76.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.76.0
+- @voyant-travel/db@0.76.0
 
 ## 0.75.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.7
+- @voyant-travel/db@0.75.7
 
 ## 0.75.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.6
+- @voyant-travel/db@0.75.6
 
 ## 0.75.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.5
+- @voyant-travel/db@0.75.5
 
 ## 0.75.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.4
+- @voyant-travel/db@0.75.4
 
 ## 0.75.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.3
+- @voyant-travel/db@0.75.3
 
 ## 0.75.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.2
+- @voyant-travel/db@0.75.2
 
 ## 0.75.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.1
+- @voyant-travel/db@0.75.1
 
 ## 0.75.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.75.0
+- @voyant-travel/db@0.75.0
 
 ## 0.74.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.74.2
+- @voyant-travel/db@0.74.2
 
 ## 0.74.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.74.1
+- @voyant-travel/db@0.74.1
 
 ## 0.74.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.74.0
+- @voyant-travel/db@0.74.0
 
 ## 0.73.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.73.1
+- @voyant-travel/db@0.73.1
 
 ## 0.73.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.73.0
+- @voyant-travel/db@0.73.0
 
 ## 0.72.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.72.0
+- @voyant-travel/db@0.72.0
 
 ## 0.71.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.71.0
+- @voyant-travel/db@0.71.0
 
 ## 0.70.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.70.0
+- @voyant-travel/db@0.70.0
 
 ## 0.69.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.69.1
+- @voyant-travel/db@0.69.1
 
 ## 0.69.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.69.0
+- @voyant-travel/db@0.69.0
 
 ## 0.68.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.68.0
+- @voyant-travel/db@0.68.0
 
 ## 0.67.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.67.0
+- @voyant-travel/db@0.67.0
 
 ## 0.66.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.6
+- @voyant-travel/db@0.66.6
 
 ## 0.66.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.5
+- @voyant-travel/db@0.66.5
 
 ## 0.66.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.4
+- @voyant-travel/db@0.66.4
 
 ## 0.66.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.3
+- @voyant-travel/db@0.66.3
 
 ## 0.66.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.2
+- @voyant-travel/db@0.66.2
 
 ## 0.66.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.1
+- @voyant-travel/db@0.66.1
 
 ## 0.66.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.66.0
+- @voyant-travel/db@0.66.0
 
 ## 0.65.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.65.0
+- @voyant-travel/db@0.65.0
 
 ## 0.64.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.64.1
+- @voyant-travel/db@0.64.1
 
 ## 0.64.0
 
 ### Patch Changes
 
 - Updated dependencies [6d0c8f3]
-  - @voyantjs/db@0.64.0
+  - @voyant-travel/db@0.64.0
 
 ## 0.63.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.63.1
+- @voyant-travel/db@0.63.1
 
 ## 0.63.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.63.0
+- @voyant-travel/db@0.63.0
 
 ## 0.62.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.62.3
+- @voyant-travel/db@0.62.3
 
 ## 0.62.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.62.2
+- @voyant-travel/db@0.62.2
 
 ## 0.62.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.62.1
+- @voyant-travel/db@0.62.1
 
 ## 0.62.0
 
 ### Patch Changes
 
 - Updated dependencies [77aad68]
-  - @voyantjs/db@0.62.0
+  - @voyant-travel/db@0.62.0
 
 ## 0.61.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.61.0
+- @voyant-travel/db@0.61.0
 
 ## 0.60.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.60.0
+- @voyant-travel/db@0.60.0
 
 ## 0.59.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.59.0
+- @voyant-travel/db@0.59.0
 
 ## 0.58.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.58.0
+- @voyant-travel/db@0.58.0
 
 ## 0.57.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.57.0
+- @voyant-travel/db@0.57.0
 
 ## 0.56.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.56.0
+- @voyant-travel/db@0.56.0
 
 ## 0.55.1
 
 ### Patch Changes
 
 - Updated dependencies [819c847]
-  - @voyantjs/db@0.55.1
+  - @voyant-travel/db@0.55.1
 
 ## 0.55.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.55.0
+- @voyant-travel/db@0.55.0
 
 ## 0.54.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.54.0
+- @voyant-travel/db@0.54.0
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.53.2
+- @voyant-travel/db@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.53.1
+- @voyant-travel/db@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.53.0
+- @voyant-travel/db@0.53.0
 
 ## 0.52.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.52.4
+- @voyant-travel/db@0.52.4
 
 ## 0.52.3
 
 ### Patch Changes
 
 - Updated dependencies [9679a57]
-  - @voyantjs/db@0.52.3
+  - @voyant-travel/db@0.52.3
 
 ## 0.52.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.52.2
+- @voyant-travel/db@0.52.2
 
 ## 0.52.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.52.1
+- @voyant-travel/db@0.52.1
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.52.0
+- @voyant-travel/db@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.51.1
+- @voyant-travel/db@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.51.0
+- @voyant-travel/db@0.51.0
 
 ## 0.50.8
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.8
+- @voyant-travel/db@0.50.8
 
 ## 0.50.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.7
+- @voyant-travel/db@0.50.7
 
 ## 0.50.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.6
+- @voyant-travel/db@0.50.6
 
 ## 0.50.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.5
+- @voyant-travel/db@0.50.5
 
 ## 0.50.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.4
+- @voyant-travel/db@0.50.4
 
 ## 0.50.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.3
+- @voyant-travel/db@0.50.3
 
 ## 0.50.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.2
+- @voyant-travel/db@0.50.2
 
 ## 0.50.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.1
+- @voyant-travel/db@0.50.1
 
 ## 0.50.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.50.0
+- @voyant-travel/db@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.49.0
+- @voyant-travel/db@0.49.0
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.48.0
+- @voyant-travel/db@0.48.0
 
 ## 0.47.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.47.0
+- @voyant-travel/db@0.47.0
 
 ## 0.46.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.46.0
+- @voyant-travel/db@0.46.0
 
 ## 0.45.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.45.0
+- @voyant-travel/db@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.44.0
+- @voyant-travel/db@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.43.0
+- @voyant-travel/db@0.43.0
 
 ## 0.42.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.42.0
+- @voyant-travel/db@0.42.0
 
 ## 0.41.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.41.3
+- @voyant-travel/db@0.41.3
 
 ## 0.41.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.41.2
+- @voyant-travel/db@0.41.2
 
 ## 0.41.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.41.1
+- @voyant-travel/db@0.41.1
 
 ## 0.41.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.41.0
+- @voyant-travel/db@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.40.1
+- @voyant-travel/db@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.40.0
+- @voyant-travel/db@0.40.0
 
 ## 0.39.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.39.0
+- @voyant-travel/db@0.39.0
 
 ## 0.38.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.38.2
+- @voyant-travel/db@0.38.2
 
 ## 0.38.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.38.1
+- @voyant-travel/db@0.38.1
 
 ## 0.38.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.38.0
+- @voyant-travel/db@0.38.0
 
 ## 0.37.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.37.1
+- @voyant-travel/db@0.37.1
 
 ## 0.37.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.37.0
+- @voyant-travel/db@0.37.0
 
 ## 0.36.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.36.0
+- @voyant-travel/db@0.36.0
 
 ## 0.35.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.35.0
+- @voyant-travel/db@0.35.0
 
 ## 0.34.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.34.0
+- @voyant-travel/db@0.34.0
 
 ## 0.33.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.33.1
+- @voyant-travel/db@0.33.1
 
 ## 0.33.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.33.0
+- @voyant-travel/db@0.33.0
 
 ## 0.32.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.32.3
+- @voyant-travel/db@0.32.3
 
 ## 0.32.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.32.2
+- @voyant-travel/db@0.32.2
 
 ## 0.32.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.32.1
+- @voyant-travel/db@0.32.1
 
 ## 0.32.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.32.0
+- @voyant-travel/db@0.32.0
 
 ## 0.31.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.31.4
+- @voyant-travel/db@0.31.4
 
 ## 0.31.3
 
 ### Patch Changes
 
 - Updated dependencies [5f974dd]
-  - @voyantjs/db@0.31.3
+  - @voyant-travel/db@0.31.3
 
 ## 0.31.2
 
 ### Patch Changes
 
 - 54ddc93: Add API token management powered by Better Auth API keys, including reusable React hooks, a shared auth UI package, canonical permission presets, and API-key route permission guards.
-  - @voyantjs/db@0.31.2
+  - @voyant-travel/db@0.31.2
 
 ## 0.31.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.31.1
+- @voyant-travel/db@0.31.1
 
 ## 0.31.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.31.0
+- @voyant-travel/db@0.31.0
 
 ## 0.30.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.7
+- @voyant-travel/db@0.30.7
 
 ## 0.30.6
 
 ### Patch Changes
 
 - Updated dependencies [5a4c592]
-  - @voyantjs/db@0.30.6
+  - @voyant-travel/db@0.30.6
 
 ## 0.30.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.5
+- @voyant-travel/db@0.30.5
 
 ## 0.30.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.4
+- @voyant-travel/db@0.30.4
 
 ## 0.30.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.3
+- @voyant-travel/db@0.30.3
 
 ## 0.30.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.2
+- @voyant-travel/db@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.1
+- @voyant-travel/db@0.30.1
 
 ## 0.30.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.30.0
+- @voyant-travel/db@0.30.0
 
 ## 0.29.0
 
@@ -1254,207 +1254,207 @@
 - Updated dependencies [583326e]
 - Updated dependencies [4a6523e]
 - Updated dependencies [db51715]
-  - @voyantjs/db@0.29.0
+  - @voyant-travel/db@0.29.0
 
 ## 0.28.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.28.3
+- @voyant-travel/db@0.28.3
 
 ## 0.28.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.28.2
+- @voyant-travel/db@0.28.2
 
 ## 0.28.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.28.1
+- @voyant-travel/db@0.28.1
 
 ## 0.28.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.28.0
+- @voyant-travel/db@0.28.0
 
 ## 0.27.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.27.0
+- @voyant-travel/db@0.27.0
 
 ## 0.26.9
 
 ### Patch Changes
 
-- @voyantjs/db@0.26.9
+- @voyant-travel/db@0.26.9
 
 ## 0.26.8
 
 ### Patch Changes
 
-- @voyantjs/db@0.26.8
+- @voyant-travel/db@0.26.8
 
 ## 0.26.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.26.7
+- @voyant-travel/db@0.26.7
 
 ## 0.26.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.26.6
+- @voyant-travel/db@0.26.6
 
 ## 0.26.5
 
 ### Patch Changes
 
 - Updated dependencies [7a92aba]
-  - @voyantjs/db@0.26.5
+  - @voyant-travel/db@0.26.5
 
 ## 0.26.4
 
 ### Patch Changes
 
 - Updated dependencies [6493f62]
-  - @voyantjs/db@0.26.4
+  - @voyant-travel/db@0.26.4
 
 ## 0.26.3
 
 ### Patch Changes
 
 - Updated dependencies [372cad5]
-  - @voyantjs/db@0.26.3
+  - @voyant-travel/db@0.26.3
 
 ## 0.26.2
 
 ### Patch Changes
 
 - Updated dependencies [ffdb485]
-  - @voyantjs/db@0.26.2
+  - @voyant-travel/db@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
 - Updated dependencies [c0507a6]
-  - @voyantjs/db@0.26.1
+  - @voyant-travel/db@0.26.1
 
 ## 0.26.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.26.0
+- @voyant-travel/db@0.26.0
 
 ## 0.25.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.25.0
+- @voyant-travel/db@0.25.0
 
 ## 0.24.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.24.3
+- @voyant-travel/db@0.24.3
 
 ## 0.24.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.24.2
+- @voyant-travel/db@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.24.1
+- @voyant-travel/db@0.24.1
 
 ## 0.24.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.24.0
+- @voyant-travel/db@0.24.0
 
 ## 0.23.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.23.0
+- @voyant-travel/db@0.23.0
 
 ## 0.22.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.22.0
+- @voyant-travel/db@0.22.0
 
 ## 0.21.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.21.1
+- @voyant-travel/db@0.21.1
 
 ## 0.21.0
 
 ### Patch Changes
 
 - Updated dependencies [6427bad]
-  - @voyantjs/db@0.21.0
+  - @voyant-travel/db@0.21.0
 
 ## 0.20.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.20.0
+- @voyant-travel/db@0.20.0
 
 ## 0.19.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.19.0
+- @voyant-travel/db@0.19.0
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [8932f60]
-  - @voyantjs/db@0.18.0
+  - @voyant-travel/db@0.18.0
 
 ## 0.17.0
 
 ### Patch Changes
 
 - Updated dependencies [66d722d]
-  - @voyantjs/db@0.17.0
+  - @voyant-travel/db@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.16.0
+- @voyant-travel/db@0.16.0
 
 ## 0.15.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.15.0
+- @voyant-travel/db@0.15.0
 
 ## 0.14.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.14.0
+- @voyant-travel/db@0.14.0
 
 ## 0.13.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.13.0
+- @voyant-travel/db@0.13.0
 
 ## 0.12.0
 
@@ -1462,145 +1462,145 @@
 
 - Updated dependencies [944d244]
 - Updated dependencies [cc561ce]
-  - @voyantjs/db@0.12.0
+  - @voyant-travel/db@0.12.0
 
 ## 0.11.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.11.0
+- @voyant-travel/db@0.11.0
 
 ## 0.10.0
 
 ### Patch Changes
 
 - Updated dependencies [29a581a]
-  - @voyantjs/db@0.10.0
+  - @voyant-travel/db@0.10.0
 
 ## 0.9.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.9.0
+- @voyant-travel/db@0.9.0
 
 ## 0.8.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.8.0
+- @voyant-travel/db@0.8.0
 
 ## 0.7.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.7.0
+- @voyant-travel/db@0.7.0
 
 ## 0.6.9
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.9
+- @voyant-travel/db@0.6.9
 
 ## 0.6.8
 
 ### Patch Changes
 
 - Updated dependencies [b218885]
-  - @voyantjs/db@0.6.8
+  - @voyant-travel/db@0.6.8
 
 ## 0.6.7
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.7
+- @voyant-travel/db@0.6.7
 
 ## 0.6.6
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.6
+- @voyant-travel/db@0.6.6
 
 ## 0.6.5
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.5
+- @voyant-travel/db@0.6.5
 
 ## 0.6.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.4
+- @voyant-travel/db@0.6.4
 
 ## 0.6.3
 
 ### Patch Changes
 
 - Updated dependencies [d3c6937]
-  - @voyantjs/db@0.6.3
+  - @voyant-travel/db@0.6.3
 
 ## 0.6.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.2
+- @voyant-travel/db@0.6.2
 
 ## 0.6.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.1
+- @voyant-travel/db@0.6.1
 
 ## 0.6.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.6.0
+- @voyant-travel/db@0.6.0
 
 ## 0.5.0
 
 ### Patch Changes
 
 - Updated dependencies [ce72e29]
-  - @voyantjs/db@0.5.0
+  - @voyant-travel/db@0.5.0
 
 ## 0.4.5
 
 ### Patch Changes
 
 - Updated dependencies [e3f6e72]
-  - @voyantjs/db@0.4.5
+  - @voyant-travel/db@0.4.5
 
 ## 0.4.4
 
 ### Patch Changes
 
-- @voyantjs/db@0.4.4
+- @voyant-travel/db@0.4.4
 
 ## 0.4.3
 
 ### Patch Changes
 
-- @voyantjs/db@0.4.3
+- @voyant-travel/db@0.4.3
 
 ## 0.4.2
 
 ### Patch Changes
 
-- @voyantjs/db@0.4.2
+- @voyant-travel/db@0.4.2
 
 ## 0.4.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.4.1
+- @voyant-travel/db@0.4.1
 
 ## 0.4.0
 
 ### Patch Changes
 
 - Updated dependencies [e84fe0f]
-  - @voyantjs/db@0.4.0
+  - @voyant-travel/db@0.4.0
 
 ## 0.3.1
 
@@ -1608,48 +1608,48 @@
 
 - Updated dependencies [8566f2d]
 - Updated dependencies [8566f2d]
-  - @voyantjs/db@0.3.1
+  - @voyant-travel/db@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.3.0
+- @voyant-travel/db@0.3.0
 
 ## 0.2.0
 
 ### Patch Changes
 
-- @voyantjs/db@0.2.0
+- @voyant-travel/db@0.2.0
 
 ## 0.1.1
 
 ### Patch Changes
 
-- @voyantjs/db@0.1.1
+- @voyant-travel/db@0.1.1
 
 ## 1.1.11
 
 ### Patch Changes
 
-- @voyantjs/db@1.1.11
+- @voyant-travel/db@1.1.11
 
 ## 1.1.1
 
 ### Patch Changes
 
-- @voyantjs/db@1.1.1
+- @voyant-travel/db@1.1.1
 
 ## 1.1.0
 
 ### Minor Changes
 
-- [#292](https://github.com/voyantjs/voyant/pull/292)
-  [`d799492`](https://github.com/voyantjs/voyant/commit/d799492fabc7789315d614af4bb2f3a58804ce10)
+- [#292](https://github.com/voyant-travel/voyant/pull/292)
+  [`d799492`](https://github.com/voyant-travel/voyant/commit/d799492fabc7789315d614af4bb2f3a58804ce10)
   Thanks [@mihaipxm](https://github.com/mihaipxm)! - Initial SDK release
 
 ### Patch Changes
 
 - Updated dependencies
-  [[`d799492`](https://github.com/voyantjs/voyant/commit/d799492fabc7789315d614af4bb2f3a58804ce10)]:
-  - @voyantjs/db@1.1.0
+  [[`d799492`](https://github.com/voyant-travel/voyant/commit/d799492fabc7789315d614af4bb2f3a58804ce10)]:
+  - @voyant-travel/db@1.1.0

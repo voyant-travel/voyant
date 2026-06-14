@@ -4,7 +4,7 @@ import type {
   FlightOffer,
   FlightOrder,
   FlightTicket,
-} from "@voyantjs/flights/contract/types"
+} from "@voyant-travel/flights/contract/types"
 
 import { catalogForItinerary } from "./synthesis-ancillaries.js"
 import { hashString, mulberry32 } from "./synthesis-common.js"

@@ -2,7 +2,7 @@
  * Schema for the catalog demo API.
  *
  * Both tables live in the demo service's own Postgres — they're not
- * mounted in the operator template's primary DB. A real upstream
+ * mounted in the operator starter's primary DB. A real upstream
  * source (TUI, Hotelbeds, a Voyant Connect peer) wouldn't share its
  * inventory and order tables with the operator either; the demo mirrors
  * that posture so the swap from `demo` → `voyant-connect` is purely an
@@ -13,7 +13,7 @@
  * `"products"` for the tracer scope).
  */
 
-import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 export const catalogDemoInventory = pgTable(

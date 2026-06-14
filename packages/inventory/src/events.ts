@@ -9,7 +9,7 @@
  * Per docs/architecture/channel-push-architecture.md §6.
  */
 
-import type { EventBus } from "@voyantjs/core"
+import type { EventBus } from "@voyant-travel/core"
 
 /** Stable event identifier. */
 export const PRODUCT_CONTENT_CHANGED_EVENT = "product.content.changed" as const

@@ -5,10 +5,10 @@ import type {
   FlightSearchRequest,
   FlightSlice,
   PassengerCounts,
-} from "@voyantjs/flights/contract/types"
-import { Button } from "@voyantjs/ui/components/button"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
+} from "@voyant-travel/flights/contract/types"
+import { Button } from "@voyant-travel/ui/components/button"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { ToggleGroup, ToggleGroupItem } from "@voyant-travel/ui/components/toggle-group"
 import { ArrowLeftRight, Search } from "lucide-react"
 import { useState } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

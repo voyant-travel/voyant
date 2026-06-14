@@ -1,4 +1,4 @@
-import { RequestValidationError } from "@voyantjs/hono"
+import { RequestValidationError } from "@voyant-travel/hono"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"

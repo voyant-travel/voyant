@@ -16,7 +16,7 @@ const financeServiceMock = vi.hoisted(() => ({
 
 const buildInvoiceIssuedEventMock = vi.hoisted(() => vi.fn())
 
-vi.mock("@voyantjs/finance", () => ({
+vi.mock("@voyant-travel/finance", () => ({
   buildInvoiceIssuedEvent: buildInvoiceIssuedEventMock,
   financeService: financeServiceMock,
 }))

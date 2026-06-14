@@ -1,4 +1,4 @@
-import { booleanQueryParam } from "@voyantjs/db/helpers"
+import { booleanQueryParam } from "@voyant-travel/db/helpers"
 import { z } from "zod"
 
 import {

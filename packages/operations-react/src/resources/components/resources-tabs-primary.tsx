@@ -1,10 +1,15 @@
 // agent-quality: file-size exception -- owner: resources-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table"
-import { formatMessage } from "@voyantjs/i18n"
-import { Badge, Button, ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
-import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
-import { TabsContent } from "@voyantjs/ui/components/tabs"
+import { formatMessage } from "@voyant-travel/i18n"
+import {
+  Badge,
+  Button,
+  ConfirmActionButton,
+  SelectionActionBar,
+} from "@voyant-travel/ui/components"
+import { DataTable } from "@voyant-travel/ui/components/data-table"
+import { DataTableColumnHeader } from "@voyant-travel/ui/components/data-table-column-header"
+import { TabsContent } from "@voyant-travel/ui/components/tabs"
 import { ExternalLink } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatSelectionLabel, formatSelectionSummary } from "../i18n/utils.js"

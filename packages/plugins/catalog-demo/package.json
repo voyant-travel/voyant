@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/plugin-catalog-demo",
+  "name": "@voyant-travel/plugin-catalog-demo",
   "version": "0.21.0",
   "private": true,
   "license": "Apache-2.0",
@@ -16,10 +16,10 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/catalog": "workspace:^"
+    "@voyant-travel/catalog": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -40,7 +40,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/plugins/catalog-demo"
   }
 }

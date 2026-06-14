@@ -9,7 +9,7 @@ and promote repeated review feedback into scripts or docs.
 - `packages/*` contain reusable schemas, services, routes, contracts, UI
   registries, React hooks, adapters, and runtime libraries.
 - `packages/plugins/*` contain first-party integration bundles.
-- `templates/*` and `apps/*` own runtime wiring, auth, deployment shape, and
+- `starters/*` and `apps/*` own runtime wiring, auth, deployment shape, and
   application UI.
 - `examples/*` are consumer-facing reference apps.
 - `docs/adr/` contains decisions. `docs/architecture/` contains active design
@@ -40,11 +40,11 @@ The fast lane runs changed-file linting plus Turbo affected typecheck/test and
 architecture checks. The full lane is intended for CI, release prep, and broad
 cross-package changes.
 
-## Agent Orchestration
+## Internal Dev Agent
 
-For agent-control-plane, remote-sandbox, browser-debugging, execution-plan, or
-AI-workflow changes, read
-`docs/architecture/agentic-engineering-orchestration.md` first.
+AFK agent queue, remote sandbox, browser evidence, and code-execution tooling
+lives outside this repository in `../internal-dev-agent`. Keep this repository
+focused on product code, architecture docs, and quality checkers.
 
 ## Common Commands
 

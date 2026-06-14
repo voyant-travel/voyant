@@ -2,7 +2,7 @@ import {
   createNotificationService,
   type NotificationProvider,
   type NotificationService,
-} from "@voyantjs/notifications"
+} from "@voyant-travel/notifications"
 
 import type { NetopiaRuntimeOptions } from "./types.js"
 

@@ -1,7 +1,14 @@
 "use client"
 
-import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { useAdminHref, useAdminNavigate } from "@voyant-travel/admin"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components"
 import { ArrowLeft } from "lucide-react"
 import { StageList } from "../components/stage-list.js"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"

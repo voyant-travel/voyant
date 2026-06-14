@@ -9,7 +9,7 @@
 
 /**
  * Widget slot rendered as the person detail page's Bookings tab
- * (packaged-admin RFC §4.7 cycle resolution): `@voyantjs/bookings-react/ui`
+ * (packaged-admin RFC §4.7 cycle resolution): `@voyant-travel/bookings-react/ui`
  * depends on this package, so the host cannot import the bookings-owned
  * person-bookings card directly — instead the bookings admin extension
  * contributes a widget targeting this slot and the host mounts the tab

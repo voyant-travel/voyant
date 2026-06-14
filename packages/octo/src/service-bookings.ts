@@ -2,7 +2,7 @@ import {
   type BookingOrigin,
   bookingsService,
   getBookingOriginByBookingId,
-} from "@voyantjs/bookings"
+} from "@voyant-travel/bookings"
 import {
   bookingAllocations,
   bookingFulfillments,
@@ -12,7 +12,7 @@ import {
   bookingSupplierStatuses,
   bookings,
   bookingTravelers,
-} from "@voyantjs/bookings/schema"
+} from "@voyant-travel/bookings/schema"
 import { asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {

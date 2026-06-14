@@ -6,7 +6,7 @@ import type { PluginOption, UserConfig } from "vite"
  * Force heavy vendor libs into their own chunks so they're only downloaded
  * when a route/component that uses them is reached (combined with React.lazy
  * at the consumer site). Without this, Vite hoists them into the shared entry
- * chunk because the @voyantjs/ui barrel re-exports components that statically
+ * chunk because the @voyant-travel/ui barrel re-exports components that statically
  * import them, leaking the deps into every route's dep graph.
  *
  * React/JSX runtime + react-dom are pinned FIRST: without that, the bundler

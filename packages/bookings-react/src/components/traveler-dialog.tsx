@@ -7,7 +7,7 @@ import {
   usePersonDocuments,
   usePersonMutation,
   usePersonTravelSnapshot,
-} from "@voyantjs/relationships-react"
+} from "@voyant-travel/relationships-react"
 import {
   Button,
   Dialog,
@@ -24,11 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/ui/components"
-import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
-import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { PhoneInput } from "@voyantjs/ui/components/phone-input"
-import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+} from "@voyant-travel/ui/components"
+import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
+import { DatePicker } from "@voyant-travel/ui/components/date-picker"
+import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
+import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2, Sparkles, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"

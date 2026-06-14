@@ -24,7 +24,7 @@ describe.skipIf(!DB_AVAILABLE)("Product brochure routes", () => {
   let db: PostgresJsDatabase
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await ensureBrochureColumns(db)
     await cleanupTestDb(db)
@@ -39,7 +39,7 @@ describe.skipIf(!DB_AVAILABLE)("Product brochure routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
   })
 

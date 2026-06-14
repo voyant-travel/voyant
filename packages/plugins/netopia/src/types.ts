@@ -1,5 +1,5 @@
-import type { NotificationProvider } from "@voyantjs/notifications"
-import type { CircuitBreaker } from "@voyantjs/utils/resilience"
+import type { NotificationProvider } from "@voyant-travel/notifications"
+import type { CircuitBreaker } from "@voyant-travel/utils/resilience"
 
 export type NetopiaFetch = (
   input: string,

@@ -2,8 +2,8 @@
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
-} from "@voyantjs/action-ledger"
-import { bookings } from "@voyantjs/bookings/schema"
+} from "@voyant-travel/action-ledger"
+import { bookings } from "@voyant-travel/bookings/schema"
 import { type AnyColumn, and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"

@@ -1,1 +1,1 @@
-export * from "@voyantjs/identity-contracts"
+export * from "@voyant-travel/identity-contracts"

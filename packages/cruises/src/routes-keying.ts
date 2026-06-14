@@ -39,7 +39,7 @@ export function makeExternalKey(adapter: CruiseAdapter, ref: SourceRef): string 
 export const registryNotConfigured = () => ({
   error: "registry_not_configured",
   detail:
-    "Cruise external detail/refresh dispatches through the catalog SourceAdapterRegistry. Inject one via Hono middleware: c.set('sourceAdapterRegistry', registry). See cruiseAdapterToSourceAdapter() in @voyantjs/cruises/adapters.",
+    "Cruise external detail/refresh dispatches through the catalog SourceAdapterRegistry. Inject one via Hono middleware: c.set('sourceAdapterRegistry', registry). See cruiseAdapterToSourceAdapter() in @voyant-travel/cruises/adapters.",
 })
 
 export function entityIdFromExternal(parsed: Extract<ParsedKey, { kind: "external" }>): string {

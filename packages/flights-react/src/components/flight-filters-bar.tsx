@@ -1,9 +1,9 @@
 "use client"
 
-import type { FlightOffer } from "@voyantjs/flights/contract/types"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { Checkbox } from "@voyantjs/ui/components/checkbox"
+import type { FlightOffer } from "@voyant-travel/flights/contract/types"
+import { formatMessage } from "@voyant-travel/i18n"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import {
   Command,
   CommandEmpty,
@@ -12,9 +12,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@voyantjs/ui/components/command"
-import { Input } from "@voyantjs/ui/components/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+} from "@voyant-travel/ui/components/command"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/components/popover"
 import { PlusCircle, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"

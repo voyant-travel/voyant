@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Button, cn } from "@voyantjs/ui/components"
+import { Badge, Button, cn } from "@voyant-travel/ui/components"
 import { CalendarDays, Wrench } from "lucide-react"
 import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
 import { formatDateTimeOrFallback, formatResourceSlotLabel } from "../i18n/utils.js"

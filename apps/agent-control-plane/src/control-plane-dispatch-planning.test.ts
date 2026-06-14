@@ -8,7 +8,7 @@ describe("control-plane dispatch planning", () => {
     expect(
       selectDispatchPlan({
         recommendations,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     ).toEqual({
       reason: "matched",
@@ -21,12 +21,12 @@ describe("control-plane dispatch planning", () => {
           "--issue",
           "579",
           "--repo",
-          "voyantjs/voyant",
+          "voyant-travel/voyant",
           "--yes",
         ],
         issue: recommendations[1]?.issue,
         reason: "maintainer-approved item is ready to claim",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         requiresMutation: true,
       },
     })
@@ -38,7 +38,7 @@ describe("control-plane dispatch planning", () => {
         filters: { action: "start" },
         options: { remoteWorkspace: "sandbox:sprite:voyant-agent-01-slot-1" },
         recommendations,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     ).toEqual({
       reason: "matched",
@@ -51,14 +51,14 @@ describe("control-plane dispatch planning", () => {
           "--issue",
           "579",
           "--repo",
-          "voyantjs/voyant",
+          "voyant-travel/voyant",
           "--workspace",
           "sandbox:sprite:voyant-agent-01-slot-1",
           "--yes",
         ],
         issue: recommendations[1]?.issue,
         reason: "maintainer-approved item is ready to claim",
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
         requiresMutation: true,
       },
     })
@@ -69,7 +69,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         filters: { action: "start", issueNumber: 579 },
         recommendations,
-        repository: "VoyantJS/Voyant",
+        repository: "Voyant-Travel/Voyant",
       }).plan?.issue.number,
     ).toBe(579)
 
@@ -77,7 +77,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         filters: { action: "cleanup" },
         recommendations,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     ).toEqual({
       plan: null,
@@ -88,7 +88,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         filters: { action: "run-command" },
         recommendations,
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }),
     ).toEqual({
       plan: null,
@@ -103,15 +103,15 @@ describe("control-plane dispatch planning", () => {
       issue: {
         number: 626,
         title: "Repair failing checks",
-        url: "https://github.com/voyantjs/voyant/issues/626",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/626",
+        repository: "voyant-travel/voyant",
       },
     }
 
     expect(
       selectDispatchPlan({
         recommendations: [ciRecommendation, recommendations[0]!],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan,
     ).toMatchObject({
       action: "collect-ci",
@@ -122,7 +122,7 @@ describe("control-plane dispatch planning", () => {
         "--issue",
         "626",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--yes",
       ],
     })
@@ -131,7 +131,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { implementationCommand: "agent-exec smoke" },
         recommendations: [recommendations[0]!],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan,
     ).toMatchObject({
       action: "run-command",
@@ -142,7 +142,7 @@ describe("control-plane dispatch planning", () => {
         "--issue",
         "581",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--command",
         "agent-exec smoke",
         "--yes",
@@ -157,8 +157,8 @@ describe("control-plane dispatch planning", () => {
       issue: {
         number: 629,
         title: "Run remote implementation",
-        url: "https://github.com/voyantjs/voyant/issues/629",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/629",
+        repository: "voyant-travel/voyant",
       },
     }
 
@@ -166,7 +166,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { remoteImplementationCommand: "agent-exec remote smoke" },
         recommendations: [remoteRecommendation],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan,
     ).toMatchObject({
       action: "remote-run-command",
@@ -177,7 +177,7 @@ describe("control-plane dispatch planning", () => {
         "--issue",
         "629",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--command",
         "agent-exec remote smoke",
         "--yes",
@@ -192,8 +192,8 @@ describe("control-plane dispatch planning", () => {
       issue: {
         number: 626,
         title: "Repair failing checks",
-        url: "https://github.com/voyantjs/voyant/issues/626",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/626",
+        repository: "voyant-travel/voyant",
       },
     }
 
@@ -201,7 +201,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { ciRepairCommand: "pnpm verify:fast" },
         recommendations: [repairRecommendation],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan,
     ).toMatchObject({
       action: "repair-ci",
@@ -212,7 +212,7 @@ describe("control-plane dispatch planning", () => {
         "--issue",
         "626",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--yes",
         "--ci-repair-command",
         "pnpm verify:fast",
@@ -227,15 +227,15 @@ describe("control-plane dispatch planning", () => {
       issue: {
         number: 628,
         title: "Publish remote evidence",
-        url: "https://github.com/voyantjs/voyant/issues/628",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/628",
+        repository: "voyant-travel/voyant",
       },
     }
 
     expect(
       selectDispatchPlan({
         recommendations: [remoteRecommendation],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan,
     ).toMatchObject({
       action: "remote-publish-evidence",
@@ -246,7 +246,7 @@ describe("control-plane dispatch planning", () => {
         "--issue",
         "628",
         "--repo",
-        "voyantjs/voyant",
+        "voyant-travel/voyant",
         "--yes",
       ],
     })
@@ -257,7 +257,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { eventLog: ".agent-runs/supervisor.jsonl" },
         recommendations: [recommendations[1]!],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan?.command,
     ).toEqual([
       "pnpm",
@@ -266,7 +266,7 @@ describe("control-plane dispatch planning", () => {
       "--issue",
       "579",
       "--repo",
-      "voyantjs/voyant",
+      "voyant-travel/voyant",
       "--yes",
       "--event-log",
       ".agent-runs/supervisor.jsonl",
@@ -280,8 +280,8 @@ describe("control-plane dispatch planning", () => {
       issue: {
         number: 627,
         title: "Sync review state",
-        url: "https://github.com/voyantjs/voyant/issues/627",
-        repository: "voyantjs/voyant",
+        url: "https://github.com/voyant-travel/voyant/issues/627",
+        repository: "voyant-travel/voyant",
       },
     }
 
@@ -289,7 +289,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { eventLog: ".agent-runs/supervisor.jsonl", updateBody: true },
         recommendations: [syncRecommendation],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan?.command,
     ).toEqual([
       "pnpm",
@@ -298,7 +298,7 @@ describe("control-plane dispatch planning", () => {
       "--issue",
       "627",
       "--repo",
-      "voyantjs/voyant",
+      "voyant-travel/voyant",
       "--yes",
       "--event-log",
       ".agent-runs/supervisor.jsonl",
@@ -309,7 +309,7 @@ describe("control-plane dispatch planning", () => {
       selectDispatchPlan({
         options: { updateBody: true },
         recommendations: [recommendations[1]!],
-        repository: "voyantjs/voyant",
+        repository: "voyant-travel/voyant",
       }).plan?.command,
     ).not.toContain("--update-body")
   })

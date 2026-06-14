@@ -10,10 +10,14 @@
 import "./bundle.mjs"
 
 import { Container } from "@cloudflare/containers"
-import { createHmacSigner, parseTokenList, resolveRequestVerifier } from "@voyantjs/workflows/auth"
-import { handleStepRequest, type StepRunner } from "@voyantjs/workflows/handler"
-import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
-import type { StepHandler } from "@voyantjs/workflows-orchestrator"
+import {
+  createHmacSigner,
+  parseTokenList,
+  resolveRequestVerifier,
+} from "@voyant-travel/workflows/auth"
+import { handleStepRequest, type StepRunner } from "@voyant-travel/workflows/handler"
+import { createInMemoryRateLimiter } from "@voyant-travel/workflows/rate-limit"
+import type { StepHandler } from "@voyant-travel/workflows-orchestrator"
 import {
   type ContainerNamespaceLike,
   createCfContainerStepRunner,
@@ -23,7 +27,7 @@ import {
   handleDurableObjectRequest,
   handleWorkerRequest,
   type StepDispatcher,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 export interface Env {
   WORKFLOW_RUN_DO: DurableObjectNamespace

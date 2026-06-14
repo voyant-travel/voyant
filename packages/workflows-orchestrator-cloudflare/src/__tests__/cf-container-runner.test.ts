@@ -1,4 +1,4 @@
-import type { StepJournalEntry } from "@voyantjs/workflows/handler"
+import type { StepJournalEntry } from "@voyant-travel/workflows/handler"
 import { describe, expect, it, vi } from "vitest"
 
 import { type ContainerNamespaceLike, createCfContainerStepRunner } from "../cf-container-runner.js"

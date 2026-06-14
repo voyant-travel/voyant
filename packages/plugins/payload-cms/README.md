@@ -1,4 +1,4 @@
-# @voyantjs/plugin-payload-cms
+# @voyant-travel/plugin-payload-cms
 
 Payload CMS sync adapter bundle for Voyant.
 
@@ -14,14 +14,14 @@ keyed by a `voyantId` field.
 ## Install
 
 ```bash
-pnpm add @voyantjs/plugin-payload-cms
+pnpm add @voyant-travel/plugin-payload-cms
 ```
 
 ## Usage
 
 ```typescript
-import { payloadCmsPlugin } from "@voyantjs/plugin-payload-cms"
-import { createApp } from "@voyantjs/hono"
+import { payloadCmsPlugin } from "@voyant-travel/plugin-payload-cms"
+import { createApp } from "@voyant-travel/hono"
 
 const payloadCmsSync = payloadCmsPlugin({
   apiUrl: "https://cms.example.com/api",

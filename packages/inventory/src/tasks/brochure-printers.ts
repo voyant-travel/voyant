@@ -1,5 +1,5 @@
-import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"
-import type { StructuredTemplateBodyFormat } from "@voyantjs/utils/template-renderer"
+import { renderPdfDocument } from "@voyant-travel/utils/pdf-renderer"
+import type { StructuredTemplateBodyFormat } from "@voyant-travel/utils/template-renderer"
 import { marked } from "marked"
 import sanitizeHtml from "sanitize-html"
 

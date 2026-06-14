@@ -1,4 +1,4 @@
-import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
+import { buildPaymentLinkUrl } from "@voyant-travel/finance/payment-link"
 
 import type { NotificationAttachment } from "./types.js"
 

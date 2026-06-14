@@ -38,7 +38,7 @@ export type PredicateExpr =
 
 /**
  * Minimal structural envelope the evaluator reads. Matches the standard
- * `EventEnvelope` from `@voyantjs/core`. Declared structurally here so the
+ * `EventEnvelope` from `@voyant-travel/core`. Declared structurally here so the
  * SDK package stays a leaf.
  */
 export interface PredicateEnvelope<TData = unknown> {

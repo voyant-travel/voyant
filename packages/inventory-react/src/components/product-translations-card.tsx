@@ -1,25 +1,25 @@
 "use client"
 
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/ui/components/card"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
-import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+} from "@voyant-travel/ui/components/card"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
+import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/ui/components/select"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Copy, Languages, Loader2, Plus, Save, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

@@ -1,18 +1,18 @@
 // Test-only Worker used by the miniflare (@cloudflare/vitest-pool-workers)
 // integration tests in this package. Mounts `handleDurableObjectRequest`
-// and `handleDurableObjectAlarm` from @voyantjs/workflows-orchestrator-cloudflare
+// and `handleDurableObjectAlarm` from @voyant-travel/workflows-orchestrator-cloudflare
 // against a real Durable Object namespace, and resolves step handlers
-// in-process via @voyantjs/workflows/handler so we're testing the DO
+// in-process via @voyant-travel/workflows/handler so we're testing the DO
 // layer end-to-end without needing a dispatch namespace.
 
-import { workflow } from "@voyantjs/workflows"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
+import { workflow } from "@voyant-travel/workflows"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import {
   createInlineDispatcher,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
-} from "@voyantjs/workflows-orchestrator-cloudflare"
+} from "@voyant-travel/workflows-orchestrator-cloudflare"
 
 // Register a couple of workflows at module load so any test DO can
 // drive them via the step handler.

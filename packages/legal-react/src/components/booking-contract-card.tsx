@@ -1,6 +1,13 @@
 "use client"
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components"
 import { Download, FilePlus2, FileText, Loader2, RotateCw } from "lucide-react"
 import { useLegalUiI18nOrDefault } from "../i18n/index.js"
 import type { LegalUiMessages } from "../i18n/messages.js"

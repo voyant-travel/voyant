@@ -1,5 +1,5 @@
-import type { LinkableDefinition, Module } from "@voyantjs/core"
-import { typeId } from "@voyantjs/db/lib/typeid-column"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import { typeId } from "@voyant-travel/db/lib/typeid-column"
 import { relations } from "drizzle-orm"
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 

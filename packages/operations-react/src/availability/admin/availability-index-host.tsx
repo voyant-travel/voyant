@@ -1,7 +1,7 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { formatMessage, useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import { formatMessage, useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { useState } from "react"
 import { toast } from "sonner"
 import {
@@ -30,7 +30,7 @@ import { formatLocalizedSelectionLabel } from "../utils.js"
  * search contract), opening a slot resolves through the
  * `availabilitySlot.detail` semantic destination, and the bulk
  * update/delete handlers run through the typed batch mutation pairs from
- * `@voyantjs/operations-react/availability` (the `batch-update`/`batch-delete`
+ * `@voyant-travel/operations-react/availability` (the `batch-update`/`batch-delete`
  * endpoints) instead of an app RPC client. Slot create/edit submits through
  * the package default (`useAvailabilitySlotMutation`).
  */

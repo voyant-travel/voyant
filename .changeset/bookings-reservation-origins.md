@@ -1,5 +1,5 @@
 ---
-"@voyantjs/bookings": patch
+"@voyant-travel/bookings": patch
 ---
 
 Stamp Booking-owned origin records for direct storefront booking sessions and

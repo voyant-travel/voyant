@@ -1,25 +1,25 @@
 ---
-"@voyantjs/accommodations": patch
-"@voyantjs/action-ledger-react": patch
-"@voyantjs/admin-app": patch
-"@voyantjs/bookings": patch
-"@voyantjs/bookings-react": patch
-"@voyantjs/catalog-authoring": patch
-"@voyantjs/catalog-react": patch
-"@voyantjs/commerce-react": patch
-"@voyantjs/distribution": patch
-"@voyantjs/distribution-react": patch
-"@voyantjs/finance": patch
-"@voyantjs/finance-react": patch
-"@voyantjs/flights-react": patch
-"@voyantjs/identity-react": patch
-"@voyantjs/inventory": patch
-"@voyantjs/inventory-react": patch
-"@voyantjs/legal-react": patch
-"@voyantjs/octo": patch
-"@voyantjs/operations": patch
-"@voyantjs/operations-react": patch
-"@voyantjs/storefront": patch
+"@voyant-travel/accommodations": patch
+"@voyant-travel/action-ledger-react": patch
+"@voyant-travel/admin-app": patch
+"@voyant-travel/bookings": patch
+"@voyant-travel/bookings-react": patch
+"@voyant-travel/catalog-authoring": patch
+"@voyant-travel/catalog-react": patch
+"@voyant-travel/commerce-react": patch
+"@voyant-travel/distribution": patch
+"@voyant-travel/distribution-react": patch
+"@voyant-travel/finance": patch
+"@voyant-travel/finance-react": patch
+"@voyant-travel/flights-react": patch
+"@voyant-travel/identity-react": patch
+"@voyant-travel/inventory": patch
+"@voyant-travel/inventory-react": patch
+"@voyant-travel/legal-react": patch
+"@voyant-travel/octo": patch
+"@voyant-travel/operations": patch
+"@voyant-travel/operations-react": patch
+"@voyant-travel/storefront": patch
 ---
 
 Retarget first-party imports from the removed beta package names to their owner

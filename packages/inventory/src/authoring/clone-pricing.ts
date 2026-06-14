@@ -7,8 +7,12 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   pickupPriceRules,
-} from "@voyantjs/commerce"
-import { availabilityRules, availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
+} from "@voyant-travel/commerce"
+import {
+  availabilityRules,
+  availabilitySlots,
+  availabilityStartTimes,
+} from "@voyant-travel/operations"
 import { eq, inArray } from "drizzle-orm"
 import { type CloneContext, withoutSystemColumns } from "./clone-content.js"
 

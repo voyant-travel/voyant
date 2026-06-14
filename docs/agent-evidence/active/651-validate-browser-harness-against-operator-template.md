@@ -1,7 +1,7 @@
 # Evidence Packet: [Task] Validate browser harness against operator template
 
-Issue: https://github.com/voyantjs/voyant/issues/651
-Repository: voyantjs/voyant
+Issue: https://github.com/voyant-travel/voyant/issues/651
+Repository: voyant-travel/voyant
 Branch: task/651-validate-browser-harness-against-operator-template
 Workspace: /Users/mihai/builds/internal/voyant-all/voyant/.agent-worktrees/651-validate-browser-harness-against-operator-template
 Evidence: docs/agent-evidence/active/651-validate-browser-harness-against-operator-template.md

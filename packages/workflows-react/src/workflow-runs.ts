@@ -8,7 +8,7 @@ import {
   type VoyantReactContextValue,
   VoyantReactProvider,
   type VoyantReactProviderProps,
-} from "@voyantjs/react"
+} from "@voyant-travel/react"
 import {
   createWorkflowRunsClientOptions,
   getWorkflowRun,

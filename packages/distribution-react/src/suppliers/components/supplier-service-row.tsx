@@ -1,4 +1,4 @@
-import { Badge, Button } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyant-travel/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSuppliersUiI18nOrDefault } from "../i18n/index.js"
 import { type SupplierRate, type SupplierService, useSupplierServiceRates } from "../index.js"

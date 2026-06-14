@@ -17,7 +17,7 @@ describe("agent runner dispatch executor selection", () => {
       {
         implementationCommand: "pnpm verify:fast",
         maxAgeDays: 1,
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       },
     )
 
@@ -27,12 +27,12 @@ describe("agent runner dispatch executor selection", () => {
     )
     assert.equal(
       implementation.command,
-      'pnpm agent:queue:run-command -- --issue 579 --repo voyantjs/other --command "pnpm verify:fast" --yes',
+      'pnpm agent:queue:run-command -- --issue 579 --repo voyant-travel/other --command "pnpm verify:fast" --yes',
     )
     assert.deepEqual(
       dispatchCommandArgs(implementation, {
         implementationCommand: "pnpm verify:fast",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
       [
         "agent:queue:run-command",
@@ -40,7 +40,7 @@ describe("agent runner dispatch executor selection", () => {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/other",
+        "voyant-travel/other",
         "--command",
         "pnpm verify:fast",
         "--yes",
@@ -58,7 +58,7 @@ describe("agent runner dispatch executor selection", () => {
       {
         maxAgeDays: 1,
         remoteImplementationCommand: "pnpm verify:fast",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       },
     )
 
@@ -66,7 +66,7 @@ describe("agent runner dispatch executor selection", () => {
     assert.deepEqual(
       dispatchCommandArgs(remote, {
         implementationCommand: "pnpm verify:fast",
-        repository: "voyantjs/other",
+        repository: "voyant-travel/other",
       }),
       [
         "agent:queue:remote-run-command",
@@ -74,7 +74,7 @@ describe("agent runner dispatch executor selection", () => {
         "--issue",
         "579",
         "--repo",
-        "voyantjs/other",
+        "voyant-travel/other",
         "--command",
         "pnpm verify:fast",
         "--yes",

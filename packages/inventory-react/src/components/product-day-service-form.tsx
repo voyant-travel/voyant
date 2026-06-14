@@ -1,17 +1,17 @@
 "use client"
 
-import { Button } from "@voyantjs/ui/components/button"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
-import { Input } from "@voyantjs/ui/components/input"
-import { Label } from "@voyantjs/ui/components/label"
+import { Button } from "@voyant-travel/ui/components/button"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { Input } from "@voyant-travel/ui/components/input"
+import { Label } from "@voyant-travel/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/ui/components/select"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+} from "@voyant-travel/ui/components/select"
+import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"

@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: legal; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { createEventBus } from "@voyantjs/core"
-import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
+import { createEventBus } from "@voyant-travel/core"
+import type { StorageProvider, StorageUploadBody } from "@voyant-travel/storage"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -35,7 +35,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
   let lifecycleEvents: Array<Record<string, unknown>>
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
 
@@ -117,7 +117,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
     generatedNames = []
     documentEvents = []

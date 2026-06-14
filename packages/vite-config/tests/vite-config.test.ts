@@ -36,7 +36,7 @@ describe("voyantVendorChunk", () => {
 
 describe("voyantStartViteConfig", () => {
   const base = {
-    appRootUrl: "file:///repo/templates/operator/vite.config.ts",
+    appRootUrl: "file:///repo/starters/operator/vite.config.ts",
     plugins: [],
   }
 
@@ -44,7 +44,7 @@ describe("voyantStartViteConfig", () => {
     const config = voyantStartViteConfig(base)
     const alias = config.resolve?.alias as Record<string, string>
 
-    expect(alias["@"]).toBe("/repo/templates/operator/src")
+    expect(alias["@"]).toBe("/repo/starters/operator/src")
   })
 
   it("layers extra manual chunks after the Voyant vendor rules", () => {

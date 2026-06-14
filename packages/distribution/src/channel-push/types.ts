@@ -4,8 +4,8 @@
  * Per docs/architecture/channel-push-architecture.md §4-§6.
  */
 
-import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 /**
  * Process-local dependencies the channel-push workers and subscribers

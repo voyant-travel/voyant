@@ -17,7 +17,7 @@
  * plane adapter, PR4 via the checkout adapter.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"

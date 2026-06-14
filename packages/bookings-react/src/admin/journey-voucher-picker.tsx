@@ -7,8 +7,8 @@
  * customers. Wired into `<BookingJourneyHost />` via `renderVoucherPicker`.
  */
 
-import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { useVouchers, type VoucherRecord } from "@voyantjs/finance-react"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useVouchers, type VoucherRecord } from "@voyant-travel/finance-react"
 import {
   Combobox,
   ComboboxCollection,
@@ -17,8 +17,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/ui/components/combobox"
-import { Label } from "@voyantjs/ui/components/label"
+} from "@voyant-travel/ui/components/combobox"
+import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useState } from "react"
 
 import type { VoucherPickerProps } from "../journey/index.js"

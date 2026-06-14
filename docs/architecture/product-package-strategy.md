@@ -5,7 +5,7 @@ package-closure, Interface-proof, schema-move, and migration issues listed in
 §8.1 are implemented on `feature/v1-package-restructure`. The beta runtime
 package names targeted by this strategy are removed from the v1 workspace
 surface rather than shipped as compatibility facades.
-Audience: contributors changing package/module shape, starter templates,
+Audience: contributors changing package/module shape, starters,
 domain vocabulary, or first-party product positioning.
 
 Related:
@@ -198,7 +198,7 @@ and deleting it only moves the same decisions into every caller.
 
 Consolidation is only worthwhile if the target Module exposes a narrower
 Interface than the package cluster it replaces. Subpaths such as
-`@voyantjs/commerce/pricing` or `@voyantjs/operations/resources` are internal
+`@voyant-travel/commerce/pricing` or `@voyant-travel/operations/resources` are internal
 organization by default. They should become public v1 Interfaces only when they
 are deliberate extension seams with at least two real adapters or consumers.
 
@@ -250,11 +250,11 @@ target.
 
 Ownership rule:
 
-- `@voyantjs/inventory/extras` owns operated add-on authoring/configuration:
+- `@voyant-travel/inventory/extras` owns operated add-on authoring/configuration:
   `product_extras`, `option_extra_configs`, authoring validation, catalog
   policy/projection helpers, sourced-content cache helpers, and schema-doc /
   reindex participation for product-attached add-ons.
-- `@voyantjs/bookings/extras` owns booking-time extra behavior:
+- `@voyant-travel/bookings/extras` owns booking-time extra behavior:
   `booking_extras`, `extra_participant_selections`, booking extra line schemas,
   customer-safe booked state, and the slot extras manifest routes/services.
 - Slot extras manifests are Bookings-owned in the current code because they
@@ -266,14 +266,14 @@ Ownership rule:
   it.
 - Product booking-engine add-on catalog loading remains an injected boundary:
   Products accepts an add-on catalog loader, while templates load booking-facing
-  extra data through `@voyantjs/bookings/extras`. This keeps Products from
+  extra data through `@voyant-travel/bookings/extras`. This keeps Products from
   depending on operated Inventory authoring and lets retail/OTA bundles use
   Catalog Item snapshots plus Bookings without installing Inventory.
-- `@voyantjs/extras-contracts` remains separate under ADR-0002 because
+- `@voyant-travel/extras-contracts` remains separate under ADR-0002 because
   `extras/v1` rich content is a real zod-only external payload seam for source
   adapters. Runtime consolidation does not collapse that contract package.
 
-The old `@voyantjs/extras` and `@voyantjs/extras-react` package names are not
+The old `@voyant-travel/extras` and `@voyant-travel/extras-react` package names are not
 part of the v1 workspace surface. The physical Drizzle tables are owner-split
 between Inventory and Bookings; template schema manifests and first-party
 runtime imports use owner packages directly.
@@ -284,14 +284,14 @@ runtime imports use owner packages directly.
 
 Candidate packages:
 
-- `@voyantjs/pricing`
-- `@voyantjs/pricing-react`
-- `@voyantjs/markets`
-- `@voyantjs/markets-react`
-- `@voyantjs/sellability`
-- `@voyantjs/sellability-react`
-- `@voyantjs/promotions`
-- `@voyantjs/promotions-react`
+- `@voyant-travel/pricing`
+- `@voyant-travel/pricing-react`
+- `@voyant-travel/markets`
+- `@voyant-travel/markets-react`
+- `@voyant-travel/sellability`
+- `@voyant-travel/sellability-react`
+- `@voyant-travel/promotions`
+- `@voyant-travel/promotions-react`
 
 Problem:
 
@@ -303,7 +303,7 @@ currency?
 
 Solution:
 
-Create `@voyantjs/commerce` and `@voyantjs/commerce-react` with internal source
+Create `@voyant-travel/commerce` and `@voyant-travel/commerce-react` with internal source
 folders such as:
 
 - `src/pricing`
@@ -322,7 +322,7 @@ vertical/source adapter. Flights, cruises, charters, and sourced adapters can
 keep native live-offer or fare topology behind price-availability adapters that
 Commerce calls.
 
-For the React/admin migration, `@voyantjs/commerce-react` is the target owner
+For the React/admin migration, `@voyant-travel/commerce-react` is the target owner
 package. The old split commercial React package names are not part of the v1
 workspace surface.
 
@@ -364,7 +364,7 @@ Prerequisite cleanup:
 - Do not expose `pricing`, `markets`, `sellability`, `promotions`, and `fx`
   as package exports for the normal public choreography. Public subpaths are
   allowed only for deliberate extension Interfaces.
-- Remove `@voyantjs/commerce/sellability/service-construct-offer`,
+- Remove `@voyant-travel/commerce/sellability/service-construct-offer`,
   `SellabilityOfferWriter`, and `POST /construct-offer` from the v1 public
   surface. Sellability stops at commercial resolution and persisted decision
   snapshots; Quote Versions, booking drafts, or Trips snapshots own
@@ -378,17 +378,17 @@ Prerequisite cleanup:
 
 Candidate packages:
 
-- `@voyantjs/availability`
-- `@voyantjs/availability-react`, including `@voyantjs/availability-react/allocation`
-- retired beta `@voyantjs/allocation-ui`
-- `@voyantjs/resources`
-- `@voyantjs/resources-react`
-- `@voyantjs/ground`
-- `@voyantjs/ground-react`
-- `@voyantjs/facilities`
-- `@voyantjs/facilities-react`
-- `@voyantjs/places`
-- `@voyantjs/places-react`
+- `@voyant-travel/availability`
+- `@voyant-travel/availability-react`, including `@voyant-travel/availability-react/allocation`
+- retired beta `@voyant-travel/allocation-ui`
+- `@voyant-travel/resources`
+- `@voyant-travel/resources-react`
+- `@voyant-travel/ground`
+- `@voyant-travel/ground-react`
+- `@voyant-travel/facilities`
+- `@voyant-travel/facilities-react`
+- `@voyant-travel/places`
+- `@voyant-travel/places-react`
 - future room-block / space-block execution slices
 
 MICE Program coordination belongs to the optional `mice` Module. Operations
@@ -404,19 +404,19 @@ product-level installation choices.
 
 Solution:
 
-Create `@voyantjs/operations` and `@voyantjs/operations-react` with subpaths for
+Create `@voyant-travel/operations` and `@voyant-travel/operations-react` with subpaths for
 availability, allocation resources, resources, places, and ground.
 
 Current implementation state:
 
-- `@voyantjs/operations/availability`, `@voyantjs/operations/resources`,
-  `@voyantjs/operations/ground`, and `@voyantjs/operations/places` own the
+- `@voyant-travel/operations/availability`, `@voyant-travel/operations/resources`,
+  `@voyant-travel/operations/ground`, and `@voyant-travel/operations/places` own the
   runtime source.
-- `@voyantjs/operations-react/availability`,
-  `@voyantjs/operations-react/availability/allocation`,
-  `@voyantjs/operations-react/resources`,
-  `@voyantjs/operations-react/ground`, and
-  `@voyantjs/operations-react/places` own the React source.
+- `@voyant-travel/operations-react/availability`,
+  `@voyant-travel/operations-react/availability/allocation`,
+  `@voyant-travel/operations-react/resources`,
+  `@voyant-travel/operations-react/ground`, and
+  `@voyant-travel/operations-react/places` own the React source.
 - The old package names are removed from the v1 workspace surface.
 - Operator runtime/admin imports and schema manifests use Operations owner
   paths.
@@ -435,7 +435,7 @@ Required cleanup:
   records. They should move to an accommodation resale owner or be removed
   before v1 if they imply PMS/property operations.
 - Remove cross-package FK constraints into old Facilities/Places tables; use
-  loose ids and template-level links where a deployment wants stronger wiring.
+  loose ids and starter-level links where a deployment wants stronger wiring.
 - Expose Room Resource Hold and Space Resource Hold execution through Operations
   Interfaces so MICE can coordinate Program-level blocks without owning
   low-level availability or resource truth.
@@ -445,20 +445,20 @@ Required cleanup:
 
 Candidate packages:
 
-- `@voyantjs/relationships`
-- `@voyantjs/quotes`
-- `@voyantjs/relationships-react`
-- `@voyantjs/quotes-react`
+- `@voyant-travel/relationships`
+- `@voyant-travel/quotes`
+- `@voyant-travel/relationships-react`
+- `@voyant-travel/quotes-react`
 
 Adjacent packages to integrate through an explicit Interface, not fold blindly:
 
-- `@voyantjs/trips`
-- `@voyantjs/trips-react`
+- `@voyant-travel/trips`
+- `@voyant-travel/trips-react`
 
 Adjacent legacy packages to decouple and retire through a dedicated ADR:
 
-- `@voyantjs/transactions`
-- `@voyantjs/transactions-react`
+- `@voyant-travel/transactions`
+- `@voyant-travel/transactions-react`
 
 Problem:
 
@@ -524,9 +524,9 @@ Prerequisite cleanup:
 
 Candidate packages:
 
-- `@voyantjs/transactions`
-- `@voyantjs/transactions-react`
-- `@voyantjs/transactions-contracts`
+- `@voyant-travel/transactions`
+- `@voyant-travel/transactions-react`
+- `@voyant-travel/transactions-contracts`
 
 Problem:
 
@@ -604,18 +604,18 @@ Move the current responsibilities as follows:
 
 Compatibility policy:
 
-- Keep `@voyantjs/transactions-contracts` only as a temporary legacy contract
+- Keep `@voyant-travel/transactions-contracts` only as a temporary legacy contract
   package if external integrations still consume those zod schemas. Do not make
   it part of the v1 default product bundles.
 - Temporary runtime facades may exist only inside intermediate migration commits
   to keep those commits verifiable.
-- No public v1 package should expose `@voyantjs/transactions` or
-  `@voyantjs/transactions-react` unless a later ADR explicitly reverses this
+- No public v1 package should expose `@voyant-travel/transactions` or
+  `@voyant-travel/transactions-react` unless a later ADR explicitly reverses this
   retirement plan.
 
 Required cleanup:
 
-- Remove the `@voyantjs/transactions` dependency from Sellability before
+- Remove the `@voyant-travel/transactions` dependency from Sellability before
   Commerce consolidation.
 - Remove `transactionsHonoModule` and `transactionsBookingExtension` from
   template composition after Bookings owns origin/provenance.
@@ -628,8 +628,8 @@ Required cleanup:
 
 ADR acceptance checklist:
 
-- No non-legacy runtime package imports `@voyantjs/transactions` or
-  `@voyantjs/transactions-react`.
+- No non-legacy runtime package imports `@voyant-travel/transactions` or
+  `@voyant-travel/transactions-react`.
 - Default templates no longer mount `transactionsHonoModule`,
   `transactionsBookingExtension`, or transactions link tables.
 - Sellability no longer constructs or persists Transactions Offers.
@@ -657,8 +657,8 @@ ADR acceptance checklist:
 
 Candidate packages:
 
-- `@voyantjs/trips`
-- `@voyantjs/trips-react`
+- `@voyant-travel/trips`
+- `@voyant-travel/trips-react`
 
 Problem:
 
@@ -681,8 +681,8 @@ draft, reservation, or checkout flow, not another generic Offer.
 
 Solution:
 
-The public package names are `@voyantjs/trips` and
-`@voyantjs/trips-react`. Keep the composer as a distinct standalone
+The public package names are `@voyant-travel/trips` and
+`@voyant-travel/trips-react`. Keep the composer as a distinct standalone
 workspace Module, not a `quotes` subpath. `trips` is precise because the
 Module owns the Trip Envelope workspace, and it avoids the vocabulary collision
 that `offers` would create. Let Quotes reference frozen composer snapshots
@@ -740,10 +740,10 @@ The accepted Quote Version reservation proof is captured in
 
 Candidate packages:
 
-- `@voyantjs/bookings`
-- `@voyantjs/bookings-react`
-- `@voyantjs/booking-requirements`
-- `@voyantjs/booking-requirements-react`
+- `@voyant-travel/bookings`
+- `@voyant-travel/bookings-react`
+- `@voyant-travel/booking-requirements`
+- `@voyant-travel/booking-requirements-react`
 - booking session and journey surfaces currently split across catalog/storefront
   glue
 
@@ -768,9 +768,9 @@ Required cleanup:
   optionality goal.
 
 Implementation note (2026-06): booking requirements now live under the
-Bookings package family as `@voyantjs/bookings/requirements*` and
-`@voyantjs/bookings-react/requirements*`. The standalone beta package names are
-removed from the v1 workspace surface. Root `@voyantjs/bookings` does not
+Bookings package family as `@voyant-travel/bookings/requirements*` and
+`@voyant-travel/bookings-react/requirements*`. The standalone beta package names are
+removed from the v1 workspace surface. Root `@voyant-travel/bookings` does not
 hard-depend on operated Products/Inventory for public transport requirement
 summaries; hosts that want product existence, booking mode, and capability
 lookup inject a requirements-only product snapshot resolver. The operator
@@ -782,10 +782,10 @@ template injects its Inventory-backed resolver while preserving the existing
 
 Candidate packages:
 
-- `@voyantjs/finance`
-- `@voyantjs/finance-react`
-- retired `@voyantjs/checkout`
-- retired `@voyantjs/checkout-react`
+- `@voyant-travel/finance`
+- `@voyant-travel/finance-react`
+- retired `@voyant-travel/checkout`
+- retired `@voyant-travel/checkout-react`
 
 Problem:
 
@@ -813,12 +813,12 @@ Required cleanup:
 
 Candidate packages:
 
-- `@voyantjs/distribution`
-- `@voyantjs/distribution-react`
-- `@voyantjs/suppliers`
-- `@voyantjs/suppliers-react`
-- `@voyantjs/external-refs`
-- `@voyantjs/external-refs-react`
+- `@voyant-travel/distribution`
+- `@voyant-travel/distribution-react`
+- `@voyant-travel/suppliers`
+- `@voyant-travel/suppliers-react`
+- `@voyant-travel/external-refs`
+- `@voyant-travel/external-refs-react`
 
 Problem:
 
@@ -855,7 +855,7 @@ procurement language into an outbound-only Distribution meaning.
 
 Required cleanup:
 
-- Keep `@voyantjs/suppliers-contracts` separate unless ADR-0002 changes.
+- Keep `@voyant-travel/suppliers-contracts` separate unless ADR-0002 changes.
 - Move schema/template manifest ownership only through the migration contract
   below; do not strand supplier or external-ref tables behind deleted package
   names.
@@ -895,8 +895,8 @@ Schema migration plan:
 
 Future packages:
 
-- `@voyantjs/mice`
-- `@voyantjs/mice-react`
+- `@voyant-travel/mice`
+- `@voyant-travel/mice-react`
 
 Problem:
 
@@ -977,13 +977,13 @@ Required cleanup:
 
 Candidate packages:
 
-- `@voyantjs/catalog`
-- `@voyantjs/catalog-react`
-- `@voyantjs/catalog-authoring`
-- `@voyantjs/products`
-- `@voyantjs/products-react`
-- `@voyantjs/extras`
-- `@voyantjs/extras-react`
+- `@voyant-travel/catalog`
+- `@voyant-travel/catalog-react`
+- `@voyant-travel/catalog-authoring`
+- `@voyant-travel/products`
+- `@voyant-travel/products-react`
+- `@voyant-travel/extras`
+- `@voyant-travel/extras-react`
 - vertical runtime packages where their differences are real
 
 Problem:
@@ -1001,8 +1001,8 @@ shape, not a root table, and Catalog is not a vertical Module. Move owned
 product authoring toward an optional `inventory` Module, with current
 `products` surfaces becoming Inventory subpaths/packages in the v1 move. Do not
 overload `catalog` or keep `products` as the long-term public Module name.
-The first implementation slice creates `@voyantjs/inventory` and
-`@voyantjs/inventory-react` as operated authoring entrypoints over the existing
+The first implementation slice creates `@voyant-travel/inventory` and
+`@voyant-travel/inventory-react` as operated authoring entrypoints over the existing
 implementation; the remaining physical file/table move is tracked as follow-up
 work behind the documented Inventory Interface.
 During that transition, template runtime manifests and hand-written UI imports
@@ -1018,14 +1018,14 @@ They should opt into Inventory only when they own or operate inventory.
 
 The name `inventory` is risky because travel systems also use "inventory" for
 availability, allotments, sourced inventory, and resource capacity. If the v1
-package name stays `@voyantjs/inventory`, public docs should consistently call
+package name stays `@voyant-travel/inventory`, public docs should consistently call
 the domain "operated Inventory authoring" and avoid using unqualified Inventory
 for Operations availability/resource truth, Distribution allotments, or sourced
 Catalog inventory.
 
 `catalog-authoring` is classified as operated-inventory authoring for the current
 compose/duplicate product-graph implementation. That implementation should live
-behind `@voyantjs/inventory/authoring`. Keep or recreate a narrow Catalog
+behind `@voyant-travel/inventory/authoring`. Keep or recreate a narrow Catalog
 merchandising surface only for real
 Catalog overlay/source-governance authoring: editorial overlays, source
 governance, freshness controls, search projection metadata, and index
@@ -1065,9 +1065,9 @@ package count:
   packages.
 - Provider/adapter packages such as payment, accounting, source, and channel
   adapters.
-- External or sibling SDK packages such as `@voyantjs/data-sdk`,
-  `@voyantjs/cloud-sdk`, `@voyantjs/connect-sdk`,
-  `@voyantjs/connect-adapter`, and `@voyantjs/connect-cruises` are out of scope
+- External or sibling SDK packages such as `@voyant-travel/data-sdk`,
+  `@voyant-travel/cloud-sdk`, `@voyant-travel/connect-sdk`,
+  `@voyant-travel/connect-adapter`, and `@voyant-travel/connect-cruises` are out of scope
   for this workspace package topology unless they are moved into this repo.
 - `core`, `db`, `hono`, `storage`, `auth`, `identity`, `workflows`, and other
   infrastructure Modules.
@@ -1104,14 +1104,14 @@ of the implementation mode.
 
 Retail-spine package closure is now a normal architecture gate. The
 Catalog + Commerce + Bookings + Finance + Distribution + Storefront + Admin
-runtime closure must have no hard dependency on `@voyantjs/products`,
-`@voyantjs/products-react`, operated Availability/Operations schemas,
+runtime closure must have no hard dependency on `@voyant-travel/products`,
+`@voyant-travel/products-react`, operated Availability/Operations schemas,
 Relationships/Quotes runtime packages, or runtime Transactions except through
 deliberate optional adapters.
 
 `pnpm verify:architecture` runs `pnpm verify:retail-spine-closure`, the pre-v1
 package-closure gate introduced for
-[#1791](https://github.com/voyantjs/voyant/issues/1791). The command computes
+[#1791](https://github.com/voyant-travel/voyant/issues/1791). The command computes
 the current manifest closure from the retail-spine package candidates, reports
 hard runtime blockers with package paths and dependency edges, and keeps
 optional adapter/shim exceptions as edge-specific allowlist entries.
@@ -1148,13 +1148,13 @@ temporary owner subpath exports remain.
 9. Implement optional `mice` as the MICE/corporate group-business Module, with
    Program as its central entity and explicit Interfaces to Quotes, Operations,
    Bookings, Finance, Distribution, Relationships, and Legal.
-10. Retire `@voyantjs/transactions` and `@voyantjs/transactions-react` as
+10. Retire `@voyant-travel/transactions` and `@voyant-travel/transactions-react` as
    public v1 runtime packages per ADR-0005. Move each
    durable concern into Quotes, Commerce, Trips, Bookings, Finance,
    Legal, Relationships, Distribution, or vertical adapters as described in
    §5.4.
-11. Keep standalone `@voyantjs/trips` and
-   `@voyantjs/trips-react` as the public v1 package names; do not expose
+11. Keep standalone `@voyant-travel/trips` and
+   `@voyant-travel/trips-react` as the public v1 package names; do not expose
    the composer as a `quotes` subpath and do not rename it to `offers`.
 12. Fold suppliers and external-refs into distribution as the external
    counterparty/integration Module, while preserving Supplier and Channel as
@@ -1208,30 +1208,30 @@ list remains as the implementation audit trail for the package move.
 
 Readiness gates:
 
-- [#1791: v1 packages: add retail-spine package-closure gate](https://github.com/voyantjs/voyant/issues/1791)
-- [#1792: commerce: define CommercialDecision Interface before consolidation](https://github.com/voyantjs/voyant/issues/1792)
-- [#1793: bookings: add accepted Quote Version to reservation golden flow](https://github.com/voyantjs/voyant/issues/1793)
+- [#1791: v1 packages: add retail-spine package-closure gate](https://github.com/voyant-travel/voyant/issues/1791)
+- [#1792: commerce: define CommercialDecision Interface before consolidation](https://github.com/voyant-travel/voyant/issues/1792)
+- [#1793: bookings: add accepted Quote Version to reservation golden flow](https://github.com/voyant-travel/voyant/issues/1793)
 
 Schema and package moves:
 
-- [#1794: commerce: move pricing, markets, sellability, and promotions under Commerce](https://github.com/voyantjs/voyant/issues/1794)
-- [#1795: inventory: move operated product authoring into optional Inventory](https://github.com/voyantjs/voyant/issues/1795)
-- [#1796: relationships/quotes: split CRM into Relationships and Quotes](https://github.com/voyantjs/voyant/issues/1796)
-- [#1797: bookings: own requirements, extras runtime, and booking origin/provenance](https://github.com/voyantjs/voyant/issues/1797)
-- [#1798: finance: fold checkout into Finance and replace transaction order refs](https://github.com/voyantjs/voyant/issues/1798)
-- [#1799: legal: replace order terms and transaction refs with target-linked legal records](https://github.com/voyantjs/voyant/issues/1799)
-- [#1800: distribution: fold suppliers and external refs into Distribution](https://github.com/voyantjs/voyant/issues/1800)
-- [#1801: operations: consolidate availability, resources, allocation, ground, and places](https://github.com/voyantjs/voyant/issues/1801)
-- [#1802: trips: rename Travel Composer and own reservation plans](https://github.com/voyantjs/voyant/issues/1802)
+- [#1794: commerce: move pricing, markets, sellability, and promotions under Commerce](https://github.com/voyant-travel/voyant/issues/1794)
+- [#1795: inventory: move operated product authoring into optional Inventory](https://github.com/voyant-travel/voyant/issues/1795)
+- [#1796: relationships/quotes: split CRM into Relationships and Quotes](https://github.com/voyant-travel/voyant/issues/1796)
+- [#1797: bookings: own requirements, extras runtime, and booking origin/provenance](https://github.com/voyant-travel/voyant/issues/1797)
+- [#1798: finance: fold checkout into Finance and replace transaction order refs](https://github.com/voyant-travel/voyant/issues/1798)
+- [#1799: legal: replace order terms and transaction refs with target-linked legal records](https://github.com/voyant-travel/voyant/issues/1799)
+- [#1800: distribution: fold suppliers and external refs into Distribution](https://github.com/voyant-travel/voyant/issues/1800)
+- [#1801: operations: consolidate availability, resources, allocation, ground, and places](https://github.com/voyant-travel/voyant/issues/1801)
+- [#1802: trips: rename Travel Composer and own reservation plans](https://github.com/voyant-travel/voyant/issues/1802)
 
 Existing package-scope issues that now fit this strategy:
 
-- [#1709: catalog: collapse AI access around HTTP APIs; remove catalog-mcp and fold catalog-rag into catalog](https://github.com/voyantjs/voyant/issues/1709)
-- [#1786: Fold allocation UI into availability-react](https://github.com/voyantjs/voyant/issues/1786)
-- [#1787: Rationalize admin package boundaries](https://github.com/voyantjs/voyant/issues/1787)
-- [#1788: Fold booking-requirements into bookings package family](https://github.com/voyantjs/voyant/issues/1788)
-- [#1789: Move extras into Inventory and Bookings; retire standalone extras packages](https://github.com/voyantjs/voyant/issues/1789)
-- [#1790: Reframe facilities as shared places/locations](https://github.com/voyantjs/voyant/issues/1790)
+- [#1709: catalog: collapse AI access around HTTP APIs; remove catalog-mcp and fold catalog-rag into catalog](https://github.com/voyant-travel/voyant/issues/1709)
+- [#1786: Fold allocation UI into availability-react](https://github.com/voyant-travel/voyant/issues/1786)
+- [#1787: Rationalize admin package boundaries](https://github.com/voyant-travel/voyant/issues/1787)
+- [#1788: Fold booking-requirements into bookings package family](https://github.com/voyant-travel/voyant/issues/1788)
+- [#1789: Move extras into Inventory and Bookings; retire standalone extras packages](https://github.com/voyant-travel/voyant/issues/1789)
+- [#1790: Reframe facilities as shared places/locations](https://github.com/voyant-travel/voyant/issues/1790)
 
 Migration contract:
 
@@ -1256,7 +1256,7 @@ Migration contract:
 - Cross-package references continue to follow schema discipline: cross-domain
   associations go through links unless a documented vertical-extension
   exception applies.
-- Because `@voyantjs/*` beta packages are already published, removed public
+- Because `@voyant-travel/*` beta packages are already published, removed public
   package names need an external-consumer policy: changelog entry, migration
   target, and npm deprecation notice where appropriate. The v1 workspace should
   not keep runtime compatibility facades solely for beta import paths.
@@ -1270,7 +1270,7 @@ migration issue rather than reopening the package move implicitly.
 
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
-| Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. The old Products runtime package names are removed from v1; template schema specifiers use Inventory directly. Keep `@voyantjs/catalog-authoring` only if a real Catalog overlay/source-governance surface is split out. |
+| Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. The old Products runtime package names are removed from v1; template schema specifiers use Inventory directly. Keep `@voyant-travel/catalog-authoring` only if a real Catalog overlay/source-governance surface is split out. |
 | Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Commerce owns the public commercial runtime surface. Sellability no longer constructs Transactions Offers; callers use commerce outputs, Quote Versions, booking drafts, or trips price snapshots. Old public subpath exports are removed from v1. |
 | CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside intermediate migration commits. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
@@ -1290,15 +1290,15 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/catalog`, `@voyantjs/catalog-react` | Keep as the catalog projection/search/overlay/snapshot plane. | Catalog remains a contract/infrastructure plane, not a universal root table and not owned product authoring. |
-| `@voyantjs/catalog-authoring` | Keep only if it owns real overlay/source-governance behavior; otherwise operated authoring belongs to `@voyantjs/inventory/authoring`. | The current compose/duplicate product graph authoring implementation is operated-inventory authoring. |
-| retired beta Products packages | Removed from the v1 workspace surface. | Products are operated inventory. Runtime, schema, and React authoring imports use `@voyantjs/inventory` and `@voyantjs/inventory-react`. |
-| `@voyantjs/accommodations` | Keep as a vertical runtime for accommodation resale where the schema/booking semantics are real. | Do not revive hotel/property operations. Room-block work may be Operations/Program-facing while accommodation resale remains vertical. |
-| `@voyantjs/cruises`, `@voyantjs/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |
-| `@voyantjs/charters`, `@voyantjs/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
-| `@voyantjs/flights`, `@voyantjs/flights-react` | Keep as a vertical/source runtime package. | Flights are live-offer/source-adapter driven and intentionally do not behave like owned product inventory. |
+| `@voyant-travel/catalog`, `@voyant-travel/catalog-react` | Keep as the catalog projection/search/overlay/snapshot plane. | Catalog remains a contract/infrastructure plane, not a universal root table and not owned product authoring. |
+| `@voyant-travel/catalog-authoring` | Keep only if it owns real overlay/source-governance behavior; otherwise operated authoring belongs to `@voyant-travel/inventory/authoring`. | The current compose/duplicate product graph authoring implementation is operated-inventory authoring. |
+| retired beta Products packages | Removed from the v1 workspace surface. | Products are operated inventory. Runtime, schema, and React authoring imports use `@voyant-travel/inventory` and `@voyant-travel/inventory-react`. |
+| `@voyant-travel/accommodations` | Keep as a vertical runtime for accommodation resale where the schema/booking semantics are real. | Do not revive hotel/property operations. Room-block work may be Operations/Program-facing while accommodation resale remains vertical. |
+| `@voyant-travel/cruises`, `@voyant-travel/cruises-react` | Keep as a vertical runtime package. | Cruises have distinct content, sailing, cabin, fare, itinerary, and booking semantics. They should participate in catalog, commerce, bookings, and operations rather than be folded into any one of them. |
+| `@voyant-travel/charters`, `@voyant-travel/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
+| `@voyant-travel/flights`, `@voyant-travel/flights-react` | Keep as a vertical/source runtime package. | Flights are live-offer/source-adapter driven and intentionally do not behave like owned product inventory. |
 | retired beta Extras packages | Removed from the v1 workspace surface. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. Inventory owns product extras, option configs, content/projection helpers, and authoring UI; Bookings owns booking extras, participant selections, slot manifests, and booking-time UI. |
-| `@voyantjs/octo` | Keep as an adapter/API compatibility package unless it grows into a first-class product seam. | OCTO should project from Bookings, booking origin/provenance, Catalog snapshots, and vertical/source refs after Transactions retirement. |
+| `@voyant-travel/octo` | Keep as an adapter/API compatibility package unless it grows into a first-class product seam. | OCTO should project from Bookings, booking origin/provenance, Catalog snapshots, and vertical/source refs after Transactions retirement. |
 
 ### 10.2 Commercial Runtime Packages
 
@@ -1310,80 +1310,80 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/relationships`, `@voyantjs/relationships-react`, `@voyantjs/quotes`, `@voyantjs/quotes-react` | Keep as the split Relationships and Quotes runtime surfaces for v1. | ADR-0004 moves supported proposal language to Quote. Customer/account records belong to Relationships; quote pursuit belongs to Quotes. |
-| `@voyantjs/transactions`, `@voyantjs/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trips, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
-| `@voyantjs/trips`, `@voyantjs/trips-react` | Keep as the standalone Trips packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
-| `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
+| `@voyant-travel/relationships`, `@voyant-travel/relationships-react`, `@voyant-travel/quotes`, `@voyant-travel/quotes-react` | Keep as the split Relationships and Quotes runtime surfaces for v1. | ADR-0004 moves supported proposal language to Quote. Customer/account records belong to Relationships; quote pursuit belongs to Quotes. |
+| `@voyant-travel/transactions`, `@voyant-travel/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Quotes, quote-time commercial snapshots to Commerce/Trips, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
+| `@voyant-travel/trips`, `@voyant-travel/trips-react` | Keep as the standalone Trips packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
+| `@voyant-travel/bookings`, `@voyant-travel/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | retired beta Booking Requirements packages | Removed from the v1 workspace surface. | Requirements define what must be collected to commit a booking; runtime and React imports use Bookings owner paths. |
-| `@voyantjs/checkout`, `@voyantjs/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published beta names should be npm-deprecated to the Finance owner paths. |
+| `@voyant-travel/checkout`, `@voyant-travel/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published beta names should be npm-deprecated to the Finance owner paths. |
 
 ### 10.4 Operations Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/operations`, `@voyantjs/operations-react` | Target owner packages. | Runtime source includes availability, resources, ground, and places; React owner paths mirror them, including availability allocation UI. |
+| `@voyant-travel/operations`, `@voyant-travel/operations-react` | Target owner packages. | Runtime source includes availability, resources, ground, and places; React owner paths mirror them, including availability allocation UI. |
 | retired beta Operations-slice packages | Removed from the v1 workspace surface. | Availability, resources, ground, places, facilities, and allocation UI imports use Operations owner packages. |
-| Future `@voyantjs/mice`, `@voyantjs/mice-react` | Create as an optional MICE/corporate group-business Module. | Program is the central entity. The Module owns Program lifecycle, requirements, agenda, delegates, rooming, and RFP/bid workflow while reusing Quotes, Operations, Bookings, Finance, Distribution, Relationships, and Legal. |
+| Future `@voyant-travel/mice`, `@voyant-travel/mice-react` | Create as an optional MICE/corporate group-business Module. | Program is the central entity. The Module owns Program lifecycle, requirements, agenda, delegates, rooming, and RFP/bid workflow while reusing Quotes, Operations, Bookings, Finance, Distribution, Relationships, and Legal. |
 
 ### 10.5 Finance, Legal, Distribution, And Counterparty Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/finance`, `@voyantjs/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, vouchers, settlement, and profitability. |
-| `@voyantjs/legal`, `@voyantjs/legal-react` | Keep separate. | Legal documents, contracts, terms, templates, signatures, and legal workflows cut across quotes, bookings, Distribution, and finance. |
-| `@voyantjs/distribution`, `@voyantjs/distribution-react` | Keep as the proposed Distribution Module name and absorb supplier/external-ref scope if the broader commercial-network definition is accepted. | Distribution owns supplier-side and channel-side commercial network concerns: Suppliers, Channels, mappings, allotments, channel push, source/operator links, reconciliation, and integration-facing references. |
+| `@voyant-travel/finance`, `@voyant-travel/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, vouchers, settlement, and profitability. |
+| `@voyant-travel/legal`, `@voyant-travel/legal-react` | Keep separate. | Legal documents, contracts, terms, templates, signatures, and legal workflows cut across quotes, bookings, Distribution, and finance. |
+| `@voyant-travel/distribution`, `@voyant-travel/distribution-react` | Keep as the proposed Distribution Module name and absorb supplier/external-ref scope if the broader commercial-network definition is accepted. | Distribution owns supplier-side and channel-side commercial network concerns: Suppliers, Channels, mappings, allotments, channel push, source/operator links, reconciliation, and integration-facing references. |
 | retired beta Supplier and External Ref packages | Removed from the v1 workspace surface. | Supplier remains a distinct role/entity inside Distribution; external refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |
 
 ### 10.6 Admin And Surface Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/admin` | Keep as packaged staff shell and extension surface. | Admin is a surface/extension host, not a domain Module. App-shell exports live under `@voyantjs/admin/app/*`. |
-| `@voyantjs/admin-app` | Keep as the first-party admin composition package until the domain-backed core extension can be inverted. | It re-exports the shell helpers for compatibility and owns `core-extension`, because that bundle imports domain React packages that depend back on `@voyantjs/admin`. First-party shell imports should still move to `@voyantjs/admin/app/*`. |
-| `@voyantjs/admin-client`, `@voyantjs/admin-contracts` | Keep if the framework-neutral admin client contract remains useful. | This is a client/contract seam, not a domain seam. |
-| `@voyantjs/admin-react` | Keep separate only as the React Query adapter over `admin-client`; fold before v1 if no independent React SDK consumers are confirmed. | It is not part of the packaged shell/runtime surface moved into `admin`. |
-| `@voyantjs/storefront`, `@voyantjs/storefront-react` | Keep as the customer-facing runtime/surface concept. | Storefront composes public and authenticated customer flows; it should not own product, price, booking, or finance truth. |
-| retired beta Customer Portal packages | Removed from the v1 workspace surface. | Storefront owns authenticated account/after-booking surfaces through `@voyantjs/storefront/customer-portal` and `@voyantjs/storefront-react/customer-portal`. |
-| `@voyantjs/storefront-sdk` | Keep as a framework-agnostic facade if public flows stay cross-module. | SDK shape may simplify once commerce/bookings/finance consolidate. |
-| `@voyantjs/storefront-verification` | Keep as a public-surface support package unless folded into storefront. | Verification is a support capability for storefront/public flows. |
+| `@voyant-travel/admin` | Keep as packaged staff shell and extension surface. | Admin is a surface/extension host, not a domain Module. App-shell exports live under `@voyant-travel/admin/app/*`. |
+| `@voyant-travel/admin-app` | Keep as the first-party admin composition package until the domain-backed core extension can be inverted. | It re-exports the shell helpers for compatibility and owns `core-extension`, because that bundle imports domain React packages that depend back on `@voyant-travel/admin`. First-party shell imports should still move to `@voyant-travel/admin/app/*`. |
+| `@voyant-travel/admin-client`, `@voyant-travel/admin-contracts` | Keep if the framework-neutral admin client contract remains useful. | This is a client/contract seam, not a domain seam. |
+| `@voyant-travel/admin-react` | Keep separate only as the React Query adapter over `admin-client`; fold before v1 if no independent React SDK consumers are confirmed. | It is not part of the packaged shell/runtime surface moved into `admin`. |
+| `@voyant-travel/storefront`, `@voyant-travel/storefront-react` | Keep as the customer-facing runtime/surface concept. | Storefront composes public and authenticated customer flows; it should not own product, price, booking, or finance truth. |
+| retired beta Customer Portal packages | Removed from the v1 workspace surface. | Storefront owns authenticated account/after-booking surfaces through `@voyant-travel/storefront/customer-portal` and `@voyant-travel/storefront-react/customer-portal`. |
+| `@voyant-travel/storefront-sdk` | Keep as a framework-agnostic facade if public flows stay cross-module. | SDK shape may simplify once commerce/bookings/finance consolidate. |
+| `@voyant-travel/storefront-verification` | Keep as a public-surface support package unless folded into storefront. | Verification is a support capability for storefront/public flows. |
 
 ### 10.7 Infrastructure, Platform, And Cross-Cutting Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/core`, `@voyantjs/db`, `@voyantjs/hono` | Keep separate. | Core framework, database helpers, and route composition are real infrastructure seams. |
-| `@voyantjs/auth`, `@voyantjs/auth-react`, `@voyantjs/identity`, `@voyantjs/identity-react` | Keep separate, but keep audience/customer terminology aligned. | Auth/session identity and contact/person identity are cross-cutting infrastructure. |
-| `@voyantjs/action-ledger`, `@voyantjs/action-ledger-react` | Keep separate as an infrastructure/audit Module. | Audit/action timelines cut across domains. |
-| `@voyantjs/notifications`, `@voyantjs/notifications-react` | Keep separate. | Notifications are infrastructure with provider/adapters and domain event consumers. |
-| `@voyantjs/storage` | Keep separate. | Storage is infrastructure. |
-| `@voyantjs/workflows`, `@voyantjs/workflows-react`, `@voyantjs/workflow-runs`, `@voyantjs/workflows-orchestrator`, `@voyantjs/workflows-orchestrator-node`, `@voyantjs/workflows-orchestrator-cloudflare`, `@voyantjs/workflows-cloud-adapter` | Keep as workflow infrastructure family. | These are runtime/orchestration seams, not travel-domain seams. |
-| `@voyantjs/catalog-rag`, `@voyantjs/catalog-mcp` | Fold Catalog retrieval into `catalog` and remove first-party `catalog-mcp`. | Semantic/vector/hybrid search and compact agent results are Catalog API capabilities; MCP wrappers belong at the application/runtime edge when needed. |
-| `@voyantjs/ui`, `@voyantjs/react`, `@voyantjs/i18n` | Keep separate. | Shared frontend/runtime infrastructure. |
-| `@voyantjs/schema-kit`, `@voyantjs/types`, `@voyantjs/utils`, `@voyantjs/templating` | Keep separate. | Shared type, TypeID, formatting, templating, and utility infrastructure. |
-| `@voyantjs/voyant-test-utils`, `@voyantjs/voyant-typescript-config`, `@voyantjs/vite-config`, `@voyantjs/worker-runtime` | Keep separate. | Test/build/runtime support packages. |
+| `@voyant-travel/core`, `@voyant-travel/db`, `@voyant-travel/hono` | Keep separate. | Core framework, database helpers, and route composition are real infrastructure seams. |
+| `@voyant-travel/auth`, `@voyant-travel/auth-react`, `@voyant-travel/identity`, `@voyant-travel/identity-react` | Keep separate, but keep audience/customer terminology aligned. | Auth/session identity and contact/person identity are cross-cutting infrastructure. |
+| `@voyant-travel/action-ledger`, `@voyant-travel/action-ledger-react` | Keep separate as an infrastructure/audit Module. | Audit/action timelines cut across domains. |
+| `@voyant-travel/notifications`, `@voyant-travel/notifications-react` | Keep separate. | Notifications are infrastructure with provider/adapters and domain event consumers. |
+| `@voyant-travel/storage` | Keep separate. | Storage is infrastructure. |
+| `@voyant-travel/workflows`, `@voyant-travel/workflows-react`, `@voyant-travel/workflow-runs`, `@voyant-travel/workflows-orchestrator`, `@voyant-travel/workflows-orchestrator-node`, `@voyant-travel/workflows-orchestrator-cloudflare`, `@voyant-travel/workflows-cloud-adapter` | Keep as workflow infrastructure family. | These are runtime/orchestration seams, not travel-domain seams. |
+| `@voyant-travel/catalog-rag`, `@voyant-travel/catalog-mcp` | Fold Catalog retrieval into `catalog` and remove first-party `catalog-mcp`. | Semantic/vector/hybrid search and compact agent results are Catalog API capabilities; MCP wrappers belong at the application/runtime edge when needed. |
+| `@voyant-travel/ui`, `@voyant-travel/react`, `@voyant-travel/i18n` | Keep separate. | Shared frontend/runtime infrastructure. |
+| `@voyant-travel/schema-kit`, `@voyant-travel/types`, `@voyant-travel/utils`, `@voyant-travel/templating` | Keep separate. | Shared type, TypeID, formatting, templating, and utility infrastructure. |
+| `@voyant-travel/voyant-test-utils`, `@voyant-travel/voyant-typescript-config`, `@voyant-travel/vite-config`, `@voyant-travel/worker-runtime` | Keep separate. | Test/build/runtime support packages. |
 
 ### 10.8 Contract Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/accommodations-contracts`, `@voyantjs/bookings-contracts`, `@voyantjs/catalog-contracts`, `@voyantjs/charters-contracts`, `@voyantjs/crm-contracts`, `@voyantjs/cruises-contracts`, `@voyantjs/extras-contracts`, `@voyantjs/finance-contracts`, `@voyantjs/flights-contracts`, `@voyantjs/identity-contracts`, `@voyantjs/legal-contracts`, `@voyantjs/products-contracts`, `@voyantjs/suppliers-contracts`, `@voyantjs/transactions-contracts` | Keep the zod-only contract seam separate unless ADR-0002 is replaced. | Runtime consolidation does not automatically collapse contract packages, but v1 package moves can still rename, split, or retire legacy contract names. Treat `crm-contracts`, `products-contracts`, `suppliers-contracts`, `extras-contracts`, and `transactions-contracts` as migration/compatibility concerns for their target Modules, not as proof that old runtime Module names should survive. |
+| `@voyant-travel/accommodations-contracts`, `@voyant-travel/bookings-contracts`, `@voyant-travel/catalog-contracts`, `@voyant-travel/charters-contracts`, `@voyant-travel/crm-contracts`, `@voyant-travel/cruises-contracts`, `@voyant-travel/extras-contracts`, `@voyant-travel/finance-contracts`, `@voyant-travel/flights-contracts`, `@voyant-travel/identity-contracts`, `@voyant-travel/legal-contracts`, `@voyant-travel/products-contracts`, `@voyant-travel/suppliers-contracts`, `@voyant-travel/transactions-contracts` | Keep the zod-only contract seam separate unless ADR-0002 is replaced. | Runtime consolidation does not automatically collapse contract packages, but v1 package moves can still rename, split, or retire legacy contract names. Treat `crm-contracts`, `products-contracts`, `suppliers-contracts`, `extras-contracts`, and `transactions-contracts` as migration/compatibility concerns for their target Modules, not as proof that old runtime Module names should survive. |
 
 ### 10.9 Plugin Packages
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyantjs/plugin-catalog-demo`, `@voyantjs/plugin-flights-demo` | Keep as demo/source plugin packages. | These are integration examples and seed connectors, not domain Modules. Their public shape may change when Catalog, Inventory, and Flights settle, but they should remain plugins. |
-| `@voyantjs/plugin-netopia` | Keep as a finance/payment plugin. | Payment-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
-| `@voyantjs/plugin-smartbill` | Keep as a finance/accounting plugin. | Accounting-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
-| `@voyantjs/plugin-payload-cms`, `@voyantjs/plugin-sanity-cms` | Keep as content/source plugins. | CMS-specific implementation should stay outside catalog core and expose provider/plugin integration points. |
+| `@voyant-travel/plugin-catalog-demo`, `@voyant-travel/plugin-flights-demo` | Keep as demo/source plugin packages. | These are integration examples and seed connectors, not domain Modules. Their public shape may change when Catalog, Inventory, and Flights settle, but they should remain plugins. |
+| `@voyant-travel/plugin-netopia` | Keep as a finance/payment plugin. | Payment-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
+| `@voyant-travel/plugin-smartbill` | Keep as a finance/accounting plugin. | Accounting-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
+| `@voyant-travel/plugin-payload-cms`, `@voyant-travel/plugin-sanity-cms` | Keep as content/source plugins. | CMS-specific implementation should stay outside catalog core and expose provider/plugin integration points. |
 
 ### 10.10 Apps And Templates
 
 | Workspace package(s) | Direction | Notes |
 | --- | --- | --- |
 | `operator` template | Keep as the reference product assembly. | The template should change after package seams settle, because it is the proof that product modes compose cleanly. |
-| `@voyantjs/agent-control-plane`, `@voyantjs/agent-runner` | Keep as agentic engineering applications. | These are repository tooling/runtime apps, not travel-domain Modules. Follow `docs/architecture/agentic-engineering-orchestration.md` for changes. |
-| `@voyantjs/scripts` | Keep as repository automation. | This is not part of the product package topology. |
+| Internal dev-agent tooling | Keep outside the Voyant workspace. | Agent queue, remote sandbox, browser evidence, and code-execution tooling lives in `../internal-dev-agent`, not in the product monorepo. |
+| `@voyant-travel/scripts` | Keep as repository automation. | This is not part of the product package topology. |
 | `catalog-demo-api`, `flights-demo-api` | Keep as demo applications. | These may need dependency updates after Catalog, Inventory, or Flights package moves, but they should not drive Module boundaries. |
-| `@voyantjs/workflow-runs-dashboard`, `@voyantjs/workflows-local-dashboard` | Keep as workflow/admin tooling apps. | They are consumers of workflow infrastructure. |
-| `@voyantjs/workflows-node-step-container`, `@voyantjs/workflows-orchestrator-worker`, `@voyantjs/workflows-selfhost-cloudflare-worker`, `@voyantjs/workflows-selfhost-node-server`, `@voyantjs/workflows-tenant-worker` | Keep as workflow runtime/deployment apps. | These are deployment targets for workflow infrastructure and should remain outside travel-domain consolidation. |
+| `@voyant-travel/workflow-runs-dashboard`, `@voyant-travel/workflows-local-dashboard` | Keep as workflow/admin tooling apps. | They are consumers of workflow infrastructure. |
+| `@voyant-travel/workflows-node-step-container`, `@voyant-travel/workflows-orchestrator-worker`, `@voyant-travel/workflows-selfhost-cloudflare-worker`, `@voyant-travel/workflows-selfhost-node-server`, `@voyant-travel/workflows-tenant-worker` | Keep as workflow runtime/deployment apps. | These are deployment targets for workflow infrastructure and should remain outside travel-domain consolidation. |

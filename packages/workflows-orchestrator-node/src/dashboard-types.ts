@@ -1,6 +1,6 @@
 import type { createServer } from "node:http"
-import type { ServiceResolver } from "@voyantjs/workflows/driver"
-import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
+import type { ServiceResolver } from "@voyant-travel/workflows/driver"
+import type { WaitpointInjection } from "@voyant-travel/workflows-orchestrator"
 import type { ChunkBus } from "./dashboard-chunks.js"
 import type { SchedulerHandle } from "./scheduler.js"
 import type { ListFilter, SnapshotRunStore, StoredRun } from "./snapshot-run-store.js"

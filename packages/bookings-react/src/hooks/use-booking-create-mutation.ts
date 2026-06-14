@@ -59,7 +59,7 @@ export interface BookingCreateItemLineInput {
    * to look up this item after insert and link it to the travelers
    * referenced in `travelerKeys`. Server writes
    * `metadata.bookingCreateLineKey` so the lookup survives the
-   * round-trip. See voyantjs/voyant#1267.
+   * round-trip. See voyant-travel/voyant#1267.
    */
   clientLineKey?: string | null
   optionId?: string | null

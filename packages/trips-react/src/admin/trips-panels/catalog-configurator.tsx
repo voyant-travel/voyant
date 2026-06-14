@@ -1,12 +1,12 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useOperatorAdminMessages as useAdminMessages } from "@voyantjs/admin"
-import { type Draft, emptyDraft } from "@voyantjs/bookings-react/journey"
-import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
-import { useBookingQuote } from "@voyantjs/catalog-react/booking-engine"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
-import { DateTimeField } from "@voyantjs/ui/components/date-time-field"
+import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
+import { type Draft, emptyDraft } from "@voyant-travel/bookings-react/journey"
+import { type CatalogSearchHit, useCatalogSearch } from "@voyant-travel/catalog-react"
+import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
+import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
+import { DateTimeField } from "@voyant-travel/ui/components/date-time-field"
 import * as React from "react"
 
 import { useVoyantTripsContext } from "../../provider.js"

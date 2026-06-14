@@ -56,7 +56,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront verification public routes", () => {
   const sendSmsChallenge = vi.fn(async () => undefined)
 
   beforeAll(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await ensureVerificationSchema(db)
     await cleanupTestDb(db)
@@ -76,7 +76,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront verification public routes", () => {
   })
 
   beforeEach(async () => {
-    const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
     sendEmailChallenge.mockClear()
     sendSmsChallenge.mockClear()

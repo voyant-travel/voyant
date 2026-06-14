@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-} from "@voyantjs/ui/components"
+} from "@voyant-travel/ui/components"
 import { Pencil, Plus, StickyNote, Trash2 } from "lucide-react"
 import * as React from "react"
 import {

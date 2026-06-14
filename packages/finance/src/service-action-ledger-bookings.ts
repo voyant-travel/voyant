@@ -2,8 +2,8 @@ import {
   type ActionLedgerRequestContextValues,
   type BuildActionLedgerMutationInput,
   buildIdempotencyFingerprint,
-} from "@voyantjs/action-ledger"
-import type { Booking } from "@voyantjs/bookings/schema"
+} from "@voyant-travel/action-ledger"
+import type { Booking } from "@voyant-travel/bookings/schema"
 
 type BookingCreateLedgerCommand = {
   productId: string

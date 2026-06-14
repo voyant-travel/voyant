@@ -1,5 +1,5 @@
-import type { IndexerSlice } from "@voyantjs/catalog"
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { describe, expect, it } from "vitest"
 
 import {

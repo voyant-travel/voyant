@@ -1,5 +1,5 @@
-import type { NotificationProvider } from "@voyantjs/notifications"
-import { createNotificationService } from "@voyantjs/notifications"
+import type { NotificationProvider } from "@voyant-travel/notifications"
+import { createNotificationService } from "@voyant-travel/notifications"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

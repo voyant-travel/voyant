@@ -9,8 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@voyantjs/ui/components"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
+} from "@voyant-travel/ui/components"
+import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"

@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/bookings-react/journey` — the unified booking journey shell.
+ * `@voyant-travel/bookings-react/journey` — the unified booking journey shell.
  *
  * Per `docs/architecture/booking-journey-architecture.md`.
  *

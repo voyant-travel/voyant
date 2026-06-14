@@ -5,7 +5,7 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
+} from "@voyant-travel/admin"
 import type { ComponentType } from "react"
 
 // Lean statics only: the client module (fetcher) and the skeletons (their
@@ -23,16 +23,16 @@ import { ProductsListSkeleton } from "./products-list-skeleton.js"
  * editor, and the editor links back to the list, into the unified booking
  * journey, and into the availability slot pages — instead of importing a
  * host route tree they resolve these keys through `useAdminHref`/
- * `useAdminNavigate` from `@voyantjs/admin`. Hosts register one resolver
+ * `useAdminNavigate` from `@voyant-travel/admin`. Hosts register one resolver
  * per key (`satisfies AdminDestinationResolvers`).
  *
- * `product.detail` is also declared by `@voyantjs/bookings-react/admin` and
- * `@voyantjs/catalog-react/admin`; `booking.create` by
- * `@voyantjs/bookings-react/admin`; `availabilitySlot.detail` by
- * `@voyantjs/operations-react/availability/admin` and others — interface merging
+ * `product.detail` is also declared by `@voyant-travel/bookings-react/admin` and
+ * `@voyant-travel/catalog-react/admin`; `booking.create` by
+ * `@voyant-travel/bookings-react/admin`; `availabilitySlot.detail` by
+ * `@voyant-travel/operations-react/availability/admin` and others — interface merging
  * requires the member shapes to stay identical across packages.
  */
-declare module "@voyantjs/admin" {
+declare module "@voyant-travel/admin" {
   interface AdminDestinations {
     /** The owned-products list page. */
     "product.list": Record<string, never>
@@ -74,7 +74,7 @@ export interface CreateInventoryAdminExtensionOptions {
    * canonical `ProductDetailPage` with context-derived wiring. The operator
    * overrides this to compose app-owned seams the package cannot import:
    * the availability-react option resource templates panel
-   * (`@voyantjs/operations-react/availability` depends on this package — a cycle), the
+   * (`@voyant-travel/operations-react/availability` depends on this package — a cycle), the
    * app's upload route, and the product-pre-selected new-booking deep link.
    */
   detailPageComponent?: () => Promise<{
@@ -84,11 +84,11 @@ export interface CreateInventoryAdminExtensionOptions {
 
 /**
  * The products admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-react/admin` convention).
+ * `@voyant-travel/<domain>-react/admin` convention).
  *
  * NAVIGATION: deliberately none. The Products item (with its Categories
  * sub-item) is part of the BASE operator navigation — see
- * `createOperatorAdminNavigation` in `@voyantjs/admin` — so contributing
+ * `createOperatorAdminNavigation` in `@voyant-travel/admin` — so contributing
  * nav entries here would duplicate it. If the base nav ever drops the
  * products item, this extension is where the entry moves.
  *

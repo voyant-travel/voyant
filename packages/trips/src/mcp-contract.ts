@@ -6,7 +6,7 @@
  * operator runtimes.
  */
 
-import type { ResolverScope, Visibility } from "@voyantjs/catalog"
+import type { ResolverScope, Visibility } from "@voyant-travel/catalog"
 import type { z } from "zod"
 
 /**

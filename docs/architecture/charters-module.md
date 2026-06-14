@@ -16,7 +16,7 @@ The brands in scope for v1 (Aman, Four Seasons, Ritz-Carlton, SeaDream, Abercrom
 
 There's a fourth less-obvious one that shapes the whole design: **these brands position themselves as luxury hospitality, not cruise lines.** Aman calls it a "hotel at sea." Four Seasons' marketing literally says "It's not a cruise, it's a yacht." That positioning is reflected in the data: per-suite (not per-person) pricing, hotel-style concierge instead of cruise programming, brand-agnostic destination focus. Schema-wise this means we lean closer to the hospitality model than the cruises model — even though the surface (ship + ports + dates) looks similar.
 
-So: a new opt-in `@voyantjs/charters` package, modeled native to Voyant's existing module conventions, designed for **per-suite** voyages and **whole-yacht** charters as two booking modes on the same product, with MYBA-style charter contracts and APA (Advance Provisioning Allowance) as first-class concerns.
+So: a new opt-in `@voyant-travel/charters` package, modeled native to Voyant's existing module conventions, designed for **per-suite** voyages and **whole-yacht** charters as two booking modes on the same product, with MYBA-style charter contracts and APA (Advance Provisioning Allowance) as first-class concerns.
 
 Connectivity to upstream charter brands (direct yacht-line APIs, charter aggregators if they emerge) is **out of scope for this module and out of scope for OSS Voyant** — same rule we applied for cruises. That layer is Voyant Connect's job (when it ships charter coverage); agencies that don't use Connect can build their own adapter against the contract this module exposes (§11). OSS Voyant ships zero charter connectors itself.
 
@@ -27,7 +27,7 @@ Connectivity to upstream charter brands (direct yacht-line APIs, charter aggrega
 - A model that fits all six known luxury yacht brands without forcing them through cruise-shaped abstractions (no cabin grades, no occupancy grids, no fare codes).
 - Both booking modes — **per-suite** and **whole-yacht charter** — supported on the same voyage definition. A voyage can be sold either way (most are; the broker chooses based on the inquiry).
 - Multi-currency stored natively. Per-suite pricing carries USD / GBP / EUR / AUD columns directly, populated at sync time from the upstream feed. Display-time FX conversion can layer on for tertiary currencies, but the four primaries are first-class.
-- **MYBA contract** integration via the existing `@voyantjs/legal/contracts` module — whole-yacht charters auto-generate a contract from the MYBA template at booking time.
+- **MYBA contract** integration via the existing `@voyant-travel/legal/contracts` module — whole-yacht charters auto-generate a contract from the MYBA template at booking time.
 - **APA (Advance Provisioning Allowance)** modeled as a first-class deposit type on the booking finance side — typically 25-30% of the charter fee, separate from the charter fee itself.
 - **Broker-mediated booking** as a workflow, not just a flag: appointment-only voyages route through an inquiry/quote/contract flow rather than a self-serve checkout.
 - v1 is migration-complete for an operator that sells the six known brands. No "we'll add MYBA later" or "broker workflow comes in phase 2" — it ships in v1 or it's not in v1.
@@ -83,7 +83,7 @@ The MYBA contract specifies:
 - Insurance requirements
 - Dispute resolution (commonly London arbitration)
 
-We model the MYBA template using the existing `@voyantjs/legal/contracts` module — `contractTemplates` already supports versioned contract templates with variable interpolation and signature capture. Charters templates ship as a seed contract template at module install time; per-charter contracts are instances of it.
+We model the MYBA template using the existing `@voyant-travel/legal/contracts` module — `contractTemplates` already supports versioned contract templates with variable interpolation and signature capture. Charters templates ship as a seed contract template at module install time; per-charter contracts are instances of it.
 
 ### 4.3 APA — Advance Provisioning Allowance
 
@@ -105,7 +105,7 @@ The package follows existing Voyant conventions exactly. File layout mirrors `pa
 
 ```
 packages/charters/
-├── package.json                 # @voyantjs/charters
+├── package.json                 # @voyant-travel/charters
 ├── README.md
 ├── tsconfig.json
 ├── vitest.config.ts
@@ -548,10 +548,10 @@ export type SourceRef = { connectionId?: string; externalId: string; [k: string]
 Two registration points in a template (mirroring cruises):
 
 ```ts
-// templates/operator/src/index.ts (illustrative)
-import { createApp } from "@voyantjs/hono"
-import { chartersHonoModule, registerCharterAdapter } from "@voyantjs/charters"
-import { createConnectCharterAdapter } from "@voyantjs/charters-adapter-connect"
+// starters/operator/src/index.ts (illustrative)
+import { createApp } from "@voyant-travel/hono"
+import { chartersHonoModule, registerCharterAdapter } from "@voyant-travel/charters"
+import { createConnectCharterAdapter } from "@voyant-travel/charters-adapter-connect"
 
 registerCharterAdapter(createConnectCharterAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
 
@@ -576,7 +576,7 @@ Same surface as cruises — `registerCharterAdapter`, `unregisterCharterAdapter`
 
 ### `MockCharterAdapter` for tests
 
-Ships in `@voyantjs/charters/adapters` with `add*` seed methods. Same pattern as `MockCruiseAdapter`.
+Ships in `@voyant-travel/charters/adapters` with `add*` seed methods. Same pattern as `MockCruiseAdapter`.
 
 ### Out of scope for this module
 
@@ -658,7 +658,7 @@ DB-backed integration tests deferred until charters is wired into a template's d
 - Integration tests on booking flow
 
 **Phase 3 — adapter contract + dual-source admin (1-2 weeks)**
-- `CharterAdapter` interface + canonical external types in `@voyantjs/charters/adapters`
+- `CharterAdapter` interface + canonical external types in `@voyant-travel/charters/adapters`
 - `registerCharterAdapter` registry, memoize decorator, `MockCharterAdapter` test fixture
 - Unified-key parsing in admin routes (`chrt_*` local + `<provider>:<ref>` external); list endpoints interleave local + adapter via `Promise.allSettled`
 - External-only routes: `POST /:key/refresh`, `POST /:key/detach` (deferred to v2 if scope tight)
@@ -666,7 +666,7 @@ DB-backed integration tests deferred until charters is wired into a template's d
 - Provenance fields on `booking_charter_details` (`source`, `sourceProvider`, `sourceRef`)
 
 **Phase 4 — react package + storefront (1-2 weeks)**
-- `@voyantjs/charters-react` mirroring the cruises-react / relationships-react shape
+- `@voyant-travel/charters-react` mirroring the cruises-react / relationships-react shape
 - Hooks for products, voyages, suites, schedule, quoting (per-suite + whole-yacht), bookings, MYBA actions, external adapter actions (refresh, detach)
 - shadcn registry components: charter-product-card, voyage-detail, suite-list, suite-card, whole-yacht-quote-display, inquiry-form, external-badge
 - Wire into the example app under `/charters`

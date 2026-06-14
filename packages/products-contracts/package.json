@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/products-contracts",
+  "name": "@voyant-travel/products-contracts",
   "version": "0.105.4",
   "license": "Apache-2.0",
   "type": "module",
@@ -78,18 +78,18 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/catalog-contracts": "workspace:^",
-    "@voyantjs/schema-kit": "workspace:^",
+    "@voyant-travel/catalog-contracts": "workspace:^",
+    "@voyant-travel/schema-kit": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voyantjs/voyant.git",
+    "url": "https://github.com/voyant-travel/voyant.git",
     "directory": "packages/products-contracts"
   }
 }

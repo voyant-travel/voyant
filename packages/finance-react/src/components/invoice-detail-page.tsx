@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@voyantjs/ui/lib/utils"
+import { cn } from "@voyant-travel/ui/lib/utils"
 import { type ReactNode, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import type { InvoiceAttachmentRecord, InvoiceRecord, LineItemRecord } from "../index.js"
