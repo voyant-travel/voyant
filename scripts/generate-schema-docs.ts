@@ -5,13 +5,21 @@ import { getTableColumns } from "drizzle-orm"
 import { getTableConfig } from "drizzle-orm/pg-core"
 import { getTableName, isTable } from "drizzle-orm/table"
 import * as accommodationsSchema from "../packages/accommodations/src/schema.ts"
-import * as availabilitySchema from "../packages/availability/src/schema.ts"
 import { bookingExtras, extraParticipantSelections } from "../packages/bookings/src/extras.ts"
 import * as bookingRequirementsSchema from "../packages/bookings/src/requirements/schema.ts"
 import * as bookingsTravelDetailsSchema from "../packages/bookings/src/schema/travel-details.ts"
 import * as bookingsCoreSchema from "../packages/bookings/src/schema-core.ts"
 import * as bookingsItemsSchema from "../packages/bookings/src/schema-items.ts"
 import * as bookingsOperationsSchema from "../packages/bookings/src/schema-operations.ts"
+import * as commerceMarketsSchema from "../packages/commerce/src/markets/schema.ts"
+import * as commercePricingCatalogsSchema from "../packages/commerce/src/pricing/schema-catalogs.ts"
+import * as commercePricingCategoriesSchema from "../packages/commerce/src/pricing/schema-categories.ts"
+import * as commercePricingDepartureOverridesSchema from "../packages/commerce/src/pricing/schema-departure-overrides.ts"
+import * as commercePricingOptionRulesSchema from "../packages/commerce/src/pricing/schema-option-rules.ts"
+import * as commercePricingPoliciesSchema from "../packages/commerce/src/pricing/schema-policies.ts"
+import * as commercePricingRelationsSchema from "../packages/commerce/src/pricing/schema-relations.ts"
+import * as commercePromotionsSchema from "../packages/commerce/src/promotions/schema.ts"
+import * as commerceSellabilitySchema from "../packages/commerce/src/sellability/schema.ts"
 import * as dbApiKeySchema from "../packages/db/src/schema/iam/apikey.ts"
 import * as dbAuthSchema from "../packages/db/src/schema/iam/auth.ts"
 import * as dbUserProfilesSchema from "../packages/db/src/schema/iam/user_profiles.ts"
@@ -19,17 +27,17 @@ import * as dbDomainsSchema from "../packages/db/src/schema/infra/domains.ts"
 import * as dbEmailDomainRecordsSchema from "../packages/db/src/schema/infra/email_domain_records.ts"
 import * as dbWebhookSubscriptionsSchema from "../packages/db/src/schema/infra/webhook_subscriptions.ts"
 import * as distributionBookingExtensionSchema from "../packages/distribution/src/booking-extension.ts"
+import * as distributionExternalRefsSchema from "../packages/distribution/src/external-refs/schema.ts"
 import * as distributionAutomationSchema from "../packages/distribution/src/schema-automation.ts"
 import * as distributionCoreSchema from "../packages/distribution/src/schema-core.ts"
 import * as distributionFinanceSchema from "../packages/distribution/src/schema-finance.ts"
 import * as distributionInventorySchema from "../packages/distribution/src/schema-inventory.ts"
-import * as externalRefsSchema from "../packages/external-refs/src/schema.ts"
-import * as facilitiesSchema from "../packages/facilities/src/schema.ts"
+import * as distributionPushIntentsSchema from "../packages/distribution/src/schema-push-intents.ts"
+import * as distributionRelationsSchema from "../packages/distribution/src/schema-relations.ts"
+import * as distributionSuppliersSchema from "../packages/distribution/src/suppliers/schema.ts"
 import * as financeSchema from "../packages/finance/src/schema.ts"
-import * as groundDispatchSchema from "../packages/ground/src/schema-dispatch.ts"
-import * as groundOperationsSchema from "../packages/ground/src/schema-operations.ts"
-import * as groundOperatorsSchema from "../packages/ground/src/schema-operators.ts"
 import * as identitySchema from "../packages/identity/src/schema.ts"
+import * as inventoryAuthoringSchema from "../packages/inventory/src/authoring/schema.ts"
 import * as productsBookingExtensionSchema from "../packages/inventory/src/booking-extension.ts"
 import {
   extrasSourcedContentTable,
@@ -38,29 +46,25 @@ import {
 } from "../packages/inventory/src/extras.ts"
 import * as productsCoreSchema from "../packages/inventory/src/schema-core.ts"
 import * as productsItinerarySchema from "../packages/inventory/src/schema-itinerary.ts"
+import * as inventoryRelationsSchema from "../packages/inventory/src/schema-relations.ts"
 import * as productsSettingsSchema from "../packages/inventory/src/schema-settings.ts"
+import * as inventorySourcedContentSchema from "../packages/inventory/src/schema-sourced-content.ts"
 import * as productsTaxonomySchema from "../packages/inventory/src/schema-taxonomy.ts"
 import * as legalContractsSchema from "../packages/legal/src/contracts/schema.ts"
 import * as legalPoliciesSchema from "../packages/legal/src/policies/schema.ts"
-import * as marketsSchema from "../packages/markets/src/schema.ts"
 import * as notificationsSchema from "../packages/notifications/src/schema.ts"
-import * as pricingCatalogsSchema from "../packages/pricing/src/schema-catalogs.ts"
-import * as pricingCategoriesSchema from "../packages/pricing/src/schema-categories.ts"
-import * as pricingOptionRulesSchema from "../packages/pricing/src/schema-option-rules.ts"
-import * as pricingPoliciesSchema from "../packages/pricing/src/schema-policies.ts"
+import * as operationsAvailabilitySchema from "../packages/operations/src/availability/schema.ts"
+import * as operationsGroundDispatchSchema from "../packages/operations/src/ground/schema-dispatch.ts"
+import * as operationsGroundOperationsSchema from "../packages/operations/src/ground/schema-operations.ts"
+import * as operationsGroundOperatorsSchema from "../packages/operations/src/ground/schema-operators.ts"
+import * as operationsPlacesSchema from "../packages/operations/src/places/schema.ts"
+import * as operationsResourcesSchema from "../packages/operations/src/resources/schema.ts"
 import * as quotesBookingExtensionSchema from "../packages/quotes/src/booking-extension.ts"
 import * as quotesSalesSchema from "../packages/quotes/src/schema-sales.ts"
 import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"
 import * as relationshipsActivitiesSchema from "../packages/relationships/src/schema-activities.ts"
 import * as relationshipsSignalsSchema from "../packages/relationships/src/schema-signals.ts"
-import * as resourcesSchema from "../packages/resources/src/schema.ts"
-import * as sellabilitySchema from "../packages/sellability/src/schema.ts"
 import * as storefrontVerificationSchema from "../packages/storefront-verification/src/schema.ts"
-import * as suppliersSchema from "../packages/suppliers/src/schema.ts"
-import * as transactionsBookingExtensionSchema from "../packages/transactions/src/booking-extension.ts"
-import * as transactionsAuditSchema from "../packages/transactions/src/schema-audit.ts"
-import * as transactionsOffersSchema from "../packages/transactions/src/schema-offers.ts"
-import * as transactionsOrdersSchema from "../packages/transactions/src/schema-orders.ts"
 
 type ImportedModule = Record<string, unknown>
 
@@ -123,26 +127,31 @@ const sections: SectionDefinition[] = [
     modules: [identitySchema],
   },
   {
-    title: "Catalog & Products",
+    title: "Inventory",
     modules: [
+      inventoryAuthoringSchema,
       productsCoreSchema,
       productsSettingsSchema,
       productsItinerarySchema,
       productsTaxonomySchema,
+      inventoryRelationsSchema,
+      inventorySourcedContentSchema,
       productsBookingExtensionSchema,
-      facilitiesSchema,
       inventoryExtrasSchema,
     ],
   },
   {
-    title: "Availability, Pricing & Booking Rules",
+    title: "Commerce",
     modules: [
-      availabilitySchema,
-      pricingCategoriesSchema,
-      pricingCatalogsSchema,
-      pricingOptionRulesSchema,
-      pricingPoliciesSchema,
-      bookingRequirementsSchema,
+      commerceMarketsSchema,
+      commercePricingCategoriesSchema,
+      commercePricingCatalogsSchema,
+      commercePricingDepartureOverridesSchema,
+      commercePricingOptionRulesSchema,
+      commercePricingPoliciesSchema,
+      commercePricingRelationsSchema,
+      commercePromotionsSchema,
+      commerceSellabilitySchema,
     ],
   },
   {
@@ -156,27 +165,24 @@ const sections: SectionDefinition[] = [
     ],
   },
   {
-    title: "Transactions & Sellability",
-    modules: [
-      transactionsOffersSchema,
-      transactionsOrdersSchema,
-      transactionsAuditSchema,
-      transactionsBookingExtensionSchema,
-      sellabilitySchema,
-    ],
+    title: "Booking Requirements",
+    modules: [bookingRequirementsSchema],
   },
   {
-    title: "Suppliers & Resources",
-    modules: [suppliersSchema, resourcesSchema],
+    title: "Operations",
+    modules: [operationsAvailabilitySchema, operationsPlacesSchema, operationsResourcesSchema],
   },
   {
-    title: "Markets & Distribution",
+    title: "Distribution",
     modules: [
-      marketsSchema,
+      distributionSuppliersSchema,
+      distributionExternalRefsSchema,
       distributionCoreSchema,
       distributionInventorySchema,
       distributionFinanceSchema,
       distributionAutomationSchema,
+      distributionPushIntentsSchema,
+      distributionRelationsSchema,
       distributionBookingExtensionSchema,
     ],
   },
@@ -197,12 +203,12 @@ const sections: SectionDefinition[] = [
     modules: [accommodationsSchema],
   },
   {
-    title: "Ground & Transport",
-    modules: [groundOperatorsSchema, groundDispatchSchema, groundOperationsSchema],
-  },
-  {
-    title: "External References",
-    modules: [externalRefsSchema],
+    title: "Operations Ground & Transport",
+    modules: [
+      operationsGroundOperatorsSchema,
+      operationsGroundDispatchSchema,
+      operationsGroundOperationsSchema,
+    ],
   },
 ]
 

@@ -16,6 +16,28 @@ export const distributionHonoModule: HonoModule = {
 }
 
 export { distributionBookingExtension } from "./booking-extension.js"
+export type {
+  DistributionCounterpartyEntityType,
+  DistributionCounterpartyRecord,
+  DistributionCounterpartyReference,
+  DistributionCounterpartyRole,
+  DistributionExternalReferenceInput,
+  LinkExternalReferenceInput,
+  LinkExternalReferenceOutcome,
+  ReconcileCounterpartyActivityInput,
+  ReconcileCounterpartyActivityOutcome,
+  ResolveCounterpartyOutcome,
+  RouteCounterpartyEventInput,
+  RouteCounterpartyEventOutcome,
+} from "./interface.js"
+export {
+  counterpartyEntityTypeToRole,
+  counterpartyRoleToEntityType,
+  linkExternalReference,
+  reconcileCounterpartyActivity,
+  resolveCounterparty,
+  routeCounterpartyEvent,
+} from "./interface.js"
 export {
   type AcquireTokenAcquired,
   type AcquireTokenDenied,

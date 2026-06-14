@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
     "./markets": "./src/markets/index.ts",
     "./markets/routes": "./src/markets/routes.ts",
     "./markets/schema": "./src/markets/schema.ts",
@@ -106,6 +107,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
       },
       "./markets": {
         "types": "./dist/markets/index.d.ts",
@@ -435,5 +441,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/commerce"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

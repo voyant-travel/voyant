@@ -214,6 +214,13 @@ If implementation preserves the old subpackage choreography as public v1 API,
 the move has failed the depth test and should remain a package rename rather
 than an accepted architecture decision.
 
+During the migration branch, target packages may temporarily export old
+subpackage paths only to keep compatibility facades and first-party templates
+compiling. Those exports are not accepted v1 API. Before v1, each temporary
+choreography subpath must either become an explicitly justified extension seam
+with its own Interface test or be removed from `package.json#exports` and kept
+as internal source organization only.
+
 Quote lifecycle ownership is singular: `quotes` owns Quote and Quote Version
 records, pipeline/stage movement, send/view/accept decisions, accepted-version
 state, and accept-to-reserve handoff. Other Modules may reference quote ids,
@@ -364,6 +371,11 @@ Prerequisite cleanup:
 - Do not expose `pricing`, `markets`, `sellability`, `promotions`, and `fx`
   as package exports for the normal public choreography. Public subpaths are
   allowed only for deliberate extension Interfaces.
+- `@voyantjs/commerce/sellability/service-construct-offer`,
+  `SellabilityOfferWriter`, and `POST /construct-offer` are migration
+  compatibility only. They must be removed or retargeted to
+  `evaluateCommercialDecision`, Quote Versions, booking drafts, or Trip Composer
+  snapshots before Commerce is considered a clean v1 public surface.
 - Invert the current `promotions` -> `storefront` edge before Commerce lands.
   Storefront should consume Commerce display contracts/events; Commerce should
   not import Storefront or the merged Module creates a `commerce` <-> `storefront`
@@ -1270,7 +1282,7 @@ migration issue rather than reopening the package move implicitly.
 | Topic | Recommendation | Implementation follow-up |
 | --- | --- | --- |
 | Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. `@voyantjs/products` and `@voyantjs/products-react` remain compatibility packages. Keep `@voyantjs/catalog-authoring` only as a compatibility package unless a real Catalog overlay/source-governance surface is split out. Move generated manifests and template schema specifiers only through explicit parity work. |
-| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Build the Commerce Interface before moving callers. Stop Sellability from constructing Transactions Offers and migrate callers to commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. |
+| Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Build the Commerce Interface before moving callers. Stop Sellability from constructing Transactions Offers and migrate callers to commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. Old public subpaths and construct-offer routes are compatibility-only until removed before v1. |
 | CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside the migration branch. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |

@@ -65017,8 +65017,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.crm_organization_products_product": {
-      "name": "crm_organization_products_product",
+    "public.relationships_organization_products_product": {
+      "name": "relationships_organization_products_product",
       "schema": "",
       "columns": {
         "id": {
@@ -65027,8 +65027,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "crm_organization_id": {
-          "name": "crm_organization_id",
+        "relationships_organization_id": {
+          "name": "relationships_organization_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -65061,11 +65061,11 @@
         }
       },
       "indexes": {
-        "crm_organization_products_product_pair_idx": {
-          "name": "crm_organization_products_product_pair_idx",
+        "relationships_organization_products_product_pair_idx": {
+          "name": "relationships_organization_products_product_pair_idx",
           "columns": [
             {
-              "expression": "crm_organization_id",
+              "expression": "relationships_organization_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -65083,11 +65083,11 @@
           "method": "btree",
           "with": {}
         },
-        "crm_organization_products_product_l_idx": {
-          "name": "crm_organization_products_product_l_idx",
+        "relationships_organization_products_product_l_idx": {
+          "name": "relationships_organization_products_product_l_idx",
           "columns": [
             {
-              "expression": "crm_organization_id",
+              "expression": "relationships_organization_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -65099,8 +65099,8 @@
           "method": "btree",
           "with": {}
         },
-        "crm_organization_products_product_r_uniq": {
-          "name": "crm_organization_products_product_r_uniq",
+        "relationships_organization_products_product_r_uniq": {
+          "name": "relationships_organization_products_product_r_uniq",
           "columns": [
             {
               "expression": "products_product_id",
@@ -65123,8 +65123,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.crm_person_products_product": {
-      "name": "crm_person_products_product",
+    "public.relationships_person_products_product": {
+      "name": "relationships_person_products_product",
       "schema": "",
       "columns": {
         "id": {
@@ -65133,8 +65133,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "crm_person_id": {
-          "name": "crm_person_id",
+        "relationships_person_id": {
+          "name": "relationships_person_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -65167,11 +65167,11 @@
         }
       },
       "indexes": {
-        "crm_person_products_product_pair_idx": {
-          "name": "crm_person_products_product_pair_idx",
+        "relationships_person_products_product_pair_idx": {
+          "name": "relationships_person_products_product_pair_idx",
           "columns": [
             {
-              "expression": "crm_person_id",
+              "expression": "relationships_person_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -65189,11 +65189,11 @@
           "method": "btree",
           "with": {}
         },
-        "crm_person_products_product_l_idx": {
-          "name": "crm_person_products_product_l_idx",
+        "relationships_person_products_product_l_idx": {
+          "name": "relationships_person_products_product_l_idx",
           "columns": [
             {
-              "expression": "crm_person_id",
+              "expression": "relationships_person_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -65205,8 +65205,8 @@
           "method": "btree",
           "with": {}
         },
-        "crm_person_products_product_r_uniq": {
-          "name": "crm_person_products_product_r_uniq",
+        "relationships_person_products_product_r_uniq": {
+          "name": "relationships_person_products_product_r_uniq",
           "columns": [
             {
               "expression": "products_product_id",

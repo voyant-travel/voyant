@@ -180,5 +180,12 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/operations"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db",
+      "@voyantjs/identity"
+    ]
   }
 }

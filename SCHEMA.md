@@ -1,6 +1,6 @@
 # Voyant Database Schema Reference
 
-> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-06-13.
+> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-06-14.
 > SQL column names are shown first; TypeScript property names are included when they differ.
 > Constraint markers are derived from the schema source, not from a live database introspection run.
 
@@ -617,7 +617,7 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-## Catalog & Products
+## Inventory
 
 ### `booking_item_product_details`
 | Column | Type |
@@ -689,71 +689,6 @@ Constraints:
 Constraints:
 - Primary key: `entity_id`, `locale`, `market`
 
-### `facilities`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `parent_facility_id` (`parentFacilityId`) | text • FK -> facilities.id • nullable |
-| `owner_type` (`ownerType`) | facility_owner_type • nullable |
-| `owner_id` (`ownerId`) | text • nullable |
-| `kind` | facility_kind • not null |
-| `status` | facility_status • not null • default "active" |
-| `name` | text • not null |
-| `code` | text • nullable |
-| `description` | text • nullable |
-| `timezone` | text • nullable |
-| `tags` | jsonb • not null • default [] |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `facility_address_projections`
-| Column | Type |
-|--------|------|
-| `facility_id` (`facilityId`) | text • PK • FK -> facilities.id • not null |
-| `address_id` (`addressId`) | text • nullable |
-| `full_text` (`fullText`) | text • nullable |
-| `line1` | text • nullable |
-| `line2` | text • nullable |
-| `city` | text • nullable |
-| `region` | text • nullable |
-| `postal_code` (`postalCode`) | text • nullable |
-| `country` | text • nullable |
-| `latitude` | double precision • nullable |
-| `longitude` | double precision • nullable |
-| `address` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `facility_features`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
-| `category` | facility_feature_category • not null • default "amenity" |
-| `code` | text • nullable |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `value_text` (`valueText`) | text • nullable |
-| `highlighted` | boolean • not null • default false |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `facility_operation_schedules`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
-| `day_of_week` (`dayOfWeek`) | facility_day_of_week • nullable |
-| `valid_from` (`validFrom`) | date • nullable |
-| `valid_to` (`validTo`) | date • nullable |
-| `opens_at` (`opensAt`) | text • nullable |
-| `closes_at` (`closesAt`) | text • nullable |
-| `closed` | boolean • not null • default false |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
 ### `option_extra_configs`
 | Column | Type |
 |--------|------|
@@ -819,6 +754,14 @@ Constraints:
 | `stop_sell_at` (`stopSellAt`) | timestamp with time zone • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `product_authoring_requests`
+| Column | Type |
+|--------|------|
+| `idempotency_key` (`idempotencyKey`) | text • PK • not null |
+| `product_id` (`productId`) | text • not null |
+| `operation` | text • not null |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 
 ### `product_capabilities`
 | Column | Type |
@@ -1213,261 +1156,27 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `properties`
+### `products_sourced_content`
 | Column | Type |
 |--------|------|
-| `id` | text • PK • not null • default |
-| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
-| `property_type` (`propertyType`) | property_type • not null • default "hotel" |
-| `brand_name` (`brandName`) | text • nullable |
-| `group_name` (`groupName`) | text • nullable |
-| `rating` | integer • nullable |
-| `rating_scale` (`ratingScale`) | integer • nullable |
-| `check_in_time` (`checkInTime`) | text • nullable |
-| `check_out_time` (`checkOutTime`) | text • nullable |
-| `policy_notes` (`policyNotes`) | text • nullable |
-| `amenity_notes` (`amenityNotes`) | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+| `entity_id` | text • PK • not null |
+| `locale` | text • PK • not null |
+| `market` | text • PK • not null • default "*" |
+| `payload` | jsonb • not null |
+| `content_schema_version` | text • not null |
+| `returned_locale` | text • not null |
+| `machine_translated` | boolean • not null • default false |
+| `source_updated_at` | timestamp with time zone • nullable |
+| `fetched_at` | timestamp with time zone • not null • default |
+| `fresh_until` | timestamp with time zone • nullable |
+| `etag` | text • nullable |
+| `fetch_status` | text • not null • default "ok" |
+| `fetch_error` | text • nullable |
 
-### `property_group_members`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `group_id` (`groupId`) | text • FK -> property_groups.id • not null |
-| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
-| `membership_role` (`membershipRole`) | property_group_membership_role • not null • default "member" |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `valid_from` (`validFrom`) | date • nullable |
-| `valid_to` (`validTo`) | date • nullable |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+Constraints:
+- Primary key: `entity_id`, `locale`, `market`
 
-### `property_groups`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `parent_group_id` (`parentGroupId`) | text • FK -> property_groups.id • nullable |
-| `group_type` (`groupType`) | property_group_type • not null • default "chain" |
-| `status` | property_group_status • not null • default "active" |
-| `name` | text • not null |
-| `code` | text • nullable |
-| `brand_name` (`brandName`) | text • nullable |
-| `legal_name` (`legalName`) | text • nullable |
-| `website` | text • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-## Availability, Pricing & Booking Rules
-
-### `allocation_audit_log`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
-| `action` | text • not null |
-| `actor_id` (`actorId`) | text • nullable |
-| `traveler_id` (`travelerId`) | text • nullable |
-| `resource_id` (`resourceId`) | text • nullable |
-| `before` | jsonb • nullable |
-| `after` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `allocation_resources`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
-| `kind` | text • not null |
-| `ref_type` (`refType`) | text • nullable |
-| `ref_id` (`refId`) | text • nullable |
-| `label` | text • nullable |
-| `capacity` | integer • not null |
-| `flags` | jsonb • not null • default |
-| `parent_id` (`parentId`) | text • nullable |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_closeouts`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
-| `date_local` (`dateLocal`) | date • not null |
-| `reason` | text • nullable |
-| `created_by` (`createdBy`) | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `availability_holds`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `draft_id` (`draftId`) | text • not null |
-| `hold_token` (`holdToken`) | text • not null |
-| `product_id` (`productId`) | text • not null |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
-| `pax_count` (`paxCount`) | integer • not null |
-| `expires_at` (`expiresAt`) | timestamp with time zone • not null |
-| `released_at` (`releasedAt`) | timestamp with time zone • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_pickup_points`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `facility_id` (`facilityId`) | text • nullable |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `location_text` (`locationText`) | text • nullable |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_rules`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `option_id` (`optionId`) | text • nullable |
-| `facility_id` (`facilityId`) | text • nullable |
-| `timezone` | text • not null |
-| `recurrence_rule` (`recurrenceRule`) | text • not null |
-| `max_capacity` (`maxCapacity`) | integer • not null |
-| `max_pickup_capacity` (`maxPickupCapacity`) | integer • nullable |
-| `min_total_pax` (`minTotalPax`) | integer • nullable |
-| `cutoff_minutes` (`cutoffMinutes`) | integer • nullable |
-| `early_booking_limit_minutes` (`earlyBookingLimitMinutes`) | integer • nullable |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_slot_pickups`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
-| `pickup_point_id` (`pickupPointId`) | text • FK -> availability_pickup_points.id • not null |
-| `initial_capacity` (`initialCapacity`) | integer • nullable |
-| `remaining_capacity` (`remainingCapacity`) | integer • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_slots`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `itinerary_id` (`itineraryId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `facility_id` (`facilityId`) | text • nullable |
-| `availability_rule_id` (`availabilityRuleId`) | text • FK -> availability_rules.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
-| `date_local` (`dateLocal`) | date • not null |
-| `starts_at` (`startsAt`) | timestamp with time zone • not null |
-| `ends_at` (`endsAt`) | timestamp with time zone • nullable |
-| `timezone` | text • not null |
-| `status` | availability_slot_status • not null • default "open" |
-| `unlimited` | boolean • not null • default false |
-| `initial_pax` (`initialPax`) | integer • nullable |
-| `remaining_pax` (`remainingPax`) | integer • nullable |
-| `initial_pickups` (`initialPickups`) | integer • nullable |
-| `remaining_pickups` (`remainingPickups`) | integer • nullable |
-| `remaining_resources` (`remainingResources`) | integer • nullable |
-| `past_cutoff` (`pastCutoff`) | boolean • not null • default false |
-| `too_early` (`tooEarly`) | boolean • not null • default false |
-| `nights` | integer • nullable |
-| `days` | integer • nullable |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `availability_start_times`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `option_id` (`optionId`) | text • nullable |
-| `facility_id` (`facilityId`) | text • nullable |
-| `label` | text • nullable |
-| `start_time_local` (`startTimeLocal`) | text • not null |
-| `duration_minutes` (`durationMinutes`) | integer • nullable |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_answers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `booking_id` (`bookingId`) | text • not null |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `booking_traveler_id` (`bookingTravelerId`) | text • nullable |
-| `booking_extra_id` (`bookingExtraId`) | text • nullable |
-| `target` | booking_answer_target • not null • default "booking" |
-| `value_text` (`valueText`) | text • nullable |
-| `value_number` (`valueNumber`) | integer • nullable |
-| `value_boolean` (`valueBoolean`) | boolean • nullable |
-| `value_json` (`valueJson`) | jsonb • nullable |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_extra_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `product_extra_id` (`productExtraId`) | text • nullable |
-| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `min_quantity` (`minQuantity`) | integer • nullable |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_option_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `option_id` (`optionId`) | text • not null |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_options`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `value` | text • not null |
-| `label` | text • not null |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `is_default` (`isDefault`) | boolean • not null • default false |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_unit_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `unit_id` (`unitId`) | text • not null |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `min_quantity` (`minQuantity`) | integer • nullable |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+## Commerce
 
 ### `cancellation_policies`
 | Column | Type |
@@ -1499,15 +1208,19 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `custom_pickup_areas`
+### `departure_price_overrides`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `meeting_config_id` (`meetingConfigId`) | text • FK -> product_meeting_configs.id • not null |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `geographic_text` (`geographicText`) | text • nullable |
+| `departure_id` (`departureId`) | text • not null |
+| `option_id` (`optionId`) | text • not null |
+| `option_unit_id` (`optionUnitId`) | text • not null |
+| `price_catalog_id` (`priceCatalogId`) | text • FK -> price_catalogs.id • not null |
+| `sell_amount_cents` (`sellAmountCents`) | integer • not null |
+| `cost_amount_cents` (`costAmountCents`) | integer • nullable |
+| `notes` | text • nullable |
 | `active` | boolean • not null • default true |
+| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -1529,6 +1242,18 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `exchange_rates`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `fx_rate_set_id` (`fxRateSetId`) | text • FK -> fx_rate_sets.id • not null |
+| `base_currency` (`baseCurrency`) | text • not null |
+| `quote_currency` (`quoteCurrency`) | text • not null |
+| `rate_decimal` (`rateDecimal`) | numeric(18, 8) • not null |
+| `inverse_rate_decimal` (`inverseRateDecimal`) | numeric(18, 8) • nullable |
+| `observed_at` (`observedAt`) | timestamp with time zone • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
 ### `extra_price_rules`
 | Column | Type |
 |--------|------|
@@ -1547,33 +1272,134 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `location_pickup_times`
+### `fx_rate_sets`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `pickup_location_id` (`pickupLocationId`) | text • FK -> pickup_locations.id • not null |
-| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
-| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
-| `timing_mode` (`timingMode`) | pickup_timing_mode • not null • default "fixed_time" |
-| `local_time` (`localTime`) | text • nullable |
-| `offset_minutes` (`offsetMinutes`) | integer • nullable |
-| `instructions` | text • nullable |
-| `initial_capacity` (`initialCapacity`) | integer • nullable |
-| `remaining_capacity` (`remainingCapacity`) | integer • nullable |
+| `source` | fx_rate_source • not null • default "manual" |
+| `base_currency` (`baseCurrency`) | text • not null |
+| `effective_at` (`effectiveAt`) | timestamp with time zone • not null |
+| `observed_at` (`observedAt`) | timestamp with time zone • nullable |
+| `source_reference` (`sourceReference`) | text • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `market_channel_rules`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `market_id` (`marketId`) | text • FK -> markets.id • not null |
+| `channel_id` (`channelId`) | text • not null |
+| `price_catalog_id` (`priceCatalogId`) | text • FK -> market_price_catalogs.id • nullable |
+| `visibility` | market_visibility • not null • default "public" |
+| `sellability` | market_sellability • not null • default "sellable" |
+| `active` | boolean • not null • default true |
+| `priority` | integer • not null • default 0 |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `market_currencies`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `market_id` (`marketId`) | text • FK -> markets.id • not null |
+| `currency_code` (`currencyCode`) | text • not null |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `is_settlement` (`isSettlement`) | boolean • not null • default false |
+| `is_reporting` (`isReporting`) | boolean • not null • default false |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
 | `active` | boolean • not null • default true |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `option_booking_questions`
+### `market_locales`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `option_id` (`optionId`) | text • not null |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `is_required_override` (`isRequiredOverride`) | boolean • nullable |
-| `active` | boolean • not null • default true |
+| `market_id` (`marketId`) | text • FK -> markets.id • not null |
+| `language_tag` (`languageTag`) | text • not null |
+| `is_default` (`isDefault`) | boolean • not null • default false |
 | `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `market_price_catalogs`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `market_id` (`marketId`) | text • FK -> markets.id • not null |
+| `price_catalog_id` (`priceCatalogId`) | text • not null |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `priority` | integer • not null • default 0 |
+| `active` | boolean • not null • default true |
 | `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `market_product_rules`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `market_id` (`marketId`) | text • FK -> markets.id • not null |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `price_catalog_id` (`priceCatalogId`) | text • FK -> market_price_catalogs.id • nullable |
+| `visibility` | market_visibility • not null • default "public" |
+| `sellability` | market_sellability • not null • default "sellable" |
+| `channel_scope` (`channelScope`) | market_channel_scope • not null • default "all" |
+| `active` | boolean • not null • default true |
+| `available_from` (`availableFrom`) | date • nullable |
+| `available_to` (`availableTo`) | date • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `markets`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `code` | text • not null |
+| `name` | text • not null |
+| `status` | market_status • not null • default "active" |
+| `region_code` (`regionCode`) | text • nullable |
+| `country_code` (`countryCode`) | text • nullable |
+| `default_language_tag` (`defaultLanguageTag`) | text • not null |
+| `default_currency` (`defaultCurrency`) | text • not null |
+| `timezone` | text • nullable |
+| `tax_context` (`taxContext`) | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `offer_expiration_events`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `offer_id` (`offerId`) | text • not null |
+| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • nullable |
+| `expires_at` (`expiresAt`) | timestamp with time zone • not null |
+| `expired_at` (`expiredAt`) | timestamp with time zone • nullable |
+| `status` | offer_expiration_event_status • not null • default "scheduled" |
+| `reason` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `offer_refresh_runs`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `offer_id` (`offerId`) | text • not null |
+| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • nullable |
+| `status` | offer_refresh_run_status • not null • default "pending" |
+| `started_at` (`startedAt`) | timestamp with time zone • not null • default |
+| `completed_at` (`completedAt`) | timestamp with time zone • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -1648,34 +1474,6 @@ Constraints:
 | `max_quantity` (`maxQuantity`) | integer • nullable |
 | `sell_amount_cents` (`sellAmountCents`) | integer • nullable |
 | `cost_amount_cents` (`costAmountCents`) | integer • nullable |
-| `active` | boolean • not null • default true |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `pickup_groups`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `meeting_config_id` (`meetingConfigId`) | text • FK -> product_meeting_configs.id • not null |
-| `kind` | pickup_group_kind • not null |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `active` | boolean • not null • default true |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `pickup_locations`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `group_id` (`groupId`) | text • FK -> pickup_groups.id • not null |
-| `facility_id` (`facilityId`) | text • nullable |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `location_text` (`locationText`) | text • nullable |
-| `lead_time_minutes` (`leadTimeMinutes`) | integer • nullable |
 | `active` | boolean • not null • default true |
 | `sort_order` (`sortOrder`) | integer • not null • default 0 |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -1767,82 +1565,147 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `product_booking_questions`
+### `promotional_offer_products`
+| Column | Type |
+|--------|------|
+| `offer_id` (`offerId`) | text • PK • FK -> promotional_offers.id • not null |
+| `product_id` (`productId`) | text • PK • not null |
+
+Constraints:
+- Primary key: `offer_id`, `product_id`
+
+### `promotional_offer_redemptions`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
-| `code` | text • nullable |
-| `label` | text • not null |
+| `offer_id` (`offerId`) | text • FK -> promotional_offers.id • not null |
+| `booking_id` (`bookingId`) | text • not null |
+| `code_used` (`codeUsed`) | text • nullable |
+| `discount_applied_cents` (`discountAppliedCents`) | integer • not null |
+| `currency` | text • not null |
+| `redeemed_at` (`redeemedAt`) | timestamp with time zone • not null • default |
+
+### `promotional_offer_scheduler_state`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `singleton_key` (`singletonKey`) | text • not null • default "singleton" |
+| `last_tick` (`lastTick`) | timestamp with time zone • not null |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `promotional_offers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `slug` | text • not null |
 | `description` | text • nullable |
-| `target` | booking_question_target • not null • default "booking" |
-| `field_type` (`fieldType`) | booking_question_field_type • not null • default "text" |
-| `placeholder` | text • nullable |
-| `help_text` (`helpText`) | text • nullable |
-| `is_required` (`isRequired`) | boolean • not null • default false |
+| `discount_type` (`discountType`) | promotional_offer_discount_type • not null |
+| `discount_percent` (`discountPercent`) | numeric(5, 2) • nullable |
+| `discount_amount_cents` (`discountAmountCents`) | integer • nullable |
+| `currency` | text • nullable |
+| `scope` | jsonb • not null |
+| `conditions` | jsonb • not null • default |
+| `valid_from` (`validFrom`) | timestamp with time zone • nullable |
+| `valid_until` (`validUntil`) | timestamp with time zone • nullable |
+| `code` | text • nullable |
+| `stackable` | boolean • not null • default false |
 | `active` | boolean • not null • default true |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
 | `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `product_contact_requirements`
+### `sellability_explanations`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
+| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
+| `snapshot_item_id` (`snapshotItemId`) | text • FK -> sellability_snapshot_items.id • nullable |
+| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
+| `explanation_type` (`explanationType`) | sellability_explanation_type • not null • default "policy" |
+| `code` | text • nullable |
+| `message` | text • not null |
+| `details` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `sellability_policies`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `scope` | sellability_policy_scope • not null • default "global" |
+| `policy_type` (`policyType`) | sellability_policy_type • not null • default "custom" |
+| `product_id` (`productId`) | text • nullable |
 | `option_id` (`optionId`) | text • nullable |
-| `field_key` (`fieldKey`) | contact_requirement_field • not null |
-| `scope` | contact_requirement_scope • not null • default "traveler" |
-| `is_required` (`isRequired`) | boolean • not null • default false |
-| `per_traveler` (`perTraveler`) | boolean • not null • default false |
+| `market_id` (`marketId`) | text • nullable |
+| `channel_id` (`channelId`) | text • nullable |
+| `priority` | integer • not null • default 0 |
 | `active` | boolean • not null • default true |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `conditions` | jsonb • not null • default |
+| `effects` | jsonb • not null • default |
 | `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `product_meeting_configs`
+### `sellability_policy_results`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `product_id` (`productId`) | text • not null |
+| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
+| `snapshot_item_id` (`snapshotItemId`) | text • FK -> sellability_snapshot_items.id • nullable |
+| `policy_id` (`policyId`) | text • FK -> sellability_policies.id • nullable |
+| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
+| `status` | sellability_policy_result_status • not null • default "passed" |
+| `message` | text • nullable |
+| `details` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `sellability_snapshot_items`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
+| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
+| `component_index` (`componentIndex`) | integer • not null • default 0 |
+| `product_id` (`productId`) | text • nullable |
 | `option_id` (`optionId`) | text • nullable |
-| `facility_id` (`facilityId`) | text • nullable |
-| `mode` | meeting_mode • not null • default "meeting_only" |
-| `allow_custom_pickup` (`allowCustomPickup`) | boolean • not null • default false |
-| `allow_custom_dropoff` (`allowCustomDropoff`) | boolean • not null • default false |
-| `requires_pickup_selection` (`requiresPickupSelection`) | boolean • not null • default false |
-| `requires_dropoff_selection` (`requiresDropoffSelection`) | boolean • not null • default false |
-| `use_pickup_allotment` (`usePickupAllotment`) | boolean • not null • default false |
-| `meeting_instructions` (`meetingInstructions`) | text • nullable |
-| `pickup_instructions` (`pickupInstructions`) | text • nullable |
-| `dropoff_instructions` (`dropoffInstructions`) | text • nullable |
-| `active` | boolean • not null • default true |
+| `slot_id` (`slotId`) | text • nullable |
+| `unit_id` (`unitId`) | text • nullable |
+| `request_ref` (`requestRef`) | text • nullable |
+| `component_kind` (`componentKind`) | sellability_snapshot_component_kind • not null |
+| `title` | text • not null |
+| `quantity` | integer • not null • default 1 |
+| `pricing_mode` (`pricingMode`) | text • not null |
+| `pricing_category_id` (`pricingCategoryId`) | text • nullable |
+| `pricing_category_name` (`pricingCategoryName`) | text • nullable |
+| `unit_name` (`unitName`) | text • nullable |
+| `unit_type` (`unitType`) | text • nullable |
+| `currency_code` (`currencyCode`) | text • not null |
+| `sell_amount_cents` (`sellAmountCents`) | integer • not null • default 0 |
+| `cost_amount_cents` (`costAmountCents`) | integer • not null • default 0 |
+| `source_rule_id` (`sourceRuleId`) | text • nullable |
+| `tier_id` (`tierId`) | text • nullable |
+| `is_selected` (`isSelected`) | boolean • not null • default true |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `product_option_resource_templates`
+### `sellability_snapshots`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `product_option_id` (`productOptionId`) | text • not null |
-| `kind` | text • not null |
-| `ref_type` (`refType`) | text • nullable |
-| `ref_id` (`refId`) | text • nullable |
-| `capacity` | integer • not null |
-| `name_pattern` (`namePattern`) | text • not null |
-| `layout` | text • nullable |
-| `default_count` (`defaultCount`) | integer • nullable |
-| `flags` | jsonb • not null • default |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `sharing_group_labels`
-| Column | Type |
-|--------|------|
-| `group_id` (`groupId`) | text • PK • not null |
-| `label` | text • not null |
+| `offer_id` (`offerId`) | text • nullable |
+| `market_id` (`marketId`) | text • nullable |
+| `channel_id` (`channelId`) | text • nullable |
+| `product_id` (`productId`) | text • nullable |
+| `option_id` (`optionId`) | text • nullable |
+| `slot_id` (`slotId`) | text • nullable |
+| `requested_currency_code` (`requestedCurrencyCode`) | text • nullable |
+| `source_currency_code` (`sourceCurrencyCode`) | text • nullable |
+| `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
+| `status` | sellability_snapshot_status • not null • default "resolved" |
+| `query_payload` (`queryPayload`) | jsonb • not null |
+| `pricing_summary` (`pricingSummary`) | jsonb • not null |
+| `expires_at` (`expiresAt`) | timestamp with time zone • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -2153,382 +2016,469 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-## Transactions & Sellability
+## Booking Requirements
 
-### `booking_transaction_details`
-| Column | Type |
-|--------|------|
-| `booking_id` (`bookingId`) | text • PK • not null |
-| `offer_id` (`offerId`) | text • nullable |
-| `order_id` (`orderId`) | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `offer_expiration_events`
+### `booking_answers`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • not null |
-| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • nullable |
-| `expires_at` (`expiresAt`) | timestamp with time zone • not null |
-| `expired_at` (`expiredAt`) | timestamp with time zone • nullable |
-| `status` | offer_expiration_event_status • not null • default "scheduled" |
-| `reason` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `offer_item_participants`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_item_id` (`offerItemId`) | text • FK -> offer_items.id • not null |
-| `traveler_id` (`travelerId`) | text • FK -> offer_participants.id • not null |
-| `role` | transaction_item_participant_role • not null • default "traveler" |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `offer_items`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • FK -> offers.id • not null |
-| `product_id` (`productId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `unit_id` (`unitId`) | text • nullable |
-| `slot_id` (`slotId`) | text • nullable |
-| `title` | text • not null |
-| `description` | text • nullable |
-| `item_type` (`itemType`) | transaction_item_type • not null • default "unit" |
-| `status` | transaction_item_status • not null • default "draft" |
-| `service_date` (`serviceDate`) | date • nullable |
-| `starts_at` (`startsAt`) | timestamp with time zone • nullable |
-| `ends_at` (`endsAt`) | timestamp with time zone • nullable |
-| `quantity` | integer • not null • default 1 |
-| `sell_currency` (`sellCurrency`) | text • not null |
-| `unit_sell_amount_cents` (`unitSellAmountCents`) | integer • nullable |
-| `total_sell_amount_cents` (`totalSellAmountCents`) | integer • nullable |
-| `tax_amount_cents` (`taxAmountCents`) | integer • nullable |
-| `fee_amount_cents` (`feeAmountCents`) | integer • nullable |
-| `cost_currency` (`costCurrency`) | text • nullable |
-| `unit_cost_amount_cents` (`unitCostAmountCents`) | integer • nullable |
-| `total_cost_amount_cents` (`totalCostAmountCents`) | integer • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `offer_participants`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • FK -> offers.id • not null |
-| `person_id` (`personId`) | text • nullable |
-| `participant_type` (`participantType`) | transaction_participant_type • not null • default "traveler" |
-| `traveler_category` (`travelerCategory`) | transaction_traveler_category • nullable |
-| `first_name` (`firstName`) | text • not null |
-| `last_name` (`lastName`) | text • not null |
-| `email` | text • nullable |
-| `phone` | text • nullable |
-| `preferred_language` (`preferredLanguage`) | text • nullable |
-| `identity_encrypted` (`identityEncrypted`) | jsonb • nullable |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
+| `booking_id` (`bookingId`) | text • not null |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `booking_traveler_id` (`bookingTravelerId`) | text • nullable |
+| `booking_extra_id` (`bookingExtraId`) | text • nullable |
+| `target` | booking_answer_target • not null • default "booking" |
+| `value_text` (`valueText`) | text • nullable |
+| `value_number` (`valueNumber`) | integer • nullable |
+| `value_boolean` (`valueBoolean`) | boolean • nullable |
+| `value_json` (`valueJson`) | jsonb • nullable |
 | `notes` | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `offer_refresh_runs`
+### `booking_question_extra_triggers`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • not null |
-| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • nullable |
-| `status` | offer_refresh_run_status • not null • default "pending" |
-| `started_at` (`startedAt`) | timestamp with time zone • not null • default |
-| `completed_at` (`completedAt`) | timestamp with time zone • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `offers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_number` (`offerNumber`) | text • unique • not null |
-| `title` | text • not null |
-| `status` | offer_status • not null • default "draft" |
-| `person_id` (`personId`) | text • nullable |
-| `organization_id` (`organizationId`) | text • nullable |
-| `quote_id` (`quoteId`) | text • nullable |
-| `quote_version_id` (`quoteVersionId`) | text • nullable |
-| `market_id` (`marketId`) | text • nullable |
-| `source_channel_id` (`sourceChannelId`) | text • nullable |
-| `contact_party_type` (`contactPartyType`) | text • nullable |
-| `contact_first_name` (`contactFirstName`) | text • nullable |
-| `contact_last_name` (`contactLastName`) | text • nullable |
-| `contact_tax_id` (`contactTaxId`) | text • nullable |
-| `contact_email` (`contactEmail`) | text • nullable |
-| `contact_phone` (`contactPhone`) | text • nullable |
-| `contact_preferred_language` (`contactPreferredLanguage`) | text • nullable |
-| `contact_country` (`contactCountry`) | text • nullable |
-| `contact_region` (`contactRegion`) | text • nullable |
-| `contact_city` (`contactCity`) | text • nullable |
-| `contact_address_line1` (`contactAddressLine1`) | text • nullable |
-| `contact_address_line2` (`contactAddressLine2`) | text • nullable |
-| `contact_postal_code` (`contactPostalCode`) | text • nullable |
-| `currency` | text • not null |
-| `base_currency` (`baseCurrency`) | text • nullable |
-| `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
-| `subtotal_amount_cents` (`subtotalAmountCents`) | integer • not null • default 0 |
-| `tax_amount_cents` (`taxAmountCents`) | integer • not null • default 0 |
-| `fee_amount_cents` (`feeAmountCents`) | integer • not null • default 0 |
-| `total_amount_cents` (`totalAmountCents`) | integer • not null • default 0 |
-| `cost_amount_cents` (`costAmountCents`) | integer • not null • default 0 |
-| `valid_from` (`validFrom`) | date • nullable |
-| `valid_until` (`validUntil`) | date • nullable |
-| `sent_at` (`sentAt`) | timestamp with time zone • nullable |
-| `accepted_at` (`acceptedAt`) | timestamp with time zone • nullable |
-| `converted_at` (`convertedAt`) | timestamp with time zone • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `order_item_participants`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `order_item_id` (`orderItemId`) | text • FK -> order_items.id • not null |
-| `traveler_id` (`travelerId`) | text • FK -> order_participants.id • not null |
-| `role` | transaction_item_participant_role • not null • default "traveler" |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `order_items`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `order_id` (`orderId`) | text • FK -> orders.id • not null |
-| `offer_item_id` (`offerItemId`) | text • FK -> offer_items.id • nullable |
-| `product_id` (`productId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `unit_id` (`unitId`) | text • nullable |
-| `slot_id` (`slotId`) | text • nullable |
-| `title` | text • not null |
-| `description` | text • nullable |
-| `item_type` (`itemType`) | transaction_item_type • not null • default "unit" |
-| `status` | transaction_item_status • not null • default "draft" |
-| `service_date` (`serviceDate`) | date • nullable |
-| `starts_at` (`startsAt`) | timestamp with time zone • nullable |
-| `ends_at` (`endsAt`) | timestamp with time zone • nullable |
-| `quantity` | integer • not null • default 1 |
-| `sell_currency` (`sellCurrency`) | text • not null |
-| `unit_sell_amount_cents` (`unitSellAmountCents`) | integer • nullable |
-| `total_sell_amount_cents` (`totalSellAmountCents`) | integer • nullable |
-| `tax_amount_cents` (`taxAmountCents`) | integer • nullable |
-| `fee_amount_cents` (`feeAmountCents`) | integer • nullable |
-| `cost_currency` (`costCurrency`) | text • nullable |
-| `unit_cost_amount_cents` (`unitCostAmountCents`) | integer • nullable |
-| `total_cost_amount_cents` (`totalCostAmountCents`) | integer • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `order_participants`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `order_id` (`orderId`) | text • FK -> orders.id • not null |
-| `person_id` (`personId`) | text • nullable |
-| `participant_type` (`participantType`) | transaction_participant_type • not null • default "traveler" |
-| `traveler_category` (`travelerCategory`) | transaction_traveler_category • nullable |
-| `first_name` (`firstName`) | text • not null |
-| `last_name` (`lastName`) | text • not null |
-| `email` | text • nullable |
-| `phone` | text • nullable |
-| `preferred_language` (`preferredLanguage`) | text • nullable |
-| `identity_encrypted` (`identityEncrypted`) | jsonb • nullable |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `order_terms`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • FK -> offers.id • nullable |
-| `order_id` (`orderId`) | text • FK -> orders.id • nullable |
-| `term_type` (`termType`) | order_term_type • not null • default "terms_and_conditions" |
-| `title` | text • not null |
-| `body` | text • not null |
-| `language` | text • nullable |
-| `required` | boolean • not null • default true |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `acceptance_status` (`acceptanceStatus`) | order_term_acceptance_status • not null • default "pending" |
-| `accepted_at` (`acceptedAt`) | timestamp with time zone • nullable |
-| `accepted_by` (`acceptedBy`) | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `orders`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `order_number` (`orderNumber`) | text • unique • not null |
-| `offer_id` (`offerId`) | text • FK -> offers.id • nullable |
-| `title` | text • not null |
-| `status` | order_status • not null • default "draft" |
-| `person_id` (`personId`) | text • nullable |
-| `organization_id` (`organizationId`) | text • nullable |
-| `quote_id` (`quoteId`) | text • nullable |
-| `quote_version_id` (`quoteVersionId`) | text • nullable |
-| `market_id` (`marketId`) | text • nullable |
-| `source_channel_id` (`sourceChannelId`) | text • nullable |
-| `contact_party_type` (`contactPartyType`) | text • nullable |
-| `contact_first_name` (`contactFirstName`) | text • nullable |
-| `contact_last_name` (`contactLastName`) | text • nullable |
-| `contact_tax_id` (`contactTaxId`) | text • nullable |
-| `contact_email` (`contactEmail`) | text • nullable |
-| `contact_phone` (`contactPhone`) | text • nullable |
-| `contact_preferred_language` (`contactPreferredLanguage`) | text • nullable |
-| `contact_country` (`contactCountry`) | text • nullable |
-| `contact_region` (`contactRegion`) | text • nullable |
-| `contact_city` (`contactCity`) | text • nullable |
-| `contact_address_line1` (`contactAddressLine1`) | text • nullable |
-| `contact_address_line2` (`contactAddressLine2`) | text • nullable |
-| `contact_postal_code` (`contactPostalCode`) | text • nullable |
-| `currency` | text • not null |
-| `base_currency` (`baseCurrency`) | text • nullable |
-| `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
-| `subtotal_amount_cents` (`subtotalAmountCents`) | integer • not null • default 0 |
-| `tax_amount_cents` (`taxAmountCents`) | integer • not null • default 0 |
-| `fee_amount_cents` (`feeAmountCents`) | integer • not null • default 0 |
-| `total_amount_cents` (`totalAmountCents`) | integer • not null • default 0 |
-| `cost_amount_cents` (`costAmountCents`) | integer • not null • default 0 |
-| `ordered_at` (`orderedAt`) | timestamp with time zone • nullable |
-| `confirmed_at` (`confirmedAt`) | timestamp with time zone • nullable |
-| `cancelled_at` (`cancelledAt`) | timestamp with time zone • nullable |
-| `expires_at` (`expiresAt`) | timestamp with time zone • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `sellability_explanations`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
-| `snapshot_item_id` (`snapshotItemId`) | text • FK -> sellability_snapshot_items.id • nullable |
-| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
-| `explanation_type` (`explanationType`) | sellability_explanation_type • not null • default "policy" |
-| `code` | text • nullable |
-| `message` | text • not null |
-| `details` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `sellability_policies`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `name` | text • not null |
-| `scope` | sellability_policy_scope • not null • default "global" |
-| `policy_type` (`policyType`) | sellability_policy_type • not null • default "custom" |
-| `product_id` (`productId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `market_id` (`marketId`) | text • nullable |
-| `channel_id` (`channelId`) | text • nullable |
-| `priority` | integer • not null • default 0 |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `product_extra_id` (`productExtraId`) | text • nullable |
+| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `min_quantity` (`minQuantity`) | integer • nullable |
 | `active` | boolean • not null • default true |
-| `conditions` | jsonb • not null • default |
-| `effects` | jsonb • not null • default |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_option_triggers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `option_id` (`optionId`) | text • not null |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_options`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `value` | text • not null |
+| `label` | text • not null |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_unit_triggers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `unit_id` (`unitId`) | text • not null |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `min_quantity` (`minQuantity`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `option_booking_questions`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `option_id` (`optionId`) | text • not null |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `is_required_override` (`isRequiredOverride`) | boolean • nullable |
+| `active` | boolean • not null • default true |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `product_booking_questions`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `code` | text • nullable |
+| `label` | text • not null |
+| `description` | text • nullable |
+| `target` | booking_question_target • not null • default "booking" |
+| `field_type` (`fieldType`) | booking_question_field_type • not null • default "text" |
+| `placeholder` | text • nullable |
+| `help_text` (`helpText`) | text • nullable |
+| `is_required` (`isRequired`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `product_contact_requirements`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `field_key` (`fieldKey`) | contact_requirement_field • not null |
+| `scope` | contact_requirement_scope • not null • default "traveler" |
+| `is_required` (`isRequired`) | boolean • not null • default false |
+| `per_traveler` (`perTraveler`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+## Operations
+
+### `allocation_audit_log`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
+| `action` | text • not null |
+| `actor_id` (`actorId`) | text • nullable |
+| `traveler_id` (`travelerId`) | text • nullable |
+| `resource_id` (`resourceId`) | text • nullable |
+| `before` | jsonb • nullable |
+| `after` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `allocation_resources`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
+| `kind` | text • not null |
+| `ref_type` (`refType`) | text • nullable |
+| `ref_id` (`refId`) | text • nullable |
+| `label` | text • nullable |
+| `capacity` | integer • not null |
+| `flags` | jsonb • not null • default |
+| `parent_id` (`parentId`) | text • nullable |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_closeouts`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
+| `date_local` (`dateLocal`) | date • not null |
+| `reason` | text • nullable |
+| `created_by` (`createdBy`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `availability_holds`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `draft_id` (`draftId`) | text • not null |
+| `hold_token` (`holdToken`) | text • not null |
+| `product_id` (`productId`) | text • not null |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
+| `pax_count` (`paxCount`) | integer • not null |
+| `expires_at` (`expiresAt`) | timestamp with time zone • not null |
+| `released_at` (`releasedAt`) | timestamp with time zone • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_pickup_points`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `facility_id` (`facilityId`) | text • nullable |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `location_text` (`locationText`) | text • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_rules`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `timezone` | text • not null |
+| `recurrence_rule` (`recurrenceRule`) | text • not null |
+| `max_capacity` (`maxCapacity`) | integer • not null |
+| `max_pickup_capacity` (`maxPickupCapacity`) | integer • nullable |
+| `min_total_pax` (`minTotalPax`) | integer • nullable |
+| `cutoff_minutes` (`cutoffMinutes`) | integer • nullable |
+| `early_booking_limit_minutes` (`earlyBookingLimitMinutes`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_slot_pickups`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • not null |
+| `pickup_point_id` (`pickupPointId`) | text • FK -> availability_pickup_points.id • not null |
+| `initial_capacity` (`initialCapacity`) | integer • nullable |
+| `remaining_capacity` (`remainingCapacity`) | integer • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_slots`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `itinerary_id` (`itineraryId`) | text • nullable |
+| `option_id` (`optionId`) | text • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `availability_rule_id` (`availabilityRuleId`) | text • FK -> availability_rules.id • nullable |
+| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `date_local` (`dateLocal`) | date • not null |
+| `starts_at` (`startsAt`) | timestamp with time zone • not null |
+| `ends_at` (`endsAt`) | timestamp with time zone • nullable |
+| `timezone` | text • not null |
+| `status` | availability_slot_status • not null • default "open" |
+| `unlimited` | boolean • not null • default false |
+| `initial_pax` (`initialPax`) | integer • nullable |
+| `remaining_pax` (`remainingPax`) | integer • nullable |
+| `initial_pickups` (`initialPickups`) | integer • nullable |
+| `remaining_pickups` (`remainingPickups`) | integer • nullable |
+| `remaining_resources` (`remainingResources`) | integer • nullable |
+| `past_cutoff` (`pastCutoff`) | boolean • not null • default false |
+| `too_early` (`tooEarly`) | boolean • not null • default false |
+| `nights` | integer • nullable |
+| `days` | integer • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `availability_start_times`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `label` | text • nullable |
+| `start_time_local` (`startTimeLocal`) | text • not null |
+| `duration_minutes` (`durationMinutes`) | integer • nullable |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `custom_pickup_areas`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `meeting_config_id` (`meetingConfigId`) | text • FK -> product_meeting_configs.id • not null |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `geographic_text` (`geographicText`) | text • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `facilities`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `parent_facility_id` (`parentFacilityId`) | text • FK -> facilities.id • nullable |
+| `owner_type` (`ownerType`) | facility_owner_type • nullable |
+| `owner_id` (`ownerId`) | text • nullable |
+| `kind` | facility_kind • not null |
+| `status` | facility_status • not null • default "active" |
+| `name` | text • not null |
+| `code` | text • nullable |
+| `description` | text • nullable |
+| `timezone` | text • nullable |
+| `tags` | jsonb • not null • default [] |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `facility_address_projections`
+| Column | Type |
+|--------|------|
+| `facility_id` (`facilityId`) | text • PK • FK -> facilities.id • not null |
+| `address_id` (`addressId`) | text • nullable |
+| `full_text` (`fullText`) | text • nullable |
+| `line1` | text • nullable |
+| `line2` | text • nullable |
+| `city` | text • nullable |
+| `region` | text • nullable |
+| `postal_code` (`postalCode`) | text • nullable |
+| `country` | text • nullable |
+| `latitude` | double precision • nullable |
+| `longitude` | double precision • nullable |
+| `address` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `facility_features`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
+| `category` | facility_feature_category • not null • default "amenity" |
+| `code` | text • nullable |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `value_text` (`valueText`) | text • nullable |
+| `highlighted` | boolean • not null • default false |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `facility_operation_schedules`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
+| `day_of_week` (`dayOfWeek`) | facility_day_of_week • nullable |
+| `valid_from` (`validFrom`) | date • nullable |
+| `valid_to` (`validTo`) | date • nullable |
+| `opens_at` (`opensAt`) | text • nullable |
+| `closes_at` (`closesAt`) | text • nullable |
+| `closed` | boolean • not null • default false |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `location_pickup_times`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `pickup_location_id` (`pickupLocationId`) | text • FK -> pickup_locations.id • not null |
+| `slot_id` (`slotId`) | text • FK -> availability_slots.id • nullable |
+| `start_time_id` (`startTimeId`) | text • FK -> availability_start_times.id • nullable |
+| `timing_mode` (`timingMode`) | pickup_timing_mode • not null • default "fixed_time" |
+| `local_time` (`localTime`) | text • nullable |
+| `offset_minutes` (`offsetMinutes`) | integer • nullable |
+| `instructions` | text • nullable |
+| `initial_capacity` (`initialCapacity`) | integer • nullable |
+| `remaining_capacity` (`remainingCapacity`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `pickup_groups`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `meeting_config_id` (`meetingConfigId`) | text • FK -> product_meeting_configs.id • not null |
+| `kind` | pickup_group_kind • not null |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `active` | boolean • not null • default true |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `pickup_locations`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `group_id` (`groupId`) | text • FK -> pickup_groups.id • not null |
+| `facility_id` (`facilityId`) | text • nullable |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `location_text` (`locationText`) | text • nullable |
+| `lead_time_minutes` (`leadTimeMinutes`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `product_meeting_configs`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `mode` | meeting_mode • not null • default "meeting_only" |
+| `allow_custom_pickup` (`allowCustomPickup`) | boolean • not null • default false |
+| `allow_custom_dropoff` (`allowCustomDropoff`) | boolean • not null • default false |
+| `requires_pickup_selection` (`requiresPickupSelection`) | boolean • not null • default false |
+| `requires_dropoff_selection` (`requiresDropoffSelection`) | boolean • not null • default false |
+| `use_pickup_allotment` (`usePickupAllotment`) | boolean • not null • default false |
+| `meeting_instructions` (`meetingInstructions`) | text • nullable |
+| `pickup_instructions` (`pickupInstructions`) | text • nullable |
+| `dropoff_instructions` (`dropoffInstructions`) | text • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `product_option_resource_templates`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_option_id` (`productOptionId`) | text • not null |
+| `kind` | text • not null |
+| `ref_type` (`refType`) | text • nullable |
+| `ref_id` (`refId`) | text • nullable |
+| `capacity` | integer • not null |
+| `name_pattern` (`namePattern`) | text • not null |
+| `layout` | text • nullable |
+| `default_count` (`defaultCount`) | integer • nullable |
+| `flags` | jsonb • not null • default |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `properties`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `facility_id` (`facilityId`) | text • FK -> facilities.id • not null |
+| `property_type` (`propertyType`) | property_type • not null • default "hotel" |
+| `brand_name` (`brandName`) | text • nullable |
+| `group_name` (`groupName`) | text • nullable |
+| `rating` | integer • nullable |
+| `rating_scale` (`ratingScale`) | integer • nullable |
+| `check_in_time` (`checkInTime`) | text • nullable |
+| `check_out_time` (`checkOutTime`) | text • nullable |
+| `policy_notes` (`policyNotes`) | text • nullable |
+| `amenity_notes` (`amenityNotes`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `property_group_members`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `group_id` (`groupId`) | text • FK -> property_groups.id • not null |
+| `property_id` (`propertyId`) | text • FK -> properties.id • not null |
+| `membership_role` (`membershipRole`) | property_group_membership_role • not null • default "member" |
+| `is_primary` (`isPrimary`) | boolean • not null • default false |
+| `valid_from` (`validFrom`) | date • nullable |
+| `valid_to` (`validTo`) | date • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `property_groups`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `parent_group_id` (`parentGroupId`) | text • FK -> property_groups.id • nullable |
+| `group_type` (`groupType`) | property_group_type • not null • default "chain" |
+| `status` | property_group_status • not null • default "active" |
+| `name` | text • not null |
+| `code` | text • nullable |
+| `brand_name` (`brandName`) | text • nullable |
+| `legal_name` (`legalName`) | text • nullable |
+| `website` | text • nullable |
 | `notes` | text • nullable |
 | `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `sellability_policy_results`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
-| `snapshot_item_id` (`snapshotItemId`) | text • FK -> sellability_snapshot_items.id • nullable |
-| `policy_id` (`policyId`) | text • FK -> sellability_policies.id • nullable |
-| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
-| `status` | sellability_policy_result_status • not null • default "passed" |
-| `message` | text • nullable |
-| `details` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `sellability_snapshot_items`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `snapshot_id` (`snapshotId`) | text • FK -> sellability_snapshots.id • not null |
-| `candidate_index` (`candidateIndex`) | integer • not null • default 0 |
-| `component_index` (`componentIndex`) | integer • not null • default 0 |
-| `product_id` (`productId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `slot_id` (`slotId`) | text • nullable |
-| `unit_id` (`unitId`) | text • nullable |
-| `request_ref` (`requestRef`) | text • nullable |
-| `component_kind` (`componentKind`) | sellability_snapshot_component_kind • not null |
-| `title` | text • not null |
-| `quantity` | integer • not null • default 1 |
-| `pricing_mode` (`pricingMode`) | text • not null |
-| `pricing_category_id` (`pricingCategoryId`) | text • nullable |
-| `pricing_category_name` (`pricingCategoryName`) | text • nullable |
-| `unit_name` (`unitName`) | text • nullable |
-| `unit_type` (`unitType`) | text • nullable |
-| `currency_code` (`currencyCode`) | text • not null |
-| `sell_amount_cents` (`sellAmountCents`) | integer • not null • default 0 |
-| `cost_amount_cents` (`costAmountCents`) | integer • not null • default 0 |
-| `source_rule_id` (`sourceRuleId`) | text • nullable |
-| `tier_id` (`tierId`) | text • nullable |
-| `is_selected` (`isSelected`) | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `sellability_snapshots`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `offer_id` (`offerId`) | text • nullable |
-| `market_id` (`marketId`) | text • nullable |
-| `channel_id` (`channelId`) | text • nullable |
-| `product_id` (`productId`) | text • nullable |
-| `option_id` (`optionId`) | text • nullable |
-| `slot_id` (`slotId`) | text • nullable |
-| `requested_currency_code` (`requestedCurrencyCode`) | text • nullable |
-| `source_currency_code` (`sourceCurrencyCode`) | text • nullable |
-| `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
-| `status` | sellability_snapshot_status • not null • default "resolved" |
-| `query_payload` (`queryPayload`) | jsonb • not null |
-| `pricing_summary` (`pricingSummary`) | jsonb • not null |
-| `expires_at` (`expiresAt`) | timestamp with time zone • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `transaction_pii_access_log`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `traveler_kind` (`travelerKind`) | text • not null |
-| `parent_id` (`parentId`) | text • nullable |
-| `traveler_id` (`travelerId`) | text • nullable |
-| `actor_id` (`actorId`) | text • nullable |
-| `actor_type` (`actorType`) | text • nullable |
-| `caller_type` (`callerType`) | text • nullable |
-| `action` | transaction_pii_access_action • not null |
-| `outcome` | transaction_pii_access_outcome • not null |
-| `reason` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-## Suppliers & Resources
 
 ### `resource_closeouts`
 | Column | Type |
@@ -2606,104 +2556,15 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `supplier_availability`
+### `sharing_group_labels`
 | Column | Type |
 |--------|------|
-| `id` | text • PK • not null • default |
-| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
-| `date` | date • not null |
-| `available` | boolean • not null • default true |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `supplier_contracts`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
-| `agreement_number` (`agreementNumber`) | text • nullable |
-| `start_date` (`startDate`) | date • not null |
-| `end_date` (`endDate`) | date • nullable |
-| `renewal_date` (`renewalDate`) | date • nullable |
-| `terms` | text • nullable |
-| `status` | supplier_contract_status • not null • default "active" |
+| `group_id` (`groupId`) | text • PK • not null |
+| `label` | text • not null |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `supplier_directory_projections`
-| Column | Type |
-|--------|------|
-| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
-| `email` | text • nullable |
-| `phone` | text • nullable |
-| `website` | text • nullable |
-| `address` | text • nullable |
-| `city` | text • nullable |
-| `country` | text • nullable |
-| `contact_name` (`contactName`) | text • nullable |
-| `contact_email` (`contactEmail`) | text • nullable |
-| `contact_phone` (`contactPhone`) | text • nullable |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `supplier_notes`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
-| `author_id` (`authorId`) | text • not null |
-| `content` | text • not null |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `supplier_rates`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `service_id` (`serviceId`) | text • FK -> supplier_services.id • not null |
-| `name` | text • not null |
-| `currency` | text • not null |
-| `amount_cents` (`amountCents`) | integer • not null |
-| `unit` | rate_unit • not null |
-| `valid_from` (`validFrom`) | date • nullable |
-| `valid_to` (`validTo`) | date • nullable |
-| `min_pax` (`minPax`) | integer • nullable |
-| `max_pax` (`maxPax`) | integer • nullable |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `supplier_services`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
-| `service_type` (`serviceType`) | service_type • not null |
-| `facility_id` (`facilityId`) | text • nullable |
-| `name` | text • not null |
-| `description` | text • nullable |
-| `duration` | text • nullable |
-| `capacity` | integer • nullable |
-| `active` | boolean • not null • default true |
-| `tags` | jsonb • nullable • default [] |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `suppliers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `name` | text • not null |
-| `type` | supplier_type • not null |
-| `status` | supplier_status • not null • default "active" |
-| `description` | text • nullable |
-| `default_currency` (`defaultCurrency`) | text • nullable |
-| `payment_terms_days` (`paymentTermsDays`) | integer • nullable |
-| `reservation_timeout_minutes` (`reservationTimeoutMinutes`) | integer • nullable |
-| `primary_facility_id` (`primaryFacilityId`) | text • nullable |
-| `customer_payment_policy` (`customerPaymentPolicy`) | jsonb • nullable |
-| `tags` | jsonb • nullable • default [] |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-## Markets & Distribution
+## Distribution
 
 ### `booking_distribution_details`
 | Column | Type |
@@ -2713,6 +2574,22 @@ Constraints:
 | `source_channel_id` (`sourceChannelId`) | text • nullable |
 | `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
 | `payment_owner` (`paymentOwner`) | booking_dist_payment_owner • not null • default "operator" |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `channel_availability_push_intents`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `channel_id` (`channelId`) | text • FK -> channels.id • not null |
+| `source_connection_id` (`sourceConnectionId`) | text • not null |
+| `slot_id` (`slotId`) | text • not null |
+| `product_id` (`productId`) | text • not null |
+| `option_id` (`optionId`) | text • nullable |
+| `starts_at` (`startsAt`) | timestamp with time zone • not null |
+| `requested_at` (`requestedAt`) | timestamp with time zone • not null • default |
+| `attempts` | integer • not null • default 0 |
+| `last_error` (`lastError`) | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -2765,6 +2642,19 @@ Constraints:
 | `website` | text • nullable |
 | `contact_name` (`contactName`) | text • nullable |
 | `contact_email` (`contactEmail`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `channel_content_push_intents`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `channel_id` (`channelId`) | text • FK -> channels.id • not null |
+| `source_connection_id` (`sourceConnectionId`) | text • not null |
+| `product_id` (`productId`) | text • not null |
+| `requested_at` (`requestedAt`) | timestamp with time zone • not null • default |
+| `attempts` | integer • not null • default 0 |
+| `last_error` (`lastError`) | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -3053,118 +2943,118 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `exchange_rates`
+### `external_refs`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `fx_rate_set_id` (`fxRateSetId`) | text • FK -> fx_rate_sets.id • not null |
-| `base_currency` (`baseCurrency`) | text • not null |
-| `quote_currency` (`quoteCurrency`) | text • not null |
-| `rate_decimal` (`rateDecimal`) | numeric(18, 8) • not null |
-| `inverse_rate_decimal` (`inverseRateDecimal`) | numeric(18, 8) • nullable |
-| `observed_at` (`observedAt`) | timestamp with time zone • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `fx_rate_sets`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `source` | fx_rate_source • not null • default "manual" |
-| `base_currency` (`baseCurrency`) | text • not null |
-| `effective_at` (`effectiveAt`) | timestamp with time zone • not null |
-| `observed_at` (`observedAt`) | timestamp with time zone • nullable |
-| `source_reference` (`sourceReference`) | text • nullable |
-| `notes` | text • nullable |
-| `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `market_channel_rules`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `market_id` (`marketId`) | text • FK -> markets.id • not null |
-| `channel_id` (`channelId`) | text • not null |
-| `price_catalog_id` (`priceCatalogId`) | text • FK -> market_price_catalogs.id • nullable |
-| `visibility` | market_visibility • not null • default "public" |
-| `sellability` | market_sellability • not null • default "sellable" |
-| `active` | boolean • not null • default true |
-| `priority` | integer • not null • default 0 |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `market_currencies`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `market_id` (`marketId`) | text • FK -> markets.id • not null |
-| `currency_code` (`currencyCode`) | text • not null |
-| `is_default` (`isDefault`) | boolean • not null • default false |
-| `is_settlement` (`isSettlement`) | boolean • not null • default false |
-| `is_reporting` (`isReporting`) | boolean • not null • default false |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `market_locales`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `market_id` (`marketId`) | text • FK -> markets.id • not null |
-| `language_tag` (`languageTag`) | text • not null |
-| `is_default` (`isDefault`) | boolean • not null • default false |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `market_price_catalogs`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `market_id` (`marketId`) | text • FK -> markets.id • not null |
-| `price_catalog_id` (`priceCatalogId`) | text • not null |
-| `is_default` (`isDefault`) | boolean • not null • default false |
-| `priority` | integer • not null • default 0 |
-| `active` | boolean • not null • default true |
-| `notes` | text • nullable |
+| `entity_type` (`entityType`) | text • not null |
+| `entity_id` (`entityId`) | text • not null |
+| `source_system` (`sourceSystem`) | text • not null |
+| `object_type` (`objectType`) | text • not null |
+| `namespace` | text • not null • default "default" |
+| `external_id` (`externalId`) | text • not null |
+| `external_parent_id` (`externalParentId`) | text • nullable |
+| `is_primary` (`isPrimary`) | boolean • not null • default false |
+| `status` | external_ref_status • not null • default "active" |
+| `last_synced_at` (`lastSyncedAt`) | timestamp with time zone • nullable |
 | `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `market_product_rules`
+### `supplier_availability`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `market_id` (`marketId`) | text • FK -> markets.id • not null |
-| `product_id` (`productId`) | text • not null |
-| `option_id` (`optionId`) | text • nullable |
-| `price_catalog_id` (`priceCatalogId`) | text • FK -> market_price_catalogs.id • nullable |
-| `visibility` | market_visibility • not null • default "public" |
-| `sellability` | market_sellability • not null • default "sellable" |
-| `channel_scope` (`channelScope`) | market_channel_scope • not null • default "all" |
-| `active` | boolean • not null • default true |
-| `available_from` (`availableFrom`) | date • nullable |
-| `available_to` (`availableTo`) | date • nullable |
+| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
+| `date` | date • not null |
+| `available` | boolean • not null • default true |
 | `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `supplier_contracts`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
+| `agreement_number` (`agreementNumber`) | text • nullable |
+| `start_date` (`startDate`) | date • not null |
+| `end_date` (`endDate`) | date • nullable |
+| `renewal_date` (`renewalDate`) | date • nullable |
+| `terms` | text • nullable |
+| `status` | supplier_contract_status • not null • default "active" |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `markets`
+### `supplier_directory_projections`
+| Column | Type |
+|--------|------|
+| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
+| `email` | text • nullable |
+| `phone` | text • nullable |
+| `website` | text • nullable |
+| `address` | text • nullable |
+| `city` | text • nullable |
+| `country` | text • nullable |
+| `contact_name` (`contactName`) | text • nullable |
+| `contact_email` (`contactEmail`) | text • nullable |
+| `contact_phone` (`contactPhone`) | text • nullable |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `supplier_notes`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `code` | text • not null |
+| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
+| `author_id` (`authorId`) | text • not null |
+| `content` | text • not null |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `supplier_rates`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `service_id` (`serviceId`) | text • FK -> supplier_services.id • not null |
 | `name` | text • not null |
-| `status` | market_status • not null • default "active" |
-| `region_code` (`regionCode`) | text • nullable |
-| `country_code` (`countryCode`) | text • nullable |
-| `default_language_tag` (`defaultLanguageTag`) | text • not null |
-| `default_currency` (`defaultCurrency`) | text • not null |
-| `timezone` | text • nullable |
-| `tax_context` (`taxContext`) | text • nullable |
-| `metadata` | jsonb • nullable |
+| `currency` | text • not null |
+| `amount_cents` (`amountCents`) | integer • not null |
+| `unit` | rate_unit • not null |
+| `valid_from` (`validFrom`) | date • nullable |
+| `valid_to` (`validTo`) | date • nullable |
+| `min_pax` (`minPax`) | integer • nullable |
+| `max_pax` (`maxPax`) | integer • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `supplier_services`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_id` (`supplierId`) | text • FK -> suppliers.id • not null |
+| `service_type` (`serviceType`) | service_type • not null |
+| `facility_id` (`facilityId`) | text • nullable |
+| `name` | text • not null |
+| `description` | text • nullable |
+| `duration` | text • nullable |
+| `capacity` | integer • nullable |
+| `active` | boolean • not null • default true |
+| `tags` | jsonb • nullable • default [] |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `suppliers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `type` | supplier_type • not null |
+| `status` | supplier_status • not null • default "active" |
+| `description` | text • nullable |
+| `default_currency` (`defaultCurrency`) | text • nullable |
+| `payment_terms_days` (`paymentTermsDays`) | integer • nullable |
+| `reservation_timeout_minutes` (`reservationTimeoutMinutes`) | integer • nullable |
+| `primary_facility_id` (`primaryFacilityId`) | text • nullable |
+| `customer_payment_policy` (`customerPaymentPolicy`) | jsonb • nullable |
+| `tags` | jsonb • nullable • default [] |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -3772,6 +3662,12 @@ Constraints:
 | `file_size` (`fileSize`) | integer • nullable |
 | `storage_key` (`storageKey`) | text • nullable |
 | `checksum` | text • nullable |
+| `target_kind` (`targetKind`) | legal_target_kind • nullable |
+| `target_id` (`targetId`) | text • nullable |
+| `target_provider` (`targetProvider`) | text • nullable |
+| `target_source_ref` (`targetSourceRef`) | text • nullable |
+| `legacy_transaction_offer_id` (`legacyTransactionOfferId`) | text • nullable |
+| `legacy_transaction_order_id` (`legacyTransactionOrderId`) | text • nullable |
 | `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 
@@ -3803,6 +3699,12 @@ Constraints:
 | `signer_email` (`signerEmail`) | text • nullable |
 | `signer_role` (`signerRole`) | text • nullable |
 | `person_id` (`personId`) | text • FK -> people.id • nullable |
+| `target_kind` (`targetKind`) | legal_target_kind • nullable |
+| `target_id` (`targetId`) | text • nullable |
+| `target_provider` (`targetProvider`) | text • nullable |
+| `target_source_ref` (`targetSourceRef`) | text • nullable |
+| `legacy_transaction_offer_id` (`legacyTransactionOfferId`) | text • nullable |
+| `legacy_transaction_order_id` (`legacyTransactionOrderId`) | text • nullable |
 | `method` | contract_signature_method • not null • default "manual" |
 | `provider` | text • nullable |
 | `external_reference` (`externalReference`) | text • nullable |
@@ -3859,7 +3761,12 @@ Constraints:
 | `supplier_id` (`supplierId`) | text • FK -> suppliers.id • nullable |
 | `channel_id` (`channelId`) | text • nullable |
 | `booking_id` (`bookingId`) | text • nullable |
-| `order_id` (`orderId`) | text • nullable |
+| `target_kind` (`targetKind`) | legal_target_kind • nullable |
+| `target_id` (`targetId`) | text • nullable |
+| `target_provider` (`targetProvider`) | text • nullable |
+| `target_source_ref` (`targetSourceRef`) | text • nullable |
+| `legacy_transaction_offer_id` (`legacyTransactionOfferId`) | text • nullable |
+| `legacy_transaction_order_id` (`legacyTransactionOrderId`) | text • nullable |
 | `issued_at` (`issuedAt`) | timestamp with time zone • nullable |
 | `sent_at` (`sentAt`) | timestamp with time zone • nullable |
 | `executed_at` (`executedAt`) | timestamp with time zone • nullable |
@@ -3894,8 +3801,12 @@ Constraints:
 | `policy_version_id` (`policyVersionId`) | text • FK -> policy_versions.id • not null |
 | `person_id` (`personId`) | text • nullable |
 | `booking_id` (`bookingId`) | text • nullable |
-| `order_id` (`orderId`) | text • nullable |
-| `offer_id` (`offerId`) | text • nullable |
+| `target_kind` (`targetKind`) | legal_target_kind • nullable |
+| `target_id` (`targetId`) | text • nullable |
+| `target_provider` (`targetProvider`) | text • nullable |
+| `target_source_ref` (`targetSourceRef`) | text • nullable |
+| `legacy_transaction_offer_id` (`legacyTransactionOfferId`) | text • nullable |
+| `legacy_transaction_order_id` (`legacyTransactionOrderId`) | text • nullable |
 | `accepted_at` (`acceptedAt`) | timestamp with time zone • not null • default |
 | `accepted_by` (`acceptedBy`) | text • nullable |
 | `method` | policy_acceptance_method • not null • default "implicit" |
@@ -4285,7 +4196,7 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-## Ground & Transport
+## Operations Ground & Transport
 
 ### `ground_dispatch_assignments`
 | Column | Type |
@@ -4485,25 +4396,5 @@ Constraints:
 | `is_accessible` (`isAccessible`) | boolean • not null • default false |
 | `active` | boolean • not null • default true |
 | `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-## External References
-
-### `external_refs`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `entity_type` (`entityType`) | text • not null |
-| `entity_id` (`entityId`) | text • not null |
-| `source_system` (`sourceSystem`) | text • not null |
-| `object_type` (`objectType`) | text • not null |
-| `namespace` | text • not null • default "default" |
-| `external_id` (`externalId`) | text • not null |
-| `external_parent_id` (`externalParentId`) | text • nullable |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `status` | external_ref_status • not null • default "active" |
-| `last_synced_at` (`lastSyncedAt`) | timestamp with time zone • nullable |
-| `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
