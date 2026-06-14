@@ -1,7 +1,7 @@
 /**
  * Validation schemas for the promotions module.
  *
- * Per docs/architecture/commerce/promotions-architecture.md §3.2 (scope), §4.1 (offer
+ * Per docs/architecture/commerce-architecture.md §3.2 (scope), §4.1 (offer
  * fields), §11 (currency rules), §12.1 (conditions schema).
  *
  * The scope discriminated union is the source of truth for what an offer
@@ -13,7 +13,7 @@ import { z } from "zod"
 
 // ---------- Scope discriminated union (§3.2) ----------
 //
-// Audience literal inlined to avoid a back-edge from @voyantjs/commerce/promotions to
+// Audience literal inlined to avoid a back-edge from @voyantjs/commerce to
 // @voyantjs/catalog (where Visibility lives). A unit test pins the literal
 // set against catalog's Visibility export.
 

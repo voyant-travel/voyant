@@ -4,4 +4,5 @@
 "operator": patch
 ---
 
-Add the Commerce React facade package and retarget first-party UI wiring that can move to the Commerce owner path.
+Add the Commerce React owner package and retarget first-party UI wiring to the
+Commerce owner path.

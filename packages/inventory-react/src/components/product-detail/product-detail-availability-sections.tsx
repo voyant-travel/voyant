@@ -1,5 +1,4 @@
 import { formatMessage } from "@voyantjs/i18n"
-import { describeRRule } from "@voyantjs/operations/availability/rrule"
 import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
 import { CalendarRange, DollarSign, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"
@@ -14,6 +13,7 @@ import {
   getDepartureStatusLabel,
   slotStatusVariant,
 } from "./product-detail-shared.js"
+import { describeRRule } from "./rrule-labels.js"
 
 export function ProductDeparturesSection({
   slots,

@@ -391,7 +391,7 @@ export interface OwnedProductsShapeLoaders {
 
   /**
    * Resolve the product's configured traveler types as pax bands
-   * (e.g. from `@voyantjs/pricing` pricing categories). Caller-supplied
+   * (e.g. from Commerce pricing categories). Caller-supplied
    * so the journey's Configure step offers exactly the traveler types
    * the product is priced for ("Adult", "Child under 6", …) instead of
    * the generic adult/child/infant defaults. Returns undefined/empty to
@@ -433,14 +433,14 @@ export interface OwnedProductsShapeLoaders {
 
   /**
    * Resolve the option price rule for a given (product, option, date)
-   * — typically backed by `@voyantjs/pricing`'s
+   * — typically backed by Commerce's
    * `resolveOptionPriceRulesForDate` plus a join into per-unit prices.
    * Returns null when no rule applies or the resolver can't run; the
    * handler then falls back to `product.sellAmountCents × pax`.
    *
    * Caller-supplied so Inventory does not import
-   * `@voyantjs/pricing` (the dependency direction is pricing →
-   * products, not the reverse).
+   * `@voyantjs/commerce` (the dependency direction is commerce →
+   * inventory, not the reverse).
    */
   loadResolvedOptionPrice?: (
     ctx: OwnedHandlerContext,
@@ -456,7 +456,7 @@ export interface OwnedProductsShapeLoaders {
   /**
    * Look up the local date of a departure slot (`availability_slots`).
    * Caller-supplied so the Inventory package does not import
-   * `@voyantjs/operations/availability`. Returns null when the slot is missing.
+   * `@voyantjs/operations`. Returns null when the slot is missing.
    *
    * Used together with `loadResolvedOptionPrice` to convert a draft's
    * `departureSlotId` into a date the resolver can match against.
@@ -466,7 +466,7 @@ export interface OwnedProductsShapeLoaders {
 
 /**
  * Caller-supplied availability-hold bridge — keeps the products
- * package free of an `@voyantjs/operations/availability` dependency. When
+ * package free of an `@voyantjs/operations` dependency. When
  * wired, the handler's `placeHold/extendHold/releaseHold` route
  * through `availability_holds` (real inventory locks). When
  * omitted, the handler falls back to stamping no-ops.

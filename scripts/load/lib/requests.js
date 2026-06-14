@@ -2,7 +2,7 @@
 //
 // All scenarios go through these helpers so endpoint paths, tags, and payload
 // shapes live in one place. Endpoints map to the /v1/public surface:
-//   GET  /v1/public/products                      (catalog list — packages/products routes-public)
+//   GET  /v1/public/products                      (catalog list — Inventory public product routes)
 //   GET  /v1/public/products/:id                  (catalog detail)
 //   GET  /v1/public/products/slug/:slug           (catalog detail by slug)
 //   GET  /v1/public/products/:id/departures       (storefront departures)

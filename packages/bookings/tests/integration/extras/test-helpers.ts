@@ -41,7 +41,7 @@ export function createExtrasTestContext() {
   })
 
   async function seedProduct() {
-    const { products } = await import("@voyantjs/inventory/schema")
+    const { products } = await import("../../../../inventory/src/schema.js")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(products)
       .values({ name: `Product ${nextSeq()}`, sellCurrency: "USD" })
@@ -50,7 +50,7 @@ export function createExtrasTestContext() {
   }
 
   async function seedProductOption(productId: string) {
-    const { productOptions } = await import("@voyantjs/inventory/schema")
+    const { productOptions } = await import("../../../../inventory/src/schema.js")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(productOptions)
       .values({ productId, name: `Option ${nextSeq()}` })
@@ -68,7 +68,7 @@ export function createExtrasTestContext() {
   }
 
   async function seedAvailabilitySlot(productId: string, overrides: Record<string, unknown> = {}) {
-    const { availabilitySlots } = await import("@voyantjs/operations/availability/schema")
+    const { availabilitySlots } = await import("../../../../operations/src/index.js")
     const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
       .insert(availabilitySlots)
       .values({

@@ -9,7 +9,7 @@
  * common case and can't accidentally point at a route that isn't mounted.
  *
  * The server side of this contract is `createProductContentRoutes` from
- * `@voyantjs/products/routes-content`. If a host mounts `CatalogPage` with
+ * `@voyantjs/inventory`. If a host mounts `CatalogPage` with
  * `enrichmentFetchers` but forgets the server mount, the first 404 triggers a
  * one-time `console.warn` pointing at the docs — fast feedback on the foot-gun
  * called out in issue #1023.
@@ -318,7 +318,7 @@ function maybeWarnMissingMount(response: Response, url: string): void {
     console.warn(
       `[catalog-ui] enrichment fetch returned 404 for ${url}. ` +
         `If the catalog detail sheet renders empty, make sure the host mounts ` +
-        `createProductContentRoutes from @voyantjs/products/routes-content ` +
+        `createProductContentRoutes from @voyantjs/inventory ` +
         `under the same prefix used here.`,
     )
   }

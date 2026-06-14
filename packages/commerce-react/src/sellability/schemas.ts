@@ -2,7 +2,7 @@ import {
   insertSellabilityPolicySchema,
   sellabilityPolicyScopeSchema,
   sellabilityPolicyTypeSchema,
-} from "@voyantjs/commerce/sellability/validation"
+} from "@voyantjs/commerce"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

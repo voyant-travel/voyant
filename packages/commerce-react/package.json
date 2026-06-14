@@ -16,6 +16,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
     "./markets": "./src/markets.ts",
     "./markets/provider": "./src/markets/provider.tsx",
     "./markets/hooks": "./src/markets/hooks/index.ts",
@@ -137,6 +138,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
       },
       "./markets": {
         "types": "./dist/markets.d.ts",

@@ -2,11 +2,13 @@
 
 import {
   departurePriceOverrides,
+  exchangeRates,
   extraPriceRules,
+  fxRateSets,
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
-} from "@voyantjs/commerce/pricing/schema"
+} from "@voyantjs/commerce"
 import { createEventBus } from "@voyantjs/core"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { productExtras } from "@voyantjs/inventory/extras"
@@ -20,14 +22,12 @@ import {
   productOptions,
   products,
 } from "@voyantjs/inventory/schema"
-import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations/availability/schema"
+import { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
 import { relationshipsService } from "@voyantjs/relationships"
 import { customerSignals } from "@voyantjs/relationships/schema"
 import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
-import { exchangeRates, fxRateSets } from "../../../markets/src/schema.js"
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 import type { StorefrontIntakePersistence, StorefrontRequestContext } from "../../src/service.js"
 

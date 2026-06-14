@@ -1,10 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type {
-  insertPropertyGroupSchema,
-  updatePropertyGroupSchema,
-} from "@voyantjs/operations/places"
+import type { insertPropertyGroupSchema, updatePropertyGroupSchema } from "@voyantjs/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
@@ -22,7 +19,7 @@ export function usePropertyGroupMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePropertyGroupInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/places/property-groups",
+        "/v1/operations/property-groups",
         propertyGroupSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +35,7 @@ export function usePropertyGroupMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePropertyGroupInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/places/property-groups/${id}`,
+        `/v1/operations/property-groups/${id}`,
         propertyGroupSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +51,7 @@ export function usePropertyGroupMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/places/property-groups/${id}`,
+        `/v1/operations/property-groups/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

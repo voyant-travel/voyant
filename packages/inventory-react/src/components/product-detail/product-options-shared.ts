@@ -1,15 +1,16 @@
 import {
+  getOptionUnitsQueryOptions as getSharedOptionUnitsQueryOptions,
+  getProductOptionsQueryOptions as getSharedProductOptionsQueryOptions,
+  type VoyantProductsContextValue,
+} from "../../index.js"
+import {
   getDeparturePriceOverridesQueryOptions as getSharedDeparturePriceOverridesQueryOptions,
   getOptionPriceRulesQueryOptions as getSharedOptionPriceRulesQueryOptions,
   getOptionUnitPriceRulesQueryOptions as getSharedOptionUnitPriceRulesQueryOptions,
   getPriceCatalogsQueryOptions as getSharedPriceCatalogsQueryOptions,
   getPricingCategoriesQueryOptions as getSharedPricingCategoriesQueryOptions,
-} from "@voyantjs/commerce-react/pricing"
-import {
-  getOptionUnitsQueryOptions as getSharedOptionUnitsQueryOptions,
-  getProductOptionsQueryOptions as getSharedProductOptionsQueryOptions,
-  type VoyantProductsContextValue,
-} from "../../index.js"
+} from "./commerce-client.js"
+import type { ProductDetailApi } from "./host.js"
 
 /**
  * The same configured `{ baseUrl, fetcher }` client (from `useVoyantProductsContext()`)
@@ -67,16 +68,19 @@ export function getOptionUnitsQueryOptions(client: OptionsClient, optionId: stri
   return getSharedOptionUnitsQueryOptions(client, { optionId, limit: 100 })
 }
 
-export function getOptionPriceRulesQueryOptions(client: OptionsClient, optionId: string) {
-  return getSharedOptionPriceRulesQueryOptions(client, { optionId, limit: 100 })
+export function getOptionPriceRulesQueryOptions(client: ProductDetailApi, optionId: string) {
+  return getSharedOptionPriceRulesQueryOptions(client, {
+    optionId,
+    limit: 100,
+  })
 }
 
-export function getPricingCategoriesQueryOptions(client: OptionsClient) {
+export function getPricingCategoriesQueryOptions(client: ProductDetailApi) {
   return getSharedPricingCategoriesQueryOptions(client, { limit: 100 })
 }
 
 export function getOptionUnitPriceRulesQueryOptions(
-  client: OptionsClient,
+  client: ProductDetailApi,
   optionPriceRuleId: string,
 ) {
   return getSharedOptionUnitPriceRulesQueryOptions(client, {
@@ -85,11 +89,14 @@ export function getOptionUnitPriceRulesQueryOptions(
   })
 }
 
-export function getPriceCatalogsQueryOptions(client: OptionsClient) {
+export function getPriceCatalogsQueryOptions(client: ProductDetailApi) {
   return getSharedPriceCatalogsQueryOptions(client, { limit: 100 })
 }
 
-export function getDeparturePriceOverridesQueryOptions(client: OptionsClient, departureId: string) {
+export function getDeparturePriceOverridesQueryOptions(
+  client: ProductDetailApi,
+  departureId: string,
+) {
   return getSharedDeparturePriceOverridesQueryOptions(client, {
     departureId,
     limit: 100,

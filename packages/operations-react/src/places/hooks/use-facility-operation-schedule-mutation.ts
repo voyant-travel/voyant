@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   insertFacilityOperationScheduleSchema,
   updateFacilityOperationScheduleSchema,
-} from "@voyantjs/operations/places"
+} from "@voyantjs/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
@@ -28,7 +28,7 @@ export function useFacilityOperationScheduleMutation() {
   const create = useMutation({
     mutationFn: async ({ facilityId, ...input }: CreateFacilityOperationScheduleInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/places/operations/places/${facilityId}/operation-schedules`,
+        `/v1/operations/facilities/${facilityId}/operation-schedules`,
         facilityOperationScheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -52,7 +52,7 @@ export function useFacilityOperationScheduleMutation() {
       input: UpdateFacilityOperationScheduleInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/places/facility-operation-schedules/${id}`,
+        `/v1/operations/facility-operation-schedules/${id}`,
         facilityOperationScheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -70,7 +70,7 @@ export function useFacilityOperationScheduleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/places/facility-operation-schedules/${id}`,
+        `/v1/operations/facility-operation-schedules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

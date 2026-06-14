@@ -1,7 +1,6 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useDeparturePriceOverrideMutation } from "@voyantjs/commerce-react/pricing"
 import {
   Button,
   Input,
@@ -16,7 +15,8 @@ import { Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useVoyantProductsContext } from "../../index.js"
 
-import { useProductDetailMessages } from "./host.js"
+import { useDeparturePriceOverrideMutation } from "./commerce-client.js"
+import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import {
   getDeparturePriceOverridesQueryOptions,
   getOptionUnitsQueryOptions,
@@ -64,19 +64,20 @@ export function DeparturePricingOverrideDialog({
 }) {
   const messages = useProductDetailMessages()
   const productMessages = messages.products.core
-  const client = useVoyantProductsContext()
+  const productsClient = useVoyantProductsContext()
+  const api = useProductDetailApi()
   const enabled = open && !!departureId && !!optionId
 
   const { data: unitsData } = useQuery({
-    ...getOptionUnitsQueryOptions(client, optionId ?? ""),
+    ...getOptionUnitsQueryOptions(productsClient, optionId ?? ""),
     enabled: enabled && !!optionId,
   })
   const { data: overridesData, refetch: refetchOverrides } = useQuery({
-    ...getDeparturePriceOverridesQueryOptions(client, departureId ?? ""),
+    ...getDeparturePriceOverridesQueryOptions(api, departureId ?? ""),
     enabled: enabled && !!departureId,
   })
   const { data: catalogsData } = useQuery({
-    ...getPriceCatalogsQueryOptions(client),
+    ...getPriceCatalogsQueryOptions(api),
     enabled,
   })
   const { create, update, remove } = useDeparturePriceOverrideMutation()

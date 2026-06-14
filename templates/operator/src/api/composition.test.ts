@@ -36,10 +36,10 @@ describe("operator runtime composition", () => {
       buildOperatorCapabilities(),
     )
 
-    // 23 manifest entries expand to 26 mounted modules because Commerce owns
-    // the pricing/markets/sellability/promotions runtime cluster.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(23)
-    expect(composed.modules).toHaveLength(26)
+    // 20 manifest entries expand to 25 mounted modules because Commerce and
+    // Distribution each mount multiple internal Hono modules.
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(20)
+    expect(composed.modules).toHaveLength(25)
     expect(composed.extensions).toHaveLength(6)
 
     // Every composed unit is a real HonoModule/HonoExtension.
@@ -67,23 +67,9 @@ describe("operator runtime composition", () => {
     // reference tables are served by those app-local routes.
     const APP_LOCAL_API_MODULES = new Set(["@voyantjs/flights"])
     const runtime = new Set(OPERATOR_RUNTIME_MANIFEST.modules)
-    const runtimeAliases = new Map([
-      ["@voyantjs/products", "@voyantjs/inventory"],
-      ["@voyantjs/pricing", "@voyantjs/commerce"],
-      ["@voyantjs/markets", "@voyantjs/commerce"],
-      ["@voyantjs/sellability", "@voyantjs/commerce"],
-      ["@voyantjs/promotions", "@voyantjs/commerce"],
-      ["@voyantjs/availability", "@voyantjs/operations/availability"],
-      ["@voyantjs/external-refs", "@voyantjs/distribution/external-refs"],
-      ["@voyantjs/suppliers", "@voyantjs/distribution/suppliers"],
-      ["@voyantjs/resources", "@voyantjs/operations/resources"],
-    ])
     const schemaModules = (voyantConfig.modules ?? []).map(entryName)
     const migratedButNotMounted = schemaModules.filter(
-      (name) =>
-        !runtime.has(name) &&
-        !runtime.has(runtimeAliases.get(name) ?? "") &&
-        !APP_LOCAL_API_MODULES.has(name),
+      (name) => !runtime.has(name) && !APP_LOCAL_API_MODULES.has(name),
     )
     expect(migratedButNotMounted).toEqual([])
   })

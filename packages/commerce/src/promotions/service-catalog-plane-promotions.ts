@@ -2,7 +2,7 @@
  * Projection extension that decorates the product search document with
  * promotional-offer annotations declared by the Product catalog policy.
  *
- * Lives in `@voyantjs/commerce/promotions` because:
+ * Lives in `@voyantjs/commerce` because:
  *   - The data lives here.
  *   - Product owns the document-builder implementation, while this package
  *     exposes a structural extension that satisfies that builder contract.
@@ -24,7 +24,7 @@
  * pricing extension uses; otherwise the strikethrough may not match the
  * customer-visible list price for option-driven products.
  *
- * Per docs/architecture/commerce/promotions-architecture.md §6.
+ * Per docs/architecture/commerce-architecture.md §6.
  */
 
 import type { IndexerSlice } from "@voyantjs/catalog"

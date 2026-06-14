@@ -43,7 +43,7 @@ export function createResourcesTestContext() {
   })
 
   async function seedResource(overrides: Record<string, unknown> = {}) {
-    const res = await app.request("/operations/resources", {
+    const res = await app.request("/", {
       method: "POST",
       ...json({
         kind: "guide",
@@ -81,7 +81,7 @@ export function createResourcesTestContext() {
   }
 
   async function seedProductDirect() {
-    const { products } = await import("@voyantjs/inventory/schema")
+    const { products } = await import("../../../../inventory/src/schema.js")
     const [row] = await db
       .insert(products)
       .values({ name: `Product ${nextSeq()}`, sellCurrency: "USD" })
@@ -90,7 +90,7 @@ export function createResourcesTestContext() {
   }
 
   async function seedAvailabilitySlotDirect(productId: string) {
-    const { availabilitySlots } = await import("@voyantjs/operations/availability/schema")
+    const { availabilitySlots } = await import("../../../src/index.js")
     const [row] = await db
       .insert(availabilitySlots)
       .values({

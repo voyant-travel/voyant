@@ -56,7 +56,7 @@ import {
   captureSnapshotGraph,
   createIndexerService,
 } from "@voyantjs/catalog"
-import { recordPromotionRedemptionsForBooking } from "@voyantjs/commerce/promotions/service-booking-confirmed"
+import { recordPromotionRedemptionsForBooking } from "@voyantjs/commerce"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
 import { buildProductSnapshotInput } from "@voyantjs/inventory/service-catalog-plane"
 import { and, eq, isNotNull } from "drizzle-orm"
@@ -88,7 +88,7 @@ interface BookingConfirmedEventPayload {
 }
 
 /**
- * Mirrors `AvailabilitySlotChangedEvent` from `@voyantjs/operations/availability`.
+ * Mirrors `AvailabilitySlotChangedEvent` from `@voyantjs/operations`.
  * Inlined here so the bridge doesn't need to import the availability
  * events module just for the type — the contract is stable enough that
  * a structural shape suffices and changes show up in review.
@@ -100,7 +100,7 @@ interface AvailabilitySlotChangedPayload {
 }
 
 /**
- * Mirrors `PricingRuleChangedEvent` from `@voyantjs/commerce/pricing`. Inlined
+ * Mirrors `PricingRuleChangedEvent` from `@voyantjs/commerce`. Inlined
  * for the same reason as `AvailabilitySlotChangedPayload` above.
  */
 interface PricingRuleChangedPayload {
@@ -111,7 +111,7 @@ interface PricingRuleChangedPayload {
 }
 
 /**
- * Mirrors `PromotionChangedEvent` from `@voyantjs/commerce/promotions/events`.
+ * Mirrors `PromotionChangedEvent` from `@voyantjs/commerce`.
  * Inlined for the same reason as the availability and pricing payloads
  * above — the bridge needs only the discriminated `affected` shape.
  */

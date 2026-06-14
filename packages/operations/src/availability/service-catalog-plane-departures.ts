@@ -3,7 +3,7 @@
  * departure-facet fields declared by `productDeparturesCatalogPolicy`
  * (in `@voyantjs/inventory/catalog-policy-departures`).
  *
- * Lives in `@voyantjs/operations/availability` because:
+ * Lives in `@voyantjs/operations` because:
  *   - The data lives here.
  *   - `availability` already depends on `products` for the `productsRef`
  *     schema; importing the `ProductProjectionExtension` contract type
@@ -36,14 +36,20 @@
  * already-fetched product row.
  */
 
+import type { IndexerSlice } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import type {
-  IndexerSlice,
-  ProductProjectionExtension,
-} from "@voyantjs/inventory/service-catalog-plane"
 import { and, asc, eq, gt, lt } from "drizzle-orm"
 
 import { availabilitySlots } from "./schema.js"
+
+export interface ProductProjectionExtension {
+  readonly name: string
+  project(
+    db: AnyDrizzleDb,
+    productId: string,
+    slice: IndexerSlice,
+  ): Promise<ReadonlyMap<string, unknown>>
+}
 
 // Window the aggregation looks at. Tunable via the factory; defaults
 // chosen so a daily-slot product produces ~180 dates / ~24 months.

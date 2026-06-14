@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useOptionUnitPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
 import { Button } from "@voyantjs/ui/components"
 import { Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useVoyantProductsContext } from "../../index.js"
-import { useProductDetailMessages } from "./host.js"
+import { useOptionUnitPriceRuleMutation } from "./commerce-client.js"
+import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import type { OptionPriceRuleData } from "./product-option-price-rule-dialog.js"
 import {
   categoryAppliesToUnit,
@@ -38,7 +38,8 @@ export function UnitPriceMatrix({
   productCurrency: string
 }) {
   const messages = useProductDetailMessages()
-  const client = useVoyantProductsContext()
+  const productsClient = useVoyantProductsContext()
+  const api = useProductDetailApi()
   const priceRuleMessages = messages.products.operations.priceRules
   const unitMessages = messages.products.operations.units
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -47,12 +48,12 @@ export function UnitPriceMatrix({
   const [preselectedCategoryId, setPreselectedCategoryId] = useState<string | null | undefined>()
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
 
-  const { data: unitsData } = useQuery(getOptionUnitsQueryOptions(client, optionId))
+  const { data: unitsData } = useQuery(getOptionUnitsQueryOptions(productsClient, optionId))
   const { data: categoriesData, refetch: refetchCategories } = useQuery(
-    getPricingCategoriesQueryOptions(client),
+    getPricingCategoriesQueryOptions(api),
   )
   const { data: cellsData, refetch: refetchCells } = useQuery(
-    getOptionUnitPriceRulesQueryOptions(client, optionPriceRuleId),
+    getOptionUnitPriceRulesQueryOptions(api, optionPriceRuleId),
   )
   const { remove } = useOptionUnitPriceRuleMutation()
 

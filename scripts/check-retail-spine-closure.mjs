@@ -10,17 +10,8 @@ const retailSpineRoots = [
     packages: ["@voyantjs/catalog", "@voyantjs/catalog-react"],
   },
   {
-    area: "Commerce candidates",
-    packages: [
-      "@voyantjs/markets",
-      "@voyantjs/markets-react",
-      "@voyantjs/pricing",
-      "@voyantjs/pricing-react",
-      "@voyantjs/promotions",
-      "@voyantjs/promotions-react",
-      "@voyantjs/sellability",
-      "@voyantjs/sellability-react",
-    ],
+    area: "Commerce",
+    packages: ["@voyantjs/commerce", "@voyantjs/commerce-react"],
   },
   {
     area: "Bookings",
@@ -76,20 +67,6 @@ const optionalEdgeAllowlist = [
     type: "peerDependencies",
     to: "@voyantjs/inventory-react",
     reason: "catalog admin components can attach operated Inventory UI when a host installs it",
-  },
-  {
-    from: "@voyantjs/pricing-react",
-    type: "peerDependencies",
-    to: "@voyantjs/products-react",
-    reason:
-      "pricing admin components can attach operated Inventory pickers when a host installs them",
-  },
-  {
-    from: "@voyantjs/sellability-react",
-    type: "peerDependencies",
-    to: "@voyantjs/inventory-react",
-    reason:
-      "sellability admin components can attach operated Inventory pickers when a host installs them",
   },
   {
     from: "@voyantjs/commerce-react",

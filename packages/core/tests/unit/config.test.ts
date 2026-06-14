@@ -210,7 +210,7 @@ describe("validateVoyantConfig", () => {
   it("accepts extensions as module-style entries", () => {
     const result = validateVoyantConfig({
       modules: ["crm"],
-      extensions: ["@voyantjs/catalog-authoring", { resolve: "@voyantjs/products" }],
+      extensions: ["@voyantjs/catalog-authoring", { resolve: "@voyantjs/inventory" }],
     })
     expect(result.ok).toBe(true)
   })

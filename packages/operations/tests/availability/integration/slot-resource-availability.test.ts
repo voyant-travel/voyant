@@ -1,8 +1,8 @@
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { optionUnits, productOptions, products } from "@voyantjs/inventory/schema"
 import { sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { optionUnits, productOptions, products } from "../../../../inventory/src/schema.js"
 import { allocationResources, availabilitySlots } from "../../../src/availability/schema.js"
 import {
   getSlotAllocationManifest,

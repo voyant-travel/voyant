@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   insertSellabilityPolicySchema,
   updateSellabilityPolicySchema,
-} from "@voyantjs/commerce/sellability/validation"
+} from "@voyantjs/commerce"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

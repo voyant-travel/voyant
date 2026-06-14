@@ -175,7 +175,7 @@ export interface CatalogBookingRoutesOptions {
   /**
    * Resolve a per-request `evaluatePromotions` hook. Returning `undefined`
    * skips promotion evaluation. Templates typically wire
-   * `createCatalogPromotionEvaluator(db)` from `@voyantjs/promotions`.
+   * `createCatalogPromotionEvaluator(db)` from `@voyantjs/commerce`.
    *
    * Per docs/architecture/promotions-architecture.md §3.6 + §7.1.
    */

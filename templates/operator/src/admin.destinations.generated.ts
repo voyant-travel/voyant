@@ -14,24 +14,23 @@ import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // augmentations into this module without pulling any runtime code into
 // the chunk that imports the resolver map.
 import type {} from "@voyantjs/action-ledger-react/admin"
-import type {} from "@voyantjs/operations-react/availability/admin"
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
-import type {} from "@voyantjs/relationships-react/admin"
+import type {} from "@voyantjs/commerce-react/admin"
 import type {} from "@voyantjs/distribution-react/admin"
 import type {} from "@voyantjs/finance-react/admin"
 import type {} from "@voyantjs/flights-react/admin"
+import type {} from "@voyantjs/inventory-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
 import type {} from "@voyantjs/notifications-react/admin"
-import type {} from "@voyantjs/inventory-react/admin"
-import type {} from "@voyantjs/commerce-react/promotions/admin"
-import type {} from "@voyantjs/distribution-react/suppliers/admin"
-import type {} from "@voyantjs/operations-react/resources/admin"
+import type {} from "@voyantjs/operations-react/admin"
+import type {} from "@voyantjs/relationships-react/admin"
 import type {} from "@voyantjs/trip-composer-react/admin"
 
 /** Resolvers for the route-backed subset of the declared destination keys. */
 export const generatedAdminDestinations = {
-  "availabilitySlot.detail": ({ slotId }) => `/operations/availability/${encodeURIComponent(slotId)}`,
+  "availabilitySlot.detail": ({ slotId }) =>
+    `/operations/availability/${encodeURIComponent(slotId)}`,
   "availabilitySlot.list": () => "/operations/availability",
   "availabilityStartTime.detail": ({ startTimeId }) =>
     `/operations/availability/start-times/${encodeURIComponent(startTimeId)}`,
@@ -69,7 +68,8 @@ export const generatedAdminDestinations = {
     `/operations/resources/allocations/${encodeURIComponent(allocationId)}`,
   "resourceAssignment.detail": ({ assignmentId }) =>
     `/operations/resources/assignments/${encodeURIComponent(assignmentId)}`,
-  "resourcePool.detail": ({ poolId }) => `/operations/resources/pools/${encodeURIComponent(poolId)}`,
+  "resourcePool.detail": ({ poolId }) =>
+    `/operations/resources/pools/${encodeURIComponent(poolId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",
   "supplierInvoice.detail": ({ supplierInvoiceId }) =>

@@ -4,7 +4,7 @@
  * `priceFromAmountCents`, `priceFromCurrency`, and `hasPricing` to the
  * product search document.
  *
- * Lives in `@voyantjs/commerce/pricing` because:
+ * Lives in `@voyantjs/commerce` because:
  *   - The data lives here (`option_price_rules`, `option_unit_price_rules`,
  *     `price_catalogs`).
  *   - Product owns the document-builder implementation, while this package

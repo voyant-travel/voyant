@@ -125,16 +125,11 @@ export function ResourceSlotAssignmentDialog({
       await sendResourcesMutation(
         client,
         "PATCH",
-        `/v1/operations/resources/slot-assignments/${assignment?.id}`,
+        `/v1/operations/slot-assignments/${assignment?.id}`,
         payload,
       )
     } else {
-      await sendResourcesMutation(
-        client,
-        "POST",
-        "/v1/operations/resources/slot-assignments",
-        payload,
-      )
+      await sendResourcesMutation(client, "POST", "/v1/operations/slot-assignments", payload)
     }
     onSuccess()
   }
@@ -349,11 +344,11 @@ export function ResourceCloseoutDialog({
       await sendResourcesMutation(
         client,
         "PATCH",
-        `/v1/operations/resources/closeouts/${closeout?.id}`,
+        `/v1/operations/closeouts/${closeout?.id}`,
         payload,
       )
     } else {
-      await sendResourcesMutation(client, "POST", "/v1/operations/resources/closeouts", payload)
+      await sendResourcesMutation(client, "POST", "/v1/operations/closeouts", payload)
     }
     onSuccess()
   }

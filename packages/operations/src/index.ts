@@ -1,9 +1,8 @@
 import type { Module } from "@voyantjs/core"
+import type { HonoModule } from "@voyantjs/hono/module"
 
-import { availabilityHonoModule, availabilityLinkable } from "./availability/index.js"
-import { groundHonoModule } from "./ground/index.js"
-import { placesHonoModule } from "./places/index.js"
-import { resourcesHonoModule } from "./resources/index.js"
+import { availabilityLinkable } from "./availability/index.js"
+import { operationsAdminRoutes, operationsRoutes } from "./routes.js"
 import {
   checkOperationalAvailability,
   confirmResourceHold,
@@ -18,12 +17,22 @@ export const operationsModule: Module = {
   linkable: availabilityLinkable,
 }
 
-export const operationsHonoModules = [
-  availabilityHonoModule,
-  resourcesHonoModule,
-  groundHonoModule,
-  placesHonoModule,
-] as const
+export const operationsHonoModule: HonoModule = {
+  module: operationsModule,
+  routes: operationsRoutes,
+  adminRoutes: operationsAdminRoutes,
+}
+
+export const operationsHonoModules = [operationsHonoModule] as const
+
+export * from "./availability/index.js"
+export * from "./availability/rrule.js"
+export * from "./availability/service-catalog-plane-departures.js"
+export * from "./availability/service-holds.js"
+export * from "./ground/index.js"
+export * from "./places/index.js"
+export * from "./resources/index.js"
+export type { OperationsAdminRoutes, OperationsRoutes } from "./routes.js"
 
 export type {
   CheckOperationalAvailabilityInput,

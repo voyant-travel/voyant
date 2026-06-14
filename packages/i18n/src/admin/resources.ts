@@ -72,7 +72,7 @@ export const adminResourcesMessages = {
         shared: "Shared",
         exclusive: "Exclusive",
       },
-      // nouns, overview: removed — owned by `@voyantjs/resources-react/ui` via
+      // nouns, overview: removed — owned by `@voyantjs/operations-react` via
       // <ResourcesUiMessagesProvider>.
       toasts: {
         bulkUpdated: "{verb} {selection}.",
@@ -80,7 +80,7 @@ export const adminResourcesMessages = {
         bulkDeleted: "Deleted {selection}.",
         bulkDeletedPartial: "Deleted {succeeded} of {selection}.",
       },
-      // tabs: removed — owned by `@voyantjs/resources-react/ui` via <ResourcesUiMessagesProvider>.
+      // tabs: removed — owned by `@voyantjs/operations-react` via <ResourcesUiMessagesProvider>.
       dialogs: {
         resource: {
           validationNameRequired: "Name is required",

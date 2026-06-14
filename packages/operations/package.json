@@ -7,26 +7,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
-    "./routes": "./src/routes.ts",
-    "./availability": "./src/availability/index.ts",
-    "./availability/schema": "./src/availability/schema.ts",
-    "./availability/validation": "./src/availability/validation.ts",
-    "./availability/routes": "./src/availability/routes.ts",
-    "./availability/rrule": "./src/availability/rrule.ts",
-    "./availability/service-holds": "./src/availability/service-holds.ts",
-    "./availability/service-catalog-plane-departures": "./src/availability/service-catalog-plane-departures.ts",
-    "./resources": "./src/resources/index.ts",
-    "./resources/schema": "./src/resources/schema.ts",
-    "./resources/validation": "./src/resources/validation.ts",
-    "./resources/routes": "./src/resources/routes.ts",
-    "./ground": "./src/ground/index.ts",
-    "./ground/schema": "./src/ground/schema.ts",
-    "./ground/validation": "./src/ground/validation.ts",
-    "./ground/routes": "./src/ground/routes.ts",
-    "./places": "./src/places/index.ts",
-    "./places/schema": "./src/places/schema.ts",
-    "./places/validation": "./src/places/validation.ts",
-    "./places/routes": "./src/places/routes.ts"
+    "./routes": "./src/routes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -37,6 +18,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/catalog": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/hono": "workspace:^",
@@ -46,7 +28,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
@@ -76,101 +57,6 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
-      },
-      "./availability": {
-        "types": "./dist/availability/index.d.ts",
-        "import": "./dist/availability/index.js",
-        "default": "./dist/availability/index.js"
-      },
-      "./availability/schema": {
-        "types": "./dist/availability/schema.d.ts",
-        "import": "./dist/availability/schema.js",
-        "default": "./dist/availability/schema.js"
-      },
-      "./availability/validation": {
-        "types": "./dist/availability/validation.d.ts",
-        "import": "./dist/availability/validation.js",
-        "default": "./dist/availability/validation.js"
-      },
-      "./availability/routes": {
-        "types": "./dist/availability/routes.d.ts",
-        "import": "./dist/availability/routes.js",
-        "default": "./dist/availability/routes.js"
-      },
-      "./availability/rrule": {
-        "types": "./dist/availability/rrule.d.ts",
-        "import": "./dist/availability/rrule.js",
-        "default": "./dist/availability/rrule.js"
-      },
-      "./availability/service-holds": {
-        "types": "./dist/availability/service-holds.d.ts",
-        "import": "./dist/availability/service-holds.js",
-        "default": "./dist/availability/service-holds.js"
-      },
-      "./availability/service-catalog-plane-departures": {
-        "types": "./dist/availability/service-catalog-plane-departures.d.ts",
-        "import": "./dist/availability/service-catalog-plane-departures.js",
-        "default": "./dist/availability/service-catalog-plane-departures.js"
-      },
-      "./resources": {
-        "types": "./dist/resources/index.d.ts",
-        "import": "./dist/resources/index.js",
-        "default": "./dist/resources/index.js"
-      },
-      "./resources/schema": {
-        "types": "./dist/resources/schema.d.ts",
-        "import": "./dist/resources/schema.js",
-        "default": "./dist/resources/schema.js"
-      },
-      "./resources/validation": {
-        "types": "./dist/resources/validation.d.ts",
-        "import": "./dist/resources/validation.js",
-        "default": "./dist/resources/validation.js"
-      },
-      "./resources/routes": {
-        "types": "./dist/resources/routes.d.ts",
-        "import": "./dist/resources/routes.js",
-        "default": "./dist/resources/routes.js"
-      },
-      "./ground": {
-        "types": "./dist/ground/index.d.ts",
-        "import": "./dist/ground/index.js",
-        "default": "./dist/ground/index.js"
-      },
-      "./ground/schema": {
-        "types": "./dist/ground/schema.d.ts",
-        "import": "./dist/ground/schema.js",
-        "default": "./dist/ground/schema.js"
-      },
-      "./ground/validation": {
-        "types": "./dist/ground/validation.d.ts",
-        "import": "./dist/ground/validation.js",
-        "default": "./dist/ground/validation.js"
-      },
-      "./ground/routes": {
-        "types": "./dist/ground/routes.d.ts",
-        "import": "./dist/ground/routes.js",
-        "default": "./dist/ground/routes.js"
-      },
-      "./places": {
-        "types": "./dist/places/index.d.ts",
-        "import": "./dist/places/index.js",
-        "default": "./dist/places/index.js"
-      },
-      "./places/schema": {
-        "types": "./dist/places/schema.d.ts",
-        "import": "./dist/places/schema.js",
-        "default": "./dist/places/schema.js"
-      },
-      "./places/validation": {
-        "types": "./dist/places/validation.d.ts",
-        "import": "./dist/places/validation.js",
-        "default": "./dist/places/validation.js"
-      },
-      "./places/routes": {
-        "types": "./dist/places/routes.d.ts",
-        "import": "./dist/places/routes.js",
-        "default": "./dist/places/routes.js"
       }
     },
     "main": "./dist/index.js",

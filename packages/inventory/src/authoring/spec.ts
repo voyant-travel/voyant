@@ -1,4 +1,4 @@
-import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyantjs/commerce/pricing/schema"
+import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyantjs/commerce"
 import { z } from "zod"
 import {
   optionUnitTypeEnum,

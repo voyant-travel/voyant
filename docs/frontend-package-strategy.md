@@ -33,13 +33,13 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 
 ## Naming Rules
 
-- Domain/runtime packages keep simple names like `@voyantjs/relationships`, `@voyantjs/quotes`, `@voyantjs/bookings`, `@voyantjs/products`.
+- Domain/runtime packages keep simple names like `@voyantjs/relationships`, `@voyantjs/quotes`, `@voyantjs/bookings`, `@voyantjs/inventory`, and `@voyantjs/operations`.
 - React packages use `-react`, for example `@voyantjs/relationships-react`.
   They own hooks, clients, providers, view-model helpers, and reusable module
   components.
-- Shared physical-place UI should use `@voyantjs/places-react` and place-first
-  names such as `PlaceCombobox` / `PlaceBadge`. `@voyantjs/facilities-react`
-  remains a compatibility import while `facilityId` public fields migrate.
+- Shared physical-place UI should use `@voyantjs/operations-react` and
+  place-first names such as `PlaceCombobox` / `PlaceBadge`. `facilityId`
+  remains a table-era field name where existing schemas require it.
 - Do not create new `*-ui` packages. If a historical `*-ui` package exists,
   fold it into the corresponding `*-react` package as part of v1 cleanup.
 - Surface packages such as `admin` and `storefront` own page assembly and should
@@ -79,7 +79,7 @@ helpers for packages they install, for example:
 
 `@voyantjs/ui/styles.css` is the canonical base import and includes the shared
 Voyant UI globals. Domain UI helpers such as
-`@voyantjs/bookings-react/styles.css` and `@voyantjs/availability-react/styles.css`
+`@voyantjs/bookings-react/styles.css` and `@voyantjs/operations-react/styles.css`
 only expose Tailwind source-detection directives for package components.
 
 ## What Does Not Belong In `-react`
@@ -105,13 +105,10 @@ React package immediately.
 Inventory is one of those justified module React packages:
 `@voyantjs/inventory-react` is the operated product authoring UI target for
 Product structure, Product Versions, product-internal components, and owned
-publication lifecycle. `@voyantjs/products-react` remains a compatibility
-entrypoint over Inventory React; new operated-authoring surfaces should be added
-under Inventory React.
+publication lifecycle. Operated-authoring surfaces should be added under
+Inventory React.
 
 Commerce follows the same v1 owner-path rule: `@voyantjs/commerce-react` owns
 the reusable Markets, Pricing, Promotions, and Sellability React/admin source
-under Commerce subpaths. The old `@voyantjs/markets-react`,
-`@voyantjs/pricing-react`, `@voyantjs/promotions-react`, and
-`@voyantjs/sellability-react` package names remain compatibility facades over
-the Commerce React owner paths.
+under Commerce React. The old split commercial React package names are removed
+from the v1 workspace surface.

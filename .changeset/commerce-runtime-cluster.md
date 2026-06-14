@@ -1,7 +1,6 @@
 ---
 "@voyantjs/commerce": minor
 "@voyantjs/hono": minor
-"@voyantjs/promotions": patch
 "@voyantjs/bookings": patch
 ---
 

@@ -1,6 +1,6 @@
 /**
  * Operator-side implementation of `BulkReindexProductsService` from
- * `@voyantjs/commerce/promotions`. Bridges the workflow runtime back into the
+ * `@voyantjs/commerce`. Bridges the workflow runtime back into the
  * operator's catalog plane: enumerate every owned product, then reindex
  * one at a time. The promotions workflow drives the loop with
  * `ctx.parallel` so each per-product reindex stays inside Worker CPU
@@ -11,7 +11,7 @@
  */
 
 import { createIndexerService } from "@voyantjs/catalog"
-import type { BulkReindexProductsService } from "@voyantjs/commerce/promotions"
+import type { BulkReindexProductsService } from "@voyantjs/commerce"
 import { products } from "@voyantjs/inventory/schema"
 
 import {

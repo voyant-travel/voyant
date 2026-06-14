@@ -1,11 +1,11 @@
-import { loadDeparturePriceOverrides } from "@voyantjs/commerce/pricing"
 import {
   extraPriceRules,
+  loadDeparturePriceOverrides,
   optionPriceRules,
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
-} from "@voyantjs/commerce/pricing/schema"
+} from "@voyantjs/commerce"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

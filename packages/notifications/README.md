@@ -156,7 +156,7 @@ contents, attachment bodies, or customer data.
 Host apps can replace the entire policy with `policy`, or keep the default
 composition and override only `notificationPolicy`. Product brochures remain an
 extension point via `resolveBrochureDocuments`, so apps that install
-`@voyantjs/products` can add current brochure artifacts without making
+`@voyantjs/inventory` can add current brochure artifacts without making
 notifications depend on products at runtime.
 
 ## Exports

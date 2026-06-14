@@ -1,8 +1,4 @@
 import {
-  type PricingCategoryRecord,
-  usePricingCategoryMutation,
-} from "@voyantjs/commerce-react/pricing"
-import {
   Button,
   Dialog,
   DialogBody,
@@ -22,6 +18,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { useEffect, useState } from "react"
+import { type PricingCategoryRecord, usePricingCategoryMutation } from "./commerce-client.js"
 import { useProductDetailMessages } from "./host.js"
 import type { OptionUnitData } from "./product-unit-dialog.js"
 

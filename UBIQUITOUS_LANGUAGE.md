@@ -140,7 +140,7 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 | **Resource Pool**     | A named collection of interchangeable Resources (e.g. "French-speaking guides – Cairo").         | *team, group*                 |
 | **Place**             | A shared physical place used by OTA, tour-operator, DMC, and MICE workflows: meeting points, pickup/dropoff places, airports, stations, ports, attractions, restaurants, supplier bases, venues, and accommodation locations. | *facility as product term, generic location* |
 | **Rooming List**      | Traveler-to-room grouping or assignment data for a Booking.                                      | *hotel room management*       |
-| **Legacy Facility**   | The compatibility/table-era name for Place rows and `facilityId` fields. Keep public imports working during the v1 package move, but use Place / `@voyantjs/places` for new domain language. | *first-party facility operations* |
+| **Legacy Facility**   | The table-era name for Place rows and `facilityId` fields. Use Place / Operations-owned places for new domain language; do not reintroduce first-party facility packages. | *first-party facility operations* |
 | **Accommodation Location** | A Place used to locate lodging content or a Stay Component for resale/trip composition. It is not a hotel/PMS/property-operations record. | *property ops, hotel operations* |
 
 ## Money

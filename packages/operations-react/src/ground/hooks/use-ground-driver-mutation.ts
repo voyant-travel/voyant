@@ -1,10 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type {
-  insertGroundDriverSchema,
-  updateGroundDriverSchema,
-} from "@voyantjs/operations/ground"
+import type { insertGroundDriverSchema, updateGroundDriverSchema } from "@voyantjs/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
@@ -22,7 +19,7 @@ export function useGroundDriverMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateGroundDriverInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/ground/drivers",
+        "/v1/operations/drivers",
         groundDriverSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +35,7 @@ export function useGroundDriverMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateGroundDriverInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/ground/drivers/${id}`,
+        `/v1/operations/drivers/${id}`,
         groundDriverSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +51,7 @@ export function useGroundDriverMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/ground/drivers/${id}`,
+        `/v1/operations/drivers/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

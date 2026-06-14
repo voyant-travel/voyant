@@ -97,9 +97,9 @@ capabilities to `catalog-authoring`; add them to `inventory` or
 requires it.
 
 The current `compose` and `duplicate` routes are Inventory-owned operated
-authoring. They keep the `/v1/admin/products` mount through the Inventory
-products compatibility module so existing clients do not see route churn during
-the v1 package restructure.
+authoring. They keep the `/v1/admin/products` mount through the Inventory-owned
+product Hono module so existing clients do not see route churn during the v1
+package restructure.
 
 ## 4. Schema Boundary
 
@@ -113,32 +113,25 @@ discipline:
 - Define cross-module link tables at the template layer with `defineLink(...)`.
 
 The current Inventory move does not introduce new tables or migrations. Product
-schema source has moved to `packages/inventory/src`, but the operator template
-still names `@voyantjs/products` in `voyant.config.ts`, and
-`@voyantjs/products/schema` remains a compatibility shim over
-`@voyantjs/inventory/schema`. This deliberately preserves the generated schema
-manifest entry (`packages/products/src/schema.ts`) until a later slice proves
-template manifest parity for switching the manifest specifier to Inventory.
+schema source has moved to `packages/inventory/src`, and the operator template
+names `@voyantjs/inventory` in `voyant.config.ts` so generated schema manifests
+point at the owner package directly.
 
 ## 5. Extras Boundary
 
-Operated extras authoring/configuration is intended to follow Inventory, but
-that move is gated by the extras ownership work. Until then:
+Operated extras authoring/configuration follows Inventory, while booking-time
+extra selections and manifests follow Bookings:
 
-- Booking add-on snapshot/provenance behavior stays with `extras` and Catalog's
+- Booking add-on snapshot/provenance behavior stays with Bookings and Catalog's
   snapshot/provenance contracts.
 - Inventory may reference extra ids as plain ids or template-owned links when
   preparing product-internal add-on authoring.
-- Do not introduce a hard Inventory-to-Extras FK or make Catalog depend on
+- Do not introduce a hard Inventory-to-Bookings FK or make Catalog depend on
   Inventory to configure extras.
 
-## 6. Compatibility
-
-`@voyantjs/products` and `@voyantjs/products-react` remain compatibility
-entrypoints for existing consumers. They should not receive new public operated
-authoring surfaces once equivalent Inventory entrypoints exist.
+## 6. Optionality
 
 Retail closure remains meaningful: retail-spine packages must not add hard
-runtime dependencies on Inventory or its compatibility authoring packages. If a
-retail-spine React package needs operated authoring UI, it must be an explicit
-optional peer edge with a closure-check allowlist entry.
+runtime dependencies on Inventory. If a retail-spine React package needs
+operated authoring UI, it must be an explicit optional peer edge with a
+closure-check allowlist entry.

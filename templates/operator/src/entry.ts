@@ -1,5 +1,5 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/commerce/promotions/workflow-runtime"
+import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/commerce"
 import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyantjs/worker-runtime"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import type {

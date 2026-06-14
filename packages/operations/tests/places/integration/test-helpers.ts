@@ -41,7 +41,7 @@ export function createFacilitiesTestContext() {
   })
 
   async function seedFacility(overrides: Record<string, unknown> = {}) {
-    const res = await app.request("/operations/places", {
+    const res = await app.request("/operations", {
       method: "POST",
       ...json({
         kind: "hotel",

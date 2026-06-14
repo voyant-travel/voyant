@@ -40,16 +40,12 @@
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "zod": "^4.0.0",
-    "@voyantjs/operations": "workspace:^",
-    "@voyantjs/operations-react": "workspace:^"
+    "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "@voyantjs/admin": {
@@ -61,19 +57,10 @@
     "@voyantjs/finance-react": {
       "optional": true
     },
-    "@voyantjs/commerce-react": {
-      "optional": true
-    },
-    "@voyantjs/distribution-react": {
-      "optional": true
-    },
     "@voyantjs/ui": {
       "optional": true
     },
     "react-hook-form": {
-      "optional": true
-    },
-    "@voyantjs/operations-react": {
       "optional": true
     }
   },
@@ -95,9 +82,7 @@
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/inventory": "workspace:^",
-    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
@@ -107,9 +92,7 @@
     "react-hook-form": "^7.60.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "zod": "^4.3.6",
-    "@voyantjs/operations": "workspace:^",
-    "@voyantjs/operations-react": "workspace:^"
+    "zod": "^4.3.6"
   },
   "files": [
     "dist",

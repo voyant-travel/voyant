@@ -8,7 +8,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
   describe("Facility Contact Points", () => {
     it("creates and lists contact points for a facility", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/contact-points`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/contact-points`, {
         method: "POST",
         ...json({ kind: "phone", value: "+1-555-0100" }),
       })
@@ -17,7 +17,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
       expect(contactPoint.id).toMatch(/^idcp_/)
       expect(contactPoint.value).toBe("+1-555-0100")
 
-      const listRes = await ctx.request(`/operations/places/${facility.id}/contact-points`, {
+      const listRes = await ctx.request(`/operations/${facility.id}/contact-points`, {
         method: "GET",
       })
       expect(listRes.status).toBe(200)
@@ -26,19 +26,16 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
     })
 
     it("returns 404 when creating contact point for non-existent facility", async () => {
-      const res = await ctx.request(
-        "/operations/places/fac_00000000000000000000000000/contact-points",
-        {
-          method: "POST",
-          ...json({ kind: "email", value: "test@example.com" }),
-        },
-      )
+      const res = await ctx.request("/operations", {
+        method: "POST",
+        ...json({ kind: "email", value: "test@example.com" }),
+      })
       expect(res.status).toBe(404)
     })
 
     it("updates a contact point", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/contact-points`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/contact-points`, {
         method: "POST",
         ...json({ kind: "email", value: "old@example.com" }),
       })
@@ -55,7 +52,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("deletes a contact point", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/contact-points`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/contact-points`, {
         method: "POST",
         ...json({ kind: "website", value: "https://example.com" }),
       })
@@ -69,7 +66,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
   describe("Facility Addresses", () => {
     it("creates and lists addresses for a facility", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/addresses`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/addresses`, {
         method: "POST",
         ...json({ label: "billing", line1: "456 Corp Ave", city: "London", country: "GB" }),
       })
@@ -78,7 +75,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
       expect(address.id).toMatch(/^idad_/)
       expect(address.city).toBe("London")
 
-      const listRes = await ctx.request(`/operations/places/${facility.id}/addresses`, {
+      const listRes = await ctx.request(`/operations/${facility.id}/addresses`, {
         method: "GET",
       })
       expect(listRes.status).toBe(200)
@@ -87,7 +84,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
     })
 
     it("returns 404 when creating address for non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000/addresses", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ label: "primary", line1: "x" }),
       })
@@ -96,7 +93,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("updates an address", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/addresses`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/addresses`, {
         method: "POST",
         ...json({ label: "primary", city: "Berlin" }),
       })
@@ -113,7 +110,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("deletes an address", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/addresses`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/addresses`, {
         method: "POST",
         ...json({ label: "shipping", line1: "789 Dock St" }),
       })
@@ -127,7 +124,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
   describe("Facility Contacts", () => {
     it("creates a facility contact", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}/contacts`, {
+      const res = await ctx.request(`/operations/${facility.id}/contacts`, {
         method: "POST",
         ...json({ name: "John Smith", role: "front_desk", email: "john@hotel.com" }),
       })
@@ -139,7 +136,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
     })
 
     it("returns 404 for non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000/contacts", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ name: "Nobody", role: "general" }),
       })
@@ -148,11 +145,11 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("lists facility contacts", async () => {
       const facility = await ctx.seedFacility()
-      await ctx.request(`/operations/places/${facility.id}/contacts`, {
+      await ctx.request(`/operations/${facility.id}/contacts`, {
         method: "POST",
         ...json({ name: "Alice", role: "sales" }),
       })
-      await ctx.request(`/operations/places/${facility.id}/contacts`, {
+      await ctx.request(`/operations/${facility.id}/contacts`, {
         method: "POST",
         ...json({ name: "Bob", role: "operations" }),
       })
@@ -166,7 +163,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("updates a facility contact", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/contacts`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/contacts`, {
         method: "POST",
         ...json({ name: "Jane Doe", role: "general" }),
       })
@@ -183,7 +180,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility identity attachment routes", () => {
 
     it("deletes a facility contact", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/contacts`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/contacts`, {
         method: "POST",
         ...json({ name: "Temp Contact", role: "other" }),
       })

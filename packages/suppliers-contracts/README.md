@@ -2,8 +2,7 @@
 
 Pure suppliers validation schemas (suppliers, services, rates) and enums,
 zod-only, for consumers (admin SDK, Voyant Connect) that validate supplier
-payloads without the suppliers runtime. `@voyantjs/suppliers` re-exports these
-so existing import paths are unchanged.
+payloads without the Distribution runtime.
 
 ## Install
 
@@ -21,5 +20,4 @@ import {
 } from "@voyantjs/suppliers-contracts"
 ```
 
-Existing `@voyantjs/suppliers/validation` imports remain available for
-applications that already depend on the full runtime package.
+Runtime supplier and counterparty workflows live in `@voyantjs/distribution`.

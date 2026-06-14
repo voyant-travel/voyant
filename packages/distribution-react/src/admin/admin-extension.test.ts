@@ -10,13 +10,19 @@ describe("createDistributionAdminExtension", () => {
     expect(extension.widgets).toBeUndefined()
   })
 
-  it("describes the channel-sync route", () => {
+  it("describes the channel-sync and supplier routes", () => {
     const extension = createDistributionAdminExtension()
     const routes = extension.routes ?? []
-    expect(routes).toHaveLength(1)
+    expect(routes).toHaveLength(3)
     expect(routes[0]?.id).toBe("distribution-channel-sync")
     expect(routes[0]?.path).toBe("/channel-sync")
     expect(routes[0]?.title).toBe("Channel sync")
+    expect(routes[1]?.id).toBe("suppliers-index")
+    expect(routes[1]?.path).toBe("/suppliers")
+    expect(routes[1]?.destination).toBe("supplier.list")
+    expect(routes[2]?.id).toBe("suppliers-detail")
+    expect(routes[2]?.path).toBe("/suppliers/$id")
+    expect(routes[2]?.destination).toBe("supplier.detail")
   })
 
   it("honors basePath and labels", () => {
@@ -29,6 +35,8 @@ describe("createDistributionAdminExtension", () => {
     )
     expect(route?.path).toBe("/sincronizare")
     expect(route?.title).toBe("Sincronizare canale")
+    const suppliers = extension.routes?.find((candidate) => candidate.id === "suppliers-index")
+    expect(suppliers?.title).toBe("Suppliers")
   })
 
   it("carries the full route implementation as a lazy page module", async () => {

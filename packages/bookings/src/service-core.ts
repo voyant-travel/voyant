@@ -380,8 +380,8 @@ async function appendBookingStatusMutationLedger(
 
 /**
  * Payload shape for `availability.slot.changed`. Mirrors the canonical
- * `AvailabilitySlotChangedEvent` from `@voyantjs/availability` — defined
- * locally to avoid a runtime dep on availability (we already mirror its
+ * `AvailabilitySlotChangedEvent` from `@voyantjs/operations` — defined
+ * locally to avoid a runtime dep on operations (we already mirror its
  * schema via `availabilitySlotsRef` for the same reason). Subscribers
  * (e.g. channel-push) can import the canonical type directly.
  *
@@ -1392,7 +1392,7 @@ async function adjustSlotCapacity(
  * the caller can surface a useful error to the client.
  *
  * Implemented with raw SQL because @voyantjs/bookings deliberately
- * has no runtime dep on @voyantjs/availability (see the module-
+ * has no runtime dep on @voyantjs/operations (see the module-
  * decoupling notes in CLAUDE.md / MEMORY.md). The schema is stable —
  * `allocation_resources` and `booking_traveler_travel_details.allocations`
  * are migration-frozen.

@@ -2,7 +2,7 @@ import {
   insertGroundDriverSchema,
   insertGroundOperatorSchema,
   insertGroundVehicleSchema,
-} from "@voyantjs/operations/ground"
+} from "@voyantjs/operations"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

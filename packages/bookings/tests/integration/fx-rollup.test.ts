@@ -9,7 +9,7 @@
 
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-import { exchangeRates, fxRateSets } from "../../../markets/src/schema.js"
+import { exchangeRates, fxRateSets } from "../../../commerce/src/markets/schema.js"
 import { bookings } from "../../src/schema.js"
 import { bookingsService } from "../../src/service.js"
 

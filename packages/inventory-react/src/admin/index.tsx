@@ -60,7 +60,7 @@ export type { ProductDetailApiClient } from "./product-detail-api.js"
 export { ProductsListSkeleton } from "./products-list-skeleton.js"
 export { ProductDetailSkeleton }
 
-export interface CreateProductsAdminExtensionOptions {
+export interface CreateInventoryAdminExtensionOptions {
   /** Mount path of the products pages inside the admin workspace. Default `/products`. */
   basePath?: string
   /** Localized page titles. Defaults are the English operator nav labels. */
@@ -108,14 +108,14 @@ export interface CreateProductsAdminExtensionOptions {
  *
  * WIDGETS: none contributed and no slots exposed yet.
  */
-export function createProductsAdminExtension(
-  options: CreateProductsAdminExtensionOptions = {},
+export function createInventoryAdminExtension(
+  options: CreateInventoryAdminExtensionOptions = {},
 ): AdminExtension {
   const { basePath = "/products", labels = {}, detailPageComponent } = options
   const { products = "Products", categories = "Categories" } = labels
 
   return defineAdminExtension({
-    id: "products",
+    id: "inventory",
     routes: [
       {
         id: "products-index",
@@ -203,7 +203,7 @@ export function createProductsAdminExtension(
           void queryClient.prefetchQuery(getChannelsQueryOptions(api))
           void queryClient.prefetchQuery(getProductChannelMappingsQueryOptions(api, id))
           void queryClient.prefetchQuery(getProductMediaQueryOptions(api, id))
-          void queryClient.prefetchQuery(getPricingCategoriesQueryOptions(client))
+          void queryClient.prefetchQuery(getPricingCategoriesQueryOptions(api))
         },
         page: async () => {
           const module = await (detailPageComponent
@@ -218,8 +218,6 @@ export function createProductsAdminExtension(
     ],
   })
 }
-
-export const createInventoryAdminExtension = createProductsAdminExtension
 
 /**
  * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to

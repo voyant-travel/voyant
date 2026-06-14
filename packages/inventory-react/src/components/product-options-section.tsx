@@ -2,7 +2,6 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
-import { useDuplicateOptionPricingMutation } from "@voyantjs/commerce-react/pricing"
 import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
@@ -45,6 +44,7 @@ import {
   useVoyantProductsContext,
 } from "../index.js"
 import { OptionUnitDialog } from "./option-unit-dialog.js"
+import { useDuplicateOptionPricingMutation } from "./product-detail/commerce-client.js"
 import { ProductOptionDialog } from "./product-option-dialog.js"
 
 const optionStatusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {

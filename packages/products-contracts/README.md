@@ -2,11 +2,11 @@
 
 Pure product content contracts for adapter implementers and external
 consumers that need to validate `products/v1` rich content payloads
-without installing the full products runtime package.
+without installing the full Inventory runtime package.
 
 Use this package for `PRODUCTS_CONTENT_SCHEMA_VERSION`,
 `productContentSchema`, `ProductContent`, nested content types, and
-`validateProductContent`. Use `@voyantjs/products` when you also need
+`validateProductContent`. Use `@voyantjs/inventory` when you also need
 Drizzle schema, routes, services, booking integration, catalog projection, or
 runtime content resolution (including the `mergeOverlaysIntoProductContent`
 overlay composition).
@@ -27,5 +27,4 @@ import {
 } from "@voyantjs/products-contracts"
 ```
 
-Existing `@voyantjs/products/content-shape` imports remain available for
-applications that already depend on the full runtime package.
+Runtime product authoring and catalog projection live in `@voyantjs/inventory`.

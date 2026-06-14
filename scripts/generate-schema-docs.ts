@@ -161,16 +161,20 @@ const sections: SectionDefinition[] = [
       bookingsItemsSchema,
       bookingsOperationsSchema,
       bookingsTravelDetailsSchema,
+      bookingRequirementsSchema,
       bookingExtrasSchema,
     ],
   },
   {
-    title: "Booking Requirements",
-    modules: [bookingRequirementsSchema],
-  },
-  {
     title: "Operations",
-    modules: [operationsAvailabilitySchema, operationsPlacesSchema, operationsResourcesSchema],
+    modules: [
+      operationsAvailabilitySchema,
+      operationsPlacesSchema,
+      operationsResourcesSchema,
+      operationsGroundOperatorsSchema,
+      operationsGroundDispatchSchema,
+      operationsGroundOperationsSchema,
+    ],
   },
   {
     title: "Distribution",

@@ -121,11 +121,11 @@ export function ResourceAllocationDialog({
       await sendResourcesMutation(
         client,
         "PATCH",
-        `/v1/operations/resources/allocations/${allocation?.id}`,
+        `/v1/operations/allocations/${allocation?.id}`,
         payload,
       )
     } else {
-      await sendResourcesMutation(client, "POST", "/v1/operations/resources/allocations", payload)
+      await sendResourcesMutation(client, "POST", "/v1/operations/allocations", payload)
     }
     onSuccess()
   }

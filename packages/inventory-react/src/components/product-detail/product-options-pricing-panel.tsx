@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useOptionPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
@@ -13,8 +12,8 @@ import {
 import { ChevronDown, ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import type * as React from "react"
 import { useState } from "react"
-import { useVoyantProductsContext } from "../../index.js"
-import { useProductDetailMessages } from "./host.js"
+import { useOptionPriceRuleMutation } from "./commerce-client.js"
+import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import type { OptionPriceRuleData } from "./product-option-price-rule-dialog.js"
 import { OptionPriceRuleDialog } from "./product-option-price-rule-dialog.js"
 import { OptionPricingGrid } from "./product-option-pricing-grid.js"
@@ -138,11 +137,11 @@ function AdvancedRatePlans({
   productCurrency: string
 }) {
   const messages = useProductDetailMessages()
-  const client = useVoyantProductsContext()
+  const api = useProductDetailApi()
   const priceRuleMessages = messages.products.operations.priceRules
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<OptionPriceRuleData | undefined>()
-  const { data, refetch } = useQuery(getOptionPriceRulesQueryOptions(client, optionId))
+  const { data, refetch } = useQuery(getOptionPriceRulesQueryOptions(api, optionId))
   const { remove: removeRule } = useOptionPriceRuleMutation()
   const deleteMutation = useMutation({
     mutationFn: (id: string) => removeRule.mutateAsync(id),

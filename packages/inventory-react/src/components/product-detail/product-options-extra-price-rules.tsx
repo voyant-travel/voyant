@@ -1,8 +1,3 @@
-import {
-  type ExtraPriceRuleRecord,
-  useExtraPriceRuleMutation,
-  useExtraPriceRules,
-} from "@voyantjs/commerce-react/pricing"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
@@ -29,6 +24,11 @@ import {
   useProductExtraMutation,
   useProductExtras,
 } from "../../extras-compat.js"
+import {
+  type ExtraPriceRuleRecord,
+  useExtraPriceRuleMutation,
+  useExtraPriceRules,
+} from "./commerce-client.js"
 import { useProductDetailMessages } from "./host.js"
 import { getExtraPricingModeLabel, ProductExtraDialog } from "./product-extra-dialog.js"
 import { formatProductMoney } from "./product-options-pricing-helpers.js"

@@ -1,7 +1,3 @@
-import { useOptionPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
-import { CancellationPolicyCombobox } from "@voyantjs/commerce-react/pricing/components/cancellation-policy-combobox"
-import { PriceCatalogCombobox } from "@voyantjs/commerce-react/pricing/components/price-catalog-combobox"
-import { PriceScheduleCombobox } from "@voyantjs/commerce-react/pricing/components/price-schedule-combobox"
 import {
   Button,
   Input,
@@ -18,6 +14,12 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import {
+  CancellationPolicyCombobox,
+  PriceCatalogCombobox,
+  PriceScheduleCombobox,
+  useOptionPriceRuleMutation,
+} from "./commerce-client.js"
 import { useProductDetailMessages } from "./host.js"
 import { zodResolver } from "./zod-resolver.js"
 

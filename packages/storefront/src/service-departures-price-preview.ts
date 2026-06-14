@@ -1,4 +1,4 @@
-import { sellabilityService } from "@voyantjs/commerce/sellability"
+import { sellabilityService } from "@voyantjs/commerce"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

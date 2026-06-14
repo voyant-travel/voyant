@@ -316,7 +316,7 @@ export function ResourcesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/operations/resources",
+                  endpoint: "/v1/operations/resources",
                   target: "resources-activate",
                   nounSingular: "resource",
                   nounPlural: "resources",
@@ -342,7 +342,7 @@ export function ResourcesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/operations/resources",
+                  endpoint: "/v1/operations/resources",
                   target: "resources-deactivate",
                   nounSingular: "resource",
                   nounPlural: "resources",
@@ -370,7 +370,7 @@ export function ResourcesTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/operations/resources",
+                  endpoint: "/v1/operations/resources",
                   target: "resources-delete",
                   nounSingular: "resource",
                   nounPlural: "resources",
@@ -445,7 +445,7 @@ export function PoolsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/pools",
+                  endpoint: "/v1/operations/pools",
                   target: "pools-activate",
                   nounSingular: "pool",
                   nounPlural: "pools",
@@ -471,7 +471,7 @@ export function PoolsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/pools",
+                  endpoint: "/v1/operations/pools",
                   target: "pools-deactivate",
                   nounSingular: "pool",
                   nounPlural: "pools",
@@ -499,7 +499,7 @@ export function PoolsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/pools",
+                  endpoint: "/v1/operations/pools",
                   target: "pools-delete",
                   nounSingular: "pool",
                   nounPlural: "pools",
@@ -576,7 +576,7 @@ export function AllocationsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/resources/allocations",
+                  endpoint: "/v1/operations/allocations",
                   target: "allocations-delete",
                   nounSingular: "allocation",
                   nounPlural: "allocations",

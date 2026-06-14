@@ -25,21 +25,23 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { marketCurrencies, marketLocales, markets } from "@voyantjs/commerce/markets/schema"
 import {
+  marketCurrencies,
+  marketLocales,
+  markets,
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
-} from "@voyantjs/commerce/pricing/schema"
+} from "@voyantjs/commerce"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
-import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
 import {
+  bookingDistributionDetails,
   supplierNotes,
   supplierRates,
   supplierServices,
   suppliers,
-} from "@voyantjs/distribution/suppliers/schema"
+} from "@voyantjs/distribution"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -87,12 +89,10 @@ import {
   availabilityPickupPoints,
   availabilitySlots,
   availabilityStartTimes,
-} from "@voyantjs/operations/availability/schema"
-import {
   facilities,
   facilityFeatures,
   facilityOperationSchedules,
-} from "@voyantjs/operations/places/schema"
+} from "@voyantjs/operations"
 import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
 import {
   pipelines,

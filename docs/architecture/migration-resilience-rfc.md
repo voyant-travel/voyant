@@ -221,7 +221,7 @@ first-class manifest entries, not a runtime-only array:
 export interface VoyantConfig {
   // ...existing...
   modules?: ModuleEntry[]
-  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyantjs/products/booking-extension"
+  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyantjs/inventory/booking-extension"
   plugins?: PluginEntry[]
 }
 ```
@@ -278,7 +278,7 @@ stop drifting (§1.2).
 Every package that owns tables sets `package.json#voyant.schema` (default
 `./schema`) and `requiresSchemas` for FK-target dependencies — the fields
 `resolveSchemas()` already reads. Extensions that own tables (e.g.
-`@voyantjs/products/booking-extension`) declare their schema subpath the same way,
+`@voyantjs/inventory/booking-extension`) declare their schema subpath the same way,
 so resolution picks them up automatically once they're in the manifest (§4.1).
 This makes "mounted but schema-less" unrepresentable.
 
@@ -447,7 +447,7 @@ defer runtime derivation (the hard part) to last.
 **Still open:**
 
 1. **Generated-file location & extension granularity** — is the extension
-   manifest entry a package subpath (`@voyantjs/products/booking-extension`) or a
+   manifest entry a package subpath (`@voyantjs/inventory/booking-extension`) or a
    stable extension name resolved via a registry? Lean: subpath, mirroring how
    modules are listed.
 2. **Multi-template generation** — do we generate per template

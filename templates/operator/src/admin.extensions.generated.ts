@@ -4,15 +4,13 @@
 
 import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/admin"
 import { createRelationshipsAdminExtension } from "@voyantjs/relationships-react/admin"
-import { createSuppliersAdminExtension } from "@voyantjs/distribution-react/suppliers/admin"
-import { createProductsAdminExtension } from "@voyantjs/inventory-react/admin"
-import { createPromotionsAdminExtension } from "@voyantjs/commerce-react/promotions/admin"
+import { createDistributionAdminExtension } from "@voyantjs/distribution-react/admin"
+import { createInventoryAdminExtension } from "@voyantjs/inventory-react/admin"
+import { createCommerceAdminExtension } from "@voyantjs/commerce-react/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-react/admin"
-import { createAvailabilityAdminExtension } from "@voyantjs/operations-react/availability/admin"
-import { createDistributionAdminExtension } from "@voyantjs/distribution-react/admin"
-import { createResourcesAdminExtension } from "@voyantjs/operations-react/resources/admin"
+import { createOperationsAdminExtension } from "@voyantjs/operations-react/admin"
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
 import { createFlightsAdminExtension } from "@voyantjs/flights-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
@@ -26,15 +24,13 @@ import { createTripComposerAdminExtension } from "@voyantjs/trip-composer-react/
 export const generatedAdminExtensionFactories = {
   actionLedger: createActionLedgerAdminExtension,
   relationships: createRelationshipsAdminExtension,
-  suppliers: createSuppliersAdminExtension,
-  products: createProductsAdminExtension,
-  promotions: createPromotionsAdminExtension,
+  distribution: createDistributionAdminExtension,
+  inventory: createInventoryAdminExtension,
+  commerce: createCommerceAdminExtension,
   catalog: createCatalogAdminExtension,
   bookings: createBookingsAdminExtension,
   finance: createFinanceAdminExtension,
-  availability: createAvailabilityAdminExtension,
-  distribution: createDistributionAdminExtension,
-  resources: createResourcesAdminExtension,
+  operations: createOperationsAdminExtension,
   notifications: createNotificationsAdminExtension,
   flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,

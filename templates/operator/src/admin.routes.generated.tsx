@@ -11,7 +11,7 @@
 // To eject a route, remove it here (and from the maps below) and add a
 // hand-written route file — the generator skips files without this header.
 import { createRoute } from "@tanstack/react-router"
-import { adminExtensionChildRoutes, adminExtensionRouteOptions } from "@voyantjs/admin/app"
+import { adminExtensionChildRoutes, adminExtensionRouteOptions } from "@voyantjs/admin-app"
 import {
   bookingDetailSearchSchema,
   bookingJourneySearchSchema,
@@ -50,36 +50,6 @@ export const ActionLedgerIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/action-ledger",
   ...adminExtensionRouteOptions(actionLedgerExtension, "action-ledger-index", runtime),
-})
-
-// ---------------------------------------------------------------------------
-// availability
-// ---------------------------------------------------------------------------
-
-const availabilityExtension = extension("availability")
-
-export const AvailabilityIndexRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/operations/availability",
-  ...adminExtensionRouteOptions(availabilityExtension, "availability-index", runtime),
-})
-
-export const AvailabilitySlotDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/operations/availability/$id",
-  ...adminExtensionRouteOptions(availabilityExtension, "availability-slot-detail", runtime),
-})
-
-export const AvailabilityRuleDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/operations/availability/rules/$id",
-  ...adminExtensionRouteOptions(availabilityExtension, "availability-rule-detail", runtime),
-})
-
-export const AvailabilityStartTimeDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/operations/availability/start-times/$id",
-  ...adminExtensionRouteOptions(availabilityExtension, "availability-start-time-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -201,6 +171,18 @@ export const CatalogAccommodationsDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// commerce
+// ---------------------------------------------------------------------------
+
+const commerceExtension = extension("commerce")
+
+export const PromotionsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/promotions",
+  ...adminExtensionRouteOptions(commerceExtension, "promotions-index", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // core
 // ---------------------------------------------------------------------------
 
@@ -317,36 +299,6 @@ export const CoreSettingsRouteWithChildren = CoreSettingsRoute.addChildren([
 ])
 
 // ---------------------------------------------------------------------------
-// crm
-// ---------------------------------------------------------------------------
-
-const crmExtension = extension("crm")
-
-export const CrmPeopleIndexRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/people",
-  ...adminExtensionRouteOptions(crmExtension, "crm-people-index", runtime),
-})
-
-export const CrmPeopleDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/people/$id",
-  ...adminExtensionRouteOptions(crmExtension, "crm-people-detail", runtime),
-})
-
-export const CrmOrganizationsIndexRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/organizations",
-  ...adminExtensionRouteOptions(crmExtension, "crm-organizations-index", runtime),
-})
-
-export const CrmOrganizationsDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/organizations/$id",
-  ...adminExtensionRouteOptions(crmExtension, "crm-organizations-detail", runtime),
-})
-
-// ---------------------------------------------------------------------------
 // distribution
 // ---------------------------------------------------------------------------
 
@@ -356,6 +308,18 @@ export const DistributionChannelSyncRoute = createRoute({
   getParentRoute: workspace,
   path: "/channel-sync",
   ...adminExtensionRouteOptions(distributionExtension, "distribution-channel-sync", runtime),
+})
+
+export const SuppliersIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/suppliers",
+  ...adminExtensionRouteOptions(distributionExtension, "suppliers-index", runtime),
+})
+
+export const SuppliersDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/suppliers/$id",
+  ...adminExtensionRouteOptions(distributionExtension, "suppliers-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -436,6 +400,30 @@ export const FlightsBookRoute = createRoute({
   path: "/flights/book/$offerId",
   validateSearch: flightsBookSearchSchema,
   ...adminExtensionRouteOptions(flightsExtension, "flights-book", runtime),
+})
+
+// ---------------------------------------------------------------------------
+// inventory
+// ---------------------------------------------------------------------------
+
+const inventoryExtension = extension("inventory")
+
+export const ProductsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products",
+  ...adminExtensionRouteOptions(inventoryExtension, "products-index", runtime),
+})
+
+export const ProductsCategoriesRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products/categories",
+  ...adminExtensionRouteOptions(inventoryExtension, "products-categories", runtime),
+})
+
+export const ProductsDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/products/$id",
+  ...adminExtensionRouteOptions(inventoryExtension, "products-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -561,93 +549,101 @@ export const NotificationsSettingsRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
-// products
+// operations
 // ---------------------------------------------------------------------------
 
-const productsExtension = extension("products")
+const operationsExtension = extension("operations")
 
-export const ProductsIndexRoute = createRoute({
+export const AvailabilityIndexRoute = createRoute({
   getParentRoute: workspace,
-  path: "/products",
-  ...adminExtensionRouteOptions(productsExtension, "products-index", runtime),
+  path: "/operations/availability",
+  ...adminExtensionRouteOptions(operationsExtension, "availability-index", runtime),
 })
 
-export const ProductsCategoriesRoute = createRoute({
+export const AvailabilitySlotDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/products/categories",
-  ...adminExtensionRouteOptions(productsExtension, "products-categories", runtime),
+  path: "/operations/availability/$id",
+  ...adminExtensionRouteOptions(operationsExtension, "availability-slot-detail", runtime),
 })
 
-export const ProductsDetailRoute = createRoute({
+export const AvailabilityRuleDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/products/$id",
-  ...adminExtensionRouteOptions(productsExtension, "products-detail", runtime),
+  path: "/operations/availability/rules/$id",
+  ...adminExtensionRouteOptions(operationsExtension, "availability-rule-detail", runtime),
 })
 
-// ---------------------------------------------------------------------------
-// promotions
-// ---------------------------------------------------------------------------
-
-const promotionsExtension = extension("promotions")
-
-export const PromotionsIndexRoute = createRoute({
+export const AvailabilityStartTimeDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/promotions",
-  ...adminExtensionRouteOptions(promotionsExtension, "promotions-index", runtime),
+  path: "/operations/availability/start-times/$id",
+  ...adminExtensionRouteOptions(operationsExtension, "availability-start-time-detail", runtime),
 })
-
-// ---------------------------------------------------------------------------
-// resources
-// ---------------------------------------------------------------------------
-
-const resourcesExtension = extension("resources")
 
 export const ResourcesIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/operations/resources",
-  ...adminExtensionRouteOptions(resourcesExtension, "resources-index", runtime),
+  ...adminExtensionRouteOptions(operationsExtension, "resources-index", runtime),
 })
 
 export const ResourcesDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/operations/resources/$id",
-  ...adminExtensionRouteOptions(resourcesExtension, "resources-detail", runtime),
+  ...adminExtensionRouteOptions(operationsExtension, "resources-detail", runtime),
 })
 
 export const ResourcesPoolDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/operations/resources/pools/$id",
-  ...adminExtensionRouteOptions(resourcesExtension, "resources-pool-detail", runtime),
+  ...adminExtensionRouteOptions(operationsExtension, "resources-pool-detail", runtime),
 })
 
 export const ResourcesAssignmentDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/operations/resources/assignments/$id",
-  ...adminExtensionRouteOptions(resourcesExtension, "resources-assignment-detail", runtime),
+  ...adminExtensionRouteOptions(operationsExtension, "resources-assignment-detail", runtime),
 })
 
 export const ResourcesAllocationDetailRoute = createRoute({
   getParentRoute: workspace,
   path: "/operations/resources/allocations/$id",
-  ...adminExtensionRouteOptions(resourcesExtension, "resources-allocation-detail", runtime),
+  ...adminExtensionRouteOptions(operationsExtension, "resources-allocation-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
-// suppliers
+// relationships
 // ---------------------------------------------------------------------------
 
-const suppliersExtension = extension("suppliers")
+const relationshipsExtension = extension("relationships")
 
-export const SuppliersIndexRoute = createRoute({
+export const RelationshipsPeopleIndexRoute = createRoute({
   getParentRoute: workspace,
-  path: "/suppliers",
-  ...adminExtensionRouteOptions(suppliersExtension, "suppliers-index", runtime),
+  path: "/people",
+  ...adminExtensionRouteOptions(relationshipsExtension, "relationships-people-index", runtime),
 })
 
-export const SuppliersDetailRoute = createRoute({
+export const RelationshipsPeopleDetailRoute = createRoute({
   getParentRoute: workspace,
-  path: "/suppliers/$id",
-  ...adminExtensionRouteOptions(suppliersExtension, "suppliers-detail", runtime),
+  path: "/people/$id",
+  ...adminExtensionRouteOptions(relationshipsExtension, "relationships-people-detail", runtime),
+})
+
+export const RelationshipsOrganizationsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/organizations",
+  ...adminExtensionRouteOptions(
+    relationshipsExtension,
+    "relationships-organizations-index",
+    runtime,
+  ),
+})
+
+export const RelationshipsOrganizationsDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/organizations/$id",
+  ...adminExtensionRouteOptions(
+    relationshipsExtension,
+    "relationships-organizations-detail",
+    runtime,
+  ),
 })
 
 // ---------------------------------------------------------------------------
@@ -674,10 +670,6 @@ export const TripComposerDetailRoute = createRoute({
 
 export const adminExtensionRoutes = [
   ActionLedgerIndexRoute,
-  AvailabilityIndexRoute,
-  AvailabilitySlotDetailRoute,
-  AvailabilityRuleDetailRoute,
-  AvailabilityStartTimeDetailRoute,
   BookingsIndexRoute,
   BookingsDetailRoute,
   BookingsNewRoute,
@@ -694,14 +686,13 @@ export const adminExtensionRoutes = [
   CatalogCruisesDetailRoute,
   CatalogAccommodationsIndexRoute,
   CatalogAccommodationsDetailRoute,
+  PromotionsIndexRoute,
   CoreDashboardRoute,
   CoreAccountRoute,
   CoreSettingsRouteWithChildren,
-  CrmPeopleIndexRoute,
-  CrmPeopleDetailRoute,
-  CrmOrganizationsIndexRoute,
-  CrmOrganizationsDetailRoute,
   DistributionChannelSyncRoute,
+  SuppliersIndexRoute,
+  SuppliersDetailRoute,
   FinanceIndexRoute,
   FinanceInvoicesIndexRoute,
   FinanceInvoicesDetailRoute,
@@ -713,6 +704,9 @@ export const adminExtensionRoutes = [
   FinanceProfitabilityRoute,
   FlightsIndexRoute,
   FlightsBookRoute,
+  ProductsIndexRoute,
+  ProductsCategoriesRoute,
+  ProductsDetailRoute,
   LegalIndexRoute,
   LegalContractsIndexRoute,
   LegalContractsDetailRoute,
@@ -730,27 +724,25 @@ export const adminExtensionRoutes = [
   NotificationsReminderRunsRoute,
   NotificationsPreviewRoute,
   NotificationsSettingsRoute,
-  ProductsIndexRoute,
-  ProductsCategoriesRoute,
-  ProductsDetailRoute,
-  PromotionsIndexRoute,
+  AvailabilityIndexRoute,
+  AvailabilitySlotDetailRoute,
+  AvailabilityRuleDetailRoute,
+  AvailabilityStartTimeDetailRoute,
   ResourcesIndexRoute,
   ResourcesDetailRoute,
   ResourcesPoolDetailRoute,
   ResourcesAssignmentDetailRoute,
   ResourcesAllocationDetailRoute,
-  SuppliersIndexRoute,
-  SuppliersDetailRoute,
+  RelationshipsPeopleIndexRoute,
+  RelationshipsPeopleDetailRoute,
+  RelationshipsOrganizationsIndexRoute,
+  RelationshipsOrganizationsDetailRoute,
   TripComposerIndexRoute,
   TripComposerDetailRoute,
 ]
 
 export interface AdminExtensionRoutesByFullPath {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/operations/availability": typeof AvailabilityIndexRoute
-  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -767,6 +759,7 @@ export interface AdminExtensionRoutesByFullPath {
   "/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/promotions": typeof PromotionsIndexRoute
   "/": typeof CoreDashboardRoute
   "/account": typeof CoreAccountRoute
   "/settings": typeof CoreSettingsRouteWithChildren
@@ -780,11 +773,9 @@ export interface AdminExtensionRoutesByFullPath {
   "/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
   "/settings/product-types": typeof CoreSettingsProductTypesRoute
   "/settings/product-tags": typeof CoreSettingsProductTagsRoute
-  "/people": typeof CrmPeopleIndexRoute
-  "/people/$id": typeof CrmPeopleDetailRoute
-  "/organizations": typeof CrmOrganizationsIndexRoute
-  "/organizations/$id": typeof CrmOrganizationsDetailRoute
   "/channel-sync": typeof DistributionChannelSyncRoute
+  "/suppliers": typeof SuppliersIndexRoute
+  "/suppliers/$id": typeof SuppliersDetailRoute
   "/finance": typeof FinanceIndexRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
@@ -796,6 +787,9 @@ export interface AdminExtensionRoutesByFullPath {
   "/finance/profitability": typeof FinanceProfitabilityRoute
   "/flights": typeof FlightsIndexRoute
   "/flights/book/$offerId": typeof FlightsBookRoute
+  "/products": typeof ProductsIndexRoute
+  "/products/categories": typeof ProductsCategoriesRoute
+  "/products/$id": typeof ProductsDetailRoute
   "/legal": typeof LegalIndexRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
@@ -813,27 +807,25 @@ export interface AdminExtensionRoutesByFullPath {
   "/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/notifications/preview": typeof NotificationsPreviewRoute
   "/notifications/settings": typeof NotificationsSettingsRoute
-  "/products": typeof ProductsIndexRoute
-  "/products/categories": typeof ProductsCategoriesRoute
-  "/products/$id": typeof ProductsDetailRoute
-  "/promotions": typeof PromotionsIndexRoute
+  "/operations/availability": typeof AvailabilityIndexRoute
+  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/operations/resources": typeof ResourcesIndexRoute
   "/operations/resources/$id": typeof ResourcesDetailRoute
   "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
-  "/suppliers": typeof SuppliersIndexRoute
-  "/suppliers/$id": typeof SuppliersDetailRoute
+  "/people": typeof RelationshipsPeopleIndexRoute
+  "/people/$id": typeof RelationshipsPeopleDetailRoute
+  "/organizations": typeof RelationshipsOrganizationsIndexRoute
+  "/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
   "/trips": typeof TripComposerIndexRoute
   "/trips/$id": typeof TripComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesByTo {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/operations/availability": typeof AvailabilityIndexRoute
-  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -850,6 +842,7 @@ export interface AdminExtensionRoutesByTo {
   "/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/promotions": typeof PromotionsIndexRoute
   "/": typeof CoreDashboardRoute
   "/account": typeof CoreAccountRoute
   "/settings": typeof CoreSettingsIndexRoute
@@ -862,11 +855,9 @@ export interface AdminExtensionRoutesByTo {
   "/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
   "/settings/product-types": typeof CoreSettingsProductTypesRoute
   "/settings/product-tags": typeof CoreSettingsProductTagsRoute
-  "/people": typeof CrmPeopleIndexRoute
-  "/people/$id": typeof CrmPeopleDetailRoute
-  "/organizations": typeof CrmOrganizationsIndexRoute
-  "/organizations/$id": typeof CrmOrganizationsDetailRoute
   "/channel-sync": typeof DistributionChannelSyncRoute
+  "/suppliers": typeof SuppliersIndexRoute
+  "/suppliers/$id": typeof SuppliersDetailRoute
   "/finance": typeof FinanceIndexRoute
   "/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
@@ -878,6 +869,9 @@ export interface AdminExtensionRoutesByTo {
   "/finance/profitability": typeof FinanceProfitabilityRoute
   "/flights": typeof FlightsIndexRoute
   "/flights/book/$offerId": typeof FlightsBookRoute
+  "/products": typeof ProductsIndexRoute
+  "/products/categories": typeof ProductsCategoriesRoute
+  "/products/$id": typeof ProductsDetailRoute
   "/legal": typeof LegalIndexRoute
   "/legal/contracts": typeof LegalContractsIndexRoute
   "/legal/contracts/$id": typeof LegalContractsDetailRoute
@@ -895,27 +889,25 @@ export interface AdminExtensionRoutesByTo {
   "/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/notifications/preview": typeof NotificationsPreviewRoute
   "/notifications/settings": typeof NotificationsSettingsRoute
-  "/products": typeof ProductsIndexRoute
-  "/products/categories": typeof ProductsCategoriesRoute
-  "/products/$id": typeof ProductsDetailRoute
-  "/promotions": typeof PromotionsIndexRoute
+  "/operations/availability": typeof AvailabilityIndexRoute
+  "/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/operations/resources": typeof ResourcesIndexRoute
   "/operations/resources/$id": typeof ResourcesDetailRoute
   "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
-  "/suppliers": typeof SuppliersIndexRoute
-  "/suppliers/$id": typeof SuppliersDetailRoute
+  "/people": typeof RelationshipsPeopleIndexRoute
+  "/people/$id": typeof RelationshipsPeopleDetailRoute
+  "/organizations": typeof RelationshipsOrganizationsIndexRoute
+  "/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
   "/trips": typeof TripComposerIndexRoute
   "/trips/$id": typeof TripComposerDetailRoute
 }
 
 export interface AdminExtensionRoutesById {
   "/_workspace/action-ledger": typeof ActionLedgerIndexRoute
-  "/_workspace/operations/availability": typeof AvailabilityIndexRoute
-  "/_workspace/operations/availability/$id": typeof AvailabilitySlotDetailRoute
-  "/_workspace/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
-  "/_workspace/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
   "/_workspace/bookings/new": typeof BookingsNewRoute
@@ -932,6 +924,7 @@ export interface AdminExtensionRoutesById {
   "/_workspace/catalog/cruises/$id": typeof CatalogCruisesDetailRoute
   "/_workspace/catalog/accommodations": typeof CatalogAccommodationsIndexRoute
   "/_workspace/catalog/accommodations/$id": typeof CatalogAccommodationsDetailRoute
+  "/_workspace/promotions": typeof PromotionsIndexRoute
   "/_workspace/": typeof CoreDashboardRoute
   "/_workspace/account": typeof CoreAccountRoute
   "/_workspace/settings": typeof CoreSettingsRouteWithChildren
@@ -945,11 +938,9 @@ export interface AdminExtensionRoutesById {
   "/_workspace/settings/price-catalogs": typeof CoreSettingsPriceCatalogsRoute
   "/_workspace/settings/product-types": typeof CoreSettingsProductTypesRoute
   "/_workspace/settings/product-tags": typeof CoreSettingsProductTagsRoute
-  "/_workspace/people": typeof CrmPeopleIndexRoute
-  "/_workspace/people/$id": typeof CrmPeopleDetailRoute
-  "/_workspace/organizations": typeof CrmOrganizationsIndexRoute
-  "/_workspace/organizations/$id": typeof CrmOrganizationsDetailRoute
   "/_workspace/channel-sync": typeof DistributionChannelSyncRoute
+  "/_workspace/suppliers": typeof SuppliersIndexRoute
+  "/_workspace/suppliers/$id": typeof SuppliersDetailRoute
   "/_workspace/finance": typeof FinanceIndexRoute
   "/_workspace/finance/invoices": typeof FinanceInvoicesIndexRoute
   "/_workspace/finance/invoices/$id": typeof FinanceInvoicesDetailRoute
@@ -961,6 +952,9 @@ export interface AdminExtensionRoutesById {
   "/_workspace/finance/profitability": typeof FinanceProfitabilityRoute
   "/_workspace/flights": typeof FlightsIndexRoute
   "/_workspace/flights/book/$offerId": typeof FlightsBookRoute
+  "/_workspace/products": typeof ProductsIndexRoute
+  "/_workspace/products/categories": typeof ProductsCategoriesRoute
+  "/_workspace/products/$id": typeof ProductsDetailRoute
   "/_workspace/legal": typeof LegalIndexRoute
   "/_workspace/legal/contracts": typeof LegalContractsIndexRoute
   "/_workspace/legal/contracts/$id": typeof LegalContractsDetailRoute
@@ -978,17 +972,19 @@ export interface AdminExtensionRoutesById {
   "/_workspace/notifications/reminder-runs": typeof NotificationsReminderRunsRoute
   "/_workspace/notifications/preview": typeof NotificationsPreviewRoute
   "/_workspace/notifications/settings": typeof NotificationsSettingsRoute
-  "/_workspace/products": typeof ProductsIndexRoute
-  "/_workspace/products/categories": typeof ProductsCategoriesRoute
-  "/_workspace/products/$id": typeof ProductsDetailRoute
-  "/_workspace/promotions": typeof PromotionsIndexRoute
+  "/_workspace/operations/availability": typeof AvailabilityIndexRoute
+  "/_workspace/operations/availability/$id": typeof AvailabilitySlotDetailRoute
+  "/_workspace/operations/availability/rules/$id": typeof AvailabilityRuleDetailRoute
+  "/_workspace/operations/availability/start-times/$id": typeof AvailabilityStartTimeDetailRoute
   "/_workspace/operations/resources": typeof ResourcesIndexRoute
   "/_workspace/operations/resources/$id": typeof ResourcesDetailRoute
   "/_workspace/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/_workspace/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/_workspace/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
-  "/_workspace/suppliers": typeof SuppliersIndexRoute
-  "/_workspace/suppliers/$id": typeof SuppliersDetailRoute
+  "/_workspace/people": typeof RelationshipsPeopleIndexRoute
+  "/_workspace/people/$id": typeof RelationshipsPeopleDetailRoute
+  "/_workspace/organizations": typeof RelationshipsOrganizationsIndexRoute
+  "/_workspace/organizations/$id": typeof RelationshipsOrganizationsDetailRoute
   "/_workspace/trips": typeof TripComposerIndexRoute
   "/_workspace/trips/$id": typeof TripComposerDetailRoute
 }

@@ -29,9 +29,12 @@ import {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "@voyantjs/commerce"
-import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
-import { externalRefsHonoModule } from "@voyantjs/distribution/external-refs"
-import { suppliersHonoModule } from "@voyantjs/distribution/suppliers"
+import {
+  distributionBookingExtension,
+  distributionHonoModule,
+  externalRefsHonoModule,
+  suppliersHonoModule,
+} from "@voyantjs/distribution"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import type {
   CheckoutNotificationDelivery,
@@ -51,8 +54,7 @@ import {
   createNotificationsHonoModule,
   notificationsService,
 } from "@voyantjs/notifications"
-import { availabilityHonoModule } from "@voyantjs/operations/availability"
-import { resourcesHonoModule } from "@voyantjs/operations/resources"
+import { operationsHonoModule } from "@voyantjs/operations"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
 import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
@@ -187,15 +189,12 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/action-ledger",
     "@voyantjs/relationships",
     "@voyantjs/quotes",
-    "@voyantjs/operations/availability",
+    "@voyantjs/operations",
     "@voyantjs/identity",
-    "@voyantjs/distribution/external-refs",
+    "@voyantjs/distribution",
     "@voyantjs/inventory/extras",
     "@voyantjs/bookings/requirements",
     "@voyantjs/commerce",
-    "@voyantjs/operations/resources",
-    "@voyantjs/distribution",
-    "@voyantjs/distribution/suppliers",
     "@voyantjs/inventory",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
@@ -214,7 +213,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/inventory/booking-extension",
     "@voyantjs/inventory/authoring/extension",
     "@voyantjs/quotes/booking-extension",
-    "@voyantjs/distribution/booking-extension",
+    "@voyantjs/distribution",
   ],
 } satisfies CompositionManifest
 
@@ -224,9 +223,13 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/action-ledger": () => actionLedgerHonoModule,
     "@voyantjs/relationships": () => createRelationshipsHonoModule(),
     "@voyantjs/quotes": () => createQuotesHonoModule(),
-    "@voyantjs/operations/availability": () => availabilityHonoModule,
+    "@voyantjs/operations": () => operationsHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
-    "@voyantjs/distribution/external-refs": () => externalRefsHonoModule,
+    "@voyantjs/distribution": () => [
+      externalRefsHonoModule,
+      distributionHonoModule,
+      suppliersHonoModule,
+    ],
     "@voyantjs/inventory/extras": () => operatorExtrasHonoModule,
     "@voyantjs/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
@@ -235,9 +238,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         },
       }),
     "@voyantjs/commerce": () => createCommerceHonoModules(),
-    "@voyantjs/operations/resources": () => resourcesHonoModule,
-    "@voyantjs/distribution": () => distributionHonoModule,
-    "@voyantjs/distribution/suppliers": () => suppliersHonoModule,
     "@voyantjs/inventory": () => inventoryHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
@@ -411,6 +411,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
     "@voyantjs/inventory/authoring/extension": () => inventoryAuthoringExtension,
     "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
-    "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,
+    "@voyantjs/distribution": () => distributionBookingExtension,
   },
 }

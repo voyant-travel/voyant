@@ -14,17 +14,17 @@ import {
   pricingCategories,
   pricingCategoryDependencies,
   resolveOptionPriceRulesForDate,
-} from "@voyantjs/commerce/pricing"
+} from "@voyantjs/commerce"
 import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import { createProductsBookingHandler } from "@voyantjs/inventory/booking-engine"
 import { productExtras } from "@voyantjs/inventory/extras"
 import { optionUnits, productOptions } from "@voyantjs/inventory/schema"
-import { availabilitySlots } from "@voyantjs/operations/availability/schema"
 import {
+  availabilitySlots,
   extendAvailabilityHold,
   placeAvailabilityHold,
   releaseAvailabilityHold,
-} from "@voyantjs/operations/availability/service-holds"
+} from "@voyantjs/operations"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { resolveBookingTaxSettings } from "../settings"
 import { asPostgresDb } from "./booking-engine-db"

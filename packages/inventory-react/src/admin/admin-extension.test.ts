@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  createProductsAdminExtension,
+  createInventoryAdminExtension,
   ProductDetailSkeleton,
   ProductsListSkeleton,
 } from "./index.js"
 import { ProductCategoriesHost } from "./product-categories-host.js"
 import { ProductsHost } from "./products-host.js"
 
-describe("createProductsAdminExtension", () => {
+describe("createInventoryAdminExtension", () => {
   it("contributes no navigation (products nav is base-nav-owned)", () => {
-    const extension = createProductsAdminExtension()
-    expect(extension.id).toBe("products")
+    const extension = createInventoryAdminExtension()
+    expect(extension.id).toBe("inventory")
     expect(extension.navigation).toBeUndefined()
   })
 
   it("describes the list, categories and detail routes with unique ids and paths", () => {
-    const extension = createProductsAdminExtension()
+    const extension = createInventoryAdminExtension()
     const routes = extension.routes ?? []
     expect(routes).toHaveLength(3)
     expect(new Set(routes.map((route) => route.id)).size).toBe(3)
@@ -28,7 +28,7 @@ describe("createProductsAdminExtension", () => {
   })
 
   it("honors basePath and labels", () => {
-    const extension = createProductsAdminExtension({
+    const extension = createInventoryAdminExtension({
       basePath: "/tours",
       labels: { products: "Produse", categories: "Categorii" },
     })
@@ -44,7 +44,7 @@ describe("createProductsAdminExtension", () => {
   })
 
   it("carries no search contracts (the pages keep their filters local)", () => {
-    const extension = createProductsAdminExtension()
+    const extension = createInventoryAdminExtension()
     for (const route of extension.routes ?? []) {
       expect(route.validateSearch).toBeUndefined()
     }
@@ -54,7 +54,7 @@ describe("createProductsAdminExtension", () => {
     // The full route implementation lives on the contribution (RFC §4.8):
     // `page` resolves the page module lazily so it stays code-split; no
     // eager `component` reference pins it into the workspace-chrome chunk.
-    const extension = createProductsAdminExtension()
+    const extension = createInventoryAdminExtension()
     for (const route of extension.routes ?? []) {
       expect(route.component).toBeUndefined()
       expect(typeof route.page).toBe("function")
@@ -65,7 +65,7 @@ describe("createProductsAdminExtension", () => {
 
   it("resolves the detail page through the detailPageComponent seam", async () => {
     const Substitute = () => null
-    const extension = createProductsAdminExtension({
+    const extension = createInventoryAdminExtension({
       detailPageComponent: () => Promise.resolve({ default: Substitute }),
     })
     const detail = extension.routes?.find((route) => route.id === "products-detail")
@@ -74,7 +74,7 @@ describe("createProductsAdminExtension", () => {
   })
 
   it("attaches data loaders to every route and marks them data-only for SSR", () => {
-    const extension = createProductsAdminExtension()
+    const extension = createInventoryAdminExtension()
     expect(extension.routes).toHaveLength(3)
     for (const route of extension.routes ?? []) {
       expect(typeof route.loader).toBe("function")
@@ -83,7 +83,7 @@ describe("createProductsAdminExtension", () => {
   })
 
   it("annotates the route-backed destinations", () => {
-    const extension = createProductsAdminExtension()
+    const extension = createInventoryAdminExtension()
     const byId = new Map(extension.routes?.map((route) => [route.id, route]))
     expect(byId.get("products-index")?.destination).toBe("product.list")
     expect(byId.get("products-categories")?.destination).toBe("productCategory.list")

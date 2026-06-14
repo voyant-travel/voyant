@@ -20,7 +20,7 @@
  *   ])
  *
  * and wire `createProductPricingProjectionExtension` (from
- * `@voyantjs/pricing/service-catalog-plane-pricing`) into
+ * `@voyantjs/commerce` pricing projection support) into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
  * Why a separate field instead of reusing the existing `sellAmountCents`

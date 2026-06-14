@@ -3,8 +3,7 @@
 The distribution client tier: headless data hooks/clients plus the styled UI
 components and page-level compositions (formerly `@voyantjs/distribution-ui`).
 Supplier and external-reference UI owner paths live in this package under
-`./suppliers` and `./external-refs`; old `@voyantjs/suppliers-react` and
-`@voyantjs/external-refs-react` package names are compatibility facades.
+`./suppliers` and `./external-refs`.
 
 Headless consumers import from the root, `./hooks`, `./client`, or
 `./query-keys` — these pull no styling peers. Styled surfaces live under

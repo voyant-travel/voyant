@@ -2,9 +2,13 @@ import { useQueries } from "@tanstack/react-query"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
 import { ProductsUiMessagesProvider } from "../../i18n/index.js"
-import { useVoyantProductsContext } from "../../index.js"
 import { ProductOptionsSection } from "../product-options-section.js"
-import { useProductDetailHost, useProductDetailMessages, useProductLocale } from "./host.js"
+import {
+  useProductDetailApi,
+  useProductDetailHost,
+  useProductDetailMessages,
+  useProductLocale,
+} from "./host.js"
 import { ProductActivitySection } from "./product-activity-section.js"
 import { DepartureDialog } from "./product-departure-dialog.js"
 import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog.js"
@@ -37,7 +41,7 @@ export function ProductDetailPage({ id }: { id: string }) {
   const productMessages = messages.products.core
   const { navigate, renderOptionExtras } = useProductDetailHost()
   const resolvedLocale = useProductLocale()
-  const client = useVoyantProductsContext()
+  const api = useProductDetailApi()
 
   const data = useProductDetailData(id)
   const dialogs = useProductDetailDialogs()
@@ -47,7 +51,7 @@ export function ProductDetailPage({ id }: { id: string }) {
 
   const overrideQueries = useQueries({
     queries: slots.map((slot) => ({
-      ...getDeparturePriceOverridesQueryOptions(client, slot.id),
+      ...getDeparturePriceOverridesQueryOptions(api, slot.id),
       enabled: !!slot.id,
     })),
   })

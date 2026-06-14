@@ -29,5 +29,5 @@ import {
 } from "@voyantjs/extras-contracts"
 ```
 
-Existing `@voyantjs/extras/content-shape` imports remain available as migration
-compatibility for applications that already depend on the legacy runtime shim.
+Runtime extras authoring lives in `@voyantjs/inventory/extras`; booked extras
+state lives in `@voyantjs/bookings/extras`.

@@ -1,13 +1,10 @@
 ---
 "@voyantjs/inventory": minor
 "@voyantjs/inventory-react": minor
-"@voyantjs/products": patch
-"@voyantjs/products-react": patch
 "operator": patch
 ---
 
 Move the main operated Product route/service/schema/runtime and React
-authoring source under Inventory owner paths. `@voyantjs/products` and
-`@voyantjs/products-react` now remain compatibility packages over Inventory,
-while the operator keeps stable `/products` URLs and the legacy generated schema
-manifest specifier until Inventory manifest parity is handled in a later slice.
+authoring source under Inventory owner paths. The old Products runtime package
+names are removed from the v1 workspace surface, while the operator keeps
+stable `/products` API URLs backed by Inventory.

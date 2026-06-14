@@ -1,15 +1,15 @@
 import { bookings } from "@voyantjs/bookings/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
+import { and, eq } from "drizzle-orm"
+import { Hono } from "hono"
+import { beforeAll, beforeEach } from "vitest"
 import {
   optionUnits,
   productCapabilities,
   productOptions,
   products,
-} from "@voyantjs/inventory/schema"
-import { and, eq } from "drizzle-orm"
-import { Hono } from "hono"
-import { beforeAll, beforeEach } from "vitest"
+} from "../../../../inventory/src/schema.js"
 
 import { bookingRequirementsRoutes } from "../../../src/requirements/routes.js"
 import { createPublicBookingRequirementsRoutes } from "../../../src/requirements/routes-public.js"

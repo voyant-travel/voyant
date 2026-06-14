@@ -35,7 +35,7 @@ export function getGroundOperatorsQueryOptions(
     queryKey: groundQueryKeys.operatorsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/ground/operators${toQueryString(filters)}`,
+        `/v1/operations/operators${toQueryString(filters)}`,
         groundOperatorListResponse,
         client,
       ),
@@ -47,7 +47,7 @@ export function getGroundOperatorQueryOptions(client: FetchWithValidationOptions
     queryKey: groundQueryKeys.operator(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/ground/operators/${id}`,
+        `/v1/operations/operators/${id}`,
         groundOperatorSingleResponse,
         client,
       )
@@ -65,7 +65,7 @@ export function getGroundVehiclesQueryOptions(
     queryKey: groundQueryKeys.vehiclesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/ground/vehicles${toQueryString(filters)}`,
+        `/v1/operations/vehicles${toQueryString(filters)}`,
         groundVehicleListResponse,
         client,
       ),
@@ -77,7 +77,7 @@ export function getGroundVehicleQueryOptions(client: FetchWithValidationOptions,
     queryKey: groundQueryKeys.vehicle(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/ground/vehicles/${id}`,
+        `/v1/operations/vehicles/${id}`,
         groundVehicleSingleResponse,
         client,
       )
@@ -95,7 +95,7 @@ export function getGroundDriversQueryOptions(
     queryKey: groundQueryKeys.driversList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/ground/drivers${toQueryString(filters)}`,
+        `/v1/operations/drivers${toQueryString(filters)}`,
         groundDriverListResponse,
         client,
       ),
@@ -107,7 +107,7 @@ export function getGroundDriverQueryOptions(client: FetchWithValidationOptions, 
     queryKey: groundQueryKeys.driver(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/ground/drivers/${id}`,
+        `/v1/operations/drivers/${id}`,
         groundDriverSingleResponse,
         client,
       )

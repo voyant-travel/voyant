@@ -1,6 +1,0 @@
-@source "../../operations-react/src/availability/components/**/*.{ts,tsx}";
-@source "../../operations-react/src/availability/allocation/**/*.{ts,tsx}";
-@source "../../operations-react/dist/availability/components/**/*.{js,mjs}";
-@source "../../operations-react/dist/availability/allocation/**/*.{js,mjs}";
-
-@import "@voyantjs/operations-react/availability/styles.css";

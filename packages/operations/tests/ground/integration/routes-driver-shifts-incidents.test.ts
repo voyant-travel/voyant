@@ -41,7 +41,7 @@ describe.skipIf(!DB_AVAILABLE)("Ground routes", () => {
   // ─── Seed Helpers ─────────────────────────────────────────
 
   async function seedResource(overrides: Record<string, unknown> = {}) {
-    const { resources } = await import("@voyantjs/operations/resources/schema")
+    const { resources } = await import("../../../src/index.js")
     const [row] = await db
       .insert(resources)
       .values({ kind: "vehicle" as const, name: `Resource ${nextSeq()}`, ...overrides })

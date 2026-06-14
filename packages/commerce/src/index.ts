@@ -11,6 +11,20 @@ export {
   evaluateCommercialDecision,
   recordCommercialSnapshot,
 } from "./interface.js"
+export * from "./markets/index.js"
+export * from "./pricing/index.js"
+export {
+  createProductPricingProjectionExtension,
+  loadProductPriceFrom,
+} from "./pricing/service-catalog-plane-pricing.js"
+export * from "./promotions/index.js"
+export { recordPromotionRedemptionsForBooking } from "./promotions/service-booking-confirmed.js"
+export {
+  type BoundarySchedulerResult,
+  runPromotionBoundaryScheduler,
+} from "./promotions/service-boundary-scheduler.js"
+export { createCatalogPromotionEvaluator } from "./promotions/service-catalog-evaluator.js"
+export { createProductPromotionsProjectionExtension } from "./promotions/service-catalog-plane-promotions.js"
 export {
   type CommerceHonoModulesOptions,
   type CommerceRuntimeModuleName,
@@ -18,6 +32,7 @@ export {
   createCommerceHonoModules,
   createCommerceStorefrontOfferResolvers,
 } from "./runtime.js"
+export * from "./sellability/index.js"
 export type {
   CommercialAdapterHandle,
   CommercialAdapterRegistrationKind,

@@ -31,14 +31,14 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
 
     it("gets a facility by id", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}`, { method: "GET" })
+      const res = await ctx.request(`/operations/${facility.id}`, { method: "GET" })
       expect(res.status).toBe(200)
       const { data } = await res.json()
       expect(data.id).toBe(facility.id)
     })
 
     it("returns 404 for non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000", {
+      const res = await ctx.request("/operations", {
         method: "GET",
       })
       expect(res.status).toBe(404)
@@ -46,7 +46,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
 
     it("updates a facility", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}`, {
+      const res = await ctx.request(`/operations/${facility.id}`, {
         method: "PATCH",
         ...json({ name: "Updated Hotel", status: "inactive" }),
       })
@@ -58,7 +58,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
 
     it("updates facility address fields", async () => {
       const facility = await ctx.seedFacility({ city: "Paris" })
-      const res = await ctx.request(`/operations/places/${facility.id}`, {
+      const res = await ctx.request(`/operations/${facility.id}`, {
         method: "PATCH",
         ...json({ city: "Lyon" }),
       })
@@ -68,7 +68,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
     })
 
     it("returns 404 when updating non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000", {
+      const res = await ctx.request("/operations", {
         method: "PATCH",
         ...json({ name: "x" }),
       })
@@ -77,15 +77,15 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
 
     it("deletes a facility", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}`, { method: "DELETE" })
+      const res = await ctx.request(`/operations/${facility.id}`, { method: "DELETE" })
       expect(res.status).toBe(200)
 
-      const check = await ctx.request(`/operations/places/${facility.id}`, { method: "GET" })
+      const check = await ctx.request(`/operations/${facility.id}`, { method: "GET" })
       expect(check.status).toBe(404)
     })
 
     it("returns 404 when deleting non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000", {
+      const res = await ctx.request("/operations", {
         method: "DELETE",
       })
       expect(res.status).toBe(404)
@@ -97,7 +97,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
       await ctx.seedFacility()
       await ctx.seedFacility()
       await ctx.seedFacility()
-      const res = await ctx.request("/operations/places?limit=2", { method: "GET" })
+      const res = await ctx.request("/operations?limit=2", { method: "GET" })
       const body = await res.json()
       expect(body.data.length).toBe(2)
       expect(body.total).toBe(3)
@@ -106,7 +106,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
     it("filters by kind", async () => {
       await ctx.seedFacility({ kind: "hotel" })
       await ctx.seedFacility({ kind: "airport" })
-      const res = await ctx.request("/operations/places?kind=airport", { method: "GET" })
+      const res = await ctx.request("/operations?kind=airport", { method: "GET" })
       const body = await res.json()
       expect(body.total).toBe(1)
       expect(body.data[0].kind).toBe("airport")
@@ -115,7 +115,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
     it("filters by status", async () => {
       await ctx.seedFacility({ status: "active" })
       await ctx.seedFacility({ status: "archived" })
-      const res = await ctx.request("/operations/places?status=archived", { method: "GET" })
+      const res = await ctx.request("/operations?status=archived", { method: "GET" })
       const body = await res.json()
       expect(body.total).toBe(1)
       expect(body.data[0].status).toBe("archived")
@@ -124,7 +124,7 @@ describe.skipIf(!DB_AVAILABLE)("Facilities routes", () => {
     it("searches by name", async () => {
       await ctx.seedFacility({ name: "Grand Hotel Plaza" })
       await ctx.seedFacility({ name: "Airport Lounge" })
-      const res = await ctx.request("/operations/places?search=Grand", { method: "GET" })
+      const res = await ctx.request("/operations?search=Grand", { method: "GET" })
       const body = await res.json()
       expect(body.total).toBe(1)
       expect(body.data[0].name).toBe("Grand Hotel Plaza")

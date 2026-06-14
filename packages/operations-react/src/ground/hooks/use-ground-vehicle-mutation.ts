@@ -1,10 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type {
-  insertGroundVehicleSchema,
-  updateGroundVehicleSchema,
-} from "@voyantjs/operations/ground"
+import type { insertGroundVehicleSchema, updateGroundVehicleSchema } from "@voyantjs/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
@@ -22,7 +19,7 @@ export function useGroundVehicleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateGroundVehicleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/ground/vehicles",
+        "/v1/operations/vehicles",
         groundVehicleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +35,7 @@ export function useGroundVehicleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateGroundVehicleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/ground/vehicles/${id}`,
+        `/v1/operations/vehicles/${id}`,
         groundVehicleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +51,7 @@ export function useGroundVehicleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/ground/vehicles/${id}`,
+        `/v1/operations/vehicles/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

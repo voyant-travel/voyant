@@ -6,8 +6,8 @@ Audience: anyone designing or implementing cross-vertical sellable inventory in 
 This document captures the architecture for how Voyant models sellable inventory across multiple verticals, and how that inventory is searched, merchandised, snapshotted at booking, and reconciled across mixed sources (owned, Voyant Connect, GDS, direct supplier APIs, bedbanks).
 
 It is the meta-contract that vertical modules and resale surfaces adopt:
-`packages/inventory` / compatibility `packages/products` (operated tours /
-experiences, OCTO-aligned), `packages/cruises` (see
+`packages/inventory` (operated tours / experiences, OCTO-aligned),
+`packages/cruises` (see
 [`cruises-module.md`](./cruises-module.md)), accommodation resale
 surfaces (hotel/lodging catalog inventory, room options, board/rate choices,
 and stay booking lines), `packages/charters` (yacht charters, see
@@ -192,9 +192,8 @@ Vertical packages depend on `packages/catalog` for the contract types and the sh
 Extras represent booking add-ons (optional line items on a booked parent), not
 independently-sellable inventory. They are exposed through
 `@voyantjs/inventory/extras` for operated authoring/catalog projection and
-`@voyantjs/bookings/extras` for booking-time selections. The legacy
-`packages/extras` package is a temporary compatibility shim, not the schema
-owner. Extras are a borderline case for the catalog contract:
+`@voyantjs/bookings/extras` for booking-time selections. Extras are a
+borderline case for the catalog contract:
 
 - It does need provenance (extras can be sourced from upstream alongside their parent product).
 - It does need snapshot capture (a refund needs to know the extra was a $50 spa credit, not just "a line item").

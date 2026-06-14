@@ -127,20 +127,17 @@ function createCoreExtension() {
   })
 }
 
-// Availability is package-delivered (packaged-admin RFC Phase 3): the
-// extension contributes NO navigation — the Availability item is part of the
-// BASE operator navigation (createOperatorAdminNavigation in @voyantjs/admin),
-// so an entry here would duplicate it. It's registered for the routes seam:
-// the contributions carry the package-owned route metadata (no search
-// contracts — the pages keep their filters local), and the detail pages are
-// the packaged hosts from @voyantjs/operations-react/availability/admin — the route files
-// under src/routes/_workspace/operations/availability/* only bind route params onto
-// them. The index page stays an app-side wrapper: its bulk update/delete
-// handlers call the availability batch endpoints, which have no
-// availability-react client equivalent yet.
-function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.availability({
-    labels: { availability: messages.availability },
+// Operations is package-delivered (packaged-admin RFC Phase 3): the owner
+// extension contributes NO navigation — Availability and Resources remain
+// base operator navigation items. The owner admin entry contributes the
+// availability and resource-planning route metadata under
+// /operations/availability and /operations/resources.
+function createOperationsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.operations({
+    labels: {
+      availability: messages.availability,
+      resources: messages.resources,
+    },
   })
 }
 
@@ -253,7 +250,7 @@ function createFlightsExtension(messages: AdminExtensionNavMessages) {
 // assembles it into its code-based route tree — no route file.
 function createDistributionExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.distribution({
-    labels: { channelSync: messages.channelSync },
+    labels: { channelSync: messages.channelSync, suppliers: messages.suppliers },
   })
 }
 
@@ -329,28 +326,12 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // detail page's customer-payment-policy card arrives via finance-ui's widget
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔
 // suppliers-ui cycle resolution).
-function createSuppliersExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.suppliers({ labels: { suppliers: messages.suppliers } })
-}
-
-// Resources is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Resources item is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata (no search contracts —
-// the tab dashboard keeps its tab/filter state local), and the pages are the
-// packaged hosts from @voyantjs/operations-react/resources/admin — the route files under
-// src/routes/_workspace/operations/resources/* only bind route params onto them.
-function createResourcesExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.resources({ labels: { resources: messages.resources } })
-}
-
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
 // route implementation come from @voyantjs/commerce-react/promotions/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.promotions({
+  return generatedAdminExtensionFactories.commerce({
     labels: { promotions: messages.promotions },
     icon: Tag,
     order: 50,
@@ -372,7 +353,7 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
 // app's /api/v1/uploads storage route, and the product-pre-selected
 // new-booking deep link.
 function createProductsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.products({
+  return generatedAdminExtensionFactories.inventory({
     labels: { products: messages.products, categories: messages.categories },
     detailPageComponent: () =>
       import("@/components/voyant/products/product-detail-page").then((module) => ({
@@ -453,7 +434,7 @@ export function createOperatorAdminExtensions(
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
     createCoreExtension(),
-    createAvailabilityExtension(messages),
+    createOperationsExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createProductsExtension(messages),
@@ -461,9 +442,7 @@ export function createOperatorAdminExtensions(
     createDistributionExtension(messages),
     createFinanceExtension(messages),
     createFlightsExtension(messages),
-    createSuppliersExtension(messages),
     createLegalExtension(messages),
-    createResourcesExtension(messages),
     createNotificationsExtension(messages),
     createPromotionsExtension(messages),
     createTripComposerExtension(messages),

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { insertFacilitySchema, updateFacilitySchema } from "@voyantjs/operations/places"
+import type { insertFacilitySchema, updateFacilitySchema } from "@voyantjs/operations"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
@@ -19,7 +19,7 @@ export function useFacilityMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateFacilityInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/places/operations/places",
+        "/v1/operations/facilities",
         facilitySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function useFacilityMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateFacilityInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/places/operations/places/${id}`,
+        `/v1/operations/facilities/${id}`,
         facilitySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useFacilityMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/places/operations/places/${id}`,
+        `/v1/operations/facilities/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

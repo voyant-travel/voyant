@@ -46,7 +46,7 @@ const renderOptionExtras = (productId: string, optionId: string) => (
 
 /**
  * Operator substitution for the packaged products-detail page (the
- * `detailPageComponent` seam on `createProductsAdminExtension`). The
+ * `detailPageComponent` seam on `createInventoryAdminExtension`). The
  * package cannot compose these app-owned seams itself: the
  * availability-react option resource templates panel (a dependency cycle —
  * availability-react depends on products-react), the app's `/api/v1/uploads`

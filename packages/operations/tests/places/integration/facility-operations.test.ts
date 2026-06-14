@@ -8,7 +8,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
   describe("Facility Features", () => {
     it("creates a feature for a facility", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}/features`, {
+      const res = await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Free WiFi", category: "amenity" }),
       })
@@ -20,7 +20,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
     })
 
     it("returns 404 for non-existent facility", async () => {
-      const res = await ctx.request("/operations/places/fac_00000000000000000000000000/features", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ name: "Pool", category: "amenity" }),
       })
@@ -29,11 +29,11 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("lists features with filter by facilityId", async () => {
       const facility = await ctx.seedFacility()
-      await ctx.request(`/operations/places/${facility.id}/features`, {
+      await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Pool", category: "amenity" }),
       })
-      await ctx.request(`/operations/places/${facility.id}/features`, {
+      await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Ramp Access", category: "accessibility" }),
       })
@@ -47,11 +47,11 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("filters features by category", async () => {
       const facility = await ctx.seedFacility()
-      await ctx.request(`/operations/places/${facility.id}/features`, {
+      await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Pool", category: "amenity" }),
       })
-      await ctx.request(`/operations/places/${facility.id}/features`, {
+      await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Guards", category: "security" }),
       })
@@ -67,7 +67,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("updates a feature", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/features`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Gym", category: "amenity" }),
       })
@@ -84,7 +84,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("deletes a feature", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/features`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/features`, {
         method: "POST",
         ...json({ name: "Spa", category: "service" }),
       })
@@ -98,7 +98,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
   describe("Facility Operation Schedules", () => {
     it("creates a schedule for a facility", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      const res = await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "monday", opensAt: "08:00", closesAt: "22:00" }),
       })
@@ -112,7 +112,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("creates a closed-day schedule", async () => {
       const facility = await ctx.seedFacility()
-      const res = await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      const res = await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "sunday", closed: true }),
       })
@@ -122,23 +122,20 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
     })
 
     it("returns 404 for non-existent facility", async () => {
-      const res = await ctx.request(
-        "/operations/places/fac_00000000000000000000000000/operation-schedules",
-        {
-          method: "POST",
-          ...json({ dayOfWeek: "monday", opensAt: "09:00", closesAt: "17:00" }),
-        },
-      )
+      const res = await ctx.request("/operations", {
+        method: "POST",
+        ...json({ dayOfWeek: "monday", opensAt: "09:00", closesAt: "17:00" }),
+      })
       expect(res.status).toBe(404)
     })
 
     it("lists schedules with filter", async () => {
       const facility = await ctx.seedFacility()
-      await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "monday", opensAt: "08:00", closesAt: "22:00" }),
       })
-      await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "tuesday", opensAt: "08:00", closesAt: "22:00" }),
       })
@@ -154,7 +151,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("updates a schedule", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "friday", opensAt: "09:00", closesAt: "18:00" }),
       })
@@ -171,7 +168,7 @@ describe.skipIf(!DB_AVAILABLE)("Facility operations routes", () => {
 
     it("deletes a schedule", async () => {
       const facility = await ctx.seedFacility()
-      const createRes = await ctx.request(`/operations/places/${facility.id}/operation-schedules`, {
+      const createRes = await ctx.request(`/operations/${facility.id}/operation-schedules`, {
         method: "POST",
         ...json({ dayOfWeek: "wednesday" }),
       })

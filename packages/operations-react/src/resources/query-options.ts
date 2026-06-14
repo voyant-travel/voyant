@@ -176,7 +176,7 @@ export function getResourcesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/operations/resources${qs ? `?${qs}` : ""}`,
+        `/v1/operations/resources${qs ? `?${qs}` : ""}`,
         resourceListResponse,
         client,
       )
@@ -196,7 +196,7 @@ export function getResourceQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getResourceQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/resources/operations/resources/${id}`,
+        `/v1/operations/resources/${id}`,
         resourceSingleResponse,
         client,
       )
@@ -222,7 +222,7 @@ export function getPoolsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/pools${qs ? `?${qs}` : ""}`,
+        `/v1/operations/pools${qs ? `?${qs}` : ""}`,
         resourcePoolListResponse,
         client,
       )
@@ -242,7 +242,7 @@ export function getPoolQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getPoolQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/resources/pools/${id}`,
+        `/v1/operations/pools/${id}`,
         resourcePoolSingleResponse,
         client,
       )
@@ -269,7 +269,7 @@ export function getAllocationsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/allocations${qs ? `?${qs}` : ""}`,
+        `/v1/operations/allocations${qs ? `?${qs}` : ""}`,
         resourceAllocationListResponse,
         client,
       )
@@ -289,7 +289,7 @@ export function getAllocationQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAllocationQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/resources/allocations/${id}`,
+        `/v1/operations/allocations/${id}`,
         resourceAllocationSingleResponse,
         client,
       )
@@ -316,7 +316,7 @@ export function getAssignmentsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/slot-assignments${qs ? `?${qs}` : ""}`,
+        `/v1/operations/slot-assignments${qs ? `?${qs}` : ""}`,
         resourceSlotAssignmentListResponse,
         client,
       )
@@ -336,7 +336,7 @@ export function getAssignmentQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAssignmentQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/resources/slot-assignments/${id}`,
+        `/v1/operations/slot-assignments/${id}`,
         resourceSlotAssignmentSingleResponse,
         client,
       )
@@ -360,7 +360,7 @@ export function getCloseoutsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/closeouts${qs ? `?${qs}` : ""}`,
+        `/v1/operations/closeouts${qs ? `?${qs}` : ""}`,
         resourceCloseoutListResponse,
         client,
       )

@@ -5,4 +5,4 @@
 
 Move product graph compose/duplicate authoring behind
 `@voyantjs/inventory/authoring`. `@voyantjs/catalog-authoring` now delegates to
-the Inventory owner path as a compatibility package during the v1 restructure.
+the Inventory owner path during the v1 restructure.

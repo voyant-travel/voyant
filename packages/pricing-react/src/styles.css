@@ -1,4 +1,0 @@
-@source "../../commerce-react/src/pricing/components/**/*.{ts,tsx}";
-@source "../../commerce-react/dist/pricing/components/**/*.{js,mjs}";
-
-@import "@voyantjs/commerce-react/pricing/styles.css";

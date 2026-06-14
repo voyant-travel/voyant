@@ -10,7 +10,7 @@
  *
  * This module is the pure content contract: schemas, types, version, and
  * the validator. The `mergeOverlaysIntoProductContent` overlay
- * composition stays in the `@voyantjs/products` runtime package.
+ * composition stays in the `@voyantjs/inventory` runtime package.
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */

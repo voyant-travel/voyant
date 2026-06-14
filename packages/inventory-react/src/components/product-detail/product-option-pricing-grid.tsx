@@ -2,20 +2,20 @@
 "use client"
 
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/i18n"
+import { Button } from "@voyantjs/ui/components/button"
+import { Pencil, Plus, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { useOptionUnitMutation, useVoyantProductsContext } from "../../index.js"
 import {
   type PricingCategoryRecord,
   useOptionPriceRuleMutation,
   useOptionUnitPriceRuleMutation,
   usePriceCatalogMutation,
   usePricingCategoryMutation,
-} from "@voyantjs/commerce-react/pricing"
-import { formatMessage } from "@voyantjs/i18n"
-import { Button } from "@voyantjs/ui/components/button"
-import { Pencil, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
-import { useOptionUnitMutation, useVoyantProductsContext } from "../../index.js"
+} from "./commerce-client.js"
 
-import { useProductDetailMessages } from "./host.js"
+import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import {
   categoryAppliesToUnit,
   ExtraPriceRulesPanel,
@@ -82,27 +82,28 @@ export function OptionPricingGrid({
   productCurrency,
   layout,
 }: OptionPricingGridProps) {
-  const client = useVoyantProductsContext()
+  const productsClient = useVoyantProductsContext()
+  const api = useProductDetailApi()
   const messages = useProductDetailMessages()
   const t = messages.products.operations.pricingGrid
   const priceRuleMessages = messages.products.operations.priceRules
 
   const { data: unitsData, refetch: refetchUnits } = useQuery(
-    getOptionUnitsQueryOptions(client, optionId),
+    getOptionUnitsQueryOptions(productsClient, optionId),
   )
   const { data: rulesData, refetch: refetchRules } = useQuery(
-    getOptionPriceRulesQueryOptions(client, optionId),
+    getOptionPriceRulesQueryOptions(api, optionId),
   )
   const { data: categoriesData, refetch: refetchCategories } = useQuery(
-    getPricingCategoriesQueryOptions(client),
+    getPricingCategoriesQueryOptions(api),
   )
-  const { data: catalogsData } = useQuery(getPriceCatalogsQueryOptions(client))
+  const { data: catalogsData } = useQuery(getPriceCatalogsQueryOptions(api))
 
   const rules = rulesData?.data ?? []
   const defaultRule = rules.find((rule) => rule.isDefault) ?? rules[0]
 
   const { data: cellsData, refetch: refetchCells } = useQuery({
-    ...getOptionUnitPriceRulesQueryOptions(client, defaultRule?.id ?? "__none__"),
+    ...getOptionUnitPriceRulesQueryOptions(api, defaultRule?.id ?? "__none__"),
     enabled: Boolean(defaultRule?.id),
   })
 

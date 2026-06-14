@@ -60,7 +60,7 @@ replayed from the journal, so their side effects do not run again.
 ## Service-backed package workflows
 
 Package workflows can resolve host-provided services through
-`ctx.services.resolve(...)`. For example, `@voyantjs/promotions` exports the
+`ctx.services.resolve(...)`. For example, `@voyantjs/commerce` exports the
 `promotions.reindex-all-products` workflow, which resolves the bulk reindex
 service registered under `BULK_REINDEX_SERVICE_KEY`.
 
@@ -75,8 +75,8 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { createNodeStandaloneDriver } from "@voyantjs/workflows-orchestrator-node"
 import {
   BULK_REINDEX_SERVICE_KEY,
-  promotionsHonoModule,
-} from "@voyantjs/promotions"
+  createCommerceHonoModules,
+} from "@voyantjs/commerce"
 
 const promotionsWorkflowServices: HonoModule = {
   module: {
@@ -87,7 +87,7 @@ const promotionsWorkflowServices: HonoModule = {
 
 const app = createApp({
   db: () => db,
-  modules: [promotionsHonoModule, promotionsWorkflowServices],
+  modules: [...createCommerceHonoModules(), promotionsWorkflowServices],
   workflows: {
     driver: () => createNodeStandaloneDriver({ db }),
     environment: "production",
@@ -106,7 +106,7 @@ entry file, pass the same read-only resolver to `startNodeSelfHostServer()` or
 `createNodeSelfHostDeps()`:
 
 ```ts
-import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions"
+import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/commerce"
 import type { ServiceResolver } from "@voyantjs/workflows/driver"
 import { startNodeSelfHostServer } from "@voyantjs/workflows-orchestrator-node"
 

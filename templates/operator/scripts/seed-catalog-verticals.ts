@@ -24,7 +24,7 @@ import { charterProducts } from "@voyantjs/charters/schema"
 import { cruises } from "@voyantjs/cruises/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { productExtras } from "@voyantjs/inventory/extras"
-import { facilities, properties } from "@voyantjs/operations/places/schema"
+import { facilities, properties } from "@voyantjs/operations"
 import type { drizzle } from "drizzle-orm/postgres-js"
 
 type Db = ReturnType<typeof drizzle>

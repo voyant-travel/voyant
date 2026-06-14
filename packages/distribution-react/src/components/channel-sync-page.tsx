@@ -81,7 +81,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       if (statusFilter !== "all") params.set("status", statusFilter)
       if (bookingId) params.set("bookingId", bookingId)
       if (channelId) params.set("channelId", channelId)
-      return fetchJson<LinksResponse>(`/v1/admin/distribution/channel-push/links?${params}`, client)
+      return fetchJson<LinksResponse>(`/v1/admin/distribution?${params}`, client)
     },
     refetchInterval: LINKS_REFETCH_MS,
     refetchIntervalInBackground: false,
@@ -89,8 +89,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const throttlingQuery = useQuery<ThrottlingResponse>({
     queryKey: ["channel-push-throttling"],
-    queryFn: () =>
-      fetchJson<ThrottlingResponse>("/v1/admin/distribution/channel-push/throttling", client),
+    queryFn: () => fetchJson<ThrottlingResponse>("/v1/admin/distribution", client),
     refetchInterval: THROTTLING_REFETCH_MS,
   })
 
@@ -113,11 +112,9 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const retryMutation = useMutation({
     mutationFn: (id: string) =>
-      fetchJson<{ ok: boolean; bookingId: string }>(
-        `/v1/admin/distribution/channel-push/retry/${id}`,
-        client,
-        { method: "POST" },
-      ),
+      fetchJson<{ ok: boolean; bookingId: string }>(`/v1/admin/distribution/${id}`, client, {
+        method: "POST",
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["channel-push-links"] })
     },
@@ -125,7 +122,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
 
   const reconcileMutation = useMutation({
     mutationFn: (flow: "bookings" | "availability" | "content") =>
-      fetchJson<ReconcilerResult>(`/v1/admin/distribution/channel-push/reconcile/${flow}`, client, {
+      fetchJson<ReconcilerResult>(`/v1/admin/distribution/${flow}`, client, {
         method: "POST",
       }),
     onSuccess: () => {

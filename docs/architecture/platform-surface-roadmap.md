@@ -94,10 +94,10 @@ Resolved in source and published through the `0.3.1` npm train:
 
 - `@voyantjs/finance` exports the public finance schemas and service helpers
   used by `@voyantjs/finance-react`
-- `@voyantjs/products` exports `publicProductsService`
+- `@voyantjs/inventory` exports `publicProductsService`
 - `@voyantjs/bookings` exports `publicBookingsService` and public booking route
   helpers
-- `@voyantjs/products-react` exports the day, version, and media hooks and
+- `@voyantjs/inventory-react` exports the day, version, and media hooks and
   query helpers from the package root
 - CI/release now smoke-test runtime exports in addition to tarball contents
 
@@ -160,7 +160,7 @@ Partially resolved:
 
 - public catalog routes now cover product search/filter/sort, category listing,
   tag listing, product detail, localized slug/SEO fields, and slug lookup
-- `@voyantjs/products` now exposes a reusable internal `catalogProductsService`
+- `@voyantjs/inventory` now exposes a reusable internal `catalogProductsService`
   for localized product hydration and locale-aware search-document generation,
   so background jobs do not need to reimplement product/category/tag/media/
   translation joins on top of raw tables
@@ -376,7 +376,7 @@ Resolved upstream in source:
   `GET /v1/public/products/:id/brochure`
 - public catalog product detail now exposes `brochure` separately from the
   normal media gallery
-- `@voyantjs/products/tasks` now includes
+- `@voyantjs/inventory` now includes
   `generateAndStoreProductBrochure()` so apps can generate a product PDF,
   persist it through a Voyant storage provider, and register it as the
   canonical current brochure without an app-local `product_media(document)`

@@ -18,7 +18,7 @@ import {
   reconcileAvailability,
   reconcileBookingLinks,
   reconcileContent,
-} from "@voyantjs/distribution/channel-push"
+} from "@voyantjs/distribution"
 
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,

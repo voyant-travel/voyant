@@ -55,7 +55,7 @@ export const customerSignals = pgTable(
     personId: typeIdRef("person_id")
       .notNull()
       .references(() => people.id, { onDelete: "cascade" }),
-    /** Optional reference into `@voyantjs/products`. Plain text — no FK. */
+    /** Optional reference into `@voyantjs/inventory`. Plain text — no FK. */
     productId: text("product_id"),
     /** Optional reference into a product's `option_units` row (the "departure"-equivalent). Plain text — no FK. */
     optionUnitId: text("option_unit_id"),

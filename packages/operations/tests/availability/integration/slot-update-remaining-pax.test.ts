@@ -1,8 +1,8 @@
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { products } from "@voyantjs/inventory/schema"
 import { eq } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { products } from "../../../../inventory/src/schema.js"
 import { availabilitySlots } from "../../../src/availability/schema.js"
 import { updateSlot } from "../../../src/availability/service-core.js"
 

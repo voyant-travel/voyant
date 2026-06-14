@@ -1,5 +1,5 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { suppliers } from "@voyantjs/distribution/suppliers/schema"
+import { suppliers } from "@voyantjs/distribution"
 import { organizations, people } from "@voyantjs/relationships/schema"
 import { relations, sql } from "drizzle-orm"
 import {

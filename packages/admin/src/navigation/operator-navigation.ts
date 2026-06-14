@@ -93,7 +93,7 @@ export function createOperatorAdminNavigation({
     {
       id: "availability",
       title: messages.availability,
-      url: "/availability",
+      url: "/operations/availability",
       icon: icons.availability,
     },
     {
@@ -161,7 +161,7 @@ export function createOperatorAdminNavigation({
     {
       id: "resources",
       title: messages.resources,
-      url: "/resources",
+      url: "/operations/resources",
       icon: icons.resources,
     },
     {

@@ -60,7 +60,6 @@ export type InventoryAuthoringSurface =
 export interface InventoryInterfaceDescriptor {
   module: "inventory"
   operatedEntityModule: "products"
-  compatibilityPackages: readonly ["@voyantjs/products", "@voyantjs/products-react"]
   authoringSurfaces: readonly InventoryAuthoringSurface[]
   catalogResponsibilities: readonly [
     "projection",
@@ -74,7 +73,6 @@ export interface InventoryInterfaceDescriptor {
 export const inventoryInterfaceDescriptor: InventoryInterfaceDescriptor = {
   module: "inventory",
   operatedEntityModule: "products",
-  compatibilityPackages: ["@voyantjs/products", "@voyantjs/products-react"],
   authoringSurfaces: [
     "product-structure",
     "product-version",

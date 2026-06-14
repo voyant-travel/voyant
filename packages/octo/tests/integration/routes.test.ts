@@ -45,9 +45,7 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
   async function seedProjectedProduct() {
     const { optionUnits, productCapabilities, productFeatures, productOptions, products } =
       await import("@voyantjs/inventory/schema")
-    const { availabilityStartTimes, availabilitySlots } = await import(
-      "@voyantjs/operations/availability/schema"
-    )
+    const { availabilityStartTimes, availabilitySlots } = await import("@voyantjs/operations")
 
     const [product] = await db
       .insert(products)
@@ -128,7 +126,7 @@ describe.skipIf(!DB_AVAILABLE)("OCTO routes (integration)", () => {
   }
 
   async function seedBookingProjectionData() {
-    const { availabilitySlots } = await import("@voyantjs/operations/availability/schema")
+    const { availabilitySlots } = await import("@voyantjs/operations")
     const { upsertBookingOrigin } = await import("@voyantjs/bookings")
     const { bookingFulfillments, bookingSupplierStatuses, bookings } = await import(
       "@voyantjs/bookings/schema"

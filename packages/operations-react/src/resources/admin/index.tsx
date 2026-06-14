@@ -24,7 +24,7 @@ import { ResourcesPageSkeleton } from "./resources-page-skeleton.js"
  * Semantic destinations the resources admin surfaces navigate to
  * (packaged-admin RFC §4.7). The tab dashboard links into the four detail
  * pages, the detail pages link back to the dashboard and across to the
- * supplier/product/operations/availability-slot pages — instead of importing a host
+ * supplier/product/operations-slot pages — instead of importing a host
  * route tree they resolve these keys through `useAdminHref`/
  * `useAdminNavigate` from `@voyantjs/admin`. Hosts register one resolver
  * per key (`satisfies AdminDestinationResolvers`).

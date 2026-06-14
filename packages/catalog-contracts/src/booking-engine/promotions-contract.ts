@@ -3,10 +3,10 @@
  * and any promotion implementation.
  *
  * Catalog defines the input/output shape so it stays decoupled from
- * `@voyantjs/promotions`: the implementation is wired in by templates as
+ * `@voyantjs/commerce`: the implementation is wired in by templates as
  * an optional dependency on `QuoteEntityDeps.evaluatePromotions`.
  *
- * The shapes mirror `@voyantjs/promotions/service-evaluator`'s
+ * The shapes mirror Commerce's promotion evaluator
  * `EvaluationResult` subset that the catalog actually consumes — the
  * promotions adapter (`createCatalogPromotionEvaluator`) just bridges the
  * two with structural compatibility.

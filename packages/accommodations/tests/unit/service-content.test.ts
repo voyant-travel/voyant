@@ -4,7 +4,7 @@ import {
   facilityAddressProjections,
   facilityFeatures,
   properties,
-} from "@voyantjs/operations/places/schema"
+} from "@voyantjs/operations"
 import { describe, expect, it } from "vitest"
 
 import {

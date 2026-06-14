@@ -1,6 +1,5 @@
 ---
 "@voyantjs/commerce": patch
-"@voyantjs/sellability": patch
 ---
 
 Remove Sellability's legacy construct-offer route, service method, validation

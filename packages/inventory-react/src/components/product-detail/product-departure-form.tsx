@@ -1,7 +1,6 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 
 import { formatMessage } from "@voyantjs/i18n"
-import { useProductResourceTemplates } from "@voyantjs/operations-react/availability"
 import {
   Button,
   Input,
@@ -29,6 +28,7 @@ import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useProductItineraries } from "../../index.js"
+import { useProductResourceTemplates } from "./commerce-client.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { getTimezoneLabel, TIMEZONE_IDS, TIMEZONE_OPTIONS } from "./timezone-options.js"
 import { zodResolver } from "./zod-resolver.js"
@@ -194,7 +194,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   // inventory (each room/seat type's count × its capacity, e.g. 20 doubles
   // sleeping 2 = 40). Lets a new departure inherit capacity from the rooms the
   // operator already set up, while staying editable for an override.
-  const { data: resourceTemplateData } = useProductResourceTemplates({ productId })
+  const { data: resourceTemplateData } = useProductResourceTemplates(productId)
   const suggestedPax = useMemo(
     () =>
       (resourceTemplateData?.data ?? []).reduce(

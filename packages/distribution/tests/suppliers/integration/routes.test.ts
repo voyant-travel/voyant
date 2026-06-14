@@ -1,4 +1,4 @@
-import { supplierRoutes } from "@voyantjs/distribution/suppliers/routes"
+import { supplierRoutes } from "@voyantjs/distribution"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 

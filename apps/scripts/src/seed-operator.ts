@@ -10,18 +10,6 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { z } from "zod"
 import {
-  availabilityPickupPoints,
-  availabilityRules,
-  availabilitySlotPickups,
-  availabilitySlots,
-  availabilityStartTimes,
-  customPickupAreas,
-  locationPickupTimes,
-  pickupGroups,
-  pickupLocations,
-  productMeetingConfigs,
-} from "../../../packages/availability/src/schema.ts"
-import {
   bookingPiiAccessLog,
   bookings,
   bookingTravelers,
@@ -37,6 +25,14 @@ import { bookingOrigins } from "../../../packages/bookings/src/schema-origin.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
 import { authMember, authOrganization, authUser } from "../../../packages/db/src/schema/iam/auth.ts"
 import { userProfilesTable } from "../../../packages/db/src/schema/iam/user_profiles.ts"
+import {
+  supplierAvailability,
+  supplierContracts,
+  supplierNotes,
+  supplierRates,
+  supplierServices,
+  suppliers,
+} from "../../../packages/distribution/src/suppliers/schema.ts"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -87,6 +83,18 @@ import {
 } from "../../../packages/inventory/src/schema-taxonomy.ts"
 import { legalTerms } from "../../../packages/legal/src/terms/schema.ts"
 import {
+  availabilityPickupPoints,
+  availabilityRules,
+  availabilitySlotPickups,
+  availabilitySlots,
+  availabilityStartTimes,
+  customPickupAreas,
+  locationPickupTimes,
+  pickupGroups,
+  pickupLocations,
+  productMeetingConfigs,
+} from "../../../packages/operations/src/availability/schema.ts"
+import {
   pipelines,
   quoteParticipants,
   quoteProducts,
@@ -111,14 +119,6 @@ import {
   customFieldDefinitions,
   customFieldValues,
 } from "../../../packages/relationships/src/schema-activities.ts"
-import {
-  supplierAvailability,
-  supplierContracts,
-  supplierNotes,
-  supplierRates,
-  supplierServices,
-  suppliers,
-} from "../../../packages/suppliers/src/schema.ts"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, "../../..")

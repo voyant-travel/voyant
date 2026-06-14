@@ -1,5 +1,3 @@
-import { useOptionUnitPriceRuleMutation } from "@voyantjs/commerce-react/pricing"
-import { PricingCategoryCombobox } from "@voyantjs/commerce-react/pricing/components/pricing-category-combobox"
 import {
   Button,
   Input,
@@ -17,6 +15,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { PricingCategoryCombobox, useOptionUnitPriceRuleMutation } from "./commerce-client.js"
 import { useProductDetailMessages, useProductLocale } from "./host.js"
 import type { OptionUnitData } from "./product-unit-form.js"
 import { zodResolver } from "./zod-resolver.js"

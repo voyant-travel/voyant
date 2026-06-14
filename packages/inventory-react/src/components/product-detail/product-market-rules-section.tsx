@@ -1,11 +1,5 @@
 "use client"
 
-import {
-  type MarketProductRuleRecord,
-  useMarketProductRuleMutation,
-  useMarketProductRules,
-  useMarkets,
-} from "@voyantjs/commerce-react/markets"
 import { formatMessage } from "@voyantjs/i18n"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
@@ -18,6 +12,12 @@ import {
 import { Globe2, Loader2, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import {
+  type MarketProductRuleRecord,
+  useMarketProductRuleMutation,
+  useMarketProductRules,
+  useMarkets,
+} from "./commerce-client.js"
 
 import { useProductDetailMessages } from "./host.js"
 

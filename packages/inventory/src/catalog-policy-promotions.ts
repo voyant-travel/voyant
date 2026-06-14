@@ -31,7 +31,7 @@
  *   ])
  *
  * and wire `createProductPromotionsProjectionExtension` (from
- * `@voyantjs/promotions/service-catalog-plane-promotions`) into
+ * `@voyantjs/commerce` promotion projection support) into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
  * Out of scope here:

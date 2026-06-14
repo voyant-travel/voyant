@@ -2,7 +2,7 @@
  * Products admin operations: list/get + create/update/delete.
  *
  * Input schemas derive from `@voyantjs/products-contracts` — the products
- * validation was extracted out of the runtime `@voyantjs/products` package into
+ * validation was extracted out of the runtime `@voyantjs/inventory` package into
  * that pure, zero-runtime contract package, so this package can depend on it
  * (mirroring the bookings/finance/crm/legal split). Output schemas stay loose
  * client-facing projections (ADR-0003).

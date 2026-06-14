@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/distribution/channel-push` — outbound channel-push pipeline.
+ * `@voyantjs/distribution` — outbound channel-push pipeline.
  *
  * Per docs/architecture/channel-push-architecture.md.
  */

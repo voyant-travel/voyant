@@ -7,10 +7,7 @@ import type {
   productOptions,
   products,
 } from "@voyantjs/inventory/schema"
-import type {
-  availabilitySlots,
-  availabilityStartTimes,
-} from "@voyantjs/operations/availability/schema"
+import type { availabilitySlots, availabilityStartTimes } from "@voyantjs/operations"
 import type { z } from "zod"
 
 import type {

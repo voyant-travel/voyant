@@ -350,7 +350,7 @@ export function getSlotAssignmentsQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/slot-assignments?${qs}`,
+        `/v1/operations/slot-assignments?${qs}`,
         availabilitySlotAssignmentListResponse,
         client,
       )
@@ -369,7 +369,7 @@ export function getSlotResourcesQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources/operations/resources${qs ? `?${qs}` : ""}`,
+        `/v1/operations/resources${qs ? `?${qs}` : ""}`,
         resourceSummaryListResponse,
         client,
       )

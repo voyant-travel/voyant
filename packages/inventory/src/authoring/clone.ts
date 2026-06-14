@@ -103,7 +103,7 @@ function newContext(
 /**
  * Deep-clone a product graph as a draft (#1493): the new product row, then its
  * content (options/units, pricing categories, itinerary, media, extras) and its
- * pricing/operations/availability — copied with correct id remapping. Availability is
+ * pricing/operations — copied with correct id remapping. Availability is
  * copied only when `copyDepartures`. MUST run inside the caller's transaction.
  */
 async function cloneGraph(

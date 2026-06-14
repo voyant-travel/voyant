@@ -6,7 +6,7 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
   const ctx = createResourcesTestContext()
 
   describe("Resources", () => {
-    it("POST /operations/resources → 201", async () => {
+    it("POST /operations → 201", async () => {
       const resource = await ctx.seedResource()
       expect(resource.id).toMatch(/^res_/)
       expect(resource.kind).toBe("guide")
@@ -14,22 +14,22 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
       expect(resource.active).toBe(true)
     })
 
-    it("GET /operations/resources/:id → 200", async () => {
+    it("GET /operations/:id → 200", async () => {
       const resource = await ctx.seedResource()
-      const res = await ctx.request(`/operations/resources/${resource.id}`)
+      const res = await ctx.request(`/operations/${resource.id}`)
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.data.id).toBe(resource.id)
     })
 
-    it("GET /operations/resources/:id → 404 for missing", async () => {
-      const res = await ctx.request("/operations/resources/res_nonexistent")
+    it("GET /operations/:id → 404 for missing", async () => {
+      const res = await ctx.request("/operations")
       expect(res.status).toBe(404)
     })
 
-    it("PATCH /operations/resources/:id → 200", async () => {
+    it("PATCH /operations/:id → 200", async () => {
       const resource = await ctx.seedResource()
-      const res = await ctx.request(`/operations/resources/${resource.id}`, {
+      const res = await ctx.request(`/operations/${resource.id}`, {
         method: "PATCH",
         ...json({ name: "Updated", kind: "vehicle", capacity: 10 }),
       })
@@ -40,61 +40,61 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
       expect(body.data.capacity).toBe(10)
     })
 
-    it("PATCH /operations/resources/:id → 404 for missing", async () => {
-      const res = await ctx.request("/operations/resources/res_nonexistent", {
+    it("PATCH /operations/:id → 404 for missing", async () => {
+      const res = await ctx.request("/operations", {
         method: "PATCH",
         ...json({ name: "Nope" }),
       })
       expect(res.status).toBe(404)
     })
 
-    it("DELETE /operations/resources/:id → 200", async () => {
+    it("DELETE /operations/:id → 200", async () => {
       const resource = await ctx.seedResource()
-      const res = await ctx.request(`/operations/resources/${resource.id}`, { method: "DELETE" })
+      const res = await ctx.request(`/operations/${resource.id}`, { method: "DELETE" })
       expect(res.status).toBe(200)
-      const get = await ctx.request(`/operations/resources/${resource.id}`)
+      const get = await ctx.request(`/operations/${resource.id}`)
       expect(get.status).toBe(404)
     })
 
-    it("DELETE /operations/resources/:id → 404 for missing", async () => {
-      const res = await ctx.request("/operations/resources/res_nonexistent", { method: "DELETE" })
+    it("DELETE /operations/:id → 404 for missing", async () => {
+      const res = await ctx.request("/operations", { method: "DELETE" })
       expect(res.status).toBe(404)
     })
 
-    it("GET /operations/resources → list with pagination", async () => {
+    it("GET /operations → list with pagination", async () => {
       await ctx.seedResource()
       await ctx.seedResource()
-      const res = await ctx.request("/operations/resources?limit=1&offset=0")
+      const res = await ctx.request("/operations?limit=1&offset=0")
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.data).toHaveLength(1)
       expect(body.total).toBe(2)
     })
 
-    it("GET /operations/resources → filter by kind", async () => {
+    it("GET /operations → filter by kind", async () => {
       await ctx.seedResource({ kind: "guide" })
       await ctx.seedResource({ kind: "vehicle" })
-      const res = await ctx.request("/operations/resources?kind=vehicle")
+      const res = await ctx.request("/operations?kind=vehicle")
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.data).toHaveLength(1)
       expect(body.data[0].kind).toBe("vehicle")
     })
 
-    it("GET /operations/resources → filter by active", async () => {
+    it("GET /operations → filter by active", async () => {
       await ctx.seedResource({ active: true })
       await ctx.seedResource({ active: false })
-      const res = await ctx.request("/operations/resources?active=false")
+      const res = await ctx.request("/operations?active=false")
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.data).toHaveLength(1)
       expect(body.data[0].active).toBe(false)
     })
 
-    it("POST /operations/resources/batch-update → 200", async () => {
+    it("POST /operations → 200", async () => {
       const r1 = await ctx.seedResource()
       const r2 = await ctx.seedResource()
-      const res = await ctx.request("/operations/resources/batch-update", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ ids: [r1.id, r2.id], patch: { active: false } }),
       })
@@ -107,9 +107,9 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
       }
     })
 
-    it("POST /operations/resources/batch-update → partial failures", async () => {
+    it("POST /operations → partial failures", async () => {
       const resource = await ctx.seedResource()
-      const res = await ctx.request("/operations/resources/batch-update", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ ids: [resource.id, "res_nonexistent"], patch: { active: false } }),
       })
@@ -120,10 +120,10 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
       expect(body.failed[0].id).toBe("res_nonexistent")
     })
 
-    it("POST /operations/resources/batch-delete → 200", async () => {
+    it("POST /operations → 200", async () => {
       const r1 = await ctx.seedResource()
       const r2 = await ctx.seedResource()
-      const res = await ctx.request("/operations/resources/batch-delete", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ ids: [r1.id, r2.id] }),
       })
@@ -133,9 +133,9 @@ describe.skipIf(!DB_AVAILABLE)("Resources and pools routes", () => {
       expect(body.deletedIds).toHaveLength(2)
     })
 
-    it("POST /operations/resources/batch-delete → partial failures", async () => {
+    it("POST /operations → partial failures", async () => {
       const resource = await ctx.seedResource()
-      const res = await ctx.request("/operations/resources/batch-delete", {
+      const res = await ctx.request("/operations", {
         method: "POST",
         ...json({ ids: [resource.id, "res_nonexistent"] }),
       })

@@ -1,4 +1,4 @@
-import { supplierAggregatesQuerySchema } from "@voyantjs/distribution/suppliers/validation"
+import { supplierAggregatesQuerySchema } from "@voyantjs/distribution"
 import { describe, expect, it } from "vitest"
 
 describe("supplierAggregatesQuerySchema", () => {

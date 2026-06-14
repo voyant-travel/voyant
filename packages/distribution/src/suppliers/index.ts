@@ -62,6 +62,7 @@ export {
   insertSupplierNoteSchema,
   insertSupplierSchema,
   selectSupplierSchema,
+  supplierAggregatesQuerySchema,
   supplierListQuerySchema,
   updateContractSchema,
   updateRateSchema,

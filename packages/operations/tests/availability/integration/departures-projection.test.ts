@@ -1,8 +1,8 @@
+import type { IndexerSlice } from "@voyantjs/catalog"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { products } from "@voyantjs/inventory/schema"
-import type { IndexerSlice } from "@voyantjs/inventory/service-catalog-plane"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { products } from "../../../../inventory/src/schema.js"
 import { availabilitySlots } from "../../../src/availability/schema.js"
 import { createProductDeparturesProjectionExtension } from "../../../src/availability/service-catalog-plane-departures.js"
 

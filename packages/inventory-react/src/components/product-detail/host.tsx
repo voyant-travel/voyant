@@ -70,6 +70,10 @@ export function useProductDetailHost(): ProductDetailHostValue {
   return context
 }
 
+export function useOptionalProductDetailHost(): ProductDetailHostValue | null {
+  return useContext(ProductDetailHostContext)
+}
+
 /**
  * Components keep their `messages.products.*` (and occasional sibling-namespace)
  * access verbatim — the only change at the call site is the hook name

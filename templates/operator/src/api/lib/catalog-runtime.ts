@@ -23,12 +23,13 @@ import {
   type TypesenseSearchResponse,
 } from "@voyantjs/catalog"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
-import { marketLocales, markets } from "@voyantjs/commerce/markets"
 import {
   createProductPricingProjectionExtension,
+  createProductPromotionsProjectionExtension,
   loadProductPriceFrom,
-} from "@voyantjs/commerce/pricing/service-catalog-plane-pricing"
-import { createProductPromotionsProjectionExtension } from "@voyantjs/commerce/promotions/service-catalog-plane-promotions"
+  marketLocales,
+  markets,
+} from "@voyantjs/commerce"
 import { cruiseCabinFacetsCatalogPolicy } from "@voyantjs/cruises/catalog-policy-cabins"
 import {
   createCruiseDocumentBuilder,
@@ -49,7 +50,7 @@ import {
 } from "@voyantjs/inventory/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-taxonomy"
-import { createProductDeparturesProjectionExtension } from "@voyantjs/operations/availability/service-catalog-plane-departures"
+import { createProductDeparturesProjectionExtension } from "@voyantjs/operations"
 import { asc, eq } from "drizzle-orm"
 
 export const CATALOG_VERTICALS = [

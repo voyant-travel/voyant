@@ -1743,6 +1743,23 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `booking_answers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `booking_id` (`bookingId`) | text • not null |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `booking_traveler_id` (`bookingTravelerId`) | text • nullable |
+| `booking_extra_id` (`bookingExtraId`) | text • nullable |
+| `target` | booking_answer_target • not null • default "booking" |
+| `value_text` (`valueText`) | text • nullable |
+| `value_number` (`valueNumber`) | integer • nullable |
+| `value_boolean` (`valueBoolean`) | boolean • nullable |
+| `value_json` (`valueJson`) | jsonb • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
 ### `booking_documents`
 | Column | Type |
 |--------|------|
@@ -1865,6 +1882,55 @@ Constraints:
 | `reason` | text • nullable |
 | `metadata` | jsonb • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_extra_triggers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `product_extra_id` (`productExtraId`) | text • nullable |
+| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `min_quantity` (`minQuantity`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_option_triggers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `option_id` (`optionId`) | text • not null |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_options`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `value` | text • not null |
+| `label` | text • not null |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `booking_question_unit_triggers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
+| `unit_id` (`unitId`) | text • not null |
+| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
+| `min_quantity` (`minQuantity`) | integer • nullable |
+| `active` | boolean • not null • default true |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `booking_redemption_events`
 | Column | Type |
@@ -2013,74 +2079,6 @@ Constraints:
 | `collected_by` (`collectedBy`) | text • nullable |
 | `notes` | text • nullable |
 | `metadata` | jsonb • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-## Booking Requirements
-
-### `booking_answers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `booking_id` (`bookingId`) | text • not null |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `booking_traveler_id` (`bookingTravelerId`) | text • nullable |
-| `booking_extra_id` (`bookingExtraId`) | text • nullable |
-| `target` | booking_answer_target • not null • default "booking" |
-| `value_text` (`valueText`) | text • nullable |
-| `value_number` (`valueNumber`) | integer • nullable |
-| `value_boolean` (`valueBoolean`) | boolean • nullable |
-| `value_json` (`valueJson`) | jsonb • nullable |
-| `notes` | text • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_extra_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `product_extra_id` (`productExtraId`) | text • nullable |
-| `option_extra_config_id` (`optionExtraConfigId`) | text • nullable |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `min_quantity` (`minQuantity`) | integer • nullable |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_option_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `option_id` (`optionId`) | text • not null |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_options`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `value` | text • not null |
-| `label` | text • not null |
-| `sort_order` (`sortOrder`) | integer • not null • default 0 |
-| `is_default` (`isDefault`) | boolean • not null • default false |
-| `active` | boolean • not null • default true |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
-### `booking_question_unit_triggers`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `product_booking_question_id` (`productBookingQuestionId`) | text • FK -> product_booking_questions.id • not null |
-| `unit_id` (`unitId`) | text • not null |
-| `trigger_mode` (`triggerMode`) | booking_question_trigger_mode • not null • default "required" |
-| `min_quantity` (`minQuantity`) | integer • nullable |
-| `active` | boolean • not null • default true |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -2347,6 +2345,207 @@ Constraints:
 | `opens_at` (`opensAt`) | text • nullable |
 | `closes_at` (`closesAt`) | text • nullable |
 | `closed` | boolean • not null • default false |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_dispatch_assignments`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
+| `vehicle_id` (`vehicleId`) | text • FK -> ground_vehicles.id • nullable |
+| `driver_id` (`driverId`) | text • FK -> ground_drivers.id • nullable |
+| `assignment_source` (`assignmentSource`) | ground_assignment_source • not null • default "manual" |
+| `assigned_at` (`assignedAt`) | timestamp with time zone • not null • default |
+| `accepted_at` (`acceptedAt`) | timestamp with time zone • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_dispatch_checkpoints`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `sequence` | integer • not null • default 0 |
+| `checkpoint_type` (`checkpointType`) | text • not null |
+| `status` | ground_checkpoint_status • not null • default "pending" |
+| `planned_at` (`plannedAt`) | timestamp with time zone • nullable |
+| `actual_at` (`actualAt`) | timestamp with time zone • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_dispatch_legs`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `sequence` | integer • not null • default 0 |
+| `leg_type` (`legType`) | ground_dispatch_leg_type • not null • default "pickup" |
+| `facility_id` (`facilityId`) | text • nullable |
+| `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
+| `scheduled_at` (`scheduledAt`) | timestamp with time zone • nullable |
+| `actual_at` (`actualAt`) | timestamp with time zone • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_dispatch_passengers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `participant_id` (`participantId`) | text • nullable |
+| `display_name` (`displayName`) | text • nullable |
+| `seat_label` (`seatLabel`) | text • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_dispatches`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `transfer_preference_id` (`transferPreferenceId`) | text • FK -> ground_transfer_preferences.id • not null |
+| `booking_id` (`bookingId`) | text • not null |
+| `booking_item_id` (`bookingItemId`) | text • nullable |
+| `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
+| `vehicle_id` (`vehicleId`) | text • FK -> ground_vehicles.id • nullable |
+| `driver_id` (`driverId`) | text • FK -> ground_drivers.id • nullable |
+| `service_date` (`serviceDate`) | date • nullable |
+| `scheduled_pickup_at` (`scheduledPickupAt`) | timestamp with time zone • nullable |
+| `scheduled_dropoff_at` (`scheduledDropoffAt`) | timestamp with time zone • nullable |
+| `actual_pickup_at` (`actualPickupAt`) | timestamp with time zone • nullable |
+| `actual_dropoff_at` (`actualDropoffAt`) | timestamp with time zone • nullable |
+| `status` | ground_dispatch_status • not null • default "draft" |
+| `passenger_count` (`passengerCount`) | integer • nullable |
+| `checked_bags` (`checkedBags`) | integer • nullable |
+| `carry_on_bags` (`carryOnBags`) | integer • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_driver_shifts`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `driver_id` (`driverId`) | text • FK -> ground_drivers.id • not null |
+| `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `starts_at` (`startsAt`) | timestamp with time zone • not null |
+| `ends_at` (`endsAt`) | timestamp with time zone • not null |
+| `status` | ground_driver_shift_status • not null • default "scheduled" |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_drivers`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `resource_id` (`resourceId`) | text • not null |
+| `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
+| `license_number` (`licenseNumber`) | text • nullable |
+| `spoken_languages` (`spokenLanguages`) | jsonb • not null • default [] |
+| `is_guide` (`isGuide`) | boolean • not null • default false |
+| `is_meet_and_greet_capable` (`isMeetAndGreetCapable`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_execution_events`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `event_type` (`eventType`) | ground_execution_event_type • not null • default "note" |
+| `occurred_at` (`occurredAt`) | timestamp with time zone • not null • default |
+| `facility_id` (`facilityId`) | text • nullable |
+| `address_id` (`addressId`) | text • FK -> identity_addresses.id • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `ground_operators`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_id` (`supplierId`) | text • nullable |
+| `facility_id` (`facilityId`) | text • nullable |
+| `name` | text • not null |
+| `code` | text • nullable |
+| `active` | boolean • not null • default true |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_service_incidents`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `dispatch_id` (`dispatchId`) | text • FK -> ground_dispatches.id • not null |
+| `severity` | ground_incident_severity • not null • default "warning" |
+| `incident_type` (`incidentType`) | text • not null |
+| `resolution_status` (`resolutionStatus`) | ground_incident_resolution_status • not null • default "open" |
+| `opened_at` (`openedAt`) | timestamp with time zone • not null • default |
+| `resolved_at` (`resolvedAt`) | timestamp with time zone • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_transfer_preferences`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `booking_id` (`bookingId`) | text • not null |
+| `booking_item_id` (`bookingItemId`) | text • nullable |
+| `pickup_facility_id` (`pickupFacilityId`) | text • nullable |
+| `dropoff_facility_id` (`dropoffFacilityId`) | text • nullable |
+| `pickup_address_id` (`pickupAddressId`) | text • FK -> identity_addresses.id • nullable |
+| `dropoff_address_id` (`dropoffAddressId`) | text • FK -> identity_addresses.id • nullable |
+| `requested_vehicle_category` (`requestedVehicleCategory`) | ground_vehicle_category • nullable |
+| `requested_vehicle_class` (`requestedVehicleClass`) | ground_vehicle_class • nullable |
+| `service_level` (`serviceLevel`) | ground_service_level • not null • default "private" |
+| `passenger_count` (`passengerCount`) | integer • nullable |
+| `checked_bags` (`checkedBags`) | integer • nullable |
+| `carry_on_bags` (`carryOnBags`) | integer • nullable |
+| `wheelchair_count` (`wheelchairCount`) | integer • nullable |
+| `child_seat_count` (`childSeatCount`) | integer • nullable |
+| `driver_language` (`driverLanguage`) | text • nullable |
+| `meet_and_greet` (`meetAndGreet`) | boolean • not null • default false |
+| `accessibility_notes` (`accessibilityNotes`) | text • nullable |
+| `pickup_notes` (`pickupNotes`) | text • nullable |
+| `dropoff_notes` (`dropoffNotes`) | text • nullable |
+| `notes` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `ground_vehicles`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `resource_id` (`resourceId`) | text • not null |
+| `operator_id` (`operatorId`) | text • FK -> ground_operators.id • nullable |
+| `category` | ground_vehicle_category • not null • default "other" |
+| `vehicle_class` (`vehicleClass`) | ground_vehicle_class • not null • default "standard" |
+| `passenger_capacity` (`passengerCapacity`) | integer • nullable |
+| `checked_bag_capacity` (`checkedBagCapacity`) | integer • nullable |
+| `carry_on_capacity` (`carryOnCapacity`) | integer • nullable |
+| `wheelchair_capacity` (`wheelchairCapacity`) | integer • nullable |
+| `child_seat_capacity` (`childSeatCapacity`) | integer • nullable |
+| `is_accessible` (`isAccessible`) | boolean • not null • default false |
+| `active` | boolean • not null • default true |
 | `notes` | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |

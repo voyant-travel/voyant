@@ -77,7 +77,7 @@ export function getResourcePoolMembersQueryOptions(
       const qs = params.toString()
       return fetchJson<ListResponse<ResourcePoolMemberRow>>(
         client,
-        `/v1/operations/resources/pool-members${qs ? `?${qs}` : ""}`,
+        `/v1/operations/pool-members${qs ? `?${qs}` : ""}`,
       )
     },
   })

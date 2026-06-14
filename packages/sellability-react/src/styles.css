@@ -1,4 +1,0 @@
-@source "../../commerce-react/src/sellability/components/**/*.{ts,tsx}";
-@source "../../commerce-react/dist/sellability/components/**/*.{js,mjs}";
-
-@import "@voyantjs/commerce-react/sellability/styles.css";

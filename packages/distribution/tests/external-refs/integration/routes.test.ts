@@ -1,4 +1,4 @@
-import { externalRefsRoutes } from "@voyantjs/distribution/external-refs/routes"
+import { externalRefsRoutes } from "@voyantjs/distribution"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 

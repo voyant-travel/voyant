@@ -108,8 +108,8 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/products",
-    entry: "packages/products/dist/index.js",
+    packageName: "@voyantjs/inventory",
+    entry: "packages/inventory/dist/index.js",
     requiredExports: [
       "publicProductRoutes",
       "publicProductsService",
@@ -174,8 +174,8 @@ const checks: ExportCheck[] = [
     ],
   },
   {
-    packageName: "@voyantjs/products-react",
-    entry: "packages/products-react/dist/index.js",
+    packageName: "@voyantjs/inventory-react",
+    entry: "packages/inventory-react/dist/index.js",
     requiredExports: [
       "useProductDayMutation",
       "useProductDays",
@@ -190,36 +190,6 @@ const checks: ExportCheck[] = [
       "productDayRecordSchema",
       "productMediaRecordSchema",
       "productVersionRecordSchema",
-    ],
-  },
-  {
-    packageName: "@voyantjs/customer-portal",
-    entry: "packages/customer-portal/dist/index.js",
-    requiredExports: [
-      "publicCustomerPortalRoutes",
-      "publicCustomerPortalService",
-      "customerPortalBookingBillingContactSchema",
-      "customerPortalBookingDetailSchema",
-      "customerPortalBookingSummarySchema",
-      "customerPortalCompanionSchema",
-      "customerPortalProfileSchema",
-      "importCustomerPortalBookingParticipantsSchema",
-      "importCustomerPortalBookingParticipantsResultSchema",
-    ],
-  },
-  {
-    packageName: "@voyantjs/customer-portal-react",
-    entry: "packages/customer-portal-react/dist/index.js",
-    requiredExports: [
-      "getCustomerPortalBooking",
-      "getCustomerPortalBookingBillingContact",
-      "getCustomerPortalBookingBillingContactQueryOptions",
-      "useCustomerPortalBooking",
-      "useCustomerPortalBookingBillingContact",
-      "useCustomerPortalMutation",
-      "customerPortalBookingBillingContactResponseSchema",
-      "customerPortalBookingsResponseSchema",
-      "customerPortalProfileResponseSchema",
     ],
   },
   {
@@ -357,28 +327,6 @@ const checks: ExportCheck[] = [
       "createSmartbillInvoiceSettlementPoller",
       "mapVoyantInvoiceToSmartbill",
       "smartbillPlugin",
-    ],
-  },
-  {
-    packageName: "@voyantjs/booking-requirements",
-    entry: "packages/booking-requirements/dist/index.js",
-    requiredExports: [
-      "publicBookingRequirementsRoutes",
-      "bookingRequirementsService",
-      "publicTransportRequirementsQuerySchema",
-      "publicTransportRequirementsSchema",
-      "transportRequirementFieldSchema",
-    ],
-  },
-  {
-    packageName: "@voyantjs/booking-requirements-react",
-    entry: "packages/booking-requirements-react/dist/index.js",
-    requiredExports: [
-      "useTransportRequirements",
-      "getTransportRequirementsQueryOptions",
-      "bookingRequirementsQueryKeys",
-      "publicTransportRequirementsSchema",
-      "transportRequirementFieldSchema",
     ],
   },
 ]

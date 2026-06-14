@@ -1,8 +1,8 @@
 import { createEventBus } from "@voyantjs/core"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { products } from "@voyantjs/inventory/schema"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { products } from "../../../../inventory/src/schema.js"
 
 import {
   AVAILABILITY_SLOT_CHANGED_EVENT,

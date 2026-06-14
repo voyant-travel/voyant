@@ -82,7 +82,7 @@ function useAvailabilityBatchMutationPair<TPatch, TRecordSchema extends z.ZodTyp
   return { batchUpdate, batchDelete }
 }
 
-/** Batch mutations for `POST /v1/operations/availability/rules/batch-update|batch-delete`. */
+/** Batch mutations for `POST /v1/operations/availability/rules/{batch-update,batch-delete}`. */
 export function useAvailabilityRuleBatchMutation() {
   return useAvailabilityBatchMutationPair<
     UpdateAvailabilityRuleInput,
@@ -90,7 +90,7 @@ export function useAvailabilityRuleBatchMutation() {
   >("/v1/operations/availability/rules", availabilityRuleRecordSchema, availabilityQueryKeys.rules)
 }
 
-/** Batch mutations for `POST /v1/operations/availability/start-times/batch-update|batch-delete`. */
+/** Batch mutations for `POST /v1/operations/availability/start-times/{batch-update,batch-delete}`. */
 export function useAvailabilityStartTimeBatchMutation() {
   return useAvailabilityBatchMutationPair<
     UpdateAvailabilityStartTimeInput,
@@ -102,7 +102,7 @@ export function useAvailabilityStartTimeBatchMutation() {
   )
 }
 
-/** Batch mutations for `POST /v1/operations/availability/slots/batch-update|batch-delete`. */
+/** Batch mutations for `POST /v1/operations/availability/slots/{batch-update,batch-delete}`. */
 export function useAvailabilitySlotBatchMutation() {
   return useAvailabilityBatchMutationPair<
     UpdateAvailabilitySlotInput,
@@ -110,7 +110,7 @@ export function useAvailabilitySlotBatchMutation() {
   >("/v1/operations/availability/slots", availabilitySlotRecordSchema, availabilityQueryKeys.slots)
 }
 
-/** Batch mutations for `POST /v1/operations/availability/closeouts/batch-update|batch-delete`. */
+/** Batch mutations for `POST /v1/operations/availability/closeouts/{batch-update,batch-delete}`. */
 export function useAvailabilityCloseoutBatchMutation() {
   return useAvailabilityBatchMutationPair<
     UpdateAvailabilityCloseoutInput,
@@ -122,7 +122,7 @@ export function useAvailabilityCloseoutBatchMutation() {
   )
 }
 
-/** Batch mutations for `POST /v1/operations/availability/pickup-points/batch-update|batch-delete`. */
+/** Batch mutations for `POST /v1/operations/availability/pickup-points/{batch-update,batch-delete}`. */
 export function useAvailabilityPickupPointBatchMutation() {
   return useAvailabilityBatchMutationPair<
     UpdateAvailabilityPickupPointInput,

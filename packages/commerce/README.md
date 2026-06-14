@@ -2,8 +2,6 @@
 
 `@voyantjs/commerce` defines the narrow commercial decision Interface and owns
 the quote-time markets, pricing, promotions, and sellability runtime sources.
-The old package names remain compatibility and schema-manifest shims until an
-explicit schema-move issue migrates those tables.
 
 The root call is:
 
@@ -27,17 +25,9 @@ The package intentionally exposes the Commerce Interface from the root:
 - `createCommerceStorefrontOfferResolvers()`
 - decision, adapter, trace, pricing, promotion, FX, and snapshot types
 
-Commerce also exposes owner-path subpaths for the consolidated implementation:
-
-- `@voyantjs/commerce/markets`
-- `@voyantjs/commerce/pricing`
-- `@voyantjs/commerce/promotions`
-- `@voyantjs/commerce/sellability`
-
-Prefer the Commerce Interface for quote-time evaluation. Use the subpaths for
-schema, route, service, and transitional compatibility surfaces that previously
-lived in `@voyantjs/markets`, `@voyantjs/pricing`, `@voyantjs/promotions`, and
-`@voyantjs/sellability`.
+Pricing, markets, promotions, and sellability source folders are internal
+organization behind the root Commerce API. Public runtime consumers import from
+`@voyantjs/commerce` or `@voyantjs/commerce/schema`.
 
 React/admin consumers should prefer `@voyantjs/commerce-react` for Commerce-owned
 UI wiring. That package owns the reusable Markets, Pricing, Promotions, and
@@ -48,10 +38,6 @@ Sellability React/admin source under owner-path subpaths:
 - `@voyantjs/commerce-react/promotions`
 - `@voyantjs/commerce-react/promotions/admin`
 - `@voyantjs/commerce-react/sellability`
-
-The old `@voyantjs/markets-react`, `@voyantjs/pricing-react`,
-`@voyantjs/promotions-react`, and `@voyantjs/sellability-react` package names
-remain temporary compatibility facades over those Commerce React paths.
 
 ## Runtime Mounting
 

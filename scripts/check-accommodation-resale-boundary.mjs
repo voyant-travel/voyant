@@ -84,11 +84,11 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/extras/src/service-content.ts",
+    file: "packages/inventory/src/extras/service-content.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/extras/src/schema-sourced-content.ts",
+    file: "packages/inventory/src/extras/schema-sourced-content.ts",
     patterns: [/\bhospitality\b/i],
   },
   {

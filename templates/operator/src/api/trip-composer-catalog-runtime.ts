@@ -12,7 +12,7 @@ import {
   quoteResponseV1,
 } from "@voyantjs/catalog/booking-engine"
 import type { PricingBasis } from "@voyantjs/catalog/snapshot/schema"
-import { createCatalogPromotionEvaluator } from "@voyantjs/commerce/promotions/service-catalog-evaluator"
+import { createCatalogPromotionEvaluator } from "@voyantjs/commerce"
 import type { EventBus } from "@voyantjs/core"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
