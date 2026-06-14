@@ -387,7 +387,8 @@ describe("agent runner tick helpers", () => {
     transcriptItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(transcriptItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
+      recommendQueueAction(transcriptItem, { maxAgeDays: 1, repository: "voyant-travel/other" })
+        .action,
       "capture-browser",
     )
 
@@ -402,7 +403,8 @@ describe("agent runner tick helpers", () => {
     capturedItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(capturedItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
+      recommendQueueAction(capturedItem, { maxAgeDays: 1, repository: "voyant-travel/other" })
+        .action,
       "run-command",
     )
   })

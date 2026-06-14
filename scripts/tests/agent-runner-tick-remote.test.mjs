@@ -42,7 +42,8 @@ describe("agent runner remote tick helpers", () => {
     prLinkedItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(prLinkedItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
+      recommendQueueAction(prLinkedItem, { maxAgeDays: 1, repository: "voyant-travel/other" })
+        .action,
       "remote-capture-browser",
     )
 
@@ -56,7 +57,8 @@ describe("agent runner remote tick helpers", () => {
     coveredItem.issue.labels = ["agent:ready", "ui-change"]
 
     assert.equal(
-      recommendQueueAction(coveredItem, { maxAgeDays: 1, repository: "voyant-travel/other" }).action,
+      recommendQueueAction(coveredItem, { maxAgeDays: 1, repository: "voyant-travel/other" })
+        .action,
       "remote-publish-evidence",
     )
   })
@@ -74,12 +76,14 @@ describe("agent runner remote tick helpers", () => {
       ),
       {
         action: "remote-bootstrap",
-        command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/other --yes",
+        command:
+          "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyant-travel/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 20,
         reason: "remote workspace sandbox:sprite:task-579 is ready for repository bootstrap",
         state: "Ready",
+        workspace: "sandbox:sprite:task-579",
       },
     )
 
@@ -107,6 +111,7 @@ describe("agent runner remote tick helpers", () => {
         reason:
           "remote workspace sandbox:sprite:task-579 is ready for supervised command execution",
         state: "Planning",
+        workspace: "sandbox:sprite:task-579",
       },
     )
 
@@ -171,6 +176,7 @@ describe("agent runner remote tick helpers", () => {
         priority: 90,
         reason: "remote workspace sandbox:sprite:task-579 needs remote adapter cleanup",
         state: "Done",
+        workspace: "sandbox:sprite:task-579",
       },
     )
   })
@@ -198,6 +204,7 @@ describe("agent runner remote tick helpers", () => {
         priority: 25,
         reason: "invalid Workspace: remote sandbox reference is malformed",
         state: "Planning",
+        workspace: "sandbox:Sprite:task-579",
       },
     )
   })

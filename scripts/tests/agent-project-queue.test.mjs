@@ -42,9 +42,15 @@ describe("agent project queue helpers", () => {
   })
 
   it("parses project numbers from GitHub Project URLs", () => {
-    assert.equal(projectNumberFromUrl("https://github.com/orgs/voyant-travel/projects/42/views/1"), "42")
+    assert.equal(
+      projectNumberFromUrl("https://github.com/orgs/voyant-travel/projects/42/views/1"),
+      "42",
+    )
     assert.equal(projectNumberFromUrl("https://github.com/orgs/voyant-travel/projects/7"), "7")
-    assert.equal(projectNumberFromUrl("https://github.com/voyant-travel/voyant/issues/7"), undefined)
+    assert.equal(
+      projectNumberFromUrl("https://github.com/voyant-travel/voyant/issues/7"),
+      undefined,
+    )
   })
 
   it("keeps single page config limits strict while scan config defaults to a full page", () => {
@@ -60,11 +66,14 @@ describe("agent project queue helpers", () => {
       limit: 100,
     })
 
-    assert.deepEqual(projectScanConfigFromArgs({ owner: "voyant-travel", project: "2", limit: "25" }), {
-      owner: "voyant-travel",
-      projectNumber: 2,
-      limit: 25,
-    })
+    assert.deepEqual(
+      projectScanConfigFromArgs({ owner: "voyant-travel", project: "2", limit: "25" }),
+      {
+        owner: "voyant-travel",
+        projectNumber: 2,
+        limit: 25,
+      },
+    )
   })
 
   it("evaluates ready issues and derives execution paths", () => {

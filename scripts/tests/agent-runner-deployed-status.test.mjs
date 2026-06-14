@@ -350,7 +350,8 @@ function responseForUrl(url) {
   }
 
   if (
-    url === "https://runner.example.com/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=2"
+    url ===
+    "https://runner.example.com/api/supervisor/status?repository=voyant-travel%2Fvoyant&limit=2"
   ) {
     return {
       capabilities: {
