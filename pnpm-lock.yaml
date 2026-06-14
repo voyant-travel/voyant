@@ -92,56 +92,6 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  apps/agent-control-plane:
-    dependencies:
-      hono:
-        specifier: 4.12.25
-        version: 4.12.25
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260426.1
-        version: 4.20260426.1
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../../packages/typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-      wrangler:
-        specifier: 4.86.0
-        version: 4.86.0(@cloudflare/workers-types@4.20260426.1)
-
-  apps/agent-runner:
-    dependencies:
-      hono:
-        specifier: 4.12.25
-        version: 4.12.25
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260426.1
-        version: 4.20260426.1
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../../packages/typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-      wrangler:
-        specifier: 4.86.0
-        version: 4.86.0(@cloudflare/workers-types@4.20260426.1)
-
   apps/catalog-demo-api:
     dependencies:
       '@hono/node-server':
