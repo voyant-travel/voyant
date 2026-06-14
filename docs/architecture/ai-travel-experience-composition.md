@@ -37,23 +37,25 @@ Current code alignment, May 2026:
 - The single-line booking journey foundation has shipped: V1 contracts,
   `catalog_quotes`, `booking_drafts`, quote/book/draft/hold routes,
   React hooks, and `@voyantjs/bookings-react/journey`.
-- The composer is catalog-first. It selects Catalog Items, not products,
+- The composer is catalog-first. It selects Catalog Items, not Product tables,
   hotels, or other vertical-owned tables directly. `sourceKind: "owned"` is
   one catalog provenance/fulfillment path: the booking engine calls an internal
   Voyant handler when that module is installed. Sourced rows call the supplier
-  or inventory-source adapter. OTA deployments can omit the products module and
-  still compose trips entirely from sourced catalog inventory.
-- Catalog MCP exists for discovery and quote tools, and the composer now adds
-  deterministic trip composition tools.
-- Flights, ground, checkout, workflows, catalog RAG, storefront SDK, and public
-  contracts remain separate modules. The composer groups their commitments
-  under one customer-facing Trip Envelope, but live flight booking is still held
-  behind public-safe flight search/price/reserve/order-status surfaces.
+  or inventory-source adapter. OTA deployments can omit Inventory and still
+  compose trips entirely from sourced Catalog inventory.
+- Catalog HTTP APIs provide AI-safe discovery and quote access. Agent runtimes
+  wrap those APIs as local tools; the first-party `catalog-mcp` package is not
+  part of the v1 public surface.
+- Flights, Operations ground logistics, Finance checkout, workflows, storefront
+  SDK, and public contracts remain separate modules. The composer groups their
+  commitments under one customer-facing Trip Envelope, but live flight booking
+  is still held behind public-safe flight search/price/reserve/order-status
+  surfaces.
 - `POST /v1/public/catalog/checkout/start` is working template-owned storefront
   glue, and the operator composer adapter can call the extracted
   `startCatalogCheckout(...)` function. A generic composer should still depend
-  on framework-owned catalog/checkout services before non-operator templates
-  consume it directly.
+  on framework-owned catalog and finance checkout services before non-operator
+  templates consume it directly.
 
 ## 1. Current foundation
 
@@ -88,13 +90,14 @@ Voyant already has many of the required primitives:
   multi-connection fan-out, itinerary fingerprinting, booking snapshots, and
   reference-data provider contracts. Public/admin route mounting remains a
   template concern.
-- **Ground transport** in `@voyantjs/ground` for operators, vehicles,
-  drivers, dispatch, execution, assignments, positions, shifts, and related
-  operational records.
+- **Ground transport** in `@voyantjs/operations/ground` for operators,
+  vehicles, drivers, dispatch, execution, assignments, positions, shifts, and
+  related operational records.
 - **Booking Sessions** for public booking-session flows and scoped checkout
   capabilities, including storefront bootstrap paths.
-- **Checkout** for collection plans, bank-transfer/card initiation, and
-  booking-session-backed collection bootstrap.
+- **Finance checkout** in `@voyantjs/finance` for collection plans,
+  bank-transfer/card initiation, and booking-session-backed collection
+  bootstrap.
 - **Operator storefront checkout wiring** for `POST
   /v1/public/catalog/checkout/start`, including card, bank transfer, inquiry,
   and hold intents. This is currently template-owned glue, not a reusable
@@ -469,7 +472,7 @@ The reusable code surface is `previewCheckoutCollection`,
 customer-facing catalog handoff is
 `POST /v1/public/catalog/checkout/start` in the operator template. Before a
 generic composer ships, extract the reusable parts of that route into
-framework-owned catalog/checkout services. The composer should not mint
+framework-owned catalog and finance checkout services. The composer should not mint
 arbitrary payment amounts in a public flow.
 
 ### 5.7. Workflows
@@ -722,9 +725,9 @@ High-level buy flow:
 5. **Manual placeholders.** Real operators often need "we will confirm this
    hotel manually." The composer should support placeholders without pretending
    they are live inventory.
-6. **Ground transport boundary.** `@voyantjs/ground` is an operational module.
-   The composer still needs a sellable transfer/search surface before it can
-   treat ground services like normal Trip Components.
+6. **Ground transport boundary.** `@voyantjs/operations/ground` is operational
+   execution state. The composer still needs a sellable transfer/search surface
+   before it can treat ground services like normal Trip Components.
 7. **Hold-release primitive for sourced drafts.** The draft reaper can release
    owned holds through owned handlers and can honor
    `AdapterCapabilities.holdReleaseGraceMs`. Sourced adapters currently expose
@@ -743,8 +746,8 @@ High-level buy flow:
     current operator adapter can call the extracted `startCatalogCheckout(...)`
     service from that template, which is enough for the integration branch.
     Before shipping the composer as a generic package, move the reusable
-    checkout-start pieces into framework-owned catalog/checkout services so
-    non-operator templates do not depend on operator-local code.
+    checkout-start pieces into framework-owned catalog and finance checkout
+    services so non-operator templates do not depend on operator-local code.
 
 ## 12. MVP slices
 

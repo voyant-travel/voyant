@@ -103,7 +103,7 @@ Do not retain:
 ### Pricing And Payment Policy
 
 Owner: `@voyantjs/accommodations` for accommodation-specific rate-plan policy;
-`@voyantjs/pricing` and `@voyantjs/finance` remain the cross-cutting engines.
+`@voyantjs/commerce` and `@voyantjs/finance` remain the cross-cutting engines.
 
 Move or recreate:
 

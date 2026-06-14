@@ -21,8 +21,8 @@ Concretely, after exploring the current schema:
 
 1. **Every `invoices` row is customer-facing (AR).** `packages/finance/src/schema.ts` defines `invoices` with `invoiceType ∈ {invoice, proforma, credit_note}` — a *document-kind* enum, **not a direction**. There is no `direction`/`kind` distinguishing receivable (AR) from payable (AP). Invoices reference `bookingId` + `personId`/`organizationId` (the customer). There is **no `supplierId`** on an invoice and **no `supplier_invoices` table**.
 2. **`supplier_payments` exists but pays against nothing.** `packages/finance/src/schema.ts` has a `supplier_payments` table (TypeID `spay`) with `bookingId`, optional `supplierId`, optional `bookingSupplierStatusId`, `amountCents`, `paymentMethod`, `status`, `paymentDate`. It records cash leaving the company — but there is **no invoice document it settles**, no due date, no balance, no aging. It's an orphaned outflow.
-3. **Planned cost is everywhere; actual cost is nowhere.** `costAmountCents` (the operator's cost) already exists on `products`, `option_price_rules`, `option_unit_price_rules`, `option_unit_tiers`, `departure_price_overrides` (`packages/pricing/src/schema-departure-overrides.ts`), `booking_items`, `booking_extras`, and `bookings`. **All of these are *estimates* captured at quote/booking time.** Nothing records what the operator was *actually invoiced* by a supplier after the trip ran — and therefore nothing can compute **cost variance** (planned vs actual), which is the single most useful number for a tour operator.
-4. **`booking_supplier_statuses` is the proto-ledger, but loose.** `packages/bookings/src/schema-operations.ts:11` tracks supplier services per booking: `bookingId`, **`supplierServiceId`** (text, nullable), `serviceName`, `status` (`supplierConfirmationStatusEnum`), `supplierReference`, `costCurrency`, `costAmountCents`, `notes`. This is effectively a purchase-commitment ("we asked for a coach, confirmed, cost ≈ €5k"). It has **no invoice number, no document, no due date, no payable balance** — and crucially **no `supplierId` column**: the supplier identity is only reachable indirectly via `supplier_services.supplierId` (`packages/suppliers/src/schema.ts:135`, a real FK to `suppliers`), and `supplierServiceId` itself is a nullable plain-text ref with no integrity.
+3. **Planned cost is everywhere; actual cost is nowhere.** `costAmountCents` (the operator's cost) already exists on Product records, Commerce price-rule tables (`option_price_rules`, `option_unit_price_rules`, `option_unit_tiers`, `departure_price_overrides` in `packages/commerce/src/pricing/schema-departure-overrides.ts`), `booking_items`, `booking_extras`, and `bookings`. **All of these are *estimates* captured at quote/booking time.** Nothing records what the operator was *actually invoiced* by a supplier after the trip ran — and therefore nothing can compute **cost variance** (planned vs actual), which is the single most useful number for a tour operator.
+4. **`booking_supplier_statuses` is the proto-ledger, but loose.** `packages/bookings/src/schema-operations.ts:11` tracks supplier services per booking: `bookingId`, **`supplierServiceId`** (text, nullable), `serviceName`, `status` (`supplierConfirmationStatusEnum`), `supplierReference`, `costCurrency`, `costAmountCents`, `notes`. This is effectively a purchase-commitment ("we asked for a coach, confirmed, cost ≈ €5k"). It has **no invoice number, no document, no due date, no payable balance** — and crucially **no `supplierId` column**: the supplier identity is only reachable indirectly via `supplier_services.supplierId` (`packages/distribution/src/suppliers/schema.ts`, a real FK within Distribution), and `supplierServiceId` itself is a nullable plain-text ref with no integrity.
 5. **No AP or profitability reporting.** `getFinanceAggregates` (`packages/finance/src/service-aggregates.ts`) computes customer-side revenue / outstanding / overdue only. A `profitabilityQuerySchema` exists in `packages/finance-contracts/src/validation-billing.ts` but is **a validator with no implementation behind it**. There is no per-departure or per-product P&L.
 
 So an operator today **cannot**:
@@ -99,18 +99,21 @@ Finance already owns money, currency/FX (`baseCurrency`/`fxRateSetId`), tax regi
 
 **Decision:** Add a **supplier-invoice (AP) model to `packages/finance`** as a sibling of the customer-facing `invoices` model — *not* by overloading `invoices` with a `direction` column. Rationale: customer invoices and supplier invoices share *machinery* but differ in *shape* (a supplier invoice has a `supplierId`, no `personId` billing target, different number-series semantics — often the *supplier's* number, not ours — and reverse-charge tax). A separate table keeps both clean and avoids a forest of `WHERE direction = …` across every existing AR query. (Considered and rejected: a `direction` enum on `invoices`. It would silently change the meaning of every existing aggregate and index.)
 
-### 4.2 Suppliers must expose a `linkable`; departures (availability slots) too
+### 4.2 Distribution suppliers and Operations departures must expose linkables
 
-`suppliersModule` currently exports **no `linkable`** (`packages/suppliers/src/index.ts`). To attribute cost to a supplier and query the graph (`supplier → invoices`, `departure → costs`), we expose:
+Distribution exposes `supplierLinkable` from its Suppliers owner path. To attribute cost to a supplier and query the graph (`supplier → invoices`, `departure → costs`), use:
 
 ```ts
-// packages/suppliers/src/index.ts
+// packages/distribution/src/suppliers/index.ts
 export const supplierLinkable: LinkableDefinition = {
   module: "suppliers", entity: "supplier", table: "suppliers", idPrefix: "supp",
 }
 ```
 
-`availability` should expose a `departureLinkable` for `availability_slots` (idPrefix **`avsl`** — the existing prefix, `packages/schema-kit/src/typeid/typeid-prefixes.ts:92`) so a departure can be referenced as an allocation target.
+Operations availability exposes a `departureLinkable` for `availability_slots`
+(idPrefix **`avsl`** — the existing prefix,
+`packages/schema-kit/src/typeid/typeid-prefixes.ts:92`) so a departure can be
+referenced as an allocation target.
 
 > **Correction (link semantics).** A `linkable` + a plain text id column does **not** by itself make `queryGraph` traverse anything. `queryGraph` only walks **defined links** (`packages/core/src/query.ts:186`) materialised from `defineLink` (`packages/core/src/links.ts:97`). So for profitability reporting we will **not** rely on graph traversal over loose ids. Reporting is **explicit service SQL** joining `supplier_cost_allocations` to `availability_slots` / `products` / `bookings` by id (§8). The `linkable`s are exposed for the *commitment/attachment* relationships where a real pivot is wanted (e.g. a template-level `defineLink(supplier, supplierInvoice)`), or as **maintained/read-only `defineLink`** relationships if we later want them in the graph — but the P&L read model does not depend on them.
 
@@ -223,24 +226,24 @@ createdAt/updatedAt
 
 `booking_supplier_statuses` (`packages/bookings/src/schema-operations.ts:11`) captures the *expected* cost of a supplier service on a booking. We add a nullable `supplierInvoiceLineId` so a confirmed commitment can be **matched** to the actual invoice line — giving commitment → invoice → payment traceability and a second variance signal (committed vs invoiced).
 
-> **Correction — matching must resolve the supplier indirectly.** `booking_supplier_statuses` has **no `supplierId`**; it has `supplierServiceId` (nullable). To match a `supplier_invoices.supplierId` to a commitment, PR2 must either (a) **derive** the supplier by joining `supplier_services.supplierId` (`packages/suppliers/src/schema.ts:135`) from `booking_supplier_statuses.supplierServiceId` — which fails when `supplierServiceId` is null — or (b) **intentionally add a `supplierId` snapshot** column to `booking_supplier_statuses`. Recommendation: add the explicit `supplierId` snapshot (matching is otherwise unreliable for ad-hoc statuses with no `supplierServiceId`).
+> **Correction — matching must resolve the supplier indirectly.** `booking_supplier_statuses` has **no `supplierId`**; it has `supplierServiceId` (nullable). To match a `supplier_invoices.supplierId` to a commitment, PR2 must either (a) **derive** the supplier by joining `supplier_services.supplierId` (`packages/distribution/src/suppliers/schema.ts`) from `booking_supplier_statuses.supplierServiceId` — which fails when `supplierServiceId` is null — or (b) **intentionally add a `supplierId` snapshot** column to `booking_supplier_statuses`. Recommendation: add the explicit `supplierId` snapshot (matching is otherwise unreliable for ad-hoc statuses with no `supplierServiceId`).
 
 ### 5.6 Service-type taxonomy — keep it AP-local in v1
 
 The request names **flights**, and while `suppliers.type` has `airline`, the shared `serviceTypeEnum` (`accommodation|transfer|experience|guide|meal|other`) has no `flight`/`insurance`.
 
-> **Correction — extending the shared enum is a broad, multi-package sweep.** `serviceTypeEnum` / `serviceType` is duplicated across ~17 files: `suppliers` + `suppliers-contracts` + `suppliers-react`, `products` (`schema-shared.ts`, `schema-itinerary.ts`, `service.ts`) + `products-contracts` + `products-react` + `products-ui`, `bookings/products-ref.ts`, `ui/registry/products/i18n/*`, plus i18n message catalogs. Changing it touches DB enums, contracts, React schemas, the UI registry, and translations.
+> **Correction — extending the shared enum is a broad, multi-package sweep.** `serviceTypeEnum` / `serviceType` spans Distribution supplier surfaces, Inventory Product surfaces, related contract packages, React packages, booking references, and i18n message catalogs. Changing it touches DB enums, contracts, React schemas, reusable UI, and translations.
 >
 > **Decision:** v1 defines an **AP-local `apServiceTypeEnum`** in finance (`transport, flight, accommodation, guide, meal, experience, insurance, other`) used only by `supplier_invoice_lines` — no cross-package churn. Unifying with the shared `serviceTypeEnum` (adding `flight`/`insurance` everywhere) is a **separate, explicitly-scoped enum-sweep PR**, not bundled into PR1.
 
 ### 5.7 Linkables (for pivots/attachment, not for the P&L read model)
 
 ```ts
-// suppliers — packages/suppliers/src/index.ts (currently exports no linkable)
+// distribution suppliers — packages/distribution/src/suppliers/index.ts
 export const supplierLinkable   = { module: "suppliers",    entity: "supplier",         table: "suppliers",          idPrefix: "supp" }
 // finance — add to financeLinkable
 export const supplierInvoiceLinkable = { module: "finance", entity: "supplierInvoice",  table: "supplier_invoices",  idPrefix: "sinv" }
-// availability
+// operations availability
 export const departureLinkable  = { module: "availability", entity: "departure",        table: "availability_slots", idPrefix: "avsl" }
 ```
 
@@ -476,7 +479,7 @@ Each independently mergeable and useful.
 5. **PR5 — Report export + accountant sharing (Phase A, §13.2).** PDF + CSV export on all finance reports; `POST /reports/:report/share` over `createPublicDocumentDeliveryGrant`; manage-shares view; read-only accountant API key issuance (`finance:read`/`reports:read`). No new RBAC — reuses existing grant/API-key infra.
 6. **PR6 — AI extraction provider.** `InvoiceExtractionProvider` + `voyant-cloud-gateway` + `byo-llm`; `invoice_extractions` audit; "extract from PDF" flow. Optional, behind config.
 - **PR-A (follow-up, cross-cutting) — internal accountant role (Phase B, §13.3).** Extend Better Auth access-control statements with finance capabilities; mount a `requireCapability` gate on `/v1/admin/*`; define the `accountant` role. Establishes sub-`staff` authorization platform-wide, so it's sequenced after the finance work lands.
-- **PR-X (separate, optional) — shared `serviceTypeEnum` sweep.** Unify the AP-local enum with the shared `serviceTypeEnum` (add `flight`/`insurance` across suppliers/products + their contracts/react/ui/i18n, ~17 files). Explicitly *not* bundled into PR1.
+- **PR-X (separate, optional) — shared `serviceTypeEnum` sweep.** Unify the AP-local enum with the shared `serviceTypeEnum` (add `flight`/`insurance` across Distribution supplier surfaces, Inventory Product surfaces, related contracts, React packages, and i18n). Explicitly *not* bundled into PR1.
 
 PR0–PR5 deliver the full request **plus accountant sharing/export** with manual entry; PR6 is the typing-saver; PR-A (internal accountant RBAC) and PR-X (taxonomy unification) are follow-ups.
 

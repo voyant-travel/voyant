@@ -20,9 +20,11 @@ Concretely:
 
 Each module is a separately publishable package. Cross-package
 `.references()` calls force schema co-installation: a consumer who
-installs `@voyantjs/ground` but not `@voyantjs/facilities` cannot create
-the `facility_id` foreign-key constraint that `ground.transport_pickups`
-declares. That breaks the module-as-a-package boundary.
+installs a vertical source package but not the target module that owns the
+referenced table cannot create that foreign-key constraint. For example, a
+standalone vertical should not create a hard FK into Operations places or
+Inventory Product tables unless it is a documented vertical-extension
+exception. That breaks the module-as-a-package boundary.
 
 Links keep the wiring explicit at the template (deployment) layer:
 - The source package exports a `LinkableDefinition` (e.g.

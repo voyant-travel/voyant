@@ -49,9 +49,9 @@ Viator and GetYourGuide outbound integrations should be **distribution channel a
 
 They should sit on top of existing modules:
 
-- `packages/products`
-- `packages/availability`
-- `packages/pricing`
+- `packages/inventory`
+- `packages/operations`
+- `packages/commerce`
 - `packages/bookings`
 - `packages/distribution`
 - `packages/bookings/src/requirements`

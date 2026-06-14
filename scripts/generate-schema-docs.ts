@@ -206,14 +206,6 @@ const sections: SectionDefinition[] = [
     title: "Accommodations",
     modules: [accommodationsSchema],
   },
-  {
-    title: "Operations Ground & Transport",
-    modules: [
-      operationsGroundOperatorsSchema,
-      operationsGroundDispatchSchema,
-      operationsGroundOperationsSchema,
-    ],
-  },
 ]
 
 function getDefaultMarker(column: {

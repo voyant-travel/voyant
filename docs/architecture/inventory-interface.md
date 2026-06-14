@@ -1,6 +1,6 @@
 # Inventory Interface
 
-Status: draft / first package-boundary slice for v1.
+Status: implemented v1 owner path.
 Audience: contributors moving operated product authoring, product-internal
 components, product versions, owned inventory publication lifecycle, or future
 operated-inventory subdomains.
@@ -61,10 +61,9 @@ The target package entrypoints are:
 ```
 
 The main Product authoring/runtime implementation now lives under these
-Inventory package paths. New first-party code that is specifically installing
-operated authoring should prefer the Inventory entrypoints. Existing
-`products` / `products-react` imports remain supported as compatibility shims
-over the Inventory implementation.
+Inventory package paths. First-party code that installs operated authoring must
+use the Inventory entrypoints; the beta `products` / `products-react` runtime
+package names are not part of the v1 workspace package surface.
 
 Product graph compose/duplicate authoring now uses an Inventory owner path:
 
@@ -75,9 +74,9 @@ Product graph compose/duplicate authoring now uses an Inventory owner path:
 @voyantjs/inventory/authoring/extension
 ```
 
-`@voyantjs/catalog-authoring` remains a compatibility package while schema
-manifests and existing hosts still name it. It should re-export Inventory
-authoring rather than own operated-product mutation logic.
+`@voyantjs/catalog-authoring` should remain catalog-owned only if it owns real
+overlay/source-governance behavior. Operated Product and Product Version
+authoring belongs under Inventory owner paths.
 
 ## 3. Catalog Authoring Classification
 

@@ -1,6 +1,13 @@
 # UI I18n Rollout Plan
 
+Status: archived pre-v1 rollout history.
+
 > Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
+> Separate `*-ui` packages were also folded into their corresponding `*-react`
+> packages for v1. Package names such as `products-ui`, `pricing-ui`, and
+> `resources-ui` below are historical rollout labels, not current public
+> package guidance. Use [`frontend-package-strategy.md`](./frontend-package-strategy.md)
+> for current frontend package rules.
 
 ## Goal
 

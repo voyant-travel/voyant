@@ -5,5 +5,5 @@ resource pools, ground logistics, and places.
 
 New code should import owner paths such as `@voyantjs/operations/availability`,
 `@voyantjs/operations/resources`, `@voyantjs/operations/ground`, and
-`@voyantjs/operations/places`. The legacy package names remain compatibility
-facades during the v1 migration.
+`@voyantjs/operations/places`. The beta slice package names are not part of the
+v1 workspace package surface.

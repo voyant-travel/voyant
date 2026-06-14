@@ -2,9 +2,9 @@
 
 Status: active v1 strategy. ADR-0005, the frontend package model, and the
 package-closure, Interface-proof, schema-move, and migration issues listed in
-§8.1 are implemented on `feature/v1-package-restructure`. Compatibility
-facades and generated schema-manifest moves still follow the migration contract
-below.
+§8.1 are implemented on `feature/v1-package-restructure`. The beta runtime
+package names targeted by this strategy are removed from the v1 workspace
+surface rather than shipped as compatibility facades.
 Audience: contributors changing package/module shape, starter templates,
 domain vocabulary, or first-party product positioning.
 
@@ -500,9 +500,9 @@ Person/Organization master records, the whole composer workspace, or
 
 Target a real split, not a permanent combined CRM Module. Because Voyant is
 still beta, this can be a breaking v1 package move: Relationships and Quotes
-own their respective runtime and React surfaces. Temporary facades are
-acceptable inside the migration branch only when they keep intermediate commits
-verifiable; they should not ship as public v1 API.
+own their respective runtime and React surfaces. Temporary facades were allowed
+only inside the migration branch to keep intermediate commits verifiable; they
+must not ship as public v1 API.
 
 Prerequisite cleanup:
 
@@ -607,8 +607,8 @@ Compatibility policy:
 - Keep `@voyantjs/transactions-contracts` only as a temporary legacy contract
   package if external integrations still consume those zod schemas. Do not make
   it part of the v1 default product bundles.
-- Temporary runtime facades may exist only inside the migration branch to keep
-  intermediate commits verifiable.
+- Temporary runtime facades may exist only inside intermediate migration commits
+  to keep those commits verifiable.
 - No public v1 package should expose `@voyantjs/transactions` or
   `@voyantjs/transactions-react` unless a later ADR explicitly reverses this
   retirement plan.
@@ -699,8 +699,8 @@ Required cleanup:
 - Keep manual and dynamic composition in the same workspace if they converge on
   the same Trip Envelope semantics.
 - Remove any old `travel-composer` public package names before v1. Temporary
-  aliases are acceptable only inside the migration branch if they keep
-  intermediate commits verifiable.
+  aliases are acceptable only inside intermediate migration commits if they keep
+  those commits verifiable.
 
 Proposal-to-reserve trace:
 
@@ -1195,11 +1195,11 @@ Critical path:
   Admin/Storefront own shell/page composition.
 - Parallel after Interfaces exist: Operations/facilities reframing,
   Distribution supplier/external-ref migration, admin/storefront package
-  rationalization, and contract-package rename/compatibility planning.
+  rationalization, and contract-package rename/legacy-contract planning.
 - Deferred if time-boxed: optional MICE can wait unless v1 explicitly ships MICE
   support; no public v1 package should expose the old `travel-composer` name. Do
-  not ship half-moved public packages: either finish the target move or keep the
-  old package with an explicit legacy/deferred status.
+  not ship half-moved public packages: either finish the target move or defer
+  the move behind an explicit issue.
 
 ### 8.1 Execution Tracking
 
@@ -1256,10 +1256,10 @@ Migration contract:
 - Cross-package references continue to follow schema discipline: cross-domain
   associations go through links unless a documented vertical-extension
   exception applies.
-- Because `@voyantjs/*` packages are already published, removed public package
-  names need an external-consumer policy: changelog entry, migration target,
-  npm deprecation or final compatibility release where appropriate, and no
-  silent deletion of a published import path before v1.
+- Because `@voyantjs/*` beta packages are already published, removed public
+  package names need an external-consumer policy: changelog entry, migration
+  target, and npm deprecation notice where appropriate. The v1 workspace should
+  not keep runtime compatibility facades solely for beta import paths.
 
 ## 9. Implemented Target Recommendations
 
@@ -1272,12 +1272,12 @@ migration issue rather than reopening the package move implicitly.
 | --- | --- | --- |
 | Products / Inventory | Owned product authoring/runtime source lives in optional `inventory` packages or subpaths. Do not install Inventory by default for OTA/reseller bundles. | Main Product routes/services/schema/UI source and compose/duplicate product graph authoring are Inventory-owned. The old Products runtime package names are removed from v1; template schema specifiers use Inventory directly. Keep `@voyantjs/catalog-authoring` only if a real Catalog overlay/source-governance surface is split out. |
 | Commerce | Use `commerce` as the target Module. Fold `pricing`, `markets`, `sellability`, and promotions into Commerce. | Commerce owns the public commercial runtime surface. Sellability no longer constructs Transactions Offers; callers use commerce outputs, Quote Versions, booking drafts, or trip-composer price snapshots. Old public subpath exports are removed from v1. |
-| CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside the migration branch. |
+| CRM | Replace current `crm` packages with `relationships` plus `quotes` in the big-bang v1 package move. Do not ship a public v1 `crm` facade. | Move Person/Organization/account surfaces to Relationships and Quote/Quote Version/pipeline surfaces to Quotes. Temporary facades are allowed only inside intermediate migration commits. |
 | Distribution | Fold `suppliers` and `external-refs` into `distribution`, while preserving Supplier and Channel as distinct domain roles. | Move supplier/channel/external-ref schemas, routes, and mappings behind Distribution Interfaces without flattening Supplier and Channel vocabulary. |
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |
 | Catalog Item | Use canonical Catalog Item terminology in docs and product language while preserving the actual Catalog Projection Interface where that is the supported code contract. | Do not invent a `CatalogEntry` compatibility alias; reconcile docs/comments and any stray `CatalogItem` identifiers with `CatalogProjection` intentionally. |
 | Trip Composer | Use standalone `trip-composer`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Keep package names, route prefixes, admin extension ids, tests, and template manifests on the Trip Composer vocabulary. |
-| Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`. Keep `transactions-contracts` only as temporary legacy contracts if external consumers still need them. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
+| Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`. Keep `transactions-contracts` only as legacy contracts if external consumers still need those zod schemas. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
 
 ## 10. Current Package Disposition
 
@@ -1315,7 +1315,7 @@ stay unchanged.
 | `@voyantjs/trip-composer`, `@voyantjs/trip-composer-react` | Keep as the standalone Trip Composer packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Quotes, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `quotes` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyantjs/bookings`, `@voyantjs/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | retired beta Booking Requirements packages | Removed from the v1 workspace surface. | Requirements define what must be collected to commit a booking; runtime and React imports use Bookings owner paths. |
-| `@voyantjs/checkout`, `@voyantjs/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published pre-v1 names should be npm-deprecated to the Finance owner paths. |
+| `@voyantjs/checkout`, `@voyantjs/checkout-react` | Removed from the v1 workspace package surface; Finance / Finance React are the owner paths. | Checkout is collection orchestration against booking, invoice, schedule, and guarantee targets. Published beta names should be npm-deprecated to the Finance owner paths. |
 
 ### 10.4 Operations Packages
 

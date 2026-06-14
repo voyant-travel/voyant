@@ -123,8 +123,8 @@ Resolved upstream for the base platform contract, adoption still incomplete in
 
 - `@voyantjs/storefront/customer-portal` and
   `@voyantjs/storefront-react/customer-portal` own the portal runtime and
-  React surface; the legacy `@voyantjs/customer-portal` package names are
-  compatibility wrappers
+  React surface; the beta `@voyantjs/customer-portal` package names are not
+  part of the v1 workspace package surface
 - public/authenticated routes now cover bootstrap, profile, companions,
   booking list/detail, documents, marketing consent, email contact-exists, and
   phone contact-exists

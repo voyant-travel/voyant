@@ -23,7 +23,9 @@ capabilities.
 Examples:
 
 - `bookings`
-- `products`
+- `inventory`
+- `commerce`
+- `operations`
 - `finance`
 - `legal`
 - `notifications`

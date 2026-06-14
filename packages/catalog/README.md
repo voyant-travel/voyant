@@ -1,6 +1,9 @@
 # @voyantjs/catalog
 
-Catalog plane foundation for Voyant. The shared cross-cutting infrastructure that vertical modules — `products`, `cruises`, `accommodations`, `charters`, `extras` — adopt to participate in a normalized discovery / overlay / snapshot / search surface.
+Catalog plane foundation for Voyant. The shared cross-cutting infrastructure
+that Inventory, vertical modules, resale modules, and booking add-on surfaces
+adopt to participate in a normalized discovery / overlay / snapshot / search
+surface.
 
 This package owns the catalog plane foundation plus semantic search primitives:
 embedding providers, model compatibility helpers, hybrid/semantic search, and
@@ -23,11 +26,11 @@ search services, or catalog runtime services.
 
 ## What's in the box
 
-- **`./contract`** — `FieldPolicy` type and the eleven governance enums. The load-bearing schema decision: every field on every CatalogEntry is declared with a row in a per-vertical policy file.
-- **`./provenance`** — `Provenance` shape (`source_kind`, `source_ref`, `source_freshness`) carried by every CatalogEntry.
+- **`./contract`** — `FieldPolicy` type and the eleven governance enums. The load-bearing schema decision: every field on every Catalog Item projection is declared with a row in a per-vertical policy file.
+- **`./provenance`** — `Provenance` shape (`source_kind`, `source_ref`, `source_freshness`) carried by every Catalog Item projection.
 - **`./overlay/schema`** — drizzle table schema for editorial overrides keyed `(entity_module, entity_id, field_path, locale, audience, market)`.
 - **`./overlay/resolver`** — resolver-merge logic with full locale × audience × market fallback chain.
-- **`./snapshot/schema`** — `booking_catalog_snapshot` table for immutable booking-time CatalogEntry views.
+- **`./snapshot/schema`** — `booking_catalog_snapshot` table for immutable booking-time Catalog Item projection views.
 - **`./indexer/contract`** — engine-agnostic `IndexerAdapter` contract.
 - **`./indexer/typesense`** — native Typesense implementation, the v1 default.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
