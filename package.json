@@ -34,7 +34,7 @@
     "verify:retail-spine-closure": "node scripts/check-retail-spine-closure.mjs",
     "verify:native-date-inputs": "node scripts/check-native-date-inputs.mjs",
     "verify:raw-minor-unit-labels": "node scripts/check-raw-minor-unit-labels.mjs",
-    "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring && pnpm verify:cloudflare-entrypoints && pnpm verify:workflows-package-surface && pnpm verify:accommodation-resale-boundary",
+    "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring && pnpm verify:cloudflare-entrypoints && pnpm verify:workflows-package-surface && pnpm verify:accommodation-resale-boundary && pnpm verify:retail-spine-closure",
     "verify:agent-quality": "node scripts/check-agent-code-quality.mjs --report-only",
     "verify:agent-quality:changed": "node scripts/check-agent-code-quality.mjs --changed --report-only",
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
