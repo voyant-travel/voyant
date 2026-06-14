@@ -55,9 +55,10 @@ Commerce returns commercial decisions, price/availability responses, commercial
 snapshots, quote-version pricing inputs, booking drafts, or Trips price
 snapshots depending on the caller.
 
-`@voyant-travel/transactions-contracts` may remain only as a temporary legacy contract
-package if external consumers still depend on those zod schemas. It must not be
-part of default v1 bundles.
+`@voyant-travel/transactions-contracts` is also removed from the v1 workspace
+surface. Useful validation schemas from the retired generic Offer/Order ladder
+must move to the owning package instead of preserving a standalone Transactions
+contract seam.
 
 ## Required v1 ownership
 

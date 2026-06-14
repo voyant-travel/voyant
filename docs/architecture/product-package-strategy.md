@@ -526,7 +526,6 @@ Candidate packages:
 
 - `@voyant-travel/transactions`
 - `@voyant-travel/transactions-react`
-- `@voyant-travel/transactions-contracts`
 
 Problem:
 
@@ -604,14 +603,15 @@ Move the current responsibilities as follows:
 
 Compatibility policy:
 
-- Keep `@voyant-travel/transactions-contracts` only as a temporary legacy contract
-  package if external integrations still consume those zod schemas. Do not make
-  it part of the v1 default product bundles.
 - Temporary runtime facades may exist only inside intermediate migration commits
   to keep those commits verifiable.
 - No public v1 package should expose `@voyant-travel/transactions` or
-  `@voyant-travel/transactions-react` unless a later ADR explicitly reverses this
-  retirement plan.
+  `@voyant-travel/transactions-react` unless a later ADR explicitly reverses
+  this retirement plan.
+- No public v1 package should expose `@voyant-travel/transactions-contracts`.
+  Any useful validation schemas from the retired generic Offer/Order ladder must
+  move to the owning package: Quotes, Bookings, Commerce, Finance, Legal,
+  Trips, Storefront, or Distribution.
 
 Required cleanup:
 
@@ -1277,7 +1277,7 @@ migration issue rather than reopening the package move implicitly.
 | MICE / Corporate | Implement optional `mice` as the group-business Module. Use Program as the central entity. Keep `corporate` as a bundle/persona label, not the Module name. | Start from one vertical slice: Program plus group block coordination, delegate/rooming workflow, or RFP/bid workflow. Keep low-level resource truth in Operations and connect through explicit Interfaces. |
 | Catalog Item | Use canonical Catalog Item terminology in docs and product language while preserving the actual Catalog Projection Interface where that is the supported code contract. | Do not invent a `CatalogEntry` compatibility alias; reconcile docs/comments and any stray `CatalogItem` identifiers with `CatalogProjection` intentionally. |
 | Trips | Use standalone `trips`. Do not expose it as a `quotes` subpath and do not rename it to `offers`. | Keep package names, route prefixes, admin extension ids, tests, and template manifests on the Trips vocabulary. |
-| Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`. Keep `transactions-contracts` only as legacy contracts if external consumers still need those zod schemas. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
+| Transactions | Retire runtime `transactions` packages per ADR-0005. Do not rename them to `orders` or `commitments`, and do not ship `transactions-contracts` in the v1 workspace surface. | Replace `booking_transaction_details`, remove Sellability's Offer construction, and move remaining order/term references to their owning Modules as described in §5.4. |
 
 ## 10. Current Package Disposition
 
@@ -1366,7 +1366,7 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyant-travel/accommodations-contracts`, `@voyant-travel/bookings-contracts`, `@voyant-travel/catalog-contracts`, `@voyant-travel/charters-contracts`, `@voyant-travel/cruises-contracts`, `@voyant-travel/extras-contracts`, `@voyant-travel/finance-contracts`, `@voyant-travel/flights-contracts`, `@voyant-travel/identity-contracts`, `@voyant-travel/legal-contracts`, `@voyant-travel/products-contracts`, `@voyant-travel/quotes-contracts`, `@voyant-travel/relationships-contracts`, `@voyant-travel/suppliers-contracts`, `@voyant-travel/transactions-contracts` | Keep the zod-only contract seam separate unless ADR-0002 is replaced. | Runtime consolidation does not automatically collapse contract packages, but v1 package moves can still rename, split, or retire legacy contract names. The legacy `crm-contracts` seam is split into Relationships and Quotes contracts for v1. Treat `products-contracts`, `suppliers-contracts`, `extras-contracts`, and `transactions-contracts` as migration/compatibility concerns for their target Modules, not as proof that old runtime Module names should survive. |
+| `@voyant-travel/accommodations-contracts`, `@voyant-travel/bookings-contracts`, `@voyant-travel/catalog-contracts`, `@voyant-travel/charters-contracts`, `@voyant-travel/cruises-contracts`, `@voyant-travel/extras-contracts`, `@voyant-travel/finance-contracts`, `@voyant-travel/flights-contracts`, `@voyant-travel/identity-contracts`, `@voyant-travel/legal-contracts`, `@voyant-travel/products-contracts`, `@voyant-travel/quotes-contracts`, `@voyant-travel/relationships-contracts`, `@voyant-travel/suppliers-contracts` | Keep the zod-only contract seam separate unless ADR-0002 is replaced. | Runtime consolidation does not automatically collapse contract packages, but v1 package moves can still rename, split, or retire legacy contract names. The legacy `crm-contracts` seam is split into Relationships and Quotes contracts for v1. `transactions-contracts` is removed with the retired Transactions runtime; useful schemas must live with their owning Modules. Treat `products-contracts`, `suppliers-contracts`, and `extras-contracts` as migration/compatibility concerns for their target Modules, not as proof that old runtime Module names should survive. |
 
 ### 10.9 Plugin Packages
 
