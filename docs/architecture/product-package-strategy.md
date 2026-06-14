@@ -1382,7 +1382,7 @@ stay unchanged.
 | Workspace package(s) | Direction | Notes |
 | --- | --- | --- |
 | `operator` template | Keep as the reference product assembly. | The template should change after package seams settle, because it is the proof that product modes compose cleanly. |
-| `@voyantjs/agent-control-plane`, `@voyantjs/agent-runner` | Keep as agentic engineering applications. | These are repository tooling/runtime apps, not travel-domain Modules. Follow `docs/architecture/agentic-engineering-orchestration.md` for changes. |
+| Internal dev-agent tooling | Keep outside the Voyant workspace. | Agent queue, remote sandbox, browser evidence, and code-execution tooling lives in `../internal-dev-agent`, not in the product monorepo. |
 | `@voyantjs/scripts` | Keep as repository automation. | This is not part of the product package topology. |
 | `catalog-demo-api`, `flights-demo-api` | Keep as demo applications. | These may need dependency updates after Catalog, Inventory, or Flights package moves, but they should not drive Module boundaries. |
 | `@voyantjs/workflow-runs-dashboard`, `@voyantjs/workflows-local-dashboard` | Keep as workflow/admin tooling apps. | They are consumers of workflow infrastructure. |

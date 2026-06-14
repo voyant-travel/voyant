@@ -49,7 +49,6 @@
       "!**/.vinxi",
       "!**/.output",
       "!**/.turbo",
-      "!**/.agents",
       "!**/.claude",
       "!**/docs/open-travel",
       "!**/*.gen.ts",

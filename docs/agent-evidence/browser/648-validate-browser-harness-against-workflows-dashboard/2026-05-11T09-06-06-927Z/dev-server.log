@@ -1,6 +1,0 @@
-# 2026-05-11T09:06:07.151Z VOYANT_WORKFLOWS_DASHBOARD_EMPTY_API=1 pnpm -C apps/workflows-local-dashboard exec vite dev --host 127.0.0.1 --port $VOYANT_AGENT_DEV_SERVER_PORT
-
-
-  VITE v6.4.2  ready in 333 ms
-
-  ➜  Local:   http://127.0.0.1:4948/
