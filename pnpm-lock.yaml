@@ -1682,8 +1682,8 @@ importers:
         specifier: workspace:^
         version: link:../core
       '@voyant-travel/data-sdk':
-        specifier: npm:@voyantjs/data-sdk@^0.4.0
-        version: '@voyantjs/data-sdk@0.4.0'
+        specifier: ^0.5.0
+        version: 0.5.0
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -2411,8 +2411,8 @@ importers:
         specifier: workspace:^
         version: link:../bookings
       '@voyant-travel/cloud-sdk':
-        specifier: npm:@voyantjs/cloud-sdk@^0.8.0
-        version: '@voyantjs/cloud-sdk@0.8.1(typesense@3.0.6(@babel/runtime@7.29.2))'
+        specifier: ^0.9.0
+        version: 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -3897,8 +3897,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/charters
       '@voyant-travel/cloud-sdk':
-        specifier: npm:@voyantjs/cloud-sdk@^0.8.0
-        version: '@voyantjs/cloud-sdk@0.8.1(typesense@3.0.6(@babel/runtime@7.29.2))'
+        specifier: ^0.9.0
+        version: 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/commerce':
         specifier: workspace:^
         version: link:../../packages/commerce
@@ -3912,8 +3912,8 @@ importers:
         specifier: npm:@voyantjs/connect-cruises@0.3.13
         version: '@voyantjs/connect-cruises@0.3.13'
       '@voyant-travel/connect-sdk':
-        specifier: npm:@voyantjs/connect-sdk@0.7.1
-        version: '@voyantjs/connect-sdk@0.7.1'
+        specifier: 0.8.0
+        version: 0.8.0
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../../packages/core
@@ -3924,8 +3924,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/cruises-react
       '@voyant-travel/data-sdk':
-        specifier: npm:@voyantjs/data-sdk@^0.4.0
-        version: '@voyantjs/data-sdk@0.4.0'
+        specifier: ^0.5.0
+        version: 0.5.0
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../../packages/db
@@ -6744,6 +6744,26 @@ packages:
   '@vitest/utils@4.1.2':
     resolution: {integrity: sha512-xw2/TiX82lQHA06cgbqRKFb5lCAy3axQ4H4SoUFhUsg+wztiet+co86IAMDtF6Vm1hc7J6j09oh/rgDn+JdKIQ==}
 
+  '@voyant-travel/cloud-sdk@0.9.0':
+    resolution: {integrity: sha512-pMaoOYSHbPW3V2KncU6PuzTyAphPx3q7HrNXADSiUpPWQxqq+trXnVqVyYRJBicuThfj7FLKe2RGx5+EN9Sdng==}
+    peerDependencies:
+      typesense: '>=2.0.0 <4.0.0'
+    peerDependenciesMeta:
+      typesense:
+        optional: true
+    bundledDependencies:
+      - '@voyant-travel/sdk-core'
+
+  '@voyant-travel/connect-sdk@0.8.0':
+    resolution: {integrity: sha512-vmfcXWTn8tHubJ/zeJxFcJAdoQwRrQoFh+/LE1a9vl12+57c9TgF4TT8x+G7z6RvFt3irF0hzKoUsYyKd1Ro6g==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
+  '@voyant-travel/data-sdk@0.5.0':
+    resolution: {integrity: sha512-H7haHd5hwRls9AVJeOvFZEsgEWjV6/L0F3JUiifIjQ9mhHfX66V5ofV8xRFpd6FYr613Nc6RT1eyAQjRqk6hBQ==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
   '@voyantjs/catalog-contracts@0.107.1':
     resolution: {integrity: sha512-kr+6WAUxGlGpoeXL9Rqzd95HkB4ycf7mA2nJq456BH2mWAHLHRfN4n+MJtpFDKpDghTQJPRaR1dz0Op8lvV48w==}
 
@@ -6757,16 +6777,6 @@ packages:
 
   '@voyantjs/cloud-sdk@0.6.2':
     resolution: {integrity: sha512-T9073qILcix61oqUcVNCeijHgxC8i2OsjWi5EDvSIZZLx4T4HJS+lBYr39b8Dh+EYdGwSd3HvIcteVrHeuHNow==}
-    peerDependencies:
-      typesense: '>=2.0.0 <4.0.0'
-    peerDependenciesMeta:
-      typesense:
-        optional: true
-    bundledDependencies:
-      - '@voyant-sdk/sdk-core'
-
-  '@voyantjs/cloud-sdk@0.8.1':
-    resolution: {integrity: sha512-YZ1Fql3vtXVkAf0KX75f/8EZsM59qBuurmJQVjhjgdmP7S7Gq6/mLZFihG+XhRI7saUsXwymW0X7qCdUsDUo4g==}
     peerDependencies:
       typesense: '>=2.0.0 <4.0.0'
     peerDependenciesMeta:
@@ -6798,11 +6808,6 @@ packages:
 
   '@voyantjs/core@0.18.0':
     resolution: {integrity: sha512-LGWoE07g9ECc/QBhXL14oKMurWheCBf0cAMXq55AIBit2uX0uy2vZJY4qAFD/l2+RiAgNGvedG6STlyOnib3lQ==}
-
-  '@voyantjs/data-sdk@0.4.0':
-    resolution: {integrity: sha512-Wr88NxxgN/QOZT+o2pfLcE/e2G+ks9udDIsJj+TUkHud/tj2ArHubSyJHinF/nlN3jBG9HfwOzij5Hokg1nE+g==}
-    bundledDependencies:
-      - '@voyant-sdk/sdk-core'
 
   '@voyantjs/db@0.108.0':
     resolution: {integrity: sha512-G25vGd7rJv1XGhOIxCfW/DWYrbBQQFgJuSeqyS+qrO6FqvCjcRtxgqtdj0XM+U+M5rY2oo9ufS65fp/Mm19qnQ==}
@@ -12983,6 +12988,14 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
+  '@voyant-travel/cloud-sdk@0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))':
+    optionalDependencies:
+      typesense: 3.0.6(@babel/runtime@7.29.2)
+
+  '@voyant-travel/connect-sdk@0.8.0': {}
+
+  '@voyant-travel/data-sdk@0.5.0': {}
+
   '@voyantjs/catalog-contracts@0.107.1':
     dependencies:
       zod: 4.3.6
@@ -13073,10 +13086,6 @@ snapshots:
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
-  '@voyantjs/cloud-sdk@0.8.1(typesense@3.0.6(@babel/runtime@7.29.2))':
-    optionalDependencies:
-      typesense: 3.0.6(@babel/runtime@7.29.2)
-
   '@voyantjs/connect-adapter@0.2.20(@voyantjs/catalog@0.117.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8))':
     dependencies:
       '@voyantjs/catalog': 0.117.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -13091,8 +13100,6 @@ snapshots:
   '@voyantjs/core@0.109.0': {}
 
   '@voyantjs/core@0.18.0': {}
-
-  '@voyantjs/data-sdk@0.4.0': {}
 
   '@voyantjs/db@0.108.0(@cloudflare/workers-types@4.20260426.1)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)':
     dependencies:

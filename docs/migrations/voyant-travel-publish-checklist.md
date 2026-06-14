@@ -2,17 +2,30 @@
 
 This repository now publishes package identities under `@voyant-travel/*`.
 During the bootstrap window, a few external dependencies still resolve through
-old `@voyantjs/*` npm alias targets until those external packages are republished.
+old `@voyantjs/*` npm alias targets until those external packages are republished
+with installable package metadata.
 Do not change workspace package `name` fields back to `@voyantjs/*`.
 
 Temporary dependency aliases:
 
-- `@voyant-travel/cloud-sdk` -> `npm:@voyantjs/cloud-sdk@^0.8.0`
-- `@voyant-travel/data-sdk` -> `npm:@voyantjs/data-sdk@^0.4.0`
 - `@voyant-travel/connect-adapter` -> `npm:@voyantjs/connect-adapter@0.2.20`
 - `@voyant-travel/connect-cruises` -> `npm:@voyantjs/connect-cruises@0.3.13`
-- `@voyant-travel/connect-sdk` -> `npm:@voyantjs/connect-sdk@0.7.1`
 - `@voyant-travel/cli` -> `npm:@voyantjs/cli@^0.26.0`
+
+Resolved external dependencies:
+
+- `@voyant-travel/cloud-sdk@^0.9.0`
+- `@voyant-travel/data-sdk@^0.5.0`
+- `@voyant-travel/connect-sdk@0.8.0`
+
+Known publish blockers:
+
+- `@voyant-travel/connect-adapter@0.2.22` and
+  `@voyant-travel/connect-cruises@0.3.15` are published, but their npm metadata
+  still contains `@voyant-travel/connect-sdk: workspace:*`; keep the aliases
+  until those packages are republished with registry semver dependencies.
+- `@voyant-travel/cli` is not visible on npm yet; keep the alias until it
+  resolves from the `@voyant-travel` scope.
 
 Publishable workspace package names at this point:
 
