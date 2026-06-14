@@ -386,7 +386,7 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
 
   it("rolls up into the accounting base (RON), converting legacy residuals at the fallback rate", async () => {
     await seedBaseScenario()
-    // 1 RON = 0.2 EUR, so EUR→RON = 5. fx_rate_sets lives in @voyantjs/markets
+    // 1 RON = 0.2 EUR, so EUR→RON = 5. fx_rate_sets lives in @voyantjs/commerce
     // (seed via raw SQL). The scenario's supplier costs were created BEFORE this
     // rate existed, so EUR rows have no base snapshot → they take the fallback.
     await db.execute(

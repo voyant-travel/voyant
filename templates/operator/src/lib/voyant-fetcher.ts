@@ -1,6 +1,6 @@
 import { createIsomorphicFn } from "@tanstack/react-start"
 import { getRequestHeader, getRequestUrl } from "@tanstack/react-start/server"
-import { defaultFetcher, type VoyantFetcher } from "@voyantjs/products-react"
+import { defaultFetcher, type VoyantFetcher } from "@voyantjs/inventory-react"
 
 /**
  * Isomorphic Voyant fetcher.

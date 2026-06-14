@@ -3,14 +3,14 @@ import { createDbClient } from "@voyantjs/db"
 import { financeService } from "@voyantjs/finance"
 import { paymentSessions } from "@voyantjs/finance/schema"
 import {
-  deliverQueuedNotificationReminder,
-  sendDueNotificationReminders,
-} from "@voyantjs/notifications/tasks"
-import {
   createDefaultProductBrochureTemplate,
   loadProductBrochureTemplateContext,
   renderProductBrochureTemplate,
-} from "@voyantjs/products/tasks"
+} from "@voyantjs/inventory/tasks"
+import {
+  deliverQueuedNotificationReminder,
+  sendDueNotificationReminders,
+} from "@voyantjs/notifications/tasks"
 import { workflow } from "@voyantjs/workflows"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

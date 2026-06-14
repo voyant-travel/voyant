@@ -120,7 +120,9 @@ export type ContractReferenceKind =
   | "supplier"
   | "channel"
   | "booking"
-  | "order"
+  | "target"
+  | "legacyTransactionOffer"
+  | "legacyTransactionOrder"
   | "templateVersion"
   | "series"
 
@@ -207,6 +209,7 @@ export function ContractDetailPage({
     renderReference?.({ kind, id: referenceId, contract }) ?? (
       <span className="font-mono text-xs">{referenceId}</span>
     )
+  const targetValue = getContractTargetValue(contract)
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -367,9 +370,25 @@ export function ContractDetailPage({
                   {renderReferenceValue("booking", contract.bookingId)}
                 </DetailRow>
               ) : null}
-              {contract.orderId ? (
-                <DetailRow label={f.fields.order}>
-                  {renderReferenceValue("order", contract.orderId)}
+              {targetValue ? (
+                <DetailRow label={f.fields.target}>
+                  {renderReferenceValue("target", targetValue)}
+                </DetailRow>
+              ) : null}
+              {contract.legacyTransactionOfferId ? (
+                <DetailRow label={f.fields.legacyTransactionOffer}>
+                  {renderReferenceValue(
+                    "legacyTransactionOffer",
+                    contract.legacyTransactionOfferId,
+                  )}
+                </DetailRow>
+              ) : null}
+              {contract.legacyTransactionOrderId ? (
+                <DetailRow label={f.fields.legacyTransactionOrder}>
+                  {renderReferenceValue(
+                    "legacyTransactionOrder",
+                    contract.legacyTransactionOrderId,
+                  )}
                 </DetailRow>
               ) : null}
               {!contract.personId &&
@@ -377,7 +396,9 @@ export function ContractDetailPage({
               !contract.supplierId &&
               !contract.channelId &&
               !contract.bookingId &&
-              !contract.orderId ? (
+              !targetValue &&
+              !contract.legacyTransactionOfferId &&
+              !contract.legacyTransactionOrderId ? (
                 <p className="text-muted-foreground">{f.empty.noParties}</p>
               ) : null}
             </div>
@@ -542,6 +563,17 @@ export function ContractDetailPage({
       />
     </div>
   )
+}
+
+function getContractTargetValue(contract: LegalContractRecord) {
+  if (contract.targetKind === "provider_source_ref") {
+    if (!contract.targetProvider && !contract.targetSourceRef) return null
+    return `${contract.targetProvider ?? "provider"}:${contract.targetSourceRef ?? ""}`
+  }
+  if (contract.targetKind && contract.targetId) {
+    return `${contract.targetKind}:${contract.targetId}`
+  }
+  return null
 }
 
 function DetailRow({ label, children }: { label: string; children: ReactNode }) {

@@ -36,8 +36,8 @@
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/checkout-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/flights": "workspace:^",
     "@voyantjs/ui": "workspace:^",
@@ -55,10 +55,10 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/checkout-react": {
+    "@voyantjs/finance-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -76,8 +76,8 @@
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/checkout-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/flights": "workspace:^",
     "@voyantjs/i18n": "workspace:^",

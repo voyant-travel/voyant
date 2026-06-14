@@ -1,6 +1,6 @@
 "use client"
 
-import type { PricingCategoryDependencyRecord } from "@voyantjs/pricing-react"
+import type { PricingCategoryDependencyRecord } from "@voyantjs/commerce-react/pricing"
 
 import {
   Dialog,

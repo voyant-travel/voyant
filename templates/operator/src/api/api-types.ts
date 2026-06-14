@@ -1,19 +1,16 @@
-import type { AvailabilityRoutes } from "@voyantjs/availability/routes"
-import type { BookingRequirementsRoutes } from "@voyantjs/booking-requirements/routes"
+import type { BookingsExtrasRoutes } from "@voyantjs/bookings/extras"
+import type { BookingRequirementsRoutes } from "@voyantjs/bookings/requirements/routes"
 import type { BookingRoutes } from "@voyantjs/bookings/routes"
-import type { CrmRoutes } from "@voyantjs/crm/routes"
+import type { MarketsRoutes, PricingRoutes, SellabilityRoutes } from "@voyantjs/commerce"
+import type { ExternalRefsRoutes, SupplierRoutes } from "@voyantjs/distribution"
 import type { DistributionRoutes } from "@voyantjs/distribution/routes"
-import type { ExternalRefsRoutes } from "@voyantjs/external-refs/routes"
-import type { ExtrasRoutes } from "@voyantjs/extras/routes"
 import type { FinanceRoutes } from "@voyantjs/finance/routes"
 import type { IdentityRoutes } from "@voyantjs/identity/routes"
-import type { MarketsRoutes } from "@voyantjs/markets/routes"
-import type { PricingRoutes } from "@voyantjs/pricing/routes"
-import type { ProductRoutes } from "@voyantjs/products/routes"
-import type { ResourcesRoutes } from "@voyantjs/resources/routes"
-import type { SellabilityRoutes } from "@voyantjs/sellability/routes"
-import type { SupplierRoutes } from "@voyantjs/suppliers/routes"
-import type { TransactionsRoutes } from "@voyantjs/transactions/routes"
+import type { InventoryExtrasRoutes } from "@voyantjs/inventory/extras"
+import type { ProductRoutes } from "@voyantjs/inventory/routes"
+import type { OperationsAdminRoutes, OperationsRoutes } from "@voyantjs/operations"
+import type { QuotesRoutes } from "@voyantjs/quotes/routes"
+import type { RelationshipsRoutes } from "@voyantjs/relationships/routes"
 import type { Hono } from "hono"
 
 /**
@@ -25,22 +22,22 @@ import type { Hono } from "hono"
  * end-to-end typed requests.
  */
 type ApiRoutes = Hono & {
-  "/v1/crm": CrmRoutes
-  "/v1/availability": AvailabilityRoutes
+  "/v1/relationships": RelationshipsRoutes
+  "/v1/quotes": QuotesRoutes
+  "/v1/operations": OperationsRoutes
   "/v1/identity": IdentityRoutes
   "/v1/external-refs": ExternalRefsRoutes
   "/v1/booking-requirements": BookingRequirementsRoutes
-  "/v1/extras": ExtrasRoutes
+  "/v1/extras": InventoryExtrasRoutes & BookingsExtrasRoutes
   "/v1/pricing": PricingRoutes
   "/v1/markets": MarketsRoutes
-  "/v1/transactions": TransactionsRoutes
-  "/v1/resources": ResourcesRoutes
   "/v1/sellability": SellabilityRoutes
   "/v1/distribution": DistributionRoutes
   "/v1/suppliers": SupplierRoutes
   "/v1/products": ProductRoutes
   "/v1/bookings": BookingRoutes
   "/v1/admin/finance": FinanceRoutes
+  "/v1/admin/operations": OperationsAdminRoutes
 }
 
 export type AppType = ApiRoutes

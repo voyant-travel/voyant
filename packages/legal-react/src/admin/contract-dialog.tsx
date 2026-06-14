@@ -3,10 +3,15 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useOperatorAdminMessages } from "@voyantjs/admin"
-import { useOrganization, useOrganizations, usePeople, usePerson } from "@voyantjs/crm-react"
 import { useChannel, useChannels } from "@voyantjs/distribution-react"
+import { useSupplier, useSuppliers } from "@voyantjs/distribution-react/suppliers"
 import { formatMessage } from "@voyantjs/i18n"
-import { useSupplier, useSuppliers } from "@voyantjs/suppliers-react"
+import {
+  useOrganization,
+  useOrganizations,
+  usePeople,
+  usePerson,
+} from "@voyantjs/relationships-react"
 import {
   Button,
   Dialog,

@@ -1,6 +1,6 @@
 import { defineLink } from "@voyantjs/core"
-import { organizationLinkable } from "@voyantjs/crm"
-import { productLinkable } from "@voyantjs/products"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyantjs/inventory"
+import { organizationLinkable } from "@voyantjs/relationships"
 
 /**
  * Each product has one owning organization (the client); each organization can

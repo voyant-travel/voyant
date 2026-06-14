@@ -1,0 +1,9 @@
+/* Tailwind v4 source-detection helper for Commerce React components. */
+@source "./markets/components/**/*.{ts,tsx}";
+@source "./pricing/components/**/*.{ts,tsx}";
+@source "./promotions/**/*.{ts,tsx}";
+@source "./sellability/components/**/*.{ts,tsx}";
+@source "../dist/markets/components/**/*.{js,mjs}";
+@source "../dist/pricing/components/**/*.{js,mjs}";
+@source "../dist/promotions/**/*.{js,mjs}";
+@source "../dist/sellability/components/**/*.{js,mjs}";

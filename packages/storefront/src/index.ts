@@ -32,12 +32,17 @@ export {
 } from "./service.js"
 export type { StorefrontBookingSessionBootstrapOptions } from "./service-booking-session-bootstrap.js"
 export type {
+  StorefrontCustomerSignalCreatedEvent,
   StorefrontIntakeGuard,
   StorefrontIntakeGuardDecision,
   StorefrontIntakeOptions,
+  StorefrontIntakePersistence,
+  StorefrontIntakePersistenceResolver,
+  StorefrontIntakePerson,
+  StorefrontIntakeSignal,
   StorefrontNewsletterDoubleOptInHook,
 } from "./service-intake.js"
-export { CUSTOMER_SIGNAL_CREATED_EVENT } from "./service-intake.js"
+export { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "./service-intake.js"
 export { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 export type {
   StorefrontAppliedOffer,

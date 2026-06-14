@@ -2,8 +2,7 @@
 
 Pure transactions validation schemas (offers, orders, order terms) and enums,
 zod-only, for consumers (admin SDK, Voyant Connect) that validate transaction
-payloads without the transactions runtime. `@voyantjs/transactions` re-exports
-these so existing import paths are unchanged.
+payloads from pre-v1 integrations. Runtime transactions are retired in v1.
 
 ## Install
 
@@ -21,5 +20,5 @@ import {
 } from "@voyantjs/transactions-contracts"
 ```
 
-Existing `@voyantjs/transactions/validation` imports remain available for
-applications that already depend on the full runtime package.
+New runtime code should use Quotes, Bookings, Finance, and Legal records instead
+of generic transaction Orders or Offers.

@@ -7,7 +7,7 @@
  * (d) a one-click retry button. The React surface lives in templates;
  * this file is the backing API.
  *
- * Routes are mounted under `/v1/admin/distribution/channel-push/*`.
+ * Routes are mounted under `/v1/admin/distribution/*`.
  *
  *   GET  /links              — counts + filterable list of channel_booking_links
  *   POST /retry/:bookingId   — drain pending links for one booking

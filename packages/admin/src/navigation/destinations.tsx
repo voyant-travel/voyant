@@ -88,7 +88,7 @@ export interface AdminNavigationProviderProps {
 /**
  * Provides destination resolution + navigation to packaged admin pages.
  * Hosts mount it once around the workspace (e.g. via `AdminWorkspaceShell`'s
- * `destinations` prop in `@voyantjs/admin-app`).
+ * `destinations` prop in `@voyantjs/admin/app/workspace`).
  */
 export function AdminNavigationProvider({
   resolvers,

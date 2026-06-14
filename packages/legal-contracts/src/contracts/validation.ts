@@ -1,6 +1,10 @@
 import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
 import { validateStructuredTemplateSyntax } from "@voyantjs/templating"
 import { z } from "zod"
+import {
+  legalTargetListQueryFieldsSchema,
+  legalTargetRefFieldsSchema,
+} from "../targets/validation.js"
 
 export const contractScopeSchema = z.enum(["customer", "supplier", "partner", "channel", "other"])
 
@@ -144,7 +148,7 @@ const contractCoreSchema = z.object({
   supplierId: optionalNullableString(),
   channelId: optionalNullableString(),
   bookingId: optionalNullableString(),
-  orderId: optionalNullableString(),
+  ...legalTargetRefFieldsSchema.shape,
   expiresAt: optionalNullableString(),
   language: z.string().min(2).max(10).default("en"),
   variables: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -166,7 +170,7 @@ export const contractListQuerySchema = paginationSchema.extend({
   organizationId: z.string().optional(),
   supplierId: z.string().optional(),
   bookingId: z.string().optional(),
-  orderId: z.string().optional(),
+  ...legalTargetListQueryFieldsSchema.shape,
   search: z.string().optional(),
 })
 
@@ -250,6 +254,7 @@ const contractSignatureCoreSchema = z.object({
   signerEmail: z.string().email().optional().nullable(),
   signerRole: z.string().max(255).optional().nullable(),
   personId: z.string().optional().nullable(),
+  ...legalTargetRefFieldsSchema.shape,
   method: contractSignatureMethodSchema.default("manual"),
   provider: z.string().max(255).optional().nullable(),
   externalReference: z.string().max(255).optional().nullable(),
@@ -270,6 +275,7 @@ const contractAttachmentCoreSchema = z.object({
   fileSize: z.number().int().min(0).optional().nullable(),
   storageKey: z.string().max(1000).optional().nullable(),
   checksum: z.string().max(255).optional().nullable(),
+  ...legalTargetRefFieldsSchema.shape,
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 

@@ -1,6 +1,6 @@
 "use client"
 
-import type { PricingCategoryRecord } from "@voyantjs/pricing-react"
+import type { PricingCategoryRecord } from "@voyantjs/commerce-react/pricing"
 
 import {
   Dialog,

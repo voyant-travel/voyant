@@ -34,10 +34,10 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/identity": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -51,13 +51,13 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
-    "@voyantjs/suppliers-react": {
+    "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -77,12 +77,12 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/identity": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",

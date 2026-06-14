@@ -1,7 +1,7 @@
 "use client"
 
 import { useAdminNavigate } from "@voyantjs/admin"
-import { usePerson } from "@voyantjs/crm-react"
+import { usePerson } from "@voyantjs/relationships-react"
 import type { ReactElement } from "react"
 
 import { ContractsPage } from "../components/contracts-page.js"

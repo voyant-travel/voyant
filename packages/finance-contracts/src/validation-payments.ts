@@ -55,11 +55,59 @@ export const paymentInstrumentListQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 })
 
+export const paymentTargetSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("booking"), bookingId: z.string().min(1) }),
+  z.object({ type: z.literal("invoice"), invoiceId: z.string().min(1) }),
+  z.object({
+    type: z.literal("booking_payment_schedule"),
+    bookingPaymentScheduleId: z.string().min(1),
+  }),
+  z.object({ type: z.literal("booking_guarantee"), bookingGuaranteeId: z.string().min(1) }),
+  z.object({ type: z.literal("flight_order"), flightOrderId: z.string().min(1) }),
+  z.object({ type: z.literal("program"), programId: z.string().min(1) }),
+  z.object({ type: z.literal("supplier_settlement"), supplierSettlementId: z.string().min(1) }),
+  z.object({ type: z.literal("channel_settlement"), channelSettlementId: z.string().min(1) }),
+  z.object({
+    type: z.literal("provider_reference"),
+    provider: z.string().min(1).max(255),
+    reference: z.string().min(1).max(255),
+  }),
+  z.object({ type: z.literal("legacy_order"), legacyOrderId: z.string().min(1) }),
+])
+
+export const paymentProvenanceSchema = z.object({
+  source: z
+    .enum([
+      "operator",
+      "storefront",
+      "customer_portal",
+      "payment_provider",
+      "supplier_channel",
+      "migration",
+      "other",
+    ])
+    .default("operator"),
+  provider: z.string().max(255).optional().nullable(),
+  reference: z.string().max(255).optional().nullable(),
+  idempotencyKey: z.string().max(255).optional().nullable(),
+})
+
+const noGenericOrderIdSchema = z.object({
+  orderId: z.never().optional(),
+})
+
+function withLegacyOrderCompatibility<TShape extends z.ZodRawShape>(schema: z.ZodObject<TShape>) {
+  return schema
+    .extend({ legacyOrderId: z.string().optional().nullable() })
+    .and(noGenericOrderIdSchema)
+}
+
 const paymentSessionCoreSchema = z.object({
+  target: paymentTargetSchema.optional(),
+  provenance: paymentProvenanceSchema.optional(),
   targetType: paymentSessionTargetTypeSchema.default("other"),
   targetId: z.string().optional().nullable(),
   bookingId: z.string().optional().nullable(),
-  orderId: z.string().optional().nullable(),
   invoiceId: z.string().optional().nullable(),
   bookingPaymentScheduleId: z.string().optional().nullable(),
   bookingGuaranteeId: z.string().optional().nullable(),
@@ -97,25 +145,30 @@ const paymentSessionCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
-export const insertPaymentSessionSchema = paymentSessionCoreSchema
-export const updatePaymentSessionSchema = paymentSessionCoreSchema.partial()
-export const paymentSessionListQuerySchema = paginationSchema.extend({
-  bookingId: z.string().optional(),
-  orderId: z.string().optional(),
-  invoiceId: z.string().optional(),
-  bookingPaymentScheduleId: z.string().optional(),
-  bookingGuaranteeId: z.string().optional(),
-  targetType: paymentSessionTargetTypeSchema.optional(),
-  status: paymentSessionStatusSchema.optional(),
-  provider: z.string().optional(),
-  providerSessionId: z.string().optional(),
-  providerPaymentId: z.string().optional(),
-  externalReference: z.string().optional(),
-  clientReference: z.string().optional(),
-  idempotencyKey: z.string().optional(),
-})
+export const insertPaymentSessionSchema = withLegacyOrderCompatibility(paymentSessionCoreSchema)
+export const updatePaymentSessionSchema = withLegacyOrderCompatibility(
+  paymentSessionCoreSchema.partial(),
+)
+export const paymentSessionListQuerySchema = withLegacyOrderCompatibility(
+  paginationSchema.extend({
+    bookingId: z.string().optional(),
+    invoiceId: z.string().optional(),
+    bookingPaymentScheduleId: z.string().optional(),
+    bookingGuaranteeId: z.string().optional(),
+    targetType: paymentSessionTargetTypeSchema.optional(),
+    status: paymentSessionStatusSchema.optional(),
+    provider: z.string().optional(),
+    providerSessionId: z.string().optional(),
+    providerPaymentId: z.string().optional(),
+    externalReference: z.string().optional(),
+    clientReference: z.string().optional(),
+    idempotencyKey: z.string().optional(),
+  }),
+)
 
 const paymentSessionProvisioningSchema = z.object({
+  target: paymentTargetSchema.optional(),
+  provenance: paymentProvenanceSchema.optional(),
   provider: z.string().max(255).optional().nullable(),
   paymentMethod: paymentMethodSchema.optional().nullable(),
   payerPersonId: z.string().optional().nullable(),
@@ -212,8 +265,9 @@ export const expirePaymentSessionSchema = z.object({
 })
 
 const paymentAuthorizationCoreSchema = z.object({
+  target: paymentTargetSchema.optional(),
+  provenance: paymentProvenanceSchema.optional(),
   bookingId: z.string().optional().nullable(),
-  orderId: z.string().optional().nullable(),
   invoiceId: z.string().optional().nullable(),
   bookingGuaranteeId: z.string().optional().nullable(),
   paymentInstrumentId: z.string().optional().nullable(),
@@ -230,16 +284,21 @@ const paymentAuthorizationCoreSchema = z.object({
   notes: z.string().optional().nullable(),
 })
 
-export const insertPaymentAuthorizationSchema = paymentAuthorizationCoreSchema
-export const updatePaymentAuthorizationSchema = paymentAuthorizationCoreSchema.partial()
-export const paymentAuthorizationListQuerySchema = paginationSchema.extend({
-  bookingId: z.string().optional(),
-  orderId: z.string().optional(),
-  invoiceId: z.string().optional(),
-  bookingGuaranteeId: z.string().optional(),
-  paymentInstrumentId: z.string().optional(),
-  status: paymentAuthorizationStatusSchema.optional(),
-})
+export const insertPaymentAuthorizationSchema = withLegacyOrderCompatibility(
+  paymentAuthorizationCoreSchema,
+)
+export const updatePaymentAuthorizationSchema = withLegacyOrderCompatibility(
+  paymentAuthorizationCoreSchema.partial(),
+)
+export const paymentAuthorizationListQuerySchema = withLegacyOrderCompatibility(
+  paginationSchema.extend({
+    bookingId: z.string().optional(),
+    invoiceId: z.string().optional(),
+    bookingGuaranteeId: z.string().optional(),
+    paymentInstrumentId: z.string().optional(),
+    status: paymentAuthorizationStatusSchema.optional(),
+  }),
+)
 
 const paymentCaptureCoreSchema = z.object({
   paymentAuthorizationId: z.string().optional().nullable(),

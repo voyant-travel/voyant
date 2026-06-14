@@ -2,7 +2,7 @@
 
 import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
 import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
-import { type Supplier, useSuppliers } from "@voyantjs/suppliers-react"
+import { type Supplier, useSuppliers } from "@voyantjs/distribution-react/suppliers"
 import {
   Button,
   Dialog,

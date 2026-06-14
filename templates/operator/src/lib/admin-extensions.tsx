@@ -23,12 +23,12 @@ import type { AdminMessages } from "@/lib/admin-i18n"
  * - `dashboard.footer`
  * - `booking.details.header`
  * - `booking.details.after-summary`
- * - `booking.details.invoices-tab` (packaged: rendered by bookings-ui's
+ * - `booking.details.invoices-tab` (packaged: rendered by booking UI's
  *   `BookingDetailHost`; finance-ui contributes its invoices card here —
- *   the finance-ui ↔ bookings-ui cycle resolution)
- * - `person.details.bookings-tab` (packaged: rendered by crm-ui's
- *   `PersonDetailHost`; bookings-ui contributes its person-bookings card
- *   here — the crm-ui ↔ bookings-ui cycle resolution)
+ *   the finance-ui ↔ booking UI cycle resolution)
+ * - `person.details.bookings-tab` (packaged: rendered by relationships-ui's
+ *   `PersonDetailHost`; booking UI contributes its person-bookings card
+ *   here — the relationships-ui ↔ booking UI cycle resolution)
  * - `invoice.details.header`
  * - `invoice.details.after-summary`
  */
@@ -73,7 +73,7 @@ type AdminExtensionNavMessages = Pick<
 >
 
 // The CORE admin surfaces — dashboard, account, settings — are
-// package-delivered by `@voyantjs/admin-app` (packaged-admin RFC §4.2): the
+// package-delivered by `@voyantjs/admin-app/core-extension` (packaged-admin RFC §4.2): the
 // extension contributes NO navigation (Dashboard/Settings are part of the
 // BASE operator navigation; Account is linked from the user menu) and is
 // registered for the routes seam. The app composes two seams through the
@@ -127,25 +127,22 @@ function createCoreExtension() {
   })
 }
 
-// Availability is package-delivered (packaged-admin RFC Phase 3): the
-// extension contributes NO navigation — the Availability item is part of the
-// BASE operator navigation (createOperatorAdminNavigation in @voyantjs/admin),
-// so an entry here would duplicate it. It's registered for the routes seam:
-// the contributions carry the package-owned route metadata (no search
-// contracts — the pages keep their filters local), and the detail pages are
-// the packaged hosts from @voyantjs/availability-react/admin — the route files
-// under src/routes/_workspace/availability/* only bind route params onto
-// them. The index page stays an app-side wrapper: its bulk update/delete
-// handlers call the availability batch endpoints, which have no
-// availability-react client equivalent yet.
-function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.availability({
-    labels: { availability: messages.availability },
+// Operations is package-delivered (packaged-admin RFC Phase 3): the owner
+// extension contributes NO navigation — Availability and Resources remain
+// base operator navigation items. The owner admin entry contributes the
+// availability and resource-planning route metadata under
+// /operations/availability and /operations/resources.
+function createOperationsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.operations({
+    labels: {
+      availability: messages.availability,
+      resources: messages.resources,
+    },
   })
 }
 
 // App-owned header action on the package-delivered bookings list: composing
-// a trip is an operator concept (the travel-composer pages are app-custom),
+// a trip is an operator concept (the trip-composer pages are app-custom),
 // so the button rides in through the extension factory's
 // `indexHeaderActions` option instead of a host route file.
 function ComposeTripButton() {
@@ -214,9 +211,9 @@ function createCatalogExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam (metadata for
 // the finance pages; the detail pages are the packaged hosts from
 // @voyantjs/finance-react/admin) AND for the widgets seam: it contributes the
-// finance-owned booking invoices card on bookings-ui's
-// `booking.details.invoices-tab` slot — the finance-ui ↔ bookings-ui cycle
-// resolution (finance-ui depends on bookings-ui, so the bookings host can't
+// finance-owned booking invoices card on booking UI's
+// `booking.details.invoices-tab` slot — the finance-ui ↔ booking UI cycle
+// resolution (finance-ui depends on booking UI, so the bookings host can't
 // import the card; the widget contribution travels the other way).
 function createFinanceExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.finance({
@@ -253,22 +250,22 @@ function createFlightsExtension(messages: AdminExtensionNavMessages) {
 // assembles it into its code-based route tree — no route file.
 function createDistributionExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.distribution({
-    labels: { channelSync: messages.channelSync },
+    labels: { channelSync: messages.channelSync, suppliers: messages.suppliers },
   })
 }
 
-// CRM is package-delivered (packaged-admin RFC Phase 3): the extension
+// Relationships is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the People and Organizations items are part of
 // the BASE operator navigation (createOperatorAdminNavigation in
 // @voyantjs/admin), so entries here would duplicate them. It's registered
 // for the routes seam (metadata for the people/organization pages; the pages
-// are the packaged hosts from @voyantjs/crm-react/admin — the route files under
+// are the packaged hosts from @voyantjs/relationships-react/admin — the route files under
 // src/routes/_workspace/people/* and src/routes/_workspace/organizations/*
 // only bind route params onto them). The person detail page's Bookings tab
-// is the crm-ui ↔ bookings-ui cycle resolution: bookings-ui contributes its
-// PersonBookingsWidget on crm-ui's `person.details.bookings-tab` slot.
-function createCrmExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.crm({
+// is the relationships-ui ↔ booking UI cycle resolution: booking UI contributes its
+// PersonBookingsWidget on relationships-ui's `person.details.bookings-tab` slot.
+function createRelationshipsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.relationships({
     labels: {
       people: messages.people,
       organizations: messages.organizations,
@@ -324,33 +321,17 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the list keeps its filters local), and the pages are the packaged hosts
-// from @voyantjs/suppliers-react/admin — the route files under
+// from @voyantjs/distribution-react/suppliers/admin — the route files under
 // src/routes/_workspace/suppliers/* only bind route params onto them. The
 // detail page's customer-payment-policy card arrives via finance-ui's widget
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔
 // suppliers-ui cycle resolution).
-function createSuppliersExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.suppliers({ labels: { suppliers: messages.suppliers } })
-}
-
-// Resources is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Resources item is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata (no search contracts —
-// the tab dashboard keeps its tab/filter state local), and the pages are the
-// packaged hosts from @voyantjs/resources-react/admin — the route files under
-// src/routes/_workspace/resources/* only bind route params onto them.
-function createResourcesExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.resources({ labels: { resources: messages.resources } })
-}
-
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
-// route implementation come from @voyantjs/promotions-react/admin. The app only
+// route implementation come from @voyantjs/commerce-react/promotions/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.promotions({
+  return generatedAdminExtensionFactories.commerce({
     labels: { promotions: messages.promotions },
     icon: Tag,
     order: 50,
@@ -364,7 +345,7 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
 // duplicate it. It's registered for the routes seam: the contributions carry
 // the package-owned route implementations (no search contracts — the pages
 // keep their filters local), and the list/categories pages are the packaged
-// hosts from @voyantjs/products-react/admin. The detail page is substituted
+// hosts from @voyantjs/inventory-react/admin. The detail page is substituted
 // through the factory's `detailPageComponent` seam: the operator wrapper
 // composes the app-owned pieces the package cannot import — the
 // availability-react option resource templates panel (availability-react
@@ -372,7 +353,7 @@ function createPromotionsExtension(messages: AdminExtensionNavMessages) {
 // app's /api/v1/uploads storage route, and the product-pre-selected
 // new-booking deep link.
 function createProductsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.products({
+  return generatedAdminExtensionFactories.inventory({
     labels: { products: messages.products, categories: messages.categories },
     detailPageComponent: () =>
       import("@/components/voyant/products/product-detail-page").then((module) => ({
@@ -381,14 +362,14 @@ function createProductsExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Travel composer is package-delivered (packaged-admin RFC Phase 2): nav AND
-// the route implementations come from @voyantjs/travel-composer-react/admin —
+// Trip composer is package-delivered (packaged-admin RFC Phase 2): nav AND
+// the route implementations come from @voyantjs/trip-composer-react/admin —
 // the Trips group (spliced after Bookings via `insertAfter`, with All trips /
 // New trip sub-items), the trips list, and the detail page whose Edit mode
 // lazy-mounts the packaged trip composer. The app only supplies the localized
 // labels and the icon.
-function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.travelComposer({
+function createTripComposerExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.tripComposer({
     labels: {
       trips: messages.trips,
       allTrips: messages.allTrips,
@@ -453,20 +434,18 @@ export function createOperatorAdminExtensions(
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
     createCoreExtension(),
-    createAvailabilityExtension(messages),
+    createOperationsExtension(messages),
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createProductsExtension(messages),
-    createCrmExtension(messages),
+    createRelationshipsExtension(messages),
     createDistributionExtension(messages),
     createFinanceExtension(messages),
     createFlightsExtension(messages),
-    createSuppliersExtension(messages),
     createLegalExtension(messages),
-    createResourcesExtension(messages),
     createNotificationsExtension(messages),
     createPromotionsExtension(messages),
-    createTravelComposerExtension(messages),
+    createTripComposerExtension(messages),
     createActionLedgerExtension(messages),
   )
 }

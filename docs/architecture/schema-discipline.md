@@ -20,9 +20,11 @@ Concretely:
 
 Each module is a separately publishable package. Cross-package
 `.references()` calls force schema co-installation: a consumer who
-installs `@voyantjs/ground` but not `@voyantjs/facilities` cannot create
-the `facility_id` foreign-key constraint that `ground.transport_pickups`
-declares. That breaks the module-as-a-package boundary.
+installs a vertical source package but not the target module that owns the
+referenced table cannot create that foreign-key constraint. For example, a
+standalone vertical should not create a hard FK into Operations places or
+Inventory Product tables unless it is a documented vertical-extension
+exception. That breaks the module-as-a-package boundary.
 
 Links keep the wiring explicit at the template (deployment) layer:
 - The source package exports a `LinkableDefinition` (e.g.
@@ -58,15 +60,15 @@ helpers like `@voyantjs/db/lib/typeid-column` and type-only imports of
 Type-only imports (`import type { ... }`) and `relations(...)`-only
 references are excluded — they don't create FK constraints.
 
-| Source package | Target package (table) | File(s) | Count |
+| Source package | Target package (table) | File(s) | Status |
 |---|---|---|---|
-| `ground` | `facilities` (`facilities`) | `schema-dispatch.ts`, `schema-operations.ts`, `schema-operators.ts` | 7 |
+| `ground` | `facilities` / target `places` (`facilities`) | `schema-dispatch.ts`, `schema-operations.ts`, `schema-operators.ts` | Resolved in #1790: `facilityId` columns are loose ids with indexes. |
 | `ground` | `identity` (`identity_addresses`) | `schema-dispatch.ts`, `schema-operations.ts` | 6 |
-| `accommodations` | `facilities` (`properties`) | `schema-bookings.ts`, `schema-inventory.ts` | 4 |
+| `accommodations` | `facilities` / target `places` (`properties`) | `schema-bookings.ts`, `schema-inventory.ts` | Resolved in #1790: `propertyId` columns are loose ids with indexes. |
 | `accommodations` | `bookings` (`booking_items`) | `schema-bookings.ts` | 1 |
-| `suppliers` | `facilities` (`facilities`) | `schema.ts` | 2 |
+| `suppliers` | `facilities` / target `places` (`facilities`) | `schema.ts` | Resolved in #1790: `primaryFacilityId` / `facilityId` columns are loose ids with indexes. |
 
-Each of these is a follow-up issue: convert the `.references()` call to a
+Unresolved rows remain follow-up issues: convert the `.references()` call to a
 plain `text()` column + `defineLink()` at the template level. File issues
 per-package so the work parallelises.
 

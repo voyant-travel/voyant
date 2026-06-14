@@ -4,11 +4,11 @@ import {
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
 } from "@voyantjs/catalog/booking-engine"
+import { createCatalogPromotionEvaluator } from "@voyantjs/commerce"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { suppliers } from "@voyantjs/distribution"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyantjs/finance"
-import { products } from "@voyantjs/products"
-import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
-import { suppliers } from "@voyantjs/suppliers"
+import { products } from "@voyantjs/inventory"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"

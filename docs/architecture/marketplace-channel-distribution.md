@@ -49,12 +49,12 @@ Viator and GetYourGuide outbound integrations should be **distribution channel a
 
 They should sit on top of existing modules:
 
-- `packages/products`
-- `packages/availability`
-- `packages/pricing`
+- `packages/inventory`
+- `packages/operations`
+- `packages/commerce`
 - `packages/bookings`
 - `packages/distribution`
-- `packages/booking-requirements`
+- `packages/bookings/src/requirements`
 - `packages/fulfillment` concepts inside bookings
 
 The core modules should stay provider-agnostic. Channel-specific payloads, status codes, certification quirks, auth requirements, retries, and mapping rules belong in adapter packages.
@@ -327,7 +327,7 @@ Voyant must expose the fields a channel needs to complete a booking.
 
 Potential sources:
 
-- `packages/booking-requirements`
+- `packages/bookings/src/requirements`
 - product settings
 - product option/unit constraints
 - pickup/meeting configuration

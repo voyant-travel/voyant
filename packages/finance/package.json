@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
+    "./checkout": "./src/checkout-service.ts",
+    "./checkout-routes": "./src/checkout-routes.ts",
+    "./checkout-validation": "./src/checkout-validation.ts",
     "./invoice-fx": "./src/invoice-fx.ts",
     "./payment-link": "./src/payment-link.ts",
     "./schema": "./src/schema.ts",
@@ -26,14 +29,12 @@
   },
   "dependencies": {
     "@voyantjs/action-ledger": "workspace:^",
-    "@voyantjs/availability": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/data-sdk": "^0.4.0",
     "@voyantjs/db": "workspace:^",
     "@voyantjs/finance-contracts": "workspace:^",
     "@voyantjs/hono": "workspace:^",
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/storage": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -42,6 +43,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
@@ -60,6 +63,21 @@
         "types": "./dist/action-ledger-drift.d.ts",
         "import": "./dist/action-ledger-drift.js",
         "default": "./dist/action-ledger-drift.js"
+      },
+      "./checkout": {
+        "types": "./dist/checkout-service.d.ts",
+        "import": "./dist/checkout-service.js",
+        "default": "./dist/checkout-service.js"
+      },
+      "./checkout-routes": {
+        "types": "./dist/checkout-routes.d.ts",
+        "import": "./dist/checkout-routes.js",
+        "default": "./dist/checkout-routes.js"
+      },
+      "./checkout-validation": {
+        "types": "./dist/checkout-validation.d.ts",
+        "import": "./dist/checkout-validation.js",
+        "default": "./dist/checkout-validation.js"
       },
       "./invoice-fx": {
         "types": "./dist/invoice-fx.d.ts",

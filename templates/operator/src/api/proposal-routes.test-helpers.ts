@@ -26,14 +26,14 @@ const mockRegistry = vi.hoisted(() => {
 
 export const mocks = mockRegistry
 
-vi.mock("@voyantjs/crm", async () => {
+vi.mock("@voyantjs/quotes", async () => {
   const { z } = await import("zod")
   return {
     QuoteVersionConflictError: mockRegistry.QuoteVersionConflictError,
     sendQuoteVersionSchema: z.object({
       validUntil: z.string().date().nullable().optional(),
     }),
-    crmService: {
+    quotesService: {
       acceptQuoteVersion: mockRegistry.acceptQuoteVersion,
       declineQuoteVersion: mockRegistry.declineQuoteVersion,
       expireQuoteVersionIfPastValidUntil: mockRegistry.expireQuoteVersionIfPastValidUntil,
@@ -44,16 +44,16 @@ vi.mock("@voyantjs/crm", async () => {
   }
 })
 
-vi.mock("@voyantjs/travel-composer", () => {
-  class TravelComposerInvariantError extends Error {
+vi.mock("@voyantjs/trip-composer", () => {
+  class TripComposerInvariantError extends Error {
     constructor(message: string) {
       super(message)
-      this.name = "TravelComposerInvariantError"
+      this.name = "TripComposerInvariantError"
     }
   }
   return {
-    TravelComposerInvariantError,
-    travelComposerService: {
+    TripComposerInvariantError,
+    tripComposerService: {
       getTrip: mockRegistry.getTrip,
       getTripSnapshotById: mockRegistry.getTripSnapshotById,
       reserveTrip: mockRegistry.reserveTrip,
@@ -71,7 +71,7 @@ vi.mock("./settings", () => ({
   toPublicOperatorSettings: (settings: unknown) => settings,
 }))
 
-vi.mock("./travel-composer-runtime", () => ({
+vi.mock("./trip-composer-runtime", () => ({
   createReserveTripDeps: () => ({ reserve: "deps" }),
   createStartCheckoutDeps: () => ({ checkout: "deps" }),
 }))

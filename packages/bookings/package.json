@@ -7,6 +7,11 @@
     ".": "./src/index.ts",
     "./pii": "./src/pii.ts",
     "./schema": "./src/schema.ts",
+    "./requirements": "./src/requirements/index.ts",
+    "./requirements/schema": "./src/requirements/schema.ts",
+    "./requirements/validation": "./src/requirements/validation.ts",
+    "./requirements/routes": "./src/requirements/routes.ts",
+    "./requirements/public-routes": "./src/requirements/routes-public.ts",
     "./tasks": "./src/tasks/index.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
@@ -15,8 +20,10 @@
     "./action-ledger-capabilities": "./src/action-ledger-capabilities.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
+    "./reservation-plans": "./src/reservation-plans.ts",
     "./checkout-capability": "./src/checkout-capability.ts",
     "./pricing-assignment": "./src/pricing-assignment.ts",
+    "./extras": "./src/extras.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
@@ -40,7 +47,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/products": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
@@ -64,6 +70,31 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
         "default": "./dist/schema.js"
+      },
+      "./requirements": {
+        "types": "./dist/requirements/index.d.ts",
+        "import": "./dist/requirements/index.js",
+        "default": "./dist/requirements/index.js"
+      },
+      "./requirements/schema": {
+        "types": "./dist/requirements/schema.d.ts",
+        "import": "./dist/requirements/schema.js",
+        "default": "./dist/requirements/schema.js"
+      },
+      "./requirements/validation": {
+        "types": "./dist/requirements/validation.d.ts",
+        "import": "./dist/requirements/validation.js",
+        "default": "./dist/requirements/validation.js"
+      },
+      "./requirements/routes": {
+        "types": "./dist/requirements/routes.d.ts",
+        "import": "./dist/requirements/routes.js",
+        "default": "./dist/requirements/routes.js"
+      },
+      "./requirements/public-routes": {
+        "types": "./dist/requirements/routes-public.d.ts",
+        "import": "./dist/requirements/routes-public.js",
+        "default": "./dist/requirements/routes-public.js"
       },
       "./tasks": {
         "types": "./dist/tasks/index.d.ts",
@@ -105,6 +136,11 @@
         "import": "./dist/validation-public.js",
         "default": "./dist/validation-public.js"
       },
+      "./reservation-plans": {
+        "types": "./dist/reservation-plans.d.ts",
+        "import": "./dist/reservation-plans.js",
+        "default": "./dist/reservation-plans.js"
+      },
       "./checkout-capability": {
         "types": "./dist/checkout-capability.d.ts",
         "import": "./dist/checkout-capability.js",
@@ -114,6 +150,11 @@
         "types": "./dist/pricing-assignment.d.ts",
         "import": "./dist/pricing-assignment.js",
         "default": "./dist/pricing-assignment.js"
+      },
+      "./extras": {
+        "types": "./dist/extras.d.ts",
+        "import": "./dist/extras.js",
+        "default": "./dist/extras.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",

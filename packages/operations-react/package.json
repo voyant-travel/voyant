@@ -1,0 +1,375 @@
+{
+  "name": "@voyantjs/operations-react",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/operations-react"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
+    "./styles.css": "./src/styles.css",
+    "./availability": "./src/availability/index.ts",
+    "./availability/provider": "./src/availability/provider.tsx",
+    "./availability/hooks": "./src/availability/hooks/index.ts",
+    "./availability/client": "./src/availability/client.ts",
+    "./availability/query-keys": "./src/availability/query-keys.ts",
+    "./availability/ui": "./src/availability/ui.ts",
+    "./availability/allocation": "./src/availability/allocation/index.ts",
+    "./availability/allocation/i18n": "./src/availability/allocation/i18n/index.ts",
+    "./availability/allocation/components/slot-allocation-model": "./src/availability/allocation/components/slot-allocation-model.ts",
+    "./availability/allocation/components/*": "./src/availability/allocation/components/*.tsx",
+    "./availability/styles.css": "./src/availability/styles.css",
+    "./availability/i18n": "./src/availability/i18n/index.ts",
+    "./availability/components/*": "./src/availability/components/*.tsx",
+    "./availability/admin": "./src/availability/admin/index.tsx",
+    "./availability/admin/*": "./src/availability/admin/*.tsx",
+    "./availability/utils": "./src/availability/utils.ts",
+    "./resources": "./src/resources/index.ts",
+    "./resources/provider": "./src/resources/provider.tsx",
+    "./resources/hooks": "./src/resources/hooks/index.ts",
+    "./resources/client": "./src/resources/client.ts",
+    "./resources/query-keys": "./src/resources/query-keys.ts",
+    "./resources/ui": "./src/resources/ui.ts",
+    "./resources/styles.css": "./src/resources/styles.css",
+    "./resources/i18n": "./src/resources/i18n/index.ts",
+    "./resources/i18n/en": "./src/resources/i18n/en.ts",
+    "./resources/i18n/ro": "./src/resources/i18n/ro.ts",
+    "./resources/components/*": "./src/resources/components/*.tsx",
+    "./resources/admin": "./src/resources/admin/index.tsx",
+    "./ground": "./src/ground/index.ts",
+    "./ground/provider": "./src/ground/provider.tsx",
+    "./ground/hooks": "./src/ground/hooks/index.ts",
+    "./ground/client": "./src/ground/client.ts",
+    "./ground/query-keys": "./src/ground/query-keys.ts",
+    "./places": "./src/places/index.ts",
+    "./places/provider": "./src/places/provider.tsx",
+    "./places/hooks": "./src/places/hooks/index.ts",
+    "./places/client": "./src/places/client.ts",
+    "./places/query-keys": "./src/places/query-keys.ts",
+    "./places/ui": "./src/places/ui.ts",
+    "./places/styles.css": "./src/places/styles.css",
+    "./places/i18n": "./src/places/i18n/index.ts",
+    "./places/i18n/en": "./src/places/i18n/en.ts",
+    "./places/i18n/ro": "./src/places/i18n/ro.ts",
+    "./places/components/*": "./src/places/components/*.tsx"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.72.1",
+    "sonner": "^2.0.7",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-table": {
+      "optional": true
+    },
+    "@voyantjs/admin": {
+      "optional": true
+    },
+    "@voyantjs/bookings-react": {
+      "optional": true
+    },
+    "@voyantjs/inventory-react": {
+      "optional": true
+    },
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    },
+    "sonner": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/react": "workspace:^"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-table": "^8.21.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.72.1",
+    "sonner": "^2.0.7",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2",
+    "zod": "^4.3.6"
+  },
+  "files": [
+    "dist",
+    "src/styles.css",
+    "src/*/styles.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
+      "./availability": {
+        "types": "./dist/availability/index.d.ts",
+        "import": "./dist/availability/index.js",
+        "default": "./dist/availability/index.js"
+      },
+      "./availability/provider": {
+        "types": "./dist/availability/provider.d.ts",
+        "import": "./dist/availability/provider.js",
+        "default": "./dist/availability/provider.js"
+      },
+      "./availability/hooks": {
+        "types": "./dist/availability/hooks/index.d.ts",
+        "import": "./dist/availability/hooks/index.js",
+        "default": "./dist/availability/hooks/index.js"
+      },
+      "./availability/client": {
+        "types": "./dist/availability/client.d.ts",
+        "import": "./dist/availability/client.js",
+        "default": "./dist/availability/client.js"
+      },
+      "./availability/query-keys": {
+        "types": "./dist/availability/query-keys.d.ts",
+        "import": "./dist/availability/query-keys.js",
+        "default": "./dist/availability/query-keys.js"
+      },
+      "./availability/ui": {
+        "types": "./dist/availability/ui.d.ts",
+        "import": "./dist/availability/ui.js",
+        "default": "./dist/availability/ui.js"
+      },
+      "./availability/allocation": {
+        "types": "./dist/availability/allocation/index.d.ts",
+        "import": "./dist/availability/allocation/index.js",
+        "default": "./dist/availability/allocation/index.js"
+      },
+      "./availability/allocation/i18n": {
+        "types": "./dist/availability/allocation/i18n/index.d.ts",
+        "import": "./dist/availability/allocation/i18n/index.js",
+        "default": "./dist/availability/allocation/i18n/index.js"
+      },
+      "./availability/allocation/components/slot-allocation-model": {
+        "types": "./dist/availability/allocation/components/slot-allocation-model.d.ts",
+        "import": "./dist/availability/allocation/components/slot-allocation-model.js",
+        "default": "./dist/availability/allocation/components/slot-allocation-model.js"
+      },
+      "./availability/allocation/components/*": {
+        "types": "./dist/availability/allocation/components/*.d.ts",
+        "import": "./dist/availability/allocation/components/*.js",
+        "default": "./dist/availability/allocation/components/*.js"
+      },
+      "./availability/styles.css": {
+        "default": "./src/availability/styles.css"
+      },
+      "./availability/i18n": {
+        "types": "./dist/availability/i18n/index.d.ts",
+        "import": "./dist/availability/i18n/index.js",
+        "default": "./dist/availability/i18n/index.js"
+      },
+      "./availability/components/*": {
+        "types": "./dist/availability/components/*.d.ts",
+        "import": "./dist/availability/components/*.js",
+        "default": "./dist/availability/components/*.js"
+      },
+      "./availability/admin": {
+        "types": "./dist/availability/admin/index.d.ts",
+        "import": "./dist/availability/admin/index.js",
+        "default": "./dist/availability/admin/index.js"
+      },
+      "./availability/admin/*": {
+        "types": "./dist/availability/admin/*.d.ts",
+        "import": "./dist/availability/admin/*.js",
+        "default": "./dist/availability/admin/*.js"
+      },
+      "./availability/utils": {
+        "types": "./dist/availability/utils.d.ts",
+        "import": "./dist/availability/utils.js",
+        "default": "./dist/availability/utils.js"
+      },
+      "./resources": {
+        "types": "./dist/resources/index.d.ts",
+        "import": "./dist/resources/index.js",
+        "default": "./dist/resources/index.js"
+      },
+      "./resources/provider": {
+        "types": "./dist/resources/provider.d.ts",
+        "import": "./dist/resources/provider.js",
+        "default": "./dist/resources/provider.js"
+      },
+      "./resources/hooks": {
+        "types": "./dist/resources/hooks/index.d.ts",
+        "import": "./dist/resources/hooks/index.js",
+        "default": "./dist/resources/hooks/index.js"
+      },
+      "./resources/client": {
+        "types": "./dist/resources/client.d.ts",
+        "import": "./dist/resources/client.js",
+        "default": "./dist/resources/client.js"
+      },
+      "./resources/query-keys": {
+        "types": "./dist/resources/query-keys.d.ts",
+        "import": "./dist/resources/query-keys.js",
+        "default": "./dist/resources/query-keys.js"
+      },
+      "./resources/ui": {
+        "types": "./dist/resources/ui.d.ts",
+        "import": "./dist/resources/ui.js",
+        "default": "./dist/resources/ui.js"
+      },
+      "./resources/styles.css": {
+        "default": "./src/resources/styles.css"
+      },
+      "./resources/i18n": {
+        "types": "./dist/resources/i18n/index.d.ts",
+        "import": "./dist/resources/i18n/index.js",
+        "default": "./dist/resources/i18n/index.js"
+      },
+      "./resources/i18n/en": {
+        "types": "./dist/resources/i18n/en.d.ts",
+        "import": "./dist/resources/i18n/en.js",
+        "default": "./dist/resources/i18n/en.js"
+      },
+      "./resources/i18n/ro": {
+        "types": "./dist/resources/i18n/ro.d.ts",
+        "import": "./dist/resources/i18n/ro.js",
+        "default": "./dist/resources/i18n/ro.js"
+      },
+      "./resources/components/*": {
+        "types": "./dist/resources/components/*.d.ts",
+        "import": "./dist/resources/components/*.js",
+        "default": "./dist/resources/components/*.js"
+      },
+      "./resources/admin": {
+        "types": "./dist/resources/admin/index.d.ts",
+        "import": "./dist/resources/admin/index.js",
+        "default": "./dist/resources/admin/index.js"
+      },
+      "./ground": {
+        "types": "./dist/ground/index.d.ts",
+        "import": "./dist/ground/index.js",
+        "default": "./dist/ground/index.js"
+      },
+      "./ground/provider": {
+        "types": "./dist/ground/provider.d.ts",
+        "import": "./dist/ground/provider.js",
+        "default": "./dist/ground/provider.js"
+      },
+      "./ground/hooks": {
+        "types": "./dist/ground/hooks/index.d.ts",
+        "import": "./dist/ground/hooks/index.js",
+        "default": "./dist/ground/hooks/index.js"
+      },
+      "./ground/client": {
+        "types": "./dist/ground/client.d.ts",
+        "import": "./dist/ground/client.js",
+        "default": "./dist/ground/client.js"
+      },
+      "./ground/query-keys": {
+        "types": "./dist/ground/query-keys.d.ts",
+        "import": "./dist/ground/query-keys.js",
+        "default": "./dist/ground/query-keys.js"
+      },
+      "./places": {
+        "types": "./dist/places/index.d.ts",
+        "import": "./dist/places/index.js",
+        "default": "./dist/places/index.js"
+      },
+      "./places/provider": {
+        "types": "./dist/places/provider.d.ts",
+        "import": "./dist/places/provider.js",
+        "default": "./dist/places/provider.js"
+      },
+      "./places/hooks": {
+        "types": "./dist/places/hooks/index.d.ts",
+        "import": "./dist/places/hooks/index.js",
+        "default": "./dist/places/hooks/index.js"
+      },
+      "./places/client": {
+        "types": "./dist/places/client.d.ts",
+        "import": "./dist/places/client.js",
+        "default": "./dist/places/client.js"
+      },
+      "./places/query-keys": {
+        "types": "./dist/places/query-keys.d.ts",
+        "import": "./dist/places/query-keys.js",
+        "default": "./dist/places/query-keys.js"
+      },
+      "./places/ui": {
+        "types": "./dist/places/ui.d.ts",
+        "import": "./dist/places/ui.js",
+        "default": "./dist/places/ui.js"
+      },
+      "./places/styles.css": {
+        "default": "./src/places/styles.css"
+      },
+      "./places/i18n": {
+        "types": "./dist/places/i18n/index.d.ts",
+        "import": "./dist/places/i18n/index.js",
+        "default": "./dist/places/i18n/index.js"
+      },
+      "./places/i18n/en": {
+        "types": "./dist/places/i18n/en.d.ts",
+        "import": "./dist/places/i18n/en.js",
+        "default": "./dist/places/i18n/en.js"
+      },
+      "./places/i18n/ro": {
+        "types": "./dist/places/i18n/ro.d.ts",
+        "import": "./dist/places/i18n/ro.js",
+        "default": "./dist/places/i18n/ro.js"
+      },
+      "./places/components/*": {
+        "types": "./dist/places/components/*.d.ts",
+        "import": "./dist/places/components/*.js",
+        "default": "./dist/places/components/*.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  }
+}

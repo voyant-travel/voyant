@@ -14,27 +14,26 @@ import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // augmentations into this module without pulling any runtime code into
 // the chunk that imports the resolver map.
 import type {} from "@voyantjs/action-ledger-react/admin"
-import type {} from "@voyantjs/availability-react/admin"
 import type {} from "@voyantjs/bookings-react/admin"
 import type {} from "@voyantjs/catalog-react/admin"
-import type {} from "@voyantjs/crm-react/admin"
+import type {} from "@voyantjs/commerce-react/admin"
 import type {} from "@voyantjs/distribution-react/admin"
 import type {} from "@voyantjs/finance-react/admin"
 import type {} from "@voyantjs/flights-react/admin"
+import type {} from "@voyantjs/inventory-react/admin"
 import type {} from "@voyantjs/legal-react/admin"
 import type {} from "@voyantjs/notifications-react/admin"
-import type {} from "@voyantjs/products-react/admin"
-import type {} from "@voyantjs/promotions-react/admin"
-import type {} from "@voyantjs/resources-react/admin"
-import type {} from "@voyantjs/suppliers-react/admin"
-import type {} from "@voyantjs/travel-composer-react/admin"
+import type {} from "@voyantjs/operations-react/admin"
+import type {} from "@voyantjs/relationships-react/admin"
+import type {} from "@voyantjs/trip-composer-react/admin"
 
 /** Resolvers for the route-backed subset of the declared destination keys. */
 export const generatedAdminDestinations = {
-  "availabilitySlot.detail": ({ slotId }) => `/availability/${encodeURIComponent(slotId)}`,
-  "availabilitySlot.list": () => "/availability",
+  "availabilitySlot.detail": ({ slotId }) =>
+    `/operations/availability/${encodeURIComponent(slotId)}`,
+  "availabilitySlot.list": () => "/operations/availability",
   "availabilityStartTime.detail": ({ startTimeId }) =>
-    `/availability/start-times/${encodeURIComponent(startTimeId)}`,
+    `/operations/availability/start-times/${encodeURIComponent(startTimeId)}`,
   "booking.create": () => "/bookings/new",
   "booking.list": () => "/bookings",
   "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
@@ -63,13 +62,14 @@ export const generatedAdminDestinations = {
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "product.list": () => "/products",
   "productCategory.list": () => "/products/categories",
-  "resource.detail": ({ resourceId }) => `/resources/${encodeURIComponent(resourceId)}`,
-  "resource.list": () => "/resources",
+  "resource.detail": ({ resourceId }) => `/operations/resources/${encodeURIComponent(resourceId)}`,
+  "resource.list": () => "/operations/resources",
   "resourceAllocation.detail": ({ allocationId }) =>
-    `/resources/allocations/${encodeURIComponent(allocationId)}`,
+    `/operations/resources/allocations/${encodeURIComponent(allocationId)}`,
   "resourceAssignment.detail": ({ assignmentId }) =>
-    `/resources/assignments/${encodeURIComponent(assignmentId)}`,
-  "resourcePool.detail": ({ poolId }) => `/resources/pools/${encodeURIComponent(poolId)}`,
+    `/operations/resources/assignments/${encodeURIComponent(assignmentId)}`,
+  "resourcePool.detail": ({ poolId }) =>
+    `/operations/resources/pools/${encodeURIComponent(poolId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",
   "supplierInvoice.detail": ({ supplierInvoiceId }) =>

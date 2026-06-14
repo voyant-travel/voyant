@@ -27,11 +27,41 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 
+type PaymentSessionTargetColumns = {
+  bookingId?: string
+  invoiceId?: string
+  bookingPaymentScheduleId?: string
+  bookingGuaranteeId?: string
+  orderId?: string
+}
+
+function derivePaymentSessionTargetColumns(
+  data: CreatePaymentSessionInput | UpdatePaymentSessionInput,
+): PaymentSessionTargetColumns {
+  const explicitTarget = "target" in data ? data.target : undefined
+  if (!explicitTarget) return {}
+
+  switch (explicitTarget.type) {
+    case "booking":
+      return { bookingId: explicitTarget.bookingId }
+    case "invoice":
+      return { invoiceId: explicitTarget.invoiceId }
+    case "booking_payment_schedule":
+      return { bookingPaymentScheduleId: explicitTarget.bookingPaymentScheduleId }
+    case "booking_guarantee":
+      return { bookingGuaranteeId: explicitTarget.bookingGuaranteeId }
+    case "legacy_order":
+      return { orderId: explicitTarget.legacyOrderId }
+    default:
+      return {}
+  }
+}
+
 export const financePaymentSessionService = {
   async listPaymentSessions(db: PostgresJsDatabase, query: PaymentSessionListQuery) {
     const conditions = []
     if (query.bookingId) conditions.push(eq(paymentSessions.bookingId, query.bookingId))
-    if (query.orderId) conditions.push(eq(paymentSessions.orderId, query.orderId))
+    if (query.legacyOrderId) conditions.push(eq(paymentSessions.orderId, query.legacyOrderId))
     if (query.invoiceId) conditions.push(eq(paymentSessions.invoiceId, query.invoiceId))
     if (query.bookingPaymentScheduleId) {
       conditions.push(eq(paymentSessions.bookingPaymentScheduleId, query.bookingPaymentScheduleId))
@@ -96,12 +126,17 @@ export const financePaymentSessionService = {
     }
 
     const target = derivePaymentSessionTarget(data)
+    const targetColumns = derivePaymentSessionTargetColumns(data)
+    const { legacyOrderId, target: _explicitTarget, provenance: _provenance, ...sessionData } = data
+    const resolvedLegacyOrderId = legacyOrderId ?? null
     const createSession = (writer: PostgresJsDatabase) =>
       writer
         .insert(paymentSessions)
         .values({
-          ...data,
+          ...sessionData,
+          ...targetColumns,
           ...target,
+          orderId: targetColumns.orderId ?? resolvedLegacyOrderId,
           paymentInstrumentId: data.paymentInstrumentId ?? null,
           paymentAuthorizationId: data.paymentAuthorizationId ?? null,
           paymentCaptureId: data.paymentCaptureId ?? null,
@@ -147,12 +182,19 @@ export const financePaymentSessionService = {
     runtime: FinanceServiceRuntime = {},
   ) {
     const target = derivePaymentSessionTarget(data)
+    const targetColumns = derivePaymentSessionTargetColumns(data)
+    const { legacyOrderId, target: _explicitTarget, provenance: _provenance, ...sessionData } = data
+    const resolvedLegacyOrderId = legacyOrderId
     const updateSession = (writer: PostgresJsDatabase) =>
       writer
         .update(paymentSessions)
         .set({
-          ...data,
+          ...sessionData,
+          ...targetColumns,
           ...target,
+          orderId:
+            targetColumns.orderId ??
+            (resolvedLegacyOrderId === undefined ? undefined : (resolvedLegacyOrderId ?? null)),
           paymentInstrumentId:
             data.paymentInstrumentId === undefined ? undefined : (data.paymentInstrumentId ?? null),
           paymentAuthorizationId:

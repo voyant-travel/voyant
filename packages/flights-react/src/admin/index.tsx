@@ -13,7 +13,7 @@ import { z } from "zod"
  * (packaged-admin RFC §4.7). `booking.detail` (where the wizard lands after
  * booking) comes from the bookings-ui augmentation bound above; declared here
  * are the flights-owned keys plus `person.list`, re-declared shape-locked —
- * also declared by `@voyantjs/crm-react/admin`, and interface merging requires
+ * also declared by `@voyantjs/relationships-react/admin`, and interface merging requires
  * the member shape to stay identical across packages.
  */
 declare module "@voyantjs/admin" {

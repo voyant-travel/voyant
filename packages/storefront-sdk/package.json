@@ -28,13 +28,13 @@
   },
   "peerDependencies": {
     "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/checkout": "workspace:^",
+    "@voyantjs/finance": "workspace:^",
     "@voyantjs/storefront": "workspace:^",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@voyantjs/bookings": "workspace:^",
-    "@voyantjs/checkout": "workspace:^",
+    "@voyantjs/finance": "workspace:^",
     "@voyantjs/storefront": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",

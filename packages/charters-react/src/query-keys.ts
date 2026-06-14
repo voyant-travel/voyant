@@ -37,7 +37,7 @@ export interface PublicProductsListFilters {
 
 /**
  * Hierarchical TanStack query keys for the charters module. Following the
- * convention from cruises-react / crm-react: all keys are tuples rooted at
+ * convention from cruises-react / relationships-react: all keys are tuples rooted at
  * `["voyant", "charters", ...]` so a single invalidation can wipe everything
  * charters-related, and finer-grained invalidations target specific resources.
  *

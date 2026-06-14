@@ -34,6 +34,15 @@ Session reads now include first-class persisted wizard state, and repricing
 supports both preview mode and `applyToSession` mode for committing the priced
 room/unit selection back onto the booking session totals.
 
+## Origin and provenance
+
+Bookings owns durable booking origin records in `booking_origins`. The origin
+row is keyed by `booking_id` and can point at accepted Quote Versions, Trip
+snapshots, reservation plans, Catalog price/availability responses, Catalog
+booking snapshots, provider/source order refs, and legacy migrated transaction
+ids. New booking flows should write this owner path instead of
+the retired booking-to-transaction detail join.
+
 ## Action-ledger approvals
 
 Agent/workflow booking status mutations that require approval return `202` with
@@ -54,6 +63,7 @@ entries consistently link back to the requested action and approval.
 
 - **Bookings** (`book`)
 - **Booking travelers** (`bkps`)
+- **Booking origins** (`booking_origins`)
 - **Booking supplier statuses** (`bkss`)
 - **Booking activity log** (`bkal`)
 - **Booking notes** (`bnot`)
@@ -67,6 +77,7 @@ entries consistently link back to the requested action and approval.
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
+| `./requirements` | Booking requirements service and routes |
 
 ## License
 

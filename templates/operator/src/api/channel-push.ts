@@ -30,7 +30,7 @@ import {
   upsertAvailabilityIntent,
   upsertContentIntent,
   upsertPendingBookingLinks,
-} from "@voyantjs/distribution/channel-push"
+} from "@voyantjs/distribution"
 import type { VoyantDb } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
@@ -166,7 +166,7 @@ export const channelPushBundle: HonoBundle = {
 
 /**
  * Mount the channel-push admin API at
- * `/v1/admin/distribution/channel-push/*`. The operator dashboard's
+ * `/v1/admin/distribution/*`. The operator dashboard's
  * "channel sync" view consumes these endpoints.
  *
  * Wires `setChannelPushDeps` per-request — the admin routes
@@ -177,7 +177,7 @@ export const channelPushBundle: HonoBundle = {
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
 export function mountChannelPushAdminRoutes(hono: Hono<{ Variables: { db: VoyantDb } }>): void {
-  hono.use("/v1/admin/distribution/channel-push/*", async (c, next) => {
+  hono.use("/v1/admin/distribution/*", async (c, next) => {
     const env = c.env as CloudflareBindings & BookingEngineEnv
     // Use the request-scoped Pool the `dbFromEnvForApp` middleware
     // installs on `c.var.db`. The disposable middleware closes it
@@ -189,5 +189,5 @@ export function mountChannelPushAdminRoutes(hono: Hono<{ Variables: { db: Voyant
     })
     await next()
   })
-  hono.route("/v1/admin/distribution/channel-push", createChannelPushAdminRoutes())
+  hono.route("/v1/admin/distribution", createChannelPushAdminRoutes())
 }

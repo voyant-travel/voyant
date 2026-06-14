@@ -1,6 +1,6 @@
 import { defineLink } from "@voyantjs/core"
-import { personLinkable } from "@voyantjs/crm"
-import { productLinkable } from "@voyantjs/products"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyantjs/inventory"
+import { personLinkable } from "@voyantjs/relationships"
 
 /**
  * Each product has one owning person (the client); each person can own many products.

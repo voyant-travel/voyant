@@ -7,11 +7,12 @@
  */
 
 import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-policy"
-import { createProductDeparturesProjectionExtension } from "@voyantjs/availability/service-catalog-plane-departures"
 import {
   createFieldPolicyRegistry,
+  createGeminiEmbeddingProvider,
   createTypesenseIndexer,
   type DocumentBuilder,
+  type EmbeddingProvider,
   type FieldPolicyRegistry,
   type IndexerAdapter,
   type IndexerDocument,
@@ -21,8 +22,14 @@ import {
   type TypesenseSearchQuery,
   type TypesenseSearchResponse,
 } from "@voyantjs/catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
+import {
+  createProductPricingProjectionExtension,
+  createProductPromotionsProjectionExtension,
+  loadProductPriceFrom,
+  marketLocales,
+  markets,
+} from "@voyantjs/commerce"
 import { cruiseCabinFacetsCatalogPolicy } from "@voyantjs/cruises/catalog-policy-cabins"
 import {
   createCruiseDocumentBuilder,
@@ -30,25 +37,20 @@ import {
 } from "@voyantjs/cruises/service-catalog-plane"
 import { createCruiseCabinFacetProjectionExtension } from "@voyantjs/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
-import { marketLocales, markets } from "@voyantjs/markets"
-import {
-  createProductPricingProjectionExtension,
-  loadProductPriceFrom,
-} from "@voyantjs/pricing/service-catalog-plane-pricing"
-import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
-import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
-import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
-import { productPricingCatalogPolicy } from "@voyantjs/products/catalog-policy-pricing"
-import { productPromotionsCatalogPolicy } from "@voyantjs/products/catalog-policy-promotions"
-import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
+import { productCatalogPolicy } from "@voyantjs/inventory/catalog-policy"
+import { productDeparturesCatalogPolicy } from "@voyantjs/inventory/catalog-policy-departures"
+import { productDestinationsCatalogPolicy } from "@voyantjs/inventory/catalog-policy-destinations"
+import { productPricingCatalogPolicy } from "@voyantjs/inventory/catalog-policy-pricing"
+import { productPromotionsCatalogPolicy } from "@voyantjs/inventory/catalog-policy-promotions"
+import { productTaxonomyCatalogPolicy } from "@voyantjs/inventory/catalog-policy-taxonomy"
+import { extrasCatalogPolicy } from "@voyantjs/inventory/extras"
 import {
   createProductDocumentBuilder,
   createProductStorefrontCardProjectionExtension,
-} from "@voyantjs/products/service-catalog-plane"
-import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
-import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
-import { createProductPromotionsProjectionExtension } from "@voyantjs/promotions/service-catalog-plane-promotions"
+} from "@voyantjs/inventory/service-catalog-plane"
+import { createProductDestinationsProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-destinations"
+import { createProductTaxonomyProjectionExtension } from "@voyantjs/inventory/service-catalog-plane-taxonomy"
+import { createProductDeparturesProjectionExtension } from "@voyantjs/operations"
 import { asc, eq } from "drizzle-orm"
 
 export const CATALOG_VERTICALS = [
@@ -167,7 +169,7 @@ export type CatalogRuntimeEnv = {
  *  - OpenAI: import `createOpenAIEmbeddingProvider` and read
  *    `OPENAI_API_KEY` instead.
  *  - Custom provider: return anything matching `EmbeddingProvider`
- *    from `@voyantjs/catalog-rag`.
+ *    from `@voyantjs/catalog`.
  *
  * Switching providers (or models) is a deliberate `bulkReindex` operation —
  * the catalog plane scopes vector queries to documents matching the active

@@ -2,7 +2,7 @@
 
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
-import { mountCatalogMcpRoutes } from "./mcp"
+import { mountOperatorAgentToolRoutes } from "./mcp"
 
 function testBindings(
   bindings: Partial<CloudflareBindings> & { TENANT_ID?: string },
@@ -13,9 +13,9 @@ function testBindings(
 const testEnv = testBindings({ TENANT_ID: "tenant_test" })
 
 describe("operator MCP routes", () => {
-  it("does not expose travel-composer mutation tools on the public surface", async () => {
+  it("does not expose trip-composer mutation tools on the public surface", async () => {
     const app = new Hono()
-    mountCatalogMcpRoutes(app)
+    mountOperatorAgentToolRoutes(app)
 
     const response = await app.request(
       "/v1/public/mcp/tools/create_trip",
@@ -27,15 +27,12 @@ describe("operator MCP routes", () => {
       testEnv,
     )
 
-    expect(response.status).toBe(403)
-    await expect(response.json()).resolves.toEqual({
-      error: "Tool is not available on the public MCP surface",
-    })
+    expect(response.status).toBe(404)
   })
 
   it("does not expose quote-locking tools on the public surface", async () => {
     const app = new Hono()
-    mountCatalogMcpRoutes(app)
+    mountOperatorAgentToolRoutes(app)
 
     const response = await app.request(
       "/v1/public/mcp/tools/get_quote",
@@ -47,12 +44,12 @@ describe("operator MCP routes", () => {
       testEnv,
     )
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(404)
   })
 
-  it("keeps read-only catalog tools available on the public surface", async () => {
+  it("does not expose retired catalog MCP tools on the public surface", async () => {
     const app = new Hono()
-    mountCatalogMcpRoutes(app)
+    mountOperatorAgentToolRoutes(app)
 
     const response = await app.request(
       "/v1/public/mcp/tools/search_catalog",
@@ -64,15 +61,12 @@ describe("operator MCP routes", () => {
       testEnv,
     )
 
-    expect(response.status).toBe(200)
-    const body = (await response.json()) as { structuredContent?: { error?: { code?: string } } }
-    expect(body.structuredContent?.error?.code).not.toBe("NOT_FOUND")
-    expect(body.structuredContent?.error?.code).not.toBe("FORBIDDEN")
+    expect(response.status).toBe(404)
   })
 
-  it("keeps the full registry available on the admin surface", async () => {
+  it("keeps trip-composer tools available on the admin surface", async () => {
     const app = new Hono()
-    mountCatalogMcpRoutes(app)
+    mountOperatorAgentToolRoutes(app)
 
     const response = await app.request(
       "/v1/admin/mcp/tools/create_trip",

@@ -3,7 +3,7 @@
 Framework-agnostic TypeScript client for custom Voyant storefronts.
 
 The SDK does not own HTTP routes. It wraps the existing public contracts from
-`@voyantjs/storefront`, `@voyantjs/bookings`, and `@voyantjs/checkout` behind a
+`@voyantjs/storefront`, `@voyantjs/bookings`, and `@voyantjs/finance` behind a
 single typed client so custom booking UIs can consume Voyant booking logic
 without stitching together package-local fetchers.
 

@@ -1,0 +1,353 @@
+{
+  "name": "@voyantjs/commerce-react",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/commerce-react"
+  },
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css",
+    "./src/markets/styles.css",
+    "./src/pricing/styles.css",
+    "./src/sellability/styles.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
+    "./markets": "./src/markets.ts",
+    "./markets/provider": "./src/markets/provider.tsx",
+    "./markets/hooks": "./src/markets/hooks/index.ts",
+    "./markets/client": "./src/markets/client.ts",
+    "./markets/query-keys": "./src/markets/query-keys.ts",
+    "./markets/ui": "./src/markets/ui.ts",
+    "./markets/styles.css": "./src/markets/styles.css",
+    "./markets/i18n": "./src/markets/i18n/index.ts",
+    "./markets/i18n/en": "./src/markets/i18n/en.ts",
+    "./markets/i18n/ro": "./src/markets/i18n/ro.ts",
+    "./markets/components/*": "./src/markets/components/*.tsx",
+    "./pricing": "./src/pricing.ts",
+    "./pricing/provider": "./src/pricing/provider.tsx",
+    "./pricing/hooks": "./src/pricing/hooks/index.ts",
+    "./pricing/client": "./src/pricing/client.ts",
+    "./pricing/query-keys": "./src/pricing/query-keys.ts",
+    "./pricing/ui": "./src/pricing/ui.ts",
+    "./pricing/styles.css": "./src/pricing/styles.css",
+    "./pricing/i18n": "./src/pricing/i18n/index.ts",
+    "./pricing/i18n/en": "./src/pricing/i18n/en.ts",
+    "./pricing/i18n/ro": "./src/pricing/i18n/ro.ts",
+    "./pricing/components/*": "./src/pricing/components/*.tsx",
+    "./promotions": "./src/promotions.ts",
+    "./promotions/ui": "./src/promotions/ui.ts",
+    "./promotions/i18n": "./src/promotions/i18n/index.ts",
+    "./promotions/i18n/en": "./src/promotions/i18n/en.ts",
+    "./promotions/i18n/ro": "./src/promotions/i18n/ro.ts",
+    "./promotions/components/*": "./src/promotions/*.tsx",
+    "./promotions/admin": "./src/promotions-admin.ts",
+    "./sellability": "./src/sellability.ts",
+    "./sellability/provider": "./src/sellability/provider.tsx",
+    "./sellability/hooks": "./src/sellability/hooks/index.ts",
+    "./sellability/client": "./src/sellability/client.ts",
+    "./sellability/query-keys": "./src/sellability/query-keys.ts",
+    "./sellability/ui": "./src/sellability/ui.ts",
+    "./sellability/styles.css": "./src/sellability/styles.css",
+    "./sellability/i18n": "./src/sellability/i18n/index.ts",
+    "./sellability/i18n/en": "./src/sellability/i18n/en.ts",
+    "./sellability/i18n/ro": "./src/sellability/i18n/ro.ts",
+    "./sellability/components/*": "./src/sellability/components/*.tsx",
+    "./i18n": "./src/i18n.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/commerce": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.60.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@voyantjs/admin": {
+      "optional": true
+    },
+    "@voyantjs/distribution-react": {
+      "optional": true
+    },
+    "@voyantjs/inventory-react": {
+      "optional": true
+    },
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/utils": "workspace:^"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/commerce": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "lucide-react": "^0.475.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.60.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2",
+    "zod": "^4.3.6"
+  },
+  "files": [
+    "dist",
+    "src/styles.css",
+    "src/markets/styles.css",
+    "src/pricing/styles.css",
+    "src/sellability/styles.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
+      },
+      "./markets": {
+        "types": "./dist/markets.d.ts",
+        "import": "./dist/markets.js",
+        "default": "./dist/markets.js"
+      },
+      "./markets/provider": {
+        "types": "./dist/markets/provider.d.ts",
+        "import": "./dist/markets/provider.js",
+        "default": "./dist/markets/provider.js"
+      },
+      "./markets/hooks": {
+        "types": "./dist/markets/hooks/index.d.ts",
+        "import": "./dist/markets/hooks/index.js",
+        "default": "./dist/markets/hooks/index.js"
+      },
+      "./markets/client": {
+        "types": "./dist/markets/client.d.ts",
+        "import": "./dist/markets/client.js",
+        "default": "./dist/markets/client.js"
+      },
+      "./markets/query-keys": {
+        "types": "./dist/markets/query-keys.d.ts",
+        "import": "./dist/markets/query-keys.js",
+        "default": "./dist/markets/query-keys.js"
+      },
+      "./markets/ui": {
+        "types": "./dist/markets/ui.d.ts",
+        "import": "./dist/markets/ui.js",
+        "default": "./dist/markets/ui.js"
+      },
+      "./markets/styles.css": {
+        "default": "./src/markets/styles.css"
+      },
+      "./markets/i18n": {
+        "types": "./dist/markets/i18n/index.d.ts",
+        "import": "./dist/markets/i18n/index.js",
+        "default": "./dist/markets/i18n/index.js"
+      },
+      "./markets/i18n/en": {
+        "types": "./dist/markets/i18n/en.d.ts",
+        "import": "./dist/markets/i18n/en.js",
+        "default": "./dist/markets/i18n/en.js"
+      },
+      "./markets/i18n/ro": {
+        "types": "./dist/markets/i18n/ro.d.ts",
+        "import": "./dist/markets/i18n/ro.js",
+        "default": "./dist/markets/i18n/ro.js"
+      },
+      "./markets/components/*": {
+        "types": "./dist/markets/components/*.d.ts",
+        "import": "./dist/markets/components/*.js",
+        "default": "./dist/markets/components/*.js"
+      },
+      "./pricing": {
+        "types": "./dist/pricing.d.ts",
+        "import": "./dist/pricing.js",
+        "default": "./dist/pricing.js"
+      },
+      "./pricing/provider": {
+        "types": "./dist/pricing/provider.d.ts",
+        "import": "./dist/pricing/provider.js",
+        "default": "./dist/pricing/provider.js"
+      },
+      "./pricing/hooks": {
+        "types": "./dist/pricing/hooks/index.d.ts",
+        "import": "./dist/pricing/hooks/index.js",
+        "default": "./dist/pricing/hooks/index.js"
+      },
+      "./pricing/client": {
+        "types": "./dist/pricing/client.d.ts",
+        "import": "./dist/pricing/client.js",
+        "default": "./dist/pricing/client.js"
+      },
+      "./pricing/query-keys": {
+        "types": "./dist/pricing/query-keys.d.ts",
+        "import": "./dist/pricing/query-keys.js",
+        "default": "./dist/pricing/query-keys.js"
+      },
+      "./pricing/ui": {
+        "types": "./dist/pricing/ui.d.ts",
+        "import": "./dist/pricing/ui.js",
+        "default": "./dist/pricing/ui.js"
+      },
+      "./pricing/styles.css": {
+        "default": "./src/pricing/styles.css"
+      },
+      "./pricing/i18n": {
+        "types": "./dist/pricing/i18n/index.d.ts",
+        "import": "./dist/pricing/i18n/index.js",
+        "default": "./dist/pricing/i18n/index.js"
+      },
+      "./pricing/i18n/en": {
+        "types": "./dist/pricing/i18n/en.d.ts",
+        "import": "./dist/pricing/i18n/en.js",
+        "default": "./dist/pricing/i18n/en.js"
+      },
+      "./pricing/i18n/ro": {
+        "types": "./dist/pricing/i18n/ro.d.ts",
+        "import": "./dist/pricing/i18n/ro.js",
+        "default": "./dist/pricing/i18n/ro.js"
+      },
+      "./pricing/components/*": {
+        "types": "./dist/pricing/components/*.d.ts",
+        "import": "./dist/pricing/components/*.js",
+        "default": "./dist/pricing/components/*.js"
+      },
+      "./promotions": {
+        "types": "./dist/promotions.d.ts",
+        "import": "./dist/promotions.js",
+        "default": "./dist/promotions.js"
+      },
+      "./promotions/ui": {
+        "types": "./dist/promotions/ui.d.ts",
+        "import": "./dist/promotions/ui.js",
+        "default": "./dist/promotions/ui.js"
+      },
+      "./promotions/i18n": {
+        "types": "./dist/promotions/i18n/index.d.ts",
+        "import": "./dist/promotions/i18n/index.js",
+        "default": "./dist/promotions/i18n/index.js"
+      },
+      "./promotions/i18n/en": {
+        "types": "./dist/promotions/i18n/en.d.ts",
+        "import": "./dist/promotions/i18n/en.js",
+        "default": "./dist/promotions/i18n/en.js"
+      },
+      "./promotions/i18n/ro": {
+        "types": "./dist/promotions/i18n/ro.d.ts",
+        "import": "./dist/promotions/i18n/ro.js",
+        "default": "./dist/promotions/i18n/ro.js"
+      },
+      "./promotions/components/*": {
+        "types": "./dist/promotions/*.d.ts",
+        "import": "./dist/promotions/*.js",
+        "default": "./dist/promotions/*.js"
+      },
+      "./promotions/admin": {
+        "types": "./dist/promotions-admin.d.ts",
+        "import": "./dist/promotions-admin.js",
+        "default": "./dist/promotions-admin.js"
+      },
+      "./sellability": {
+        "types": "./dist/sellability.d.ts",
+        "import": "./dist/sellability.js",
+        "default": "./dist/sellability.js"
+      },
+      "./sellability/provider": {
+        "types": "./dist/sellability/provider.d.ts",
+        "import": "./dist/sellability/provider.js",
+        "default": "./dist/sellability/provider.js"
+      },
+      "./sellability/hooks": {
+        "types": "./dist/sellability/hooks/index.d.ts",
+        "import": "./dist/sellability/hooks/index.js",
+        "default": "./dist/sellability/hooks/index.js"
+      },
+      "./sellability/client": {
+        "types": "./dist/sellability/client.d.ts",
+        "import": "./dist/sellability/client.js",
+        "default": "./dist/sellability/client.js"
+      },
+      "./sellability/query-keys": {
+        "types": "./dist/sellability/query-keys.d.ts",
+        "import": "./dist/sellability/query-keys.js",
+        "default": "./dist/sellability/query-keys.js"
+      },
+      "./sellability/ui": {
+        "types": "./dist/sellability/ui.d.ts",
+        "import": "./dist/sellability/ui.js",
+        "default": "./dist/sellability/ui.js"
+      },
+      "./sellability/styles.css": {
+        "default": "./src/sellability/styles.css"
+      },
+      "./sellability/i18n": {
+        "types": "./dist/sellability/i18n/index.d.ts",
+        "import": "./dist/sellability/i18n/index.js",
+        "default": "./dist/sellability/i18n/index.js"
+      },
+      "./sellability/i18n/en": {
+        "types": "./dist/sellability/i18n/en.d.ts",
+        "import": "./dist/sellability/i18n/en.js",
+        "default": "./dist/sellability/i18n/en.js"
+      },
+      "./sellability/i18n/ro": {
+        "types": "./dist/sellability/i18n/ro.d.ts",
+        "import": "./dist/sellability/i18n/ro.js",
+        "default": "./dist/sellability/i18n/ro.js"
+      },
+      "./sellability/components/*": {
+        "types": "./dist/sellability/components/*.d.ts",
+        "import": "./dist/sellability/components/*.js",
+        "default": "./dist/sellability/components/*.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n.d.ts",
+        "import": "./dist/i18n.js",
+        "default": "./dist/i18n.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  }
+}

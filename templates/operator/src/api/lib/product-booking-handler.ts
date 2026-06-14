@@ -1,10 +1,4 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
-import {
-  extendAvailabilityHold,
-  placeAvailabilityHold,
-  releaseAvailabilityHold,
-} from "@voyantjs/availability/service-holds"
-import { bookingRequirementsService } from "@voyantjs/booking-requirements"
+import { bookingRequirementsService } from "@voyantjs/bookings/requirements"
 import type {
   AddonOffer,
   OwnedBookingHandlerRegistry,
@@ -12,8 +6,6 @@ import type {
   PaxBandSpec,
   TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
-import { productExtras } from "@voyantjs/extras/schema"
-import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import {
   extraPriceRules,
   optionPriceRules,
@@ -22,9 +14,17 @@ import {
   pricingCategories,
   pricingCategoryDependencies,
   resolveOptionPriceRulesForDate,
-} from "@voyantjs/pricing"
-import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
-import { optionUnits, productOptions } from "@voyantjs/products/schema"
+} from "@voyantjs/commerce"
+import { createBooking as createFinanceBooking, resolveBookingSellTaxRate } from "@voyantjs/finance"
+import { createProductsBookingHandler } from "@voyantjs/inventory/booking-engine"
+import { productExtras } from "@voyantjs/inventory/extras"
+import { optionUnits, productOptions } from "@voyantjs/inventory/schema"
+import {
+  availabilitySlots,
+  extendAvailabilityHold,
+  placeAvailabilityHold,
+  releaseAvailabilityHold,
+} from "@voyantjs/operations"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { resolveBookingTaxSettings } from "../settings"
 import { asPostgresDb } from "./booking-engine-db"

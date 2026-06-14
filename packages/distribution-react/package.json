@@ -21,7 +21,30 @@
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
     "./admin": "./src/admin/index.tsx",
-    "./components/*": "./src/components/*.tsx"
+    "./components/*": "./src/components/*.tsx",
+    "./suppliers": "./src/suppliers/index.ts",
+    "./suppliers/provider": "./src/suppliers/provider.tsx",
+    "./suppliers/hooks": "./src/suppliers/hooks/index.ts",
+    "./suppliers/client": "./src/suppliers/client.ts",
+    "./suppliers/query-keys": "./src/suppliers/query-keys.ts",
+    "./suppliers/ui": "./src/suppliers/ui.ts",
+    "./suppliers/styles.css": "./src/suppliers/styles.css",
+    "./suppliers/i18n": "./src/suppliers/i18n/index.ts",
+    "./suppliers/i18n/en": "./src/suppliers/i18n/en.ts",
+    "./suppliers/i18n/ro": "./src/suppliers/i18n/ro.ts",
+    "./suppliers/admin": "./src/suppliers/admin/index.tsx",
+    "./suppliers/components/*": "./src/suppliers/components/*.tsx",
+    "./external-refs": "./src/external-refs/index.ts",
+    "./external-refs/provider": "./src/external-refs/provider.tsx",
+    "./external-refs/hooks": "./src/external-refs/hooks/index.ts",
+    "./external-refs/client": "./src/external-refs/client.ts",
+    "./external-refs/query-keys": "./src/external-refs/query-keys.ts",
+    "./external-refs/ui": "./src/external-refs/ui.ts",
+    "./external-refs/styles.css": "./src/external-refs/styles.css",
+    "./external-refs/i18n": "./src/external-refs/i18n/index.ts",
+    "./external-refs/i18n/en": "./src/external-refs/i18n/en.ts",
+    "./external-refs/i18n/ro": "./src/external-refs/i18n/ro.ts",
+    "./external-refs/components/*": "./src/external-refs/components/*.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -39,7 +62,11 @@
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
+    "react-hook-form": "^7.60.0"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
@@ -49,6 +76,18 @@
       "optional": true
     },
     "@voyantjs/ui": {
+      "optional": true
+    },
+    "@voyantjs/bookings-react": {
+      "optional": true
+    },
+    "@voyantjs/inventory-react": {
+      "optional": true
+    },
+    "@voyantjs/relationships-react": {
+      "optional": true
+    },
+    "react-hook-form": {
       "optional": true
     }
   },
@@ -72,11 +111,16 @@
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
+    "react-hook-form": "^7.60.0"
   },
   "files": [
     "dist",
-    "src/styles.css"
+    "src/styles.css",
+    "src/*/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -138,6 +182,117 @@
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",
         "default": "./dist/components/*.js"
+      },
+      "./suppliers": {
+        "types": "./dist/suppliers/index.d.ts",
+        "import": "./dist/suppliers/index.js",
+        "default": "./dist/suppliers/index.js"
+      },
+      "./suppliers/provider": {
+        "types": "./dist/suppliers/provider.d.ts",
+        "import": "./dist/suppliers/provider.js",
+        "default": "./dist/suppliers/provider.js"
+      },
+      "./suppliers/hooks": {
+        "types": "./dist/suppliers/hooks/index.d.ts",
+        "import": "./dist/suppliers/hooks/index.js",
+        "default": "./dist/suppliers/hooks/index.js"
+      },
+      "./suppliers/client": {
+        "types": "./dist/suppliers/client.d.ts",
+        "import": "./dist/suppliers/client.js",
+        "default": "./dist/suppliers/client.js"
+      },
+      "./suppliers/query-keys": {
+        "types": "./dist/suppliers/query-keys.d.ts",
+        "import": "./dist/suppliers/query-keys.js",
+        "default": "./dist/suppliers/query-keys.js"
+      },
+      "./suppliers/ui": {
+        "types": "./dist/suppliers/ui.d.ts",
+        "import": "./dist/suppliers/ui.js",
+        "default": "./dist/suppliers/ui.js"
+      },
+      "./suppliers/styles.css": {
+        "default": "./src/suppliers/styles.css"
+      },
+      "./suppliers/i18n": {
+        "types": "./dist/suppliers/i18n/index.d.ts",
+        "import": "./dist/suppliers/i18n/index.js",
+        "default": "./dist/suppliers/i18n/index.js"
+      },
+      "./suppliers/i18n/en": {
+        "types": "./dist/suppliers/i18n/en.d.ts",
+        "import": "./dist/suppliers/i18n/en.js",
+        "default": "./dist/suppliers/i18n/en.js"
+      },
+      "./suppliers/i18n/ro": {
+        "types": "./dist/suppliers/i18n/ro.d.ts",
+        "import": "./dist/suppliers/i18n/ro.js",
+        "default": "./dist/suppliers/i18n/ro.js"
+      },
+      "./suppliers/admin": {
+        "types": "./dist/suppliers/admin/index.d.ts",
+        "import": "./dist/suppliers/admin/index.js",
+        "default": "./dist/suppliers/admin/index.js"
+      },
+      "./suppliers/components/*": {
+        "types": "./dist/suppliers/components/*.d.ts",
+        "import": "./dist/suppliers/components/*.js",
+        "default": "./dist/suppliers/components/*.js"
+      },
+      "./external-refs": {
+        "types": "./dist/external-refs/index.d.ts",
+        "import": "./dist/external-refs/index.js",
+        "default": "./dist/external-refs/index.js"
+      },
+      "./external-refs/provider": {
+        "types": "./dist/external-refs/provider.d.ts",
+        "import": "./dist/external-refs/provider.js",
+        "default": "./dist/external-refs/provider.js"
+      },
+      "./external-refs/hooks": {
+        "types": "./dist/external-refs/hooks/index.d.ts",
+        "import": "./dist/external-refs/hooks/index.js",
+        "default": "./dist/external-refs/hooks/index.js"
+      },
+      "./external-refs/client": {
+        "types": "./dist/external-refs/client.d.ts",
+        "import": "./dist/external-refs/client.js",
+        "default": "./dist/external-refs/client.js"
+      },
+      "./external-refs/query-keys": {
+        "types": "./dist/external-refs/query-keys.d.ts",
+        "import": "./dist/external-refs/query-keys.js",
+        "default": "./dist/external-refs/query-keys.js"
+      },
+      "./external-refs/ui": {
+        "types": "./dist/external-refs/ui.d.ts",
+        "import": "./dist/external-refs/ui.js",
+        "default": "./dist/external-refs/ui.js"
+      },
+      "./external-refs/styles.css": {
+        "default": "./src/external-refs/styles.css"
+      },
+      "./external-refs/i18n": {
+        "types": "./dist/external-refs/i18n/index.d.ts",
+        "import": "./dist/external-refs/i18n/index.js",
+        "default": "./dist/external-refs/i18n/index.js"
+      },
+      "./external-refs/i18n/en": {
+        "types": "./dist/external-refs/i18n/en.d.ts",
+        "import": "./dist/external-refs/i18n/en.js",
+        "default": "./dist/external-refs/i18n/en.js"
+      },
+      "./external-refs/i18n/ro": {
+        "types": "./dist/external-refs/i18n/ro.d.ts",
+        "import": "./dist/external-refs/i18n/ro.js",
+        "default": "./dist/external-refs/i18n/ro.js"
+      },
+      "./external-refs/components/*": {
+        "types": "./dist/external-refs/components/*.d.ts",
+        "import": "./dist/external-refs/components/*.js",
+        "default": "./dist/external-refs/components/*.js"
       }
     },
     "main": "./dist/index.js",

@@ -54,7 +54,7 @@ export interface StorefrontListFilters {
 
 /**
  * Hierarchical TanStack query keys for the cruises module. Following the
- * convention from crm-react and products-react: all keys are tuples rooted
+ * convention from relationships-react and products-react: all keys are tuples rooted
  * at ["voyant", "cruises", ...] so a single invalidation can wipe everything
  * cruises-related, and finer-grained invalidations target specific resources.
  */

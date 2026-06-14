@@ -1,0 +1,52 @@
+import type { Module } from "@voyantjs/core"
+import type { HonoModule } from "@voyantjs/hono/module"
+
+import { availabilityLinkable } from "./availability/index.js"
+import { operationsAdminRoutes, operationsRoutes } from "./routes.js"
+import {
+  checkOperationalAvailability,
+  confirmResourceHold,
+  createResourceHold,
+  operationsService,
+  releaseResourceHold,
+} from "./service.js"
+
+export const operationsModule: Module = {
+  name: "operations",
+  requiresTransactionalDb: true,
+  linkable: availabilityLinkable,
+}
+
+export const operationsHonoModule: HonoModule = {
+  module: operationsModule,
+  routes: operationsRoutes,
+  adminRoutes: operationsAdminRoutes,
+}
+
+export const operationsHonoModules = [operationsHonoModule] as const
+
+export * from "./availability/index.js"
+export * from "./availability/rrule.js"
+export * from "./availability/service-catalog-plane-departures.js"
+export * from "./availability/service-holds.js"
+export * from "./ground/index.js"
+export * from "./places/index.js"
+export * from "./resources/index.js"
+export type { OperationsAdminRoutes, OperationsRoutes } from "./routes.js"
+
+export type {
+  CheckOperationalAvailabilityInput,
+  CheckOperationalAvailabilityOutcome,
+  ConfirmResourceHoldInput,
+  ConfirmResourceHoldOutcome,
+  CreateResourceHoldInput,
+  CreateResourceHoldOutcome,
+  ReleaseResourceHoldInput,
+} from "./service.js"
+export {
+  checkOperationalAvailability,
+  confirmResourceHold,
+  createResourceHold,
+  operationsService,
+  releaseResourceHold,
+}

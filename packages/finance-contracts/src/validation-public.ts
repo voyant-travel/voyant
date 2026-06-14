@@ -1,5 +1,5 @@
 import { z } from "zod"
-
+import { paymentProvenanceSchema, paymentTargetSchema } from "./validation-payments.js"
 import {
   paymentInstrumentStatusSchema,
   paymentInstrumentTypeSchema,
@@ -29,6 +29,8 @@ export const publicPaymentOptionsQuerySchema = z.object({
 })
 
 export const publicStartPaymentSessionSchema = z.object({
+  target: paymentTargetSchema.optional(),
+  provenance: paymentProvenanceSchema.optional(),
   provider: z.string().max(255).optional().nullable(),
   paymentMethod: paymentMethodSchema.optional().nullable(),
   paymentInstrumentId: z.string().optional().nullable(),
@@ -110,40 +112,96 @@ export const publicBookingPaymentOptionsSchema = z.object({
     .nullable(),
 })
 
-export const publicPaymentSessionSchema = z.object({
-  id: z.string(),
-  targetType: paymentSessionTargetTypeSchema,
-  targetId: z.string().nullable(),
-  bookingId: z.string().nullable(),
-  invoiceId: z.string().nullable(),
-  bookingPaymentScheduleId: z.string().nullable(),
-  bookingGuaranteeId: z.string().nullable(),
-  status: paymentSessionStatusSchema,
-  provider: z.string().nullable(),
-  providerSessionId: z.string().nullable(),
-  providerPaymentId: z.string().nullable(),
-  externalReference: z.string().nullable(),
-  clientReference: z.string().nullable(),
-  currency: z.string(),
-  amountCents: z.number().int(),
-  paymentMethod: paymentMethodSchema.nullable(),
-  payerEmail: z.string().nullable(),
-  payerName: z.string().nullable(),
-  redirectUrl: z.string().nullable(),
-  returnUrl: z.string().nullable(),
-  cancelUrl: z.string().nullable(),
-  expiresAt: z.string().nullable(),
-  completedAt: z.string().nullable(),
-  failureCode: z.string().nullable(),
-  failureMessage: z.string().nullable(),
-  /**
-   * Operator-supplied human-readable context (e.g. "London → New York,
-   * Sat 16 May · Diego Müller"). Surfaced on the public landing page so
-   * the customer can see what they're paying for. Server-controlled — only
-   * populated when the session is created with `notes`.
-   */
-  notes: z.string().nullable(),
-})
+function derivePublicPaymentTarget(value: {
+  targetType: z.infer<typeof paymentSessionTargetTypeSchema>
+  targetId: string | null
+  bookingId: string | null
+  legacyOrderId: string | null
+  invoiceId: string | null
+  bookingPaymentScheduleId: string | null
+  bookingGuaranteeId: string | null
+  provider: string | null
+  externalReference: string | null
+}) {
+  if (value.bookingPaymentScheduleId) {
+    return {
+      type: "booking_payment_schedule" as const,
+      bookingPaymentScheduleId: value.bookingPaymentScheduleId,
+    }
+  }
+  if (value.bookingGuaranteeId) {
+    return { type: "booking_guarantee" as const, bookingGuaranteeId: value.bookingGuaranteeId }
+  }
+  if (value.invoiceId) return { type: "invoice" as const, invoiceId: value.invoiceId }
+  if (value.targetType === "flight_order" && value.targetId) {
+    return { type: "flight_order" as const, flightOrderId: value.targetId }
+  }
+  if (value.bookingId) return { type: "booking" as const, bookingId: value.bookingId }
+  if (value.legacyOrderId) {
+    return { type: "legacy_order" as const, legacyOrderId: value.legacyOrderId }
+  }
+  if (value.provider && value.externalReference) {
+    return {
+      type: "provider_reference" as const,
+      provider: value.provider,
+      reference: value.externalReference,
+    }
+  }
+  return null
+}
+
+export const publicPaymentSessionSchema = z
+  .object({
+    id: z.string(),
+    target: paymentTargetSchema.nullable().optional(),
+    provenance: paymentProvenanceSchema.nullable().optional(),
+    targetType: paymentSessionTargetTypeSchema,
+    targetId: z.string().nullable(),
+    bookingId: z.string().nullable(),
+    legacyOrderId: z.string().nullable().optional(),
+    invoiceId: z.string().nullable(),
+    bookingPaymentScheduleId: z.string().nullable(),
+    bookingGuaranteeId: z.string().nullable(),
+    status: paymentSessionStatusSchema,
+    provider: z.string().nullable(),
+    providerSessionId: z.string().nullable(),
+    providerPaymentId: z.string().nullable(),
+    externalReference: z.string().nullable(),
+    clientReference: z.string().nullable(),
+    currency: z.string(),
+    amountCents: z.number().int(),
+    paymentMethod: paymentMethodSchema.nullable(),
+    payerEmail: z.string().nullable(),
+    payerName: z.string().nullable(),
+    redirectUrl: z.string().nullable(),
+    returnUrl: z.string().nullable(),
+    cancelUrl: z.string().nullable(),
+    expiresAt: z.string().nullable(),
+    completedAt: z.string().nullable(),
+    failureCode: z.string().nullable(),
+    failureMessage: z.string().nullable(),
+    /**
+     * Operator-supplied human-readable context (e.g. "London → New York,
+     * Sat 16 May · Diego Müller"). Surfaced on the public landing page so
+     * the customer can see what they're paying for. Server-controlled — only
+     * populated when the session is created with `notes`.
+     */
+    notes: z.string().nullable(),
+  })
+  .transform(({ legacyOrderId, target, provenance, ...value }) => {
+    const resolvedLegacyOrderId = legacyOrderId ?? null
+    return {
+      ...value,
+      legacyOrderId: resolvedLegacyOrderId,
+      target:
+        target ??
+        derivePublicPaymentTarget({
+          ...value,
+          legacyOrderId: resolvedLegacyOrderId,
+        }),
+      provenance: provenance ?? null,
+    }
+  })
 
 export const publicFinanceBookingDocumentSchema = z.object({
   invoiceId: z.string(),

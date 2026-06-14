@@ -3,22 +3,22 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  availabilityQueryKeys,
-  getSlotQueryOptions,
-  useSlots,
-  useSlotUnitAvailability,
-  useVoyantAvailabilityContext,
-} from "@voyantjs/availability-react"
-import {
   type PricingAssignmentUnit,
   resolveBookingDraft,
   resolveBookingExtraLines,
   travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
-import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/commerce-react/pricing"
 import { useAddresses } from "@voyantjs/identity-react"
-import { useOptionUnitPriceRules, usePricingCategories } from "@voyantjs/pricing-react"
-import { useProduct } from "@voyantjs/products-react"
+import { useProduct } from "@voyantjs/inventory-react"
+import {
+  availabilityQueryKeys,
+  getSlotQueryOptions,
+  useSlots,
+  useSlotUnitAvailability,
+  useVoyantAvailabilityContext,
+} from "@voyantjs/operations-react/availability"
+import { useOrganization, usePerson } from "@voyantjs/relationships-react"
 import {
   Button,
   Checkbox,

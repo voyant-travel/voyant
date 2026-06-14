@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts/validation": "./src/contracts/validation.ts",
-    "./policies/validation": "./src/policies/validation.ts"
+    "./policies/validation": "./src/policies/validation.ts",
+    "./targets/validation": "./src/targets/validation.ts",
+    "./terms/validation": "./src/terms/validation.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -36,6 +38,16 @@
         "types": "./dist/policies/validation.d.ts",
         "import": "./dist/policies/validation.js",
         "default": "./dist/policies/validation.js"
+      },
+      "./targets/validation": {
+        "types": "./dist/targets/validation.d.ts",
+        "import": "./dist/targets/validation.js",
+        "default": "./dist/targets/validation.js"
+      },
+      "./terms/validation": {
+        "types": "./dist/terms/validation.d.ts",
+        "import": "./dist/terms/validation.js",
+        "default": "./dist/terms/validation.js"
       }
     },
     "main": "./dist/index.js",

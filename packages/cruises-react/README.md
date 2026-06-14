@@ -11,7 +11,7 @@ only needed when you import those subpaths.
 
 React Query hooks + Zod-validated fetch client for the Voyant cruises module.
 
-Mirrors the convention used by `@voyantjs/crm-react` and `@voyantjs/products-react`.
+Mirrors the convention used by `@voyantjs/relationships-react` and `@voyantjs/inventory-react`.
 
 ## Quickstart
 

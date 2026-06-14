@@ -1,20 +1,43 @@
 /**
- * Per-request catalog context builder shared by both the AI/MCP surface
- * (`mountCatalogMcpRoutes`) and the packaged plain-JSON search module.
- * The shape is `McpToolContext` because that
- * type already covers everything either caller needs (actor, defaultScope,
- * catalog.indexer/embeddings/resolveEntity) — it's reused, not adopted from
- * MCP semantically.
+ * Per-request catalog context builder shared by the packaged plain-JSON
+ * catalog search module and app-local runtime helpers.
  */
 
-import type { McpResolvedEntity, McpToolContext } from "@voyantjs/catalog-mcp"
-import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
-import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
+import type {
+  EmbeddingProvider,
+  IndexerAdapter,
+  ResolverScope,
+  Visibility,
+} from "@voyantjs/catalog"
+import { getResolvedExtraById } from "@voyantjs/inventory/extras"
+import { getResolvedProductById } from "@voyantjs/inventory/service-catalog-plane"
 import type { Context } from "hono"
 
 import { buildEmbeddingProvider, buildTypesenseIndexer, DEFAULT_SLICES } from "./catalog-runtime"
 
-export function buildCatalogContext(c: Context): McpToolContext {
+export interface OperatorCatalogResolvedEntity {
+  vertical: string
+  entityId: string
+  fields: Record<string, unknown>
+  provenance?: Record<string, { locale: string; audience: string; market: string } | null>
+}
+
+export interface OperatorCatalogContext {
+  actor: Visibility
+  tenantId: string
+  defaultScope: ResolverScope
+  catalog: {
+    indexer?: IndexerAdapter
+    embeddings?: EmbeddingProvider
+    resolveEntity?: (
+      vertical: string,
+      entityId: string,
+      scope: ResolverScope,
+    ) => Promise<OperatorCatalogResolvedEntity | null>
+  }
+}
+
+export function buildCatalogContext(c: Context): OperatorCatalogContext {
   const env = c.env as CloudflareBindings & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
@@ -24,8 +47,9 @@ export function buildCatalogContext(c: Context): McpToolContext {
     TYPESENSE_API_KEY?: string
   }
   const db = c.var.db
-  const actor = (c.var.actor ?? "staff") as McpToolContext["actor"]
-  const audience: McpToolContext["defaultScope"]["audience"] = actor === "staff" ? "staff" : actor
+  const actor = (c.var.actor ?? "staff") as OperatorCatalogContext["actor"]
+  const audience: OperatorCatalogContext["defaultScope"]["audience"] =
+    actor === "staff" ? "staff" : actor
   // Default locale to the first indexed slice, NOT the browser's
   // `accept-language`. The operator only indexes `DEFAULT_SLICES`
   // (en-GB by default), so a Chrome-on-en-US user would otherwise hit
@@ -45,7 +69,7 @@ export function buildCatalogContext(c: Context): McpToolContext {
     catalog: {
       embeddings,
       indexer,
-      async resolveEntity(vertical, entityId): Promise<McpResolvedEntity | null> {
+      async resolveEntity(vertical, entityId): Promise<OperatorCatalogResolvedEntity | null> {
         const ctx = {
           sellerOperatorId,
           scope: { locale, audience, market: "default", actor },

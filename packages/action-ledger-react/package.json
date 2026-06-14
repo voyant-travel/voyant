@@ -27,8 +27,8 @@
     "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -41,10 +41,10 @@
     "@voyantjs/bookings-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -62,9 +62,9 @@
     "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/bookings-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",

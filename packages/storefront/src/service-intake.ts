@@ -1,7 +1,4 @@
-import { crmService } from "@voyantjs/crm"
-import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "@voyantjs/crm/events"
-import { customerSignals } from "@voyantjs/crm/schema"
-import { and, eq } from "drizzle-orm"
+import type { EventBus, EventSource } from "@voyantjs/core"
 
 import type { StorefrontRequestContext } from "./service.js"
 import type {
@@ -12,7 +9,40 @@ import type {
   StorefrontNewsletterSubscribeResponse,
 } from "./validation.js"
 
-export { CUSTOMER_SIGNAL_CREATED_EVENT }
+export const CUSTOMER_SIGNAL_CREATED_EVENT = "customer.signal.created" as const
+
+export interface StorefrontCustomerSignalCreatedEvent {
+  id: string
+  personId: string
+  kind: StorefrontIntakeSignal["kind"]
+  source: StorefrontIntakeSignal["source"]
+  status: StorefrontIntakeSignal["status"]
+  productId?: string | null
+  optionUnitId?: string | null
+  sourceSubmissionId?: string | null
+  intake?:
+    | {
+        surface: "storefront"
+        type: "lead"
+      }
+    | {
+        surface: "storefront"
+        type: "newsletter"
+        doubleOptIn: "not_configured" | "requested"
+      }
+}
+
+export async function emitCustomerSignalCreated(
+  eventBus: EventBus | undefined,
+  payload: StorefrontCustomerSignalCreatedEvent,
+  source: EventSource = "service",
+): Promise<void> {
+  if (!eventBus) return
+  await eventBus.emit(CUSTOMER_SIGNAL_CREATED_EVENT, payload, {
+    category: "domain",
+    source,
+  })
+}
 
 export interface StorefrontIntakeGuardDecision {
   allowed: boolean
@@ -43,16 +73,96 @@ export type StorefrontNewsletterDoubleOptInHook = (input: {
   context: StorefrontRequestContext
 }) => Promise<void> | void
 
+export interface StorefrontIntakeSignal {
+  id: string
+  personId: string
+  kind: "wishlist" | "notify" | "inquiry" | "request_offer" | "referral"
+  source: "form" | "phone" | "admin" | "abandoned_cart" | "website" | "booking"
+  status: "new" | "contacted" | "qualified" | "converted" | "lost" | "expired"
+  productId?: string | null
+  optionUnitId?: string | null
+  sourceSubmissionId?: string | null
+  metadata?: Record<string, unknown> | null
+}
+
+export interface StorefrontIntakePerson {
+  id: string
+}
+
+export interface StorefrontIntakePersistence {
+  findSignal(input: {
+    context: StorefrontRequestContext
+    kind: StorefrontIntakeSignal["kind"]
+    sourceSubmissionId: string
+  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  createPerson(input: {
+    context: StorefrontRequestContext
+    data: {
+      firstName: string
+      lastName: string
+      status: "active"
+      website: string | null
+      email?: string | null
+      phone?: string | null
+      source: string
+      sourceRef: string
+      tags: string[]
+    }
+  }): Promise<StorefrontIntakePerson | null> | StorefrontIntakePerson | null
+  createCustomerSignal(input: {
+    context: StorefrontRequestContext
+    data: {
+      personId: string
+      productId?: string | null
+      optionUnitId?: string | null
+      kind: StorefrontIntakeSignal["kind"]
+      source: StorefrontIntakeSignal["source"]
+      status: "new"
+      priority: "normal"
+      notes?: string | null
+      tags: string[]
+      sourceSubmissionId: string
+      metadata: Record<string, unknown>
+    }
+  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  updateCustomerSignal(input: {
+    context: StorefrontRequestContext
+    id: string
+    data: {
+      metadata: Record<string, unknown>
+    }
+  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  deleteCustomerSignal(input: {
+    context: StorefrontRequestContext
+    id: string
+  }): Promise<unknown> | unknown
+  deletePerson(input: { context: StorefrontRequestContext; id: string }): Promise<unknown> | unknown
+}
+
+export type StorefrontIntakePersistenceResolver = (
+  context: StorefrontRequestContext,
+) =>
+  | Promise<StorefrontIntakePersistence | null | undefined>
+  | StorefrontIntakePersistence
+  | null
+  | undefined
+
 export interface StorefrontIntakeOptions {
   guard?: StorefrontIntakeGuard
+  persistence?: StorefrontIntakePersistence
+  resolvePersistence?: StorefrontIntakePersistenceResolver
   requestNewsletterDoubleOptIn?: StorefrontNewsletterDoubleOptInHook
 }
 
-function requireDb(context: StorefrontRequestContext) {
-  if (!context.db) {
-    throw new Error("Storefront intake requires a request database")
+async function requirePersistence(
+  options: StorefrontIntakeOptions | undefined,
+  context: StorefrontRequestContext,
+) {
+  const persistence = (await options?.resolvePersistence?.(context)) ?? options?.persistence ?? null
+  if (!persistence) {
+    throw new Error("Storefront intake persistence is not configured")
   }
-  return context.db
+  return persistence
 }
 
 function splitName(name: string | undefined): { firstName?: string; lastName?: string } {
@@ -110,24 +220,19 @@ function defaultLeadSubmissionId(input: StorefrontLeadIntakeInput) {
 }
 
 async function findExistingSignal(
-  db: ReturnType<typeof requireDb>,
+  persistence: StorefrontIntakePersistence,
+  context: StorefrontRequestContext,
   input: {
     kind: StorefrontLeadIntakeInput["kind"]
     sourceSubmissionId?: string | null
   },
 ) {
   if (!input.sourceSubmissionId) return null
-  const [row] = await db
-    .select()
-    .from(customerSignals)
-    .where(
-      and(
-        eq(customerSignals.kind, input.kind),
-        eq(customerSignals.sourceSubmissionId, input.sourceSubmissionId),
-      ),
-    )
-    .limit(1)
-  return row ?? null
+  return await persistence.findSignal({
+    context,
+    kind: input.kind,
+    sourceSubmissionId: input.sourceSubmissionId,
+  })
 }
 
 function leadResponse(
@@ -178,51 +283,58 @@ function newsletterSignalMetadata(input: {
 export async function createStorefrontLeadSignal(input: {
   body: StorefrontLeadIntakeInput
   context: StorefrontRequestContext
+  intake?: StorefrontIntakeOptions
 }): Promise<StorefrontIntakeResponse> {
-  const db = requireDb(input.context)
+  const persistence = await requirePersistence(input.intake, input.context)
   const sourceSubmissionId = input.body.sourceSubmissionId ?? defaultLeadSubmissionId(input.body)
-  const existing = await findExistingSignal(db, {
+  const existing = await findExistingSignal(persistence, input.context, {
     kind: input.body.kind,
     sourceSubmissionId,
   })
   if (existing) return leadResponse(existing, true)
 
   const { firstName, lastName } = personNameFromContact(input.body.contact)
-  const person = await crmService.createPerson(db, {
-    firstName,
-    lastName,
-    status: "active",
-    website: null,
-    email: input.body.contact.email ? normalizeEmail(input.body.contact.email) : null,
-    phone: input.body.contact.phone ?? null,
-    source: "storefront",
-    sourceRef: sourceSubmissionId,
-    tags: input.body.tags,
+  const person = await persistence.createPerson({
+    context: input.context,
+    data: {
+      firstName,
+      lastName,
+      status: "active",
+      website: null,
+      email: input.body.contact.email ? normalizeEmail(input.body.contact.email) : null,
+      phone: input.body.contact.phone ?? null,
+      source: "storefront",
+      sourceRef: sourceSubmissionId,
+      tags: input.body.tags,
+    },
   })
-  if (!person) throw new Error("Failed to create CRM person for storefront lead")
+  if (!person) throw new Error("Failed to create intake person for storefront lead")
 
-  const signal = await crmService.createCustomerSignal(db, {
-    personId: person.id,
-    productId: input.body.productId ?? null,
-    optionUnitId: input.body.optionUnitId ?? null,
-    kind: input.body.kind,
-    source: input.body.source,
-    status: "new",
-    priority: "normal",
-    notes: input.body.notes ?? null,
-    tags: input.body.tags,
-    sourceSubmissionId,
-    metadata: {
-      intake: { surface: "storefront", type: "lead" },
-      payload: input.body.payload,
-      consent: input.body.consent,
-      source: {
-        url: input.body.sourceUrl ?? null,
-        locale: input.body.locale ?? null,
+  const signal = await persistence.createCustomerSignal({
+    context: input.context,
+    data: {
+      personId: person.id,
+      productId: input.body.productId ?? null,
+      optionUnitId: input.body.optionUnitId ?? null,
+      kind: input.body.kind,
+      source: input.body.source,
+      status: "new",
+      priority: "normal",
+      notes: input.body.notes ?? null,
+      tags: input.body.tags,
+      sourceSubmissionId,
+      metadata: {
+        intake: { surface: "storefront", type: "lead" },
+        payload: input.body.payload,
+        consent: input.body.consent,
+        source: {
+          url: input.body.sourceUrl ?? null,
+          locale: input.body.locale ?? null,
+        },
       },
     },
   })
-  if (!signal) throw new Error("Failed to create CRM customer signal for storefront lead")
+  if (!signal) throw new Error("Failed to create customer signal for storefront lead")
 
   await emitCustomerSignalCreated(
     input.context.eventBus,
@@ -246,13 +358,14 @@ export async function createStorefrontLeadSignal(input: {
 export async function subscribeStorefrontNewsletter(input: {
   body: StorefrontNewsletterSubscribeInput
   context: StorefrontRequestContext
+  intake?: StorefrontIntakeOptions
   requestDoubleOptIn?: StorefrontNewsletterDoubleOptInHook
 }): Promise<StorefrontNewsletterSubscribeResponse> {
-  const db = requireDb(input.context)
+  const persistence = await requirePersistence(input.intake, input.context)
   const email = normalizeEmail(input.body.email)
   const sourceSubmissionId =
     input.body.sourceSubmissionId ?? defaultNewsletterSubmissionId(input.body.email)
-  const existing = await findExistingSignal(db, {
+  const existing = await findExistingSignal(persistence, input.context, {
     kind: "notify",
     sourceSubmissionId,
   })
@@ -264,35 +377,41 @@ export async function subscribeStorefrontNewsletter(input: {
   }
 
   const { firstName, lastName } = personNameFromNewsletter(input.body)
-  const person = await crmService.createPerson(db, {
-    firstName,
-    lastName,
-    status: "active",
-    website: null,
-    email,
-    source: "storefront-newsletter",
-    sourceRef: sourceSubmissionId,
-    tags: input.body.tags,
+  const person = await persistence.createPerson({
+    context: input.context,
+    data: {
+      firstName,
+      lastName,
+      status: "active",
+      website: null,
+      email,
+      source: "storefront-newsletter",
+      sourceRef: sourceSubmissionId,
+      tags: input.body.tags,
+    },
   })
-  if (!person) throw new Error("Failed to create CRM person for newsletter subscription")
+  if (!person) throw new Error("Failed to create intake person for newsletter subscription")
 
   const doubleOptIn = input.requestDoubleOptIn ? "requested" : "not_configured"
-  let signal = await crmService.createCustomerSignal(db, {
-    personId: person.id,
-    kind: "notify",
-    source: input.body.source,
-    status: "new",
-    priority: "normal",
-    notes: "Newsletter subscription",
-    tags: input.body.tags,
-    sourceSubmissionId,
-    metadata: newsletterSignalMetadata({
-      email,
-      doubleOptIn: "not_configured",
-      body: input.body,
-    }),
+  let signal = await persistence.createCustomerSignal({
+    context: input.context,
+    data: {
+      personId: person.id,
+      kind: "notify",
+      source: input.body.source,
+      status: "new",
+      priority: "normal",
+      notes: "Newsletter subscription",
+      tags: input.body.tags,
+      sourceSubmissionId,
+      metadata: newsletterSignalMetadata({
+        email,
+        doubleOptIn: "not_configured",
+        body: input.body,
+      }),
+    },
   })
-  if (!signal) throw new Error("Failed to create CRM customer signal for newsletter subscription")
+  if (!signal) throw new Error("Failed to create customer signal for newsletter subscription")
 
   if (input.requestDoubleOptIn) {
     try {
@@ -305,18 +424,32 @@ export async function subscribeStorefrontNewsletter(input: {
         context: input.context,
       })
     } catch (error) {
-      await crmService.deleteCustomerSignal(db, signal.id).catch(() => null)
-      await crmService.deletePerson(db, person.id).catch(() => null)
+      await Promise.resolve(
+        persistence.deleteCustomerSignal({
+          context: input.context,
+          id: signal.id,
+        }),
+      ).catch(() => null)
+      await Promise.resolve(
+        persistence.deletePerson({
+          context: input.context,
+          id: person.id,
+        }),
+      ).catch(() => null)
       throw error
     }
 
     signal =
-      (await crmService.updateCustomerSignal(db, signal.id, {
-        metadata: newsletterSignalMetadata({
-          email,
-          doubleOptIn,
-          body: input.body,
-        }),
+      (await persistence.updateCustomerSignal({
+        context: input.context,
+        id: signal.id,
+        data: {
+          metadata: newsletterSignalMetadata({
+            email,
+            doubleOptIn,
+            body: input.body,
+          }),
+        },
       })) ?? signal
   }
 

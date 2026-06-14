@@ -1,0 +1,260 @@
+import { Link, redirect, useRouter, useRouterState } from "@tanstack/react-router"
+import { Loader2 } from "lucide-react"
+import { forwardRef, type ReactNode, useCallback, useMemo } from "react"
+
+import type { AdminNavLinkComponent, AdminNavLinkProps } from "../components/admin-nav-link.js"
+import { OperatorAdminBootstrapGate } from "../components/operator-admin-bootstrap-gate.js"
+import { OperatorAdminWorkspaceLayout } from "../components/operator-admin-sidebar.js"
+import type { AdminExtension } from "../extensions.js"
+import {
+  type AdminDestinationResolvers,
+  AdminNavigationProvider,
+} from "../navigation/destinations.js"
+import type { OperatorAdminNavigationIcons } from "../navigation/operator-navigation.js"
+import { AdminLocalePreferenceSync } from "../providers/locale-preferences.js"
+import {
+  getOperatorAdminMessageOverridesFromUiPrefs,
+  type OperatorAdminMessages,
+  OperatorAdminMessagesProvider,
+  useOperatorAdminMessages,
+} from "../providers/operator-admin-messages.js"
+import type { AdminUser } from "../types.js"
+
+/**
+ * Router-aware sidebar link. SidebarMenuButton with `asChild` wraps this in a
+ * Slot, which clones the element with merged className, data attributes, and
+ * event props — extras not declared on AdminNavLinkProps but arriving at runtime, so
+ * spread the rest. Without this, Slot's className is silently dropped and
+ * sidebar items render unstyled. External URLs fall back to a plain anchor.
+ */
+export const AdminRouterLink = forwardRef<HTMLAnchorElement, AdminNavLinkProps>(
+  function AdminRouterLink({ children, href, onClick, target, ...rest }, ref) {
+    const external = href.startsWith("http://") || href.startsWith("https://")
+
+    if (external) {
+      return (
+        <a
+          ref={ref}
+          href={href}
+          target={target}
+          rel={target === "_blank" ? "noopener noreferrer" : undefined}
+          onClick={onClick}
+          {...rest}
+        >
+          {children}
+        </a>
+      )
+    }
+
+    return (
+      <Link ref={ref} to={href} target={target} onClick={onClick} {...rest}>
+        {children}
+      </Link>
+    )
+  },
+)
+
+export interface CreateAdminWorkspaceBeforeLoadOptions<TUser> {
+  /** Resolve the current user (server fn / cookie-forwarding fetch). */
+  getCurrentUser: () => Promise<TUser | null | undefined>
+  /** Where unauthenticated visitors are sent. Default `/sign-in`. */
+  signInPath?: string
+}
+
+/**
+ * The workspace auth guard. MUST run in `beforeLoad`, not `loader`:
+ * beforeLoad executes top-down for the whole matched chain BEFORE any loader
+ * fires, so an unauthenticated redirect short-circuits the subtree. In a
+ * loader it would race child loaders whose 401s surface the root error
+ * boundary and beat the redirect, dead-ending logged-out users. Returns
+ * `{ user }`, which TanStack merges into route context.
+ */
+export function createAdminWorkspaceBeforeLoad<TUser>({
+  getCurrentUser,
+  signInPath = "/sign-in",
+}: CreateAdminWorkspaceBeforeLoadOptions<TUser>) {
+  return async ({ location }: { location: { href: string } }): Promise<{ user: TUser }> => {
+    const user = await getCurrentUser()
+
+    if (!user) {
+      throw redirect({
+        to: signInPath,
+        search: { next: location.href },
+      })
+    }
+
+    return { user }
+  }
+}
+
+export function AdminWorkspacePendingFallback({ label }: { label?: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        {label ? <p className="text-sm text-muted-foreground">{label}</p> : null}
+      </div>
+    </div>
+  )
+}
+
+/** Structural slice of the loaded user the shell itself needs. */
+export interface AdminWorkspaceShellUser {
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  profilePictureUrl?: string | null
+  locale?: string | null
+  timeZone?: string | null
+  timezone?: string | null
+  uiPrefs?: unknown
+}
+
+/** Default mapping from the loaded user to the layout's AdminUser shape. */
+export function defaultAdminWorkspaceUser(user: AdminWorkspaceShellUser): AdminUser {
+  return {
+    name: [user.firstName, user.lastName].filter(Boolean).join(" "),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email ?? "",
+    avatar: user.profilePictureUrl,
+    locale: user.locale,
+    timeZone: user.timeZone ?? user.timezone,
+  }
+}
+
+export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser> {
+  user: TUser | null | undefined
+  isUserLoading?: boolean
+  /**
+   * Admin extensions for the navigation/widget seam. Pass a function to
+   * derive nav labels from the resolved admin messages.
+   */
+  extensions?:
+    | ReadonlyArray<AdminExtension>
+    | ((messages: OperatorAdminMessages) => ReadonlyArray<AdminExtension>)
+  icons?: OperatorAdminNavigationIcons
+  /** Defaults to the router-aware {@link AdminRouterLink}. */
+  linkComponent?: AdminNavLinkComponent
+  /**
+   * Host resolver map for the semantic-destination contract (packaged-admin
+   * RFC §4.7): one `params → href` resolver per `AdminDestinations` key the
+   * mounted packages declare. When provided, the shell mounts an
+   * `AdminNavigationProvider` wired to the app router, so packaged pages can
+   * navigate to routes they don't own via `useAdminHref`/`useAdminNavigate`.
+   */
+  destinations?: AdminDestinationResolvers
+  onSignOut?: () => void | Promise<void>
+  /** Maps the loaded user for the layout; default covers the common fields. */
+  mapUser?: (user: TUser) => AdminUser
+  children: ReactNode
+}
+
+/**
+ * The authenticated workspace shell: bootstrap gate (current-user readiness
+ * is the only shell dependency), per-user message overrides, locale
+ * preference sync, and the workspace layout with router-aware links — the
+ * composition every Voyant admin previously copied from the template.
+ */
+export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
+  user,
+  isUserLoading,
+  extensions,
+  icons,
+  linkComponent = AdminRouterLink,
+  destinations,
+  onSignOut,
+  mapUser = defaultAdminWorkspaceUser,
+  children,
+}: AdminWorkspaceShellProps<TUser>) {
+  const messages = useOperatorAdminMessages()
+
+  return (
+    <OperatorAdminBootstrapGate
+      user={user}
+      isUserLoading={isUserLoading}
+      loadingFallback={<AdminWorkspacePendingFallback label={messages.loading} />}
+    >
+      {({ user: loadedUser }) => (
+        <OperatorAdminMessagesProvider
+          overrides={getOperatorAdminMessageOverridesFromUiPrefs(loadedUser.uiPrefs)}
+        >
+          <AdminLocalePreferenceSync source={loadedUser} />
+          <AdminWorkspaceShellInner
+            user={loadedUser}
+            extensions={extensions}
+            icons={icons}
+            linkComponent={linkComponent}
+            destinations={destinations}
+            onSignOut={onSignOut}
+            mapUser={mapUser}
+          >
+            {children}
+          </AdminWorkspaceShellInner>
+        </OperatorAdminMessagesProvider>
+      )}
+    </OperatorAdminBootstrapGate>
+  )
+}
+
+function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
+  user,
+  extensions,
+  icons,
+  linkComponent,
+  destinations,
+  onSignOut,
+  mapUser,
+  children,
+}: {
+  user: TUser
+  extensions: AdminWorkspaceShellProps<TUser>["extensions"]
+  icons?: OperatorAdminNavigationIcons
+  linkComponent: AdminNavLinkComponent
+  destinations?: AdminDestinationResolvers
+  onSignOut?: () => void | Promise<void>
+  mapUser: (user: TUser) => AdminUser
+  children: ReactNode
+}) {
+  const router = useRouter()
+  const currentPath = useRouterState({ select: (s) => s.location.pathname })
+  const messages = useOperatorAdminMessages()
+  const resolvedExtensions = useMemo(
+    () => (typeof extensions === "function" ? extensions(messages) : extensions),
+    [extensions, messages],
+  )
+  // Resolver-built hrefs may carry a query string, so navigate by `href`
+  // (which parses it back into search params) rather than `to` (which would
+  // treat the whole string as a literal pathname). `replace` forwards so
+  // packaged redirect pages (alias routes, deep-link forwards) keep
+  // route-redirect history semantics.
+  const navigateToHref = useCallback(
+    (href: string, options?: { replace?: boolean }) => {
+      void router.navigate({ href, replace: options?.replace })
+    },
+    [router],
+  )
+
+  const layout = (
+    <OperatorAdminWorkspaceLayout
+      currentPath={currentPath}
+      extensions={resolvedExtensions}
+      icons={icons}
+      linkComponent={linkComponent}
+      onSignOut={onSignOut}
+      user={mapUser(user)}
+    >
+      {children}
+    </OperatorAdminWorkspaceLayout>
+  )
+
+  if (!destinations) {
+    return layout
+  }
+
+  return (
+    <AdminNavigationProvider resolvers={destinations} navigate={navigateToHref}>
+      {layout}
+    </AdminNavigationProvider>
+  )
+}

@@ -3,20 +3,18 @@
 //   voyant admin generate
 
 import { createActionLedgerAdminExtension } from "@voyantjs/action-ledger-react/admin"
-import { createCrmAdminExtension } from "@voyantjs/crm-react/admin"
-import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
-import { createProductsAdminExtension } from "@voyantjs/products-react/admin"
-import { createPromotionsAdminExtension } from "@voyantjs/promotions-react/admin"
+import { createRelationshipsAdminExtension } from "@voyantjs/relationships-react/admin"
+import { createDistributionAdminExtension } from "@voyantjs/distribution-react/admin"
+import { createInventoryAdminExtension } from "@voyantjs/inventory-react/admin"
+import { createCommerceAdminExtension } from "@voyantjs/commerce-react/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-react/admin"
-import { createAvailabilityAdminExtension } from "@voyantjs/availability-react/admin"
-import { createDistributionAdminExtension } from "@voyantjs/distribution-react/admin"
-import { createResourcesAdminExtension } from "@voyantjs/resources-react/admin"
+import { createOperationsAdminExtension } from "@voyantjs/operations-react/admin"
 import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
 import { createFlightsAdminExtension } from "@voyantjs/flights-react/admin"
 import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
-import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-react/admin"
+import { createTripComposerAdminExtension } from "@voyantjs/trip-composer-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -25,18 +23,16 @@ import { createTravelComposerAdminExtension } from "@voyantjs/travel-composer-re
  */
 export const generatedAdminExtensionFactories = {
   actionLedger: createActionLedgerAdminExtension,
-  crm: createCrmAdminExtension,
-  suppliers: createSuppliersAdminExtension,
-  products: createProductsAdminExtension,
-  promotions: createPromotionsAdminExtension,
+  relationships: createRelationshipsAdminExtension,
+  distribution: createDistributionAdminExtension,
+  inventory: createInventoryAdminExtension,
+  commerce: createCommerceAdminExtension,
   catalog: createCatalogAdminExtension,
   bookings: createBookingsAdminExtension,
   finance: createFinanceAdminExtension,
-  availability: createAvailabilityAdminExtension,
-  distribution: createDistributionAdminExtension,
-  resources: createResourcesAdminExtension,
+  operations: createOperationsAdminExtension,
   notifications: createNotificationsAdminExtension,
   flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,
-  travelComposer: createTravelComposerAdminExtension,
+  tripComposer: createTripComposerAdminExtension,
 } as const

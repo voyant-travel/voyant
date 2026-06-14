@@ -15,7 +15,31 @@ export const distributionHonoModule: HonoModule = {
   routes: distributionRoutes,
 }
 
-export { distributionBookingExtension } from "./booking-extension.js"
+export * from "./booking-extension.js"
+export * from "./channel-push/index.js"
+export * from "./external-refs/index.js"
+export type {
+  DistributionCounterpartyEntityType,
+  DistributionCounterpartyRecord,
+  DistributionCounterpartyReference,
+  DistributionCounterpartyRole,
+  DistributionExternalReferenceInput,
+  LinkExternalReferenceInput,
+  LinkExternalReferenceOutcome,
+  ReconcileCounterpartyActivityInput,
+  ReconcileCounterpartyActivityOutcome,
+  ResolveCounterpartyOutcome,
+  RouteCounterpartyEventInput,
+  RouteCounterpartyEventOutcome,
+} from "./interface.js"
+export {
+  counterpartyEntityTypeToRole,
+  counterpartyRoleToEntityType,
+  linkExternalReference,
+  reconcileCounterpartyActivity,
+  resolveCounterparty,
+  routeCounterpartyEvent,
+} from "./interface.js"
 export {
   type AcquireTokenAcquired,
   type AcquireTokenDenied,
@@ -106,6 +130,7 @@ export {
   channelAvailabilityPushIntents,
   channelContentPushIntents,
 } from "./schema-push-intents.js"
+export * from "./suppliers/index.js"
 export {
   channelBookingLinkListQuerySchema,
   channelCommissionRuleListQuerySchema,

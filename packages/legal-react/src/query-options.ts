@@ -19,6 +19,7 @@ import type { UseLegalPolicyRulesOptions } from "./hooks/use-policy-rules.js"
 import type { UseLegalPolicyVersionsOptions } from "./hooks/use-policy-versions.js"
 import {
   type LegalContractTemplateDefaultFilters,
+  type LegalTermsListFilters,
   legalQueryKeys,
   type ResolvePolicyFilters,
 } from "./query-keys.js"
@@ -39,6 +40,8 @@ import {
   legalPolicySingleResponse,
   legalPolicyVersionListResponse,
   legalPolicyVersionSingleResponse,
+  legalTermListResponse,
+  legalTermSingleResponse,
   resolvedPolicyResponse,
 } from "./schemas.js"
 
@@ -338,6 +341,35 @@ export function getLegalPolicyAcceptancesQueryOptions(
         legalPolicyAcceptanceListResponse,
         client,
       ),
+  })
+}
+
+export function getLegalTermsQueryOptions(
+  client: FetchWithValidationOptions,
+  options: LegalTermsListFilters = {},
+) {
+  return queryOptions({
+    queryKey: legalQueryKeys.termsList(options),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/legal/terms${toQueryString(options)}`,
+        legalTermListResponse,
+        client,
+      ),
+  })
+}
+
+export function getLegalTermQueryOptions(client: FetchWithValidationOptions, id: string) {
+  return queryOptions({
+    queryKey: legalQueryKeys.term(id),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/legal/terms/${id}`,
+        legalTermSingleResponse,
+        client,
+      )
+      return data
+    },
   })
 }
 

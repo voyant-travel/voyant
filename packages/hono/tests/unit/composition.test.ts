@@ -48,6 +48,29 @@ describe("composeFromManifest", () => {
     expect(result.modules[0]?.module.name).toBe("op:b:spicy")
   })
 
+  it("flattens multi-module factories in manifest order", () => {
+    const result = composeFromManifest(
+      {
+        modules: ["@voyantjs/a", "@voyantjs/commercial-cluster", "@voyantjs/b"],
+      },
+      {
+        ...registry,
+        modules: {
+          ...registry.modules,
+          "@voyantjs/commercial-cluster": () => [mod("pricing"), mod("markets")],
+        },
+      },
+      { prefix: "op" },
+    )
+
+    expect(result.modules.map((m) => m.module.name)).toEqual([
+      "a",
+      "pricing",
+      "markets",
+      "op:b:default",
+    ])
+  })
+
   it("throws when a manifest module has no registered factory", () => {
     expect(() =>
       composeFromManifest({ modules: ["@voyantjs/missing"] }, registry, { prefix: "op" }),

@@ -1,7 +1,7 @@
-import { productExtras } from "@voyantjs/extras/schema"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { productExtrasRef } from "./product-extra-ref.js"
 import {
   centsToAmount,
   getPreferredCurrency,
@@ -17,20 +17,20 @@ export async function getStorefrontProductExtensions(
 
   const extras = await db
     .select({
-      id: productExtras.id,
-      name: productExtras.name,
-      description: productExtras.description,
-      selectionType: productExtras.selectionType,
-      pricingMode: productExtras.pricingMode,
-      pricedPerPerson: productExtras.pricedPerPerson,
-      defaultQuantity: productExtras.defaultQuantity,
-      minQuantity: productExtras.minQuantity,
-      maxQuantity: productExtras.maxQuantity,
-      metadata: productExtras.metadata,
+      id: productExtrasRef.id,
+      name: productExtrasRef.name,
+      description: productExtrasRef.description,
+      selectionType: productExtrasRef.selectionType,
+      pricingMode: productExtrasRef.pricingMode,
+      pricedPerPerson: productExtrasRef.pricedPerPerson,
+      defaultQuantity: productExtrasRef.defaultQuantity,
+      minQuantity: productExtrasRef.minQuantity,
+      maxQuantity: productExtrasRef.maxQuantity,
+      metadata: productExtrasRef.metadata,
     })
-    .from(productExtras)
-    .where(and(eq(productExtras.productId, productId), eq(productExtras.active, true)))
-    .orderBy(asc(productExtras.sortOrder), asc(productExtras.name))
+    .from(productExtrasRef)
+    .where(and(eq(productExtrasRef.productId, productId), eq(productExtrasRef.active, true)))
+    .orderBy(asc(productExtrasRef.sortOrder), asc(productExtrasRef.name))
 
   const priceRuleByExtraId = new Map(
     context.extraRules

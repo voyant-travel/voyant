@@ -7,6 +7,8 @@ import {
   insertContractSchema,
   updateContractSchema,
 } from "../../src/contracts/validation.js"
+import { insertPolicyAcceptanceSchema } from "../../src/policies/validation.js"
+import { insertLegalTermSchema } from "../../src/terms/validation.js"
 
 describe("legal contract validation", () => {
   it("parses boolean query parameters without treating false as truthy", () => {
@@ -62,6 +64,7 @@ describe("legal contract validation", () => {
         organizationId: "",
         supplierId: "",
         seriesId: "",
+        legacyTransactionOrderId: "",
         expiresAt: "",
         language: "ro",
       }),
@@ -71,6 +74,7 @@ describe("legal contract validation", () => {
       organizationId: undefined,
       supplierId: undefined,
       seriesId: undefined,
+      legacyTransactionOrderId: undefined,
       expiresAt: undefined,
     })
   })
@@ -84,7 +88,7 @@ describe("legal contract validation", () => {
         supplierId: "",
         channelId: "",
         bookingId: "",
-        orderId: "",
+        legacyTransactionOrderId: "",
         expiresAt: "",
       }),
     ).toEqual({
@@ -94,8 +98,76 @@ describe("legal contract validation", () => {
       supplierId: undefined,
       channelId: undefined,
       bookingId: undefined,
-      orderId: undefined,
+      legacyTransactionOrderId: undefined,
       expiresAt: undefined,
     })
+  })
+
+  it("accepts explicit contract target refs and legacy transaction compatibility refs", () => {
+    expect(
+      insertContractSchema.parse({
+        scope: "customer",
+        title: "Quote version contract",
+        targetKind: "quote_version",
+        targetId: "qver_123",
+        legacyTransactionOrderId: "ord_legacy",
+      }),
+    ).toMatchObject({
+      targetKind: "quote_version",
+      targetId: "qver_123",
+      legacyTransactionOrderId: "ord_legacy",
+    })
+  })
+
+  it("accepts policy acceptances against provider/source targets", () => {
+    expect(
+      insertPolicyAcceptanceSchema.parse({
+        policyVersionId: "plvr_123",
+        targetKind: "provider_source_ref",
+        targetProvider: "connect",
+        targetSourceRef: "supplier-order-42",
+        method: "explicit_checkbox",
+      }),
+    ).toMatchObject({
+      policyVersionId: "plvr_123",
+      targetKind: "provider_source_ref",
+      targetProvider: "connect",
+      targetSourceRef: "supplier-order-42",
+      method: "explicit_checkbox",
+    })
+  })
+
+  it("requires Legal terms to target an explicit domain record or legacy compatibility ref", () => {
+    expect(
+      insertLegalTermSchema.parse({
+        targetKind: "quote_version",
+        targetId: "qver_123",
+        termType: "terms_and_conditions",
+        title: "Proposal terms",
+        body: "Accepted quote version terms.",
+      }),
+    ).toMatchObject({
+      targetKind: "quote_version",
+      targetId: "qver_123",
+      acceptanceStatus: "pending",
+      required: true,
+    })
+
+    expect(
+      insertLegalTermSchema.parse({
+        legacyTransactionOrderId: "ord_legacy",
+        title: "Migrated order terms",
+        body: "Legacy migrated term body.",
+      }),
+    ).toMatchObject({
+      legacyTransactionOrderId: "ord_legacy",
+    })
+
+    expect(() =>
+      insertLegalTermSchema.parse({
+        title: "Missing target",
+        body: "No target.",
+      }),
+    ).toThrow()
   })
 })

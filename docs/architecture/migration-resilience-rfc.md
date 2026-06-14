@@ -86,8 +86,8 @@ places today, but only because someone remembered each time:
 | `bookingsSupplierExtension` | bookings | `bookingSupplierStatuses`, `bookingActivityLog` | ✓ | ✓ |
 | `bookingsCreateExtension` | finance | (uses finance tables) | ✓ | ✓ |
 | `productsBookingExtension` | products | `bookingProductDetails`, `bookingItemProductDetails` | ✓ | ✓ |
-| `crmBookingExtension` | crm | `bookingCrmDetails` | ✓ | ✓ |
-| `transactionsBookingExtension` | transactions | `bookingTransactionDetails` | ✓ | ✓ |
+| `quotesBookingExtension` | quotes | `bookingQuoteDetails` | ✓ | ✓ |
+| `bookingOrigins` | bookings | `bookingOrigins` | ✓ | ✓ |
 | `distributionBookingExtension` | distribution | `bookingDistributionDetails` | ✓ | ✓ |
 
 Six extensions, two lists, zero enforcement that they stay in sync.
@@ -186,7 +186,7 @@ schema list:
   `legal`, `catalog`, `storefront-verification`.
 - **Operator** would miss even more: `action-ledger`, `catalog-authoring`,
   `legal`, `promotions`, `cruises`, `charters`, `accommodations`,
-  `travel-composer`, `flights`, `catalog`, `workflow-runs`,
+  `trip-composer`, `flights`, `catalog`, `workflow-runs`,
   `storefront-verification` (plus its template-local `./src/db/schema.ts`).
 - **apps/dev** has a `drizzle.config.ts` but **no `voyant.config.ts`** — there is
   no manifest to resolve from, so it needs a manifest-creation step before it can
@@ -195,7 +195,7 @@ schema list:
 Two further normalization gaps block resolution even where a module *is* listed:
 
 - **Missing `package.json#voyant` metadata.** `catalog`, `workflow-runs`,
-  `travel-composer`, and `flights` export schema subpaths but declare no `voyant`
+  `trip-composer`, and `flights` export schema subpaths but declare no `voyant`
   field, so `resolveSchemas()` cannot find their schema or dependencies.
   (`crm`/`products`/`bookings` do declare it.)
 - **Non-standard schema entrypoints.** Operator lists `flights` as
@@ -221,7 +221,7 @@ first-class manifest entries, not a runtime-only array:
 export interface VoyantConfig {
   // ...existing...
   modules?: ModuleEntry[]
-  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyantjs/products/booking-extension"
+  extensions?: ExtensionEntry[]   // NEW — e.g. "@voyantjs/inventory/booking-extension"
   plugins?: PluginEntry[]
 }
 ```
@@ -253,7 +253,8 @@ generated file**:
   // Run `voyant db generate` to refresh.
   export const schema = [
     "../../packages/db/src/schema/index.ts",
-    "../../packages/crm/src/schema.ts",
+    "../../packages/relationships/src/schema.ts",
+    "../../packages/quotes/src/schema.ts",
     // ...dependency-ordered, derived from the manifest...
   ]
   ```
@@ -277,7 +278,7 @@ stop drifting (§1.2).
 Every package that owns tables sets `package.json#voyant.schema` (default
 `./schema`) and `requiresSchemas` for FK-target dependencies — the fields
 `resolveSchemas()` already reads. Extensions that own tables (e.g.
-`@voyantjs/products/booking-extension`) declare their schema subpath the same way,
+`@voyantjs/inventory/booking-extension`) declare their schema subpath the same way,
 so resolution picks them up automatically once they're in the manifest (§4.1).
 This makes "mounted but schema-less" unrepresentable.
 
@@ -364,7 +365,7 @@ defer runtime derivation (the hard part) to last.
 ### Phase 0 — inventory & normalization (no behavior change)
 - Build the per-template manifest↔schema gap inventory (§3.1) and keep it current.
 - Add `package.json#voyant` (`schema`, `requiresSchemas`) to **every**
-  schema-owning package, including `catalog`, `workflow-runs`, `travel-composer`,
+  schema-owning package, including `catalog`, `workflow-runs`, `trip-composer`,
   and `flights`; fix non-standard entrypoints (e.g. flights'
   `src/reference/local-postgres.ts`).
 - Complete each template's `voyant.config.ts` so `modules` covers everything its
@@ -446,7 +447,7 @@ defer runtime derivation (the hard part) to last.
 **Still open:**
 
 1. **Generated-file location & extension granularity** — is the extension
-   manifest entry a package subpath (`@voyantjs/products/booking-extension`) or a
+   manifest entry a package subpath (`@voyantjs/inventory/booking-extension`) or a
    stable extension name resolved via a registry? Lean: subpath, mirroring how
    modules are listed.
 2. **Multi-template generation** — do we generate per template

@@ -43,7 +43,12 @@ export interface ContractLifecycleEvent {
   supplierId: string | null
   channelId: string | null
   bookingId: string | null
-  orderId: string | null
+  targetKind: Contract["targetKind"] | null
+  targetId: string | null
+  targetProvider: string | null
+  targetSourceRef: string | null
+  legacyTransactionOfferId: string | null
+  legacyTransactionOrderId: string | null
   /**
    * Operator-supplied delivery override for the `sent` transition only —
    * the Send-contract dialog forwards the typed-in subject + message +
@@ -152,7 +157,12 @@ export function buildContractLifecycleEvent(
     supplierId: contract.supplierId ?? null,
     channelId: contract.channelId ?? null,
     bookingId: contract.bookingId ?? null,
-    orderId: contract.orderId ?? null,
+    targetKind: contract.targetKind ?? null,
+    targetId: contract.targetId ?? null,
+    targetProvider: contract.targetProvider ?? null,
+    targetSourceRef: contract.targetSourceRef ?? null,
+    legacyTransactionOfferId: contract.legacyTransactionOfferId ?? null,
+    legacyTransactionOrderId: contract.legacyTransactionOrderId ?? null,
     delivery: delivery ?? null,
   }
 }

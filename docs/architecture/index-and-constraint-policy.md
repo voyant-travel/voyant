@@ -211,7 +211,7 @@ Policy outcome:
 
 Query:
 
-- [`listSuppliers(...)`](../../packages/suppliers/src/service-core.ts)
+- [`listSuppliers(...)`](../../packages/distribution/src/suppliers/service-core.ts)
   filters by `type`, `status`, and `primaryFacilityId`, then sorts by
   `createdAt`
 - the same query also performs `ILIKE` and `exists(...)` searches across
@@ -219,7 +219,7 @@ Query:
 
 Schema:
 
-- [`suppliers`](../../packages/suppliers/src/schema.ts) has single-column
+- [`suppliers`](../../packages/distribution/src/suppliers/schema.ts) has single-column
   indexes for `type`, `status`, and `primaryFacilityId`
 
 Policy outcome:

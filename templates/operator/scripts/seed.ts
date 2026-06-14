@@ -4,7 +4,7 @@
  * Operator seed script — a realistic tour-operator scenario.
  *
  * Seeds: 1 auth org, 5 staff users, a populated CRM (2 orgs, 30 people,
- * 1 sales pipeline with quotes/quote versions), 4 facilities, 6 suppliers,
+ * 1 sales pipeline with quotes/quote versions), 4 shared places, 6 suppliers,
  * 6 products with availability, 6 bookings across lifecycle states with
  * matching finance docs, a cancellation policy, and a customer contract.
  *
@@ -16,11 +16,6 @@ import { readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
-  availabilityPickupPoints,
-  availabilitySlots,
-  availabilityStartTimes,
-} from "@voyantjs/availability/schema"
-import {
   bookingActivityLog,
   bookingDocuments,
   bookingItems,
@@ -30,37 +25,23 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { bookingCrmDetails } from "@voyantjs/crm/booking-extension"
 import {
-  activities,
-  activityLinks,
-  activityParticipants,
-  communicationLog,
-  customFieldDefinitions,
-  customFieldValues,
-  organizationNotes,
-  organizations,
-  people,
-  personNotes,
-  personPaymentMethods,
-  pipelines,
-  quoteParticipants,
-  quotes,
-  quoteVersionLines,
-  quoteVersions,
-  segmentMembers,
-  segments,
-  stages,
-} from "@voyantjs/crm/schema"
-
+  marketCurrencies,
+  marketLocales,
+  markets,
+  optionPriceRules,
+  optionUnitPriceRules,
+  priceCatalogs,
+} from "@voyantjs/commerce"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
-import { bookingDistributionDetails } from "@voyantjs/distribution/booking-extension"
 import {
-  facilities,
-  facilityFeatures,
-  facilityOperationSchedules,
-} from "@voyantjs/facilities/schema"
+  bookingDistributionDetails,
+  supplierNotes,
+  supplierRates,
+  supplierServices,
+  suppliers,
+} from "@voyantjs/distribution"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -82,20 +63,9 @@ import {
   identityNamedContacts,
 } from "@voyantjs/identity/schema"
 import {
-  contracts,
-  contractTemplates,
-  contractTemplateVersions,
-  policies,
-  policyAcceptances,
-  policyRules,
-  policyVersions,
-} from "@voyantjs/legal/schema"
-import { marketCurrencies, marketLocales, markets } from "@voyantjs/markets/schema"
-import { optionPriceRules, optionUnitPriceRules, priceCatalogs } from "@voyantjs/pricing/schema"
-import {
   bookingItemProductDetails,
   bookingProductDetails,
-} from "@voyantjs/products/booking-extension"
+} from "@voyantjs/inventory/booking-extension"
 import {
   optionUnits,
   productDayServices,
@@ -105,15 +75,48 @@ import {
   productOptions,
   products,
   productVersions,
-} from "@voyantjs/products/schema"
+} from "@voyantjs/inventory/schema"
 import {
-  supplierNotes,
-  supplierRates,
-  supplierServices,
-  suppliers,
-} from "@voyantjs/suppliers/schema"
-import { bookingTransactionDetails } from "@voyantjs/transactions/booking-extension"
-import { offers, orders } from "@voyantjs/transactions/schema"
+  contracts,
+  contractTemplates,
+  contractTemplateVersions,
+  policies,
+  policyAcceptances,
+  policyRules,
+  policyVersions,
+} from "@voyantjs/legal/schema"
+import {
+  availabilityPickupPoints,
+  availabilitySlots,
+  availabilityStartTimes,
+  facilities,
+  facilityFeatures,
+  facilityOperationSchedules,
+} from "@voyantjs/operations"
+import { bookingQuoteDetails } from "@voyantjs/quotes/booking-extension"
+import {
+  pipelines,
+  quoteParticipants,
+  quotes,
+  quoteVersionLines,
+  quoteVersions,
+  stages,
+} from "@voyantjs/quotes/schema"
+import {
+  activities,
+  activityLinks,
+  activityParticipants,
+  communicationLog,
+  customFieldDefinitions,
+  customFieldValues,
+  organizationNotes,
+  organizations,
+  people,
+  personNotes,
+  personPaymentMethods,
+  segmentMembers,
+  segments,
+} from "@voyantjs/relationships/schema"
 import { hashPassword } from "better-auth/crypto"
 import { asc, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"
@@ -236,7 +239,6 @@ async function reset() {
     "booking_item_product_details",
     "booking_product_details",
     "booking_crm_details",
-    "booking_transaction_details",
     "booking_distribution_details",
     "booking_traveler_travel_details",
     "booking_supplier_statuses",
@@ -247,9 +249,6 @@ async function reset() {
     "booking_items",
     "booking_travelers",
     "bookings",
-    // Transactions
-    "orders",
-    "offers",
     // Availability
     "availability_slot_pickups",
     "availability_slots",
@@ -285,7 +284,7 @@ async function reset() {
     "supplier_contracts",
     "supplier_directory_projections",
     "suppliers",
-    // Facilities
+    // Shared place compatibility tables
     "facility_features",
     "facility_operation_schedules",
     "facility_address_projections",
@@ -718,7 +717,7 @@ async function seedMarketsAndFinanceSetup() {
   })
 }
 
-// ---------- 3. Facilities ----------
+// ---------- 3. Shared places ----------
 
 const FACILITIES = {
   hotelThames: newId("facilities"),
@@ -728,7 +727,7 @@ const FACILITIES = {
 } as const
 
 async function seedFacilities() {
-  console.log("→ seeding facilities…")
+  console.log("→ seeding shared places…")
   await db.insert(facilities).values([
     {
       id: FACILITIES.hotelThames,
@@ -2476,7 +2475,7 @@ async function seedBookingsAndFinance() {
     })
 
     // Extension details — populated on every booking
-    await db.insert(bookingCrmDetails).values({
+    await db.insert(bookingQuoteDetails).values({
       bookingId,
       quoteId: null,
       quoteVersionId: null,
@@ -2484,11 +2483,6 @@ async function seedBookingsAndFinance() {
     await db.insert(bookingProductDetails).values({
       bookingId,
       productId: product.id,
-    })
-    await db.insert(bookingTransactionDetails).values({
-      bookingId,
-      orderId: null,
-      offerId: null,
     })
     await db.insert(bookingDistributionDetails).values({
       bookingId,
@@ -2739,36 +2733,6 @@ async function seedBookingsAndFinance() {
         method: "explicit_checkbox",
       })
     }
-  }
-
-  // Quick transactions sanity: 1 offer + 1 order referencing the first booking's customer
-  try {
-    await db.insert(offers).values({
-      id: newId("offers"),
-      status: "sent",
-      personId: people_ids[0]!,
-      organizationId: CRM_ORGS[0]!.id,
-      currency: "EUR",
-      subtotalAmountCents: 1650000,
-      taxAmountCents: 330000,
-      totalAmountCents: 1980000,
-      validUntil: yyyyMmDd(daysFromNow(30)),
-    })
-    await db.insert(orders).values({
-      id: newId("orders"),
-      status: "confirmed",
-      personId: people_ids[0]!,
-      organizationId: CRM_ORGS[0]!.id,
-      currency: "EUR",
-      subtotalAmountCents: 1650000,
-      taxAmountCents: 330000,
-      totalAmountCents: 1980000,
-    })
-  } catch (e) {
-    console.warn(
-      "  (skipping offers/orders stub — column mismatch):",
-      (e as Error).message.split("\n")[0],
-    )
   }
 }
 

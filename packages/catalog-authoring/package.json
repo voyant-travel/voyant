@@ -18,21 +18,21 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/availability": "workspace:^",
     "@voyantjs/core": "workspace:^",
-    "@voyantjs/db": "workspace:^",
-    "@voyantjs/extras": "workspace:^",
-    "@voyantjs/hono": "workspace:^",
-    "@voyantjs/pricing": "workspace:^",
-    "@voyantjs/products": "workspace:^",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "@voyantjs/inventory": "workspace:^"
   },
   "devDependencies": {
+    "@voyantjs/operations": "workspace:^",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/commerce": "workspace:^",
+    "@voyantjs/inventory": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
     "@voyantjs/voyant-test-utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "zod": "^4.3.6"
   },
   "files": [
     "dist"
@@ -73,10 +73,9 @@
     "schema": "./schema",
     "requiresSchemas": [
       "@voyantjs/db",
-      "@voyantjs/products",
-      "@voyantjs/pricing",
-      "@voyantjs/availability",
-      "@voyantjs/extras"
+      "@voyantjs/inventory",
+      "@voyantjs/commerce",
+      "@voyantjs/operations"
     ]
   }
 }

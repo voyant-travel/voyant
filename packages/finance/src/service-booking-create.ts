@@ -642,7 +642,7 @@ async function findDuplicateBookingForCreate(
 /**
  * Load the option_unit catalog for a product so the resolver can
  * verify the submitted itemLines server-side. Raw SQL because
- * `option_units` lives in `@voyantjs/products` and finance doesn't
+ * `option_units` lives in `@voyantjs/inventory` and finance doesn't
  * depend on it directly — adding a runtime dependency for a log-only
  * sanity check would be overkill.
  */

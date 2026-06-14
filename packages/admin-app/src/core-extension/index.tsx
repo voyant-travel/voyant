@@ -1,3 +1,8 @@
+// Lean static only: the dashboard skeleton (pending boundary). Every page —
+// dashboard (recharts), account, and the settings pages — resolves through
+// dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
+// thunks, so the heavy chunks load on navigation, not with workspace chrome.
+import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -5,12 +10,7 @@ import {
   type AdminUiRouteContribution,
   adminRoutePageModule,
   defineAdminExtension,
-} from "@voyantjs/admin"
-// Lean static only: the dashboard skeleton (pending boundary). Every page —
-// dashboard (recharts), account, and the settings pages — resolves through
-// dynamic imports of SPECIFIC modules (never barrels) inside `page`/`loader`
-// thunks, so the heavy chunks load on navigation, not with workspace chrome.
-import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
+} from "@voyantjs/admin/extensions"
 
 import {
   type AdminCoreSettingsExtraNavEntry,
@@ -241,7 +241,7 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
 function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteContribution {
   const entry = adminCoreSettingsNavEntries.find((candidate) => candidate.id === id)
   if (!entry) {
-    throw new Error(`[voyant-admin-app] Unknown core settings page "${id}".`)
+    throw new Error(`[voyant-admin] Unknown core settings page "${id}".`)
   }
   const base = { id: `core-settings-${id}`, path: entry.path, title: entry.defaultTitle }
 
@@ -301,11 +301,13 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/pricing-react/components/pricing-categories-page").then((module) =>
-            adminRoutePageModule(module.PricingCategoriesPage),
+          import("@voyantjs/commerce-react/pricing/components/pricing-categories-page").then(
+            (module) => adminRoutePageModule(module.PricingCategoriesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getPricingCategoriesQueryOptions } = await import("@voyantjs/pricing-react")
+          const { getPricingCategoriesQueryOptions } = await import(
+            "@voyantjs/commerce-react/pricing"
+          )
           return ctx.queryClient.ensureQueryData(
             getPricingCategoriesQueryOptions(coreClient(ctx), { limit: 25, active: undefined }),
           )
@@ -316,11 +318,11 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/pricing-react/components/price-catalogs-page").then((module) =>
+          import("@voyantjs/commerce-react/pricing/components/price-catalogs-page").then((module) =>
             adminRoutePageModule(module.PriceCatalogsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getPriceCatalogsQueryOptions } = await import("@voyantjs/pricing-react")
+          const { getPriceCatalogsQueryOptions } = await import("@voyantjs/commerce-react/pricing")
           return ctx.queryClient.ensureQueryData(
             getPriceCatalogsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )
@@ -331,11 +333,11 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/products-react/components/product-types-page").then((module) =>
+          import("@voyantjs/inventory-react/components/product-types-page").then((module) =>
             adminRoutePageModule(module.ProductTypesPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getProductTypesQueryOptions } = await import("@voyantjs/products-react")
+          const { getProductTypesQueryOptions } = await import("@voyantjs/inventory-react")
           return ctx.queryClient.ensureQueryData(
             getProductTypesQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )
@@ -346,11 +348,11 @@ function createBuiltInSettingsPage(id: AdminCoreSettingsPageId): AdminUiRouteCon
         ...base,
         ssr: "data-only",
         page: () =>
-          import("@voyantjs/products-react/components/product-tags-page").then((module) =>
+          import("@voyantjs/inventory-react/components/product-tags-page").then((module) =>
             adminRoutePageModule(module.ProductTagsPage),
           ),
         loader: async (ctx: AdminRouteLoaderContext) => {
-          const { getProductTagsQueryOptions } = await import("@voyantjs/products-react")
+          const { getProductTagsQueryOptions } = await import("@voyantjs/inventory-react")
           return ctx.queryClient.ensureQueryData(
             getProductTagsQueryOptions(coreClient(ctx), { limit: 25, offset: 0 }),
           )

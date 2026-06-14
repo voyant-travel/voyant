@@ -21,9 +21,9 @@ Current implementation state, May 2026:
   internal Voyant handler when the relevant module is installed; sourced
   inventory dispatches to the source adapter. An OTA deployment can run without
   the products module and still book sourced catalog rows.
-- `@voyantjs/travel-composer` now exists as the multi-line orchestration layer
+- `@voyantjs/trip-composer` now exists as the multi-line orchestration layer
   above this journey. It owns Trip Envelopes, Trip Components, aggregate
-  pricing/reserve/checkout/cancellation operations, and calls this journey's
+  pricing/reserve/finance/checkout/cancellation operations, and calls this journey's
   single-line catalog booking-engine primitives per component.
 
 Five load-bearing rules, in order of importance:
@@ -32,7 +32,7 @@ Five load-bearing rules, in order of importance:
 2. **The Catalog Item's *shape* drives the UI, not the source.** Every quote response carries a `BookingDraftShape` descriptor — which steps to show, which fields are required per passenger, occupancy bands, Extra catalog references. The same wizard renders a one-page booking for a 2h walking tour and a six-step booking for a 14-day cruise + flight package, by reading the descriptor.
 3. **Live pricing is the default, not an afterthought.** Every meaningful input change (pax count, age bands, dates, Extras, billing country for VAT) re-quotes. The total displayed in the sticky footer is always the price the system will commit to. No silent drift between display and commit.
 4. **Build the journey once; ship it on every surface.** Operator dashboard, customer storefront, partner portal, embedded white-label widgets — all consume the same wizard shell, the same React hooks, the same UI sections, and the same engine endpoints. Surface differences (CRM picker for operators vs. inline contact for customers, B2B billing default vs. B2C, payment provider hookup) live in injectable slots, not parallel codebases.
-5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [travel-composer](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
+5. **The journey is a building block, not the ceiling.** Customer-composed multi-line itineraries (flight + cruise + stay + return flight, all booked together) are explicitly NOT this doc's concern — they are the [trip-composer](./ai-travel-experience-composition.md)'s concern. But the journey's shape is designed so the composer can drive it: per-line drafts, per-line quotes, per-line holds, all coordinated by the composer's saga. Decisions in this doc that block multi-line composition are bugs.
 
 ## 0.5. Single-line journey vs. composed itinerary
 
@@ -42,7 +42,7 @@ That covers the high-volume case: a customer browsing a tour catalog and clickin
 
 > "Flight Bucharest → Budapest, Danube cruise to Vienna, 3-night stay in Vienna, flight back to Bucharest." Four lines, four verticals, one customer experience, one consolidated payment.
 
-That second case is the [travel-composer](./ai-travel-experience-composition.md)'s job. The composer:
+That second case is the [trip-composer](./ai-travel-experience-composition.md)'s job. The composer:
 
 - Holds the user-built itinerary as a Trip Envelope with multiple Trip Components,
   one per line.
@@ -60,7 +60,7 @@ bundle because it shares one departure capacity and operational lifecycle.
 
 Customer-composed additions are different. If the same traveler books that
 group departure, then adds 3 extra hotel nights and a flight home, those added
-stay/flight commitments are sibling components under the travel composer, not
+stay/flight commitments are sibling components under the trip composer, not
 Extras inside the group-departure booking journey.
 
 **The journey and the composer share primitives, not UI:**
@@ -93,8 +93,8 @@ Before specifying anything new, this doc commits to reusing the following primit
 | Encrypted PII (passport, DOB, dietary, accessibility) | `booking_traveler_travel_details` with `KmsEnvelope` columns (`identityEncrypted`, `dietaryEncrypted`, `accessibilityEncrypted`) — `packages/bookings/src/schema/travel-details.ts` | **Reuse.** Per-traveler document fields collected in the Travelers step commit through this envelope; no parallel `bookingTravelers.documents jsonb`. The Travelers step's *transient* draft state may carry plaintext during the journey, but the commit path encrypts. |
 | Tax-regime catalog (jurisdiction × rate) | `tax_regimes` table — `packages/finance/src/schema.ts` | **Reuse.** New `tax_classes` (this doc, §9) carries the per-product tax-treatment decision and *resolves to* a `tax_regimes` row at quote time. They stack, not overlap. |
 | Per-occupancy pricing for cruises | `cruise_prices.occupancy` column + `cruisePrices` table — `packages/cruises/src/schema-pricing.ts` | **Reuse for cruises.** The new `product_pax_pricing_tiers` (§9) is for non-cruise verticals that need single-supplement / triple-share. Cruises keep their specialized table; the engine reads from the right place per vertical. |
-| Payment-collection UI (saved cards, new card, processor flow) | `checkout-ui`'s `PaymentStep` — `packages/checkout-react/src/components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to `checkout-ui`'s `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
-| Quantity-tier pricing (more units → cheaper per-unit) | `option_unit_tiers` — `packages/pricing/src/schema-option-rules.ts` | **Reuse.** Quantity tiers are an orthogonal axis to per-occupancy tiers; the engine consults both when pricing an option. |
+| Payment-collection UI (saved cards, new card, processor flow) | Finance React checkout UI's `PaymentStep` — `packages/finance-react/src/checkout-components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to Finance React checkout UI's `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
+| Quantity-tier pricing (more units → cheaper per-unit) | `option_unit_tiers` — `packages/commerce/src/pricing/schema-option-rules.ts` | **Reuse.** Quantity tiers are an orthogonal axis to per-occupancy tiers; the engine consults both when pricing an option. |
 | Snapshot graph at commit | `booking_catalog_snapshot` + `captureSnapshot` / `captureSnapshotGraph` — `packages/catalog/src/services/snapshot-service.ts` | **Reuse.** Both owned and sourced commits pass through these. |
 | Atomic owned-product transaction | `bookingsCreate` — `packages/finance/src/service-booking-create.ts` | **Bridge only.** The products owned handler maps a draft to booking-create's input shape for the current commit path. Booking-create's input still does not model every axis the journey can collect (full extras, all accommodation stay details, encrypted travel details, tax lines, catalog snapshots, arbitrary draft shape), so vertical handlers remain the seam for richer commit primitives. |
 | Public booking sessions (existing model) | `booking_session_states` keyed by `booking_id` — `packages/bookings/src/schema-operations.ts`. Public routes at `POST /v1/public/bookings/sessions`, `/state`, `/reprice`, `/confirm`. | **Sibling, not replacement.** The existing model materializes a `bookings` row first (status `draft`) and wraps it with session state. The journey's `booking_drafts` (§5.7) is the inverse — a pre-booking-row hold that may *never* materialize into a booking (abandonment is the common case). See §12.10 for the open question on whether to extend `booking_session_states` to allow `booking_id IS NULL` instead of adding `booking_drafts`. |
@@ -107,10 +107,10 @@ A short inventory so we don't reinvent (full survey lives in the agent reports c
 
 - **`packages/bookings/`** — `bookings`, `bookingTravelers`, `bookingItems`, `bookingAllocations`, `bookingGroups` schemas. Booking states: `draft`/`on_hold`/`confirmed`/`in_progress`/`completed`/`expired`/`cancelled`.
 - **`packages/bookings-react/`** — composable sections: `ProductPickerSection`, `RoomsStepperSection`, `PersonPickerSection`, `PassengersSection`, `PaymentScheduleSection`, `SharedRoomSection`, `VoucherPickerSection`, `PriceBreakdownSection`. Each carries a `value` / `onChange` contract, parent owns state.
-- **`packages/availability/`** — `availabilitySlots`, `useSlots`, `useSlotUnitAvailability`. Departure pickers for date / time / slot.
-- **`packages/pricing/`** — per-unit tier matching, `optionPriceRules` and `optionUnitPriceRules`. No unified `computeTotal()` exists yet.
-- **`packages/booking-requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
-- **`packages/extras/`** — Extras schema (selection types, pricing modes). The journey has a generic Extras step; vertical handlers still need richer commit wiring for selected Extras.
+- **`packages/operations/src/availability/`** — `availabilitySlots`, `useSlots`, `useSlotUnitAvailability`. Departure pickers for date / time / slot.
+- **`packages/commerce/src/pricing/`** — per-unit tier matching, `optionPriceRules` and `optionUnitPriceRules`. No unified `computeTotal()` exists yet.
+- **`packages/bookings/src/requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field booking requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
+- **Booking and Inventory extras owner paths** — Extras schema (selection types, pricing modes). The journey has a generic Extras step; vertical handlers still need richer commit wiring for selected Extras.
 - **Accommodation resale / trip composition** — stay-item shape (check-in/out, room option, occupancy, daily rates) for sourced accommodation or package components. Hotel/property operations are outside the booking journey scope.
 - **`packages/finance/`** — tax regimes, voucher redemption, checkout collection primitives. Product quote tax is wired through the operator template's quote transform; broader per-line tax class support remains a handler-deepening task.
 - **`bookingsCreateExtension`** — `POST /v1/admin/bookings/create`. One-shot atomic transaction creating booking + travelers + payment schedules + voucher redemption + group membership. The products owned handler uses it as a bridge where the draft shape fits.
@@ -470,7 +470,7 @@ bookEntity({ quoteId | draftId, draft })
 
 **Where the handlers live.** Each vertical owns its handler:
 
-- `packages/products/src/booking-engine/handler.ts` -> `createProductsBookingHandler({ db })`. Composes products' existing pricing/availability + `bookingsCreate` as the current bridge.
+- `packages/inventory/src/booking-engine/handler.ts` -> `createProductsBookingHandler({ db })`. Composes Inventory's Product pricing/availability + `bookingsCreate` as the current bridge.
 - Accommodation resale handler -> daily-rate computation and room-option stay booking for sourced or packaged accommodation. This should not include hotel/property operations.
 - `packages/cruises/src/booking-engine/handler.ts` → uses `cruise_prices.occupancy` for tiers, sailing-level holds.
 - And so on per vertical.
@@ -540,12 +540,12 @@ The same wizard handles each of these by reading the descriptor; no special-case
 
 | Step | Existing component to reuse | New component / change needed |
 |------|------------------------------|-------------------------------|
-| Configure | `useSlots`, `useSlotUnitAvailability` from `availability-react` | New `DepartureStep` (date + time + variant + pax bands) |
+| Configure | `useSlots`, `useSlotUnitAvailability` from `@voyantjs/operations-react/availability` | New `DepartureStep` (date + time + variant + pax bands) |
 | Billing | `PersonPickerSection` (CRM picker pattern) | New `BillingStep` with B2C/B2B toggle, address, VAT — generalize beyond the existing PersonPicker |
 | Travelers | `PassengersSection` | Widen with `dateOfBirth`, `band`, `documents` driven by `travelerFields[]` |
 | Accommodation | `RoomsStepperSection`, `SharedRoomSection` | Compose into a single `AccommodationStep` |
 | Extras | — | New `AddonsStep` with quantity stepper per Extra (per-pax / per-booking semantics); component name is legacy-compatible |
-| Payment | `PaymentScheduleSection` (intent + schedule shape) + **compose `checkout-ui`'s `PaymentStep`** (provider mechanics) | Thin wrapper that picks intent/schedule, then mounts `checkout-ui`'s `PaymentStep` at commit transition. No new provider seam in the journey shell. |
+| Payment | `PaymentScheduleSection` (intent + schedule shape) + **compose Finance React checkout UI's `PaymentStep`** (provider mechanics) | Thin wrapper that picks intent/schedule, then mounts Finance React checkout UI's `PaymentStep` at commit transition. No new provider seam in the journey shell. |
 | Review | — | New `ReviewStep` showing the full draft + final pricing |
 | Side panel | `PriceBreakdownSection` | Adapt to consume the new `PricingBreakdown` shape |
 
@@ -583,8 +583,8 @@ The wizard shell takes render-prop slots for the bits that legitimately differ b
   defaultBuyerType="B2B"
   // Operator: "Send confirmation to customer". Storefront: hand off to checkout/payment.
   onCommitted={(booking) => navigate({ to: "/orders/catalog" })}
-  // Optional: payment-provider mechanics live in checkout-ui. The
-  // journey hands the chosen intent + schedule to checkout-ui's
+  // Optional: payment-provider mechanics live in Finance React checkout UI. The
+  // journey hands the chosen intent + schedule to Finance React checkout UI's
   // PaymentStep at commit time; the slot below lets the template pass
   // a pre-configured PaymentStep with its capabilities + saved methods.
   renderPaymentProviderStep={(intent, schedule, capabilities) => (
@@ -608,7 +608,7 @@ operator (admin):
       - renderLeadContactPicker: CRM-backed PersonPicker
       - defaultBuyerType: "B2B"
       - onCommitted: navigate to /orders/catalog
-      - renderPaymentProviderStep: composes `checkout-ui`'s PaymentStep
+      - renderPaymentProviderStep: composes Finance React checkout UI's PaymentStep
         with operator capabilities + Netopia (when configured)
 
 storefront (customer):
@@ -621,7 +621,7 @@ storefront (customer):
                                  that swaps to CRM picker on auth
       - defaultBuyerType: "B2C"
       - onCommitted: navigate to /confirmation/$bookingId
-      - renderPaymentProviderStep: composes `checkout-ui`'s PaymentStep
+      - renderPaymentProviderStep: composes Finance React checkout UI's PaymentStep
         with the storefront's payment-provider capabilities
 ```
 
@@ -717,10 +717,10 @@ not just the original proposal.
 1. **`products.tax_class_id`** — text reference to a `tax_classes` row. Drives the engine's tax computation for owned products. (Default `null` → falls through to a market-level default.) **Why new:** today there is no per-product link from `products` to `tax_regimes`; tax is computed only at invoice time.
 2. **`tax_classes`** — `{ id, code, label, default_regime_id, lines: [{ regime_id, applies_to: "base"|"extra"|"all" }] }`. Lives in `packages/finance/`. **Why not extend `tax_regimes`:** `tax_regimes` is the jurisdictional rate catalog (RO 19% VAT, EU rates, etc.) and stays as-is. `tax_classes` is the *per-product treatment decision* — "this product applies the standard VAT regime; that one is exempt under Art. 311 margin scheme; the third applies a reduced regime in DE only." A product points at a class; the class points at a regime row keyed off buyer country. The two stack.
 3. **`booking_drafts`** — shipped in `packages/catalog/src/booking-engine/drafts-schema.ts`; see §5.7. **Why not extend `booking_session_states`:** the existing model is keyed by an existing `booking_id` (it wraps a materialized booking). The journey needs a *pre-booking-row* hold so abandoned drafts don't litter `bookings`.
-4. **`product_extra_offers` view** — convenience view over `extras` + `option_extra_configs` that the engine queries to populate `BookingDraftShape.addonGroups`. View, not a table; no source-of-truth change. If an older implementation creates `product_addon_offers`, keep it as a compatibility alias rather than the canonical name.
+4. **`product_extra_offers` view** — convenience view over Inventory extras + `option_extra_configs` that the engine queries to populate `BookingDraftShape.addonGroups`. View, not a table; no source-of-truth change. If an older implementation creates `product_addon_offers`, keep it as a legacy alias rather than the canonical name.
 5. **`product_pax_pricing_tiers`** — per-product per-occupancy rate tier table **for non-cruise verticals**. Columns: `product_id`, `option_unit_id`, `tier_pax` (1, 2, 3, 4), `price_per_pax_cents`, `promo_price_per_pax_cents`, `effective_from`, `effective_to`. Falls back to `option_unit_tiers` (quantity, not occupancy) when no occupancy tiers exist. **Why not generalize `cruise_prices`:** cruises have specialized columns (`fareCode`, `secondGuestPricePerPerson`, `singleSupplementPercent`) the rest of the catalog doesn't need. Cruises keep `cruise_prices`; the engine reads from `cruise_prices` for cruise rows and `product_pax_pricing_tiers` for everyone else. The handler dispatches.
-6. **`product_excursion_offers`** — for cruise/tour products with per-port excursion catalogs. Columns: `product_id`, `port_facility_id` or `day_number`, `excursion_extra_id` (fk into `extras` so we don't fork the Extras model), `pricing_kind`, `availability_kind`. Lets the descriptor's `addonGroups` carry a grouped excursion section without a new Extra table.
-7. **`availability_holds`** — shipped in `packages/availability/src/schema.ts`. The original doc sketched owned holds as `bookingAllocations`, but allocations require a materialized `booking_id`. Journey holds are pre-booking, so availability owns a dedicated soft-hold table keyed by draft id and slot id. The products owned handler is wired to it; accommodations/cruises still use handler-level placeholder holds until their inventory models expose equivalent locks.
+6. **`product_excursion_offers`** — for cruise/tour products with per-port excursion catalogs. Columns: `product_id`, `port_facility_id` or `day_number`, `excursion_extra_id` (fk into Inventory extras so we don't fork the Extras model), `pricing_kind`, `availability_kind`. Lets the descriptor's `addonGroups` carry a grouped excursion section without a new Extra table.
+7. **`availability_holds`** — shipped in `packages/operations/src/availability/schema.ts`. The original doc sketched owned holds as `bookingAllocations`, but allocations require a materialized `booking_id`. Journey holds are pre-booking, so Operations availability owns a dedicated soft-hold table keyed by draft id and slot id. The Inventory owned handler is wired to it; accommodations/cruises still use handler-level placeholder holds until their inventory models expose equivalent locks.
 
 **Removed from earlier drafts (do not add):**
 
@@ -757,7 +757,7 @@ section as the current execution map.
   `templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx`
   and `templates/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx`.
 - Storefront checkout handoff exists at
-  `POST /v1/public/catalog/checkout/start`, but it is still template-owned.
+  `POST /v1/public/catalog/finance/checkout/start`, but it is still template-owned.
 
 **Next execution slice 1 — make the single-line journey production-hard:**
 
@@ -783,7 +783,7 @@ section as the current execution map.
 
 **Next execution slice 3 — extract checkout start for composer reuse:**
 
-- Move reusable parts of `POST /v1/public/catalog/checkout/start` out of the
+- Move reusable parts of `POST /v1/public/catalog/finance/checkout/start` out of the
   operator template into framework-owned checkout/catalog services.
 - Keep deployment-specific payment provider configuration, contract template
   choice, CRM Quote creation, and bank-transfer details in templates.
@@ -801,7 +801,7 @@ section as the current execution map.
 
 ## 11. Non-goals (v1)
 
-- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [travel-composer](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
+- **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [trip-composer](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable component; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
 - **Customer group bookings** beyond shared-room (corporate event, school trip). This is not the same as an operated group departure product. An operated group departure can still be one journey line when the product/departure owns capacity, allocations, included services, and dependent Extras.
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
 - **Partial cancellations** (cancel only some travelers from a booking).
@@ -839,7 +839,7 @@ vertical hardening or composer work.
 - [`channel-push-architecture.md`](./channel-push-architecture.md) — outbound supplier integration. The journey's commit triggers the booking-push subscriber where configured.
 - [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — the flights vertical's specialized booking flow. The wizard described here borrows shape but does not replace it; flights stays special-case.
 - [`payments-architecture.md`](./payments-architecture.md) — payment intent + schedule. The Payment step calls into the same primitives.
-- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed travel-composer module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
+- [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed trip-composer module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
 
 ### Patterns from systems we've shipped
 

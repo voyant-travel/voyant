@@ -1,4 +1,3 @@
-import { availabilitySlots } from "@voyantjs/availability/schema"
 import { publicBookingsService, resolveSessionPricingSnapshot } from "@voyantjs/bookings"
 import {
   computePaymentSchedule,
@@ -6,9 +5,9 @@ import {
   noDepositPolicy,
   type PaymentPolicy,
 } from "@voyantjs/finance"
-import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { loadStorefrontAvailabilitySlot } from "./service-boundary-sql.js"
 import type { StorefrontBookingSessionBootstrapInput } from "./validation.js"
 
 export interface StorefrontBootstrapRequestContext {
@@ -100,13 +99,7 @@ function serializePaymentPlan(policy: PaymentPolicy, requiresFullPayment: boolea
 }
 
 async function resolveAvailabilitySlot(db: PostgresJsDatabase, slotId: string) {
-  const [slot] = await db
-    .select()
-    .from(availabilitySlots)
-    .where(eq(availabilitySlots.id, slotId))
-    .limit(1)
-
-  return slot ?? null
+  return loadStorefrontAvailabilitySlot(db, slotId)
 }
 
 async function previewBootstrapPricing(
@@ -376,7 +369,7 @@ export async function bootstrapStorefrontBookingSession(
     {
       totalCents: createdSession.sellAmountCents ?? preview.pricing.totalSellAmountCents,
       currency: createdSession.sellCurrency,
-      departureDate: slot.dateLocal ?? normalizeDate(slot.startsAt),
+      departureDate: normalizeDate(slot.dateLocal) ?? normalizeDate(slot.startsAt),
       today: now,
     },
     policy,
@@ -387,12 +380,7 @@ export async function bootstrapStorefrontBookingSession(
       createdSession.sessionId,
       computedSchedule,
     )) ?? []
-  const [slotAfter] = await context.db
-    .select()
-    .from(availabilitySlots)
-    .where(eq(availabilitySlots.id, input.slotId))
-    .limit(1)
-  const availability = slotAfter ?? slot
+  const availability = (await resolveAvailabilitySlot(context.db, input.slotId)) ?? slot
   const currentItems = preview.pricing.items.map(({ inputIndex: _inputIndex, ...item }, index) => ({
     ...item,
     itemId: createdSession.items[index]?.id ?? item.itemId,

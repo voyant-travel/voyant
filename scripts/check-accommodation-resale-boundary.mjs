@@ -72,23 +72,23 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i, /^## Hospitality$/],
   },
   {
-    file: "packages/products/src/draft-shape.ts",
+    file: "packages/inventory/src/draft-shape.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/products/src/booking-engine/handler.ts",
+    file: "packages/inventory/src/booking-engine/handler.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/products/src/service-catalog-plane.ts",
+    file: "packages/inventory/src/service-catalog-plane.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/extras/src/service-content.ts",
+    file: "packages/inventory/src/extras/service-content.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/extras/src/schema-sourced-content.ts",
+    file: "packages/inventory/src/extras/schema-sourced-content.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
@@ -144,15 +144,15 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/travel-composer/src/validation.ts",
+    file: "packages/trip-composer/src/validation.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/travel-composer/src/service-trips.ts",
+    file: "packages/trip-composer/src/service-trips.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/travel-composer-react/src/operations.ts",
+    file: "packages/trip-composer-react/src/operations.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
@@ -160,15 +160,15 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
+    file: "packages/trip-composer-react/src/admin/admin-trip-composer-page.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
+    file: "packages/trip-composer-react/src/admin/admin-trip-composer-panels.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
+    file: "templates/operator/src/components/voyant/trip-composer/storefront-composer-block.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
@@ -185,14 +185,6 @@ const FILE_CHECKS = [
   },
   {
     file: "packages/types/src/api-keys.ts",
-    patterns: [/\bhospitality\b/i],
-  },
-  {
-    file: "packages/catalog-mcp/src/tools/get-entity.ts",
-    patterns: [/\bhospitality\b/i],
-  },
-  {
-    file: "packages/catalog-mcp/src/tools/tools.test.ts",
     patterns: [/\bhospitality\b/i],
   },
   {

@@ -36,10 +36,11 @@ describe("operator runtime composition", () => {
       buildOperatorCapabilities(),
     )
 
-    // 27 modules + 7 extensions — the exact set the operator app mounts.
-    expect(composed.modules).toHaveLength(OPERATOR_RUNTIME_MANIFEST.modules.length)
-    expect(composed.modules).toHaveLength(27)
-    expect(composed.extensions).toHaveLength(7)
+    // 20 manifest entries expand to 25 mounted modules because Commerce and
+    // Distribution each mount multiple internal Hono modules.
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(20)
+    expect(composed.modules).toHaveLength(25)
+    expect(composed.extensions).toHaveLength(6)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
@@ -54,8 +55,8 @@ describe("operator runtime composition", () => {
     // The dangerous drift: a module added to voyant.config (so its tables
     // migrate) but never mounted — migrated-but-dead. Guard: voyant.config
     // modules ⊆ runtime manifest modules. (Route-only modules like
-    // storefront/checkout are mounted-but-schema-less and live only in the
-    // runtime manifest, which is fine.)
+    // storefront is mounted-but-schema-less and lives only in the runtime
+    // manifest, which is fine.)
     //
     // Carve-out: modules whose API is mounted APP-LOCALLY instead of as a
     // package Hono module. `@voyantjs/flights` exports no Hono module — its

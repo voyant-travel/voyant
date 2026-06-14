@@ -1,5 +1,5 @@
-import { people } from "@voyantjs/crm/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
+import { people } from "@voyantjs/relationships/schema"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"

@@ -13,33 +13,21 @@ export default defineVoyantConfig({
     auth: { provider: "better-auth" },
   },
   admin: { enabled: true, path: "/app" },
-  // Mounted Hono modules that own migrated schema. NOTE: not yet the full
-  // runtime mount list — route-only modules that own no tables (storefront,
-  // customer-portal, checkout, public-document-delivery, octo) are deferred to
-  // the Phase 5 runtime manifest; they do not affect schema resolution.
-  // `facilities` is migrated but mounted nowhere — it is pulled transitively
-  // via `suppliers`/`accommodations` requiresSchemas, so it needs no entry.
+  // Mounted Hono modules that own migrated schema. Route-only modules that own
+  // no tables are mounted by runtime composition rather than schema discovery.
   modules: [
     "@voyantjs/action-ledger",
-    "@voyantjs/crm",
+    "@voyantjs/relationships",
+    "@voyantjs/quotes",
     "@voyantjs/identity",
-    "@voyantjs/suppliers",
-    "@voyantjs/products",
-    "@voyantjs/promotions",
+    "@voyantjs/distribution",
+    "@voyantjs/inventory",
+    "@voyantjs/commerce",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
     "@voyantjs/finance",
-    "@voyantjs/transactions",
-    "@voyantjs/availability",
-    "@voyantjs/pricing",
-    "@voyantjs/sellability",
-    "@voyantjs/distribution",
-    "@voyantjs/resources",
-    "@voyantjs/markets",
+    "@voyantjs/operations",
     "@voyantjs/notifications",
-    "@voyantjs/booking-requirements",
-    "@voyantjs/external-refs",
-    "@voyantjs/extras",
     // Flights: schema is migrated and the admin surface is package-delivered
     // (@voyantjs/flights-react/admin); the API routes are still mounted
     // app-locally in src/api/flights.ts rather than as the package's Hono
@@ -47,7 +35,7 @@ export default defineVoyantConfig({
     "@voyantjs/flights",
     "@voyantjs/legal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/travel-composer",
+    "@voyantjs/trip-composer",
   ],
   plugins: ["@voyantjs/plugin-smartbill"],
   // Mounted Hono extensions that own migrated schema.

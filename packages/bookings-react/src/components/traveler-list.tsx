@@ -2,7 +2,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { usePerson } from "@voyantjs/crm-react"
+import { usePerson } from "@voyantjs/relationships-react"
 import {
   AlertDialog,
   AlertDialogAction,

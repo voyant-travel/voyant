@@ -1,16 +1,16 @@
+import { parseJsonBody, type VoyantDb } from "@voyantjs/hono"
 import {
-  crmService,
   type QuoteVersion,
   QuoteVersionConflictError,
   type QuoteVersionLine,
-} from "@voyantjs/crm"
-import { parseJsonBody, type VoyantDb } from "@voyantjs/hono"
+  quotesService,
+} from "@voyantjs/quotes"
 import {
-  TravelComposerInvariantError,
+  TripComposerInvariantError,
   type TripSnapshot,
   type TripSnapshotProposalLine,
-  travelComposerService,
-} from "@voyantjs/travel-composer"
+  tripComposerService,
+} from "@voyantjs/trip-composer"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
@@ -22,7 +22,7 @@ type OperatorQuoteVersionSnapshotRouteEnv = {
   }
 }
 
-type ApplyTripSnapshotPayload = Parameters<typeof crmService.applyTripSnapshotToQuoteVersion>[2]
+type ApplyTripSnapshotPayload = Parameters<typeof quotesService.applyTripSnapshotToQuoteVersion>[2]
 
 export type ApplyTripSnapshotToQuoteVersionResult = {
   snapshot: TripSnapshot
@@ -38,7 +38,7 @@ export function mountOperatorQuoteVersionSnapshotRoutes(
   hono: Hono<OperatorQuoteVersionSnapshotRouteEnv>,
 ): void {
   hono.post(
-    "/v1/admin/travel-composer/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot",
+    "/v1/admin/trip-composer/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot",
     handleFreezeQuoteVersionSnapshot,
   )
 }
@@ -55,18 +55,18 @@ export async function handleFreezeQuoteVersionSnapshot(
   const body = await parseJsonBody(c, freezeQuoteVersionSnapshotBodySchema)
 
   try {
-    const quoteVersion = await crmService.getQuoteVersionById(db, quoteVersionId)
+    const quoteVersion = await quotesService.getQuoteVersionById(db, quoteVersionId)
     if (!quoteVersion) return c.json({ error: "Quote version not found" }, 404)
     if (quoteVersion.status !== "draft") {
       return c.json({ error: "Trip snapshots can only be applied to draft Quote Versions" }, 409)
     }
 
     const userId = c.get("userId")
-    const snapshot = await travelComposerService.freezeTripSnapshot(db, {
+    const snapshot = await tripComposerService.freezeTripSnapshot(db, {
       envelopeId,
       createdBy: typeof userId === "string" ? userId : (body.createdBy ?? undefined),
     })
-    const applied = await crmService.applyTripSnapshotToQuoteVersion(
+    const applied = await quotesService.applyTripSnapshotToQuoteVersion(
       db,
       quoteVersionId,
       tripSnapshotToQuoteVersionApply(snapshot),
@@ -85,7 +85,7 @@ export async function handleFreezeQuoteVersionSnapshot(
       201,
     )
   } catch (error) {
-    if (error instanceof TravelComposerInvariantError) {
+    if (error instanceof TripComposerInvariantError) {
       return c.json({ error: error.message }, error.message.includes("was not found") ? 404 : 409)
     }
     if (error instanceof QuoteVersionConflictError) {

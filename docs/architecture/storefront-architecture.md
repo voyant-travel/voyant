@@ -161,20 +161,22 @@ Voyant already has distinct frontend layers that should remain separate:
 
 - public/storefront contract packages
 - shared React/runtime packages
-- source-installed UI blocks
+- reusable module components shipped from the relevant `*-react` packages
 - app/template-owned final storefront shell
 
 These are complementary layers, not competing strategies.
 
 Rule:
 
-Keep public contracts, runtime hooks, UI blocks, and final storefront apps as
-distinct layers.
+Keep public contracts, module React packages, and final storefront apps as
+distinct layers. Reusable module UI belongs in `*-react`; storefront owns final
+page composition and deployment-specific presentation.
 
-### 9. Preserve the source-installed UI strategy
+### 9. Preserve editable storefront composition
 
-Voyant should keep the registry/source-installed block approach for storefront
-UI.
+Voyant should keep final storefront presentation editable in the app/template or
+surface package. The retired registry/source-installed block approach is no
+longer the target package model.
 
 That gives teams editable storefront presentation while the framework still
 owns:
@@ -182,11 +184,12 @@ owns:
 - the public contract
 - the runtime hooks/providers
 - the core route semantics
+- reusable module components from `*-react` packages where they are justified
 
 Rule:
 
-Editable UI blocks remain part of the storefront strategy and should not be
-replaced with a more opaque frontend system.
+Editable storefront composition remains part of the storefront strategy and
+should not be replaced with a closed turnkey frontend system.
 
 ## Template Ownership
 
@@ -240,7 +243,8 @@ When adding or reviewing a storefront/public capability:
    payment bootstrap.
 7. Keep payment amounts server-derived from booking/payment targets.
 8. Keep the final storefront shell template-owned.
-9. Preserve the source-installed UI strategy for editable presentation.
+9. Preserve editable storefront composition while using `-react` for runtime
+   helpers and reusable module components.
 
 ## Non-Goals
 
@@ -248,7 +252,7 @@ This guide does not introduce:
 
 - a closed turnkey storefront product
 - a second HTTP namespace for `storefront`
-- a replacement for the source-installed UI/block strategy
+- a replacement for editable app/template-owned storefront presentation
 
 The point is a clear shared storefront/public contract, not a more rigid
 frontend platform.

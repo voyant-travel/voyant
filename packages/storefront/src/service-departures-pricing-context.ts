@@ -1,15 +1,19 @@
-import { loadDeparturePriceOverrides } from "@voyantjs/pricing"
 import {
   extraPriceRules,
+  loadDeparturePriceOverrides,
   optionPriceRules,
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
-} from "@voyantjs/pricing/schema"
-import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+} from "@voyantjs/commerce"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  listOptionUnitFacts,
+  loadProductOptionFacts,
+  loadProductPricingFacts,
+} from "./service-boundary-sql.js"
 import type { SlotRow } from "./service-departures-core.js"
 
 export type PricingContext = {
@@ -226,16 +230,7 @@ export async function resolvePricingContext(
   optionId?: string | null,
   departureId?: string | null,
 ): Promise<PricingContext> {
-  const [product] = await db
-    .select({
-      id: products.id,
-      sellCurrency: products.sellCurrency,
-      sellAmountCents: products.sellAmountCents,
-      capacityMode: products.capacityMode,
-    })
-    .from(products)
-    .where(eq(products.id, productId))
-    .limit(1)
+  const product = await loadProductPricingFacts(db, productId)
 
   const [catalog] = await db
     .select({
@@ -247,26 +242,7 @@ export async function resolvePricingContext(
     .orderBy(desc(priceCatalogs.isDefault), asc(priceCatalogs.name))
     .limit(1)
 
-  const [resolvedOption] = await db
-    .select({
-      id: productOptions.id,
-      name: productOptions.name,
-      description: productOptions.description,
-    })
-    .from(productOptions)
-    .where(
-      and(
-        eq(productOptions.productId, productId),
-        eq(productOptions.status, "active"),
-        optionId ? eq(productOptions.id, optionId) : undefined,
-      ),
-    )
-    .orderBy(
-      desc(productOptions.isDefault),
-      asc(productOptions.sortOrder),
-      asc(productOptions.name),
-    )
-    .limit(1)
+  const resolvedOption = await loadProductOptionFacts(db, { productId, optionId })
 
   if (!resolvedOption || !catalog) {
     return {
@@ -302,20 +278,7 @@ export async function resolvePricingContext(
     .orderBy(desc(optionPriceRules.isDefault), asc(optionPriceRules.name))
     .limit(1)
 
-  const units = await db
-    .select({
-      id: optionUnits.id,
-      name: optionUnits.name,
-      unitType: optionUnits.unitType,
-      minAge: optionUnits.minAge,
-      maxAge: optionUnits.maxAge,
-      occupancyMin: optionUnits.occupancyMin,
-      occupancyMax: optionUnits.occupancyMax,
-      isRequired: optionUnits.isRequired,
-    })
-    .from(optionUnits)
-    .where(and(eq(optionUnits.optionId, resolvedOption.id), eq(optionUnits.isHidden, false)))
-    .orderBy(asc(optionUnits.sortOrder), asc(optionUnits.name))
+  const units = await listOptionUnitFacts(db, resolvedOption.id)
 
   if (!rule) {
     return {

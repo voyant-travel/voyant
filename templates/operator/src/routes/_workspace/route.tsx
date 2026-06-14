@@ -4,7 +4,7 @@ import {
   AdminWorkspacePendingFallback,
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
-} from "@voyantjs/admin-app"
+} from "@voyantjs/admin/app/workspace"
 import {
   Building,
   Building2,

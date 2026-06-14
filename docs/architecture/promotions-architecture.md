@@ -24,7 +24,7 @@ So an operator today cannot:
 - Issue an `EARLYBIRD2026` code for customers to enter at checkout.
 - Track which customers redeemed which code.
 
-The catalog architecture (`catalog-architecture.md` §5.4) already establishes that the search index is the canonical place for cross-entity denormalization. The pricing module (PR4 of #493, in `packages/products/src/catalog-policy-pricing.ts`) already projects `priceFromAmountCents` as the configured base price across options. Promotions slot into the same shape: a separate module that owns the offer schema + rule evaluator, with a catalog-plane projection extension that decorates each product's search document with discount-aware fields, **and** a checkout-time integration that applies the same offers to the quote.
+The catalog architecture (`catalog-architecture.md` §5.4) already establishes that the search index is the canonical place for cross-entity denormalization. The pricing module (PR4 of #493, in `packages/inventory/src/catalog-policy-pricing.ts`) already projects `priceFromAmountCents` as the configured base price across options. Promotions slot into the same shape: a separate module that owns the offer schema + rule evaluator, with a catalog-plane projection extension that decorates each product's search document with discount-aware fields, **and** a checkout-time integration that applies the same offers to the quote.
 
 ### 1.1. Why catalog-display + code redemption belong in one module
 
@@ -63,11 +63,11 @@ Splitting them produces two near-duplicate evaluators that drift. They ship toge
 
 ## 3. Core architectural conclusions
 
-### 3.1. Promotions is its own module — `packages/promotions`
+### 3.1. Promotions is a Commerce-owned capability
 
-Not a sub-path of `packages/pricing`. Pricing rules answer *what is the configured price right now for this option, in this catalog, on this date* — they're per-option rate tables (per #493 PR4). Promotions answer *what discount applies on top of that price for this slice*. The two have different lifecycles, different operator UIs, different audit trails (redemption tracking is a promotions concern only), and different reindex triggers. Co-locating them in `pricing` would obscure both.
+Not a pricing-only concern. Pricing rules answer *what is the configured price right now for this option, in this catalog, on this date* — they're per-option rate tables (per #493 PR4). Promotions answer *what discount applies on top of that price for this slice*. The two have different lifecycles, different operator UIs, different audit trails (redemption tracking is a promotions concern only), and different reindex triggers. Commerce owns both so consumers use one commercial boundary without promotions becoming a standalone install seam.
 
-`packages/promotions` follows the same shape as the recently-shipped vertical packages: `schema.ts`, `service.ts`, `routes.ts`, `validation.ts`, `events.ts`. It depends on `@voyantjs/products` (for the contract type imports + scope-by-product link) and on `@voyantjs/markets` (for scope-by-market). Catalog plane wiring lives in `packages/promotions/src/service-catalog-plane-promotions.ts` (matching the `service-catalog-plane-departures` precedent in `@voyantjs/availability`). Storefront integration ships an explicit `createPromotionsStorefrontResolvers()` factory that consumers wire into the storefront service's resolver-hook fields; the resolver reads the request-scoped db supplied by `@voyantjs/storefront`.
+`packages/commerce/src/promotions` follows the same source shape as the recently-shipped vertical packages: `schema.ts`, `service.ts`, `routes.ts`, `validation.ts`, `events.ts`. It uses Inventory contracts for product-scoped links and Commerce market data for market-scoped rules. Catalog plane wiring lives in `packages/commerce/src/promotions/service-catalog-plane-promotions.ts` (matching the `service-catalog-plane-departures` precedent in Operations). Storefront integration ships an explicit `createPromotionsStorefrontResolvers()` factory that consumers wire into the storefront service's resolver-hook fields; the resolver reads the request-scoped db supplied by `@voyantjs/storefront`.
 
 ### 3.2. Scope is a typed discriminated union, not a list of foreign keys
 
@@ -123,7 +123,7 @@ A single booking can produce multiple `booking_catalog_snapshot` rows (one per p
 
 Per-customer tracking would require attaching identity to every redemption — works for code-redeemed offers (the customer is on the booking) but doesn't apply to auto-applied catalog offers (no customer at index time). The booking → customer join is available downstream for any operator who wants per-customer reporting — they JOIN `promotional_offer_redemptions` to `bookings.personId`.
 
-### 3.6. Catalog never depends on `@voyantjs/promotions` directly
+### 3.6. Catalog never depends on `@voyantjs/commerce` directly
 
 The catalog package is downstream of every vertical and must stay generic. Hard-importing the promotions evaluator from `quote.ts` would invert the dependency direction and make promotions non-optional for any catalog consumer.
 
@@ -154,13 +154,13 @@ eventBus.subscribe<BookingConfirmedEvent>("booking.confirmed", async ({ data }) 
 
 The recorder reads `pricing_applied_offers` from `catalog_quotes` (joined to the booking via the new `booking_id` column on `catalog_quotes`, set during `bookEntity` commit; see §7.1.1). It does NOT read from the snapshot to avoid an ordering race with the catalog-bridge's `captureSnapshotGraph` subscriber, which fires on the same event.
 
-`@voyantjs/promotions` exports the adapter factories: `createCatalogPromotionEvaluator(db)` (matches `QuoteEntityDeps.evaluatePromotions`) and `createBookingConfirmedRedemptionSubscriber(env)` (subscriber). The operator template wires the evaluator into `quoteEntity` deps and registers the subscriber on the event bus. When unwired, the catalog skips evaluation and no redemptions are recorded.
+`@voyantjs/commerce` exports the adapter factories: `createCatalogPromotionEvaluator(db)` (matches `QuoteEntityDeps.evaluatePromotions`) and `createBookingConfirmedRedemptionSubscriber(env)` (subscriber). The operator template wires the evaluator into `quoteEntity` deps and registers the subscriber on the event bus. When unwired, the catalog skips evaluation and no redemptions are recorded.
 
 ### 3.7. The catalog plane annotates with offer fields; it does not overwrite `priceFromAmountCents`
 
 The product search document already carries `priceFromAmountCents` (PR4 of #493), produced by `pricingExtension`. The natural shape would be "promotions overwrites that field with the discounted value". **It can't.**
 
-`ProductProjectionExtension.project(db, productId, slice)` (`packages/products/src/service-catalog-plane.ts:262`) receives only the product ID and slice — extensions run **independently in parallel** (`Promise.all(extensions.map(ext => ext.project(...)))` at `:351`), then their result maps are merged. There is no "previous extension's output" channel. Promotions cannot read `pricingExtension`'s `priceFromAmountCents` to subtract from it.
+`ProductProjectionExtension.project(db, productId, slice)` (`packages/inventory/src/service-catalog-plane.ts:262`) receives only the product ID and slice — extensions run **independently in parallel** (`Promise.all(extensions.map(ext => ext.project(...)))` at `:351`), then their result maps are merged. There is no "previous extension's output" channel. Promotions cannot read `pricingExtension`'s `priceFromAmountCents` to subtract from it.
 
 Possible fixes considered:
 
@@ -427,8 +427,8 @@ Because the checkout caller supplies `pax`, no offer should be returned in `cond
 
 Mirrors the destinations / taxonomy / departures / pricing pattern from #493:
 
-- **`packages/products/src/catalog-policy-promotions.ts`** declares the `productPromotionsCatalogPolicy` field policy entries — paths, `localized: false` (offer names are operator-managed in one language for v1; localization tracked as follow-up), `reindex: "facet-affecting"`, `query: "indexed-column"`, `snapshot: "on-quote-and-book"`, audience visibility `["staff", "customer", "partner"]`.
-- **`packages/promotions/src/service-catalog-plane-promotions.ts`** lives here (not in `products`) because the data lives here, mirroring the `@voyantjs/availability/service-catalog-plane-departures` precedent. Exports `createProductPromotionsProjectionExtension()`. It receives a slice, looks up applicable offers via the rule evaluator (with `pax: undefined` so the catalog gets the conditional set, no `code` so code-gated offers are excluded), and contributes the projection map. No `executionCtx` concerns — projections run inside `withDbFromEnv`-wrapped subscribers per the lifecycle audit (#510).
+- **`packages/inventory/src/catalog-policy-promotions.ts`** declares the `productPromotionsCatalogPolicy` field policy entries — paths, `localized: false` (offer names are operator-managed in one language for v1; localization tracked as follow-up), `reindex: "facet-affecting"`, `query: "indexed-column"`, `snapshot: "on-quote-and-book"`, audience visibility `["staff", "customer", "partner"]`.
+- **`packages/commerce/src/promotions/service-catalog-plane-promotions.ts`** lives here (not in `products`) because the data lives here, mirroring the `@voyantjs/operations/service-catalog-plane-departures` precedent. Exports `createProductPromotionsProjectionExtension()`. It receives a slice, looks up applicable offers via the rule evaluator (with `pax: undefined` so the catalog gets the conditional set, no `code` so code-gated offers are excluded), and contributes the projection map. No `executionCtx` concerns — projections run inside `withDbFromEnv`-wrapped subscribers per the lifecycle audit (#510).
 - **Annotation-only contract** (per §3.7). The extension does NOT overwrite `priceFromAmountCents`. It contributes only the `bestOffer*`, `originalPriceFromAmountCents`, `conditionalOffer*` fields. Storefront consumers compute the effective price client-side.
 - **Operator template wiring**: `templates/operator/src/api/lib/catalog-runtime.ts` composes `productPromotionsCatalogPolicy` into the products registry alongside destinations / taxonomy / departures / pricing, and adds `createProductPromotionsProjectionExtension()` to the extensions list of `createProductsDocumentBuilder`.
 - **Reindex triggers** — two kinds:
@@ -447,7 +447,7 @@ There are no live consumers of `draft.voucher.code` today — the audit in §1 c
 
 ### 7.1. Quote-time evaluation via injected hook
 
-`@voyantjs/catalog` does **not** import from `@voyantjs/promotions`. Instead, `quoteEntity` calls a new optional `evaluatePromotions` dependency on `QuoteEntityDeps` (per §3.6), which the operator template wires to `createCatalogPromotionEvaluator(db)` from `@voyantjs/promotions`.
+`@voyantjs/catalog` does **not** import from `@voyantjs/commerce`. Instead, `quoteEntity` calls a new optional `evaluatePromotions` dependency on `QuoteEntityDeps` (per §3.6), which the operator template wires to `createCatalogPromotionEvaluator(db)` from `@voyantjs/commerce`.
 
 #### 7.1.0. What "discount" applies to
 
@@ -549,7 +549,7 @@ Promotions ships a subscriber on `booking.confirmed`, registered by the operator
 4. Upserts one row per offer into `promotional_offer_redemptions` using `INSERT … ON CONFLICT (offer_id, booking_id) DO UPDATE SET discount_applied_cents = EXCLUDED.discount_applied_cents` — the `(offer_id, booking_id)` unique index from §4.3 makes the upsert idempotent across event-bus retries.
 
 ```ts
-// packages/promotions/src/service-booking-confirmed.ts
+// packages/commerce/src/promotions/service-booking-confirmed.ts
 export function createBookingConfirmedRedemptionSubscriber(env: WorkersEnv) {
   return async ({ data }: { data: BookingConfirmedEvent }) => {
     await withDbFromEnv(env, async (db) => {
@@ -576,7 +576,7 @@ Both the catalog-bridge `captureSnapshotGraph` subscriber AND the promotions red
 
 ## 8. Storefront integration
 
-The existing placeholder hooks in `packages/storefront/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/promotions/src/service-storefront.ts`. The same resolver surface owns customer-facing mutations:
+The existing placeholder hooks in `packages/storefront/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/commerce/src/promotions/service-storefront.ts`. The same resolver surface owns customer-facing mutations:
 
 ```ts
 export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
@@ -608,7 +608,7 @@ Mirrors the `availability.slot.changed` precedent (PR3 of #493 + the lifecycle w
 
 ### 9.1. Mutation-driven: `promotion.changed`
 
-- **`PROMOTION_CHANGED_EVENT = "promotion.changed"`** in `packages/promotions/src/events.ts`.
+- **`PROMOTION_CHANGED_EVENT = "promotion.changed"`** in `packages/commerce/src/promotions/events.ts`.
 - **Payload**: simple, no slice-narrowing variant (`IndexerService` only exposes per-entity reindex — `reindexEntity` (all slices) and `reindexEntityForSlice` (one slice for one entity), per `packages/catalog/src/services/indexer-service.ts:75`. There's no "reindex all products in this slice" helper, so a `slices` payload kind would have nothing to dispatch to. We resolve to product IDs at the emission boundary instead.)
 
   ```ts
@@ -654,7 +654,7 @@ A separate `promotional_offer_scheduler_state` table (single row, `last_tick tim
 }
 ```
 
-The scheduled handler runs `runPromotionBoundaryScheduler({ db, eventBus })` from `@voyantjs/promotions`, wrapping the call in `withDbFromEnv`.
+The scheduled handler runs `runPromotionBoundaryScheduler({ db, eventBus })` from `@voyantjs/commerce`, wrapping the call in `withDbFromEnv`.
 
 ## 10. Stacking semantics — the worked example
 
@@ -698,12 +698,12 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 7. **Storefront `applicableDepartureIds`** — return empty arrays in v1. Departure-scoped offers aren't modeled until there's a real departure-scope rule. DTO compatibility preserved.
 8. **Per-tenant overrides** — out of scope. Per the repo's tenancy ADR, multitenancy is a deployment-boundary concern; no tenant-scoping or override machinery in this module. Reopened only if the shared-tier work happens.
 9. **Booking-draft field rename** — `voucher.code` → `promotionCode`. Avoids permanent collision with the finance `vouchers` domain (`packages/finance/src/schema.ts:239`).
-10. **Catalog → promotions dependency direction** — `@voyantjs/catalog` does not import `@voyantjs/promotions`. The quote-time evaluator is an injected dep on `QuoteEntityDeps`; redemption recording is a `booking.confirmed` subscriber registered by the operator template. **No `BookEntityDeps` hook** — `bookEntity` has no enclosing transaction so the "atomic with commit" framing was wrong (see §7.3.1).
+10. **Catalog → promotions dependency direction** — `@voyantjs/catalog` does not import `@voyantjs/commerce`. The quote-time evaluator is an injected dep on `QuoteEntityDeps`; redemption recording is a `booking.confirmed` subscriber registered by the operator template. **No `BookEntityDeps` hook** — `bookEntity` has no enclosing transaction so the "atomic with commit" framing was wrong (see §7.3.1).
 11. **`PROMOTION_CHANGED_EVENT` payload** — typed discriminated union `affected: { kind: "products" | "all" }`. No `kind: "slices"` — `IndexerService` has no "reindex all products in this slice" helper, so promotions resolves slice-shaped scopes to product IDs at emission time and emits `kind: "products"` (or falls back to `kind: "all"` when the resolved set is too large to enumerate). See §9.1.
 12. **No `channels` scope kind in v1** — `channelScope` lives on `market_product_rules` (not `markets`) and `IndexerSlice` has no channel dimension. Modeling channels properly requires structural changes to either (a) the projection's per-product join load or (b) `IndexerSlice` itself; both are out of scope for the promotions PR. Operators model channel-wide promos via `audiences` + `markets`. See §3.2; deferred follow-up in §14.
 13. **Discount applies to `pricing.base_amount` (pre-tax)** — the operator template's `applyOperatorTaxToQuoteResult` step recomputes taxes against the new base. Applying post-tax would either undo the discount or double-tax the customer. `fees` and `surcharges` are not discounted in v1. See §7.1.0.
 14. **Boundary scheduler exists** — a 5-minute cron emits `promotion.changed` at `valid_from` / `valid_until` transitions to expire stale catalog projections. Without it, the storefront would keep showing expired discounts until another mutation reindexed. New `promotional_offer_scheduler_state` watermark table. See §9.2.
-15. **Catalog plane projects annotations only — promotions does NOT touch `priceFromAmountCents`** — `ProductProjectionExtension`s run independently in parallel and can't read each other's output (`packages/products/src/service-catalog-plane.ts:262`, `:351`). Promotions adds `bestOffer*` + `originalPriceFromAmountCents` only; storefront consumers compute the effective price client-side. Filter / sort behavior uses the list price (an acknowledged v1 limitation, tracked in §15.1). See §3.7.
+15. **Catalog plane projects annotations only — promotions does NOT touch `priceFromAmountCents`** — `ProductProjectionExtension`s run independently in parallel and can't read each other's output (`packages/inventory/src/service-catalog-plane.ts:262`, `:351`). Promotions adds `bestOffer*` + `originalPriceFromAmountCents` only; storefront consumers compute the effective price client-side. Filter / sort behavior uses the list price (an acknowledged v1 limitation, tracked in §15.1). See §3.7.
 16. **No new public routes** — reuse the existing `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug` (`packages/storefront/src/routes-public.ts:99`); the resolver implementation makes the previously-empty endpoints functional.
 17. **`ProductProjectionExtension` contract stays as-is for v1** — the ordered, output-passing variant (§15.1) is the right eventual shape if discount-aware filtering becomes important, but it touches every existing extension. v1 ships annotation-only and accepts the list-price filter limitation. Revisit when operator feedback shows it matters.
 18. **Promotions does not own the `bookEntity` transaction problem** — keep the `booking.confirmed` subscriber pattern (§7.3, §15.2). Refactoring `bookEntity` into one coherent commit transaction is a booking-engine architecture change with its own justification, scoped outside promotions. Operational recovery is via the persisted `pricing_applied_offers` on the snapshot (backfill path) and the idempotent upsert against `(offer_id, booking_id)`.
@@ -714,7 +714,7 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 
 ### PR1 — Module foundation
 
-- New package `packages/promotions` (skeleton: package.json, tsconfig, schema.ts, validation.ts, service.ts, routes.ts, events.ts, index.ts).
+- New package `packages/commerce/src/promotions` (skeleton: package.json, tsconfig, schema.ts, validation.ts, service.ts, routes.ts, events.ts, index.ts).
 - TypeID prefixes `pofr` + `pofx` registered.
 - Schema: `promotional_offers`, `promotional_offer_products`, `promotional_offer_redemptions`. Drizzle migration (autogenerated by `pnpm -F operator db:generate`).
 - Validation schemas (Zod) for the discriminated-union scope + conditions JSONB.
@@ -723,11 +723,11 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 - Unit tests: scope discriminator validation, code uniqueness, currency rule on fixed-amount type.
 - Integration tests: full CRUD flow, link table materialization on category-scope changes.
 
-**Acceptance**: an operator can create, list, edit, archive, delete offers via the admin API. No catalog visibility yet, no checkout integration. One changeset entry: `@voyantjs/promotions` minor (initial release).
+**Acceptance**: an operator can create, list, edit, archive, delete offers via the admin API. No catalog visibility yet, no checkout integration. One changeset entry: `@voyantjs/commerce` minor (initial release).
 
 ### PR2 — Rule evaluator
 
-- `packages/promotions/src/service-evaluator.ts`: `evaluateOffersForProduct` per §5.
+- `packages/commerce/src/promotions/service-evaluator.ts`: `evaluateOffersForProduct` per §5.
 - Per-scope-kind matchers (`global`, `products`, `categories`, `destinations`, `markets`, `audiences`). No `channels` matcher in v1 — see §3.2.
 - Conditions evaluator (`minPax` + scaffolding for future conditions).
 - Stacking algorithm + currency filter.
@@ -737,16 +737,16 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 
 ### PR3 — Catalog plane wiring + boundary scheduler
 
-- `packages/products/src/catalog-policy-promotions.ts` declaring the policy (annotation-only field set per §3.7 — does NOT touch `priceFromAmountCents`).
-- `packages/promotions/src/service-catalog-plane-promotions.ts` with `createProductPromotionsProjectionExtension()`. Adds `bestOffer*`, `originalPriceFromAmountCents`, `conditionalOffer*` fields. Reads its own list-price MIN to populate `originalPriceFromAmountCents` (small bounded duplication of pricing's MIN logic — see §3.7).
+- `packages/inventory/src/catalog-policy-promotions.ts` declaring the policy (annotation-only field set per §3.7 — does NOT touch `priceFromAmountCents`).
+- `packages/commerce/src/promotions/service-catalog-plane-promotions.ts` with `createProductPromotionsProjectionExtension()`. Adds `bestOffer*`, `originalPriceFromAmountCents`, `conditionalOffer*` fields. Reads its own list-price MIN to populate `originalPriceFromAmountCents` (small bounded duplication of pricing's MIN logic — see §3.7).
 - `events.ts`: `PROMOTION_CHANGED_EVENT`. Service mutations emit per §9.1; the service resolves the offer's scope to a product set at emission time.
-- **Boundary scheduler** (per §9.2): `packages/promotions/src/service-boundary-scheduler.ts` exports `runPromotionBoundaryScheduler({ db, eventBus })`. New `promotional_offer_scheduler_state` table (single-row watermark). Operator template adds a `*/5 * * * *` cron in `wrangler.jsonc` and wires the handler in `src/api/promotion-scheduled.ts`.
+- **Boundary scheduler** (per §9.2): `packages/commerce/src/promotions/service-boundary-scheduler.ts` exports `runPromotionBoundaryScheduler({ db, eventBus })`. New `promotional_offer_scheduler_state` table (single-row watermark). Operator template adds a `*/5 * * * *` cron in `wrangler.jsonc` and wires the handler in `src/api/promotion-scheduled.ts`.
 - Operator template's `catalog-runtime.ts` composes the new policy + extension. `catalog-bridge.ts` subscribes to `promotion.changed`.
 - Integration tests:
   - Create an offer scoped to a category, verify the projection sets `bestOfferName` / `originalPriceFromAmountCents` on the right slice; on slices the offer doesn't apply to, all promotion fields are `null`.
   - Boundary scheduler: insert an offer with `valid_until = now() + 1ms`, run the scheduler tick, verify `promotion.changed` was emitted with `source: "expired"`.
 
-**Acceptance**: storefront cards (in apps that consume the catalog index) render badges + strikethrough prices for products under an active offer (consumers compute the effective price from the annotations). Offers expire from the index automatically within ~5 min of `valid_until`. No checkout integration yet. `@voyantjs/promotions` + `@voyantjs/products` minor.
+**Acceptance**: storefront cards (in apps that consume the catalog index) render badges + strikethrough prices for products under an active offer (consumers compute the effective price from the annotations). Offers expire from the index automatically within ~5 min of `valid_until`. No checkout integration yet. `@voyantjs/commerce` + `@voyantjs/inventory` minor.
 
 ### PR4 — Booking-engine integration
 
@@ -758,19 +758,19 @@ Recorded here as the rationale trail. The two larger architectural threads have 
   - `booking_id` column (text, nullable, indexed) on `catalog_quotes`. `bookEntity` sets it inside `markQuoteConsumed` (`packages/catalog/src/booking-engine/book.ts:222`) on successful commit. Used by the redemption subscriber to find quotes per booking.
 - `packages/catalog/src/booking-engine/quote.ts` reads `parameters.promotionCode`, calls `deps.evaluatePromotions` if present, applies the discount to `pricing.base_amount` (pre-tax, per §7.1.0). Returns `code_*` invalidReasons when `codeStatus.kind !== "code_valid"`.
 - New `invalidReason` codes on the quote response: `code_not_found`, `code_expired`, `code_not_yet_valid`, `code_not_applicable`.
-- `packages/promotions/src/service-catalog-evaluator.ts`: `createCatalogPromotionEvaluator(db)` adapter factory matching the `QuoteEntityDeps.evaluatePromotions` signature.
-- `packages/promotions/src/service-booking-confirmed.ts`: `createBookingConfirmedRedemptionSubscriber(env)` subscriber factory + `recordPromotionRedemptionsForBooking(db, bookingId)` core logic (idempotent upsert per §4.3).
+- `packages/commerce/src/promotions/service-catalog-evaluator.ts`: `createCatalogPromotionEvaluator(db)` adapter factory matching the `QuoteEntityDeps.evaluatePromotions` signature.
+- `packages/commerce/src/promotions/service-booking-confirmed.ts`: `createBookingConfirmedRedemptionSubscriber(env)` subscriber factory + `recordPromotionRedemptionsForBooking(db, bookingId)` core logic (idempotent upsert per §4.3).
 - Operator template wires the evaluator into `quoteEntity` deps and registers the subscriber on the event bus alongside the existing `captureSnapshotGraph` subscriber.
 - Storefront DTO mapping (`packages/storefront/src/validation.ts:392`) verified to remain compatible — likely no changes.
-- `packages/promotions/src/service-storefront.ts`: `createPromotionsStorefrontResolvers()` factory.
+- `packages/commerce/src/promotions/service-storefront.ts`: `createPromotionsStorefrontResolvers()` factory.
 - Operator template wires the resolver into its storefront service composition. **No new public routes** — the storefront already exposes `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug` (`packages/storefront/src/routes-public.ts:99-120`); the resolver implementation makes those previously-empty endpoints functional.
 - Integration tests: end-to-end quote with valid code → discount applied; quote with invalid code → error; commit creates redemption row; snapshot round-trip preserves `appliedOffers`.
 
-**Acceptance**: a customer can enter a code on the booking flow, see the discount applied to the pre-tax base on the quote, complete the booking, and end up with the redemption recorded by the post-commit subscriber. `@voyantjs/promotions` + `@voyantjs/catalog` (minor — `evaluatePromotions` hook + `pricing_applied_offers` + `booking_id` columns on `catalog_quotes` + `pricing_applied_offers` on `booking_catalog_snapshot` + draft field rename) + `@voyantjs/storefront` (likely just patch — the existing public routes start returning real data).
+**Acceptance**: a customer can enter a code on the booking flow, see the discount applied to the pre-tax base on the quote, complete the booking, and end up with the redemption recorded by the post-commit subscriber. `@voyantjs/commerce` + `@voyantjs/catalog` (minor — `evaluatePromotions` hook + `pricing_applied_offers` + `booking_id` columns on `catalog_quotes` + `pricing_applied_offers` on `booking_catalog_snapshot` + draft field rename) + `@voyantjs/storefront` (likely just patch — the existing public routes start returning real data).
 
 ### PR5 — Operator UI primitives
 
-- `packages/promotions-react` (registry components for the operator dashboard): offer list, offer form, offer detail, redemption history.
+- `packages/commerce-react/src/promotions` (registry components for the operator dashboard): offer list, offer form, offer detail, redemption history.
 - DMC + operator template wires the components into `/admin/promotions/*` routes.
 - Integration tests of the form's discriminated-union scope picker (the trickiest piece of the UI).
 
@@ -812,7 +812,7 @@ Two threads needed explicit user sign-off because they were the largest design f
 
 **Decision: NO for v1** — accept the list-price filter limitation; revisit when operator feedback shows discount-aware filtering matters.
 
-**Today**: extensions run independently in parallel; result maps are merged (`packages/products/src/service-catalog-plane.ts:262 + :351`). Promotions can't read pricing's `priceFromAmountCents` output, so the v1 design has promotions emit annotations only and storefront consumers compute the effective price client-side (per §3.7 + decision §12.15).
+**Today**: extensions run independently in parallel; result maps are merged (`packages/inventory/src/service-catalog-plane.ts:262 + :351`). Promotions can't read pricing's `priceFromAmountCents` output, so the v1 design has promotions emit annotations only and storefront consumers compute the effective price client-side (per §3.7 + decision §12.15).
 
 **Cost of staying as-is**: catalog filter / sort uses the list price, not the effective price. A customer searching `< $200` won't find a `$250 → $180` discounted product via the filter. Storefront cards still display correctly.
 
@@ -842,7 +842,7 @@ Two threads needed explicit user sign-off because they were the largest design f
 - Catalog architecture: `docs/architecture/catalog-architecture.md` §5.4 (denormalization at index time), §5.3 (snapshot capture)
 - Pricing rule-evaluation precedent: `packages/pricing/src/schema-option-rules.ts` (per-rule structure), `packages/pricing/src/service-rule-resolver.ts` (rule selection algorithm)
 - Lifecycle audit completed in #500 / #511 / #510 / #512 — promotions evaluator + service mutations follow the `withDbFromEnv` + `dbFromEnvForApp` patterns established there
-- Pricing catalog plane wiring (PR4 of #493): `packages/products/src/catalog-policy-pricing.ts`, `packages/pricing/src/service-catalog-plane-pricing.ts`
+- Pricing catalog plane wiring (PR4 of #493): `packages/inventory/src/catalog-policy-pricing.ts`, `packages/pricing/src/service-catalog-plane-pricing.ts`
 - Existing storefront DTO placeholder: `packages/storefront/src/validation.ts:392` (`storefrontPromotionalOfferSchema`)
 - Existing booking-draft placeholder: `packages/catalog/src/booking-engine/contracts.ts:343` (`voucher: { code }`)
 - Markets / channels vocabulary: `packages/markets/src/schema.ts` (`marketChannelScopeEnum`, `markets`, `marketChannelRules`)

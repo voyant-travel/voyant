@@ -1,4 +1,4 @@
-import { priceCatalogs } from "@voyantjs/pricing/schema"
+import { priceCatalogs } from "@voyantjs/commerce"
 import { createTestDb, describeIfDb } from "@voyantjs/voyant-test-utils/db"
 import { jsonRequest, mountTestApp } from "@voyantjs/voyant-test-utils/http"
 import { beforeAll, expect, it } from "vitest"

@@ -1,14 +1,14 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
-import { useSlotUnitAvailability } from "@voyantjs/availability-react"
 import {
   getOptionUnitsQueryOptions,
   type OptionUnitRecord,
   type ProductOptionRecord,
   useProductOptions,
   useVoyantProductsContext,
-} from "@voyantjs/products-react"
+} from "@voyantjs/inventory-react"
+import { useSlotUnitAvailability } from "@voyantjs/operations-react/availability"
 import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
 import * as React from "react"
@@ -80,7 +80,7 @@ export interface OptionUnitsStepperSectionProps {
 
 /**
  * Rooms / per-unit stepper for booking-create flows. Drives
- * `GET /v1/availability/slots/:id/unit-availability` from #235 when a
+ * `GET /v1/operations/availability/slots/:id/unit-availability` from #235 when a
  * departure is selected, and product option-level units before departure
  * selection, so operators can build "2 double rooms and 1 single" drafts.
  *

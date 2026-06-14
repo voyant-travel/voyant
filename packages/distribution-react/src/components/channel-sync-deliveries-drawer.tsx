@@ -43,10 +43,7 @@ export function DeliveriesDrawer({
     queryKey: ["channel-push-deliveries", bookingId],
     queryFn: () => {
       const params = new URLSearchParams({ bookingId: bookingId ?? "", limit: "200" })
-      return fetchJson<DeliveriesResponse>(
-        `/v1/admin/distribution/channel-push/deliveries?${params}`,
-        client,
-      )
+      return fetchJson<DeliveriesResponse>(`/v1/admin/distribution?${params}`, client)
     },
   })
 

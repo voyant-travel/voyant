@@ -5,37 +5,37 @@
 // from the migration snapshot.
 import { sql } from "drizzle-orm"
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
-export const crm_person_products_product = pgTable(
-  "crm_person_products_product",
+export const relationships_person_products_product = pgTable(
+  "relationships_person_products_product",
   {
     id: text("id").primaryKey().notNull(),
-    "crm_person_id": text("crm_person_id").notNull(),
+    "relationships_person_id": text("relationships_person_id").notNull(),
     "products_product_id": text("products_product_id").notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("crm_person_products_product_pair_idx").on(t["crm_person_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-    index("crm_person_products_product_l_idx").on(t["crm_person_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("crm_person_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_products_product_pair_idx").on(t["relationships_person_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_person_products_product_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
 
-export const crm_organization_products_product = pgTable(
-  "crm_organization_products_product",
+export const relationships_organization_products_product = pgTable(
+  "relationships_organization_products_product",
   {
     id: text("id").primaryKey().notNull(),
-    "crm_organization_id": text("crm_organization_id").notNull(),
+    "relationships_organization_id": text("relationships_organization_id").notNull(),
     "products_product_id": text("products_product_id").notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("crm_organization_products_product_pair_idx").on(t["crm_organization_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-    index("crm_organization_products_product_l_idx").on(t["crm_organization_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("crm_organization_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_organization_products_product_pair_idx").on(t["relationships_organization_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_organization_products_product_l_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_organization_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
 
@@ -53,23 +53,6 @@ export const legal_contract_bookings_booking = pgTable(
     uniqueIndex("legal_contract_bookings_booking_pair_idx").on(t["legal_contract_id"], t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
     uniqueIndex("legal_contract_bookings_booking_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
     index("legal_contract_bookings_booking_r_idx").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_transactions_order = pgTable(
-  "legal_contract_transactions_order",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "transactions_order_id": text("transactions_order_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_transactions_order_pair_idx").on(t["legal_contract_id"], t["transactions_order_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_transactions_order_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_transactions_order_r_idx").on(t["transactions_order_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
 

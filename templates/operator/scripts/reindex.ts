@@ -24,21 +24,21 @@
 import { roomTypes } from "@voyantjs/accommodations/schema"
 import { createRoomTypeDocumentBuilder } from "@voyantjs/accommodations/service-catalog-plane"
 import {
+  createGeminiEmbeddingProvider,
   createIndexerService,
   createTypesenseIndexer,
   type DocumentBuilder,
+  type EmbeddingProvider,
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
 } from "@voyantjs/catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterProducts } from "@voyantjs/charters/schema"
 import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog-plane"
 import { cruises } from "@voyantjs/cruises/schema"
 import { createDbClient } from "@voyantjs/db"
-import { productExtras } from "@voyantjs/extras/schema"
-import { createExtraDocumentBuilder } from "@voyantjs/extras/service-catalog-plane"
-import { products } from "@voyantjs/products/schema"
+import { createExtraDocumentBuilder, productExtras } from "@voyantjs/inventory/extras"
+import { products } from "@voyantjs/inventory/schema"
 import { config } from "dotenv"
 import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"

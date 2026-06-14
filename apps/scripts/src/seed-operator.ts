@@ -10,18 +10,6 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { z } from "zod"
 import {
-  availabilityPickupPoints,
-  availabilityRules,
-  availabilitySlotPickups,
-  availabilitySlots,
-  availabilityStartTimes,
-  customPickupAreas,
-  locationPickupTimes,
-  pickupGroups,
-  pickupLocations,
-  productMeetingConfigs,
-} from "../../../packages/availability/src/schema.ts"
-import {
   bookingPiiAccessLog,
   bookings,
   bookingTravelers,
@@ -33,34 +21,18 @@ import {
   bookingItemTravelers,
   bookingRedemptionEvents,
 } from "../../../packages/bookings/src/schema-items.ts"
-import {
-  communicationLog,
-  organizations as crmOrganizations,
-  organizationNotes,
-  people,
-  personNotes,
-  segmentMembers,
-  segments,
-} from "../../../packages/crm/src/schema-accounts.ts"
-import {
-  activities,
-  activityLinks,
-  activityParticipants,
-  customFieldDefinitions,
-  customFieldValues,
-} from "../../../packages/crm/src/schema-activities.ts"
-import {
-  pipelines,
-  quoteParticipants,
-  quoteProducts,
-  quotes,
-  quoteVersionLines,
-  quoteVersions,
-  stages,
-} from "../../../packages/crm/src/schema-sales.ts"
+import { bookingOrigins } from "../../../packages/bookings/src/schema-origin.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
 import { authMember, authOrganization, authUser } from "../../../packages/db/src/schema/iam/auth.ts"
 import { userProfilesTable } from "../../../packages/db/src/schema/iam/user_profiles.ts"
+import {
+  supplierAvailability,
+  supplierContracts,
+  supplierNotes,
+  supplierRates,
+  supplierServices,
+  suppliers,
+} from "../../../packages/distribution/src/suppliers/schema.ts"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -77,7 +49,7 @@ import {
   optionUnits,
   productOptions,
   products,
-} from "../../../packages/products/src/schema-core.ts"
+} from "../../../packages/inventory/src/schema-core.ts"
 import {
   productDayServices,
   productDays,
@@ -85,7 +57,7 @@ import {
   productMedia,
   productNotes,
   productVersions,
-} from "../../../packages/products/src/schema-itinerary.ts"
+} from "../../../packages/inventory/src/schema-itinerary.ts"
 import {
   optionUnitTranslations,
   productActivationSettings,
@@ -98,7 +70,7 @@ import {
   productTicketSettings,
   productTranslations,
   productVisibilitySettings,
-} from "../../../packages/products/src/schema-settings.ts"
+} from "../../../packages/inventory/src/schema-settings.ts"
 import {
   destinations,
   destinationTranslations,
@@ -108,28 +80,45 @@ import {
   productTagProducts,
   productTags,
   productTypes,
-} from "../../../packages/products/src/schema-taxonomy.ts"
+} from "../../../packages/inventory/src/schema-taxonomy.ts"
+import { legalTerms } from "../../../packages/legal/src/terms/schema.ts"
 import {
-  supplierAvailability,
-  supplierContracts,
-  supplierNotes,
-  supplierRates,
-  supplierServices,
-  suppliers,
-} from "../../../packages/suppliers/src/schema.ts"
+  availabilityPickupPoints,
+  availabilityRules,
+  availabilitySlotPickups,
+  availabilitySlots,
+  availabilityStartTimes,
+  customPickupAreas,
+  locationPickupTimes,
+  pickupGroups,
+  pickupLocations,
+  productMeetingConfigs,
+} from "../../../packages/operations/src/availability/schema.ts"
 import {
-  offerItemParticipants,
-  offerItems,
-  offerParticipants,
-  offers,
-} from "../../../packages/transactions/src/schema-offers.ts"
+  pipelines,
+  quoteParticipants,
+  quoteProducts,
+  quotes,
+  quoteVersionLines,
+  quoteVersions,
+  stages,
+} from "../../../packages/quotes/src/schema-sales.ts"
 import {
-  orderItemParticipants,
-  orderItems,
-  orderParticipants,
-  orders,
-  orderTerms,
-} from "../../../packages/transactions/src/schema-orders.ts"
+  communicationLog,
+  organizations as crmOrganizations,
+  organizationNotes,
+  people,
+  personNotes,
+  segmentMembers,
+  segments,
+} from "../../../packages/relationships/src/schema-accounts.ts"
+import {
+  activities,
+  activityLinks,
+  activityParticipants,
+  customFieldDefinitions,
+  customFieldValues,
+} from "../../../packages/relationships/src/schema-activities.ts"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, "../../..")
@@ -365,7 +354,7 @@ const worldPlanSchema = z.object({
 type WorldPlan = z.infer<typeof worldPlanSchema>
 type SeedArgs = z.infer<typeof argsSchema>
 type SqlClient = postgres.Sql<Record<string, unknown>>
-type Database = ReturnType<typeof drizzle>
+type Database = Pick<ReturnType<typeof drizzle>, "insert" | "select">
 
 type SeedContext = {
   db: Database
@@ -465,7 +454,7 @@ async function main() {
     }
 
     await db.transaction(async (tx) => {
-      const transactionCtx = { ...ctx, db: tx as Database }
+      const transactionCtx = { ...ctx, db: tx }
 
       const customerSeeds = await seedCustomers(transactionCtx, plan)
       const supplierSeeds = await seedSuppliers(transactionCtx, plan)
@@ -1884,8 +1873,7 @@ async function seedTransactionsAndBookings(
     const totalSell = participantCount * unitPrice
     const totalCost = Math.round(totalSell * 0.62)
     const bookingNumber = `BK-${ctx.labelSlug.toUpperCase()}-${String(index + 1).padStart(4, "0")}`
-    const offerNumber = `OFF-${ctx.labelSlug.toUpperCase()}-${String(index + 1).padStart(4, "0")}`
-    const orderNumber = `ORD-${ctx.labelSlug.toUpperCase()}-${String(index + 1).padStart(4, "0")}`
+    const providerOrderRef = `ORD-${ctx.labelSlug.toUpperCase()}-${String(index + 1).padStart(4, "0")}`
     const invoiceNumber = `INV-${ctx.labelSlug.toUpperCase()}-${String(index + 1).padStart(4, "0")}`
 
     const leadPersonId =
@@ -1893,199 +1881,6 @@ async function seedTransactionsAndBookings(
       customerSeed.primaryContactId
     const serviceDate = shiftDateString("2026-06-20", index * 3)
     const slotId = productSeed.slotIds[index % productSeed.slotIds.length] ?? null
-
-    const [offer] = await ctx.db
-      .insert(offers)
-      .values({
-        id: newId("offers"),
-        offerNumber,
-        title: `${bookingPlan.productName} offer`,
-        status: bookingPlan.status === "completed" ? "accepted" : "sent",
-        personId: leadPersonId,
-        organizationId: customerSeed.organizationId,
-        currency: plan.workspace.currency,
-        subtotalAmountCents: totalSell,
-        taxAmountCents: Math.round(totalSell * 0.09),
-        feeAmountCents: 0,
-        totalAmountCents: Math.round(totalSell * 1.09),
-        costAmountCents: totalCost,
-        validFrom: serviceDate,
-        validUntil: shiftDateString(serviceDate, 14),
-        sentAt: daysAgo(14 - index),
-        acceptedAt: bookingPlan.status === "completed" ? daysAgo(7) : null,
-        notes: bookingPlan.notes,
-        metadata: { seedLabel: ctx.labelSlug },
-      })
-      .returning()
-
-    const [offerTraveler] = await ctx.db
-      .insert(offerParticipants)
-      .values({
-        id: newId("offer_participants"),
-        offerId: offer.id,
-        personId: leadPersonId,
-        participantType: "traveler",
-        travelerCategory: "adult",
-        firstName: bookingPlan.leadTraveler.firstName,
-        lastName: bookingPlan.leadTraveler.lastName,
-        email: bookingPlan.leadTraveler.email,
-        preferredLanguage: plan.workspace.locale,
-        identityEncrypted: toEnvelope({
-          passportNumber: `P-${ctx.labelSlug.toUpperCase()}-${index + 1}`,
-          nationality: "RO",
-        }),
-        isPrimary: true,
-        notes: bookingPlan.notes,
-      })
-      .returning()
-
-    const [offerItem] = await ctx.db
-      .insert(offerItems)
-      .values({
-        id: newId("offer_items"),
-        offerId: offer.id,
-        productId: productSeed.productId,
-        optionId: productSeed.optionId,
-        unitId: productSeed.unitId,
-        slotId,
-        title: bookingPlan.productName,
-        description: bookingPlan.notes,
-        itemType: "unit",
-        status: bookingPlan.status === "draft" ? "priced" : "confirmed",
-        serviceDate,
-        quantity: participantCount,
-        sellCurrency: plan.workspace.currency,
-        unitSellAmountCents: unitPrice,
-        totalSellAmountCents: totalSell,
-        taxAmountCents: Math.round(totalSell * 0.09),
-        feeAmountCents: 0,
-        costCurrency: plan.workspace.currency,
-        unitCostAmountCents: Math.round(totalCost / participantCount),
-        totalCostAmountCents: totalCost,
-        metadata: { source: "operator_seed" },
-      })
-      .returning()
-
-    await ctx.db.insert(offerItemParticipants).values({
-      id: newId("offer_item_participants"),
-      offerItemId: offerItem.id,
-      travelerId: offerTraveler.id,
-      role: "traveler",
-      isPrimary: true,
-    })
-
-    const [order] = await ctx.db
-      .insert(orders)
-      .values({
-        id: newId("orders"),
-        orderNumber,
-        offerId: offer.id,
-        title: `${bookingPlan.productName} order`,
-        status: bookingPlan.status === "draft" ? "pending" : "confirmed",
-        personId: leadPersonId,
-        organizationId: customerSeed.organizationId,
-        currency: plan.workspace.currency,
-        subtotalAmountCents: totalSell,
-        taxAmountCents: Math.round(totalSell * 0.09),
-        feeAmountCents: 0,
-        totalAmountCents: Math.round(totalSell * 1.09),
-        costAmountCents: totalCost,
-        orderedAt: daysAgo(10 - index),
-        confirmedAt: bookingPlan.status === "draft" ? null : daysAgo(8 - index),
-        notes: bookingPlan.notes,
-        metadata: { seedLabel: ctx.labelSlug },
-      })
-      .returning()
-
-    const [orderTraveler] = await ctx.db
-      .insert(orderParticipants)
-      .values({
-        id: newId("order_participants"),
-        orderId: order.id,
-        personId: leadPersonId,
-        participantType: "traveler",
-        travelerCategory: "adult",
-        firstName: bookingPlan.leadTraveler.firstName,
-        lastName: bookingPlan.leadTraveler.lastName,
-        email: bookingPlan.leadTraveler.email,
-        preferredLanguage: plan.workspace.locale,
-        identityEncrypted: toEnvelope({
-          loyaltyTier: index === 0 ? "gold" : "standard",
-          travelerIndex: index,
-        }),
-        isPrimary: true,
-        notes: bookingPlan.notes,
-      })
-      .returning()
-
-    const [orderItem] = await ctx.db
-      .insert(orderItems)
-      .values({
-        id: newId("order_items"),
-        orderId: order.id,
-        offerItemId: offerItem.id,
-        productId: productSeed.productId,
-        optionId: productSeed.optionId,
-        unitId: productSeed.unitId,
-        slotId,
-        title: bookingPlan.productName,
-        description: bookingPlan.notes,
-        itemType: "unit",
-        status: "confirmed",
-        serviceDate,
-        quantity: participantCount,
-        sellCurrency: plan.workspace.currency,
-        unitSellAmountCents: unitPrice,
-        totalSellAmountCents: totalSell,
-        taxAmountCents: Math.round(totalSell * 0.09),
-        feeAmountCents: 0,
-        costCurrency: plan.workspace.currency,
-        unitCostAmountCents: Math.round(totalCost / participantCount),
-        totalCostAmountCents: totalCost,
-        metadata: { seedLabel: ctx.labelSlug },
-      })
-      .returning()
-
-    await ctx.db.insert(orderItemParticipants).values({
-      id: newId("order_item_participants"),
-      orderItemId: orderItem.id,
-      travelerId: orderTraveler.id,
-      role: "traveler",
-      isPrimary: true,
-    })
-
-    await ctx.db.insert(orderTerms).values([
-      {
-        id: newId("order_terms"),
-        orderId: order.id,
-        offerId: offer.id,
-        termType: "terms_and_conditions",
-        title: "General booking terms",
-        body: "Seeded booking terms covering payment, cancellation, and traveler responsibilities.",
-        language: plan.workspace.locale,
-        required: true,
-        sortOrder: 0,
-        acceptanceStatus: "accepted",
-        acceptedAt: new Date(),
-        acceptedBy: bookingPlan.leadTraveler.email,
-        metadata: { seedLabel: ctx.labelSlug },
-      },
-      {
-        id: newId("order_terms"),
-        orderId: order.id,
-        offerId: offer.id,
-        termType: "cancellation",
-        title: "Cancellation policy",
-        body: "Seeded cancellation policy with partial refund windows.",
-        language: plan.workspace.locale,
-        required: true,
-        sortOrder: 1,
-        acceptanceStatus: bookingPlan.status === "draft" ? "pending" : "accepted",
-        acceptedAt: bookingPlan.status === "draft" ? null : new Date(),
-        acceptedBy: bookingPlan.status === "draft" ? null : bookingPlan.leadTraveler.email,
-        metadata: { seedLabel: ctx.labelSlug },
-      },
-    ])
 
     const [booking] = await ctx.db
       .insert(bookings)
@@ -2112,6 +1907,49 @@ async function seedTransactionsAndBookings(
         completedAt: bookingPlan.status === "completed" ? daysAgo(1) : null,
       })
       .returning()
+
+    await ctx.db.insert(bookingOrigins).values({
+      bookingId: booking.id,
+      originSource: "provider_source_order",
+      providerSourceKind: "seed",
+      providerSourceProvider: "operator_seed",
+      providerSourceRef: bookingNumber,
+      providerOrderRef,
+      metadata: { seedLabel: ctx.labelSlug },
+    })
+
+    await ctx.db.insert(legalTerms).values([
+      {
+        id: newId("order_terms"),
+        targetKind: "booking",
+        targetId: booking.id,
+        termType: "terms_and_conditions",
+        title: "General booking terms",
+        body: "Seeded booking terms covering payment, cancellation, and traveler responsibilities.",
+        language: plan.workspace.locale,
+        required: true,
+        sortOrder: 0,
+        acceptanceStatus: "accepted",
+        acceptedAt: new Date(),
+        acceptedBy: bookingPlan.leadTraveler.email,
+        metadata: { seedLabel: ctx.labelSlug },
+      },
+      {
+        id: newId("order_terms"),
+        targetKind: "booking",
+        targetId: booking.id,
+        termType: "cancellation",
+        title: "Cancellation policy",
+        body: "Seeded cancellation policy with partial refund windows.",
+        language: plan.workspace.locale,
+        required: true,
+        sortOrder: 1,
+        acceptanceStatus: bookingPlan.status === "draft" ? "pending" : "accepted",
+        acceptedAt: bookingPlan.status === "draft" ? null : new Date(),
+        acceptedBy: bookingPlan.status === "draft" ? null : bookingPlan.leadTraveler.email,
+        metadata: { seedLabel: ctx.labelSlug },
+      },
+    ])
 
     const bookingTravelerIds: string[] = []
     for (let travelerIndex = 0; travelerIndex < participantCount; travelerIndex += 1) {
@@ -2160,8 +1998,7 @@ async function seedTransactionsAndBookings(
         productId: productSeed.productId,
         optionId: productSeed.optionId,
         optionUnitId: productSeed.unitId,
-        sourceOfferId: offer.id,
-        metadata: { orderId: order.id, seedLabel: ctx.labelSlug },
+        metadata: { providerOrderRef, seedLabel: ctx.labelSlug },
       })
       .returning()
 
@@ -2497,12 +2334,6 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48)
-}
-
-function toEnvelope(payload: Record<string, unknown>) {
-  return {
-    enc: Buffer.from(JSON.stringify(payload), "utf8").toString("base64"),
-  }
 }
 
 function shiftDateString(dateString: string, dayOffset: number) {

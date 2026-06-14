@@ -32,6 +32,23 @@ export {
   redactTravelerIdentity,
   shouldRevealBookingPii,
 } from "./pii-redaction.js"
+export * from "./requirements/index.js"
+export {
+  type BookingReservationPlanCompensation,
+  type BookingReservationPlanFailure,
+  type BookingReservationPlanLine,
+  type BookingReservationPlanLineContext,
+  type BookingReservationPlanLineKind,
+  type BookingReservationPlanLineResult,
+  type BookingReservationPlanOrigin,
+  type BookingReservationPlanReleaseResult,
+  type BookingReservationPlanStatus,
+  type SubmitBookingReservationPlanInput,
+  type SubmitBookingReservationPlanResult,
+  type SubmitBookingReservationPlanRuntime,
+  type SubmittedBookingReservationPlanLine,
+  submitBookingReservationPlan,
+} from "./reservation-plans.js"
 export type {
   BookingCancelledEvent,
   BookingConfirmedEvent,
@@ -51,6 +68,16 @@ export {
   listGroupBookingTravelers,
   type UpdateBookingGroupInput,
 } from "./service-groups.js"
+export {
+  type CatalogReservationBookingOriginInput,
+  type DirectB2CBookingOriginInput,
+  type DirectB2CBookingOriginItemInput,
+  getBookingOriginByBookingId,
+  toCatalogReservationBookingOriginInput,
+  toDirectB2CBookingOriginInput,
+  type UpsertBookingOriginInput,
+  upsertBookingOrigin,
+} from "./service-origin.js"
 export {
   BOOKING_TRANSITIONS,
   type BookingStatus,
@@ -159,6 +186,9 @@ export type {
   BookingItem,
   BookingItemTraveler,
   BookingNote,
+  BookingOrigin,
+  BookingOriginLegacyTransactionIds,
+  BookingOriginSource,
   BookingPiiAccessLog,
   BookingPriceOverride,
   BookingRedemptionEvent,
@@ -176,6 +206,7 @@ export type {
   NewBookingItem,
   NewBookingItemTraveler,
   NewBookingNote,
+  NewBookingOrigin,
   NewBookingPiiAccessLog,
   NewBookingRedemptionEvent,
   NewBookingSessionState,
@@ -195,6 +226,8 @@ export {
   bookingItems,
   bookingItemTravelers,
   bookingNotes,
+  bookingOriginSources,
+  bookingOrigins,
   bookingPiiAccessLog,
   bookingRedemptionEvents,
   bookingSessionStates,
@@ -253,7 +286,6 @@ export {
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
   recordBookingRedemptionSchema,
-  reserveBookingFromTransactionSchema,
   reserveBookingSchema,
   sharingGroupsForSlotQuerySchema,
   startBookingSchema,

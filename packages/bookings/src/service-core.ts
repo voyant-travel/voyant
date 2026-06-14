@@ -59,26 +59,12 @@ import {
   bookingItemTravelers,
   bookingNotes,
   bookingRedemptionEvents,
-  bookingStaffAssignments,
   bookingSupplierStatuses,
   bookings,
   bookingTravelers,
 } from "./schema.js"
 import { cleanupGroupOnBookingCancelled } from "./service-groups.js"
 import { type BookingStatus, canTransitionBooking, transitionBooking } from "./state-machine.js"
-import {
-  bookingTransactionDetailsRef,
-  offerItemParticipantsRef,
-  offerItemsRef,
-  offerParticipantsRef,
-  offerStaffAssignmentsRef,
-  offersRef,
-  orderItemParticipantsRef,
-  orderItemsRef,
-  orderParticipantsRef,
-  orderStaffAssignmentsRef,
-  ordersRef,
-} from "./transactions-ref.js"
 import type {
   bookingListQuerySchema,
   cancelBookingSchema,
@@ -99,7 +85,6 @@ import type {
   insertTravelerSchema,
   overrideBookingStatusSchema,
   recordBookingRedemptionSchema,
-  reserveBookingFromTransactionSchema,
   reserveBookingSchema,
   startBookingSchema,
   updateBookingFulfillmentSchema,
@@ -241,7 +226,6 @@ type CreateBookingDocumentInput = z.infer<typeof insertBookingDocumentSchema>
 type CreateBookingFulfillmentInput = z.infer<typeof insertBookingFulfillmentSchema>
 type UpdateBookingFulfillmentInput = z.infer<typeof updateBookingFulfillmentSchema>
 type RecordBookingRedemptionInput = z.infer<typeof recordBookingRedemptionSchema>
-type ReserveBookingFromTransactionInput = z.infer<typeof reserveBookingFromTransactionSchema>
 type BookingItemStatus = NonNullable<CreateBookingItemInput["status"]>
 type BookingAllocationStatus = NonNullable<(typeof bookingAllocations.$inferInsert)["status"]>
 
@@ -396,8 +380,8 @@ async function appendBookingStatusMutationLedger(
 
 /**
  * Payload shape for `availability.slot.changed`. Mirrors the canonical
- * `AvailabilitySlotChangedEvent` from `@voyantjs/availability` — defined
- * locally to avoid a runtime dep on availability (we already mirror its
+ * `AvailabilitySlotChangedEvent` from `@voyantjs/operations` — defined
+ * locally to avoid a runtime dep on operations (we already mirror its
  * schema via `availabilitySlotsRef` for the same reason). Subscribers
  * (e.g. channel-push) can import the canonical type directly.
  *
@@ -666,158 +650,6 @@ async function ensureBookingScopedLinks(
   }
 
   return { ok: true as const }
-}
-
-type TransactionParticipantRecord = {
-  id: string
-  personId: string | null
-  participantType: string
-  travelerCategory: string | null
-  firstName: string
-  lastName: string
-  email: string | null
-  phone: string | null
-  preferredLanguage: string | null
-  isPrimary: boolean
-  notes: string | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-function isStaffParticipantType(participantType: string) {
-  return participantType === "staff"
-}
-
-function toStaffAssignmentRole(role: string | null | undefined) {
-  return role === "service_assignee" ? "service_assignee" : "other"
-}
-
-type TransactionItemRecord = {
-  id: string
-  productId: string | null
-  optionId: string | null
-  unitId: string | null
-  slotId: string | null
-  title: string
-  description: string | null
-  itemType: string
-  status: string
-  serviceDate: string | null
-  startsAt: Date | null
-  endsAt: Date | null
-  quantity: number
-  sellCurrency: string
-  unitSellAmountCents: number | null
-  totalSellAmountCents: number | null
-  costCurrency: string | null
-  unitCostAmountCents: number | null
-  totalCostAmountCents: number | null
-  notes: string | null
-  metadata: unknown
-  createdAt: Date
-  updatedAt: Date
-}
-
-type TransactionItemParticipantRecord = {
-  travelerId: string
-  role: string
-  isPrimary: boolean
-  offerItemId?: string
-  orderItemId?: string
-}
-
-type ReservationSourceBundle = {
-  kind: "offer" | "order"
-  sourceId: string
-  offerId: string | null
-  orderId: string | null
-  personId: string | null
-  organizationId: string | null
-  contactFirstName: string | null
-  contactLastName: string | null
-  contactPartyType: string | null
-  contactTaxId: string | null
-  contactEmail: string | null
-  contactPhone: string | null
-  contactPreferredLanguage: string | null
-  contactCountry: string | null
-  contactRegion: string | null
-  contactCity: string | null
-  contactAddressLine1: string | null
-  contactAddressLine2: string | null
-  contactPostalCode: string | null
-  currency: string
-  baseCurrency: string | null
-  totalAmountCents: number | null
-  costAmountCents: number | null
-  notes: string | null
-  participants: TransactionParticipantRecord[]
-  items: TransactionItemRecord[]
-  itemParticipants: TransactionItemParticipantRecord[]
-}
-
-function deriveBookingDateRange(items: TransactionItemRecord[]) {
-  const dates = items
-    .flatMap((item) => [item.serviceDate, item.startsAt?.toISOString().slice(0, 10) ?? null])
-    .filter((value): value is string => Boolean(value))
-    .sort()
-
-  return {
-    startDate: dates[0] ?? null,
-    endDate: dates[dates.length - 1] ?? null,
-  }
-}
-
-function deriveBookingPax(
-  participants: TransactionParticipantRecord[],
-  items: TransactionItemRecord[],
-) {
-  const pax = participants.filter((participant) =>
-    ["traveler", "occupant"].includes(participant.participantType),
-  ).length
-
-  if (pax > 0) {
-    return pax
-  }
-
-  return items
-    .filter((item) => item.itemType === "unit")
-    .reduce((sum, item) => sum + item.quantity, 0)
-}
-
-function getTransactionItemParticipantItemId(link: TransactionItemParticipantRecord) {
-  return "offerItemId" in link ? link.offerItemId : link.orderItemId
-}
-
-function toStaffReservationParticipant(
-  assignment: {
-    id: string
-    personId: string | null
-    firstName: string
-    lastName: string
-    email: string | null
-    phone: string | null
-    preferredLanguage: string | null
-    isPrimary: boolean
-    notes: string | null
-  },
-  suffix: string,
-): TransactionParticipantRecord {
-  return {
-    id: `staff:${suffix}:${assignment.id}`,
-    personId: assignment.personId,
-    participantType: "staff",
-    travelerCategory: null,
-    firstName: assignment.firstName,
-    lastName: assignment.lastName,
-    email: assignment.email,
-    phone: assignment.phone,
-    preferredLanguage: assignment.preferredLanguage,
-    isPrimary: assignment.isPrimary,
-    notes: assignment.notes,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
 }
 
 function mapDeliveryFormatToFulfillment(format: string) {
@@ -1560,7 +1392,7 @@ async function adjustSlotCapacity(
  * the caller can surface a useful error to the client.
  *
  * Implemented with raw SQL because @voyantjs/bookings deliberately
- * has no runtime dep on @voyantjs/availability (see the module-
+ * has no runtime dep on @voyantjs/operations (see the module-
  * decoupling notes in CLAUDE.md / MEMORY.md). The schema is stable —
  * `allocation_resources` and `booking_traveler_travel_details.allocations`
  * are migration-frozen.
@@ -1790,420 +1622,6 @@ async function releaseAllocationCapacity(
     source,
   )
   return result.status === "ok" ? result.slotChange : undefined
-}
-
-async function reserveBookingFromTransactionSource(
-  db: PostgresJsDatabase,
-  source: ReservationSourceBundle,
-  data: ReserveBookingFromTransactionInput,
-  userId?: string,
-  runtime: BookingServiceRuntime = {},
-) {
-  const slotChanges: AvailabilitySlotChangedEventPayload[] = []
-  try {
-    const result = await db.transaction(async (tx) => {
-      const holdExpiresAt = await computeHoldExpiresAt(tx as PostgresJsDatabase, data, source.items)
-      const dateRange = deriveBookingDateRange(source.items)
-      const pax = deriveBookingPax(source.participants, source.items)
-
-      const [booking] = await tx
-        .insert(bookings)
-        .values({
-          bookingNumber: data.bookingNumber,
-          status: "on_hold",
-          personId: source.personId,
-          organizationId: source.organizationId,
-          sourceType: data.sourceType,
-          contactFirstName: data.contactFirstName ?? source.contactFirstName,
-          contactLastName: data.contactLastName ?? source.contactLastName,
-          contactPartyType: data.contactPartyType ?? source.contactPartyType,
-          contactTaxId: data.contactTaxId ?? source.contactTaxId,
-          contactEmail: data.contactEmail ?? source.contactEmail,
-          contactPhone: data.contactPhone ?? source.contactPhone,
-          contactPreferredLanguage:
-            data.contactPreferredLanguage ?? source.contactPreferredLanguage,
-          contactCountry: data.contactCountry ?? source.contactCountry,
-          contactRegion: data.contactRegion ?? source.contactRegion,
-          contactCity: data.contactCity ?? source.contactCity,
-          contactAddressLine1: data.contactAddressLine1 ?? source.contactAddressLine1,
-          contactAddressLine2: data.contactAddressLine2 ?? source.contactAddressLine2,
-          contactPostalCode: data.contactPostalCode ?? source.contactPostalCode,
-          sellCurrency: source.currency,
-          baseCurrency: source.baseCurrency,
-          sellAmountCents: source.totalAmountCents,
-          costAmountCents: source.costAmountCents,
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate,
-          pax: pax > 0 ? pax : null,
-          internalNotes: data.internalNotes ?? source.notes,
-          holdExpiresAt,
-        })
-        .returning()
-
-      if (!booking) {
-        throw new BookingServiceError("booking_create_failed")
-      }
-
-      const participantMap = new Map<string, string>()
-      const staffParticipantMap = new Map<string, TransactionParticipantRecord>()
-      if (data.includeParticipants) {
-        for (const participant of source.participants) {
-          if (isStaffParticipantType(participant.participantType)) {
-            staffParticipantMap.set(participant.id, participant)
-            continue
-          }
-
-          const [createdParticipant] = await tx
-            .insert(bookingTravelers)
-            .values({
-              bookingId: booking.id,
-              personId: participant.personId ?? null,
-              participantType:
-                participant.participantType as CreateTravelerRecordInput["participantType"],
-              travelerCategory:
-                (participant.travelerCategory as CreateTravelerRecordInput["travelerCategory"]) ??
-                null,
-              firstName: participant.firstName,
-              lastName: participant.lastName,
-              email: participant.email ?? null,
-              phone: participant.phone ?? null,
-              preferredLanguage: participant.preferredLanguage ?? null,
-              isPrimary: participant.isPrimary,
-              notes: participant.notes ?? null,
-            })
-            .returning()
-
-          if (!createdParticipant) {
-            throw new BookingServiceError("participant_create_failed")
-          }
-
-          participantMap.set(participant.id, createdParticipant.id)
-        }
-      }
-
-      const bookingItemMap = new Map<string, string>()
-      for (const item of source.items) {
-        if (item.slotId) {
-          const capacity = await adjustSlotCapacity(
-            tx as PostgresJsDatabase,
-            item.slotId,
-            -item.quantity,
-            "booking",
-          )
-
-          if (capacity.status === "slot_not_found") {
-            throw new BookingServiceError("slot_not_found")
-          }
-          if (capacity.status === "slot_unavailable") {
-            throw new BookingServiceError("slot_unavailable")
-          }
-          if (capacity.status === "insufficient_capacity") {
-            throw new BookingServiceError("insufficient_capacity")
-          }
-
-          const slot = capacity.slot
-          if (item.productId && item.productId !== slot.product_id) {
-            throw new BookingServiceError("slot_product_mismatch")
-          }
-          // Per issue #960, a per-item `optionId` no longer has to match
-          // `slot.option_id` — option-scoped slots accept items for any
-          // option that lives on the same product. `getConvertProductData`
-          // already validated each line's option belongs to the product;
-          // total pax is enforced by `adjustSlotCapacity` above.
-          if (capacity.slotChange) slotChanges.push(capacity.slotChange)
-        }
-
-        const [bookingItem] = await tx
-          .insert(bookingItems)
-          .values({
-            bookingId: booking.id,
-            title: item.title,
-            description: item.description ?? null,
-            itemType: item.itemType as CreateBookingItemInput["itemType"],
-            status: "on_hold",
-            serviceDate: item.serviceDate ?? (item.slotId ? undefined : null),
-            startsAt: item.startsAt ?? null,
-            endsAt: item.endsAt ?? null,
-            quantity: item.quantity,
-            sellCurrency: item.sellCurrency,
-            unitSellAmountCents: item.unitSellAmountCents ?? null,
-            totalSellAmountCents: item.totalSellAmountCents ?? null,
-            costCurrency: item.costCurrency ?? null,
-            unitCostAmountCents: item.unitCostAmountCents ?? null,
-            totalCostAmountCents: item.totalCostAmountCents ?? null,
-            notes: item.notes ?? null,
-            productId: item.productId ?? null,
-            optionId: item.optionId ?? null,
-            optionUnitId: item.unitId ?? null,
-            sourceOfferId: source.offerId,
-            metadata: (item.metadata as Record<string, unknown> | null | undefined) ?? null,
-          })
-          .returning()
-
-        if (!bookingItem) {
-          throw new BookingServiceError("booking_item_create_failed")
-        }
-
-        bookingItemMap.set(item.id, bookingItem.id)
-
-        if (item.slotId) {
-          const [allocation] = await tx
-            .insert(bookingAllocations)
-            .values({
-              bookingId: booking.id,
-              bookingItemId: bookingItem.id,
-              productId: item.productId ?? null,
-              optionId: item.optionId ?? null,
-              optionUnitId: item.unitId ?? null,
-              availabilitySlotId: item.slotId,
-              quantity: item.quantity,
-              allocationType: "unit",
-              status: "held",
-              holdExpiresAt,
-              metadata: (item.metadata as Record<string, unknown> | null | undefined) ?? null,
-            })
-            .returning()
-
-          if (!allocation) {
-            throw new BookingServiceError("allocation_create_failed")
-          }
-        }
-      }
-
-      for (const link of source.itemParticipants) {
-        const sourceItemId = getTransactionItemParticipantItemId(link)
-        if (!sourceItemId) {
-          continue
-        }
-
-        const bookingItemId = bookingItemMap.get(sourceItemId)
-        const travelerId = participantMap.get(link.travelerId)
-
-        if (!bookingItemId || !travelerId) {
-          continue
-        }
-
-        await tx.insert(bookingItemTravelers).values({
-          bookingItemId,
-          travelerId,
-          role: link.role as CreateBookingItemParticipantInput["role"],
-          isPrimary: link.isPrimary,
-        })
-      }
-
-      if (staffParticipantMap.size > 0) {
-        const linkedStaffAssignments = [] as Array<typeof bookingStaffAssignments.$inferInsert>
-        const linkedStaffParticipantIds = new Set<string>()
-
-        for (const link of source.itemParticipants) {
-          const staffParticipant = staffParticipantMap.get(link.travelerId)
-          if (!staffParticipant) {
-            continue
-          }
-
-          const sourceItemId = getTransactionItemParticipantItemId(link)
-          if (!sourceItemId) {
-            continue
-          }
-
-          const bookingItemId = bookingItemMap.get(sourceItemId)
-          if (!bookingItemId) {
-            continue
-          }
-
-          linkedStaffParticipantIds.add(staffParticipant.id)
-          linkedStaffAssignments.push({
-            bookingId: booking.id,
-            bookingItemId,
-            personId: staffParticipant.personId ?? null,
-            role: toStaffAssignmentRole(link.role),
-            firstName: staffParticipant.firstName,
-            lastName: staffParticipant.lastName,
-            email: staffParticipant.email ?? null,
-            phone: staffParticipant.phone ?? null,
-            preferredLanguage: staffParticipant.preferredLanguage ?? null,
-            isPrimary: link.isPrimary || staffParticipant.isPrimary,
-            notes: staffParticipant.notes ?? null,
-            metadata: {
-              sourceParticipantId: staffParticipant.id,
-              sourceItemId,
-              sourceRole: link.role,
-            },
-          })
-        }
-
-        for (const staffParticipant of staffParticipantMap.values()) {
-          if (linkedStaffParticipantIds.has(staffParticipant.id)) {
-            continue
-          }
-
-          linkedStaffAssignments.push({
-            bookingId: booking.id,
-            bookingItemId: null,
-            personId: staffParticipant.personId ?? null,
-            role: "service_assignee",
-            firstName: staffParticipant.firstName,
-            lastName: staffParticipant.lastName,
-            email: staffParticipant.email ?? null,
-            phone: staffParticipant.phone ?? null,
-            preferredLanguage: staffParticipant.preferredLanguage ?? null,
-            isPrimary: staffParticipant.isPrimary,
-            notes: staffParticipant.notes ?? null,
-            metadata: {
-              sourceParticipantId: staffParticipant.id,
-            },
-          })
-        }
-
-        if (linkedStaffAssignments.length > 0) {
-          await tx.insert(bookingStaffAssignments).values(linkedStaffAssignments)
-        }
-      }
-
-      await tx
-        .insert(bookingTransactionDetailsRef)
-        .values({
-          bookingId: booking.id,
-          offerId: source.offerId,
-          orderId: source.orderId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: bookingTransactionDetailsRef.bookingId,
-          set: {
-            offerId: source.offerId,
-            orderId: source.orderId,
-            updatedAt: new Date(),
-          },
-        })
-
-      await tx.insert(bookingActivityLog).values({
-        bookingId: booking.id,
-        actorId: userId ?? "system",
-        activityType: "booking_reserved",
-        description: `Booking ${booking.bookingNumber} reserved from ${source.kind} ${source.sourceId}`,
-        metadata: {
-          sourceKind: source.kind,
-          sourceId: source.sourceId,
-          offerId: source.offerId,
-          orderId: source.orderId,
-          holdExpiresAt: holdExpiresAt.toISOString(),
-          itemCount: source.items.length,
-        },
-      })
-
-      if (data.note) {
-        await tx.insert(bookingNotes).values({
-          bookingId: booking.id,
-          authorId: userId ?? "system",
-          content: data.note,
-        })
-      }
-
-      return { status: "ok" as const, booking }
-    })
-    if (result.status === "ok") {
-      await emitSlotChanges(runtime, slotChanges)
-    }
-    return result
-  } catch (error) {
-    if (error instanceof BookingServiceError) {
-      return { status: error.code as Exclude<string, "ok"> }
-    }
-    throw error
-  }
-}
-
-async function getBookingTransactionLink(db: PostgresJsDatabase, bookingId: string) {
-  const [link] = await db
-    .select()
-    .from(bookingTransactionDetailsRef)
-    .where(eq(bookingTransactionDetailsRef.bookingId, bookingId))
-    .limit(1)
-
-  return link ?? null
-}
-
-async function syncTransactionOnBookingConfirmed(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
-  if (!link) {
-    return
-  }
-
-  const now = new Date()
-
-  if (link.orderId) {
-    await db
-      .update(ordersRef)
-      .set({
-        status: "confirmed",
-        confirmedAt: now,
-        updatedAt: now,
-      })
-      .where(eq(ordersRef.id, link.orderId))
-  }
-
-  if (link.offerId) {
-    await db
-      .update(offersRef)
-      .set({
-        status: "converted",
-        acceptedAt: now,
-        convertedAt: now,
-        updatedAt: now,
-      })
-      .where(eq(offersRef.id, link.offerId))
-  }
-}
-
-async function syncTransactionOnBookingExpired(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
-  if (!link?.orderId) {
-    return
-  }
-
-  const now = new Date()
-  await db
-    .update(ordersRef)
-    .set({
-      status: "expired",
-      expiresAt: now,
-      updatedAt: now,
-    })
-    .where(eq(ordersRef.id, link.orderId))
-}
-
-async function syncTransactionOnBookingCancelled(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
-  if (!link?.orderId) {
-    return
-  }
-
-  const now = new Date()
-  await db
-    .update(ordersRef)
-    .set({
-      status: "cancelled",
-      cancelledAt: now,
-      updatedAt: now,
-    })
-    .where(eq(ordersRef.id, link.orderId))
-}
-
-async function syncTransactionOnBookingRedeemed(db: PostgresJsDatabase, bookingId: string) {
-  const link = await getBookingTransactionLink(db, bookingId)
-  if (!link?.orderId) {
-    return
-  }
-
-  await db
-    .update(ordersRef)
-    .set({
-      status: "fulfilled",
-      updatedAt: new Date(),
-    })
-    .where(eq(ordersRef.id, link.orderId))
 }
 
 async function autoIssueFulfillmentsForBooking(
@@ -3226,212 +2644,6 @@ export const bookingsService = {
       .orderBy(asc(bookingAllocations.createdAt))
   },
 
-  async reserveBookingFromOffer(
-    db: PostgresJsDatabase,
-    offerId: string,
-    data: ReserveBookingFromTransactionInput,
-    userId?: string,
-    runtime: BookingServiceRuntime = {},
-  ) {
-    const [offer] = await db.select().from(offersRef).where(eq(offersRef.id, offerId)).limit(1)
-
-    if (!offer) {
-      return { status: "not_found" as const }
-    }
-
-    const [participants, items, itemParticipants, staffAssignments] = await Promise.all([
-      db
-        .select()
-        .from(offerParticipantsRef)
-        .where(eq(offerParticipantsRef.offerId, offerId))
-        .orderBy(asc(offerParticipantsRef.createdAt)),
-      db
-        .select()
-        .from(offerItemsRef)
-        .where(eq(offerItemsRef.offerId, offerId))
-        .orderBy(asc(offerItemsRef.createdAt)),
-      db
-        .select()
-        .from(offerItemParticipantsRef)
-        .where(
-          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-          sql`${offerItemParticipantsRef.offerItemId} IN (
-            SELECT ${offerItemsRef.id}
-            FROM ${offerItemsRef}
-            WHERE ${offerItemsRef.offerId} = ${offerId}
-          )`,
-        )
-        .orderBy(asc(offerItemParticipantsRef.createdAt)),
-      db
-        .select()
-        .from(offerStaffAssignmentsRef)
-        .where(eq(offerStaffAssignmentsRef.offerId, offerId))
-        .orderBy(asc(offerStaffAssignmentsRef.createdAt)),
-    ])
-
-    const reservationParticipants = [...participants] as TransactionParticipantRecord[]
-    const reservationItemParticipants = itemParticipants.map(
-      (link): TransactionItemParticipantRecord => ({
-        travelerId: link.travelerId,
-        role: link.role,
-        isPrimary: link.isPrimary,
-        offerItemId: link.offerItemId,
-      }),
-    )
-    for (const assignment of staffAssignments) {
-      const participant = toStaffReservationParticipant(assignment, "offer")
-      reservationParticipants.push(participant)
-
-      if (assignment.offerItemId) {
-        reservationItemParticipants.push({
-          travelerId: participant.id,
-          role: assignment.role,
-          isPrimary: assignment.isPrimary,
-          offerItemId: assignment.offerItemId,
-        })
-      }
-    }
-
-    return reserveBookingFromTransactionSource(
-      db,
-      {
-        kind: "offer",
-        sourceId: offerId,
-        offerId: offer.id,
-        orderId: null,
-        personId: offer.personId ?? null,
-        organizationId: offer.organizationId ?? null,
-        contactFirstName: offer.contactFirstName ?? null,
-        contactLastName: offer.contactLastName ?? null,
-        contactPartyType: offer.contactPartyType ?? null,
-        contactTaxId: offer.contactTaxId ?? null,
-        contactEmail: offer.contactEmail ?? null,
-        contactPhone: offer.contactPhone ?? null,
-        contactPreferredLanguage: offer.contactPreferredLanguage ?? null,
-        contactCountry: offer.contactCountry ?? null,
-        contactRegion: offer.contactRegion ?? null,
-        contactCity: offer.contactCity ?? null,
-        contactAddressLine1: offer.contactAddressLine1 ?? null,
-        contactAddressLine2: offer.contactAddressLine2 ?? null,
-        contactPostalCode: offer.contactPostalCode ?? null,
-        currency: offer.currency,
-        baseCurrency: offer.baseCurrency ?? null,
-        totalAmountCents: offer.totalAmountCents ?? null,
-        costAmountCents: offer.costAmountCents ?? null,
-        notes: offer.notes ?? null,
-        participants: reservationParticipants,
-        items,
-        itemParticipants: reservationItemParticipants,
-      },
-      data,
-      userId,
-      runtime,
-    )
-  },
-
-  async reserveBookingFromOrder(
-    db: PostgresJsDatabase,
-    orderId: string,
-    data: ReserveBookingFromTransactionInput,
-    userId?: string,
-    runtime: BookingServiceRuntime = {},
-  ) {
-    const [order] = await db.select().from(ordersRef).where(eq(ordersRef.id, orderId)).limit(1)
-
-    if (!order) {
-      return { status: "not_found" as const }
-    }
-
-    const [participants, items, itemParticipants, staffAssignments] = await Promise.all([
-      db
-        .select()
-        .from(orderParticipantsRef)
-        .where(eq(orderParticipantsRef.orderId, orderId))
-        .orderBy(asc(orderParticipantsRef.createdAt)),
-      db
-        .select()
-        .from(orderItemsRef)
-        .where(eq(orderItemsRef.orderId, orderId))
-        .orderBy(asc(orderItemsRef.createdAt)),
-      db
-        .select()
-        .from(orderItemParticipantsRef)
-        .where(
-          // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-          sql`${orderItemParticipantsRef.orderItemId} IN (
-            SELECT ${orderItemsRef.id}
-            FROM ${orderItemsRef}
-            WHERE ${orderItemsRef.orderId} = ${orderId}
-          )`,
-        )
-        .orderBy(asc(orderItemParticipantsRef.createdAt)),
-      db
-        .select()
-        .from(orderStaffAssignmentsRef)
-        .where(eq(orderStaffAssignmentsRef.orderId, orderId))
-        .orderBy(asc(orderStaffAssignmentsRef.createdAt)),
-    ])
-
-    const reservationParticipants = [...participants] as TransactionParticipantRecord[]
-    const reservationItemParticipants = itemParticipants.map(
-      (link): TransactionItemParticipantRecord => ({
-        travelerId: link.travelerId,
-        role: link.role,
-        isPrimary: link.isPrimary,
-        orderItemId: link.orderItemId,
-      }),
-    )
-    for (const assignment of staffAssignments) {
-      const participant = toStaffReservationParticipant(assignment, "order")
-      reservationParticipants.push(participant)
-
-      if (assignment.orderItemId) {
-        reservationItemParticipants.push({
-          travelerId: participant.id,
-          role: assignment.role,
-          isPrimary: assignment.isPrimary,
-          orderItemId: assignment.orderItemId,
-        })
-      }
-    }
-
-    return reserveBookingFromTransactionSource(
-      db,
-      {
-        kind: "order",
-        sourceId: orderId,
-        offerId: order.offerId ?? null,
-        orderId: order.id,
-        personId: order.personId ?? null,
-        organizationId: order.organizationId ?? null,
-        contactFirstName: order.contactFirstName ?? null,
-        contactLastName: order.contactLastName ?? null,
-        contactPartyType: order.contactPartyType ?? null,
-        contactTaxId: order.contactTaxId ?? null,
-        contactEmail: order.contactEmail ?? null,
-        contactPhone: order.contactPhone ?? null,
-        contactPreferredLanguage: order.contactPreferredLanguage ?? null,
-        contactCountry: order.contactCountry ?? null,
-        contactRegion: order.contactRegion ?? null,
-        contactCity: order.contactCity ?? null,
-        contactAddressLine1: order.contactAddressLine1 ?? null,
-        contactAddressLine2: order.contactAddressLine2 ?? null,
-        contactPostalCode: order.contactPostalCode ?? null,
-        currency: order.currency,
-        baseCurrency: order.baseCurrency ?? null,
-        totalAmountCents: order.totalAmountCents ?? null,
-        costAmountCents: order.costAmountCents ?? null,
-        notes: order.notes ?? null,
-        participants: reservationParticipants,
-        items,
-        itemParticipants: reservationItemParticipants,
-      },
-      data,
-      userId,
-      runtime,
-    )
-  },
-
   async reserveBooking(
     db: PostgresJsDatabase,
     data: ReserveBookingInput,
@@ -3837,7 +3049,6 @@ export const bookingsService = {
           .where(eq(bookings.id, id))
           .returning()
 
-        await syncTransactionOnBookingConfirmed(tx as PostgresJsDatabase, id)
         await autoIssueFulfillmentsForBooking(tx as PostgresJsDatabase, id, userId)
 
         await tx.insert(bookingActivityLog).values({
@@ -3994,7 +3205,6 @@ export const bookingsService = {
           .where(eq(bookings.id, id))
           .returning()
 
-        await syncTransactionOnBookingConfirmed(tx as PostgresJsDatabase, id)
         await autoIssueFulfillmentsForBooking(tx as PostgresJsDatabase, id, userId)
 
         await tx.insert(bookingActivityLog).values({
@@ -4186,7 +3396,6 @@ export const bookingsService = {
           .where(eq(bookings.id, id))
           .returning()
 
-        await syncTransactionOnBookingExpired(tx as PostgresJsDatabase, id)
         await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, "expired")
 
         await tx.insert(bookingActivityLog).values({
@@ -4357,7 +3566,6 @@ export const bookingsService = {
           .where(eq(bookings.id, id))
           .returning()
 
-        await syncTransactionOnBookingCancelled(tx as PostgresJsDatabase, id)
         await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, "cancelled")
 
         await tx.insert(bookingActivityLog).values({
@@ -4904,7 +4112,7 @@ export const bookingsService = {
        * a plaintext snapshot of dietary / accessibility / primary
        * passport from the linked person record. Snapshot fields fill
        * gaps in `data` only — explicit input always wins. Templates
-       * wire this from `crmService.loadPersonTravelSnapshot`.
+       * wire this from `relationshipsService.loadPersonTravelSnapshot`.
        */
       resolveTravelSnapshot?: (personId: string) => Promise<BookingTravelerSnapshot | null>
     },
@@ -5940,8 +5148,6 @@ export const bookingsService = {
           method: data.method,
         },
       })
-
-      await syncTransactionOnBookingRedeemed(tx as PostgresJsDatabase, bookingId)
 
       return event ?? null
     })

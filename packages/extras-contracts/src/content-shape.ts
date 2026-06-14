@@ -15,7 +15,7 @@
  *
  * This module is the pure content contract: schemas, types, version, and
  * the validator. The `mergeOverlaysIntoExtraContent` overlay composition
- * stays in the `@voyantjs/extras` runtime package.
+ * stays in the Inventory extras runtime facade.
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */

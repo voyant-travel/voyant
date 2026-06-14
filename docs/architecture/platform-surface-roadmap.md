@@ -94,10 +94,10 @@ Resolved in source and published through the `0.3.1` npm train:
 
 - `@voyantjs/finance` exports the public finance schemas and service helpers
   used by `@voyantjs/finance-react`
-- `@voyantjs/products` exports `publicProductsService`
+- `@voyantjs/inventory` exports `publicProductsService`
 - `@voyantjs/bookings` exports `publicBookingsService` and public booking route
   helpers
-- `@voyantjs/products-react` exports the day, version, and media hooks and
+- `@voyantjs/inventory-react` exports the day, version, and media hooks and
   query helpers from the package root
 - CI/release now smoke-test runtime exports in addition to tarball contents
 
@@ -121,8 +121,10 @@ Resolved upstream for contracts, partially resolved for reusable UI:
 Resolved upstream for the base platform contract, adoption still incomplete in
   downstream apps:
 
-- dedicated `@voyantjs/customer-portal` and
-  `@voyantjs/customer-portal-react` packages exist
+- `@voyantjs/storefront/customer-portal` and
+  `@voyantjs/storefront-react/customer-portal` own the portal runtime and
+  React surface; the beta `@voyantjs/customer-portal` package names are not
+  part of the v1 workspace package surface
 - public/authenticated routes now cover bootstrap, profile, companions,
   booking list/detail, documents, marketing consent, email contact-exists, and
   phone contact-exists
@@ -158,7 +160,7 @@ Partially resolved:
 
 - public catalog routes now cover product search/filter/sort, category listing,
   tag listing, product detail, localized slug/SEO fields, and slug lookup
-- `@voyantjs/products` now exposes a reusable internal `catalogProductsService`
+- `@voyantjs/inventory` now exposes a reusable internal `catalogProductsService`
   for localized product hydration and locale-aware search-document generation,
   so background jobs do not need to reimplement product/category/tag/media/
   translation joins on top of raw tables
@@ -183,14 +185,13 @@ Partially resolved:
 - `@voyantjs/storefront` now also exposes product extensions and departure
   itinerary reads so storefront booking flows do not need app-local wrappers
   for those payloads
-- `@voyantjs/transactions` now exposes a shared
-  `createStorefrontPromotionalOffersResolver()` plus direct lookup helpers over
-  published offers with `storefrontPromotionalOffer` metadata, giving apps a
-  first-class way to plug native product/departure promo applicability into
-  the storefront contract without inventing their own resolver shape
-- offer create/update validation now recognizes `storefrontPromotionalOffer`
-  metadata explicitly, so storefront promo payloads no longer have to live as
-  completely unchecked blobs inside generic offer metadata
+- `@voyantjs/commerce/promotions` now exposes storefront promotional-offer
+  resolvers over Commerce-owned promotional offers, giving apps a first-class
+  way to plug native product/departure promo applicability into the storefront
+  contract without inventing their own resolver shape
+- promotion create/update validation now recognizes storefront presentation and
+  applicability metadata explicitly, so storefront promo payloads no longer
+  live as unchecked blobs inside generic offer metadata
 
 Still missing:
 
@@ -212,10 +213,10 @@ Partially resolved:
   explicit `applyToSession` support
 - matching React helpers now exist in `@voyantjs/bookings-react` for public
   session read, state read/write, and repricing flows
-- `@voyantjs/checkout` now exposes a module-based checkout surface with typed
+- `@voyantjs/finance/checkout` now exposes a module-based checkout surface with typed
   collection-plan and initiate-collection contracts
-- `@voyantjs/checkout` now also exposes a unified
-  `/v1/public/checkout/collections/bootstrap` contract that can start exact-amount
+- `@voyantjs/finance/checkout` now also exposes a unified
+  `/v1/public/finance/checkout/collections/bootstrap` contract that can start exact-amount
   collection from either a `bookingId` or a `sessionId`, covering booking-
   backed and session-backed storefront flows through one request shape
 - admin checkout reminder tracking is now backed by first-class notification
@@ -340,7 +341,7 @@ Resolved upstream in source after `0.3.1`:
 - generic email/SMS verification challenge flow via
   `@voyantjs/storefront-verification`
 - transport requirements for passport/document rules via
-  `@voyantjs/booking-requirements`
+  `@voyantjs/bookings/requirements`
 
 App-owned for now:
 
@@ -359,9 +360,9 @@ Now covered as a pluggable storefront contract:
 - `@voyantjs/storefront` can expose product/departure-applicable promotional
   offers and slug-based offer detail through injected resolvers, without
   forcing Voyant core to adopt a CMS-specific promo schema
-- `@voyantjs/transactions` now ships a shared resolver factory and metadata
-  schema for that contract, so apps can back storefront promotional offers
-  with native Voyant offers instead of custom resolver plumbing
+- `@voyantjs/commerce/promotions` now ships a shared resolver factory and
+  metadata schema for that contract, so apps can back storefront promotional
+  offers with native Commerce offers instead of custom resolver plumbing
 
 ### Product brochure workflow
 
@@ -375,7 +376,7 @@ Resolved upstream in source:
   `GET /v1/public/products/:id/brochure`
 - public catalog product detail now exposes `brochure` separately from the
   normal media gallery
-- `@voyantjs/products/tasks` now includes
+- `@voyantjs/inventory/tasks` now includes
   `generateAndStoreProductBrochure()` so apps can generate a product PDF,
   persist it through a Voyant storage provider, and register it as the
   canonical current brochure without an app-local `product_media(document)`
@@ -436,7 +437,7 @@ Completed in the current source tree:
 - storefront product extensions and departure itinerary via
   `@voyantjs/storefront`
 - storefront verification via `@voyantjs/storefront-verification`
-- transport requirements via `@voyantjs/booking-requirements`
+- transport requirements via `@voyantjs/bookings/requirements`
 - booking-session state storage and repricing
 - public finance booking documents
 - checkout module formalization and admin reminder tracking
@@ -486,10 +487,10 @@ Completed in source:
 
 Completed in source:
 
-- transactions now expose a native storefront promotional-offer resolver on top
-  of published offers, and shared offer validation/editorial UI now support
-  typed `storefrontPromotionalOffer` metadata instead of leaving storefront
-  promo payloads as unchecked blobs
+- Commerce promotions now expose a native storefront promotional-offer resolver
+  on top of promotional offers, and shared validation/editorial UI now support
+  typed storefront presentation and applicability metadata instead of leaving
+  storefront promo payloads as unchecked blobs
 - products now expose a lightweight destination taxonomy with translations and
   product links, and the public catalog can filter/list products by
   destination id or slug

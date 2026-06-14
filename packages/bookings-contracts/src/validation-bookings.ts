@@ -410,35 +410,3 @@ export const overrideBookingStatusSchema = z.object({
    */
   suppressLifecycleEvents: z.boolean().optional(),
 })
-
-export const reserveBookingFromTransactionSchema = bookingCoreSchema
-  .pick({
-    bookingNumber: true,
-    sourceType: true,
-    contactFirstName: true,
-    contactLastName: true,
-    contactPartyType: true,
-    contactTaxId: true,
-    contactEmail: true,
-    contactPhone: true,
-    contactPreferredLanguage: true,
-    contactCountry: true,
-    contactRegion: true,
-    contactCity: true,
-    contactAddressLine1: true,
-    contactAddressLine2: true,
-    contactPostalCode: true,
-    internalNotes: true,
-  })
-  .extend({
-    sourceType: bookingSourceTypeSchema.default("internal"),
-    holdMinutes: z
-      .number()
-      .int()
-      .positive()
-      .max(24 * 60)
-      .optional(),
-    holdExpiresAt: z.string().datetime().optional().nullable(),
-    note: z.string().optional().nullable(),
-    includeParticipants: z.boolean().default(true),
-  })

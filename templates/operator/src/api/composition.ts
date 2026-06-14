@@ -17,44 +17,58 @@
 
 // Singleton modules (no template-specific options).
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
-import { availabilityHonoModule } from "@voyantjs/availability"
-import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
-import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
-import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
-import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
-import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
-import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
-import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
-import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
-import { externalRefsHonoModule } from "@voyantjs/external-refs"
-import { extrasHonoModule } from "@voyantjs/extras"
+import { bookingsExtrasRoutes } from "@voyantjs/bookings/extras"
+import { createBookingRequirementsHonoModule } from "@voyantjs/bookings/requirements"
+import {
+  createCatalogSearchHonoModule,
+  type EmbeddingProvider,
+  executeSemanticSearch,
+} from "@voyantjs/catalog"
+import {
+  createCommerceHonoModules,
+  createCommerceStorefrontOfferResolvers,
+} from "@voyantjs/commerce"
+import {
+  distributionBookingExtension,
+  distributionHonoModule,
+  externalRefsHonoModule,
+  suppliersHonoModule,
+} from "@voyantjs/distribution"
 import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
+import type {
+  CheckoutNotificationDelivery,
+  CheckoutPaymentStarter,
+} from "@voyantjs/finance/checkout"
+import type { CheckoutReminderRunRecord } from "@voyantjs/finance/checkout-validation"
 import { createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyantjs/hono/composition"
+import type { HonoModule } from "@voyantjs/hono/module"
 import { identityHonoModule } from "@voyantjs/identity"
+import { inventoryBookingExtension, inventoryHonoModule } from "@voyantjs/inventory"
+import { inventoryAuthoringExtension } from "@voyantjs/inventory/authoring/extension"
+import { inventoryExtrasRoutes } from "@voyantjs/inventory/extras"
 import { createLegalHonoModule } from "@voyantjs/legal"
-import { marketsHonoModule } from "@voyantjs/markets"
 import {
   createDefaultBookingDocumentAttachment,
+  createNotificationService,
   createNotificationsHonoModule,
+  notificationsService,
 } from "@voyantjs/notifications"
+import { operationsHonoModule } from "@voyantjs/operations"
 import { createNetopiaCheckoutStarter } from "@voyantjs/plugin-netopia"
-import { pricingHonoModule } from "@voyantjs/pricing"
-import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
-import { promotionsHonoModule } from "@voyantjs/promotions"
-import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
-import { resourcesHonoModule } from "@voyantjs/resources"
-import { sellabilityHonoModule } from "@voyantjs/sellability"
+import { createQuotesHonoModule, quotesBookingExtension } from "@voyantjs/quotes"
+import { createRelationshipsHonoModule, relationshipsService } from "@voyantjs/relationships"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
+import { createCustomerPortalHonoModule } from "@voyantjs/storefront/customer-portal"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
-import { suppliersHonoModule } from "@voyantjs/suppliers"
-import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
-import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
+import { createTripComposerHonoModule } from "@voyantjs/trip-composer"
+import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
+import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createDocumentStorage } from "./lib/storage"
 import {
@@ -71,7 +85,77 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
-import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+import { createRelationshipsStorefrontIntakePersistence } from "./storefront-intake-runtime"
+import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
+
+const operatorExtrasHonoModule: HonoModule = {
+  module: { name: "extras" },
+  routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
+}
+
+type NotificationDeliveryLike = {
+  id: string
+  templateSlug: string | null
+  channel: "email" | "sms"
+  provider: string
+  status: "pending" | "sent" | "failed" | "cancelled"
+  toAddress: string
+  subject: string | null
+  sentAt: Date | string | null
+  failedAt: Date | string | null
+  errorMessage: string | null
+}
+
+function optionalDateTime(value: Date | string | null | undefined) {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString() : value
+}
+
+function toCheckoutNotificationDelivery(
+  delivery: NotificationDeliveryLike | null,
+): CheckoutNotificationDelivery | null {
+  if (!delivery) return null
+  return {
+    id: delivery.id,
+    templateSlug: delivery.templateSlug,
+    channel: delivery.channel,
+    provider: delivery.provider,
+    status: delivery.status,
+    toAddress: delivery.toAddress,
+    subject: delivery.subject,
+    sentAt: optionalDateTime(delivery.sentAt),
+    failedAt: optionalDateTime(delivery.failedAt),
+    errorMessage: delivery.errorMessage,
+  }
+}
+
+type NotificationReminderRunLike = Awaited<
+  ReturnType<typeof notificationsService.listReminderRuns>
+>["data"][number]
+
+function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutReminderRunRecord {
+  return {
+    id: run.id,
+    reminderRuleId: run.reminderRuleId,
+    reminderRuleSlug: run.reminderRule.slug,
+    reminderRuleName: run.reminderRule.name,
+    targetType: run.targetType,
+    targetId: run.targetId,
+    bookingId: run.links.bookingId,
+    paymentSessionId: run.links.paymentSessionId,
+    notificationDeliveryId: run.links.notificationDeliveryId,
+    status: run.status,
+    deliveryStatus: run.delivery?.status ?? null,
+    channel: run.delivery?.channel ?? run.reminderRule.channel,
+    provider: run.delivery?.provider ?? run.reminderRule.provider ?? null,
+    recipient: run.recipient,
+    scheduledFor: run.scheduledFor,
+    processedAt: run.processedAt,
+    errorMessage: run.errorMessage,
+    relativeDaysFromDueDate: null,
+    createdAt: run.createdAt,
+  }
+}
 
 /**
  * The operator deployment's capability container. Every template-specific
@@ -92,10 +176,10 @@ export interface OperatorCapabilities {
   createBookingPiiService: typeof createOperatorBookingPiiService
   autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
   resolveBankTransferDetails: typeof resolveBankTransferDetails
-  crmService: typeof crmService
+  relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   buildCatalogContext: typeof buildCatalogContext
-  createTravelComposerRoutesOptions: typeof createOperatorTravelComposerRoutesOptions
+  createTripComposerRoutesOptions: typeof createOperatorTripComposerRoutesOptions
   /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
 }
@@ -116,10 +200,10 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     createBookingPiiService: createOperatorBookingPiiService,
     autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
     resolveBankTransferDetails,
-    crmService,
+    relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     buildCatalogContext,
-    createTravelComposerRoutesOptions: createOperatorTravelComposerRoutesOptions,
+    createTripComposerRoutesOptions: createOperatorTripComposerRoutesOptions,
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
   }
 }
@@ -132,21 +216,15 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
 export const OPERATOR_RUNTIME_MANIFEST = {
   modules: [
     "@voyantjs/action-ledger",
-    "@voyantjs/crm",
-    "@voyantjs/availability",
+    "@voyantjs/relationships",
+    "@voyantjs/quotes",
+    "@voyantjs/operations",
     "@voyantjs/identity",
-    "@voyantjs/external-refs",
-    "@voyantjs/extras",
-    "@voyantjs/booking-requirements",
-    "@voyantjs/pricing",
-    "@voyantjs/markets",
-    "@voyantjs/transactions",
-    "@voyantjs/resources",
-    "@voyantjs/sellability",
     "@voyantjs/distribution",
-    "@voyantjs/suppliers",
-    "@voyantjs/products",
-    "@voyantjs/promotions",
+    "@voyantjs/inventory/extras",
+    "@voyantjs/bookings/requirements",
+    "@voyantjs/commerce",
+    "@voyantjs/inventory",
     "@voyantjs/catalog",
     "@voyantjs/bookings",
     "@voyantjs/finance",
@@ -154,19 +232,17 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyantjs/public-document-delivery",
     "@voyantjs/notifications",
     "@voyantjs/storefront",
-    "@voyantjs/customer-portal",
+    "@voyantjs/storefront/customer-portal",
     "@voyantjs/storefront-verification",
-    "@voyantjs/checkout",
-    "@voyantjs/travel-composer",
+    "@voyantjs/trip-composer",
   ],
   extensions: [
     "@voyantjs/bookings/booking-supplier-extension",
     "@voyantjs/finance/bookings-create-extension",
-    "@voyantjs/products/booking-extension",
-    "@voyantjs/catalog-authoring/extension",
-    "@voyantjs/crm/booking-extension",
-    "@voyantjs/transactions/booking-extension",
-    "@voyantjs/distribution/booking-extension",
+    "@voyantjs/inventory/booking-extension",
+    "@voyantjs/inventory/authoring/extension",
+    "@voyantjs/quotes/booking-extension",
+    "@voyantjs/distribution",
   ],
 } satisfies CompositionManifest
 
@@ -174,21 +250,24 @@ export const OPERATOR_RUNTIME_MANIFEST = {
 export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
   modules: {
     "@voyantjs/action-ledger": () => actionLedgerHonoModule,
-    "@voyantjs/crm": () => createCrmHonoModule(),
-    "@voyantjs/availability": () => availabilityHonoModule,
+    "@voyantjs/relationships": () => createRelationshipsHonoModule(),
+    "@voyantjs/quotes": () => createQuotesHonoModule(),
+    "@voyantjs/operations": () => operationsHonoModule,
     "@voyantjs/identity": () => identityHonoModule,
-    "@voyantjs/external-refs": () => externalRefsHonoModule,
-    "@voyantjs/extras": () => extrasHonoModule,
-    "@voyantjs/booking-requirements": () => bookingRequirementsHonoModule,
-    "@voyantjs/pricing": () => pricingHonoModule,
-    "@voyantjs/markets": () => marketsHonoModule,
-    "@voyantjs/transactions": () => transactionsHonoModule,
-    "@voyantjs/resources": () => resourcesHonoModule,
-    "@voyantjs/sellability": () => sellabilityHonoModule,
-    "@voyantjs/distribution": () => distributionHonoModule,
-    "@voyantjs/suppliers": () => suppliersHonoModule,
-    "@voyantjs/products": () => productsHonoModule,
-    "@voyantjs/promotions": () => promotionsHonoModule,
+    "@voyantjs/distribution": () => [
+      externalRefsHonoModule,
+      distributionHonoModule,
+      suppliersHonoModule,
+    ],
+    "@voyantjs/inventory/extras": () => operatorExtrasHonoModule,
+    "@voyantjs/bookings/requirements": () =>
+      createBookingRequirementsHonoModule({
+        publicRoutes: {
+          resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
+        },
+      }),
+    "@voyantjs/commerce": () => createCommerceHonoModules(),
+    "@voyantjs/inventory": () => inventoryHonoModule,
     "@voyantjs/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
         resolveRuntime: (c) => {
@@ -210,26 +289,34 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyantjs/bookings": ({ capabilities }) =>
       createBookingsHonoModule({
         resolveTravelSnapshot: (db, personId, { kms }) =>
-          capabilities.crmService.loadPersonTravelSnapshot(db, personId, { kms }),
+          capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
         resolveBillingPerson: async (db, contact, ctx) => {
-          const person = await capabilities.crmService.upsertPersonFromContact(db, contact, {
-            source: ctx.source,
-            sourceRef: ctx.sourceRef,
-          })
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+            },
+          )
           return person?.id ?? null
         },
         resolveTravelerPerson: async (db, contact, ctx) => {
-          const person = await capabilities.crmService.upsertPersonFromContact(db, contact, {
-            source: ctx.source,
-            sourceRef: ctx.sourceRef,
-            requireContactPoint: true,
-          })
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+              requireContactPoint: true,
+            },
+          )
           return person?.id ?? null
         },
         resolveBillingPersonById: async (db, personId) =>
-          (await capabilities.crmService.getPersonById(db, personId)) != null,
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
         resolveBillingOrganizationById: async (db, organizationId) =>
-          (await capabilities.crmService.getOrganizationById(db, organizationId)) != null,
+          (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
         closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
       }),
     "@voyantjs/finance": ({ capabilities }) =>
@@ -240,6 +327,51 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
         invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
           bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
+        resolveNotificationDispatcher: (bindings) => {
+          const providers = capabilities.resolveNotificationProviders(bindings)
+          if (providers.length === 0) return null
+
+          const dispatcher = createNotificationService(providers)
+          return {
+            sendInvoiceNotification: async (db, invoiceId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendInvoiceNotification(
+                  db,
+                  dispatcher,
+                  invoiceId,
+                  input,
+                ),
+              ),
+            sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendPaymentSessionNotification(
+                  db,
+                  dispatcher,
+                  paymentSessionId,
+                  input,
+                ),
+              ),
+          }
+        },
+        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
+          netopia: capabilities.netopiaCheckoutStarter,
+        }),
+        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
+        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+        listBookingReminderRuns: async (db, bookingId, query) => {
+          const result = await notificationsService.listReminderRuns(db, {
+            bookingId,
+            status: query.status,
+            limit: query.limit,
+            offset: query.offset,
+          })
+          return {
+            data: result.data.map(toCheckoutReminderRun),
+            total: result.total,
+            limit: result.limit,
+            offset: result.offset,
+          }
+        },
       }),
     "@voyantjs/legal": ({ capabilities }) =>
       createLegalHonoModule({
@@ -291,13 +423,16 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       }),
     "@voyantjs/storefront": ({ capabilities }) =>
       createStorefrontHonoModule({
-        offers: createPromotionsStorefrontResolvers(),
+        offers: createCommerceStorefrontOfferResolvers(),
         // Async booking-bootstrap intents (queued write pipeline, RFC
         // voyant#1687 §3.2) — the handler runs on the app bus with
         // outbox-grade retries; the */2min cron sweeps stale intents.
         bookingIntents: { resolveDb: capabilities.resolveDb },
+        intake: {
+          persistence: createRelationshipsStorefrontIntakePersistence(),
+        },
       }),
-    "@voyantjs/customer-portal": ({ capabilities }) =>
+    "@voyantjs/storefront/customer-portal": ({ capabilities }) =>
       createCustomerPortalHonoModule({
         resolveDocumentDownloadUrl: (bindings, storageKey) =>
           capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
@@ -307,28 +442,18 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         resolveProviders: capabilities.resolveNotificationProviders,
         email: { subject: "Your verification code" },
       }),
-    "@voyantjs/checkout": ({ capabilities }) =>
-      createCheckoutHonoModule({
-        resolveProviders: capabilities.resolveNotificationProviders,
-        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-          netopia: capabilities.netopiaCheckoutStarter,
-        }),
-        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-      }),
-    "@voyantjs/travel-composer": ({ capabilities }) =>
-      createTravelComposerHonoModule({
-        ...capabilities.createTravelComposerRoutesOptions(),
+    "@voyantjs/trip-composer": ({ capabilities }) =>
+      createTripComposerHonoModule({
+        ...capabilities.createTripComposerRoutesOptions(),
         publicRoutes: true,
       }),
   },
   extensions: {
     "@voyantjs/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
     "@voyantjs/finance/bookings-create-extension": () => bookingsCreateExtension,
-    "@voyantjs/products/booking-extension": () => productsBookingExtension,
-    "@voyantjs/catalog-authoring/extension": () => catalogAuthoringExtension,
-    "@voyantjs/crm/booking-extension": () => crmBookingExtension,
-    "@voyantjs/transactions/booking-extension": () => transactionsBookingExtension,
-    "@voyantjs/distribution/booking-extension": () => distributionBookingExtension,
+    "@voyantjs/inventory/booking-extension": () => inventoryBookingExtension,
+    "@voyantjs/inventory/authoring/extension": () => inventoryAuthoringExtension,
+    "@voyantjs/quotes/booking-extension": () => quotesBookingExtension,
+    "@voyantjs/distribution": () => distributionBookingExtension,
   },
 }

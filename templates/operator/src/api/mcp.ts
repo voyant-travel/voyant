@@ -1,99 +1,85 @@
 /**
- * MCP (Model Context Protocol) tool surface — `/v1/admin/mcp/tools/:tool`
- * and `/v1/public/mcp/tools/:tool`. Used by AI agents and external MCP
- * clients to invoke catalog tools (search, resolve entity, suggest
- * alternatives, check availability, get quote).
+ * Operator agent tool surface.
  *
- * Plain-JSON catalog search for admin UIs is provided by `@voyantjs/catalog`.
+ * Catalog MCP wrappers are retired; catalog-capable agents call the catalog
+ * HTTP APIs directly. This route keeps only the admin trip-composer commands.
  */
 
 import {
-  checkAvailabilityTool,
   createMcpToolRegistry,
-  getEntityTool,
-  getQuoteTool,
-  searchCatalogTool,
-  suggestAlternativesTool,
-} from "@voyantjs/catalog-mcp"
-import {
   createTripTool,
+  type McpToolContext,
   priceTripTool,
   reserveTripTool,
   reviseTripTool,
-  type TravelComposerMcpServices,
-  travelComposerService,
-} from "@voyantjs/travel-composer"
+  type TripComposerMcpServices,
+  tripComposerService,
+} from "@voyantjs/trip-composer"
 import type { Context, Hono } from "hono"
 
-import { buildCatalogContext } from "./lib/catalog-context"
-import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
+import { DEFAULT_SLICES } from "./lib/catalog-runtime"
+import { createOperatorTripComposerRoutesOptions } from "./trip-composer-runtime"
 
-const PUBLIC_MCP_TOOL_NAMES = new Set([
-  searchCatalogTool.name,
-  getEntityTool.name,
-  suggestAlternativesTool.name,
-  checkAvailabilityTool.name,
-])
-
-function registerPublicTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
-  registry.register(searchCatalogTool)
-  registry.register(getEntityTool)
-  registry.register(suggestAlternativesTool)
-  registry.register(checkAvailabilityTool)
-}
-
-function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
-  registerPublicTools(registry)
-  registry.register(getQuoteTool)
+function registerAdminTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(createTripTool)
   registry.register(reviseTripTool)
   registry.register(priceTripTool)
   registry.register(reserveTripTool)
 }
 
-export function mountCatalogMcpRoutes(hono: Hono): void {
-  async function handle(c: Context, surface: "admin" | "public") {
+export function mountOperatorAgentToolRoutes(hono: Hono): void {
+  async function handle(c: Context) {
     const tool = c.req.param("tool")
     if (!tool) return c.json({ error: "Missing tool name" }, 400)
-    if (surface === "public" && !PUBLIC_MCP_TOOL_NAMES.has(tool)) {
-      return c.json({ error: "Tool is not available on the public MCP surface" }, 403)
-    }
+
     let body: Record<string, unknown>
     try {
       body = await c.req.json<Record<string, unknown>>()
     } catch {
       body = {}
     }
-    const ctx = {
-      ...buildCatalogContext(c),
-      travelComposer: createTravelComposerMcpServices(c),
-    }
-    const registry = createMcpToolRegistry({ context: ctx })
-    if (surface === "admin") registerAllTools(registry)
-    else registerPublicTools(registry)
+
+    const registry = createMcpToolRegistry({
+      context: {
+        ...buildToolContext(c),
+        tripComposer: createTripComposerMcpServices(c),
+      } as McpToolContext & { tripComposer: TripComposerMcpServices },
+    })
+    registerAdminTools(registry)
     const result = await registry.dispatchTool(tool, body)
     return c.json(result)
   }
 
-  hono.post("/v1/admin/mcp/tools/:tool", (c) => handle(c, "admin"))
-  hono.post("/v1/public/mcp/tools/:tool", (c) => handle(c, "public"))
+  hono.post("/v1/admin/mcp/tools/:tool", handle)
 }
 
-function createTravelComposerMcpServices(c: Context): TravelComposerMcpServices {
-  const options = createOperatorTravelComposerRoutesOptions()
+function buildToolContext(c: Context): McpToolContext {
+  const env = c.env as CloudflareBindings & { TENANT_ID?: string }
+  const actor = (c.var.actor ?? "staff") as McpToolContext["actor"]
+  const audience: McpToolContext["defaultScope"]["audience"] = actor === "staff" ? "staff" : actor
+  const locale = DEFAULT_SLICES[0]?.locale ?? "en-GB"
   return {
-    createTrip: (input) => travelComposerService.createTrip(c.var.db, input),
-    addComponent: (input) => travelComposerService.addComponent(c.var.db, input),
-    removeComponent: (componentId) => travelComposerService.removeComponent(c.var.db, componentId),
+    actor,
+    tenantId: env.TENANT_ID ?? "default",
+    defaultScope: { locale, audience, market: "default", actor },
+  }
+}
+
+function createTripComposerMcpServices(c: Context): TripComposerMcpServices {
+  const options = createOperatorTripComposerRoutesOptions()
+  return {
+    createTrip: (input) => tripComposerService.createTrip(c.var.db, input),
+    addComponent: (input) => tripComposerService.addComponent(c.var.db, input),
+    removeComponent: (componentId) => tripComposerService.removeComponent(c.var.db, componentId),
     priceTrip: (input) => {
       const deps = resolveDeps(c, options.priceTripDeps)
-      if (!deps) throw new Error("Travel composer price dependencies are not configured")
-      return travelComposerService.priceTrip(c.var.db, input, deps)
+      if (!deps) throw new Error("Trip composer price dependencies are not configured")
+      return tripComposerService.priceTrip(c.var.db, input, deps)
     },
     reserveTrip: (input) => {
       const deps = resolveDeps(c, options.reserveTripDeps)
-      if (!deps) throw new Error("Travel composer reserve dependencies are not configured")
-      return travelComposerService.reserveTrip(c.var.db, input, deps)
+      if (!deps) throw new Error("Trip composer reserve dependencies are not configured")
+      return tripComposerService.reserveTrip(c.var.db, input, deps)
     },
   }
 }

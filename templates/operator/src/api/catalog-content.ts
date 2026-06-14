@@ -19,7 +19,7 @@
 
 import { createAccommodationContentRoutes } from "@voyantjs/accommodations/routes-content"
 import { createCruiseContentRoutes } from "@voyantjs/cruises/routes-content"
-import { createProductContentRoutes } from "@voyantjs/products/routes-content"
+import { createProductContentRoutes } from "@voyantjs/inventory/routes-content"
 import type { Hono } from "hono"
 
 import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"

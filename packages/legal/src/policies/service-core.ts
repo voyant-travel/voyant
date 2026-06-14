@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: legal; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { normalizeLegalTargetFields } from "../targets/service.js"
 import {
   policies,
   policyAcceptances,
@@ -481,7 +481,20 @@ export const policiesCoreService = {
       conditions.push(eq(policyAcceptances.policyVersionId, query.policyVersionId))
     if (query.personId) conditions.push(eq(policyAcceptances.personId, query.personId))
     if (query.bookingId) conditions.push(eq(policyAcceptances.bookingId, query.bookingId))
-    if (query.orderId) conditions.push(eq(policyAcceptances.orderId, query.orderId))
+    if (query.targetKind) conditions.push(eq(policyAcceptances.targetKind, query.targetKind))
+    if (query.targetId) conditions.push(eq(policyAcceptances.targetId, query.targetId))
+    if (query.targetProvider)
+      conditions.push(eq(policyAcceptances.targetProvider, query.targetProvider))
+    if (query.targetSourceRef)
+      conditions.push(eq(policyAcceptances.targetSourceRef, query.targetSourceRef))
+    if (query.legacyTransactionOfferId)
+      conditions.push(
+        eq(policyAcceptances.legacyTransactionOfferId, query.legacyTransactionOfferId),
+      )
+    if (query.legacyTransactionOrderId)
+      conditions.push(
+        eq(policyAcceptances.legacyTransactionOrderId, query.legacyTransactionOrderId),
+      )
     const where = conditions.length ? and(...conditions) : undefined
     return paginate(
       db
@@ -503,8 +516,7 @@ export const policiesCoreService = {
         policyVersionId: data.policyVersionId,
         personId: data.personId ?? null,
         bookingId: data.bookingId ?? null,
-        orderId: data.orderId ?? null,
-        offerId: data.offerId ?? null,
+        ...normalizeLegalTargetFields(data),
         acceptedBy: data.acceptedBy ?? null,
         method: data.method,
         ipAddress: data.ipAddress ?? null,

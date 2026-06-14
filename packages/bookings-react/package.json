@@ -17,10 +17,22 @@
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
+    "./requirements": "./src/requirements/index.ts",
+    "./requirements/provider": "./src/requirements/provider.tsx",
+    "./requirements/hooks": "./src/requirements/hooks/index.ts",
+    "./requirements/client": "./src/requirements/client.ts",
+    "./requirements/query-keys": "./src/requirements/query-keys.ts",
+    "./requirements/ui": "./src/requirements/ui.ts",
+    "./requirements/styles.css": "./src/requirements/styles.css",
+    "./requirements/i18n": "./src/requirements/i18n/index.ts",
+    "./requirements/i18n/en": "./src/requirements/i18n/en.ts",
+    "./requirements/i18n/ro": "./src/requirements/i18n/ro.ts",
+    "./requirements/components/*": "./src/requirements/components/*.tsx",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
     "./journey": "./src/journey/index.ts",
+    "./extras": "./src/extras.ts",
     "./admin": "./src/admin/index.tsx",
     "./admin/*": "./src/admin/*.tsx",
     "./components/*": "./src/components/*.tsx"
@@ -37,23 +49,22 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
-    "@voyantjs/extras-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
@@ -62,16 +73,13 @@
     "@voyantjs/admin": {
       "optional": true
     },
-    "@voyantjs/availability-react": {
-      "optional": true
-    },
     "@voyantjs/catalog-react": {
       "optional": true
     },
-    "@voyantjs/crm-react": {
+    "@voyantjs/distribution-react": {
       "optional": true
     },
-    "@voyantjs/extras-react": {
+    "@voyantjs/relationships-react": {
       "optional": true
     },
     "@voyantjs/finance-react": {
@@ -83,13 +91,10 @@
     "@voyantjs/legal-react": {
       "optional": true
     },
-    "@voyantjs/pricing-react": {
+    "@voyantjs/commerce-react": {
       "optional": true
     },
-    "@voyantjs/products-react": {
-      "optional": true
-    },
-    "@voyantjs/suppliers-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     },
     "@voyantjs/ui": {
@@ -99,6 +104,9 @@
       "optional": true
     },
     "react-hook-form": {
+      "optional": true
+    },
+    "@voyantjs/operations-react": {
       "optional": true
     }
   },
@@ -114,18 +122,16 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/crm-react": "workspace:^",
-    "@voyantjs/extras-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
+    "@voyantjs/relationships-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/identity-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
-    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
@@ -135,11 +141,13 @@
     "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@voyantjs/operations-react": "workspace:^"
   },
   "files": [
     "dist",
-    "src/styles.css"
+    "src/styles.css",
+    "src/requirements/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -177,6 +185,59 @@
       "./styles.css": {
         "default": "./src/styles.css"
       },
+      "./requirements": {
+        "types": "./dist/requirements/index.d.ts",
+        "import": "./dist/requirements/index.js",
+        "default": "./dist/requirements/index.js"
+      },
+      "./requirements/provider": {
+        "types": "./dist/requirements/provider.d.ts",
+        "import": "./dist/requirements/provider.js",
+        "default": "./dist/requirements/provider.js"
+      },
+      "./requirements/hooks": {
+        "types": "./dist/requirements/hooks/index.d.ts",
+        "import": "./dist/requirements/hooks/index.js",
+        "default": "./dist/requirements/hooks/index.js"
+      },
+      "./requirements/client": {
+        "types": "./dist/requirements/client.d.ts",
+        "import": "./dist/requirements/client.js",
+        "default": "./dist/requirements/client.js"
+      },
+      "./requirements/query-keys": {
+        "types": "./dist/requirements/query-keys.d.ts",
+        "import": "./dist/requirements/query-keys.js",
+        "default": "./dist/requirements/query-keys.js"
+      },
+      "./requirements/ui": {
+        "types": "./dist/requirements/ui.d.ts",
+        "import": "./dist/requirements/ui.js",
+        "default": "./dist/requirements/ui.js"
+      },
+      "./requirements/styles.css": {
+        "default": "./src/requirements/styles.css"
+      },
+      "./requirements/i18n": {
+        "types": "./dist/requirements/i18n/index.d.ts",
+        "import": "./dist/requirements/i18n/index.js",
+        "default": "./dist/requirements/i18n/index.js"
+      },
+      "./requirements/i18n/en": {
+        "types": "./dist/requirements/i18n/en.d.ts",
+        "import": "./dist/requirements/i18n/en.js",
+        "default": "./dist/requirements/i18n/en.js"
+      },
+      "./requirements/i18n/ro": {
+        "types": "./dist/requirements/i18n/ro.d.ts",
+        "import": "./dist/requirements/i18n/ro.js",
+        "default": "./dist/requirements/i18n/ro.js"
+      },
+      "./requirements/components/*": {
+        "types": "./dist/requirements/components/*.d.ts",
+        "import": "./dist/requirements/components/*.js",
+        "default": "./dist/requirements/components/*.js"
+      },
       "./i18n": {
         "types": "./dist/i18n/index.d.ts",
         "import": "./dist/i18n/index.js",
@@ -196,6 +257,11 @@
         "types": "./dist/journey/index.d.ts",
         "import": "./dist/journey/index.js",
         "default": "./dist/journey/index.js"
+      },
+      "./extras": {
+        "types": "./dist/extras.d.ts",
+        "import": "./dist/extras.js",
+        "default": "./dist/extras.js"
       },
       "./admin": {
         "types": "./dist/admin/index.d.ts",

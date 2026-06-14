@@ -5,7 +5,7 @@ import {
   useProduct,
   useProductOptions,
   useProducts,
-} from "@voyantjs/products-react"
+} from "@voyantjs/inventory-react"
 import {
   Label,
   Select,

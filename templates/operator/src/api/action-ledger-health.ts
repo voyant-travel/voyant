@@ -19,7 +19,7 @@ import {
   type CheckProductActionLedgerDriftInput,
   type CheckProductActionLedgerDriftResult,
   checkProductActionLedgerDrift,
-} from "@voyantjs/products/action-ledger-drift"
+} from "@voyantjs/inventory/action-ledger-drift"
 import type { Hono } from "hono"
 import { z } from "zod"
 

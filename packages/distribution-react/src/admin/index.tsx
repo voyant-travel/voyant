@@ -1,4 +1,29 @@
-import { type AdminExtension, adminRoutePageModule, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+
+import {
+  type CreateSuppliersAdminExtensionOptions,
+  createSuppliersAdminExtension,
+} from "../suppliers/admin/index.js"
+import { SupplierDetailSkeleton } from "../suppliers/admin/supplier-detail-skeleton.js"
+import { SuppliersListSkeleton } from "../suppliers/admin/suppliers-list-skeleton.js"
+import { defaultFetcher } from "../suppliers/client.js"
+
+export { type CreateSuppliersAdminExtensionOptions, createSuppliersAdminExtension }
+
+declare module "@voyantjs/admin" {
+  interface AdminDestinations {
+    /** The suppliers list page. */
+    "supplier.list": Record<string, never>
+    /** A supplier's detail page. */
+    "supplier.detail": { supplierId: string }
+  }
+}
 
 export interface CreateDistributionAdminExtensionOptions {
   /** Mount path of the channel-sync page inside the admin workspace. Default `/channel-sync`. */
@@ -6,38 +31,22 @@ export interface CreateDistributionAdminExtensionOptions {
   /** Localized page titles. Defaults are the English operator nav labels. */
   labels?: {
     channelSync?: string
+    suppliers?: string
   }
+  suppliers?: Omit<CreateSuppliersAdminExtensionOptions, "labels">
 }
 
 /**
- * The distribution admin contribution (packaged-admin RFC Phase 3,
- * `@voyantjs/<domain>-ui/admin` convention).
- *
- * NAVIGATION: deliberately none. The Channel sync nav item is part of the
- * BASE operator navigation — see `createOperatorAdminNavigation` in
- * `@voyantjs/admin` — so contributing a nav entry here would duplicate it.
- * If the base nav ever drops the item, this extension is where the entry
- * moves.
- *
- * ROUTES: one full implementation (packaged-admin RFC §4.8 endgame) — a lazy
- * `page` module loader for {@link ChannelSyncPage}, so hosts bind it through
- * their code-assembled admin route tree with no per-route file. The page
- * keeps its filter/tab state component-local and fetches client-side through
- * the shared `@voyantjs/react` provider context (`baseUrl` + credentialed
- * fetcher), so the contribution carries no loader, no search contract and no
- * SSR override. `adminRoutePageModule` adapts the page's all-optional props
- * bag past TypeScript's weak-type rule. No destination key is declared:
- * nothing navigates here semantically — the base nav links the path
- * directly.
- *
- * WIDGETS: none today. Per-booking sync state on the booking detail page is
- * that host's concern.
+ * The distribution admin contribution owns channel-side sync plus supplier
+ * counterparty pages. Supplier pages stay under `/suppliers`, but the v1
+ * admin entry and package surface are distribution-owned.
  */
 export function createDistributionAdminExtension(
   options: CreateDistributionAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/channel-sync", labels = {} } = options
-  const { channelSync = "Channel sync" } = labels
+  const { basePath = "/channel-sync", labels = {}, suppliers = {} } = options
+  const { basePath: suppliersBasePath = "/suppliers" } = suppliers
+  const { channelSync = "Channel sync", suppliers: suppliersLabel = "Suppliers" } = labels
 
   return defineAdminExtension({
     id: "distribution",
@@ -51,6 +60,59 @@ export function createDistributionAdminExtension(
             adminRoutePageModule(module.ChannelSyncPage),
           ),
       },
+      {
+        id: "suppliers-index",
+        path: suppliersBasePath,
+        title: suppliersLabel,
+        destination: "supplier.list",
+        ssr: "data-only",
+        page: () =>
+          import("../suppliers/admin/suppliers-host.js").then((module) =>
+            adminRoutePageModule(module.SuppliersHost),
+          ),
+        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+          const { getSuppliersQueryOptions } = await import("../suppliers/query-options.js")
+          return queryClient.ensureQueryData(getSuppliersQueryOptions(loaderClient(runtime)))
+        },
+        pendingComponent: SuppliersListSkeleton,
+      },
+      {
+        id: "suppliers-detail",
+        path: `${suppliersBasePath}/$id`,
+        title: suppliersLabel,
+        destination: "supplier.detail",
+        destinationParams: { id: "supplierId" },
+        page: () => import("../suppliers/admin/pages/supplier-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const {
+            getSupplierNotesQueryOptions,
+            getSupplierQueryOptions,
+            getSupplierServiceRatesQueryOptions,
+            getSupplierServicesQueryOptions,
+          } = await import("../suppliers/query-options.js")
+          const client = loaderClient(runtime)
+          const servicesData = await queryClient.ensureQueryData(
+            getSupplierServicesQueryOptions(client, id),
+          )
+
+          await Promise.all([
+            queryClient.ensureQueryData(getSupplierQueryOptions(client, id)),
+            queryClient.ensureQueryData(getSupplierNotesQueryOptions(client, id)),
+            ...servicesData.data.map((service) =>
+              queryClient.ensureQueryData(
+                getSupplierServiceRatesQueryOptions(client, id, service.id),
+              ),
+            ),
+          ])
+        },
+        pendingComponent: SupplierDetailSkeleton,
+      },
     ],
   })
+}
+
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }

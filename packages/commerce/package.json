@@ -1,0 +1,67 @@
+{
+  "name": "@voyantjs/commerce",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyantjs/catalog": "workspace:^",
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/distribution": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/products-contracts": "workspace:^",
+    "@voyantjs/workflows": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "rrule": "^2.8.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:^",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/commerce"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  }
+}

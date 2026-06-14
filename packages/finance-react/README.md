@@ -53,6 +53,13 @@ sections.
   `PaymentMetadataCard` remain exported for consumers that need to compose the
   detail page manually.
 
+## Checkout UI
+
+Finance React owns checkout hooks and payment collection UI under
+`@voyantjs/finance-react/checkout` and `@voyantjs/finance-react/checkout-ui`.
+The legacy `@voyantjs/checkout-react` workspace package has been removed from
+the v1 branch; use the Finance React owner paths directly.
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in

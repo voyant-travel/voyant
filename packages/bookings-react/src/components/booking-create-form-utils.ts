@@ -1,4 +1,4 @@
-import type { PricingCategoryRecord } from "@voyantjs/pricing-react"
+import type { PricingCategoryRecord } from "@voyantjs/commerce-react/pricing"
 import type { BookingsUiMessages } from "../i18n/messages.js"
 import { formatMessage } from "../i18n/provider.js"
 import type { BookingCreatePaymentScheduleInput, PricingPreviewSnapshot } from "../index.js"

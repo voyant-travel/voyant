@@ -1,6 +1,6 @@
 "use client"
 
-import { usePeople } from "@voyantjs/crm-react"
+import { usePeople } from "@voyantjs/relationships-react"
 import { Button } from "@voyantjs/ui/components/button"
 import {
   Command,

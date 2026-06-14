@@ -1,8 +1,9 @@
 # @voyantjs/distribution
 
-Distribution module for Voyant. Channels, contracts, commissions, mappings,
-webhook events, and channel identity for OTA, tour-operator, and DMC
-deployments.
+Distribution module for Voyant. Distribution owns the broader commercial
+network: channels, suppliers, source/operator links, external refs, mappings,
+allotments, channel push, webhooks, and reconciliation for OTA,
+tour-operator, and DMC deployments.
 
 Distribution is cross-cutting channel support. It is not a separate
 implementation scenario or user base.
@@ -33,6 +34,8 @@ const app = createApp({
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
+| `./suppliers` | Supplier identity, services, rates, notes, routes, validation, and schema owner path |
+| `./external-refs` | External reference routes, service, validation, and schema owner path |
 
 ## License
 

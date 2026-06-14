@@ -263,7 +263,9 @@ export type LegalUiMessages = {
       supplier: string
       channel: string
       booking: string
-      order: string
+      target: string
+      legacyTransactionOffer: string
+      legacyTransactionOrder: string
       name: string
       email: string
       role: string
@@ -340,6 +342,7 @@ export type LegalUiMessages = {
       versionId: string
       personId: string
       bookingId: string
+      target: string
       method: string
       acceptedAt: string
       sort: string

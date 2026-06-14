@@ -22,7 +22,7 @@ This doc resolves all three.
 2. **Self-host is the primary architectural unit.** The runtime defaults to a single-tenant, in-process composition. `createApp({ workflows: { db } })` is enough to run workflows. Multi-tenancy, customer dashboards, billing, and scoped tokens are layered on top by managed-cloud deployments — they do not live in the runtime.
 3. **Two reference deployment shapes ship together.** Mode 1 — all on Cloudflare (Workers + DO + KV + Sandboxes/Containers, reusing the existing `workflows-orchestrator-cloudflare` package). Mode 2 — all in Docker (single Node process or sibling-process pair sharing Postgres; extends the existing `workflows-orchestrator-node` package with manifest store + idempotency wiring).
 4. **No env-var-based driver selection.** `createApp({ workflows: ... })` is explicit. The default is Mode 2 (`{ db }` shorthand). Mode 1 requires explicit factory wiring. Misconfiguration is a startup error, not a runtime surprise.
-5. **Modules and plugins are the primary declaration sites.** `@voyantjs/promotions` ships `bulkReindexProducts` and `trigger.on("promotion.changed", { ... })` from its package. `definePlugin({ workflows, eventFilters })` exposes the same to plugins. Templates don't see the manifest unless they're adding workflows of their own.
+5. **Modules and plugins are the primary declaration sites.** `@voyantjs/commerce` ships the promotions `bulkReindexProducts` workflow and `trigger.on("promotion.changed", { ... })` declarations from its package. `definePlugin({ workflows, eventFilters })` exposes the same to plugins. Templates don't see the manifest unless they're adding workflows of their own.
 6. **Durable run execution; non-durable event delivery in v1.** Once an event has been ingested by the driver, the resulting run is durable: persisted to Postgres or DO storage, retried on transient failures, replay-safe, surviving process restart. Event *ingest* itself is at-most-once in v1 because the EventBus forwarder is fire-and-forget, matching the in-process EventBus's existing semantics. The upgrade path to at-least-once durable ingest (an outbox table on the emitter side) is designed-for in §16.2 and ships as a separate piece of work.
 7. **Closes #514 and unblocks #515.** When this lands the `affected.kind === "all"` reindex paths in promotions become a routine `trigger.on(...)` declaration plus a workflow body, not a doc-flagged hole.
 
@@ -507,7 +507,7 @@ This is the same pattern Voyant uses for `LinkableDefinition` (`packages/core/sr
 A module's source becomes:
 
 ```ts
-// packages/promotions/src/workflows/bulk-reindex-products.ts
+// packages/commerce/src/promotions/workflows/bulk-reindex-products.ts
 import { workflow } from "@voyantjs/workflows"
 import { z } from "zod"
 
@@ -528,7 +528,7 @@ export const bulkReindexProducts = workflow<BulkReindexInput, void>({
   run: async (input, ctx) => { /* see §20 for the body */ },
 })
 
-// packages/promotions/src/event-filters.ts
+// packages/commerce/src/promotions/event-filters.ts
 import { trigger } from "@voyantjs/workflows"
 import { bulkReindexProducts } from "./workflows/bulk-reindex-products.js"
 
@@ -551,7 +551,7 @@ export const promotionsEventFilters = [
   }),
 ]
 
-// packages/promotions/src/index.ts (the module)
+// packages/commerce/src/promotions/index.ts (the module)
 export const promotionsModule: Module = {
   name: "promotions",
   // ...
@@ -583,9 +583,9 @@ The EventBus forwarder is a single subscriber installed on every `eventType` tha
 
 After this work lands, the promotions module ships:
 
-- `packages/promotions/src/workflows/bulk-reindex-products.ts` — workflow definition; body uses `ctx.services.resolve(...)` to get the indexer + products repo from the framework's container (see §11).
-- `packages/promotions/src/event-filters.ts` — one `trigger.on()` declaration.
-- `packages/promotions/src/index.ts` — module wires the above.
+- `packages/commerce/src/promotions/workflows/bulk-reindex-products.ts` — workflow definition; body uses `ctx.services.resolve(...)` to get the indexer + products repo from the framework's container (see §11).
+- `packages/commerce/src/promotions/event-filters.ts` — one `trigger.on()` declaration.
+- `packages/commerce/src/promotions/index.ts` — module wires the above.
 
 The operator template's `catalog-bridge.ts:247-264` and `promotion-scheduled.ts:82-91` warn-blocks delete entirely. Closes #515.
 
@@ -655,10 +655,10 @@ This is `ModuleContainer` minus `register`. Step bodies can read; they cannot mu
 Typed resolution: modules export a typed accessor alongside the registration so consumers don't pass strings around:
 
 ```ts
-// packages/promotions/src/services.ts
+// packages/commerce/src/promotions/services.ts
 import type { ModuleContainerView } from "@voyantjs/core"
 import type { IndexerService } from "@voyantjs/catalog"
-import type { ProductsRepository } from "@voyantjs/products"
+import type { ProductsRepository } from "@voyantjs/inventory"
 
 export const promotionsServices = {
   indexer: (c: ModuleContainerView): IndexerService => c.resolve("indexer"),
@@ -1052,7 +1052,7 @@ Both share the same Postgres. The lease mechanism in `voyant_wakeups` handles co
 
 ## 19. Worked example: `bulkReindexProducts`
 
-The workflow this design unblocks. Lives in `packages/promotions/src/workflows/bulk-reindex-products.ts`:
+The workflow this design unblocks. Lives in `packages/commerce/src/promotions/workflows/bulk-reindex-products.ts`:
 
 ```ts
 import { workflow } from "@voyantjs/workflows"
@@ -1114,7 +1114,7 @@ export const bulkReindexProducts = workflow<BulkReindexInput, void>({
 
 The workflow uses the existing SDK (`workflow({ id, run })`, `ctx.step`, `ctx.metadata`) — this work doesn't introduce a new authoring API. The only new thing the body relies on is `ctx.services`, the container access added in §11.
 
-The filter declaration in `packages/promotions/src/event-filters.ts`:
+The filter declaration in `packages/commerce/src/promotions/event-filters.ts`:
 
 ```ts
 import { trigger } from "@voyantjs/workflows"
@@ -1143,7 +1143,7 @@ export const promotionsEventFilters = [
 The promotions module wires both:
 
 ```ts
-// packages/promotions/src/index.ts
+// packages/commerce/src/promotions/index.ts
 export const promotionsModule: Module = {
   name: "promotions",
   // ...
@@ -1395,12 +1395,12 @@ Files (modified):
 - `packages/hono/src/app.ts` — accept `workflows.db` shorthand or `workflows.driver`; collect; in the lazy bootstrap path: build manifest, register, install EventBus forwarder. Expose `app.ready()`.
 
 Files (new):
-- `packages/promotions/src/workflows/bulk-reindex-products.ts`.
-- `packages/promotions/src/event-filters.ts`.
-- `packages/promotions/src/services.ts` — typed accessors per §11.3.
+- `packages/commerce/src/promotions/workflows/bulk-reindex-products.ts`.
+- `packages/commerce/src/promotions/event-filters.ts`.
+- `packages/commerce/src/promotions/services.ts` — typed accessors per §11.3.
 
 Files (modified):
-- `packages/promotions/src/index.ts` — export `workflows` + `eventFilters`.
+- `packages/commerce/src/promotions/index.ts` — export `workflows` + `eventFilters`.
 - `templates/operator/src/api/catalog-bridge.ts` — delete the `affected.kind === "all"` warn block.
 - `templates/operator/src/api/promotion-scheduled.ts` — emit `promotion.changed` instead of warning; remove inline indexer call for the all-affected case.
 

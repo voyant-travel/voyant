@@ -1,4 +1,8 @@
 import { z } from "zod"
+import {
+  legalTargetListQueryFieldsSchema,
+  legalTargetRefFieldsSchema,
+} from "../targets/validation.js"
 
 export const policyKindSchema = z.enum([
   "cancellation",
@@ -129,8 +133,7 @@ const policyAcceptanceCoreSchema = z.object({
   policyVersionId: z.string(),
   personId: z.string().optional().nullable(),
   bookingId: z.string().optional().nullable(),
-  orderId: z.string().optional().nullable(),
-  offerId: z.string().optional().nullable(),
+  ...legalTargetRefFieldsSchema.shape,
   acceptedBy: z.string().max(255).optional().nullable(),
   method: policyAcceptanceMethodSchema.default("implicit"),
   ipAddress: z.string().max(64).optional().nullable(),
@@ -144,7 +147,7 @@ export const policyAcceptanceListQuerySchema = paginationSchema.extend({
   policyVersionId: z.string().optional(),
   personId: z.string().optional(),
   bookingId: z.string().optional(),
-  orderId: z.string().optional(),
+  ...legalTargetListQueryFieldsSchema.shape,
 })
 
 // ---------- evaluation ----------

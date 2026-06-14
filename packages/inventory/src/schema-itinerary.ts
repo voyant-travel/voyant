@@ -1,0 +1,219 @@
+import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import { sql } from "drizzle-orm"
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core"
+
+import { products } from "./schema-core.js"
+import { productMediaTypeEnum, serviceTypeEnum } from "./schema-shared.js"
+
+export const productItineraries = pgTable(
+  "product_itineraries",
+  {
+    id: typeId("product_itineraries"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    isDefault: boolean("is_default").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_itineraries_product").on(table.productId),
+    index("idx_product_itineraries_product_sort").on(
+      table.productId,
+      table.sortOrder,
+      table.createdAt,
+    ),
+    index("idx_product_itineraries_product_default").on(table.productId, table.isDefault),
+    uniqueIndex("uidx_product_itineraries_default")
+      .on(table.productId)
+      // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+      .where(sql`${table.isDefault} = true`),
+  ],
+)
+
+export type ProductItinerary = typeof productItineraries.$inferSelect
+export type NewProductItinerary = typeof productItineraries.$inferInsert
+
+export const productDays = pgTable(
+  "product_days",
+  {
+    id: typeId("product_days"),
+    itineraryId: typeIdRef("itinerary_id")
+      .notNull()
+      .references(() => productItineraries.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(),
+    title: text("title"),
+    description: text("description"),
+    location: text("location"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_days_itinerary").on(table.itineraryId),
+    index("idx_product_days_itinerary_day_number").on(table.itineraryId, table.dayNumber),
+  ],
+)
+
+export type ProductDay = typeof productDays.$inferSelect
+export type NewProductDay = typeof productDays.$inferInsert
+
+export const productDayTranslations = pgTable(
+  "product_day_translations",
+  {
+    id: typeId("product_day_translations"),
+    dayId: typeIdRef("day_id")
+      .notNull()
+      .references(() => productDays.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    title: text("title"),
+    description: text("description"),
+    location: text("location"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_day_translations_day").on(table.dayId),
+    index("idx_product_day_translations_language").on(table.languageTag),
+    uniqueIndex("uidx_product_day_translations_day_language").on(table.dayId, table.languageTag),
+  ],
+)
+
+export type ProductDayTranslation = typeof productDayTranslations.$inferSelect
+export type NewProductDayTranslation = typeof productDayTranslations.$inferInsert
+
+export const productDayServices = pgTable(
+  "product_day_services",
+  {
+    id: typeId("product_day_services"),
+    dayId: typeIdRef("day_id")
+      .notNull()
+      .references(() => productDays.id, { onDelete: "cascade" }),
+    supplierServiceId: text("supplier_service_id"),
+    serviceType: serviceTypeEnum("service_type").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    countryCode: text("country_code"),
+    costCurrency: text("cost_currency").notNull(),
+    costAmountCents: integer("cost_amount_cents").notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    sortOrder: integer("sort_order"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_day_services_day").on(table.dayId),
+    index("idx_product_day_services_day_sort").on(table.dayId, table.sortOrder),
+    index("idx_product_day_services_supplier_service").on(table.supplierServiceId),
+  ],
+)
+
+export type ProductDayService = typeof productDayServices.$inferSelect
+export type NewProductDayService = typeof productDayServices.$inferInsert
+
+export const productVersions = pgTable(
+  "product_versions",
+  {
+    id: typeId("product_versions"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    versionNumber: integer("version_number").notNull(),
+    snapshot: jsonb("snapshot").notNull(),
+    authorId: text("author_id").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_versions_product").on(table.productId),
+    index("idx_product_versions_product_version").on(table.productId, table.versionNumber),
+  ],
+)
+
+export type ProductVersion = typeof productVersions.$inferSelect
+export type NewProductVersion = typeof productVersions.$inferInsert
+
+export const productNotes = pgTable(
+  "product_notes",
+  {
+    id: typeId("product_notes"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    authorId: text("author_id").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_notes_product").on(table.productId),
+    index("idx_product_notes_product_created").on(table.productId, table.createdAt),
+  ],
+)
+
+export type ProductNote = typeof productNotes.$inferSelect
+export type NewProductNote = typeof productNotes.$inferInsert
+
+export const productMedia = pgTable(
+  "product_media",
+  {
+    id: typeId("product_media"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    dayId: typeIdRef("day_id").references(() => productDays.id, { onDelete: "cascade" }),
+    mediaType: productMediaTypeEnum("media_type").notNull(),
+    name: text("name").notNull(),
+    url: text("url").notNull(),
+    storageKey: text("storage_key"),
+    mimeType: text("mime_type"),
+    fileSize: integer("file_size"),
+    altText: text("alt_text"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isCover: boolean("is_cover").notNull().default(false),
+    isBrochure: boolean("is_brochure").notNull().default(false),
+    isBrochureCurrent: boolean("is_brochure_current").notNull().default(false),
+    brochureVersion: integer("brochure_version"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_media_product").on(table.productId),
+    index("idx_product_media_day").on(table.dayId),
+    index("idx_product_media_product_day").on(table.productId, table.dayId),
+    index("idx_product_media_product_cover_sort").on(
+      table.productId,
+      table.isCover,
+      table.sortOrder,
+      table.createdAt,
+    ),
+    index("idx_product_media_product_day_cover_sort").on(
+      table.productId,
+      table.dayId,
+      table.isCover,
+      table.sortOrder,
+      table.createdAt,
+    ),
+    index("idx_product_media_product_brochure_current_version").on(
+      table.productId,
+      table.isBrochure,
+      table.dayId,
+      table.isBrochureCurrent,
+      table.brochureVersion,
+      table.updatedAt,
+      table.createdAt,
+    ),
+  ],
+)
+
+export type ProductMedia = typeof productMedia.$inferSelect
+export type NewProductMedia = typeof productMedia.$inferInsert

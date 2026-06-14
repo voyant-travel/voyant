@@ -5,7 +5,7 @@ import {
   facilityAddressProjections,
   facilityFeatures,
   properties,
-} from "@voyantjs/facilities/schema"
+} from "@voyantjs/operations"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import {
   type AccommodationContent,

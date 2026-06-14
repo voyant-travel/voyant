@@ -9,8 +9,8 @@ import {
 } from "@voyantjs/admin"
 // Importing the slot id also binds the crm-ui `AdminDestinations`
 // augmentation (`person.list`, `organization.list`, ...) into this program;
-// this package already peer-depends on `@voyantjs/crm-react/ui`.
-import { personDetailBookingsTabSlot } from "@voyantjs/crm-react/admin"
+// this package already peer-depends on `@voyantjs/relationships-react/ui`.
+import { personDetailBookingsTabSlot } from "@voyantjs/relationships-react/admin"
 import type { ComponentType, ReactNode } from "react"
 import * as React from "react"
 import { z } from "zod"
@@ -62,7 +62,7 @@ declare module "@voyantjs/admin" {
     /**
      * The trip composer's "new trip" entry. Declared here because the
      * packaged `/bookings/compose` alias route forwards to it — the composer
-     * pages themselves live in the travel-composer area, whose admin entry
+     * pages themselves live in the trip-composer area, whose admin entry
      * may also declare this key (interface merging requires the member shape
      * to stay identical across packages).
      */
@@ -298,7 +298,7 @@ export interface CreateBookingsAdminExtensionOptions {
    * {@link BookingDetailHost}. The operator overrides this to compose the
    * app-owned payment/payment-link dialogs around the host — those dialogs
    * live app-side because `@voyantjs/finance-react/ui` and
-   * `@voyantjs/checkout-react/ui` depend on this package, so importing them
+   * `@voyantjs/finance-react/checkout-ui` depend on this package, so importing them
    * here would be a cycle.
    */
   detailPageComponent?: () => Promise<{
@@ -372,7 +372,7 @@ const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidg
  *
  * WIDGETS: the crm-ui ↔ bookings-ui cycle resolution (RFC §4.7). The CRM
  * person detail page mounts a Bookings tab, but this package depends on
- * `@voyantjs/crm-react/ui`, so crm-ui's host cannot import the bookings-owned
+ * `@voyantjs/relationships-react/ui`, so crm-ui's host cannot import the bookings-owned
  * card. Instead this extension contributes {@link PersonBookingsWidget} on
  * the `person.details.bookings-tab` slot crm-ui's `PersonDetailHost`
  * exposes; the host mounts its Bookings tab whenever a contribution targets

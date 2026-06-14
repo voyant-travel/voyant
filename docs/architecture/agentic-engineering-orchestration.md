@@ -543,7 +543,7 @@ UI agent policy:
   from the package or registry surface exists.
 - Do not introduce new visual language without a screenshot-backed reason.
 - UI briefs must name the relevant reusable surfaces to inspect, such as
-  `packages/ui`, `packages/products-react`, `packages/suppliers-react`, or the
+  `packages/ui`, `packages/inventory-react`, `packages/distribution-react`, or the
   existing page composition in the target template.
 - UI handoffs require browser evidence: screenshot for static UI, video for
   interaction-heavy changes, plus console/network error capture.

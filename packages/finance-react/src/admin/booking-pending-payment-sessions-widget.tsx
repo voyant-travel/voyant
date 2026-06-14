@@ -74,7 +74,7 @@ export function BookingPendingPaymentSessionsWidget({
 
   const { data } = usePaymentSessions({ bookingId, status: "pending", limit: 10 })
   // Shares the cache entry with `useCheckoutPaymentLinkConfig` from
-  // `@voyantjs/checkout-react` — same endpoint, same key.
+  // Finance checkout collection uses the same endpoint and query key.
   const { data: paymentLinkConfig } = useQuery({
     queryKey: ["checkout-payment-link-config"],
     queryFn: async (): Promise<{ publicCheckoutBaseUrl?: string | null }> => {

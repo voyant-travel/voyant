@@ -20,8 +20,6 @@
  * Per docs/architecture/channel-push-architecture.md §13.
  */
 
-import { availabilitySlots } from "@voyantjs/availability/schema"
-import { products } from "@voyantjs/products/schema"
 import { and, asc, eq, inArray, sql } from "drizzle-orm"
 
 import {
@@ -32,6 +30,10 @@ import {
 } from "../schema.js"
 import { upsertAvailabilityIntent } from "./availability-push.js"
 import { processBookingPush } from "./booking-push.js"
+import {
+  loadContentPushProducts,
+  loadRecentlyUpdatedAvailabilityPushSlots,
+} from "./boundary-sql.js"
 import { canonicalHash, upsertContentIntent } from "./content-push.js"
 import { type ChannelPushDeps, defaultLogger, getChannelPushDepsOrThrow } from "./types.js"
 
@@ -126,13 +128,10 @@ export async function reconcileAvailability(
   const lookback = new Date(Date.now() - (options.lookbackMs ?? 60 * 60 * 1000))
   const limit = options.limit ?? 500
 
-  const slots = (await db
-    .select()
-    .from(availabilitySlots)
-    // agent-quality: raw-sql reviewed -- owner: distribution; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-    .where(sql`${availabilitySlots.updatedAt} > ${lookback}`)
-    .orderBy(asc(availabilitySlots.updatedAt))
-    .limit(limit)) as Array<typeof availabilitySlots.$inferSelect>
+  const slots = await loadRecentlyUpdatedAvailabilityPushSlots(db, {
+    updatedAfter: lookback,
+    limit,
+  })
 
   if (slots.length === 0) return { scanned: 0, triggered: 0 }
 
@@ -212,10 +211,8 @@ export async function reconcileContent(
   const mappings = (await db
     .select({
       mapping: channelProductMappings,
-      product: products,
     })
     .from(channelProductMappings)
-    .innerJoin(products, eq(channelProductMappings.productId, products.id))
     .innerJoin(channels, eq(channelProductMappings.channelId, channels.id))
     .where(
       and(
@@ -227,12 +224,16 @@ export async function reconcileContent(
     )
     .limit(limit)) as Array<{
     mapping: typeof channelProductMappings.$inferSelect
-    product: typeof products.$inferSelect
   }>
 
+  const productIds = Array.from(new Set(mappings.map((row) => row.mapping.productId)))
+  const products = await loadContentPushProducts(db, productIds)
+
   let triggered = 0
-  for (const { mapping, product } of mappings) {
+  for (const { mapping } of mappings) {
     if (!mapping.sourceConnectionId) continue
+    const product = products.get(mapping.productId)
+    if (!product) continue
     const minimalContent = {
       id: product.id,
       name: product.name,

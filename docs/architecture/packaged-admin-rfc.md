@@ -150,7 +150,7 @@ What we have (and is already exercised in `templates/operator`):
   `AdminExtension`, `defineAdminExtension()`, `createAdminExtensionRegistry()`,
   `resolveAdminNavigation()`, `resolveAdminWidgets()`, `AdminWidgetSlot`.
 - **Live extension usage** — `templates/operator/src/lib/admin-extensions.tsx`
-  registers three extensions (promotions, travel-composer, action-ledger).
+  registers three extensions (promotions, trip-composer, action-ledger).
   Today they contribute **navigation only** (the route components behind
   those nav entries are still template-local route files), and 7 widget
   slots are exposed (`dashboard.header`, `dashboard.after-kpis`,
@@ -189,12 +189,17 @@ What is missing — the actual gap this RFC closes:
 
 ### 4.1 `createAdminApp` — the admin as a package-owned application
 
-`@voyantjs/admin` (or a new `@voyantjs/admin-app` if we want to keep the
-primitives package lean) exports a factory that owns the entire application:
+`@voyantjs/admin` owns the packaged staff shell through app-oriented subpaths
+(`@voyantjs/admin/app/*`). During the package-boundary migration,
+`@voyantjs/admin-app` re-exports those shell helpers for compatibility and owns
+the domain-backed core extension bundle; that bundle imports first-party domain
+React packages that depend back on the admin extension surface, so it must not
+sit in `@voyantjs/admin`.
+A future factory can still consolidate the host wiring:
 
 ```ts
 // src/admin/index.ts in a project — illustrative, not final API
-import { createAdminApp } from "@voyantjs/admin-app";
+import { createAdminApp } from "@voyantjs/admin/app";
 // generated from voyant.config.ts — see "manifest-driven composition" below
 import { adminExtensions } from "./admin.extensions.generated";
 import { customExtensions } from "./extensions";
@@ -399,7 +404,7 @@ the host resolves keys to hrefs exactly once:
   `"supplier.detail": { supplierId: string }`. Naming convention:
   `<entity>.<action>` (`"product.detail"`, `"bookingJourney.start"`).
 - The host registers one resolver map and hands it to the workspace shell
-  (`AdminWorkspaceShell destinations={...}` in `@voyantjs/admin-app`), which
+  (`AdminWorkspaceShell destinations={...}` in `@voyantjs/admin/app/workspace`), which
   injects router navigation behind the provider. `satisfies
   AdminDestinationResolvers` makes the map exhaustive: mounting a package
   that declares a new destination fails the host's typecheck until the key
@@ -474,7 +479,7 @@ are dynamically imported *inside* the loader so they cannot pin the page
 chunk into the host's entry graph; loader + page resolve the same chunk,
 fetched once.
 
-**The host side.** `@voyantjs/admin-app` exports the binder:
+**The host side.** `@voyantjs/admin/app` exports the binder:
 
 - `adminExtensionRouteOptions(extension, routeId, runtime)` resolves a
   contribution (via `requireImplementedAdminRoute`, which fails at module
@@ -645,9 +650,11 @@ Decided:
 
 Open:
 
-1. **Package shape:** grow `@voyantjs/admin` into the app factory, or keep it
-   as primitives and add `@voyantjs/admin-app`? (Leaning: separate package, so
-   the primitives stay consumable by non-standard hosts.)
+1. **Package shape:** resolved for the v1 cleanup direction by moving app-shell
+   exports into `@voyantjs/admin/app/*`; `@voyantjs/admin-app` remains the
+   first-party composition package for the domain-backed core extension plus
+   compatibility re-exports. A later full `createAdminApp` factory can build on
+   those subpaths without re-splitting the package.
 2. **Typed links across packages:** how much route-path type safety do we
    accept losing in Phase 2 before the generated tree lands?
 3. **Auth route ownership:** the auth flows are framework-owned in §4.1 —

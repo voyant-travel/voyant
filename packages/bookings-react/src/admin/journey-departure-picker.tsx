@@ -1,6 +1,6 @@
 "use client"
 
-import { useSlots } from "@voyantjs/availability-react"
+import { useSlots } from "@voyantjs/operations-react/availability"
 import {
   Combobox,
   ComboboxCollection,

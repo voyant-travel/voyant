@@ -1,3 +1,4 @@
+export * from "./checkout-ui.js"
 export {
   AccountantPortal,
   type AccountantPortalProps,

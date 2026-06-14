@@ -2,13 +2,13 @@
 
 import { useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
-import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin/option-resource-templates-panel"
 import {
   type ProductDetailBreadcrumb,
   ProductDetailHostProvider,
   type ProductDetailHostValue,
   ProductDetailPage as ProductDetailPageBody,
-} from "@voyantjs/products-react/components/product-detail"
+} from "@voyantjs/inventory-react/components/product-detail"
+import { OptionResourceTemplatesPanel } from "@voyantjs/operations-react/availability/admin/option-resource-templates-panel"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
@@ -46,7 +46,7 @@ const renderOptionExtras = (productId: string, optionId: string) => (
 
 /**
  * Operator substitution for the packaged products-detail page (the
- * `detailPageComponent` seam on `createProductsAdminExtension`). The
+ * `detailPageComponent` seam on `createInventoryAdminExtension`). The
  * package cannot compose these app-owned seams itself: the
  * availability-react option resource templates panel (a dependency cycle —
  * availability-react depends on products-react), the app's `/api/v1/uploads`
@@ -66,7 +66,7 @@ export function ProductDetailPage({ id }: { id: string }) {
       toNewBooking: (productId) =>
         void navigate({ to: "/bookings/$id", params: { id: "new" }, search: { productId } }),
       toAvailability: (slotId) =>
-        void navigate({ to: "/availability/$id", params: { id: slotId } }),
+        void navigate({ to: "/operations/availability/$id", params: { id: slotId } }),
     }),
     [navigate],
   )

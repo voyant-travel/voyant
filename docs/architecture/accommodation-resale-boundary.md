@@ -70,20 +70,21 @@ surfaces as part of the current first-party scope.
 The retained module families should be described relative to the three target
 implementation scenarios:
 
-- `products`, `availability`, `bookings`, `finance`, `pricing`, `legal`,
-  `checkout`, `storefront`, `crm`, and related packages are core OTA,
+- `inventory`, `operations`, `bookings`, `finance`, `commerce`, `legal`,
+  `storefront`, `relationships`, and related packages are core OTA,
   tour-operator, and DMC capabilities.
 - `charters` and `cruises` are optional inventory and operations capabilities
   for those scenarios. They may represent sourced supplier inventory or
   small-scale/specialized operations owned by a tour operator or DMC.
 - `flights` is a supplier-integration and sourced-inventory surface. Voyant is
   not an airline or flight-operator system.
-- `facilities` and `ground` support DMC and tour-operator operations:
-  attractions, hubs, restaurants, airports, meeting points, vehicles, drivers,
-  pickup points, dispatch, and transfers.
-- `distribution`, `suppliers`, and `external-refs` are cross-cutting support for
-  channels, supplier relationships, and external-system mappings. They are not
-  implementation scenarios by themselves.
+- Operations places and ground logistics support DMC and tour-operator operations:
+  attractions, hubs, restaurants, airports, ports, stations, meeting points,
+  vehicles, drivers, pickup points, dispatch, and transfers. `facilityId` fields
+  are table-era names where existing schemas still require them.
+- `distribution` is cross-cutting support for channels, supplier
+  relationships, and external-system mappings. It is not an implementation
+  scenario by itself.
 - accommodation belongs in catalog, product composition, booking journey,
   storefront, supplier, and external-source contracts unless a future product
   decision approves a narrower first-party accommodation module.
@@ -101,6 +102,7 @@ Use accommodation terms when the surface is about resale or trip composition:
 - stay component
 - accommodation booking line
 - sourced accommodation
+- accommodation location
 
 Use hotel-operations terms only for legacy or explicitly out-of-scope material:
 
@@ -111,6 +113,11 @@ Use hotel-operations terms only for legacy or explicitly out-of-scope material:
 - folio
 - PMS
 - property operations
+- facility operations
+
+Use `Place` for shared physical places in active product language. Treat
+`Facility` as a table-era name for existing schemas. Do not rename
+hotel/PMS/property operations to places.
 
 Avoid using `hospitality` as a first-party module family name in new active
 surfaces. If a reusable accommodation resale contract survives the de-scoping

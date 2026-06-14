@@ -2,14 +2,14 @@
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import { financeService } from "@voyantjs/finance"
 import { invoices, paymentSessions } from "@voyantjs/finance/schema"
+import { productMedia, products } from "@voyantjs/inventory/schema"
 import {
   NETOPIA_RUNTIME_CONTAINER_KEY,
   netopiaService,
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
-import { productMedia, products } from "@voyantjs/products/schema"
-import { travelComposerService } from "@voyantjs/travel-composer"
-import { tripComponents, tripEnvelopes } from "@voyantjs/travel-composer/schema"
+import { tripComposerService } from "@voyantjs/trip-composer"
+import { tripComponents, tripEnvelopes } from "@voyantjs/trip-composer/schema"
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -225,7 +225,7 @@ export async function handlePaymentLinkTripSummary(c: OperatorContext) {
 
   if (session.status === "paid" && envelope.status !== "booked") {
     try {
-      await travelComposerService.completeTripCheckout(db, {
+      await tripComposerService.completeTripCheckout(db, {
         envelopeId: envelope.id,
         paymentSessionId: session.id,
         payload: {
@@ -236,7 +236,7 @@ export async function handlePaymentLinkTripSummary(c: OperatorContext) {
         },
       })
     } catch (err) {
-      console.error("[travel-composer] payment summary reconciliation failed", err)
+      console.error("[trip-composer] payment summary reconciliation failed", err)
     }
   }
 

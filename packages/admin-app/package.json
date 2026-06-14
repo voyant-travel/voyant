@@ -24,10 +24,10 @@
     "@tanstack/react-router": "^1.0.0",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -40,10 +40,10 @@
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
     "@voyantjs/auth-react": "workspace:^",
+    "@voyantjs/commerce-react": "workspace:^",
     "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
-    "@voyantjs/pricing-react": "workspace:^",
-    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/inventory-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
@@ -96,16 +96,16 @@
     "@voyantjs/auth-react": {
       "optional": true
     },
+    "@voyantjs/commerce-react": {
+      "optional": true
+    },
     "@voyantjs/distribution-react": {
       "optional": true
     },
     "@voyantjs/finance-react": {
       "optional": true
     },
-    "@voyantjs/pricing-react": {
-      "optional": true
-    },
-    "@voyantjs/products-react": {
+    "@voyantjs/inventory-react": {
       "optional": true
     }
   }

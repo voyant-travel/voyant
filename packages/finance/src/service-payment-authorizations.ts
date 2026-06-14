@@ -26,11 +26,38 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 
+type PaymentAuthorizationTargetColumns = {
+  bookingId?: string
+  invoiceId?: string
+  bookingGuaranteeId?: string
+  orderId?: string
+}
+
+function derivePaymentAuthorizationTargetColumns(
+  data: CreatePaymentAuthorizationInput | UpdatePaymentAuthorizationInput,
+): PaymentAuthorizationTargetColumns {
+  const explicitTarget = "target" in data ? data.target : undefined
+  if (!explicitTarget) return {}
+
+  switch (explicitTarget.type) {
+    case "booking":
+      return { bookingId: explicitTarget.bookingId }
+    case "invoice":
+      return { invoiceId: explicitTarget.invoiceId }
+    case "booking_guarantee":
+      return { bookingGuaranteeId: explicitTarget.bookingGuaranteeId }
+    case "legacy_order":
+      return { orderId: explicitTarget.legacyOrderId }
+    default:
+      return {}
+  }
+}
+
 export const financePaymentAuthorizationService = {
   async listPaymentAuthorizations(db: PostgresJsDatabase, query: PaymentAuthorizationListQuery) {
     const conditions = []
     if (query.bookingId) conditions.push(eq(paymentAuthorizations.bookingId, query.bookingId))
-    if (query.orderId) conditions.push(eq(paymentAuthorizations.orderId, query.orderId))
+    if (query.legacyOrderId) conditions.push(eq(paymentAuthorizations.orderId, query.legacyOrderId))
     if (query.invoiceId) conditions.push(eq(paymentAuthorizations.invoiceId, query.invoiceId))
     if (query.bookingGuaranteeId)
       conditions.push(eq(paymentAuthorizations.bookingGuaranteeId, query.bookingGuaranteeId))
@@ -66,11 +93,21 @@ export const financePaymentAuthorizationService = {
     data: CreatePaymentAuthorizationInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const targetColumns = derivePaymentAuthorizationTargetColumns(data)
+    const {
+      legacyOrderId,
+      target: _explicitTarget,
+      provenance: _provenance,
+      ...authorizationData
+    } = data
+    const resolvedLegacyOrderId = legacyOrderId ?? null
     const createAuthorization = (writer: PostgresJsDatabase) =>
       writer
         .insert(paymentAuthorizations)
         .values({
-          ...data,
+          ...authorizationData,
+          ...targetColumns,
+          orderId: targetColumns.orderId ?? resolvedLegacyOrderId,
           authorizedAt: toTimestamp(data.authorizedAt),
           expiresAt: toTimestamp(data.expiresAt),
           voidedAt: toTimestamp(data.voidedAt),
@@ -109,11 +146,23 @@ export const financePaymentAuthorizationService = {
     data: UpdatePaymentAuthorizationInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const targetColumns = derivePaymentAuthorizationTargetColumns(data)
+    const {
+      legacyOrderId,
+      target: _explicitTarget,
+      provenance: _provenance,
+      ...authorizationData
+    } = data
+    const resolvedLegacyOrderId = legacyOrderId
     const updateAuthorization = (writer: PostgresJsDatabase) =>
       writer
         .update(paymentAuthorizations)
         .set({
-          ...data,
+          ...authorizationData,
+          ...targetColumns,
+          orderId:
+            targetColumns.orderId ??
+            (resolvedLegacyOrderId === undefined ? undefined : (resolvedLegacyOrderId ?? null)),
           authorizedAt:
             data.authorizedAt === undefined ? undefined : toTimestamp(data.authorizedAt),
           expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),

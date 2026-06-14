@@ -6,19 +6,19 @@ components and page compositions (formerly `@voyantjs/flights-ui`).
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
 live under `./ui`, `./components/*`, `./i18n`, and `./styles.css`, whose
-heavier peers (`@voyantjs/ui`, `@voyantjs/crm-react`, `@voyantjs/checkout-react/ui`,
+heavier peers (`@voyantjs/ui`, `@voyantjs/relationships-react`, `@voyantjs/finance-react/checkout-ui`,
 `@tanstack/react-table`) are optional and only needed when you import those
 subpaths.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/flights-react @voyantjs/flights @voyantjs/crm-react @voyantjs/ui @tanstack/react-query react react-dom
+pnpm add @voyantjs/flights-react @voyantjs/flights @voyantjs/relationships-react @voyantjs/ui @tanstack/react-query react react-dom
 ```
 
 `@voyantjs/ui` provides the design-system primitives. The root and `./hooks`
 subpaths provide the data-layer hooks. CRM-backed contact and billing pickers
-use `@voyantjs/crm-react`.
+use `@voyantjs/relationships-react`.
 
 ## Pages
 

@@ -7,9 +7,9 @@ import {
   useAdminHref,
   useAdminNavigate,
 } from "@voyantjs/admin"
-import { getSlotsQueryOptions } from "@voyantjs/availability-react"
 import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
-import { getProductsQueryOptions } from "@voyantjs/products-react"
+import { getProductsQueryOptions } from "@voyantjs/inventory-react"
+import { getSlotsQueryOptions } from "@voyantjs/operations-react/availability"
 
 import {
   type SupplierInvoiceAttachmentUpload,

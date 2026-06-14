@@ -7,6 +7,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
+    "./app": "./src/app/index.ts",
+    "./app/root": "./src/app/root.tsx",
+    "./app/router": "./src/app/router.tsx",
+    "./app/workspace": "./src/app/workspace.tsx",
+    "./app/extension-routes": "./src/app/extension-routes.tsx",
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
     "./components/admin-page-head": "./src/components/admin-page-head.tsx",
@@ -85,6 +90,31 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./app": {
+        "types": "./dist/app/index.d.ts",
+        "import": "./dist/app/index.js",
+        "default": "./dist/app/index.js"
+      },
+      "./app/root": {
+        "types": "./dist/app/root.d.ts",
+        "import": "./dist/app/root.js",
+        "default": "./dist/app/root.js"
+      },
+      "./app/router": {
+        "types": "./dist/app/router.d.ts",
+        "import": "./dist/app/router.js",
+        "default": "./dist/app/router.js"
+      },
+      "./app/workspace": {
+        "types": "./dist/app/workspace.d.ts",
+        "import": "./dist/app/workspace.js",
+        "default": "./dist/app/workspace.js"
+      },
+      "./app/extension-routes": {
+        "types": "./dist/app/extension-routes.d.ts",
+        "import": "./dist/app/extension-routes.js",
+        "default": "./dist/app/extension-routes.js"
       },
       "./components/admin-nav-group": {
         "types": "./dist/components/admin-nav-group.d.ts",
