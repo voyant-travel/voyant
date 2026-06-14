@@ -37,7 +37,11 @@ const FILE_CHECKS = [
   },
   {
     file: "starters/operator/src/api/booking-schedule.ts",
-    patterns: [/@voyant-travel\/hospitality/, /\bresolveHospitalityListingPolicy\b/, /"hospitality"/],
+    patterns: [
+      /@voyant-travel\/hospitality/,
+      /\bresolveHospitalityListingPolicy\b/,
+      /"hospitality"/,
+    ],
   },
   {
     file: "starters/operator/src/api/app.ts",

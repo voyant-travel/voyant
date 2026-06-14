@@ -27,7 +27,11 @@ const retailSpineRoots = [
   },
   {
     area: "Storefront",
-    packages: ["@voyant-travel/storefront", "@voyant-travel/storefront-react", "@voyant-travel/storefront-sdk"],
+    packages: [
+      "@voyant-travel/storefront",
+      "@voyant-travel/storefront-react",
+      "@voyant-travel/storefront-sdk",
+    ],
   },
   {
     area: "Admin surfaces",
