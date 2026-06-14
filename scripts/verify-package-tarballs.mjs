@@ -174,6 +174,37 @@ async function extractTarball(tarballPath) {
   }
 }
 
+async function cleanAndBuildPackage(packageDir, pkg) {
+  if (pkg.scripts?.clean) {
+    try {
+      await execFileAsync("pnpm", ["run", "clean"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return `pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`
+    }
+  }
+  removeTsBuildInfoFiles(packageDir)
+
+  if (pkg.scripts?.build) {
+    try {
+      await execFileAsync("pnpm", ["run", "build"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return `pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`
+    }
+  }
+
+  return null
+}
+
 function hasExplicitRuntimeExtension(specifier) {
   return /\.(?:c?js|mjs|json|css|wasm|svg|png|jpe?g|gif|webp)(?:[?#].*)?$/.test(specifier)
 }
@@ -258,6 +289,98 @@ function getPublishedTargets(pkg) {
   return [...targets].sort()
 }
 
+async function packAndInspectPackage(packageDir) {
+  const packDestination = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-"))
+
+  let stdout
+  let packInfo
+  let packedManifest
+  try {
+    // npm pack does not apply pnpm's publish-time manifest rewrites, including
+    // publishConfig exports and workspace: dependency replacement. The release
+    // job publishes through pnpm, so verify the same lifecycle and packed
+    // manifest consumers receive.
+    //
+    // When reusing dist, also skip lifecycle scripts: most packages declare a
+    // `prepack` that runs `pnpm run build`, so without --config.ignore-scripts
+    // every pack would silently re-tsc on top of the already-fresh dist.
+    const packArgs = ["pack", "--json", "--pack-destination", packDestination]
+    if (REUSE_DIST) packArgs.unshift("--config.ignore-scripts=true")
+    const result = await execFileAsync("pnpm", packArgs, {
+      cwd: packageDir,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      env: process.env,
+    })
+    stdout = result.stdout
+  } catch (error) {
+    fs.rmSync(packDestination, { recursive: true, force: true })
+    return {
+      error: `pnpm pack failed: ${error.stderr?.toString().trim() || error.message}`,
+    }
+  }
+
+  let extensionlessRelativeSpecifiers = []
+  let extracted
+  try {
+    ;[packInfo] = getPackJson(stdout)
+    extracted = await extractTarball(packInfo.filename)
+    packedManifest = JSON.parse(fs.readFileSync(path.join(extracted.root, "package.json"), "utf8"))
+    extensionlessRelativeSpecifiers = collectPackedExtensionlessRelativeSpecifiers(
+      extracted.root,
+      packInfo,
+    )
+  } catch (error) {
+    return { error: `could not parse pnpm pack output: ${error.message}` }
+  } finally {
+    extracted?.cleanup()
+    fs.rmSync(packDestination, { recursive: true, force: true })
+  }
+
+  return { packInfo, packedManifest, extensionlessRelativeSpecifiers }
+}
+
+function collectTarballProblems(
+  { packInfo, packedManifest, extensionlessRelativeSpecifiers },
+  sourceFiles,
+) {
+  const expectedTargets = getPublishedTargets(packedManifest)
+  const tarballFiles = new Set(packInfo.files.map((file) => file.path))
+  const missingTargets = expectedTargets.filter(
+    (target) =>
+      !matchesTarget(target, tarballFiles) &&
+      !shouldIgnoreMissingWildcardTarget(target, sourceFiles),
+  )
+  const suspiciousFiles = packInfo.files
+    .map((file) => file.path)
+    .filter((filePath) => filePath.startsWith("dist/src/") || filePath.startsWith("dist/tests/"))
+
+  const problems = []
+  if (missingTargets.length > 0) {
+    problems.push(`missing published targets: ${missingTargets.join(", ")}`)
+  }
+  if (extensionlessRelativeSpecifiers.length > 0) {
+    problems.push(
+      `extensionless relative ESM specifiers in dist files: ${extensionlessRelativeSpecifiers.join(
+        ", ",
+      )}`,
+    )
+  }
+  const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
+  if (workspaceProtocolDependencies.length > 0) {
+    problems.push(
+      `packed manifest contains workspace protocol dependencies: ${workspaceProtocolDependencies.join(
+        ", ",
+      )}`,
+    )
+  }
+  if (suspiciousFiles.length > 0) {
+    problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)
+  }
+
+  return { missingTargets, problems }
+}
+
 function shouldVerifyPackageDir(packageDir) {
   if (PACKAGE_FILTERS.size === 0) {
     return true
@@ -300,130 +423,35 @@ async function verifyPackage(packageDir) {
   if (pkg.private) return null
 
   if (!REUSE_DIST) {
-    if (pkg.scripts?.clean) {
-      try {
-        await execFileAsync("pnpm", ["run", "clean"], {
-          cwd: packageDir,
-          encoding: "utf8",
-          maxBuffer: 16 * 1024 * 1024,
-          env: process.env,
-        })
-      } catch (error) {
-        return {
-          name: pkg.name,
-          packageDir,
-          problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
-        }
-      }
-    }
-    removeTsBuildInfoFiles(packageDir)
-
-    if (pkg.scripts?.build) {
-      try {
-        await execFileAsync("pnpm", ["run", "build"], {
-          cwd: packageDir,
-          encoding: "utf8",
-          maxBuffer: 64 * 1024 * 1024,
-          env: process.env,
-        })
-      } catch (error) {
-        return {
-          name: pkg.name,
-          packageDir,
-          problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
-        }
-      }
-    }
+    const buildProblem = await cleanAndBuildPackage(packageDir, pkg)
+    if (buildProblem) return { name: pkg.name, packageDir, problems: [buildProblem] }
   }
 
   const sourceFiles = new Set(listPackageFiles(packageDir))
-  const packDestination = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-"))
-
-  let stdout
-  let packInfo
-  let packedManifest
-  try {
-    // npm pack does not apply pnpm's publish-time manifest rewrites, including
-    // publishConfig exports and workspace: dependency replacement. The release
-    // job publishes through pnpm, so verify the same lifecycle and packed
-    // manifest consumers receive.
-    //
-    // When reusing dist, also skip lifecycle scripts: most packages declare a
-    // `prepack` that runs `pnpm run build`, so without --config.ignore-scripts
-    // every pack would silently re-tsc on top of the already-fresh dist.
-    const packArgs = ["pack", "--json", "--pack-destination", packDestination]
-    if (REUSE_DIST) packArgs.unshift("--config.ignore-scripts=true")
-    const result = await execFileAsync("pnpm", packArgs, {
-      cwd: packageDir,
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-      env: process.env,
-    })
-    stdout = result.stdout
-  } catch (error) {
-    fs.rmSync(packDestination, { recursive: true, force: true })
+  let inspection = await packAndInspectPackage(packageDir)
+  if (inspection.error) {
     return {
       name: pkg.name,
       packageDir,
-      problems: [`pnpm pack failed: ${error.stderr?.toString().trim() || error.message}`],
+      problems: [inspection.error],
     }
   }
 
-  let extensionlessRelativeSpecifiers = []
-  let extracted
-  try {
-    ;[packInfo] = getPackJson(stdout)
-    extracted = await extractTarball(packInfo.filename)
-    packedManifest = JSON.parse(fs.readFileSync(path.join(extracted.root, "package.json"), "utf8"))
-    extensionlessRelativeSpecifiers = collectPackedExtensionlessRelativeSpecifiers(
-      extracted.root,
-      packInfo,
-    )
-  } catch (error) {
-    extracted?.cleanup()
-    fs.rmSync(packDestination, { recursive: true, force: true })
-    return {
-      name: pkg.name,
-      packageDir,
-      problems: [`could not parse pnpm pack output: ${error.message}`],
+  let { missingTargets, problems } = collectTarballProblems(inspection, sourceFiles)
+
+  if (REUSE_DIST && missingTargets.length > 0 && pkg.scripts?.build) {
+    const buildProblem = await cleanAndBuildPackage(packageDir, pkg)
+    if (buildProblem) return { name: pkg.name, packageDir, problems: [buildProblem] }
+
+    inspection = await packAndInspectPackage(packageDir)
+    if (inspection.error) {
+      return {
+        name: pkg.name,
+        packageDir,
+        problems: [inspection.error],
+      }
     }
-  } finally {
-    extracted?.cleanup()
-    fs.rmSync(packDestination, { recursive: true, force: true })
-  }
-
-  const expectedTargets = getPublishedTargets(packedManifest)
-  const tarballFiles = new Set(packInfo.files.map((file) => file.path))
-  const missingTargets = expectedTargets.filter(
-    (target) =>
-      !matchesTarget(target, tarballFiles) &&
-      !shouldIgnoreMissingWildcardTarget(target, sourceFiles),
-  )
-  const suspiciousFiles = packInfo.files
-    .map((file) => file.path)
-    .filter((filePath) => filePath.startsWith("dist/src/") || filePath.startsWith("dist/tests/"))
-
-  const problems = []
-  if (missingTargets.length > 0) {
-    problems.push(`missing published targets: ${missingTargets.join(", ")}`)
-  }
-  if (extensionlessRelativeSpecifiers.length > 0) {
-    problems.push(
-      `extensionless relative ESM specifiers in dist files: ${extensionlessRelativeSpecifiers.join(
-        ", ",
-      )}`,
-    )
-  }
-  const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
-  if (workspaceProtocolDependencies.length > 0) {
-    problems.push(
-      `packed manifest contains workspace protocol dependencies: ${workspaceProtocolDependencies.join(
-        ", ",
-      )}`,
-    )
-  }
-  if (suspiciousFiles.length > 0) {
-    problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)
+    ;({ problems } = collectTarballProblems(inspection, sourceFiles))
   }
 
   if (problems.length === 0) return null
