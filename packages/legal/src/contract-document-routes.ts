@@ -1,11 +1,72 @@
-import type { EventBus } from "@voyant-travel/core"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Hono } from "hono"
-import {
-  generateContractPdfForBooking,
-  previewContractForBooking,
-} from "./contract-document-runtime"
-import { createDocumentStorage, guessMimeType } from "./lib/storage"
+/**
+ * Contract-document HTTP routes, owned by the legal module.
+ *
+ *   POST   /v1/admin/bookings/:bookingId/generate-contract
+ *   GET    /v1/admin/documents/files/*
+ *
+ * The first route generates (or previews) a booking's contract PDF; the second
+ * streams private document bytes from the deployment's document storage — used
+ * as the authenticated download fallback for environments where the R2 binding
+ * isn't backed by a real S3 SigV4 signer.
+ *
+ * These shapes (validation, status codes, headers, the scriptable-mime safety,
+ * the path-traversal-safe key parser) are framework logic and live here. The
+ * deployment supplies the contract generator/preview, the document storage
+ * resolver, and the MIME guesser via `ContractDocumentRoutesOptions`.
+ *
+ * The routes are mounted at absolute paths (the family spans multiple prefixes),
+ * so a deployment composes them via `lazyRoutes` using
+ * `CONTRACT_DOCUMENT_ROUTE_PATHS`.
+ */
+import { type Context, Hono } from "hono"
+
+/** Minimal structural view of the deployment's document storage backend. */
+export interface ContractDocumentStorageLike {
+  get(key: string): Promise<ArrayBuffer | null>
+}
+
+/**
+ * Deployment-supplied dependencies for the contract-document routes. Generic /
+ * structural types keep the legal package free of operator types and
+ * CloudflareBindings — the deployment casts `c.env` / `c.get("db")` to its own
+ * concrete types inside these callbacks.
+ */
+export interface ContractDocumentRoutesOptions {
+  /**
+   * Generate (and persist) the booking's contract PDF. Returns `null` when
+   * document storage isn't configured (→ 503). The deployment reads its
+   * concrete db / event bus from `c` and casts as needed.
+   */
+  generateContract(
+    env: unknown,
+    db: unknown,
+    eventBus: unknown,
+    bookingId: string,
+    options: { force?: boolean },
+  ): Promise<{ contractId: string; attachmentId: string } | null>
+  /**
+   * Render the contract preview HTML for a booking. Returns `null` when the
+   * contract template can't be found (→ 404).
+   */
+  previewContract(
+    env: unknown,
+    db: unknown,
+    bookingId: string,
+  ): Promise<{ html: string; templateName: string; templateLanguage: string } | null>
+  /**
+   * Resolve the private document storage backend from the request env. Returns
+   * `null` when storage isn't configured (→ 503).
+   */
+  resolveStorage(env: unknown): ContractDocumentStorageLike | null
+  /** Best-effort MIME-type guess from a document key/path. */
+  guessMimeType(key: string): string
+}
+
+/** Absolute path matchers for the deployment's `lazyRoutes.paths`. */
+export const CONTRACT_DOCUMENT_ROUTE_PATHS = [
+  "/v1/admin/bookings/:bookingId/generate-contract",
+  "/v1/admin/documents/files/*",
+] as const
 
 const SCRIPTABLE_MIME_TYPES = new Set([
   "application/ecmascript",
@@ -18,14 +79,6 @@ const SCRIPTABLE_MIME_TYPES = new Set([
   "text/javascript",
   "text/xml",
 ])
-
-type OperatorContractDocumentRouteEnv = {
-  Bindings: CloudflareBindings
-  Variables: {
-    db: PostgresJsDatabase
-    eventBus?: EventBus
-  }
-}
 
 function maybeString(value: string | null | undefined) {
   const trimmed = value?.trim()
@@ -62,7 +115,7 @@ function isScriptableMimeType(contentType: string | null | undefined) {
   return normalized ? SCRIPTABLE_MIME_TYPES.has(normalized) : false
 }
 
-function safeServedContentType(key: string) {
+function safeServedContentType(guessMimeType: (key: string) => string, key: string) {
   const guessed = guessMimeType(key)
   return isScriptableMimeType(guessed) ? "application/octet-stream" : guessed
 }
@@ -96,12 +149,18 @@ function parseDocumentKey(path: string) {
   return segments.join("/")
 }
 
-export function mountOperatorContractDocumentRoutes(
-  hono: Hono<OperatorContractDocumentRouteEnv>,
-): void {
+/**
+ * Build the contract-document routes (absolute paths). A deployment composes
+ * these via `lazyRoutes` and supplies the generator/preview, storage resolver,
+ * and MIME guesser.
+ */
+export function createContractDocumentRoutes(options: ContractDocumentRoutesOptions): Hono {
+  const { generateContract, previewContract, resolveStorage, guessMimeType } = options
+  const hono = new Hono()
+
   // Manual contract-PDF generation for the booking detail page's Documents tab.
   // POST /v1/admin/bookings/:bookingId/generate-contract
-  hono.post("/v1/admin/bookings/:bookingId/generate-contract", async (c) => {
+  hono.post("/v1/admin/bookings/:bookingId/generate-contract", async (c: Context) => {
     const bookingId = c.req.param("bookingId")
     if (!bookingId) return c.json({ error: "bookingId route param is required" }, 400)
 
@@ -110,20 +169,16 @@ export function mountOperatorContractDocumentRoutes(
       .catch(() => ({}) as { force?: boolean; preview?: boolean })
     try {
       if (body.preview === true) {
-        const preview = await previewContractForBooking(c.env, c.get("db"), bookingId)
+        const preview = await previewContract(c.env, c.get("db"), bookingId)
         if (!preview) {
           return c.json({ error: "Contract template not found" }, 404)
         }
         return c.json({ data: preview })
       }
 
-      const result = await generateContractPdfForBooking(
-        c.env,
-        c.get("db"),
-        c.get("eventBus"),
-        bookingId,
-        { force: body.force === true },
-      )
+      const result = await generateContract(c.env, c.get("db"), c.get("eventBus"), bookingId, {
+        force: body.force === true,
+      })
       if (!result) {
         return c.json(
           { error: "Contract document storage not configured (missing DOCUMENTS_BUCKET)" },
@@ -138,12 +193,12 @@ export function mountOperatorContractDocumentRoutes(
   })
 
   // GET /v1/admin/documents/files/* — admin-only stream of private
-  // documents bytes from the DOCUMENTS_BUCKET. Used as the fallback
+  // documents bytes from the document storage. Used as the fallback
   // download target for environments where the R2 binding isn't backed by a
   // real S3 SigV4 signer. Auth is the standard staff guard inherited from
   // `/v1/admin/*` middleware in createApp.
-  hono.get("/v1/admin/documents/files/*", async (c) => {
-    const storage = createDocumentStorage(c.env)
+  hono.get("/v1/admin/documents/files/*", async (c: Context) => {
+    const storage = resolveStorage(c.env)
     if (!storage) {
       return c.json({ error: "Storage not configured" }, 503)
     }
@@ -155,7 +210,7 @@ export function mountOperatorContractDocumentRoutes(
     if (!buffer) return c.json({ error: "Not found" }, 404)
 
     const headers = new Headers()
-    headers.set("Content-Type", safeServedContentType(key))
+    headers.set("Content-Type", safeServedContentType(guessMimeType, key))
     headers.set("X-Content-Type-Options", "nosniff")
     headers.set("Cache-Control", "private, no-store")
     headers.set("Content-Length", String(buffer.byteLength))
@@ -163,4 +218,6 @@ export function mountOperatorContractDocumentRoutes(
 
     return new Response(buffer, { headers })
   })
+
+  return hono
 }

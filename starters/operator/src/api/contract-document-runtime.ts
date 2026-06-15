@@ -1,7 +1,11 @@
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
-import type { ContractDocumentGenerator } from "@voyant-travel/legal"
+import {
+  type ContractDocumentGenerator,
+  type ContractDocumentRoutesOptions,
+  createContractDocumentRoutes,
+} from "@voyant-travel/legal"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { tryGetCloudClient } from "../lib/voyant-cloud"
@@ -10,7 +14,7 @@ import {
   contractVariableBindings,
   DEFAULT_CONTRACT_SERIES_NAME,
 } from "./contract-document-variables"
-import { createDocumentStorage } from "./lib/storage"
+import { createDocumentStorage, guessMimeType } from "./lib/storage"
 
 export { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
 
@@ -163,6 +167,31 @@ export async function previewContractForBooking(
 
   const reason = "reason" in result && typeof result.reason === "string" ? result.reason : "unknown"
   throw new Error(`Contract preview failed: ${result.status} (${reason})`)
+}
+
+/**
+ * Build the contract-document routes wired with this deployment's options.
+ *
+ * The route shapes live in `@voyant-travel/legal`; this supplies the
+ * generator/preview (above), the private document storage resolver, and the
+ * MIME guesser (from `./lib/storage`).
+ */
+export function buildContractDocumentRoutes() {
+  const options: ContractDocumentRoutesOptions = {
+    generateContract: (env, db, eventBus, bookingId, opts) =>
+      generateContractPdfForBooking(
+        env as CloudflareBindings,
+        db as PostgresJsDatabase,
+        eventBus as EventBus | undefined,
+        bookingId,
+        opts,
+      ),
+    previewContract: (env, db, bookingId) =>
+      previewContractForBooking(env as CloudflareBindings, db as PostgresJsDatabase, bookingId),
+    resolveStorage: (env) => createDocumentStorage(env as CloudflareBindings),
+    guessMimeType,
+  }
+  return createContractDocumentRoutes(options)
 }
 
 async function createContractBookingPiiService(env: CloudflareBindings) {

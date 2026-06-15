@@ -58,7 +58,7 @@ import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
-import { createLegalHonoModule } from "@voyant-travel/legal"
+import { CONTRACT_DOCUMENT_ROUTE_PATHS, createLegalHonoModule } from "@voyant-travel/legal"
 import {
   createDefaultBookingDocumentAttachment,
   createNotificationService,
@@ -610,14 +610,12 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     }),
     "operator/contract-document": () => ({
       module: { name: "contract-document" },
+      // Routes live in @voyant-travel/legal; this deployment supplies the
+      // generator/preview + document storage via ./contract-document-runtime.
       lazyRoutes: {
-        paths: ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
+        paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
         load: () =>
-          import("./contract-document-routes").then((m) => {
-            const app = new Hono()
-            m.mountOperatorContractDocumentRoutes(app as never)
-            return app
-          }),
+          import("./contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
       },
     }),
   },

@@ -3,7 +3,6 @@
   "files": {
     "starters/operator/src/api/app.ts": 1,
     "starters/operator/src/api/catalog-booking.ts": 4,
-    "starters/operator/src/api/contract-document-routes.ts": 2,
     "starters/operator/src/api/lazy-additional-routes.ts": 7,
     "starters/operator/src/api/media-upload-routes.ts": 7,
     "starters/operator/src/api/settings.ts": 10

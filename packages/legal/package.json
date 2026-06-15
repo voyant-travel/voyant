@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./contract-document-routes": "./src/contract-document-routes.ts",
     "./schema": "./src/schema.ts",
     "./contracts": "./src/contracts/index.ts",
     "./contracts/validation": "./src/contracts/validation.ts",
@@ -59,6 +60,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./contract-document-routes": {
+        "types": "./dist/contract-document-routes.d.ts",
+        "import": "./dist/contract-document-routes.js",
+        "default": "./dist/contract-document-routes.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
