@@ -23,11 +23,10 @@ The supported deployment shapes are:
   Cloud. Workflow bundles execute in the hosted Node runner implementation in
   `/Users/mihai/builds/internal/voyant-all/voyant-cloud`.
 
-Cloudflare Workers may still host application/API code, and this repo still
-contains legacy Cloudflare Worker/Durable Object workflow adapters. Those
-adapters are compatibility surfaces for old self-host experiments; they are not
-the managed Cloud workflow execution model and must not introduce new runtime
-selection APIs.
+Cloudflare Workers may still host application/API code, but the workflow
+runtime itself is Node-only. The old Cloudflare Worker/Durable Object workflow
+adapter, tenant-worker adapter, and external step-server package have been
+removed from the workspace package surface.
 
 ## Evidence From `voyant-cloud`
 
@@ -63,11 +62,6 @@ event routing, dispatch contracts, and compliance tests.
 
 `@voyant-travel/workflows-orchestrator-node` is the primary self-host runtime. It
 uses Postgres for run records, wakeups, manifests, schedules, and admin queries.
-
-`@voyant-travel/workflows-orchestrator-cloudflare`,
-`@voyant-travel/workflows-cloud-adapter`, and the Cloudflare Worker apps are
-legacy compatibility surfaces. Keep fixes narrow and do not extend them with new
-managed-runtime behavior.
 
 ## Application Wiring
 
@@ -122,5 +116,5 @@ then schedules execution on Node runners.
 - Prefer Node/Postgres for new self-host workflow runtime work.
 - Prefer `@voyant-travel/workflows/client` and
   `createCloudWorkflowDriver(...)` for managed Cloud app bundles.
-- When a legacy Cloudflare workflow package must change, keep the change
-  compatibility-focused and do not present it as the current architecture.
+- Do not reintroduce Cloudflare workflow runtime adapter packages or external
+  step-server packages.

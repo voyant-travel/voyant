@@ -37,9 +37,8 @@ how a real tour operator runs checkout:
      (converting the proforma when applicable),
    - notifies the customer with both documents attached.
 
-The whole orchestration runs through Voyant workflows
-(`packages/core/src/workflows.ts`, executed by
-`apps/workflows-tenant-worker`). No Trigger.dev, no BullMQ.
+The whole orchestration runs through Voyant workflows and executes in the
+node-only workflow runtime. No Trigger.dev, no BullMQ.
 
 ## Reference: protravel-v3
 
@@ -81,7 +80,7 @@ need to write".
 | SmartBill plugin | `packages/plugins/smartbill/` | subscribers for `invoice.issued`, `invoice.voided`; `createInvoice`, `cancelInvoice`; `createSmartbillInvoiceSettlementPoller` |
 | Netopia plugin | `packages/plugins/netopia/` | `startPaymentSession`, finance routes, webhook callback |
 | EventBus | `packages/core/src/events.ts` | `emit / subscribe`, fire-and-forget |
-| Workflows | `packages/core/src/workflows.ts` + `apps/workflows-tenant-worker` | `createWorkflow`, `step`, async via JobRunner |
+| Workflows | `@voyant-travel/workflows` + Node workflow runtime | `createWorkflow`, `step`, async via JobRunner |
 | Booking journey UI | `packages/bookings-react/src/journey/` | `<BookingJourney />`, descriptor-driven Review step, render-prop slots |
 
 ## Gaps to close
@@ -215,8 +214,8 @@ unchanged).
    - `notify_customer` (async, via notifications package)
    - Compensations: release hold, void contract, void invoice on
      failures upstream of confirmation.
-3. `apps/workflows-tenant-worker` — register `checkout-finalize` so
-   per-step async execution works. The `wait_for_payment` step
+3. Node workflow runtime — register `checkout-finalize` so
+   async execution works. The `wait_for_payment` step
    persists state and resumes when the matching `payment.completed`
    event arrives.
 

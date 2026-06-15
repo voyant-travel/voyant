@@ -80,16 +80,12 @@ orchestrator or local dashboard server.
 - `packages/workflows`
 - `packages/workflows-react`
 - `packages/workflows-orchestrator`
-- `packages/workflows-orchestrator-cloudflare`
 - `packages/workflows-orchestrator-node`
 
 ### Add as workflows runtime apps
 
 - `apps/workflows-local-dashboard`
-- `apps/workflows-orchestrator-worker`
-- `apps/workflows-selfhost-cloudflare-worker`
 - `apps/workflows-selfhost-node-server`
-- `apps/workflows-tenant-worker`
 
 ### Do not keep as separate packages
 
@@ -115,7 +111,6 @@ instead of preserving temporary naming debt.
 | `@voyant/errors` | `@voyant-travel/workflows/errors` |
 | `@voyant/bindings` | `@voyant-travel/workflows/bindings` |
 | `@voyant/orchestrator` | `@voyant-travel/workflows-orchestrator` |
-| `@voyant/orchestrator-cloudflare` | `@voyant-travel/workflows-orchestrator-cloudflare` |
 | `@voyant/orchestrator-node` | `@voyant-travel/workflows-orchestrator-node` |
 | `@voyant/cli` | merge into `@voyant-travel/cli` |
 | `@voyant/ui` | merge into `@voyant-travel/ui` |
@@ -199,16 +194,12 @@ Promote these packages directly:
 - `packages/workflows`
 - `packages/workflows-react`
 - `packages/workflows-orchestrator`
-- `packages/workflows-orchestrator-cloudflare`
 - `packages/workflows-orchestrator-node`
 
 Promote these apps directly:
 
 - `apps/workflows-local-dashboard`
-- `apps/workflows-orchestrator-worker`
-- `apps/workflows-selfhost-cloudflare-worker`
 - `apps/workflows-selfhost-node-server`
-- `apps/workflows-tenant-worker`
 
 Do not promote:
 

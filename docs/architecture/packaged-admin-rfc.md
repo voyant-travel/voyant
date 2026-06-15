@@ -325,8 +325,8 @@ Directly per voyant#1641's suggested directions:
   `hono-api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
   API/auth/SSR dispatch and the SSR-manifest-restriction logic (#1642).
   Scoping is deliberate: `entry.ts` (287 LOC) also owns the cron
-  `scheduled()` handler, lazy workflow-runtime loading, the `WorkflowRunDO`
-  Durable Object, and the workflow step-service registry. Those are
+  `scheduled()` handler, lazy workflow-runtime loading, and the workflow
+  step-service registry. Those are
   app-specific composition (which crons exist, which services steps may
   resolve) and **stay app-owned in Phase 0** — Phase 0 packages only the
   load-bearing dispatch logic that caused the #1636 incident class. A fuller

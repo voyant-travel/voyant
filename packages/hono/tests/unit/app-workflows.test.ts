@@ -330,10 +330,10 @@ describe("createApp workflows wiring", () => {
   })
 
   test("function-of-bindings shape sees env at boot (defers construction)", async () => {
-    // Mirrors the CF-edge use case: driver options come from env bindings
-    // that don't exist at createApp() call time. The bindings-aware
-    // factory shape lets users write
-    // `driver: (env) => createCloudflareEdgeDriver({ env.* })`.
+    // Mirrors Worker-hosted app shells: driver options come from env
+    // bindings that don't exist at createApp() call time. The
+    // bindings-aware factory shape lets apps build the workflow driver
+    // after bindings are available.
     interface MockEnv extends VoyantBindings {
       WORKFLOW_RUN_DO?: { id: string }
     }
