@@ -1,5 +1,11 @@
 # @voyant-travel/distribution-react
 
+## 0.110.1
+
+### Patch Changes
+
+- @voyant-travel/distribution@0.110.1
+
 ## 0.110.0
 
 ### Minor Changes

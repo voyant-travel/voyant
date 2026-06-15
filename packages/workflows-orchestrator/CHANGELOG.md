@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.108.0
+
+### Patch Changes
+
+- Updated dependencies [0c003f3]
+  - @voyant-travel/workflows@0.108.0
+
 ## 0.107.11
 
 ### Patch Changes

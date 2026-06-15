@@ -1,5 +1,18 @@
 # @voyant-travel/workflows
 
+## 0.108.0
+
+### Minor Changes
+
+- 0c003f3: Make workflows node-only and remove the stale Cloudflare edge/Node step split.
+
+  Workflow runtime annotations now accept only `runtime: "node"`, legacy
+  `runtime: "edge"` is rejected, and the old split-runner wiring has been removed.
+  The legacy Cloudflare workflow adapter packages, Worker reference apps, and
+  standalone external step-server artifact have been removed. Managed Cloud apps
+  should forward workflow calls to the hosted Node runtime, and self-hosted
+  deployments should use the Node/Postgres runtime package.
+
 ## 0.107.11
 
 ## 0.107.10

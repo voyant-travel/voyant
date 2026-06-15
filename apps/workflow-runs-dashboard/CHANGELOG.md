@@ -1,5 +1,11 @@
 # @voyant-travel/workflow-runs-dashboard
 
+## 0.0.4
+
+### Patch Changes
+
+- @voyant-travel/workflows-react@0.108.0
+
 ## 0.0.3
 
 ### Patch Changes

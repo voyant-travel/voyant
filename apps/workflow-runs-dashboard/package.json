@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/workflow-runs-dashboard",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Standalone Vite SPA for the workflow_runs admin surface. Reads /v1/admin/workflow-runs from any deployment that mounts createWorkflowRunsAdminRoutes(). Deployable same-origin or standalone via VITE_API_BASE.",
   "license": "Apache-2.0",
   "private": true,
