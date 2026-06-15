@@ -17,7 +17,7 @@
  *                               Cloud Gemini gateway. Without it, the
  *                               index works for keyword search only.
  *   VOYANT_CLOUD_API_KEY      — legacy alias for VOYANT_API_KEY.
- *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyantjs.com`.
+ *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyant.travel`.
  *   VOYANT_CATALOG_EMBEDDINGS — set to `false` to skip embedding generation.
  */
 
@@ -63,7 +63,7 @@ const cloudApiKey =
   process.env.VOYANT_CATALOG_EMBEDDINGS === "false"
     ? undefined
     : (process.env.VOYANT_API_KEY ?? process.env.VOYANT_CLOUD_API_KEY)
-const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(
+const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.travel").replace(
   /\/$/,
   "",
 )

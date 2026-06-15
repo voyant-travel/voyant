@@ -124,7 +124,7 @@ describe("createGeminiEmbeddingProvider", () => {
     const provider = createGeminiEmbeddingProvider({
       apiKey: "vc-token-abc",
       auth: "bearer",
-      baseUrl: "https://api.voyantjs.com/ai/v1/gemini",
+      baseUrl: "https://api.voyant.travel/ai/v1/gemini",
       fetchImpl: fetchSpy,
     })
     await provider.embed(["x"])
@@ -134,7 +134,7 @@ describe("createGeminiEmbeddingProvider", () => {
     expect(headers.Authorization).toBe("Bearer vc-token-abc")
     expect(headers["x-goog-api-key"]).toBeUndefined()
     expect(url).toBe(
-      "https://api.voyantjs.com/ai/v1/gemini/models/gemini-embedding-001:batchEmbedContents",
+      "https://api.voyant.travel/ai/v1/gemini/models/gemini-embedding-001:batchEmbedContents",
     )
   })
 

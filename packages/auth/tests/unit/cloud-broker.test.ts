@@ -129,7 +129,7 @@ describe("revalidateCloudAdminAuthAccess", () => {
       workosUserId: "user_workos_123",
       fetch: fetch as typeof globalThis.fetch,
       config: {
-        revalidateUrl: "https://api.voyantjs.com/cloud/v1/admin-auth/revalidate",
+        revalidateUrl: "https://api.voyant.travel/cloud/v1/admin-auth/revalidate",
         deploymentId: "dep_123",
         clientToken: "client_token_123",
       },
@@ -155,7 +155,7 @@ describe("revalidateCloudAdminAuthAccess", () => {
         workosUserId: "user_workos_123",
         fetch: fetch as typeof globalThis.fetch,
         config: {
-          revalidateUrl: "https://api.voyantjs.com/cloud/v1/admin-auth/revalidate",
+          revalidateUrl: "https://api.voyant.travel/cloud/v1/admin-auth/revalidate",
           deploymentId: "dep_123",
           clientToken: "client_token_123",
         },
@@ -197,10 +197,10 @@ describe("exchangeCloudAdminAuthCode", () => {
     const fetch = async (url: string | URL | Request, init?: RequestInit) => {
       const href = url.toString()
       fetchCalls.push({ url: href, init })
-      if (href === "https://api.voyantjs.com/dashboard/v1/admin-auth/exchange") {
+      if (href === "https://api.voyant.travel/dashboard/v1/admin-auth/exchange") {
         return Response.json({ assertion })
       }
-      if (href === "https://api.voyantjs.com/.well-known/admin-auth/jwks.json") {
+      if (href === "https://api.voyant.travel/.well-known/admin-auth/jwks.json") {
         return Response.json({ keys: [publicJwk] })
       }
       return Response.json({ error: "not found" }, { status: 404 })
@@ -219,10 +219,10 @@ describe("exchangeCloudAdminAuthCode", () => {
       now: new Date("2026-05-16T00:00:10.000Z"),
       fetch: fetch as typeof globalThis.fetch,
       config: {
-        exchangeUrl: "https://api.voyantjs.com/dashboard/v1/admin-auth/exchange",
+        exchangeUrl: "https://api.voyant.travel/dashboard/v1/admin-auth/exchange",
         deploymentId: "dep_123",
         clientToken: "client_token_123",
-        assertionJwksUrl: "https://api.voyantjs.com/.well-known/admin-auth/jwks.json",
+        assertionJwksUrl: "https://api.voyant.travel/.well-known/admin-auth/jwks.json",
         assertionAudience: "dep_123",
       },
     })
@@ -266,10 +266,10 @@ describe("exchangeCloudAdminAuthCode", () => {
         now: new Date("2026-05-16T00:00:10.000Z"),
         fetch: fetch as typeof globalThis.fetch,
         config: {
-          exchangeUrl: "https://api.voyantjs.com/dashboard/v1/admin-auth/exchange",
+          exchangeUrl: "https://api.voyant.travel/dashboard/v1/admin-auth/exchange",
           deploymentId: "dep_123",
           clientToken: "client_token_123",
-          assertionJwksUrl: "https://api.voyantjs.com/.well-known/admin-auth/jwks.json",
+          assertionJwksUrl: "https://api.voyant.travel/.well-known/admin-auth/jwks.json",
           assertionAudience: "dep_123",
         },
       }),
