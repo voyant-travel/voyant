@@ -18,6 +18,7 @@
  * Per docs/architecture/channel-push-architecture.md §10 (Phase D-G).
  */
 
+import type { Extension } from "@voyant-travel/core"
 import {
   createChannelPushAdminRoutes,
   processAvailabilityPushIntents,
@@ -32,9 +33,10 @@ import {
   upsertPendingBookingLinks,
 } from "@voyant-travel/distribution"
 import type { VoyantDb } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
-import type { Hono } from "hono"
+import { Hono } from "hono"
 
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
 import { withDbFromEnv } from "./lib/db"
@@ -164,30 +166,42 @@ export const channelPushBundle: HonoBundle = {
   },
 }
 
+const channelPushExtensionDef: Extension = {
+  name: "channel-push",
+  module: "distribution",
+}
+
 /**
- * Mount the channel-push admin API at
- * `/v1/admin/distribution/*`. The operator dashboard's
- * "channel sync" view consumes these endpoints.
+ * Channel-push admin API as a composed distribution extension.
  *
- * Wires `setChannelPushDeps` per-request — the admin routes
- * (`triggerBookingPushForBooking` and the reconciler triggers) read
- * deps via `getChannelPushDepsOrThrow`, so this hop makes Workers'
- * per-request DB binding play nicely with the global holder.
+ * `createApp` mounts the extension's `adminRoutes` at
+ * `/v1/admin/distribution` (the target module), so the package routes
+ * keep their existing absolute paths. The operator dashboard's "channel
+ * sync" view consumes these endpoints.
  *
+ * The per-request middleware wires `setChannelPushDeps` from the
+ * request-scoped Pool the `dbFromEnvForApp` middleware installs on
+ * `c.var.db`, plus the operator's booking-engine registry, so the admin
+ * routes' push/reconcile triggers resolve deps via
+ * `getChannelPushDepsOrThrow`. It is scoped to this extension's own
+ * routes (mirroring the former additionalRoutes mount, which only ever
+ * wrapped the channel-push routes — the distribution module routes do
+ * not read channel-push deps).
+ *
+ * Replaces the former `mountChannelPushAdminRoutes(...)` additionalRoutes
+ * hop; see docs/architecture/api-route-ownership-and-composition.md.
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
-export function mountChannelPushAdminRoutes(hono: Hono<{ Variables: { db: VoyantDb } }>): void {
-  hono.use("/v1/admin/distribution/*", async (c, next) => {
+export function createChannelPushExtension(): HonoExtension {
+  const adminRoutes = new Hono<{ Variables: { db: VoyantDb } }>()
+  adminRoutes.use("*", async (c, next) => {
     const env = c.env as CloudflareBindings & BookingEngineEnv
-    // Use the request-scoped Pool the `dbFromEnvForApp` middleware
-    // installs on `c.var.db`. The disposable middleware closes it
-    // after the response is sent, so we don't have to manage Pool
-    // lifecycle here.
     setChannelPushDeps({
       db: c.get("db") as NeonDatabase,
       registry: getBookingEngineRegistry(env),
     })
     await next()
   })
-  hono.route("/v1/admin/distribution", createChannelPushAdminRoutes())
+  adminRoutes.route("/", createChannelPushAdminRoutes())
+  return { extension: channelPushExtensionDef, adminRoutes }
 }

@@ -67,6 +67,7 @@ import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
+import { createChannelPushExtension } from "./channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
@@ -243,6 +244,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/inventory/authoring/extension",
     "@voyant-travel/quotes/booking-extension",
     "@voyant-travel/distribution",
+    "@voyant-travel/distribution/channel-push-extension",
   ],
 } satisfies CompositionManifest
 
@@ -455,5 +457,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyant-travel/inventory/authoring/extension": () => inventoryAuthoringExtension,
     "@voyant-travel/quotes/booking-extension": () => quotesBookingExtension,
     "@voyant-travel/distribution": () => distributionBookingExtension,
+    "@voyant-travel/distribution/channel-push-extension": () => createChannelPushExtension(),
   },
 }

@@ -14,7 +14,7 @@ import {
 } from "./booking-schedule"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
-import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
+import { channelPushBundle } from "./channel-push"
 import {
   buildOperatorCapabilities,
   OPERATOR_RUNTIME_MANIFEST,
@@ -348,7 +348,6 @@ export const app = createApp<CloudflareBindings>({
     mountLazyRouteApp(hono, catalogOfferRoutePaths, () =>
       import("./catalog-offers").then((module) => module.mountCatalogOffersRoutes),
     )
-    mountChannelPushAdminRoutes(hono)
     mountLazyRouteApp(hono, ["/v1/admin/flights/*"], () =>
       import("./flights").then((module) => module.mountFlightRoutes),
     )

@@ -40,7 +40,7 @@ describe("operator runtime composition", () => {
     // Distribution each mount multiple internal Hono modules.
     expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(20)
     expect(composed.modules).toHaveLength(25)
-    expect(composed.extensions).toHaveLength(6)
+    expect(composed.extensions).toHaveLength(7)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
@@ -49,6 +49,21 @@ describe("operator runtime composition", () => {
     // Module names are unique (no double-mount).
     const names = composed.modules.map((m) => m.module.name)
     expect(new Set(names).size).toBe(names.length)
+  })
+
+  it("composes the channel-push admin API as a distribution extension", () => {
+    // Channel-push moved off the additionalRoutes hop into composition; its
+    // adminRoutes mount under `/v1/admin/distribution` (the target module).
+    const composed = composeFromManifest(
+      OPERATOR_RUNTIME_MANIFEST,
+      operatorComposition,
+      buildOperatorCapabilities(),
+    )
+
+    const channelPush = composed.extensions.find((e) => e.extension.name === "channel-push")
+    expect(channelPush).toBeDefined()
+    expect(channelPush?.extension.module).toBe("distribution")
+    expect(channelPush?.adminRoutes).toBeDefined()
   })
 
   it("every schema-migrated module (voyant.config) is actually mounted at runtime", () => {
