@@ -51,6 +51,11 @@ export interface CreateCruiseContentRoutesOptions {
   onOverlayError?: (event: { field_path: string; reason: string }) => void
   defaultAcceptMachineTranslated?: boolean
   /**
+   * Optional response cache policy for deployments mounting this route
+   * on a public surface. Admin mounts should leave this unset.
+   */
+  cacheControl?: string | false
+  /**
    * When the unified key resolves to a cruise typeid (`crus_*` —
    * owned cruise), the route returns 404 by default. Set this to
    * `true` to also dispatch through `getCruiseContent` for owned ids
@@ -116,6 +121,7 @@ export function createCruiseContentRoutes(
         )
       }
 
+      if (options.cacheControl) c.header("Cache-Control", options.cacheControl)
       return c.json({
         data: {
           content: result.content,

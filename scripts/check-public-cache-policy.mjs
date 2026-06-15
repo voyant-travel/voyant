@@ -1,0 +1,298 @@
+/**
+ * Enforces the public-route cache policy from
+ * docs/architecture/public-route-cache-policy.md.
+ *
+ * The public response cache is opt-in by route header, so the guardrail keeps
+ * the known route groups, policy doc, and Cloudflare KV bindings in sync.
+ */
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT = join(__dirname, "..")
+
+const violations = []
+
+function read(relativePath) {
+  return readFileSync(join(ROOT, relativePath), "utf-8")
+}
+
+function addViolation(message) {
+  violations.push(message)
+}
+
+function requireContains(relativePath, phrase, reason) {
+  const content = read(relativePath)
+  if (!content.includes(phrase)) {
+    addViolation(`${relativePath}: missing ${JSON.stringify(phrase)} (${reason})`)
+  }
+}
+
+function countLiteral(content, literal) {
+  let count = 0
+  let index = content.indexOf(literal)
+  while (index !== -1) {
+    count += 1
+    index = content.indexOf(literal, index + literal.length)
+  }
+  return count
+}
+
+function requireCallCount(relativePath, literal, minimum, reason) {
+  const content = read(relativePath)
+  const count = countLiteral(content, literal)
+  if (count < minimum) {
+    addViolation(
+      `${relativePath}: expected at least ${minimum} occurrences of ${JSON.stringify(
+        literal,
+      )}, found ${count} (${reason})`,
+    )
+  }
+}
+
+function stripJsonComments(input) {
+  let output = ""
+  let inString = false
+  let quote = ""
+  let escaped = false
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i]
+    const next = input[i + 1]
+
+    if (inString) {
+      output += char
+      if (escaped) {
+        escaped = false
+      } else if (char === "\\") {
+        escaped = true
+      } else if (char === quote) {
+        inString = false
+        quote = ""
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      inString = true
+      quote = char
+      output += char
+      continue
+    }
+
+    if (char === "/" && next === "/") {
+      while (i < input.length && input[i] !== "\n") i += 1
+      output += "\n"
+      continue
+    }
+
+    if (char === "/" && next === "*") {
+      i += 2
+      while (i < input.length && !(input[i] === "*" && input[i + 1] === "/")) i += 1
+      i += 1
+      continue
+    }
+
+    output += char
+  }
+
+  return output
+}
+
+function checkPolicyDoc() {
+  const relativePath = "docs/architecture/public-route-cache-policy.md"
+  if (!existsSync(join(ROOT, relativePath))) {
+    addViolation(`${relativePath}: missing public route cache policy document`)
+    return
+  }
+
+  const requiredPhrases = [
+    "Inventory public product browse/detail",
+    "Storefront settings, departure browse/detail",
+    "Catalog sourced content for products, cruises, and accommodations",
+    "Cruise public browse/detail/sailing/ship GETs",
+    "Charter public browse/detail/voyage/yacht GETs",
+    "Commerce public pricing and availability snapshots",
+    "Booking transport requirements",
+    "Legal policies, terms, and default contract template",
+    "Operator public profile, public operator settings, payment-link config",
+    "Catalog POST search",
+  ]
+
+  for (const phrase of requiredPhrases) {
+    requireContains(relativePath, phrase, "route matrix entry")
+  }
+}
+
+function checkCloudflareKvBindings() {
+  requireContains(
+    "starters/operator/voyant.config.ts",
+    'cache: { provider: "kv", binding: "CACHE" }',
+    "Cloudflare starter cache backend declaration",
+  )
+  requireContains(
+    "starters/operator/env.d.ts",
+    "CACHE: KVNamespace",
+    "Cloudflare starter CACHE binding type",
+  )
+  requireContains(
+    "starters/operator/env.d.ts",
+    "RATE_LIMIT: KVNamespace",
+    "Cloudflare starter RATE_LIMIT binding type",
+  )
+
+  let config
+  try {
+    config = JSON.parse(stripJsonComments(read("starters/operator/wrangler.jsonc")))
+  } catch (err) {
+    addViolation(`starters/operator/wrangler.jsonc: failed to parse JSONC (${err.message})`)
+    return
+  }
+
+  const kvNamespaces = Array.isArray(config.kv_namespaces) ? config.kv_namespaces : []
+  for (const binding of ["CACHE", "RATE_LIMIT"]) {
+    const namespace = kvNamespaces.find((entry) => entry?.binding === binding)
+    if (!namespace) {
+      addViolation(`starters/operator/wrangler.jsonc: missing KV binding ${binding}`)
+      continue
+    }
+    if (typeof namespace.id !== "string" || namespace.id.trim().length === 0) {
+      addViolation(`starters/operator/wrangler.jsonc: KV binding ${binding} must declare an id`)
+    }
+  }
+}
+
+function checkSourceMarkers() {
+  requireContains(
+    "packages/hono/src/app.ts",
+    "publicResponseCache(config.publicCache ?? {})",
+    "public response cache middleware must stay mounted by default",
+  )
+  requireContains(
+    "packages/hono/src/middleware/public-cache.ts",
+    'const DEFAULT_PREFIXES = ["/v1/public/"]',
+    "public response cache must remain scoped to public API by default",
+  )
+  requireContains(
+    "packages/hono/src/middleware/public-cache.ts",
+    "c.env.CACHE",
+    "public response cache must keep the KV fallback",
+  )
+
+  const sharedCacheMarkers = [
+    {
+      file: "packages/inventory/src/routes-public.ts",
+      call: "setPublicCacheHeaders(c)",
+      minimum: 7,
+      reason: "inventory public read routes",
+    },
+    {
+      file: "packages/storefront/src/routes-public.ts",
+      call: "setPublicCacheHeaders(c)",
+      minimum: 8,
+      reason: "storefront public read routes",
+    },
+    {
+      file: "packages/cruises/src/routes-public.ts",
+      call: "cachePublicRead(c)",
+      minimum: 7,
+      reason: "cruise public read routes",
+    },
+    {
+      file: "packages/charters/src/routes-public.ts",
+      call: "cachePublicRead(c)",
+      minimum: 9,
+      reason: "charter public read routes",
+    },
+    {
+      file: "packages/commerce/src/pricing/routes-public.ts",
+      call: "cachePublicRead(c)",
+      minimum: 2,
+      reason: "public pricing and availability snapshots",
+    },
+    {
+      file: "packages/bookings/src/requirements/routes-public.ts",
+      call: "cachePublicRead(c)",
+      minimum: 1,
+      reason: "public booking transport requirements",
+    },
+    {
+      file: "packages/legal/src/policies/routes.ts",
+      call: "cachePublicLegalRead(c)",
+      minimum: 1,
+      reason: "public legal policy reads",
+    },
+    {
+      file: "packages/legal/src/terms/routes.ts",
+      call: "cachePublicLegalRead(c)",
+      minimum: 2,
+      reason: "public legal terms reads",
+    },
+    {
+      file: "packages/legal/src/contracts/routes.ts",
+      call: "cachePublicLegalRead(c)",
+      minimum: 1,
+      reason: "public default contract template read",
+    },
+    {
+      file: "starters/operator/src/api/settings.ts",
+      call: "cachePublicOperatorSettings(c)",
+      minimum: 2,
+      reason: "public operator settings/profile reads",
+    },
+    {
+      file: "starters/operator/src/api/payment-link-routes.ts",
+      call: "cachePublicPaymentLinkConfig(c)",
+      minimum: 1,
+      reason: "public payment-link config read",
+    },
+  ]
+
+  for (const marker of sharedCacheMarkers) {
+    requireCallCount(marker.file, marker.call, marker.minimum, marker.reason)
+  }
+
+  requireCallCount(
+    "packages/legal/src/contracts/routes.ts",
+    "preventSharedCache(c)",
+    2,
+    "public contract instance and signing routes must stay private/no-store",
+  )
+
+  for (const file of [
+    "packages/inventory/src/routes-content.ts",
+    "packages/cruises/src/routes-content.ts",
+    "packages/accommodations/src/routes-content.ts",
+  ]) {
+    requireContains(file, "cacheControl?: string | false", "public content route cache option")
+    requireContains(file, "options.cacheControl", "public content route applies cache option")
+  }
+
+  requireContains(
+    "starters/operator/src/api/catalog-content.ts",
+    "PUBLIC_CATALOG_CONTENT_CACHE_CONTROL",
+    "public catalog content cache policy constant",
+  )
+  requireCallCount(
+    "starters/operator/src/api/catalog-content.ts",
+    "cacheControl: PUBLIC_CATALOG_CONTENT_CACHE_CONTROL",
+    3,
+    "product, cruise, and accommodation public content mounts",
+  )
+}
+
+checkPolicyDoc()
+checkCloudflareKvBindings()
+checkSourceMarkers()
+
+if (violations.length > 0) {
+  console.error("Public cache policy violation.")
+  console.error("See docs/architecture/public-route-cache-policy.md.\n")
+  for (const violation of violations) {
+    console.error(`  - ${violation}`)
+  }
+  process.exit(1)
+}
+
+console.log("check-public-cache-policy: OK")

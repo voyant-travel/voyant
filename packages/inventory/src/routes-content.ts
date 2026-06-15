@@ -58,6 +58,11 @@ export interface CreateProductContentRoutesOptions {
    * `false` so ops sees authored content before deciding to override.
    */
   defaultAcceptMachineTranslated?: boolean
+  /**
+   * Optional response cache policy for deployments mounting this route
+   * on a public surface. Admin mounts should leave this unset.
+   */
+  cacheControl?: string | false
 }
 
 /**
@@ -88,6 +93,7 @@ export function createProductContentRoutes(
       )
     }
 
+    if (options.cacheControl) c.header("Cache-Control", options.cacheControl)
     return c.json({
       data: {
         content: result.content,

@@ -255,6 +255,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * and falls back to the `env.CACHE` KV binding (Voyant Cloud
    * namespaced workers have no `caches.default`).
    */
+  publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**
    * Transactional outbox (RFC #1687 Phase 2.1). When `true`, request
    * emits persist the envelope to the `event_outbox` table BEFORE any
@@ -291,7 +292,6 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * individual policies.
    */
   rateLimit?: false | import("./middleware/rate-limit.js").RateLimitConfig
-  publicCache?: false | import("./middleware/public-cache.js").PublicCacheOptions
   /**
    * Workflow runtime configuration. When set, `createApp()` collects
    * `module.workflows` + `module.eventFilters` (plus the same fields

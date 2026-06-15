@@ -26,6 +26,11 @@ export interface CreateAccommodationContentRoutesOptions {
   resolveRegistry: (c: Context) => SourceAdapterRegistry
   onOverlayError?: (event: { field_path: string; reason: string }) => void
   defaultAcceptMachineTranslated?: boolean
+  /**
+   * Optional response cache policy for deployments mounting this route
+   * on a public surface. Admin mounts should leave this unset.
+   */
+  cacheControl?: string | false
 }
 
 export function createAccommodationContentRoutes(
@@ -51,6 +56,7 @@ export function createAccommodationContentRoutes(
       )
     }
 
+    if (options.cacheControl) c.header("Cache-Control", options.cacheControl)
     return c.json({
       data: {
         content: result.content,

@@ -24,6 +24,8 @@ import type { Hono } from "hono"
 
 import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
 
+const PUBLIC_CATALOG_CONTENT_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
+
 export function mountCatalogContentRoutes(hono: Hono): void {
   // ── Products ─────────────────────────────────────────────────
   const adminProductContentRoutes = createProductContentRoutes({
@@ -39,6 +41,7 @@ export function mountCatalogContentRoutes(hono: Hono): void {
     // available, including machine-translated when no human-authored
     // version exists for their locale.
     defaultAcceptMachineTranslated: true,
+    cacheControl: PUBLIC_CATALOG_CONTENT_CACHE_CONTROL,
   })
 
   hono.route("/v1/admin/products", adminProductContentRoutes)
@@ -55,6 +58,7 @@ export function mountCatalogContentRoutes(hono: Hono): void {
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
     defaultAcceptMachineTranslated: true,
     allowOwnedKeys: true,
+    cacheControl: PUBLIC_CATALOG_CONTENT_CACHE_CONTROL,
   })
 
   hono.route("/v1/admin/cruises", adminCruiseContentRoutes)
@@ -69,6 +73,7 @@ export function mountCatalogContentRoutes(hono: Hono): void {
   const publicAccommodationContentRoutes = createAccommodationContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
     defaultAcceptMachineTranslated: true,
+    cacheControl: PUBLIC_CATALOG_CONTENT_CACHE_CONTROL,
   })
 
   hono.route("/v1/admin/accommodations", adminAccommodationContentRoutes)

@@ -50,6 +50,10 @@ import { storefrontTransportEligibilityInputSchema } from "./validation-transpor
  */
 const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
 
+function setPublicCacheHeaders(c: Context) {
+  c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+}
+
 /**
  * KV read-model TTL for the departure list (RFC voyant#1687 Phase 2.2).
  * Departure availability shifts with every booking, so unlike the
@@ -184,7 +188,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
 
   return new Hono<Env>()
     .get("/settings", async (c) => {
-      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
+      const settings = await storefrontService.resolveSettings(getRequestContext(c))
+      setPublicCacheHeaders(c)
+      return c.json({ data: settings })
     })
     .post("/leads", async (c) => {
       const context = getRequestContext(c)
@@ -225,7 +231,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       )
 
       if (!departure) return c.json({ error: "Storefront departure not found" }, 404)
-      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      setPublicCacheHeaders(c)
       return c.json({ data: departure })
     })
     .get("/products/:productId/departures", async (c) => {
@@ -236,7 +242,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         departuresDocKey(productId, query as Record<string, unknown>),
         () => storefrontService.listProductDepartures(c.get("db" as never), productId, query),
       )
-      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      setPublicCacheHeaders(c)
       return c.json(result)
     })
     .post("/departures/:departureId/price", async (c) => {
@@ -438,23 +444,24 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     })
     .get("/products/:productId/extensions", async (c) => {
       const query = await parseQuery(c, storefrontProductExtensionsQuerySchema)
+      const extensions = await storefrontService.getProductExtensions(
+        c.get("db" as never),
+        c.req.param("productId"),
+        query.optionId,
+      )
 
-      return c.json({
-        data: await storefrontService.getProductExtensions(
-          c.get("db" as never),
-          c.req.param("productId"),
-          query.optionId,
-        ),
-      })
+      setPublicCacheHeaders(c)
+      return c.json({ data: extensions })
     })
     .get("/products/:productId/availability", async (c) => {
-      return c.json({
-        data: await storefrontService.getProductAvailabilitySummary(
-          c.get("db" as never),
-          c.req.param("productId"),
-          await parseQuery(c, storefrontProductAvailabilitySummaryQuerySchema),
-        ),
-      })
+      const availability = await storefrontService.getProductAvailabilitySummary(
+        c.get("db" as never),
+        c.req.param("productId"),
+        await parseQuery(c, storefrontProductAvailabilitySummaryQuerySchema),
+      )
+
+      setPublicCacheHeaders(c)
+      return c.json({ data: availability })
     })
     .get("/products/:productId/departures/:departureId/itinerary", async (c) => {
       const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
@@ -463,20 +470,20 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       })
 
       if (!itinerary) return c.json({ error: "Storefront itinerary not found" }, 404)
-      c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+      setPublicCacheHeaders(c)
       return c.json({ data: itinerary })
     })
     .get("/products/:productId/offers", async (c) => {
       const query = await parseQuery(c, storefrontPromotionalOfferListQuerySchema)
-
-      return c.json({
-        data: await storefrontService.listApplicableOffers({
-          productId: c.req.param("productId"),
-          departureId: query.departureId,
-          locale: query.locale,
-          context: getRequestContext(c),
-        }),
+      const offers = await storefrontService.listApplicableOffers({
+        productId: c.req.param("productId"),
+        departureId: query.departureId,
+        locale: query.locale,
+        context: getRequestContext(c),
       })
+
+      setPublicCacheHeaders(c)
+      return c.json({ data: offers })
     })
     .get("/offers/:slug", async (c) => {
       const query = await parseQuery(c, storefrontPromotionalOfferListQuerySchema)
@@ -486,7 +493,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         context: getRequestContext(c),
       })
 
-      return offer ? c.json({ data: offer }) : c.json({ error: "Storefront offer not found" }, 404)
+      if (!offer) return c.json({ error: "Storefront offer not found" }, 404)
+      setPublicCacheHeaders(c)
+      return c.json({ data: offer })
     })
     .post("/offers/:slug/apply", async (c) => {
       const result = await storefrontService.applyOffer({
