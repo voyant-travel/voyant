@@ -47,6 +47,29 @@ honest.
 | `quote-version-snapshot-routes.ts` | package-owned-manual | 1 | — | `@voyant-travel/quotes` | Quote-version snapshot route; belongs with quotes. |
 | `settings.ts` | package-owned-manual | 10 | eager | `@voyant-travel/operator-settings` (new) or `@voyant-travel/finance` | Operator profile/payment instructions/defaults — framework infrastructure consumed by legal, checkout, storefront. Promote table + routes together. |
 
+## Final state (migration complete)
+
+Every route family above now composes through `OPERATOR_RUNTIME_MANIFEST` /
+`operatorComposition` as a module or extension. `app.ts`'s `additionalRoutes`
+contains only the **workflow-runs** admin surface, which is genuinely coupled to
+the app-level runner registry that bundle bootstraps populate at construction.
+
+- Package-owned extensions: `channel-push` (distribution), `booking-tax`
+  (finance).
+- Deployment-local single-surface lazy modules/extensions (relative routes):
+  `flights`, `mcp`, `invitations`, `booking-schedule`, `quote-version-snapshot`,
+  `action-ledger-health`, `proposal`, `catalog-offers`, `catalog-checkout`,
+  `booking-maintenance`.
+- Deployment-local multi-prefix lazy modules (`lazyRoutes` — explicit paths over
+  the existing absolute-route mount functions): `catalog-booking`,
+  `catalog-content`, `media`, `payment-link`, `operator-settings`,
+  `contract-document`.
+
+The route-ownership checker baseline is down to the deployment-local route files
+that still *define* their routes in the starter (they compose cleanly now rather
+than mounting ad-hoc); promoting any of them into shared packages is the natural
+follow-up where a second deployment would reuse them.
+
 ## How this maps to the migration phases
 
 - **Already composed (no action):** the ~20 modules + 6 extensions in

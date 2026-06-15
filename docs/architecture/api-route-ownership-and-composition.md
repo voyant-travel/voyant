@@ -13,6 +13,17 @@ Related:
 - [Catalog Booking Route Module Plan](./catalog-booking-route-module-plan.md)
 - [Route Ownership Inventory](./route-ownership-inventory.md)
 
+## Status update (2026-06-15)
+
+Implemented for the operator starter. The route-ownership checker (Phase 0),
+first-class context-preserving lazy contributions including the multi-prefix
+`lazyRoutes` variant (Phase 1), and the full route-family migration (Phases 3–4)
+have landed: `app.ts`'s `additionalRoutes` now contains only the workflow-runs
+admin surface, and every other route family composes through the registry. See
+[Route Ownership Inventory](./route-ownership-inventory.md) for the per-family
+result. The remaining open work is promoting deployment-local route definitions
+into shared packages where a second deployment would reuse them.
+
 ## Summary
 
 Voyant should not require every deployment to rewrite the same HTTP route
