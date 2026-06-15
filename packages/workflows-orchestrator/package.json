@@ -13,11 +13,24 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "development": "./src/index.ts",
+      "node": "./dist/index.js",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./node": {
+      "types": "./src/node/index.ts",
+      "development": "./src/node/index.ts",
+      "node": "./dist/node/index.js",
+      "import": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
     },
     "./testing": {
       "types": "./src/testing/driver-compliance.ts",
-      "import": "./src/testing/driver-compliance.ts"
+      "development": "./src/testing/driver-compliance.ts",
+      "node": "./dist/testing/driver-compliance.js",
+      "import": "./src/testing/driver-compliance.ts",
+      "default": "./src/testing/driver-compliance.ts"
     }
   },
   "main": "./dist/index.js",
@@ -58,11 +71,21 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "node": "./dist/index.js",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./node": {
+        "types": "./dist/node/index.d.ts",
+        "node": "./dist/node/index.js",
+        "import": "./dist/node/index.js",
+        "default": "./dist/node/index.js"
       },
       "./testing": {
         "types": "./dist/testing/driver-compliance.d.ts",
-        "import": "./dist/testing/driver-compliance.js"
+        "node": "./dist/testing/driver-compliance.js",
+        "import": "./dist/testing/driver-compliance.js",
+        "default": "./dist/testing/driver-compliance.js"
       }
     },
     "main": "./dist/index.js",

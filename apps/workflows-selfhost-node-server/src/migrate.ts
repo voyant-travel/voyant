@@ -1,4 +1,4 @@
-import { runPostgresMigrations } from "@voyant-travel/workflows-orchestrator"
+import { runPostgresMigrations } from "@voyant-travel/workflows-orchestrator/node"
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL

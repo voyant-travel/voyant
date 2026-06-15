@@ -33,7 +33,7 @@ export function WorkflowsRoute() {
 
 ```ts
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
-import { createNodeSelfHostWorkflowClient } from "@voyant-travel/workflows-orchestrator"
+import { createNodeSelfHostWorkflowClient } from "@voyant-travel/workflows-orchestrator/node"
 
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const workflowServer = createNodeSelfHostWorkflowClient({
