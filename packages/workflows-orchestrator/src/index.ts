@@ -1,9 +1,9 @@
 // @voyant-travel/workflows-orchestrator
 //
-// Reference orchestrator for Voyant Workflows. Drives runs through
-// the tenant step handler over the v1 wire protocol. Transport- and
-// storage-agnostic: compose with a RunRecordStore of your choice
-// (in-memory for tests, Postgres-backed for production).
+// Postgres self-host orchestrator runtime for Voyant Workflows. Drives runs
+// through the tenant step handler over the v1 wire protocol and exports
+// the core engine, in-memory test stores, Postgres stores, scheduler,
+// and self-host server helpers.
 //
 // See docs/runtime-protocol.md §2 + §5 for the contract this
 // implements and docs/design.md §6 for the broader orchestrator
@@ -39,6 +39,7 @@ export {
 } from "./http-step-handler.js"
 export { createInMemoryRunStore } from "./in-memory-store.js"
 export { emptyJournal } from "./journal-helpers.js"
+export * from "./node/index.js"
 export {
   type CancelArgs,
   cancel,

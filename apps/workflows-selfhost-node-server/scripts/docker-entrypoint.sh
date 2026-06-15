@@ -26,7 +26,7 @@ run_migrations() {
     return 0
   fi
 
-  echo "voyant workflows selfhost: applying orchestrator-node migrations" >&2
+  echo "voyant workflows selfhost: applying orchestrator migrations" >&2
   node ./dist/migrate.js
 }
 

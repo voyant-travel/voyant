@@ -53,7 +53,7 @@ Voyant ships one first-party starter:
 - A normalized travel operations data model on PostgreSQL + Drizzle
 - Headless domain modules for catalog, commerce, inventory, operations, relationships, quotes, bookings, finance, distribution, legal, charters, cruises, accommodation resale, and more
 - Hono-based API transport with optional Next.js route helpers
-- Step-based durable workflow orchestration that runs on Node self-host infrastructure or Voyant Cloud's hosted Node runtime
+- Step-based durable workflow orchestration that runs on self-host infrastructure or Voyant Cloud's hosted runtime
 - Better Auth wiring in first-party starters, with core packages staying auth-provider agnostic
 - Versioned React packages per domain (`relationships-react`, `inventory-react`, `commerce-react`, `bookings-react`, …) consumed as ordinary dependencies
 - React hook and reusable UI libraries (`relationships-react`, `inventory-react`, `commerce-react`, `bookings-react`, …) that wrap the HTTP contract of each module
@@ -82,11 +82,10 @@ hotel-operations system; see
 
 ### Workflows (durable orchestration)
 
-Step-based workflows with durable state, retries, and a shared wire protocol — runnable on Node self-host infrastructure or Voyant Cloud's hosted Node runtime.
+Step-based workflows with durable state, retries, and a shared wire protocol — runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 
 - [`@voyant-travel/workflows`](./packages/workflows) — authoring SDK
-- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — reference orchestrator core
-- [`@voyant-travel/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — Node/Postgres self-host runtime primitives
+- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — orchestrator engine and Postgres self-host runtime primitives
 - `@voyant-travel/workflows/bindings`, `@voyant-travel/workflows/config`, and `@voyant-travel/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
 - [`@voyant-travel/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
 - [`@voyant-travel/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI

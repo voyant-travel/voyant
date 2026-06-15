@@ -79,6 +79,8 @@ jobs:
         #
         # Runs through the operator workspace's own @voyant-travel/cli devDependency
         # (a public package, already installed) — no extra root dependency.
+        env:
+          NODE_OPTIONS: --conditions=development --max-old-space-size=8192
         run: pnpm --filter operator exec voyant db doctor --fail-on-drift
 
       - name: i18n checks

@@ -119,7 +119,7 @@ The shipped authoring snippets reinforce the unsafe pattern (`{{ traveler.firstN
 **Fix:** Set `outputEscape: "escape"` on the Liquid engines for `html` body formats; HTML-escape in `renderMustacheTemplate`/`stringifyValue`; sanitize (e.g. `sanitize-html`, already a dep in products) before handing HTML to Browser Rendering; render the PDF path with JS disabled or a `default-src 'none'` CSP. See also dependency advisory M11 (liquidjs RCE).
 
 ### H4 — Workflow orchestrator fails open; run state is forgeable
-**`packages/workflows-orchestrator/src/resume-run.ts:77`, `packages/workflows-orchestrator-node/src/dashboard-server.ts`**
+**`packages/workflows-orchestrator/src/resume-run.ts:77`, `packages/workflows-orchestrator/src/node/dashboard-server.ts`**
 
 The orchestrator's auth gate is skipped entirely when no token is configured (`verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined`), and its own comment admits this is "dangerous in production." The Node self-host server (`apps/workflows-selfhost-node-server`) has no auth hook at all. Separately, `POST /api/runs/:id/resume` accepts `seedResults` (validated only as "an object") and writes them verbatim into the new run's journal before resuming, and runs are addressed by an attacker-suppliable `runId` with weak default ids (`run_<ts36>_<Math.random()*1e6>`), with no per-tenant authorization.
 

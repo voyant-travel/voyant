@@ -7,18 +7,18 @@
   "type": "module",
   "main": "./dist/server.js",
   "scripts": {
-    "build:deps": "pnpm -C ../.. --filter @voyant-travel/workflows build && pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator build && pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-node build",
+    "build:deps": "pnpm -C ../.. --filter @voyant-travel/workflows build && pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator build",
     "build": "pnpm --filter @voyant-travel/workflows-selfhost-node-server build:deps && tsc -p tsconfig.json",
     "bundle:example": "pnpm -C ../.. --filter @voyant-travel/cli build && node ../../packages/cli/bin/voyant.mjs workflows build --file ./examples/basic-workflows.ts --out ./dist --platform node",
     "check-types": "pnpm --filter @voyant-travel/workflows-selfhost-node-server build:deps && tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
     "docker:build": "docker build -f apps/workflows-selfhost-node-server/Dockerfile -t voyant-selfhost-node .",
-    "migrate": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator-node db:migrate",
+    "migrate": "pnpm -C ../.. --filter @voyant-travel/workflows-orchestrator db:migrate",
     "migrate:runtime": "node ./dist/migrate.js",
     "start": "node ./dist/server.js"
   },
   "dependencies": {
-    "@voyant-travel/workflows-orchestrator-node": "workspace:^",
+    "@voyant-travel/workflows-orchestrator": "workspace:^",
     "@voyant-travel/workflows": "workspace:^"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 {
   "name": "@voyant-travel/workflows-orchestrator",
   "version": "0.108.0",
-  "description": "Reference orchestrator core for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
+  "description": "Postgres self-host orchestrator runtime for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -13,17 +13,31 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "development": "./src/index.ts",
+      "node": "./dist/index.js",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./selfhost": {
+      "types": "./src/node/index.ts",
+      "development": "./src/node/index.ts",
+      "node": "./dist/node/index.js",
+      "import": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
     },
     "./testing": {
       "types": "./src/testing/driver-compliance.ts",
-      "import": "./src/testing/driver-compliance.ts"
+      "development": "./src/testing/driver-compliance.ts",
+      "node": "./dist/testing/driver-compliance.js",
+      "import": "./src/testing/driver-compliance.ts",
+      "default": "./src/testing/driver-compliance.ts"
     }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "drizzle",
     "src",
     "!**/*.test.*",
     "!**/*.spec.*",
@@ -32,16 +46,23 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "dev": "tsc -w -p tsconfig.json",
+    "test:integration": "vitest run --maxWorkers=1 --testTimeout=30000 --hookTimeout=30000 src/node/__tests__/migrate.integration.test.ts src/node/__tests__/postgres-integration.test.ts src/node/__tests__/selfhost-server-postgres.integration.test.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@voyant-travel/workflows": "workspace:^"
+    "@voyant-travel/workflows": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
+    "@types/pg": "^8.20.0",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.2",
     "vitest": "^3.2.6"
   },
@@ -50,11 +71,21 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "node": "./dist/index.js",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./selfhost": {
+        "types": "./dist/node/index.d.ts",
+        "node": "./dist/node/index.js",
+        "import": "./dist/node/index.js",
+        "default": "./dist/node/index.js"
       },
       "./testing": {
         "types": "./dist/testing/driver-compliance.d.ts",
-        "import": "./dist/testing/driver-compliance.js"
+        "node": "./dist/testing/driver-compliance.js",
+        "import": "./dist/testing/driver-compliance.js",
+        "default": "./dist/testing/driver-compliance.js"
       }
     },
     "main": "./dist/index.js",

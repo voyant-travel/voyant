@@ -13,6 +13,8 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "node": "./dist/index.js",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
@@ -23,11 +25,15 @@
     },
     "./protocol": {
       "types": "./src/protocol/index.ts",
+      "development": "./src/protocol/index.ts",
+      "node": "./dist/protocol/index.js",
       "import": "./src/protocol/index.ts",
       "default": "./src/protocol/index.ts"
     },
     "./handler": {
       "types": "./src/handler/index.ts",
+      "development": "./src/handler/index.ts",
+      "node": "./dist/handler/index.js",
       "import": "./src/handler/index.ts",
       "default": "./src/handler/index.ts"
     },
@@ -58,16 +64,22 @@
     },
     "./rate-limit": {
       "types": "./src/rate-limit/index.ts",
+      "development": "./src/rate-limit/index.ts",
+      "node": "./dist/rate-limit/index.js",
       "import": "./src/rate-limit/index.ts",
       "default": "./src/rate-limit/index.ts"
     },
     "./driver": {
       "types": "./src/driver.ts",
+      "development": "./src/driver.ts",
+      "node": "./dist/driver.js",
       "import": "./src/driver.ts",
       "default": "./src/driver.ts"
     },
     "./events": {
       "types": "./src/events/index.ts",
+      "development": "./src/events/index.ts",
+      "node": "./dist/events/index.js",
       "import": "./src/events/index.ts",
       "default": "./src/events/index.ts"
     },

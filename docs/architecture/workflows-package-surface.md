@@ -15,8 +15,7 @@ These workflow packages are intentionally public:
 | `@voyant-travel/workflows-react` | React hooks and client helpers for workflow run inspection. |
 | `@voyant-travel/workflows-react/ui` | Canonical importable workflow run admin UI. |
 | `@voyant-travel/workflow-runs` | Operator observability module: schema, recorder, admin routes, and rerun/resume registry. |
-| `@voyant-travel/workflows-orchestrator` | Transport-neutral orchestrator engine and compliance tests. |
-| `@voyant-travel/workflows-orchestrator-node` | Supported Node/Postgres self-host runtime primitives. |
+| `@voyant-travel/workflows-orchestrator` | Orchestrator engine, compliance tests, and supported Postgres self-host runtime primitives. Runtime self-host imports use the `@voyant-travel/workflows-orchestrator/selfhost` subpath. |
 
 ## Managed Cloud Versus Self-Host Adapters
 
@@ -26,7 +25,7 @@ Cloud; workflow definitions and Node/server-only dependencies live in a separate
 workflow bundle that Cloud executes. Workflow releases are created by Cloud
 deployment flows, not by deployed app runtimes.
 
-Self-host workflow runtime work should use the Node/Postgres package. Managed
+Self-host workflow runtime work should use the orchestrator package. Managed
 Cloud app bundles should use `@voyant-travel/workflows/client`; they do not
 embed workflow definitions or runner internals.
 
@@ -46,9 +45,10 @@ been removed; do not reintroduce them.
 
 | Removed package concept | Replacement |
 | --- | --- |
-| Cloudflare Worker/Durable Object workflow adapter | Use `@voyant-travel/workflows-orchestrator-node` for self-host runtime work, or `@voyant-travel/workflows/client` for managed Cloud app forwarding. |
+| Cloudflare Worker/Durable Object workflow adapter | Use `@voyant-travel/workflows-orchestrator/selfhost` for self-host runtime work, or `@voyant-travel/workflows/client` for managed Cloud app forwarding. |
 | Cloudflare tenant-worker adapter | Use `@voyant-travel/workflows/client` from app bundles and deploy workflow bundles to the managed Cloud runtime. |
-| Standalone external node step server | Use the Node self-host runtime package or the managed Cloud Node runner. |
+| Separate self-host orchestrator package | Use the `@voyant-travel/workflows-orchestrator/selfhost` runtime subpath. |
+| Standalone external step server | Use the self-host runtime in `@voyant-travel/workflows-orchestrator/selfhost` or the managed Cloud runner. |
 
 ## `workflow-runs` Exception
 

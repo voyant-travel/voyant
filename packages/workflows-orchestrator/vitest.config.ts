@@ -5,5 +5,8 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     globals: false,
+    // Some moved Node/Postgres integration tests share one database and
+    // truncate tables in beforeEach; serialize files to avoid cross-test races.
+    fileParallelism: false,
   },
 })
