@@ -35,7 +35,8 @@
     "./booking-engine/schema": "./src/booking-engine/schema.ts",
     "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts",
     "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
-    "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts"
+    "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts",
+    "./offers": "./src/offers/operator-routes.ts"
   },
   "voyant": {
     "schema": "./schema",
@@ -217,6 +218,11 @@
         "types": "./dist/booking-engine/drafts-schema.d.ts",
         "import": "./dist/booking-engine/drafts-schema.js",
         "default": "./dist/booking-engine/drafts-schema.js"
+      },
+      "./offers": {
+        "types": "./dist/offers/operator-routes.d.ts",
+        "import": "./dist/offers/operator-routes.js",
+        "default": "./dist/offers/operator-routes.js"
       }
     },
     "main": "./dist/index.js",

@@ -178,6 +178,16 @@ export {
   type TypesenseSearchQuery,
   type TypesenseSearchResponse,
 } from "./indexer/typesense.js"
+// Live offer/search routes (sourced packages + cruises). Connect-sdk /
+// typesense / geo access is injected by the deployment via options.
+export {
+  type CatalogOffersAirportLabel,
+  type CatalogOffersConnectClient,
+  type CatalogOffersIndexFields,
+  type CatalogOffersRouteModuleOptions,
+  type CatalogOffersSearchDestination,
+  createCatalogOffersAdminRoutes,
+} from "./offers/operator-routes.js"
 export {
   applyMerge,
   isVisibleTo,

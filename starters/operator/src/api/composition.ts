@@ -675,7 +675,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/catalog-offers-extension": () => ({
       extension: { name: "catalog-offers", module: "catalog" },
       lazyAdminRoutes: () =>
-        import("./catalog-offers").then((m) => m.createCatalogOffersAdminRoutes()),
+        import("./catalog-offers-runtime").then((m) =>
+          m.createCatalogOffersAdminRoutesForOperator(),
+        ),
     }),
     "operator/catalog-checkout-extension": () => ({
       extension: { name: "catalog-checkout", module: "catalog" },

@@ -1,9 +1,16 @@
 /**
- * Live package-offers route for the operator starter.
+ * Live package/cruise offer routes — owned by `@voyant-travel/catalog`.
  *
- * agent-quality: file-size exception -- Live package-offer routes keep search, detail, and pricing adapter normalization together until the route is split by provider surface.
+ * agent-quality: file-size exception -- Live offer routes keep search, detail,
+ * and pricing adapter normalization together until the route is split by
+ * provider surface.
  *
  *   POST /v1/admin/catalog/package-offers
+ *   POST /v1/admin/catalog/package-detail
+ *   POST /v1/admin/catalog/package-search
+ *   POST /v1/admin/catalog/departure-airports
+ *   POST /v1/admin/catalog/cruise-price
+ *   POST /v1/admin/catalog/cruise-sailing-pricing
  *
  * Sourced packages (TUI) are synced into the catalog as a priced *summary*
  * (the cards). The actual bookable units — departure dates, room/board, flights
@@ -15,32 +22,110 @@
  * accommodation ref from `catalog_sourced_entries`, then fan the search out and
  * return the offers mapped to a lean, render-ready shape. The call is live, so
  * it can 5xx (TUI staging) — we retry once and fail soft with an empty list.
+ *
+ * Deployment-specific access (Voyant Connect client construction, the Typesense
+ * hero-field lookup, and destination-name resolution) is INJECTED via options
+ * so this package never statically imports connect-sdk / typesense / geo. The
+ * handlers only call the structural surface the deployment hands them.
  */
 
-import { catalogSourcedEntriesTable } from "@voyant-travel/catalog"
-import { createVoyantConnectClient, type VoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { createDestinationNameResolver } from "./lib/geo-resolver"
+import { catalogSourcedEntriesTable } from "../schema-sourced-entries.js"
 
-interface PackageOffersEnv {
-  VOYANT_API_KEY?: string
-  VOYANT_CONNECT_API_KEY?: string
-  VOYANT_CLOUD_API_KEY?: string
-  VOYANT_CONNECT_OPERATOR_ID?: string
-  VOYANT_CONNECT_API_URL?: string
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
+// ─────────────────────────────────────────────────────────────────
+// Injected deployment surface (structural — no connect-sdk/typesense/geo import)
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * The structural subset of the Voyant Connect client the offer handlers call.
+ * The deployment builds the real client (from its env) and hands back this
+ * shape; the package never imports `@voyant-travel/connect-sdk`.
+ */
+export interface CatalogOffersConnectClient {
+  transport: {
+    request(
+      path: string,
+      init: { method: string; body?: unknown; unwrapData?: boolean },
+    ): Promise<unknown>
+  }
+  accommodations: {
+    getOnConnection(
+      connectionId: string,
+      externalId: string,
+      options?: { locale?: string },
+    ): Promise<unknown>
+  }
+  cruises: {
+    getOnConnection(connectionId: string, externalId: string): Promise<unknown>
+    listSailingPricing(connectionId: string, sailingRef: string): Promise<unknown[]>
+  }
 }
 
-function connectApiKey(env: PackageOffersEnv): string | undefined {
-  return env.VOYANT_API_KEY ?? env.VOYANT_CONNECT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
+/** Hero/index fields the offer cards enrich from (mirrors the Typesense doc). */
+export interface CatalogOffersIndexFields {
+  name?: string
+  thumbnailUrl?: string
+  stars?: string | number
+  destinations?: string[]
+  countryCodes?: string[]
 }
+
+/** A resolved departure airport, code + friendly label. */
+export interface CatalogOffersAirportLabel {
+  code: string
+  label: string
+}
+
+/** A destination filter for the live search / airport probe. */
+export interface CatalogOffersSearchDestination {
+  countryCode?: string
+  region?: string
+  city?: string
+  destinationCodes?: string[]
+}
+
+/**
+ * Deployment-supplied options for the catalog offer route module. Structural
+ * only — the three injected functions encapsulate every connect-sdk / typesense
+ * / geo access so the package stays free of those static imports.
+ */
+export interface CatalogOffersRouteModuleOptions {
+  /**
+   * Build the Voyant Connect client for this request, or return `null` when
+   * Connect isn't configured (missing api key / operator id). When `null`, the
+   * handlers fall back to the "connect_not_configured" empty-list responses.
+   */
+  resolveConnectClient(c: Context): CatalogOffersConnectClient | null
+  /**
+   * Resolve product ids → their indexed hero fields (Typesense). Best-effort;
+   * the deployment owns the typesense call and returns an empty map on failure.
+   */
+  fetchIndexFields(c: Context, productIds: string[]): Promise<Map<string, CatalogOffersIndexFields>>
+  /**
+   * Resolve a destination → its dynamic (live-composable) catalog hotel ids
+   * from the deployment's search index, capped to `limit`. Empty array when the
+   * index isn't configured.
+   */
+  resolveDynamicHotelIds(
+    c: Context,
+    destination: CatalogOffersSearchDestination,
+    limit: number,
+  ): Promise<string[]>
+  /**
+   * Resolve departure airport codes (OTP, IAS…) to "City (CODE)" labels. Must
+   * never throw — falls back to the bare code on any error.
+   */
+  resolveAirportLabels(c: Context, codes: string[]): Promise<CatalogOffersAirportLabel[]>
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Schemas
+// ─────────────────────────────────────────────────────────────────
 
 const bodySchema = z.object({
   productId: z.string().min(1),
@@ -70,8 +155,66 @@ const cruiseSailingPricingSchema = z.object({
   sailingRef: z.string().min(1),
 })
 
-export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffersEnv }> {
-  const hono = new Hono<{ Bindings: PackageOffersEnv }>()
+const airportsSchema = z.object({
+  destination: z.object({
+    countryCode: z.string().optional(),
+    region: z.string().optional(),
+    city: z.string().optional(),
+    destinationCodes: z.array(z.string()).optional(),
+  }),
+  nights: z
+    .object({ min: z.number().int().positive(), max: z.number().int().positive() })
+    .optional(),
+})
+
+const searchSchema = z.object({
+  destination: z.object({
+    countryCode: z.string().optional(),
+    region: z.string().optional(),
+    city: z.string().optional(),
+    destinationCodes: z.array(z.string()).optional(),
+  }),
+  departureDateFrom: z.string().min(1),
+  departureDateTo: z.string().min(1),
+  nights: z
+    .object({ min: z.number().int().positive(), max: z.number().int().positive() })
+    .optional(),
+  adults: z.number().int().min(1).default(2),
+  children: z.number().int().min(0).optional(),
+  childrenAges: z.array(z.number().int().min(0)).optional(),
+  boards: z.array(z.string()).optional(),
+  minStars: z.number().positive().optional(),
+  maxPriceMinor: z.number().int().positive().optional(),
+  currency: z.string().optional(),
+  limit: z.number().int().positive().max(200).optional(),
+})
+
+// ─────────────────────────────────────────────────────────────────
+// Tuning constants
+// ─────────────────────────────────────────────────────────────────
+
+// Most TUI sun packages are 7-night; without a duration the offers API 400s.
+const DEFAULT_NIGHTS = { min: 7, max: 7 }
+// Bound the live fan-out: enough hotels for a representative calendar without
+// hammering TUI's (flaky) offers API on every search.
+const MAX_HOTELS = 45
+const HOTELS_PER_CALL = 15
+const MAX_OFFERS = 600
+// Departure-airport probe scope — a handful of hotels is enough to surface the
+// destination's departure airports without a heavy fan-out.
+const AIRPORT_PROBE_HOTELS = 8
+
+// ─────────────────────────────────────────────────────────────────
+// Routes
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * The catalog admin offer routes (relative paths; mount at
+ * `/v1/admin/catalog`). All connect/typesense/geo access is injected via
+ * `options`.
+ */
+export function createCatalogOffersAdminRoutes(options: CatalogOffersRouteModuleOptions): Hono {
+  const hono = new Hono()
 
   hono.post("/package-offers", async (c: Context) => {
     const parsed = bodySchema.safeParse(await c.req.json().catch(() => ({})))
@@ -80,10 +223,8 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     }
     const input = parsed.data
 
-    const env = c.env as PackageOffersEnv
-    const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CONNECT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
-    if (!apiKey || !operatorId) {
+    const client = options.resolveConnectClient(c)
+    if (!client) {
       return c.json({ error: "connect_not_configured", offers: [] }, 200)
     }
 
@@ -107,12 +248,6 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
       return c.json({ error: "no_connection_for_product", offers: [] }, 200)
     }
 
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
-
     const { offers, retryable } = await fetchLiveOffers(
       client,
       connectionId,
@@ -125,7 +260,7 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     // Include the product's indexed hero fields so the in-sheet section can
     // render header + calendar from a single call. (The full-page detail uses
     // `package-detail`, which reads the real record from Connect.)
-    const idx = await fetchIndexFields(env, [input.productId])
+    const idx = await options.fetchIndexFields(c, [input.productId])
     const product = idx.get(input.productId) ?? null
     return c.json({ product, offers: offers.map(mapOffer), retryable })
   })
@@ -141,10 +276,8 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
       return c.json({ error: "invalid_request", details: parsed.error.issues }, 400)
     }
     const input = parsed.data
-    const env = c.env as PackageOffersEnv
-    const apiKey = connectApiKey(env)
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
-    if (!apiKey || !operatorId) {
+    const client = options.resolveConnectClient(c)
+    if (!client) {
       return c.json({ error: "connect_not_configured", product: null, offers: [] }, 200)
     }
 
@@ -162,12 +295,6 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     if (!connectionId) {
       return c.json({ error: "no_connection_for_product", product: null, offers: [] }, 200)
     }
-
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
 
     // Accommodation detail + rich content, direct from Connect (best-effort —
     // offers still render if it fails).
@@ -216,16 +343,14 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
       return c.json({ error: "invalid_request", details: parsed.error.issues }, 400)
     }
     const input = parsed.data
-    const env = c.env as PackageOffersEnv
-    const apiKey = connectApiKey(env)
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
-    if (!apiKey || !operatorId) {
+    const client = options.resolveConnectClient(c)
+    const currencyFallback = input.currency ?? "EUR"
+    if (!client) {
       return c.json({ error: "connect_not_configured", offers: [] }, 200)
     }
-    const currencyFallback = input.currency ?? "EUR"
 
     // 1) Resolve the dynamic hotels for this destination from our own index.
-    const hotelIds = await resolveDynamicHotelIds(env, input.destination, MAX_HOTELS)
+    const hotelIds = await options.resolveDynamicHotelIds(c, input.destination, MAX_HOTELS)
     if (hotelIds.length === 0) {
       return c.json({ offers: [], currency: currencyFallback, sampledHotels: 0, retryable: false })
     }
@@ -252,11 +377,6 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
       return c.json({ offers: [], currency: currencyFallback, sampledHotels: 0, retryable: false })
     }
 
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
     const occupancy: Record<string, unknown> = { adults: input.adults }
     if (input.children != null) occupancy.children = input.children
     if (input.childrenAges) occupancy.childrenAges = input.childrenAges
@@ -314,8 +434,8 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
       .sort((a, b) => offerTotalMinor(a) - offerTotalMinor(b))
       .slice(0, MAX_OFFERS)
 
-    const indexFields = await fetchIndexFields(
-      env,
+    const indexFields = await options.fetchIndexFields(
+      c,
       chosen.map(offerProductId).filter((x): x is string => Boolean(x)),
     )
     let currency = currencyFallback
@@ -326,7 +446,7 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
         break
       }
     }
-    const departureAirports = await resolveAirportLabels(env, [...originCodes])
+    const departureAirports = await options.resolveAirportLabels(c, [...originCodes])
     return c.json({
       offers: chosen.map((offer) =>
         mapSearchCard(offer, indexFields.get(offerProductId(offer) ?? "")),
@@ -346,12 +466,14 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     const parsed = airportsSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) return c.json({ departureAirports: [] }, 200)
     const input = parsed.data
-    const env = c.env as PackageOffersEnv
-    const apiKey = connectApiKey(env)
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
-    if (!apiKey || !operatorId) return c.json({ departureAirports: [] }, 200)
+    const client = options.resolveConnectClient(c)
+    if (!client) return c.json({ departureAirports: [] }, 200)
 
-    const hotelIds = await resolveDynamicHotelIds(env, input.destination, AIRPORT_PROBE_HOTELS)
+    const hotelIds = await options.resolveDynamicHotelIds(
+      c,
+      input.destination,
+      AIRPORT_PROBE_HOTELS,
+    )
     if (hotelIds.length === 0) return c.json({ departureAirports: [] }, 200)
     const db = c.get("db") as PostgresJsDatabase
     const entries = await db
@@ -372,11 +494,6 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     }
     if (byConnection.size === 0) return c.json({ departureAirports: [] }, 200)
 
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
     const nights = input.nights ?? DEFAULT_NIGHTS
     const origins = new Set<string>()
     for (const [connectionId, accIds] of byConnection) {
@@ -405,7 +522,7 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
         }
       }
     }
-    return c.json({ departureAirports: await resolveAirportLabels(env, [...origins]) })
+    return c.json({ departureAirports: await options.resolveAirportLabels(c, [...origins]) })
   })
 
   // ── Cruise from-price (source) ──────────────────────────────────────────
@@ -417,18 +534,11 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     if (!parsed.success) {
       return c.json({ error: "invalid_request" }, 400)
     }
-    const env = c.env as PackageOffersEnv
-    const apiKey = connectApiKey(env)
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
+    const client = options.resolveConnectClient(c)
     const decoded = decodeCruiseCatalogId(parsed.data.cruiseId)
-    if (!apiKey || !operatorId || !decoded) {
+    if (!client || !decoded) {
       return c.json({ fromAmountMinor: null, currency: null }, 200)
     }
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
     try {
       const summary =
         asRecord(await client.cruises.getOnConnection(decoded.connectionId, decoded.externalId)) ??
@@ -451,18 +561,11 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
     if (!parsed.success) {
       return c.json({ error: "invalid_request", cabins: [] }, 400)
     }
-    const env = c.env as PackageOffersEnv
-    const apiKey = connectApiKey(env)
-    const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
+    const client = options.resolveConnectClient(c)
     const decoded = decodeCruiseCatalogId(parsed.data.cruiseId)
-    if (!apiKey || !operatorId || !decoded) {
+    if (!client || !decoded) {
       return c.json({ cabins: [], currency: null }, 200)
     }
-    const client = createVoyantConnectClient({
-      apiKey,
-      operatorId,
-      ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-    })
     let rows: Record<string, unknown>[] = []
     try {
       const pricing = await client.cruises.listSailingPricing(
@@ -502,6 +605,10 @@ export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffers
   return hono
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Pure mapping helpers
+// ─────────────────────────────────────────────────────────────────
+
 // Decode a `crus_sr_` catalog id back to its connection + provider externalId.
 function decodeCruiseCatalogId(id: string): { connectionId: string; externalId: string } | null {
   if (!id.startsWith("crus_sr_")) return null
@@ -516,28 +623,6 @@ function decodeCruiseCatalogId(id: string): { connectionId: string; externalId: 
     return null
   }
 }
-// Most TUI sun packages are 7-night; without a duration the offers API 400s.
-const DEFAULT_NIGHTS = { min: 7, max: 7 }
-// Bound the live fan-out: enough hotels for a representative calendar without
-// hammering TUI's (flaky) offers API on every search.
-const MAX_HOTELS = 45
-const HOTELS_PER_CALL = 15
-const MAX_OFFERS = 600
-// Departure-airport probe scope — a handful of hotels is enough to surface the
-// destination's departure airports without a heavy fan-out.
-const AIRPORT_PROBE_HOTELS = 8
-
-const airportsSchema = z.object({
-  destination: z.object({
-    countryCode: z.string().optional(),
-    region: z.string().optional(),
-    city: z.string().optional(),
-    destinationCodes: z.array(z.string()).optional(),
-  }),
-  nights: z
-    .object({ min: z.number().int().positive(), max: z.number().int().positive() })
-    .optional(),
-})
 
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = []
@@ -562,94 +647,6 @@ function offerOrigin(offer: Record<string, unknown>): string | null {
   return typeof origin === "string" ? origin : null
 }
 
-// Resolve departure airport codes (OTP, IAS…) to "City (CODE)" labels via
-// Voyant Data air. Defensive — name resolution must NEVER fail the search; on
-// any error we fall back to the bare code.
-async function resolveAirportLabels(
-  env: PackageOffersEnv,
-  codes: string[],
-): Promise<Array<{ code: string; label: string }>> {
-  const sorted = [...new Set(codes)].sort()
-  const apiKey = connectApiKey(env)
-  if (!apiKey || sorted.length === 0) return sorted.map((code) => ({ code, label: code }))
-  let resolver: ReturnType<typeof createDestinationNameResolver> | null = null
-  try {
-    resolver = createDestinationNameResolver({ apiKey })
-  } catch {
-    resolver = null
-  }
-  return Promise.all(
-    sorted.map(async (code) => {
-      if (!resolver) return { code, label: code }
-      try {
-        const city = await resolver.resolve(code)
-        return { code, label: city && city !== code ? `${city} (${code})` : code }
-      } catch {
-        return { code, label: code }
-      }
-    }),
-  )
-}
-
-interface SearchDestination {
-  countryCode?: string
-  region?: string
-  city?: string
-  destinationCodes?: string[]
-}
-
-// Resolve a destination to its dynamic (live-composable) hotels from our index.
-// Gating on `supplyModel:=dynamic` keeps scheduled connections out of the live
-// packages/search fan-out.
-async function resolveDynamicHotelIds(
-  env: PackageOffersEnv,
-  destination: SearchDestination,
-  limit: number,
-): Promise<string[]> {
-  const host = env.TYPESENSE_HOST
-  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !key) return []
-  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
-  const filters = ["supplyModel:=dynamic"]
-  if (destination.countryCode) filters.push(`countryCodes:=[\`${destination.countryCode}\`]`)
-  if (destination.city) filters.push(`destinations:=[\`${destination.city}\`]`)
-  const filter = filters.join(" && ")
-  const url =
-    `${base}/collections/products__en-GB__staff__default/documents/search` +
-    `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}` +
-    `&per_page=${Math.min(limit, 250)}&include_fields=id`
-  try {
-    const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
-      r.json(),
-    )) as { hits?: Array<{ document?: { id?: string } }> }
-    return (res.hits ?? []).map((hit) => hit.document?.id).filter((id): id is string => Boolean(id))
-  } catch {
-    return []
-  }
-}
-
-const searchSchema = z.object({
-  destination: z.object({
-    countryCode: z.string().optional(),
-    region: z.string().optional(),
-    city: z.string().optional(),
-    destinationCodes: z.array(z.string()).optional(),
-  }),
-  departureDateFrom: z.string().min(1),
-  departureDateTo: z.string().min(1),
-  nights: z
-    .object({ min: z.number().int().positive(), max: z.number().int().positive() })
-    .optional(),
-  adults: z.number().int().min(1).default(2),
-  children: z.number().int().min(0).optional(),
-  childrenAges: z.array(z.number().int().min(0)).optional(),
-  boards: z.array(z.string()).optional(),
-  minStars: z.number().positive().optional(),
-  maxPriceMinor: z.number().int().positive().optional(),
-  currency: z.string().optional(),
-  limit: z.number().int().positive().max(200).optional(),
-})
-
 function offerProductId(offer: Record<string, unknown>): string | undefined {
   const ref = offer.productRef as { entityId?: unknown } | undefined
   return typeof ref?.entityId === "string" ? ref.entityId : undefined
@@ -660,52 +657,7 @@ function offerTotalMinor(offer: Record<string, unknown>): number {
   return typeof total?.amountMinor === "number" ? total.amountMinor : Number.POSITIVE_INFINITY
 }
 
-interface IndexFields {
-  name?: string
-  thumbnailUrl?: string
-  stars?: string | number
-  destinations?: string[]
-  countryCodes?: string[]
-}
-
-async function fetchIndexFields(
-  env: PackageOffersEnv,
-  ids: string[],
-): Promise<Map<string, IndexFields>> {
-  const out = new Map<string, IndexFields>()
-  const host = env.TYPESENSE_HOST
-  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !key || ids.length === 0) return out
-  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
-  // Dedupe + chunk: a destination search yields many (hotel, date) offers but
-  // only a handful of distinct hotels. Typesense rejects a `filter_by` over
-  // 4000 chars, so cap each request to a safe batch of distinct ids.
-  const distinct = [...new Set(ids)]
-  for (const batch of chunk(distinct, INDEX_LOOKUP_BATCH)) {
-    const filter = `id:=[${batch.map((id) => `\`${id}\``).join(",")}]`
-    const url =
-      `${base}/collections/products__en-GB__staff__default/documents/search` +
-      `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}&per_page=${batch.length}` +
-      `&include_fields=id,name,thumbnailUrl,stars,destinations,countryCodes`
-    try {
-      const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
-        r.json(),
-      )) as { hits?: Array<{ document?: IndexFields & { id?: string } }> }
-      for (const hit of res.hits ?? []) {
-        if (hit.document?.id) out.set(hit.document.id, hit.document)
-      }
-    } catch {
-      // Enrichment is best-effort; cards still render from the offer alone.
-    }
-  }
-  return out
-}
-
-// Distinct ids per index lookup — ~80 backtick-quoted catalog ids stays well
-// under Typesense's 4000-char filter_by limit.
-const INDEX_LOOKUP_BATCH = 80
-
-function mapSearchCard(offer: Record<string, unknown>, idx: IndexFields | undefined) {
+function mapSearchCard(offer: Record<string, unknown>, idx: CatalogOffersIndexFields | undefined) {
   const stay = (offer.stay ?? {}) as Record<string, unknown>
   const pricing = (offer.pricing ?? {}) as Record<string, unknown>
   const outbound = (
@@ -739,7 +691,7 @@ function readOffers(response: unknown): Record<string, unknown>[] {
 // Live dated package offers for one accommodation. Retries once on upstream 5xx
 // (TUI staging flaps). Shared by package-offers + package-detail.
 async function fetchLiveOffers(
-  client: VoyantConnectClient,
+  client: CatalogOffersConnectClient,
   connectionId: string,
   accommodationId: string,
   input: {
