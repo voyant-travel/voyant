@@ -1633,12 +1633,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../inventory
-      '@voyant-travel/operations':
-        specifier: workspace:^
-        version: link:../operations
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
