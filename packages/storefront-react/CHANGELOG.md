@@ -1,5 +1,12 @@
 # @voyant-travel/storefront-react
 
+## 0.121.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+  - @voyant-travel/storefront@0.121.1
+
 ## 0.121.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @voyant-travel/notifications-react
 
+## 0.111.9
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+- Updated dependencies [eef1a00]
+  - @voyant-travel/admin@0.111.2
+  - @voyant-travel/notifications@0.111.9
+
 ## 0.111.8
 
 ### Patch Changes

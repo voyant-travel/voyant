@@ -1,5 +1,14 @@
 # @voyant-travel/plugin-smartbill
 
+## 0.120.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+- Updated dependencies [eef1a00]
+  - @voyant-travel/finance-react@0.120.1
+  - @voyant-travel/finance@0.120.1
+
 ## 0.120.0
 
 ### Patch Changes

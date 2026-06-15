@@ -1,5 +1,15 @@
 # @voyant-travel/commerce-react
 
+## 0.2.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+- Updated dependencies [eef1a00]
+  - @voyant-travel/admin@0.111.2
+  - @voyant-travel/distribution-react@0.110.4
+  - @voyant-travel/inventory-react@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

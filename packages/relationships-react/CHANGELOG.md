@@ -1,5 +1,14 @@
 # @voyant-travel/crm-react
 
+## 0.120.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+- Updated dependencies [eef1a00]
+  - @voyant-travel/admin@0.111.2
+  - @voyant-travel/identity-react@0.120.1
+
 ## 0.120.0
 
 ### Patch Changes

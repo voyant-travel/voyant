@@ -1,5 +1,14 @@
 # @voyant-travel/charters-react
 
+## 0.118.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+- Updated dependencies [eef1a00]
+  - @voyant-travel/catalog-react@0.118.1
+  - @voyant-travel/charters@0.118.1
+
 ## 0.118.0
 
 ### Patch Changes

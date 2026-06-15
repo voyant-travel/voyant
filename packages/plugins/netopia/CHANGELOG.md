@@ -1,5 +1,13 @@
 # @voyant-travel/plugin-netopia
 
+## 0.104.21
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+  - @voyant-travel/finance@0.120.1
+  - @voyant-travel/notifications@0.111.9
+
 ## 0.104.20
 
 ### Patch Changes
