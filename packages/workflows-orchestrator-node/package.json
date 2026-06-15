@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/workflows-orchestrator-node",
-  "version": "0.107.11",
+  "version": "0.108.0",
   "description": "Node/Docker runtime primitives for @voyant-travel/workflows-orchestrator, including a file-backed run store and local scheduler.",
   "license": "Apache-2.0",
   "repository": {

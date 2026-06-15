@@ -1,5 +1,14 @@
 # @voyant-travel/distribution
 
+## 0.110.1
+
+### Patch Changes
+
+- Updated dependencies [0c003f3]
+  - @voyant-travel/workflows@0.108.0
+  - @voyant-travel/db@0.108.1
+  - @voyant-travel/hono@0.110.1
+
 ## 0.110.0
 
 ### Minor Changes
