@@ -6,13 +6,14 @@ import {
 } from "@voyant-travel/finance"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { MaterializationSnapshot } from "./catalog-checkout-materialization"
-import { inferSnapshotTaxFacts } from "./catalog-checkout-materialization-support"
-import { resolveBookingTaxSettings } from "./settings"
+import type { MaterializationSnapshot } from "./materialization.js"
+import { inferSnapshotTaxFacts } from "./materialization-support.js"
+import type { CheckoutModuleOptions } from "./options.js"
 
 export async function rebuildBookingItemTaxLines(
   db: PostgresJsDatabase,
   bookingId: string,
+  options: Pick<CheckoutModuleOptions, "resolveBookingTaxSettings">,
 ): Promise<{ rebuilt: number; itemsWithoutSnapshot: number }> {
   const { bookingItems: bookingItemsTable, bookings: bookingsTable } = await import(
     "@voyant-travel/bookings/schema"
@@ -45,6 +46,7 @@ export async function rebuildBookingItemTaxLines(
       item.id,
       item.totalSellAmountCents ?? 0,
       snapshot,
+      options,
     )
     rebuilt += 1
   }
@@ -100,6 +102,7 @@ export async function materializeBookingItemTaxLine(
   bookingItemId: string,
   amountCents: number,
   snapshot: MaterializationSnapshot,
+  options: Pick<CheckoutModuleOptions, "resolveBookingTaxSettings">,
 ) {
   const currency = booking.sellCurrency ?? snapshot.pricing_currency ?? "EUR"
   const taxRate = await resolveBookingSellTaxRate(
@@ -109,7 +112,7 @@ export async function materializeBookingItemTaxLine(
       facts: inferSnapshotTaxFacts(snapshot),
     },
     {
-      resolveBookingTaxSettings,
+      resolveBookingTaxSettings: options.resolveBookingTaxSettings,
     },
   )
   const policyLine = computeBookingItemTaxLine(taxRate, amountCents, currency)
@@ -149,14 +152,3 @@ function buildSnapshotFallbackTaxLine(snapshot: MaterializationSnapshot, currenc
     sortOrder: 0,
   }
 }
-
-/**
- * Write `booking_allocations` rows linking each booking item to the
- * availability slot the customer selected. The allocation manifest +
- * "Generate resources" queries both filter by `availability_slot_id`,
- * so without these rows the slot appears empty even when bookings
- * exist for the right product + dates.
- *
- * Idempotent: short-circuits when allocations for the booking already
- * exist (re-running checkout finalize doesn't create duplicates).
- */

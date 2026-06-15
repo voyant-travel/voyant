@@ -1191,6 +1191,9 @@ importers:
 
   packages/commerce:
     dependencies:
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -1203,12 +1206,27 @@ importers:
       '@voyant-travel/distribution':
         specifier: workspace:^
         version: link:../distribution
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/legal':
+        specifier: workspace:^
+        version: link:../legal
+      '@voyant-travel/plugin-netopia':
+        specifier: workspace:^
+        version: link:../plugins/netopia
       '@voyant-travel/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
+      '@voyant-travel/quotes':
+        specifier: workspace:^
+        version: link:../quotes
+      '@voyant-travel/workflow-runs':
+        specifier: workspace:^
+        version: link:../workflow-runs
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../workflows

@@ -1,0 +1,75 @@
+/**
+ * Deployment-supplied options for the catalog-checkout cluster.
+ *
+ * The checkout business logic (materialization, tax, start-service,
+ * acceptance signature) lives in `@voyant-travel/commerce`. The two
+ * genuinely deployment-specific dependencies are injected here as
+ * structural functions so the package never statically imports the
+ * deployment, and — crucially — never imports `@voyant-travel/inventory`
+ * (which already depends on `@voyant-travel/commerce`; a static import
+ * would cycle).
+ *
+ *   - `resolveBookingTaxSettings` — reads the operator's tax-mode /
+ *     tax-policy-profile row. The deployment owns the settings table.
+ *   - `getOwnedProductName` — resolves an owned product's title for the
+ *     line-item fallback. The package can't import inventory's
+ *     `productsService.getProductById` without cycling, so the
+ *     deployment hands it in.
+ *   - `resolveBankTransferInstructions` — reads the operator profile +
+ *     payment-instruction rows for the bank-transfer checkout path.
+ */
+
+import type { BookingTaxSettings } from "@voyant-travel/finance"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+/**
+ * Bank-transfer instructions surfaced on the bank_transfer_instructions
+ * checkout result. The deployment composes these from its operator
+ * profile / payment-instruction rows + env fallbacks.
+ */
+export interface CheckoutBankTransferInstructions {
+  beneficiary: string
+  iban: string
+  bankName: string
+}
+
+/**
+ * Options shared by the checkout materialization + start-service. All
+ * structural — no deployment imports, no platform bindings.
+ */
+export interface CheckoutModuleOptions {
+  /**
+   * Read the operator's booking tax settings (tax-price mode + policy
+   * profile). Modelled on the operator's `resolveBookingTaxSettings`;
+   * structural so commerce doesn't import the deployment settings table.
+   */
+  resolveBookingTaxSettings(db: PostgresJsDatabase): Promise<BookingTaxSettings>
+  /**
+   * Resolve an owned product's display name for the line-item title
+   * fallback. INJECTED because `@voyant-travel/inventory` depends on
+   * `@voyant-travel/commerce` — a static import would cycle. Returns the
+   * product name, or null when not an owned product / not found.
+   */
+  getOwnedProductName(
+    db: PostgresJsDatabase,
+    entityModule: string,
+    entityId: string,
+  ): Promise<string | null>
+}
+
+/**
+ * Options for the checkout-start service (`startCatalogCheckout`). Extends
+ * the shared module options with the bank-transfer instruction reader the
+ * bank_transfer path needs.
+ */
+export interface CheckoutStartOptions extends CheckoutModuleOptions {
+  /**
+   * Resolve the bank-transfer instructions for the bank_transfer payment
+   * intent. The deployment reads its operator profile / payment
+   * instructions and applies env fallbacks.
+   */
+  resolveBankTransferInstructions(
+    db: PostgresJsDatabase,
+    env: Record<string, string | undefined>,
+  ): Promise<CheckoutBankTransferInstructions>
+}

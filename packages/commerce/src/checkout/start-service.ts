@@ -1,4 +1,6 @@
-// agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
+// agent-quality: file-size exception -- owner: commerce; the checkout-start
+// service (card / bank-transfer / inquiry / hold intents) is one cohesive
+// entry point; splitting it would scatter a single request lifecycle.
 import { bookingsService, canTransitionBooking, transitionBooking } from "@voyant-travel/bookings"
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
@@ -15,8 +17,8 @@ import {
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
-import { materializeBookingFromSnapshot } from "./catalog-checkout-materialization"
-import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
+import { materializeBookingFromSnapshot } from "./materialization.js"
+import type { CheckoutStartOptions } from "./options.js"
 
 export const checkoutStartSchema = z.object({
   bookingId: z.string().min(1),
@@ -45,10 +47,12 @@ export interface CheckoutStartRequestMeta {
 
 export interface CatalogCheckoutStartContext {
   db: PostgresJsDatabase
-  env: CloudflareBindings & Record<string, string | undefined>
+  env: Record<string, string | undefined>
   eventBus?: EventBus
   resolveRuntime?: (key: string) => unknown
   requestMeta?: CheckoutStartRequestMeta
+  /** Deployment-supplied injected readers (tax settings, owned product name, bank transfer). */
+  options: CheckoutStartOptions
 }
 
 export type CatalogCheckoutStartResult =
@@ -121,7 +125,7 @@ export async function startCatalogCheckout(
   // can operate on a normal booking. Owned products already have
   // the row written by their OwnedBookingHandler.commit.
   if (!booking) {
-    booking = await materializeBookingFromSnapshot(db, body.bookingId, context.env)
+    booking = await materializeBookingFromSnapshot(db, body.bookingId, context.env, context.options)
   }
   if (!booking) throw new CatalogCheckoutStartError("booking_not_found", 404)
   if (
@@ -476,7 +480,7 @@ async function startBankTransferCheckout(
     targetType: "booking",
   } as never)
 
-  const bankTransfer = await resolveBankTransferInstructions(db, context.env)
+  const bankTransfer = await context.options.resolveBankTransferInstructions(db, context.env)
   return {
     kind: "bank_transfer_instructions",
     bookingId: booking.id,
@@ -492,28 +496,6 @@ async function startBankTransferCheckout(
       currency: booking.sellCurrency ?? "EUR",
       dueAt: dueDate,
     },
-  }
-}
-
-async function resolveBankTransferInstructions(
-  db: PostgresJsDatabase,
-  env: Record<string, string | undefined>,
-) {
-  const [operatorProfile, paymentInstructions] = await Promise.all([
-    getOperatorProfile(db),
-    getOperatorPaymentInstructions(db),
-  ])
-  return {
-    beneficiary:
-      paymentInstructions?.bankTransferBeneficiary ||
-      operatorProfile?.legalName ||
-      operatorProfile?.name ||
-      env.BANK_TRANSFER_BENEFICIARY ||
-      env.STOREFRONT_BANK_BENEFICIARY ||
-      "—",
-    iban: paymentInstructions?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "—",
-    bankName:
-      paymentInstructions?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "—",
   }
 }
 

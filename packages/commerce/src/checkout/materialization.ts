@@ -1,3 +1,6 @@
+// agent-quality: file-size exception -- owner: commerce; the snapshot→booking
+// materialization (parent row + traveler/item/allocation/supplier children) is
+// one cohesive bridge; splitting it would scatter a single checkout step.
 import { bookings } from "@voyant-travel/bookings/schema"
 import { OWNED_SOURCE_KIND } from "@voyant-travel/catalog/booking-engine"
 import { eq } from "drizzle-orm"
@@ -12,10 +15,11 @@ import {
   resolveSupplierFromSnapshot,
   resolveUpstreamCostCents,
   travelerBandToCategory,
-} from "./catalog-checkout-materialization-support"
-import { materializeBookingItemTaxLine } from "./catalog-checkout-materialization-tax"
+} from "./materialization-support.js"
+import { materializeBookingItemTaxLine } from "./materialization-tax.js"
+import type { CheckoutModuleOptions } from "./options.js"
 
-export { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization-tax"
+export { rebuildBookingItemTaxLines } from "./materialization-tax.js"
 
 /**
  * Look up the catalog snapshot for a `bookingId` (the catalog plane
@@ -34,7 +38,8 @@ export { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization-t
 export async function materializeBookingFromSnapshot(
   db: PostgresJsDatabase,
   bookingId: string,
-  env: CloudflareBindings,
+  env: Record<string, unknown>,
+  options: CheckoutModuleOptions,
 ): Promise<typeof bookings.$inferSelect | null> {
   const { bookingCatalogSnapshotTable } = await import("@voyant-travel/catalog")
   const { bookingDraftsTable } = await import("@voyant-travel/catalog/booking-engine")
@@ -137,6 +142,7 @@ export async function materializeBookingFromSnapshot(
       },
       draftPayload,
       env,
+      options,
     )
   }
 
@@ -222,7 +228,8 @@ async function materializeChildren(
   booking: typeof bookings.$inferSelect,
   snapshot: MaterializationSnapshot,
   draftPayload: DraftPayload,
-  env: CloudflareBindings,
+  env: Record<string, unknown>,
+  options: CheckoutModuleOptions,
 ): Promise<void> {
   const { bookingTravelers, bookingItems, bookingSupplierStatuses } = await import(
     "@voyant-travel/bookings/schema"
@@ -275,7 +282,7 @@ async function materializeChildren(
   // "Tour booking". For sourced products, the projection captured
   // by `catalog_sourced_entries` carries the upstream name; for
   // owned products, the local `products.title` is canonical.
-  const resolvedTitle = await resolveLineItemTitle(db, snapshot)
+  const resolvedTitle = await resolveLineItemTitle(db, snapshot, options)
   const itemDates = extractItemDates(snapshot, draftPayload, booking)
   const itemDescription = extractItemDescription(snapshot)
 
@@ -331,6 +338,7 @@ async function materializeChildren(
       item.id,
       item.totalSellAmountCents ?? 0,
       snapshot,
+      options,
     )
   }
 
@@ -405,12 +413,3 @@ async function materializeChildren(
     }
   }
 }
-
-/**
- * Backfill `booking_item_tax_lines` for an existing booking using the
- * catalog snapshot stamped on it at checkout time. Used by the admin
- * "rebuild tax lines" route to repair bookings created before the
- * snapshot fallback shipped (or any time the operator changes the tax
- * policy and wants to re-derive). Deletes any existing rows for each
- * item before re-materializing — the route is destructive by design.
- */

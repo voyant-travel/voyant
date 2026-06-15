@@ -631,13 +631,19 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         app.post("/:bookingId/rebuild-tax-lines", async (c) => {
           const bookingId = c.req.param("bookingId")
           try {
-            const [{ rebuildBookingItemTaxLines }, { operatorPostgresDb }] = await Promise.all([
-              import("./catalog-checkout-materialization"),
+            const [
+              { rebuildBookingItemTaxLines },
+              { operatorPostgresDb },
+              { resolveBookingTaxSettings },
+            ] = await Promise.all([
+              import("@voyant-travel/commerce/checkout"),
               import("./operator-runtime-adapter"),
+              import("./settings"),
             ])
             const result = await rebuildBookingItemTaxLines(
               operatorPostgresDb(c.get("db")),
               bookingId,
+              { resolveBookingTaxSettings },
             )
             return c.json({ data: result })
           } catch (err) {

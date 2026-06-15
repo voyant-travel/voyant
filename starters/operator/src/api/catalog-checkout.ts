@@ -1,70 +1,42 @@
 /**
- * Storefront checkout endpoint.
+ * Operator glue for the storefront checkout endpoint.
  *
- * POST /v1/public/catalog/checkout/start parses the BookingJourney
- * checkout request and delegates to the checkout-start service.
+ * The checkout logic lives in `@voyant-travel/commerce/checkout`. This file
+ * wires the deployment's injected options and exposes:
+ *   - `createCatalogCheckoutPublicRoutes()` — the public `POST /checkout/start`
+ *     route, mounted under `/v1/public/catalog`.
+ *   - `startCatalogCheckout(context, body)` — a thin wrapper that injects the
+ *     operator options, for callers (e.g. trips-catalog-runtime) that drive the
+ *     service directly.
  */
 
-import { parseJsonBody } from "@voyant-travel/hono"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context } from "hono"
-import { Hono } from "hono"
 import {
-  CatalogCheckoutStartError,
+  type CatalogCheckoutStartContext,
+  type CatalogCheckoutStartResult,
   type CheckoutStartInput,
-  type CheckoutStartRequestMeta,
-  checkoutStartSchema,
-  startCatalogCheckout,
-} from "./catalog-checkout-start-service"
+  createCatalogCheckoutRoutes,
+  startCatalogCheckout as packageStartCatalogCheckout,
+} from "@voyant-travel/commerce/checkout"
+import type { Hono } from "hono"
+import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 
 export {
   CatalogCheckoutStartError,
   type CatalogCheckoutStartResult,
   type CheckoutStartInput,
-  startCatalogCheckout,
-} from "./catalog-checkout-start-service"
+} from "@voyant-travel/commerce/checkout"
 
 export function createCatalogCheckoutPublicRoutes(): Hono {
-  const routes = new Hono()
-  routes.post("/checkout/start", handleCheckoutStart)
-  return routes
+  return createCatalogCheckoutRoutes(createOperatorCheckoutStartOptions())
 }
 
-async function handleCheckoutStart(c: Context): Promise<Response> {
-  let body: CheckoutStartInput
-  try {
-    body = await parseJsonBody(c, checkoutStartSchema)
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "invalid body" }, 400)
-  }
-
-  try {
-    const result = await startCatalogCheckout(
-      {
-        db: c.get("db") as PostgresJsDatabase,
-        env: c.env as CloudflareBindings & Record<string, string | undefined>,
-        eventBus: c.var.eventBus,
-        resolveRuntime: (key) => c.var.container?.resolve(key),
-        requestMeta: checkoutRequestMeta(c),
-      },
-      body,
-    )
-    return c.json(result)
-  } catch (err) {
-    if (err instanceof CatalogCheckoutStartError) {
-      return c.json({ error: err.code }, err.status)
-    }
-    throw err
-  }
-}
-
-function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {
-  return {
-    clientIp:
-      c.req.header("cf-connecting-ip") ??
-      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-      c.req.header("x-real-ip") ??
-      "",
-    userAgent: c.req.header("user-agent") ?? "",
-  }
+/** Drive the checkout-start service with this deployment's injected options. */
+export function startCatalogCheckout(
+  context: Omit<CatalogCheckoutStartContext, "options">,
+  body: CheckoutStartInput,
+): Promise<CatalogCheckoutStartResult> {
+  return packageStartCatalogCheckout(
+    { ...context, options: createOperatorCheckoutStartOptions() },
+    body,
+  )
 }

@@ -1,9 +1,13 @@
-// agent-quality: file-size exception -- owner: operator; existing route module stays co-located until a dedicated split preserves behavior and tests.
+// agent-quality: file-size exception -- owner: commerce; the checkout
+// materialization-support helpers are one cohesive family (allocations,
+// travelers, supplier/date/title resolution) extracted together to preserve
+// behavior; splitting would scatter a single snapshot→booking bridge.
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
 import type { bookings } from "@voyant-travel/bookings/schema"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { DraftPayload, MaterializationSnapshot } from "./catalog-checkout-materialization"
+import type { DraftPayload, MaterializationSnapshot } from "./materialization.js"
+import type { CheckoutModuleOptions } from "./options.js"
 
 interface InsertedBookingItem {
   id: string
@@ -97,7 +101,7 @@ export async function materializeTravelerTravelDetails(
   db: PostgresJsDatabase,
   insertedTravelers: Array<{ id: string }>,
   draftTravelers: NonNullable<DraftPayload["travelers"]>,
-  env: CloudflareBindings,
+  env: Record<string, unknown>,
 ): Promise<void> {
   const runtime = buildBookingRouteRuntime(env)
   const pii = createBookingPiiService({ kms: await runtime.getKmsProvider() })
@@ -541,8 +545,9 @@ export async function resolveUpstreamCostCents(
  * Resolve a human title for the booking line item. Tries:
  *   1. `catalog_sourced_entries.projection.name` — sourced products
  *      (demo, Bokun, …) all carry the upstream title there.
- *   2. `products.title` — owned products from this template's own
- *      products module.
+ *   2. The injected `getOwnedProductName` — owned products from this
+ *      deployment's products module (injected because inventory
+ *      depends on commerce; a static import would cycle).
  *   3. A generic "$module booking" fallback.
  *
  * Errors fall through quietly — a title is purely cosmetic, the
@@ -551,6 +556,7 @@ export async function resolveUpstreamCostCents(
 export async function resolveLineItemTitle(
   db: PostgresJsDatabase,
   snapshot: { entity_module: string; entity_id: string },
+  options: Pick<CheckoutModuleOptions, "getOwnedProductName">,
 ): Promise<string> {
   try {
     const { catalogSourcedEntriesTable } = await import("@voyant-travel/catalog")
@@ -577,9 +583,8 @@ export async function resolveLineItemTitle(
 
   if (snapshot.entity_module === "products") {
     try {
-      const { productsService } = await import("@voyant-travel/inventory")
-      const product = await productsService.getProductById(db, snapshot.entity_id)
-      if (product?.name) return product.name
+      const name = await options.getOwnedProductName(db, snapshot.entity_module, snapshot.entity_id)
+      if (name) return name
     } catch {
       // continue to generic fallback
     }
