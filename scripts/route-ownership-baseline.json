@@ -3,7 +3,6 @@
   "files": {
     "starters/operator/src/api/app.ts": 1,
     "starters/operator/src/api/lazy-additional-routes.ts": 7,
-    "starters/operator/src/api/media-upload-routes.ts": 7,
     "starters/operator/src/api/settings.ts": 10
   },
   "additionalRoutesAllowed": ["starters/operator/src/api/app.ts"]

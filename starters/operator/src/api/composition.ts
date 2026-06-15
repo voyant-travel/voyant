@@ -564,12 +564,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/media/*",
           "/v1/admin/media/*",
         ],
-        load: () =>
-          import("./media-upload-routes").then((m) => {
-            const app = new Hono()
-            m.mountOperatorMediaUploadRoutes(app as never)
-            return app
-          }),
+        load: () => import("./media-runtime").then((m) => m.buildOperatorMediaRoutes()),
       },
     }),
     "operator/payment-link": () => ({

@@ -1,37 +1,38 @@
 // @vitest-environment node
 
-import type { EventBus } from "@voyant-travel/core"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
+import { describe, expect, it, vi } from "vitest"
 
-type TestRouteEnv = {
-  Bindings: CloudflareBindings
-  Variables: {
-    db: PostgresJsDatabase
-    eventBus?: EventBus
+import { createMediaRoutes, type MediaRoutesOptions } from "./routes.js"
+import type { StorageProvider } from "./types.js"
+
+function makeStorage(overrides: Partial<StorageProvider>): StorageProvider {
+  return {
+    name: "stub",
+    upload: vi.fn(async () => ({ key: "k", url: "/u" })),
+    delete: vi.fn(async () => {}),
+    signedUrl: vi.fn(async () => "/signed"),
+    get: vi.fn(async () => null),
+    ...overrides,
   }
 }
 
-const storage = vi.hoisted(() => ({
-  createMediaStorage: vi.fn(),
-}))
-
-const videoUploads = vi.hoisted(() => ({
-  createVideoUploadTicket: vi.fn(async () => ({ uploadUrl: "https://uploads.example/video" })),
-}))
-
-vi.mock("./lib/storage", () => ({
-  createMediaStorage: storage.createMediaStorage,
-  guessMimeType: (key: string) => {
-    if (key.endsWith(".pdf")) return "application/pdf"
-    if (key.endsWith(".svg")) return "image/svg+xml"
-    return "text/plain"
-  },
-}))
-
-vi.mock("../lib/video-uploads", () => videoUploads)
+function mountApp(
+  options: Partial<MediaRoutesOptions> & { resolveStorage?: MediaRoutesOptions["resolveStorage"] },
+) {
+  const app = new Hono()
+  app.route(
+    "/",
+    createMediaRoutes({
+      resolveStorage: options.resolveStorage ?? (() => null),
+      signVideoUploadTicket:
+        options.signVideoUploadTicket ??
+        (async () => ({ uploadUrl: "https://uploads.example/video" })),
+      ...(options.guessServedMimeType ? { guessServedMimeType: options.guessServedMimeType } : {}),
+    }),
+  )
+  return app
+}
 
 function multipartFileBody(options: {
   boundary: string
@@ -50,17 +51,10 @@ function multipartFileBody(options: {
   ].join("\r\n")
 }
 
-describe("operator media upload routes", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
+describe("media routes", () => {
   it("streams stored media by allowed key as an attachment", async () => {
-    const app = new Hono<TestRouteEnv>()
-    storage.createMediaStorage.mockReturnValue({
-      get: vi.fn(async () => new TextEncoder().encode("pdf").buffer),
-    })
-    mountOperatorMediaUploadRoutes(app)
+    const storage = makeStorage({ get: vi.fn(async () => new TextEncoder().encode("pdf").buffer) })
+    const app = mountApp({ resolveStorage: () => storage })
 
     const response = await app.request("/v1/media/brochures/products/example.pdf")
 
@@ -72,10 +66,8 @@ describe("operator media upload routes", () => {
   })
 
   it("rejects media keys outside allowed upload prefixes", async () => {
-    const app = new Hono<TestRouteEnv>()
     const get = vi.fn(async () => new TextEncoder().encode("private").buffer)
-    storage.createMediaStorage.mockReturnValue({ get })
-    mountOperatorMediaUploadRoutes(app)
+    const app = mountApp({ resolveStorage: () => makeStorage({ get }) })
 
     const response = await app.request("/v1/media/private/example.pdf")
 
@@ -84,11 +76,10 @@ describe("operator media upload routes", () => {
   })
 
   it("forces scriptable stored media to octet-stream", async () => {
-    const app = new Hono<TestRouteEnv>()
-    storage.createMediaStorage.mockReturnValue({
+    const storage = makeStorage({
       get: vi.fn(async () => new TextEncoder().encode("<svg />").buffer),
     })
-    mountOperatorMediaUploadRoutes(app)
+    const app = mountApp({ resolveStorage: () => storage })
 
     const response = await app.request("/v1/media/uploads/evil.svg")
 
@@ -98,10 +89,8 @@ describe("operator media upload routes", () => {
   })
 
   it("serves media through the admin surface with the same hardening", async () => {
-    const app = new Hono<TestRouteEnv>()
     const get = vi.fn(async () => new TextEncoder().encode("pdf").buffer)
-    storage.createMediaStorage.mockReturnValue({ get })
-    mountOperatorMediaUploadRoutes(app)
+    const app = mountApp({ resolveStorage: () => makeStorage({ get }) })
 
     const response = await app.request("/v1/admin/media/uploads/example.pdf")
 
@@ -111,11 +100,15 @@ describe("operator media upload routes", () => {
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="example.pdf"')
   })
 
+  it("responds 503 when storage is unconfigured", async () => {
+    const app = mountApp({ resolveStorage: () => null })
+    const response = await app.request("/v1/media/uploads/example.pdf")
+    expect(response.status).toBe(503)
+  })
+
   it("rejects unsafe upload types", async () => {
-    const app = new Hono<TestRouteEnv>()
     const upload = vi.fn()
-    storage.createMediaStorage.mockReturnValue({ upload })
-    mountOperatorMediaUploadRoutes(app)
+    const app = mountApp({ resolveStorage: () => makeStorage({ upload }) })
 
     const boundary = "----voyant-test-boundary"
 
@@ -135,15 +128,13 @@ describe("operator media upload routes", () => {
   })
 
   it("accepts bounded uploads on the admin surface", async () => {
-    const app = new Hono<TestRouteEnv>()
     const upload = vi.fn(
       async (_body: ArrayBuffer, options: { key: string; contentType: string }) => ({
         key: options.key,
         url: `/api/v1/media/${options.key}`,
       }),
     )
-    storage.createMediaStorage.mockReturnValue({ upload })
-    mountOperatorMediaUploadRoutes(app)
+    const app = mountApp({ resolveStorage: () => makeStorage({ upload }) })
 
     const boundary = "----voyant-test-boundary"
 
@@ -160,9 +151,7 @@ describe("operator media upload routes", () => {
 
     expect(response.status).toBe(200)
     expect(upload).toHaveBeenCalledOnce()
-    expect(upload.mock.calls[0]?.[1]).toMatchObject({
-      contentType: "image/png",
-    })
+    expect(upload.mock.calls[0]?.[1]).toMatchObject({ contentType: "image/png" })
     const body = (await response.json()) as { key: string; mimeType: string; size: number }
     expect(body.key).toMatch(/^uploads\/\d+-[a-f0-9-]+\.png$/)
     expect(body.mimeType).toBe("image/png")
@@ -170,27 +159,35 @@ describe("operator media upload routes", () => {
   })
 
   it("validates video upload ticket requests on the admin surface", async () => {
-    const app = new Hono<TestRouteEnv>()
-    mountOperatorMediaUploadRoutes(app)
+    const signVideoUploadTicket = vi.fn(async () => ({
+      uploadUrl: "https://uploads.example/video",
+    }))
+    const app = mountApp({ signVideoUploadTicket })
 
     const response = await app.request("/v1/admin/uploads/video", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        fileSize: 1024,
-        maxDurationSeconds: 60,
-        name: "clip.mp4",
-      }),
+      body: JSON.stringify({ fileSize: 1024, maxDurationSeconds: 60, name: "clip.mp4" }),
     })
 
     expect(response.status).toBe(200)
-    expect(videoUploads.createVideoUploadTicket).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({
-        fileSize: 1024,
-        maxDurationSeconds: 60,
-        name: "clip.mp4",
-      }),
+    expect(signVideoUploadTicket).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ fileSize: 1024, maxDurationSeconds: 60, name: "clip.mp4" }),
     )
+  })
+
+  it("rejects an invalid video upload ticket body", async () => {
+    const signVideoUploadTicket = vi.fn()
+    const app = mountApp({ signVideoUploadTicket })
+
+    const response = await app.request("/v1/uploads/video", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ fileSize: -1, maxDurationSeconds: 60 }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(signVideoUploadTicket).not.toHaveBeenCalled()
   })
 })
