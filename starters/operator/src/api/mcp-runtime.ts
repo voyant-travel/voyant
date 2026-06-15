@@ -1,58 +1,33 @@
 /**
- * Operator agent tool surface.
+ * Operator (deployment) wiring for the trips agent tool surface.
  *
- * Catalog MCP wrappers are retired; catalog-capable agents call the catalog
- * HTTP APIs directly. This route keeps only the admin trips commands.
+ * The generic tool-dispatch route + the trips command tools live in
+ * `@voyant-travel/trips/mcp` (`createTripMcpRoutes`). This file supplies the
+ * deployment-specific options:
+ *   - how to build the per-request `McpToolContext` (actor / tenant / scope),
+ *   - how to bind the trips MCP services to this deployment's db + dependency
+ *     wiring (`createOperatorTripsRoutesOptions`).
+ *
+ * The route mounts at `/v1/admin/mcp` via the `"operator/mcp"` composition
+ * entry.
  */
-
 import {
-  createMcpToolRegistry,
-  createTripTool,
+  createTripMcpRoutes,
   type McpToolContext,
-  priceTripTool,
-  reserveTripTool,
-  reviseTripTool,
   type TripsMcpServices,
   tripsService,
 } from "@voyant-travel/trips"
-import { type Context, Hono } from "hono"
+import type { Context, Hono } from "hono"
 
 import { DEFAULT_SLICES } from "./lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
-function registerAdminTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
-  registry.register(createTripTool)
-  registry.register(reviseTripTool)
-  registry.register(priceTripTool)
-  registry.register(reserveTripTool)
-}
-
-export function createMcpAdminRoutes(): Hono {
-  async function handle(c: Context) {
-    const tool = c.req.param("tool")
-    if (!tool) return c.json({ error: "Missing tool name" }, 400)
-
-    let body: Record<string, unknown>
-    try {
-      body = await c.req.json<Record<string, unknown>>()
-    } catch {
-      body = {}
-    }
-
-    const registry = createMcpToolRegistry({
-      context: {
-        ...buildToolContext(c),
-        trips: createTripsMcpServices(c),
-      } as McpToolContext & { trips: TripsMcpServices },
-    })
-    registerAdminTools(registry)
-    const result = await registry.dispatchTool(tool, body)
-    return c.json(result)
-  }
-
-  const routes = new Hono()
-  routes.post("/tools/:tool", handle)
-  return routes
+/** Build the trips MCP admin routes wired with this deployment's options. */
+export function buildMcpAdminRoutes(): Hono {
+  return createTripMcpRoutes({
+    buildContext: buildToolContext,
+    buildTripsServices: createTripsMcpServices,
+  })
 }
 
 function buildToolContext(c: Context): McpToolContext {

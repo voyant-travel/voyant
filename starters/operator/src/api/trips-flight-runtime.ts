@@ -12,7 +12,11 @@ import type {
   ReserveComponentResult,
 } from "@voyant-travel/trips"
 import type { Context } from "hono"
-import { formatTripBillingName, readTripBilling, splitTripBillingName } from "./trips-checkout"
+import {
+  formatTripBillingName,
+  readTripBilling,
+  splitTripBillingName,
+} from "./trips-checkout-runtime"
 
 export async function validateNonCatalogComponentBeforeReserve(
   c: Context,

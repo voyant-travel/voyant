@@ -20,7 +20,7 @@ import {
   reserveCatalogComponent,
   startComponentCheckout,
 } from "./trips-catalog-runtime"
-import { startTripCheckout } from "./trips-checkout"
+import { startTripCheckout } from "./trips-checkout-runtime"
 import {
   reserveNonCatalogComponent,
   validateNonCatalogComponentBeforeReserve,

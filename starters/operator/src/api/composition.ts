@@ -510,7 +510,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     }),
     "operator/mcp": () => ({
       module: { name: "mcp" },
-      lazyAdminRoutes: () => import("./mcp").then((m) => m.createMcpAdminRoutes()),
+      // Route + trips tools live in @voyant-travel/trips/mcp; this deployment
+      // supplies the tool context + trips service wiring via ./mcp-runtime.
+      lazyAdminRoutes: () => import("./mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     }),
     "operator/invitations": () => ({
       module: { name: "invitations" },
