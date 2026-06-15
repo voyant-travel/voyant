@@ -20,6 +20,11 @@ export type {
   StoredDocumentReference,
 } from "./document-download.js"
 export { resolveStoredDocumentDownload } from "./document-download.js"
+export {
+  createLazyRouteHandler,
+  type LazyRoutesLoader,
+  mountLazyRoutesAt,
+} from "./lazy-routes.js"
 export { createPathDbSelector, type PathDbSelectorOptions } from "./lib/db-selector.js"
 export {
   clientIpKey,

@@ -543,14 +543,46 @@ unless the whole route contribution genuinely calls interactive transactions.
 
 ## Built-In Lazy Loading And Performance
 
-Lazy route loading should be a first-class `@voyant-travel/hono` feature. On
-Cloudflare Workers this is load-bearing, not cosmetic: the operator starter
-wraps heavy route families in `mountLazyRouteApp(...)` to protect bundle size
-and cold start. Because that helper lives in the starter, it currently pushes
-package route families back into `additionalRoutes`.
+**Status: shipped (minimal form).** `@voyant-travel/hono` now exposes
+`lazyAdminRoutes` / `lazyPublicRoutes` on `HonoModule` and `HonoExtension`: a
+loader `() => Promise<Hono>` returning the same relative routes an eager
+`adminRoutes` / `publicRoutes` would. `createApp` mounts each at the surface
+prefix (`/v1/admin/{name}`, `/v1/public/{publicPath ?? name}`), dynamically
+imports the bundle on first matching request, and caches it per isolate. So a
+package can ship a heavy route family that loads on demand, and the deployment
+gets it just by composing the module — no route authoring, no starter wiring.
 
-The composition layer should support lazy Hono route contributions with static
-metadata:
+### Context preservation is the hard part (and the reason the starter helper was insufficient)
+
+Eager routes mounted via `app.route(...)` share the request context, so they see
+`c.var.db`, `c.var.container`, the resolved actor, etc. that the `createApp`
+middleware pipeline set. The starter's `mountLazyRouteApp(...)` forwards via
+`subApp.fetch(c.req.raw, c.env)`, which builds a **fresh** Hono context and drops
+every `c.var`. This was verified empirically: a forwarded sub-app reads
+`c.var.db === undefined`. That is a latent bug for any lazy family that relies on
+request-scoped state — including the operator's lazy `flights.ts`, whose
+`getDb(c)` reads `c.var.db`. Such families work only by accident (paths that
+never touch the dropped vars).
+
+The first-class implementation fixes this by bridging context across the forward:
+it snapshots `c.var`, carries it on the forwarded `env` under a private symbol,
+and a wrapper middleware re-hydrates it onto the loaded sub-app before the real
+routes run. The db lease is **carried, not re-acquired**, so the outer `db`
+middleware keeps sole ownership of dispose (no double-release). Actor guards and
+auth still run on the outer pipeline before the lazy proxy, so a rejected request
+never imports the bundle. Failed loads are not cached, so a transient
+import/config error recovers on the next request. All of this is covered by
+`packages/hono/tests/unit/app-lazy-routes.test.ts`.
+
+Migrating the existing lazy families (`flights`, `media`, `catalog-booking`, …)
+off the starter's `mountLazyRouteApp` onto `lazyAdminRoutes`/`lazyPublicRoutes`
+both removes their `additionalRoutes` hops and fixes the dropped-context bug.
+Those migrations are per-family work that still needs integration verification.
+
+### Future: richer lazy metadata
+
+The minimal form intentionally omits per-route policy metadata. A later
+extension could carry path/policy/preload hints alongside the loader:
 
 ```ts
 interface LazyHonoRoutes {
