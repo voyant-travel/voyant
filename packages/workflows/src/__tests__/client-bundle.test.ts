@@ -6,6 +6,18 @@ import { afterEach, describe, expect, test } from "vitest"
 
 const tempDirs: string[] = []
 
+// Resolve `@voyant-travel/workflows` to its TypeScript source for these
+// bundle-boundary checks. The package's `.` export has a `node` condition that
+// points at `./dist/index.js`, but package `build` is typecheck-only in this
+// repo (no `dist` is emitted in dev/CI), so a `platform: "node"` esbuild bundle
+// can't resolve it. Aliasing to src keeps the boundary assertions intact (they
+// are about the local `node-only.ts` import, not the package internals) and
+// makes the test self-contained — no built artifact required.
+const workflowsAlias = {
+  "@voyant-travel/workflows": join(process.cwd(), "src/index.ts"),
+  "@voyant-travel/workflows/client": join(process.cwd(), "src/client.ts"),
+}
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { force: true, recursive: true })))
 })
@@ -72,6 +84,7 @@ describe("@voyant-travel/workflows/client bundle boundary", () => {
       platform: "browser",
       metafile: true,
       write: true,
+      alias: workflowsAlias,
     })
     const appCode = await readFile(appOut, "utf8")
 
@@ -89,6 +102,7 @@ describe("@voyant-travel/workflows/client bundle boundary", () => {
       platform: "node",
       metafile: true,
       write: true,
+      alias: workflowsAlias,
     })
 
     expect(
