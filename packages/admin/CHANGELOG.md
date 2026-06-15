@@ -1,5 +1,12 @@
 # @voyant-travel/admin
 
+## 0.111.1
+
+### Patch Changes
+
+- dd71543: Move the packaged admin app shell into `@voyant-travel/admin/app/*` and keep
+  `@voyant-travel/admin-app` as a compatibility shim over the new exports.
+
 ## 0.111.0
 
 ### Minor Changes

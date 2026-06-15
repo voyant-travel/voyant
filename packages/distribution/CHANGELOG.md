@@ -1,5 +1,44 @@
 # @voyant-travel/distribution
 
+## 0.110.0
+
+### Minor Changes
+
+- 3e160d3: Move supplier and external-reference runtime and React implementation under
+  Distribution owner paths. The old supplier and external-ref package names are
+  removed from v1 while operator runtime and legal schema imports use
+  Distribution-owned surfaces.
+
+### Patch Changes
+
+- 081e310: Remove Distribution runtime dependencies on Product and Availability schemas.
+  Channel push now reads Product content and Availability slots through reviewed
+  SQL boundary queries, while Product and Availability remain dev/test-only
+  dependencies for integration coverage.
+- eb17d3d: Add owner-path schema manifest metadata for Commerce and Operations, expose the
+  Distribution counterparty interface, and refresh operator schema/link generated
+  artifacts for the v1 package restructure.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [c9ec9f8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [44c3875]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/catalog@0.118.0
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/identity@0.120.0
+  - @voyant-travel/workflows@0.107.11
+
 ## 0.109.8
 
 ### Patch Changes

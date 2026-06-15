@@ -1,5 +1,40 @@
 # @voyant-travel/admin-app
 
+## 0.11.0
+
+### Patch Changes
+
+- dd71543: Move the packaged admin app shell into `@voyant-travel/admin/app/*` and keep
+  `@voyant-travel/admin-app` as a compatibility shim over the new exports.
+- 97d520c: Add the Commerce React owner package and retarget first-party UI wiring to the
+  Commerce owner path.
+- 85f9ce1: Move commercial React/admin source under the Commerce React owner path and
+  remove the old Markets, Pricing, Promotions, and Sellability React package
+  names from the v1 workspace surface.
+- d5c540e: Move first-party operated product authoring imports to the Inventory owner path
+  and remove the temporary Products compatibility package names from v1.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- Updated dependencies [dd71543]
+- Updated dependencies [97d520c]
+- Updated dependencies [85f9ce1]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [9e970a5]
+- Updated dependencies [3408b2a]
+- Updated dependencies [3e160d3]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [47fef18]
+- Updated dependencies [6196b3b]
+  - @voyant-travel/admin@0.111.1
+  - @voyant-travel/commerce-react@0.2.0
+  - @voyant-travel/inventory-react@0.2.0
+  - @voyant-travel/finance-react@0.120.0
+  - @voyant-travel/distribution-react@0.110.0
+
 ## 0.10.0
 
 ### Patch Changes

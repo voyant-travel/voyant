@@ -1,5 +1,40 @@
 # @voyant-travel/octo
 
+## 0.104.20
+
+### Patch Changes
+
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- 2c9c4a4: Retire the runtime Transactions packages before v1. The default Bookings/OCTO
+  bridge now reads booking origin/provenance records instead of the legacy
+  booking-to-transaction detail table, and the public `@voyant-travel/transactions`
+  and `@voyant-travel/transactions-react` workspaces have been removed. The
+  legacy `@voyant-travel/transactions-contracts` workspace is removed as well;
+  use the owning domain contract/runtime package for replacement validation
+  schemas.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [eb17d3d]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [44c3875]
+- Updated dependencies [3408b2a]
+- Updated dependencies [7ea516a]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/operations@0.1.0
+  - @voyant-travel/inventory@0.2.0
+
 ## 0.104.19
 
 ### Patch Changes

@@ -1,5 +1,37 @@
 # @voyant-travel/accommodations
 
+## 0.105.18
+
+### Patch Changes
+
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- eb1ad4b: Move shared place handling into Operations-owned places surfaces while
+  preserving existing `facilityId` database fields.
+
+  Remove direct cross-package database constraints from ground, distribution, and
+  accommodations into the legacy facilities/property tables; those references now
+  remain indexed loose ids for deployment-level linking.
+
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [c9ec9f8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [eb17d3d]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [44c3875]
+- Updated dependencies [3408b2a]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/catalog@0.118.0
+  - @voyant-travel/operations@0.1.0
+
 ## 0.105.17
 
 ### Patch Changes

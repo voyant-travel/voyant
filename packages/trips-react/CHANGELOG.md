@@ -1,5 +1,35 @@
 # @voyant-travel/trips-react
 
+## 0.111.0
+
+### Minor Changes
+
+- f374a58: Rename the Travel Composer runtime and React packages to Trips, including package names, route prefixes, admin extension ids, operator manifests, and template imports.
+
+### Patch Changes
+
+- Updated dependencies [dd71543]
+- Updated dependencies [c9ec9f8]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [0fa993c]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [3408b2a]
+- Updated dependencies [47fef18]
+- Updated dependencies [f374a58]
+- Updated dependencies [6196b3b]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/admin@0.111.1
+  - @voyant-travel/catalog@0.118.0
+  - @voyant-travel/trips@0.111.0
+  - @voyant-travel/bookings-react@0.120.0
+  - @voyant-travel/finance@0.120.0
+  - @voyant-travel/catalog-react@0.118.0
+  - @voyant-travel/flights-react@0.120.0
+  - @voyant-travel/flights@0.120.0
+  - @voyant-travel/relationships-react@0.120.0
+
 ## 0.110.2
 
 ### Patch Changes

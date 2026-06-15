@@ -1,5 +1,46 @@
 # @voyant-travel/finance
 
+## 0.120.0
+
+### Minor Changes
+
+- 9e970a5: Move checkout collection orchestration and React payment collection surfaces
+  behind Finance owner paths. The old Checkout workspace packages are removed
+  from the v1 branch while payment plugins, storefront SDK helpers, and the
+  operator starter retarget Finance checkout interfaces.
+
+### Patch Changes
+
+- 0fa993c: Remove Finance runtime dependencies on Product and Availability schemas for tax
+  facts and profitability/allocation labels. Finance now uses reviewed SQL
+  boundary reads for those read-model lookups, keeping Product and Availability as
+  dev/test-only dependencies.
+- b711b04: Reject generic payment `orderId` request fields and keep legacy order references behind explicit `legacyOrderId` targets.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- 6196b3b: Move customer portal runtime and React surfaces under Storefront owner paths and
+  remove the old customer-portal workspace packages. Remove the retired Checkout
+  workspace packages now that Finance and Finance React own checkout collection
+  services, hooks, and UI.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/finance-contracts@0.104.5
+  - @voyant-travel/action-ledger@0.104.11
+
 ## 0.119.5
 
 ### Patch Changes

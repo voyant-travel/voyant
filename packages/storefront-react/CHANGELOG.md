@@ -1,5 +1,24 @@
 # @voyant-travel/storefront-react
 
+## 0.121.0
+
+### Minor Changes
+
+- 6196b3b: Move customer portal runtime and React surfaces under Storefront owner paths and
+  remove the old customer-portal workspace packages. Remove the retired Checkout
+  workspace packages now that Finance and Finance React own checkout collection
+  services, hooks, and UI.
+
+### Patch Changes
+
+- Updated dependencies [3cc83b6]
+- Updated dependencies [23fc4bd]
+- Updated dependencies [47fef18]
+- Updated dependencies [c8189fc]
+- Updated dependencies [f916094]
+- Updated dependencies [6196b3b]
+  - @voyant-travel/storefront@0.121.0
+
 ## 0.120.1
 
 ### Patch Changes

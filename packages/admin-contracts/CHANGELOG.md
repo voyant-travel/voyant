@@ -1,5 +1,23 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.5
+
+### Patch Changes
+
+- c8189fc: Split the legacy `@voyant-travel/crm-contracts` package into
+  `@voyant-travel/relationships-contracts` and
+  `@voyant-travel/quotes-contracts`. Runtime packages and public validation
+  imports now depend on the domain-specific contract packages.
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [c3f4fa0]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [c8189fc]
+  - @voyant-travel/finance-contracts@0.104.5
+  - @voyant-travel/legal-contracts@0.105.0
+  - @voyant-travel/bookings-contracts@0.105.0
+  - @voyant-travel/relationships-contracts@0.107.0
+
 ## 0.104.4
 
 ### Patch Changes

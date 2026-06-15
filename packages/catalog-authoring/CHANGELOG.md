@@ -1,5 +1,28 @@
 # @voyant-travel/catalog-authoring
 
+## 0.106.19
+
+### Patch Changes
+
+- 3cc83b6: Move extras runtime and React source behind Inventory and Bookings owner
+  subpaths. The old runtime and React extras package names are removed from v1;
+  first-party imports use the Inventory and Bookings owner paths.
+- 7ea516a: Move product graph compose/duplicate authoring behind
+  `@voyant-travel/inventory/authoring`. `@voyant-travel/catalog-authoring` now delegates to
+  the Inventory owner path during the v1 restructure.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- Updated dependencies [3cc83b6]
+- Updated dependencies [3408b2a]
+- Updated dependencies [7ea516a]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [47fef18]
+  - @voyant-travel/inventory@0.2.0
+
 ## 0.106.18
 
 ### Patch Changes

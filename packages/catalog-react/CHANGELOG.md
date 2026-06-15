@@ -1,5 +1,28 @@
 # @voyant-travel/catalog-react
 
+## 0.118.0
+
+### Patch Changes
+
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- Updated dependencies [dd71543]
+- Updated dependencies [97d520c]
+- Updated dependencies [85f9ce1]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [3408b2a]
+- Updated dependencies [3e160d3]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [47fef18]
+  - @voyant-travel/admin@0.111.1
+  - @voyant-travel/commerce-react@0.2.0
+  - @voyant-travel/inventory-react@0.2.0
+  - @voyant-travel/distribution-react@0.110.0
+
 ## 0.117.2
 
 ### Patch Changes

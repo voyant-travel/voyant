@@ -1,6 +1,0 @@
----
-"@voyant-travel/admin-app": patch
----
-
-Move first-party operated product authoring imports to the Inventory owner path
-and remove the temporary Products compatibility package names from v1.

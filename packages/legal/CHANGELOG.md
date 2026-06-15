@@ -1,5 +1,43 @@
 # @voyant-travel/legal
 
+## 0.120.0
+
+### Minor Changes
+
+- c3f4fa0: Move Legal acceptance, contract, and term records to target refs with explicit legacy transaction compatibility fields.
+
+### Patch Changes
+
+- 3e160d3: Move supplier and external-reference runtime and React implementation under
+  Distribution owner paths. The old supplier and external-ref package names are
+  removed from v1 while operator runtime and legal schema imports use
+  Distribution-owned surfaces.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [081e310]
+- Updated dependencies [eb17d3d]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [0fa993c]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [3e160d3]
+- Updated dependencies [c3f4fa0]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [c8189fc]
+- Updated dependencies [6196b3b]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/distribution@0.110.0
+  - @voyant-travel/finance@0.120.0
+  - @voyant-travel/legal-contracts@0.105.0
+  - @voyant-travel/relationships@0.119.3
+  - @voyant-travel/action-ledger@0.104.11
+
 ## 0.119.2
 
 ### Patch Changes
