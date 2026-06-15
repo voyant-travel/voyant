@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { formatMessage } from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/admin/lib/i18n"
 import { VerifyEmailPage, type VerifyEmailPageMessages } from "@voyant-travel/auth-react/ui"
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"

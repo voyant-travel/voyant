@@ -1,6 +1,5 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
@@ -11,6 +10,8 @@ import {
   TableRow,
 } from "@voyant-travel/ui/components/table"
 
+const HEADER_WIDTHS = ["w-20", "w-14", "w-20", "w-8", "w-20"] as const
+
 /**
  * Route-level placeholder for the bookings list. Mirrors `BookingsPage` +
  * `BookingList`:
@@ -20,8 +21,6 @@ import {
  *   - Pagination bar
  */
 export function BookingsListSkeleton() {
-  const bookingMessages = useOperatorAdminMessages().bookings.list
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -41,11 +40,14 @@ export function BookingsListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{bookingMessages.tableBookingNumber}</TableHead>
-              <TableHead>{bookingMessages.tableStatus}</TableHead>
-              <TableHead>{bookingMessages.tableSellAmount}</TableHead>
-              <TableHead>{bookingMessages.tablePax}</TableHead>
-              <TableHead>{bookingMessages.tableStartDate}</TableHead>
+              {HEADER_WIDTHS.map((width, column) => (
+                <TableHead
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
+                  key={column}
+                >
+                  <Skeleton className={`h-3.5 ${width}`} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <SkeletonRows rows={8} widths={["w-28", "w-20", "w-24", "w-6", "w-24"]} />

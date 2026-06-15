@@ -1,6 +1,5 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
@@ -13,16 +12,15 @@ import {
 } from "@voyant-travel/ui/components/table"
 
 const TABLE_COLUMNS = [
-  { id: "name", width: "w-40" },
-  { id: "kind", width: "w-20" },
-  { id: "supplier", width: "w-32" },
-  { id: "capacity", width: "w-16" },
-  { id: "status", width: "w-16" },
+  { id: "name", headerWidth: "w-16", width: "w-40" },
+  { id: "kind", headerWidth: "w-12", width: "w-20" },
+  { id: "supplier", headerWidth: "w-16", width: "w-32" },
+  { id: "capacity", headerWidth: "w-16", width: "w-16" },
+  { id: "status", headerWidth: "w-14", width: "w-16" },
 ] as const
 
 /** Body-only placeholder used inside the live page while queries load. */
 export function ResourcesBodySkeleton() {
-  const t = useOperatorAdminMessages().resources
   return (
     <div className="flex flex-col gap-6">
       {/* KPI row */}
@@ -76,11 +74,11 @@ export function ResourcesBodySkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t.nameLabel}</TableHead>
-              <TableHead>{t.kindLabel}</TableHead>
-              <TableHead>{t.supplierLabel}</TableHead>
-              <TableHead>{t.capacityLabel}</TableHead>
-              <TableHead>{t.statusLabel}</TableHead>
+              {TABLE_COLUMNS.map((column) => (
+                <TableHead key={column.id}>
+                  <Skeleton className={`h-3.5 ${column.headerWidth}`} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -8,25 +8,23 @@ import {
   TableRow,
 } from "@voyant-travel/ui/components/table"
 
-import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
-
 const INVOICE_WIDTHS = ["w-28", "w-16", "w-20", "w-20", "w-20", "w-24"]
+const INVOICE_HEADER_WIDTHS = ["w-24", "w-14", "w-12", "w-10", "w-20", "w-16"]
 
 export function InvoicesTableSkeleton({ rows = 8 }: { rows?: number }) {
-  const messages = useFinanceUiMessagesOrDefault()
-  const columns = messages.invoicesPage.columns
-
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{columns.invoiceNumber}</TableHead>
-            <TableHead>{columns.status}</TableHead>
-            <TableHead>{columns.total}</TableHead>
-            <TableHead>{columns.paid}</TableHead>
-            <TableHead>{columns.balanceDue}</TableHead>
-            <TableHead>{columns.dueDate}</TableHead>
+            {INVOICE_HEADER_WIDTHS.map((width, columnIndex) => (
+              <TableHead
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
+                key={columnIndex}
+              >
+                <Skeleton className={`h-3.5 ${width}`} />
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>

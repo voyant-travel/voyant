@@ -12,6 +12,7 @@
     "./app/router": "./src/app/router.tsx",
     "./app/workspace": "./src/app/workspace.tsx",
     "./app/extension-routes": "./src/app/extension-routes.tsx",
+    "./components/admin-breadcrumbs": "./src/components/admin-breadcrumbs.tsx",
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
     "./components/admin-page-head": "./src/components/admin-page-head.tsx",
@@ -115,6 +116,11 @@
         "types": "./dist/app/extension-routes.d.ts",
         "import": "./dist/app/extension-routes.js",
         "default": "./dist/app/extension-routes.js"
+      },
+      "./components/admin-breadcrumbs": {
+        "types": "./dist/components/admin-breadcrumbs.d.ts",
+        "import": "./dist/components/admin-breadcrumbs.js",
+        "default": "./dist/components/admin-breadcrumbs.js"
       },
       "./components/admin-nav-group": {
         "types": "./dist/components/admin-nav-group.d.ts",

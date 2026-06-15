@@ -1,4 +1,4 @@
-import { useTheme } from "@voyant-travel/admin"
+import { useTheme } from "@voyant-travel/admin/providers/theme"
 import {
   CircleCheckIcon,
   InfoIcon,

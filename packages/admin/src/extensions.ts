@@ -63,6 +63,17 @@ export interface AdminRoutePageModule {
   default: AdminRoutePageComponent
 }
 
+export interface AdminRouteMessagesProviderProps {
+  children: React.ReactNode
+  locale: string | null | undefined
+}
+
+export type AdminRouteMessagesProvider = React.ComponentType<AdminRouteMessagesProviderProps>
+
+export interface AdminRouteMessagesProviderModule {
+  default: AdminRouteMessagesProvider
+}
+
 /**
  * Adapt a component into an {@link AdminRoutePageModule}. Use inside `page`
  * loaders for components that ignore route props entirely (zero-prop hosts)
@@ -101,6 +112,12 @@ export interface AdminUiRouteContribution {
   page?: () => Promise<AdminRoutePageModule>
   /** Data loader; receives the host QueryClient + app runtime. */
   loader?: (ctx: AdminRouteLoaderContext) => unknown
+  /**
+   * Route-local package i18n provider. Keep this lazy: app shells can
+   * localize package pages without pulling every domain message table into
+   * the workspace chrome chunk.
+   */
+  routeMessagesProvider?: () => Promise<AdminRouteMessagesProviderModule>
   /** Typed search-param validation (e.g. a zod schema's parse). */
   validateSearch?: (search: Record<string, unknown>) => unknown
   /** Per-route SSR mode, mirroring the host router's option. */

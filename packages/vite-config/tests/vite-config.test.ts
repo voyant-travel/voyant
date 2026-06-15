@@ -27,6 +27,13 @@ describe("voyantVendorChunk", () => {
     expect(voyantVendorChunk("/repo/node_modules/@pdf-lib/fontkit/index.js")).toBe("pdf-lib")
   })
 
+  it("keeps class-name helpers out of heavy vendor chunks", () => {
+    expect(voyantVendorChunk("/repo/node_modules/clsx/dist/clsx.mjs")).toBe("class-utils")
+    expect(voyantVendorChunk("/repo/node_modules/tailwind-merge/dist/index.mjs")).toBe(
+      "class-utils",
+    )
+  })
+
   it("leaves other vendors to the default chunking", () => {
     expect(voyantVendorChunk("/repo/node_modules/zod/index.js")).toBeUndefined()
     // react-hook-form must NOT match the /react/ pin.
@@ -85,6 +92,10 @@ describe("VOYANT_ROUTE_FILE_IGNORE_PATTERN", () => {
     expect(pattern.test("_hooks")).toBe(true)
     expect(pattern.test("booking-detail-page.tsx")).toBe(true)
     expect(pattern.test("contract-dialogs.tsx")).toBe(true)
+    expect(pattern.test("shop-product-detail-content.ts")).toBe(true)
+    expect(pattern.test("shop-product-detail-accommodations.tsx")).toBe(true)
+    expect(pattern.test("shop-product-detail-cruises.tsx")).toBe(true)
+    expect(pattern.test("shop-product-detail-products.tsx")).toBe(true)
     expect(pattern.test("types.ts")).toBe(true)
   })
 

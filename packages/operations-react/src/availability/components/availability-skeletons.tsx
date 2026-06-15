@@ -8,10 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components/table"
-import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
+
+const AVAILABILITY_HEADER_WIDTHS = ["w-12", "w-16", "w-14", "w-20", "w-16"] as const
 
 export function AvailabilityBodySkeleton() {
-  const messages = useAvailabilityUiMessagesOrDefault().page.skeleton
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -64,11 +64,14 @@ export function AvailabilityBodySkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{messages.date}</TableHead>
-              <TableHead>{messages.product}</TableHead>
-              <TableHead>{messages.status}</TableHead>
-              <TableHead>{messages.remaining}</TableHead>
-              <TableHead>{messages.capacity}</TableHead>
+              {AVAILABILITY_HEADER_WIDTHS.map((width, column) => (
+                <TableHead
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: availability-react; existing suppression is intentional pending typed cleanup.
+                  key={column}
+                >
+                  <Skeleton className={`h-3.5 ${width}`} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <SkeletonTableRows
