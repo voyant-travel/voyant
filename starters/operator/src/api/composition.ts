@@ -580,11 +580,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/public/bookings/:bookingId/checkout-status",
         ],
         load: () =>
-          import("./lazy-additional-routes").then((m) => {
-            const app = new Hono()
-            m.mountOperatorLazyAdditionalRoutes(app)
-            return app
-          }),
+          import("./payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
       },
     }),
     "operator/operator-settings": () => ({
