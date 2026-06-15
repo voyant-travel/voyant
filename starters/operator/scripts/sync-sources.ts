@@ -146,10 +146,6 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
       apiKey: voyantConnectApiKey,
       baseUrl: cloudApiUrl,
     })
-    // Temporary bridge while connect-adapter/connect-cruises remain npm aliases
-    // to @voyantjs packages; the runtime client shape is compatible, but their
-    // published types reference the old connect-sdk package identity.
-    const aliasedAdapterClient = client as never
     for (const connection of connections) {
       const connectionDetail = await client.connections
         .get(voyantConnectOperatorId, connection.id)
@@ -158,7 +154,7 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
       registry.register(
         connection.id,
         createVoyantConnectSourceAdapter({
-          client: aliasedAdapterClient,
+          client,
           operatorId: voyantConnectOperatorId,
           sourceProvider,
           market: voyantConnectMarket,
@@ -177,7 +173,7 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
         withSupplyModel(
           createConnectCruiseSourceAdapter(
             {
-              client: aliasedAdapterClient,
+              client,
               operatorId: voyantConnectOperatorId,
               connectionIds: [connection.id],
               sourceProvider,
