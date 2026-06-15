@@ -5,7 +5,6 @@
 "@voyant-travel/finance-react": patch
 "@voyant-travel/inventory": patch
 "@voyant-travel/inventory-react": patch
-"operator": patch
 ---
 
 Move availability, allocation UI, resources, ground logistics, and places source

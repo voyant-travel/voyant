@@ -1,7 +1,6 @@
 ---
 "@voyant-travel/distribution": minor
 "@voyant-travel/distribution-react": minor
-"operator": patch
 "@voyant-travel/legal": patch
 ---
 

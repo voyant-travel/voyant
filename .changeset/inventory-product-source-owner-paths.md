@@ -1,7 +1,6 @@
 ---
 "@voyant-travel/inventory": minor
 "@voyant-travel/inventory-react": minor
-"operator": patch
 ---
 
 Move the main operated Product route/service/schema/runtime and React

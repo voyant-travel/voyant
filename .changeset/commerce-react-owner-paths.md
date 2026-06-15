@@ -1,7 +1,6 @@
 ---
 "@voyant-travel/commerce-react": minor
 "@voyant-travel/admin-app": patch
-"operator": patch
 ---
 
 Move commercial React/admin source under the Commerce React owner path and
