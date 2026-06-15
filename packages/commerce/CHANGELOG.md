@@ -1,5 +1,13 @@
 # @voyant-travel/commerce
 
+## 0.2.3
+
+### Patch Changes
+
+- 756213e: Add public cache policy headers for cacheable public read routes and expose public response cache configuration typing.
+- Updated dependencies [756213e]
+  - @voyant-travel/hono@0.110.3
+
 ## 0.2.2
 
 ### Patch Changes
