@@ -10,10 +10,10 @@ Temporary dependency aliases:
 
 - `@voyant-travel/connect-adapter` -> `npm:@voyantjs/connect-adapter@0.2.20`
 - `@voyant-travel/connect-cruises` -> `npm:@voyantjs/connect-cruises@0.3.13`
-- `@voyant-travel/cli` -> `npm:@voyantjs/cli@^0.26.0`
 
 Resolved external dependencies:
 
+- `@voyant-travel/cli@^0.26.0`
 - `@voyant-travel/cloud-sdk@^0.9.0`
 - `@voyant-travel/data-sdk@^0.5.0`
 - `@voyant-travel/connect-sdk@0.8.0`
@@ -24,8 +24,6 @@ Known publish blockers:
   `@voyant-travel/connect-cruises@0.3.15` are published, but their npm metadata
   still contains `@voyant-travel/connect-sdk: workspace:*`; keep the aliases
   until those packages are republished with registry semver dependencies.
-- `@voyant-travel/cli` is not visible on npm yet; keep the alias until it
-  resolves from the `@voyant-travel` scope.
 
 Publishable workspace package names at this point:
 
