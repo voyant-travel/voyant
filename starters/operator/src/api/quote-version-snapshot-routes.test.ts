@@ -43,7 +43,7 @@ vi.mock("./operator-runtime-adapter", () => ({
 }))
 
 import {
-  mountOperatorQuoteVersionSnapshotRoutes,
+  createOperatorQuoteVersionSnapshotExtension,
   tripSnapshotToQuoteVersionApply,
 } from "./quote-version-snapshot-routes"
 
@@ -92,7 +92,8 @@ function makeApp() {
     c.set("userId" as never, "user_1" as never)
     await next()
   })
-  mountOperatorQuoteVersionSnapshotRoutes(app as never)
+  const extension = createOperatorQuoteVersionSnapshotExtension()
+  app.route("/v1/admin/trips", extension.adminRoutes as never)
   return app
 }
 

@@ -7,11 +7,7 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import {
-  bookingScheduleBundle,
-  mountBookingPaymentScheduleRoutes,
-  mountPublicPaymentPolicyRoutes,
-} from "./booking-schedule"
+import { bookingScheduleBundle } from "./booking-schedule"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
 import { channelPushBundle } from "./channel-push"
@@ -241,15 +237,9 @@ export const app = createApp<CloudflareBindings>({
     // Operator profile, payment instructions, and booking payment defaults.
     mountOperatorSettingsRoutes(hono)
 
-    // Booking-level payment-policy override + schedule regeneration.
-    // POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate
-    mountBookingPaymentScheduleRoutes(hono)
-
-    // Real-time tax preview for the admin booking-create dialog.
-    // POST /v1/admin/bookings/tax-preview
-    mountLazyRouteApp(hono, ["/v1/admin/bookings/tax-preview"], () =>
-      import("./booking-tax-preview").then((module) => module.mountBookingTaxPreviewRoutes),
-    )
+    // Booking payment-schedule (admin regenerate + public policy preview)
+    // and booking-tax preview are now composed extensions on the bookings
+    // module — see composition.ts.
 
     // Rebuild `booking_item_tax_lines` from the catalog snapshot for a
     // booking. Repairs bookings created before the snapshot fallback in
@@ -281,13 +271,6 @@ export const app = createApp<CloudflareBindings>({
         ),
     )
 
-    // Storefront preview policy resolution. The customer-facing
-    // booking journey calls this on mount + whenever the
-    // sailing/cabin/rate-plan selection changes; the resolved policy
-    // drives the deposit / balance preview in the contract dialog.
-    // POST /v1/public/payment-policy/resolve
-    mountPublicPaymentPolicyRoutes(hono)
-
     mountLazyRouteApp(
       hono,
       [
@@ -313,14 +296,8 @@ export const app = createApp<CloudflareBindings>({
       () => import("./proposal-routes").then((module) => module.mountOperatorProposalRoutes),
     )
 
-    mountLazyRouteApp(
-      hono,
-      ["/v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot"],
-      () =>
-        import("./quote-version-snapshot-routes").then(
-          (module) => module.mountOperatorQuoteVersionSnapshotRoutes,
-        ),
-    )
+    // Quote-version snapshot is now a composed extension on the trips
+    // module — see composition.ts.
 
     mountOperatorLazyAdditionalRoutes(hono)
 

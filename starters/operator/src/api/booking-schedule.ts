@@ -36,10 +36,11 @@ import {
   resolveEffectivePaymentPolicy,
 } from "@voyant-travel/finance"
 import { parseJsonBody } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import { type Context, Hono } from "hono"
 import { z } from "zod"
 
 import {
@@ -302,9 +303,7 @@ function getPaymentScheduleActionLedgerRequestContext(
   }
 }
 
-export function mountBookingPaymentScheduleRoutes(hono: Hono): void {
-  hono.post("/v1/admin/bookings/:bookingId/payment-schedule/regenerate", handleRegenerateSchedule)
-}
+// Admin route mounted via the booking-schedule extension below.
 
 // ─────────────────────────────────────────────────────────────────
 // Public route: resolve policy for an entity (storefront preview)
@@ -357,6 +356,33 @@ async function handleResolvePolicy(c: Context): Promise<Response> {
   })
 }
 
-export function mountPublicPaymentPolicyRoutes(hono: Hono): void {
-  hono.post("/v1/public/payment-policy/resolve", handleResolvePolicy)
+/**
+ * Booking payment-schedule routes as a composed extension on the
+ * `bookings` module.
+ *
+ * - admin: `POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate`
+ * - public: `POST /v1/public/payment-policy/resolve` (anonymous storefront
+ *   preview; the public mount path is overridden to `payment-policy`).
+ *
+ * Replaces the former `mountBookingPaymentScheduleRoutes(...)` /
+ * `mountPublicPaymentPolicyRoutes(...)` additionalRoutes hops; the handler
+ * bodies and operator-local policy cascade are unchanged. See
+ * docs/architecture/api-route-ownership-and-composition.md.
+ *
+ * The event-subscriber bundle (`bookingScheduleBundle`) stays a separate
+ * plugin — it carries no routes.
+ */
+export function createBookingScheduleExtension(): HonoExtension {
+  const adminRoutes = new Hono()
+  adminRoutes.post("/:bookingId/payment-schedule/regenerate", handleRegenerateSchedule)
+
+  const publicRoutes = new Hono()
+  publicRoutes.post("/resolve", handleResolvePolicy)
+
+  return {
+    extension: { name: "booking-schedule", module: "bookings" },
+    adminRoutes,
+    publicRoutes,
+    publicPath: "payment-policy",
+  }
 }

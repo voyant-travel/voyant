@@ -1,4 +1,5 @@
 import { parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
+import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
   type QuoteVersion,
   QuoteVersionConflictError,
@@ -11,7 +12,7 @@ import {
   TripsInvariantError,
   tripsService,
 } from "@voyant-travel/trips"
-import type { Context, Hono } from "hono"
+import { type Context, Hono } from "hono"
 import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 
@@ -34,13 +35,24 @@ const freezeQuoteVersionSnapshotBodySchema = z.object({
   createdBy: z.string().min(1).nullable().optional(),
 })
 
-export function mountOperatorQuoteVersionSnapshotRoutes(
-  hono: Hono<OperatorQuoteVersionSnapshotRouteEnv>,
-): void {
-  hono.post(
-    "/v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot",
+/**
+ * Quote-version snapshot route as a composed extension on the `trips`
+ * module: `POST /v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot`.
+ *
+ * Replaces the former `mountOperatorQuoteVersionSnapshotRoutes(...)`
+ * additionalRoutes hop; the handler body is unchanged. See
+ * docs/architecture/api-route-ownership-and-composition.md.
+ */
+export function createOperatorQuoteVersionSnapshotExtension(): HonoExtension {
+  const adminRoutes = new Hono<OperatorQuoteVersionSnapshotRouteEnv>()
+  adminRoutes.post(
+    "/:envelopeId/quote-versions/:quoteVersionId/snapshot",
     handleFreezeQuoteVersionSnapshot,
   )
+  return {
+    extension: { name: "quote-version-snapshot", module: "trips" },
+    adminRoutes,
+  }
 }
 
 export async function handleFreezeQuoteVersionSnapshot(

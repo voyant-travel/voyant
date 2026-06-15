@@ -35,7 +35,11 @@ import {
   externalRefsHonoModule,
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
-import { bookingsCreateExtension, createFinanceHonoModule } from "@voyant-travel/finance"
+import {
+  bookingsCreateExtension,
+  createBookingTaxHonoExtension,
+  createFinanceHonoModule,
+} from "@voyant-travel/finance"
 import type {
   CheckoutNotificationDelivery,
   CheckoutPaymentStarter,
@@ -67,6 +71,7 @@ import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
 import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
+import { createBookingScheduleExtension } from "./booking-schedule"
 import { createChannelPushExtension } from "./channel-push"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
@@ -86,6 +91,8 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
+import { createOperatorQuoteVersionSnapshotExtension } from "./quote-version-snapshot-routes"
+import { resolveBookingTaxSettings, updateBookingTaxSettings } from "./settings"
 import { createRelationshipsStorefrontIntakePersistence } from "./storefront-intake-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
@@ -245,6 +252,9 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/quotes/booking-extension",
     "@voyant-travel/distribution",
     "@voyant-travel/distribution/channel-push-extension",
+    "@voyant-travel/finance/booking-tax-extension",
+    "operator/booking-schedule-extension",
+    "operator/quote-version-snapshot-extension",
   ],
 } satisfies CompositionManifest
 
@@ -458,5 +468,10 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "@voyant-travel/quotes/booking-extension": () => quotesBookingExtension,
     "@voyant-travel/distribution": () => distributionBookingExtension,
     "@voyant-travel/distribution/channel-push-extension": () => createChannelPushExtension(),
+    "@voyant-travel/finance/booking-tax-extension": () =>
+      createBookingTaxHonoExtension({ resolveBookingTaxSettings, updateBookingTaxSettings }),
+    "operator/booking-schedule-extension": () => createBookingScheduleExtension(),
+    "operator/quote-version-snapshot-extension": () =>
+      createOperatorQuoteVersionSnapshotExtension(),
   },
 }

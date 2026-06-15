@@ -3,7 +3,6 @@
   "files": {
     "starters/operator/src/api/action-ledger-health.ts": 2,
     "starters/operator/src/api/app.ts": 1,
-    "starters/operator/src/api/booking-schedule.ts": 2,
     "starters/operator/src/api/catalog-booking.ts": 4,
     "starters/operator/src/api/catalog-checkout.ts": 1,
     "starters/operator/src/api/catalog-offers.ts": 6,
@@ -14,7 +13,6 @@
     "starters/operator/src/api/mcp.ts": 1,
     "starters/operator/src/api/media-upload-routes.ts": 7,
     "starters/operator/src/api/proposal-routes.ts": 4,
-    "starters/operator/src/api/quote-version-snapshot-routes.ts": 1,
     "starters/operator/src/api/settings.ts": 10
   },
   "additionalRoutesAllowed": ["starters/operator/src/api/app.ts"]

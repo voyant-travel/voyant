@@ -52,9 +52,13 @@ honest.
 - **Already composed (no action):** the ~20 modules + 6 extensions in
   `OPERATOR_RUNTIME_MANIFEST` / `operatorComposition`. This inventory only covers
   the `additionalRoutes` stragglers.
-- **Phase 3 (mount-only moves):** `booking-schedule.ts`, `catalog-booking.ts`,
-  `quote-version-snapshot-routes.ts`, and the distribution/finance extensions
-  named in the RFC — where the factory already exists.
+- **Phase 3 (mount-only moves) — DONE:** `channel-push` (distribution
+  extension), `booking-tax` (finance `createBookingTaxHonoExtension`),
+  `booking-schedule` (bookings extension + `payment-policy` public path), and
+  `quote-version-snapshot` (trips extension) now compose through the registry;
+  `booking-tax-preview.ts` deleted. `catalog-booking.ts` remains (it is lazy —
+  deferred until Phase 1 lazy contributions land, so it does not regress Worker
+  cold-start by going eager).
 - **Phase 4 (extraction):** `flights.ts` (proving slice), `lazy-additional-routes.ts`,
   `proposal-routes.ts`, `media-upload-routes.ts`, `contract-document-routes.ts`,
   `catalog-offers.ts`.

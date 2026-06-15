@@ -40,7 +40,7 @@ describe("operator runtime composition", () => {
     // Distribution each mount multiple internal Hono modules.
     expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(20)
     expect(composed.modules).toHaveLength(25)
-    expect(composed.extensions).toHaveLength(7)
+    expect(composed.extensions).toHaveLength(10)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
@@ -51,19 +51,36 @@ describe("operator runtime composition", () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it("composes the channel-push admin API as a distribution extension", () => {
-    // Channel-push moved off the additionalRoutes hop into composition; its
-    // adminRoutes mount under `/v1/admin/distribution` (the target module).
+  it("composes the route families moved off additionalRoutes as extensions", () => {
+    // These route families moved off the additionalRoutes hop into the
+    // composition registry; createApp mounts each extension's routes under
+    // `/v1/admin/{module}` (+ publicPath for public routes), preserving URLs.
     const composed = composeFromManifest(
       OPERATOR_RUNTIME_MANIFEST,
       operatorComposition,
       buildOperatorCapabilities(),
     )
+    const byName = (name: string) => composed.extensions.find((e) => e.extension.name === name)
 
-    const channelPush = composed.extensions.find((e) => e.extension.name === "channel-push")
-    expect(channelPush).toBeDefined()
+    const channelPush = byName("channel-push")
     expect(channelPush?.extension.module).toBe("distribution")
     expect(channelPush?.adminRoutes).toBeDefined()
+
+    const bookingTax = byName("booking-tax")
+    expect(bookingTax?.extension.module).toBe("bookings")
+    expect(bookingTax?.adminRoutes).toBeDefined()
+
+    // Booking-schedule owns an admin route on bookings + a public route
+    // mounted at /v1/public/payment-policy via the publicPath override.
+    const bookingSchedule = byName("booking-schedule")
+    expect(bookingSchedule?.extension.module).toBe("bookings")
+    expect(bookingSchedule?.adminRoutes).toBeDefined()
+    expect(bookingSchedule?.publicRoutes).toBeDefined()
+    expect(bookingSchedule?.publicPath).toBe("payment-policy")
+
+    const snapshot = byName("quote-version-snapshot")
+    expect(snapshot?.extension.module).toBe("trips")
+    expect(snapshot?.adminRoutes).toBeDefined()
   })
 
   it("every schema-migrated module (voyant.config) is actually mounted at runtime", () => {
