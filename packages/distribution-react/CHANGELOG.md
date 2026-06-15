@@ -1,5 +1,13 @@
 # @voyant-travel/distribution-react
 
+## 0.110.3
+
+### Patch Changes
+
+- Updated dependencies [28898ad]
+  - @voyant-travel/distribution@0.110.3
+  - @voyant-travel/ui@0.106.2
+
 ## 0.110.2
 
 ### Patch Changes

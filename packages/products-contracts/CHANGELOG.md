@@ -1,5 +1,11 @@
 # @voyant-travel/products-contracts
 
+## 0.105.5
+
+### Patch Changes
+
+- 28898ad: Fix migration-facing publish artifacts by exporting all Distribution-owned supplier and external-reference schemas, republishing contract packages with complete dist files, guarding packed artifacts against legacy package-scope specifiers, and updating Voyant Cloud defaults to `https://api.voyant.travel`.
+
 ## 0.105.4
 
 ### Patch Changes
