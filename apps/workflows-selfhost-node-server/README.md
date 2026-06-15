@@ -51,7 +51,7 @@ host-provided service resolver. For those, either start the server from code
 with `startNodeSelfHostServer({ services })`, or prefer the app-integrated
 Node path with `createApp({ workflows: { driver: () =>
 createNodeStandaloneDriver({ db }) } })`. See
-[`@voyant-travel/workflows-orchestrator-node`](../../packages/workflows-orchestrator-node/README.md#service-backed-package-workflows)
+[`@voyant-travel/workflows-orchestrator`](../../packages/workflows-orchestrator/README.md)
 for an example using the promotions catalog reindex workflow.
 
 Operational endpoints:
@@ -151,7 +151,7 @@ stores to Drizzle-backed PostgreSQL tables:
 - `voyant_wakeups`
 
 Schema changes now go through committed Drizzle migrations in
-[`packages/workflows-orchestrator-node/drizzle`](../../packages/workflows-orchestrator-node/drizzle).
+[`packages/workflows-orchestrator/drizzle`](../../packages/workflows-orchestrator/drizzle).
 Apply them before starting the server:
 
 ```bash
@@ -160,10 +160,10 @@ DATABASE_URL='<postgres connection string>' \
 ```
 
 To generate a new migration after changing
-[`packages/workflows-orchestrator-node/src/postgres-schema.ts`](../../packages/workflows-orchestrator-node/src/postgres-schema.ts):
+[`packages/workflows-orchestrator/src/node/postgres-schema.ts`](../../packages/workflows-orchestrator/src/node/postgres-schema.ts):
 
 ```bash
-pnpm --filter @voyant-travel/workflows-orchestrator-node db:generate -- --name your_change_name
+pnpm --filter @voyant-travel/workflows-orchestrator db:generate -- --name your_change_name
 ```
 
 ## Status

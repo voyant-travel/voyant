@@ -85,8 +85,7 @@ hotel-operations system; see
 Step-based workflows with durable state, retries, and a shared wire protocol — runnable on Node self-host infrastructure or Voyant Cloud's hosted Node runtime.
 
 - [`@voyant-travel/workflows`](./packages/workflows) — authoring SDK
-- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — reference orchestrator core
-- [`@voyant-travel/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — Node/Postgres self-host runtime primitives
+- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — orchestrator engine and Node/Postgres self-host runtime primitives
 - `@voyant-travel/workflows/bindings`, `@voyant-travel/workflows/config`, and `@voyant-travel/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
 - [`@voyant-travel/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
 - [`@voyant-travel/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI

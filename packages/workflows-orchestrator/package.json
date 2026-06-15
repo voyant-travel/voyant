@@ -1,7 +1,7 @@
 {
   "name": "@voyant-travel/workflows-orchestrator",
   "version": "0.107.11",
-  "description": "Reference orchestrator core for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
+  "description": "Node/Postgres orchestrator runtime for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "drizzle",
     "src",
     "!**/*.test.*",
     "!**/*.spec.*",
@@ -32,16 +33,23 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "dev": "tsc -w -p tsconfig.json",
+    "test:integration": "vitest run --maxWorkers=1 --testTimeout=30000 --hookTimeout=30000 src/node/__tests__/migrate.integration.test.ts src/node/__tests__/postgres-integration.test.ts src/node/__tests__/selfhost-server-postgres.integration.test.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@voyant-travel/workflows": "workspace:^"
+    "@voyant-travel/workflows": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
+    "@types/pg": "^8.20.0",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.2",
     "vitest": "^3.2.6"
   },
