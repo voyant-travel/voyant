@@ -14,7 +14,7 @@ import {
   makeFrameworkLogger,
   wireWorkflowRuntime,
 } from "./app-workflows.js"
-import { mountLazyRoutesAt } from "./lazy-routes.js"
+import { mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
@@ -496,6 +496,9 @@ export function createApp<TBindings extends VoyantBindings>(
     if (mod.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, mod.lazyPublicRoutes)
     }
+    if (mod.lazyRoutes) {
+      mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
+    }
     if (mod.routes) {
       app.route(`/v1/${mod.module.name}`, mod.routes)
     }
@@ -516,6 +519,9 @@ export function createApp<TBindings extends VoyantBindings>(
     }
     if (ext.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, ext.lazyPublicRoutes)
+    }
+    if (ext.lazyRoutes) {
+      mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
     }
     if (ext.routes) {
       app.route(`/v1/${ext.extension.module}`, ext.routes)

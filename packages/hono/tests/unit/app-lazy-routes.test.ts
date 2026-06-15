@@ -92,6 +92,42 @@ describe("createApp lazy route mounting", () => {
     expect(load).not.toHaveBeenCalled()
   })
 
+  it("mounts a multi-prefix lazyRoutes family at explicit absolute paths, context bridged", async () => {
+    const load = vi.fn(async () =>
+      // Absolute routes spanning several prefixes — a deployment-local bundle.
+      new Hono()
+        .get("/v1/uploads", (c) => c.json({ at: "uploads", db: (c.get("db") as string) ?? null }))
+        .get("/v1/media/x", (c) => c.json({ at: "media" }))
+        .get("/v1/admin/uploads", (c) => c.json({ at: "admin-uploads" })),
+    )
+    const app = createApp({
+      // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
+      db: () => "leased-db" as any,
+      modules: [
+        {
+          module: { name: "media" },
+          lazyRoutes: {
+            paths: ["/v1/uploads", "/v1/media/*", "/v1/admin/uploads"],
+            load,
+          },
+        },
+      ],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const uploads = await app.request("/v1/uploads", {}, TEST_ENV, TEST_CTX)
+    expect(uploads.status).toBe(200)
+    const body = (await uploads.json()) as { at: string; db: string }
+    expect(body.at).toBe("uploads")
+    expect(body.db).toBe("leased-db") // context bridged across the forward
+
+    const media = await app.request("/v1/media/x", {}, TEST_ENV, TEST_CTX)
+    expect(media.status).toBe(200)
+    expect(((await media.json()) as { at: string }).at).toBe("media")
+
+    expect(load).toHaveBeenCalledTimes(1) // one shared cached handler
+  })
+
   it("does not cache a failed load — a later request can recover", async () => {
     let attempt = 0
     const load = vi.fn(async () => {

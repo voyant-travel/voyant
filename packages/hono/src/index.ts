@@ -22,7 +22,9 @@ export type {
 export { resolveStoredDocumentDownload } from "./document-download.js"
 export {
   createLazyRouteHandler,
+  type LazyHonoRoutes,
   type LazyRoutesLoader,
+  mountLazyRoutePaths,
   mountLazyRoutesAt,
 } from "./lazy-routes.js"
 export { createPathDbSelector, type PathDbSelectorOptions } from "./lib/db-selector.js"

@@ -1,7 +1,7 @@
 import type { Extension, Module } from "@voyant-travel/core"
 import type { Hono } from "hono"
 
-import type { LazyRoutesLoader } from "./lazy-routes.js"
+import type { LazyHonoRoutes, LazyRoutesLoader } from "./lazy-routes.js"
 
 export interface HonoModule {
   module: Module
@@ -30,6 +30,13 @@ export interface HonoModule {
   /** Lazy variant of `publicRoutes` — mounted at `/v1/public/{publicPath ?? module.name}`. */
   lazyPublicRoutes?: LazyRoutesLoader
   /**
+   * Deployment-local lazy family spanning explicit absolute path matchers (for
+   * route bundles that don't fit a single admin/public surface). The loader
+   * returns ABSOLUTE routes; the framework mounts + caches them with the request
+   * context bridged in. Context-preserving replacement for `mountLazyRouteApp`.
+   */
+  lazyRoutes?: LazyHonoRoutes
+  /**
    * Optional override for the public mount path relative to `/v1/public`.
    *
    * Defaults to `{module.name}`. Use `"/"` to mount a module directly at the
@@ -53,6 +60,8 @@ export interface HonoExtension {
   lazyAdminRoutes?: LazyRoutesLoader
   /** Lazy variant of `publicRoutes` — mounted at `/v1/public/{publicPath ?? extension.module}`. */
   lazyPublicRoutes?: LazyRoutesLoader
+  /** Deployment-local lazy family at explicit absolute paths (see HonoModule). */
+  lazyRoutes?: LazyHonoRoutes
   /**
    * Optional override for the public mount path relative to `/v1/public`.
    *

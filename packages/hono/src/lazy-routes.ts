@@ -7,6 +7,13 @@
  * imported on first matching request and cached per isolate/process, so heavy
  * route families don't inflate the main bundle or the Worker cold start.
  *
+ * For deployment-local families that span MULTIPLE absolute path prefixes (e.g.
+ * an operator bundle exposing `/v1/uploads`, `/v1/admin/uploads`, `/v1/media/*`),
+ * the single-surface loaders don't fit. Such families declare `lazyRoutes`:
+ * `{ paths, load }` where `load` returns a sub-app whose routes are ABSOLUTE and
+ * `paths` are the explicit matchers the framework installs up front. This is the
+ * context-preserving replacement for the starter's `mountLazyRouteApp(...)`.
+ *
  * The hard requirement (and the reason the starter's old `mountLazyRouteApp`
  * was insufficient): the lazy routes must behave **exactly** like eager routes.
  * Eager routes mounted via `app.route(...)` share the request context, so they
@@ -32,17 +39,28 @@ type AnyHono = HonoType<any>
 /** Loads (and builds) the Hono sub-app for a lazy route surface. */
 export type LazyRoutesLoader = () => Promise<AnyHono>
 
+/**
+ * A deployment-local lazy route family spanning explicit absolute path
+ * matchers. `load` returns a sub-app whose routes are ABSOLUTE; `paths` are the
+ * matchers the framework installs up front (no bundle import until a request
+ * matches).
+ */
+export interface LazyHonoRoutes {
+  paths: readonly string[]
+  load: LazyRoutesLoader
+}
+
 /** Private carrier key for snapshotting `c.var` across the forward. */
 const LAZY_CONTEXT_CARRIER = Symbol.for("voyant.hono.lazyContextCarrier")
 
 /**
- * Build a cached, context-preserving request handler for one lazy surface.
- *
- * `prefix` is the absolute mount path (e.g. `/v1/admin/flights`); `load`
- * returns the sub-app whose routes are RELATIVE to that prefix — identical to
- * what would be passed to `app.route(prefix, routes)` eagerly.
+ * Build a cached, context-preserving request handler. `mountPrefix` is where the
+ * loaded routes are re-mounted in the wrapper sub-app so the forwarded absolute
+ * request URL matches: the surface prefix (e.g. `/v1/admin/flights`) for
+ * relative-route loaders, or `"/"` for loaders that already return absolute
+ * routes.
  */
-export function createLazyRouteHandler(prefix: string, load: LazyRoutesLoader) {
+export function createLazyRouteHandler(mountPrefix: string, load: LazyRoutesLoader) {
   let cached: Promise<AnyHono> | undefined
 
   function getApp(): Promise<AnyHono> {
@@ -64,9 +82,7 @@ export function createLazyRouteHandler(prefix: string, load: LazyRoutesLoader) {
             }
             await next()
           })
-          // Re-apply the prefix so the forwarded absolute request URL matches
-          // the sub-app's relative routes.
-          wrapped.route(prefix, routes)
+          wrapped.route(mountPrefix, routes)
           return wrapped
         })
         .catch((err) => {
@@ -87,11 +103,29 @@ export function createLazyRouteHandler(prefix: string, load: LazyRoutesLoader) {
 }
 
 /**
- * Register a lazy surface on `app` at `prefix`. Matches both the prefix root
- * (`POST /v1/admin/foo`) and any sub-path (`/v1/admin/foo/bar`).
+ * Register a single lazy surface on `app` at `prefix` (loader returns RELATIVE
+ * routes). Matches both the prefix root (`POST /v1/admin/foo`) and any sub-path
+ * (`/v1/admin/foo/bar`).
  */
 export function mountLazyRoutesAt(app: AnyHono, prefix: string, load: LazyRoutesLoader): void {
   const handler = createLazyRouteHandler(prefix, load)
   app.all(prefix, handler)
   app.all(`${prefix}/*`, handler)
+}
+
+/**
+ * Register a multi-prefix lazy family on `app` at explicit `paths` (loader
+ * returns ABSOLUTE routes). One shared cached/context-bridging handler backs
+ * every path. Context-preserving replacement for the starter's
+ * `mountLazyRouteApp(...)`.
+ */
+export function mountLazyRoutePaths(
+  app: AnyHono,
+  paths: readonly string[],
+  load: LazyRoutesLoader,
+): void {
+  const handler = createLazyRouteHandler("/", load)
+  for (const path of paths) {
+    app.all(path, handler)
+  }
 }
