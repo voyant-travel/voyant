@@ -3,9 +3,14 @@ import type { CheckBookingActionLedgerDriftResult } from "@voyant-travel/booking
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { CheckFinanceActionLedgerDriftResult } from "@voyant-travel/finance/action-ledger-drift"
 import type { CheckProductActionLedgerDriftResult } from "@voyant-travel/inventory/action-ledger-drift"
+import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { runOperatorActionLedgerHealthCheck } from "./action-ledger-health.js"
+import {
+  type ActionLedgerHealthResponse,
+  createActionLedgerHealthAdminRoutes,
+  runOperatorActionLedgerHealthCheck,
+} from "./action-ledger-health.js"
 
 const db = {} as AnyDrizzleDb
 
@@ -181,5 +186,72 @@ describe("runOperatorActionLedgerHealthCheck", () => {
       financeDrift,
       productDrift,
     })
+  })
+})
+
+vi.mock("@voyant-travel/bookings/action-ledger-drift", () => ({
+  checkBookingActionLedgerDrift: vi.fn().mockResolvedValue({
+    ok: true,
+    rows: [{ check: "booking", missingCount: 0, sampleIds: [] }],
+  }),
+}))
+
+vi.mock("@voyant-travel/finance/action-ledger-drift", () => ({
+  checkFinanceActionLedgerDrift: vi.fn().mockResolvedValue({
+    ok: true,
+    rows: [{ check: "invoice", missingCount: 0, sampleIds: [] }],
+  }),
+}))
+
+vi.mock("@voyant-travel/inventory/action-ledger-drift", () => ({
+  checkProductActionLedgerDrift: vi.fn().mockResolvedValue({
+    ok: true,
+    rows: [{ check: "product", missingCount: 0, sampleIds: [] }],
+  }),
+}))
+
+vi.mock("@voyant-travel/action-ledger/canary", () => ({
+  runActionLedgerCanary: vi.fn().mockResolvedValue({
+    ok: true,
+    actionId: "alge_canary",
+    replayed: false,
+    observedWrite: true,
+    observedRelay: true,
+  }),
+}))
+
+describe("createActionLedgerHealthAdminRoutes", () => {
+  const mountApp = () => {
+    const app = new Hono<{
+      Variables: { db: AnyDrizzleDb; userId?: string; organizationId?: string }
+    }>()
+    app.use("*", async (c, next) => {
+      c.set("db", db)
+      await next()
+    })
+    app.route("/v1/admin/action-ledger", createActionLedgerHealthAdminRoutes())
+    return app
+  }
+
+  it("serves the read-only health check at the mounted prefix", async () => {
+    const app = mountApp()
+    const res = await app.request("/v1/admin/action-ledger/health")
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as ActionLedgerHealthResponse
+    expect(body.data.ok).toBe(true)
+    expect(body.data.canary).toBeNull()
+  })
+
+  it("serves the canary health check at the mounted prefix", async () => {
+    const app = mountApp()
+    const res = await app.request("/v1/admin/action-ledger/health/check", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as ActionLedgerHealthResponse
+    expect(body.data.ok).toBe(true)
+    expect(body.data.canary?.actionId).toBe("alge_canary")
   })
 })

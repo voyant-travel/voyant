@@ -15,7 +15,7 @@ import {
   type TripsMcpServices,
   tripsService,
 } from "@voyant-travel/trips"
-import type { Context, Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { DEFAULT_SLICES } from "./lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
@@ -27,7 +27,7 @@ function registerAdminTools(registry: ReturnType<typeof createMcpToolRegistry>):
   registry.register(reserveTripTool)
 }
 
-export function mountOperatorAgentToolRoutes(hono: Hono): void {
+export function createMcpAdminRoutes(): Hono {
   async function handle(c: Context) {
     const tool = c.req.param("tool")
     if (!tool) return c.json({ error: "Missing tool name" }, 400)
@@ -50,7 +50,9 @@ export function mountOperatorAgentToolRoutes(hono: Hono): void {
     return c.json(result)
   }
 
-  hono.post("/v1/admin/mcp/tools/:tool", handle)
+  const routes = new Hono()
+  routes.post("/tools/:tool", handle)
+  return routes
 }
 
 function buildToolContext(c: Context): McpToolContext {

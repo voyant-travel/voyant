@@ -231,6 +231,7 @@ export function makeApp() {
     c.set("db" as never, fakeDb as never)
     await next()
   })
-  proposalRoutes.mountOperatorProposalRoutes(app as never)
+  app.route("/v1/admin/quote-versions", proposalRoutes.createProposalAdminRoutes() as never)
+  app.route("/v1/public/proposals", proposalRoutes.createProposalPublicRoutes() as never)
   return app
 }

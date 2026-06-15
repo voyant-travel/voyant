@@ -47,7 +47,7 @@ import {
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyant-travel/plugin-netopia"
 import { and, desc, eq, ilike, inArray, or } from "drizzle-orm"
-import type { Context, Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 /**
  * Resolve the flight connector adapter for this request. The demo adapter
@@ -300,9 +300,10 @@ function formatDay(iso: string): string {
   })
 }
 
-export function mountFlightRoutes(hono: Hono): void {
+export function createFlightAdminRoutes(): Hono {
+  const hono = new Hono()
   // ── Search ────────────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/search", async (c) => {
+  hono.post("/search", async (c) => {
     let body: FlightSearchRequest
     try {
       body = await c.req.json<FlightSearchRequest>()
@@ -324,7 +325,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Ancillaries ───────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/ancillaries", async (c) => {
+  hono.post("/ancillaries", async (c) => {
     let body: AncillaryRequest
     try {
       body = await c.req.json<AncillaryRequest>()
@@ -346,7 +347,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Seat map ──────────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/seatmap", async (c) => {
+  hono.post("/seatmap", async (c) => {
     let body: SeatMapRequest
     try {
       body = await c.req.json<SeatMapRequest>()
@@ -370,7 +371,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Re-price ──────────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/price", async (c) => {
+  hono.post("/price", async (c) => {
     let body: FlightPriceRequest
     try {
       body = await c.req.json<FlightPriceRequest>()
@@ -389,7 +390,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Book ──────────────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/book", async (c) => {
+  hono.post("/book", async (c) => {
     let body: FlightBookRequest
     try {
       body = await c.req.json<FlightBookRequest>()
@@ -417,7 +418,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── List orders ───────────────────────────────────────────────────────
-  hono.get("/v1/admin/flights/orders", async (c) => {
+  hono.get("/orders", async (c) => {
     const listAdapter = getAdapter(c)
     if (!listAdapter.listOrders) {
       return c.json({ error: "Adapter does not support listing orders" }, 501)
@@ -470,7 +471,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Get order ─────────────────────────────────────────────────────────
-  hono.get("/v1/admin/flights/orders/:orderId", async (c) => {
+  hono.get("/orders/:orderId", async (c) => {
     const orderId = c.req.param("orderId")
     if (!orderId) return c.json({ error: "orderId is required" }, 400)
     try {
@@ -495,7 +496,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Cancel order ──────────────────────────────────────────────────────
-  hono.post("/v1/admin/flights/orders/:orderId/cancel", async (c) => {
+  hono.post("/orders/:orderId/cancel", async (c) => {
     const orderId = c.req.param("orderId")
     if (!orderId) return c.json({ error: "orderId is required" }, 400)
     let body: { reason?: FlightCancelReason } = {}
@@ -515,7 +516,7 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Reference: airports (with substring search) ───────────────────────
-  hono.get("/v1/admin/flights/reference/airports", async (c) => {
+  hono.get("/reference/airports", async (c) => {
     const db = getDb(c)
     const q = c.req.query("q")?.trim()
     const limit = Math.min(Number(c.req.query("limit") ?? 50), 200)
@@ -542,16 +543,18 @@ export function mountFlightRoutes(hono: Hono): void {
   })
 
   // ── Reference: airlines (full list) ───────────────────────────────────
-  hono.get("/v1/admin/flights/reference/airlines", async (c) => {
+  hono.get("/reference/airlines", async (c) => {
     const db = getDb(c)
     const rows = await db.select().from(referenceAirlines)
     return c.json({ data: rows })
   })
 
   // ── Reference: aircraft (full list) ───────────────────────────────────
-  hono.get("/v1/admin/flights/reference/aircraft", async (c) => {
+  hono.get("/reference/aircraft", async (c) => {
     const db = getDb(c)
     const rows = await db.select().from(referenceAircraft)
     return c.json({ data: rows })
   })
+
+  return hono
 }

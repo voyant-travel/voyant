@@ -90,11 +90,11 @@ async function assertSuperAdmin(env: InvitationsBindings, userId: string): Promi
   })
 }
 
-export function createInvitationsRoutes() {
+export function createInvitationsAdminRoutes() {
   const routes = new Hono<{ Bindings: InvitationsBindings; Variables: InvitationsVariables }>()
 
   // ---------- Admin: list active invitations ----------
-  routes.get("/v1/admin/invitations", async (c) => {
+  routes.get("/", async (c) => {
     const userId = c.get("userId")
     if (!userId || !(await assertSuperAdmin(c.env, userId))) {
       return c.json({ error: "Forbidden" }, 403)
@@ -118,7 +118,7 @@ export function createInvitationsRoutes() {
   })
 
   // ---------- Admin: create invitation ----------
-  routes.post("/v1/admin/invitations", async (c) => {
+  routes.post("/", async (c) => {
     const userId = c.get("userId")
     if (!userId || !(await assertSuperAdmin(c.env, userId))) {
       return c.json({ error: "Forbidden" }, 403)
@@ -194,7 +194,7 @@ export function createInvitationsRoutes() {
   })
 
   // ---------- Admin: revoke invitation ----------
-  routes.delete("/v1/admin/invitations/:id", async (c) => {
+  routes.delete("/:id", async (c) => {
     const userId = c.get("userId")
     if (!userId || !(await assertSuperAdmin(c.env, userId))) {
       return c.json({ error: "Forbidden" }, 403)
@@ -206,8 +206,14 @@ export function createInvitationsRoutes() {
     return c.json({ data: { id } })
   })
 
+  return routes
+}
+
+export function createInvitationsPublicRoutes() {
+  const routes = new Hono<{ Bindings: InvitationsBindings; Variables: InvitationsVariables }>()
+
   // ---------- Public: inspect invitation ----------
-  routes.get("/v1/public/invitations/:token", async (c) => {
+  routes.get("/:token", async (c) => {
     const token = c.req.param("token")
     const tokenHash = await sha256Hex(token)
     const db = c.get("db")
@@ -236,7 +242,7 @@ export function createInvitationsRoutes() {
   })
 
   // ---------- Public: redeem invitation ----------
-  routes.post("/v1/public/invitations/:token/redeem", async (c) => {
+  routes.post("/:token/redeem", async (c) => {
     const token = c.req.param("token")
     const parsed = redeemInviteSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) {

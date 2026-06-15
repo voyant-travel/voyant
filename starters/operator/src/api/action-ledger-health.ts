@@ -20,7 +20,7 @@ import {
   type CheckProductActionLedgerDriftResult,
   checkProductActionLedgerDrift,
 } from "@voyant-travel/inventory/action-ledger-drift"
-import type { Hono } from "hono"
+import { Hono } from "hono"
 import { z } from "zod"
 
 type ActionLedgerHealthVariables = {
@@ -102,10 +102,12 @@ export async function runOperatorActionLedgerHealthCheck({
   }
 }
 
-export function mountActionLedgerHealthRoutes(
-  hono: Hono<{ Variables: ActionLedgerHealthVariables }>,
-): void {
-  hono.get("/v1/admin/action-ledger/health", async (c) => {
+export function createActionLedgerHealthAdminRoutes(): Hono<{
+  Variables: ActionLedgerHealthVariables
+}> {
+  const hono = new Hono<{ Variables: ActionLedgerHealthVariables }>()
+
+  hono.get("/health", async (c) => {
     const query = parseQuery(c, actionLedgerHealthQuerySchema)
     const data = await runOperatorActionLedgerHealthCheck({
       db: c.get("db"),
@@ -119,7 +121,7 @@ export function mountActionLedgerHealthRoutes(
     return c.json({ data } satisfies ActionLedgerHealthResponse, data.ok ? 200 : 503)
   })
 
-  hono.post("/v1/admin/action-ledger/health/check", async (c) => {
+  hono.post("/health/check", async (c) => {
     const body = await parseJsonBody(c, actionLedgerHealthCheckBodySchema)
     const data = await runOperatorActionLedgerHealthCheck({
       db: c.get("db"),
@@ -138,4 +140,6 @@ export function mountActionLedgerHealthRoutes(
 
     return c.json({ data } satisfies ActionLedgerHealthResponse, data.ok ? 200 : 503)
   })
+
+  return hono
 }

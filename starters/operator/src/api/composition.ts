@@ -243,6 +243,9 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/storefront/customer-portal",
     "@voyant-travel/storefront/verification",
     "@voyant-travel/trips",
+    "@voyant-travel/flights",
+    "operator/mcp",
+    "operator/invitations",
   ],
   extensions: [
     "@voyant-travel/bookings/booking-supplier-extension",
@@ -255,6 +258,10 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/finance/booking-tax-extension",
     "operator/booking-schedule-extension",
     "operator/quote-version-snapshot-extension",
+    "operator/action-ledger-health-extension",
+    "operator/proposal-extension",
+    "operator/catalog-offers-extension",
+    "operator/catalog-checkout-extension",
   ],
 } satisfies CompositionManifest
 
@@ -459,6 +466,23 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         ...capabilities.createTripsRoutesOptions(),
         publicRoutes: true,
       }),
+    // Deployment-local route modules. The route bundles live in the operator
+    // (vendor/demo wiring, agent tooling, Better Auth invitations) and load
+    // lazily; the framework mounts + caches them and bridges request context.
+    "@voyant-travel/flights": () => ({
+      module: { name: "flights" },
+      lazyAdminRoutes: () => import("./flights").then((m) => m.createFlightAdminRoutes()),
+    }),
+    "operator/mcp": () => ({
+      module: { name: "mcp" },
+      lazyAdminRoutes: () => import("./mcp").then((m) => m.createMcpAdminRoutes()),
+    }),
+    "operator/invitations": () => ({
+      module: { name: "invitations" },
+      lazyAdminRoutes: () => import("./invitations").then((m) => m.createInvitationsAdminRoutes()),
+      lazyPublicRoutes: () =>
+        import("./invitations").then((m) => m.createInvitationsPublicRoutes()),
+    }),
   },
   extensions: {
     "@voyant-travel/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
@@ -473,5 +497,31 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/booking-schedule-extension": () => createBookingScheduleExtension(),
     "operator/quote-version-snapshot-extension": () =>
       createOperatorQuoteVersionSnapshotExtension(),
+    "operator/action-ledger-health-extension": () => ({
+      extension: { name: "action-ledger-health", module: "action-ledger" },
+      lazyAdminRoutes: () =>
+        import("./action-ledger-health").then((m) => m.createActionLedgerHealthAdminRoutes()),
+    }),
+    // Quote-version proposal lifecycle: admin send under /v1/admin/quote-versions,
+    // public accept/decline under /v1/public/proposals.
+    "operator/proposal-extension": () => ({
+      extension: { name: "proposal", module: "quote-versions" },
+      publicPath: "proposals",
+      lazyAdminRoutes: () => import("./proposal-routes").then((m) => m.createProposalAdminRoutes()),
+      lazyPublicRoutes: () =>
+        import("./proposal-routes").then((m) => m.createProposalPublicRoutes()),
+    }),
+    // Catalog admin offer/search + public checkout, mounted under the catalog
+    // module's /v1/admin/catalog and /v1/public/catalog surfaces.
+    "operator/catalog-offers-extension": () => ({
+      extension: { name: "catalog-offers", module: "catalog" },
+      lazyAdminRoutes: () =>
+        import("./catalog-offers").then((m) => m.createCatalogOffersAdminRoutes()),
+    }),
+    "operator/catalog-checkout-extension": () => ({
+      extension: { name: "catalog-checkout", module: "catalog" },
+      lazyPublicRoutes: () =>
+        import("./catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
+    }),
   },
 }

@@ -70,15 +70,6 @@ const catalogBookingRoutePaths = [
   "/v1/public/catalog/slots",
 ] as const
 
-const catalogOfferRoutePaths = [
-  "/v1/admin/catalog/package-offers",
-  "/v1/admin/catalog/package-detail",
-  "/v1/admin/catalog/package-search",
-  "/v1/admin/catalog/departure-airports",
-  "/v1/admin/catalog/cruise-price",
-  "/v1/admin/catalog/cruise-sailing-pricing",
-] as const
-
 export const app = createApp<CloudflareBindings>({
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
@@ -210,29 +201,9 @@ export const app = createApp<CloudflareBindings>({
     validateApiKey: async ({ env, db, apiKey }) => validateApiTokenAccess(env, db, apiKey),
   },
   additionalRoutes: (hono) => {
-    // Admin-issued invitation flow (single-tenant sign-up is otherwise gated
-    // at the Better Auth layer).
-    mountLazyRouteApp(
-      hono,
-      [
-        "/v1/admin/invitations",
-        "/v1/admin/invitations/:id",
-        "/v1/public/invitations/:token",
-        "/v1/public/invitations/:token/redeem",
-      ],
-      () =>
-        import("./invitations").then(
-          (module) => (app) => app.route("/", module.createInvitationsRoutes()),
-        ),
-    )
-
-    // Action ledger diagnostics. GET is read-only drift health; POST writes
-    // a synthetic canary action and verifies the relay row is visible.
-    mountLazyRouteApp(
-      hono,
-      ["/v1/admin/action-ledger/health", "/v1/admin/action-ledger/health/check"],
-      () => import("./action-ledger-health").then((module) => module.mountActionLedgerHealthRoutes),
-    )
+    // Invitations, action-ledger health, MCP agent tools, flights, proposals,
+    // and catalog offers/checkout are now composed route modules/extensions —
+    // see composition.ts.
 
     // Operator profile, payment instructions, and booking payment defaults.
     mountOperatorSettingsRoutes(hono)
@@ -285,30 +256,10 @@ export const app = createApp<CloudflareBindings>({
       () => import("./media-upload-routes").then((module) => module.mountOperatorMediaUploadRoutes),
     )
 
-    mountLazyRouteApp(
-      hono,
-      [
-        "/v1/admin/quote-versions/:quoteVersionId/send",
-        "/v1/public/proposals/:quoteVersionId",
-        "/v1/public/proposals/:quoteVersionId/accept",
-        "/v1/public/proposals/:quoteVersionId/decline",
-      ],
-      () => import("./proposal-routes").then((module) => module.mountOperatorProposalRoutes),
-    )
-
-    // Quote-version snapshot is now a composed extension on the trips
-    // module — see composition.ts.
-
     mountOperatorLazyAdditionalRoutes(hono)
 
-    mountLazyRouteApp(hono, ["/v1/admin/mcp/tools/:tool"], () =>
-      import("./mcp").then((module) => module.mountOperatorAgentToolRoutes),
-    )
     mountLazyRouteApp(hono, catalogBookingRoutePaths, () =>
       import("./catalog-booking").then((module) => module.mountCatalogBookingRoutes),
-    )
-    mountLazyRouteApp(hono, ["/v1/public/catalog/checkout/start"], () =>
-      import("./catalog-checkout").then((module) => module.mountCatalogCheckoutRoutes),
     )
     mountLazyRouteApp(
       hono,
@@ -321,12 +272,6 @@ export const app = createApp<CloudflareBindings>({
         "/v1/public/accommodations/:id/content",
       ],
       () => import("./catalog-content").then((module) => module.mountCatalogContentRoutes),
-    )
-    mountLazyRouteApp(hono, catalogOfferRoutePaths, () =>
-      import("./catalog-offers").then((module) => module.mountCatalogOffersRoutes),
-    )
-    mountLazyRouteApp(hono, ["/v1/admin/flights/*"], () =>
-      import("./flights").then((module) => module.mountFlightRoutes),
     )
 
     // Workflow runs admin surface — list/get + rerun/resume actions

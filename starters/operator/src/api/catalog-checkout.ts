@@ -7,7 +7,8 @@
 
 import { parseJsonBody } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
+import { Hono } from "hono"
 import {
   CatalogCheckoutStartError,
   type CheckoutStartInput,
@@ -23,8 +24,10 @@ export {
   startCatalogCheckout,
 } from "./catalog-checkout-start-service"
 
-export function mountCatalogCheckoutRoutes(hono: Hono): void {
-  hono.post("/v1/public/catalog/checkout/start", handleCheckoutStart)
+export function createCatalogCheckoutPublicRoutes(): Hono {
+  const routes = new Hono()
+  routes.post("/checkout/start", handleCheckoutStart)
+  return routes
 }
 
 async function handleCheckoutStart(c: Context): Promise<Response> {

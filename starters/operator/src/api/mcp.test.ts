@@ -2,7 +2,7 @@
 
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
-import { mountOperatorAgentToolRoutes } from "./mcp"
+import { createMcpAdminRoutes } from "./mcp"
 
 function testBindings(
   bindings: Partial<CloudflareBindings> & { TENANT_ID?: string },
@@ -15,7 +15,7 @@ const testEnv = testBindings({ TENANT_ID: "tenant_test" })
 describe("operator MCP routes", () => {
   it("does not expose trips mutation tools on the public surface", async () => {
     const app = new Hono()
-    mountOperatorAgentToolRoutes(app)
+    app.route("/v1/admin/mcp", createMcpAdminRoutes())
 
     const response = await app.request(
       "/v1/public/mcp/tools/create_trip",
@@ -32,7 +32,7 @@ describe("operator MCP routes", () => {
 
   it("does not expose quote-locking tools on the public surface", async () => {
     const app = new Hono()
-    mountOperatorAgentToolRoutes(app)
+    app.route("/v1/admin/mcp", createMcpAdminRoutes())
 
     const response = await app.request(
       "/v1/public/mcp/tools/get_quote",
@@ -49,7 +49,7 @@ describe("operator MCP routes", () => {
 
   it("does not expose retired catalog MCP tools on the public surface", async () => {
     const app = new Hono()
-    mountOperatorAgentToolRoutes(app)
+    app.route("/v1/admin/mcp", createMcpAdminRoutes())
 
     const response = await app.request(
       "/v1/public/mcp/tools/search_catalog",
@@ -66,7 +66,7 @@ describe("operator MCP routes", () => {
 
   it("keeps trips tools available on the admin surface", async () => {
     const app = new Hono()
-    mountOperatorAgentToolRoutes(app)
+    app.route("/v1/admin/mcp", createMcpAdminRoutes())
 
     const response = await app.request(
       "/v1/admin/mcp/tools/create_trip",

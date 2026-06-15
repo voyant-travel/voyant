@@ -16,7 +16,8 @@ import {
 } from "@voyant-travel/trips"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
+import { Hono } from "hono"
 import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
@@ -134,11 +135,18 @@ function toPublicQuoteVersionProposal(
   }
 }
 
-export function mountOperatorProposalRoutes(hono: Hono<OperatorProposalRouteEnv>): void {
-  hono.post("/v1/admin/quote-versions/:quoteVersionId/send", handleSendQuoteVersion)
-  hono.get("/v1/public/proposals/:quoteVersionId", handleGetPublicProposal)
-  hono.post("/v1/public/proposals/:quoteVersionId/accept", handleAcceptPublicProposal)
-  hono.post("/v1/public/proposals/:quoteVersionId/decline", handleDeclinePublicProposal)
+export function createProposalAdminRoutes(): Hono<OperatorProposalRouteEnv> {
+  const app = new Hono<OperatorProposalRouteEnv>()
+  app.post("/:quoteVersionId/send", handleSendQuoteVersion)
+  return app
+}
+
+export function createProposalPublicRoutes(): Hono<OperatorProposalRouteEnv> {
+  const app = new Hono<OperatorProposalRouteEnv>()
+  app.get("/:quoteVersionId", handleGetPublicProposal)
+  app.post("/:quoteVersionId/accept", handleAcceptPublicProposal)
+  app.post("/:quoteVersionId/decline", handleDeclinePublicProposal)
+  return app
 }
 
 export async function handleSendQuoteVersion(c: Context<OperatorProposalRouteEnv>) {

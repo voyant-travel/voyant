@@ -21,7 +21,8 @@ import { catalogSourcedEntriesTable } from "@voyant-travel/catalog"
 import { createVoyantConnectClient, type VoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
+import { Hono } from "hono"
 import { z } from "zod"
 
 import { createDestinationNameResolver } from "./lib/geo-resolver"
@@ -69,8 +70,10 @@ const cruiseSailingPricingSchema = z.object({
   sailingRef: z.string().min(1),
 })
 
-export function mountCatalogOffersRoutes(hono: Hono): void {
-  hono.post("/v1/admin/catalog/package-offers", async (c: Context) => {
+export function createCatalogOffersAdminRoutes(): Hono<{ Bindings: PackageOffersEnv }> {
+  const hono = new Hono<{ Bindings: PackageOffersEnv }>()
+
+  hono.post("/package-offers", async (c: Context) => {
     const parsed = bodySchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
       return c.json({ error: "invalid_request", details: parsed.error.issues }, 400)
@@ -132,7 +135,7 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
   // (name, stars, location, gallery, descriptions, rooms, reviews) directly
   // from Connect via `getOnConnection(connectionId, externalId, { locale })` —
   // both ids come from `catalog_sourced_entries` — plus the live dated offers.
-  hono.post("/v1/admin/catalog/package-detail", async (c: Context) => {
+  hono.post("/package-detail", async (c: Context) => {
     const parsed = detailSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
       return c.json({ error: "invalid_request", details: parsed.error.issues }, 400)
@@ -207,7 +210,7 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
   //   2. Call packages/search with `accommodationIds` (proven 200), grouped by
   //      the hotels' own connection.
   //   3. Always send `nights` — TUI's offers API 400s without it.
-  hono.post("/v1/admin/catalog/package-search", async (c: Context) => {
+  hono.post("/package-search", async (c: Context) => {
     const parsed = searchSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
       return c.json({ error: "invalid_request", details: parsed.error.issues }, 400)
@@ -339,7 +342,7 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
   // A lightweight probe: which airports does this destination depart from? Run
   // a small/short packages/search and collect the distinct flight origins so the
   // operator can pick a departure airport BEFORE the full availability search.
-  hono.post("/v1/admin/catalog/departure-airports", async (c: Context) => {
+  hono.post("/departure-airports", async (c: Context) => {
     const parsed = airportsSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) return c.json({ departureAirports: [] }, 200)
     const input = parsed.data
@@ -409,7 +412,7 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
   // The cruise content route carries no price; the cruise-level "from" price
   // lives on the Connect summary. Decode the catalog id → connection +
   // externalId → getOnConnection → priceFromAmountMinor.
-  hono.post("/v1/admin/catalog/cruise-price", async (c: Context) => {
+  hono.post("/cruise-price", async (c: Context) => {
     const parsed = cruisePriceSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
       return c.json({ error: "invalid_request" }, 400)
@@ -443,7 +446,7 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
   // Connect `listSailingPricing` returns a row per cabin × occupancy × fare ×
   // currency; reduce to the cheapest *available* price per cabin in a single
   // currency for the rate table on the cruise detail page.
-  hono.post("/v1/admin/catalog/cruise-sailing-pricing", async (c: Context) => {
+  hono.post("/cruise-sailing-pricing", async (c: Context) => {
     const parsed = cruiseSailingPricingSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
       return c.json({ error: "invalid_request", cabins: [] }, 400)
@@ -495,6 +498,8 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
       .sort((a, b) => a.fromAmountMinor - b.fromAmountMinor)
     return c.json({ cabins, currency })
   })
+
+  return hono
 }
 
 // Decode a `crus_sr_` catalog id back to its connection + provider externalId.
