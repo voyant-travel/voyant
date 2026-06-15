@@ -101,7 +101,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/vite-config`
 - `@voyant-travel/worker-runtime`
 - `@voyant-travel/workflow-runs`
-- `@voyant-travel/workflows-orchestrator-node`
 - `@voyant-travel/workflows-orchestrator`
 - `@voyant-travel/workflows-react`
 - `@voyant-travel/workflows`

@@ -5,7 +5,7 @@
 // we ship: InMemory, Node/Postgres, and legacy Cloudflare Worker/DO.
 //
 // Importable from a regular `.ts` file so downstream packages
-// (`@voyant-travel/workflows-orchestrator-node`, `-cloudflare`) can run the
+// (`@voyant-travel/workflows-orchestrator`, `-cloudflare`) can run the
 // same suite against their own driver factories without duplicating the
 // assertions. Vitest globals are imported explicitly because this file
 // isn't a `.test.ts` (no auto-injection).

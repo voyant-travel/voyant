@@ -348,9 +348,9 @@ importers:
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../../packages/workflows
-      '@voyant-travel/workflows-orchestrator-node':
+      '@voyant-travel/workflows-orchestrator':
         specifier: workspace:^
-        version: link:../../packages/workflows-orchestrator-node
+        version: link:../../packages/workflows-orchestrator
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
@@ -3566,28 +3566,6 @@ importers:
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../workflows
-    devDependencies:
-      '@types/node':
-        specifier: ^20.12.0
-        version: 20.19.39
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.6(@types/node@20.19.39)(jiti@2.7.0)(jsdom@29.0.1(@noble/hashes@2.0.1))(lightningcss@1.32.0)(msw@2.12.14(@types/node@20.19.39)(typescript@5.9.3))(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
-
-  packages/workflows-orchestrator-node:
-    dependencies:
-      '@voyant-travel/workflows':
-        specifier: workspace:^
-        version: link:../workflows
-      '@voyant-travel/workflows-orchestrator':
-        specifier: workspace:^
-        version: link:../workflows-orchestrator
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)

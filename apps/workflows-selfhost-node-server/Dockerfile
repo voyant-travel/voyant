@@ -21,14 +21,10 @@ COPY apps/workflows-selfhost-node-server/examples apps/workflows-selfhost-node-s
 
 COPY packages/workflows-orchestrator/package.json packages/workflows-orchestrator/package.json
 COPY packages/workflows-orchestrator/voyant-typescript-config.json packages/workflows-orchestrator/voyant-typescript-config.json
+COPY packages/workflows-orchestrator/README.md packages/workflows-orchestrator/README.md
 COPY packages/workflows-orchestrator/src packages/workflows-orchestrator/src
-
-COPY packages/workflows-orchestrator-node/package.json packages/workflows-orchestrator-node/package.json
-COPY packages/workflows-orchestrator-node/voyant-typescript-config.json packages/workflows-orchestrator-node/voyant-typescript-config.json
-COPY packages/workflows-orchestrator-node/README.md packages/workflows-orchestrator-node/README.md
-COPY packages/workflows-orchestrator-node/src packages/workflows-orchestrator-node/src
-COPY packages/workflows-orchestrator-node/drizzle packages/workflows-orchestrator-node/drizzle
-COPY packages/workflows-orchestrator-node/drizzle.config.ts packages/workflows-orchestrator-node/drizzle.config.ts
+COPY packages/workflows-orchestrator/drizzle packages/workflows-orchestrator/drizzle
+COPY packages/workflows-orchestrator/drizzle.config.ts packages/workflows-orchestrator/drizzle.config.ts
 
 COPY packages/workflows/package.json packages/workflows/package.json
 COPY packages/workflows/voyant-typescript-config.json packages/workflows/voyant-typescript-config.json

@@ -80,7 +80,6 @@ orchestrator or local dashboard server.
 - `packages/workflows`
 - `packages/workflows-react`
 - `packages/workflows-orchestrator`
-- `packages/workflows-orchestrator-node`
 
 ### Add as workflows runtime apps
 
@@ -111,7 +110,7 @@ instead of preserving temporary naming debt.
 | `@voyant/errors` | `@voyant-travel/workflows/errors` |
 | `@voyant/bindings` | `@voyant-travel/workflows/bindings` |
 | `@voyant/orchestrator` | `@voyant-travel/workflows-orchestrator` |
-| `@voyant/orchestrator-node` | `@voyant-travel/workflows-orchestrator-node` |
+| `@voyant/orchestrator-node` | `@voyant-travel/workflows-orchestrator` |
 | `@voyant/cli` | merge into `@voyant-travel/cli` |
 | `@voyant/ui` | merge into `@voyant-travel/ui` |
 | `@voyant/tsconfig` | merge into `@voyant-travel/voyant-typescript-config` |
@@ -194,7 +193,6 @@ Promote these packages directly:
 - `packages/workflows`
 - `packages/workflows-react`
 - `packages/workflows-orchestrator`
-- `packages/workflows-orchestrator-node`
 
 Promote these apps directly:
 

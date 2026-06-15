@@ -7,7 +7,6 @@ const allowedPublicPackages = new Set([
   "@voyant-travel/workflow-runs",
   "@voyant-travel/workflows",
   "@voyant-travel/workflows-orchestrator",
-  "@voyant-travel/workflows-orchestrator-node",
   "@voyant-travel/workflows-react",
   "@voyant-travel/workflows-react/ui",
 ])
@@ -17,6 +16,7 @@ const removedWrapperNames = new Set([
   ["@voyant-travel", "workflows-cloud-adapter"].join("/"),
   ["@voyant-travel", "workflows-node-step-container"].join("/"),
   ["@voyant-travel", "workflows-orchestrator-cloudflare"].join("/"),
+  ["@voyant-travel", "workflows-orchestrator-node"].join("/"),
   ...["bindings", "config", "errors"].map((suffix) =>
     ["@voyant-travel", `workflows-${suffix}`].join("/"),
   ),

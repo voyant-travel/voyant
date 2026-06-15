@@ -1,10 +1,9 @@
 # @voyant-travel/workflows-orchestrator
 
-Reference orchestrator for Voyant Workflows. Drives runs through the
-tenant step handler over the v1 wire protocol. Transport- and
-storage-agnostic: compose with a `RunRecordStore` of your choice
-(in-memory for tests, Postgres-backed for production through
-[`@voyant-travel/workflows-orchestrator-node`](../workflows-orchestrator-node)).
+Node/Postgres orchestrator runtime for Voyant Workflows. Drives runs through
+the tenant step handler over the v1 wire protocol. The package includes the
+core state machine, in-memory test store, Postgres-backed production stores,
+scheduler/wakeup support, and the Node self-host server helpers.
 
 See [`docs/runtime-protocol.md`](../../docs/runtime-protocol.md) §2 +
 §5 for the contract this implements.
@@ -21,7 +20,7 @@ import { handleStepRequest } from "@voyant-travel/workflows/handler";
 
 // A StepHandler calls into the tenant's workflow code. In-process
 // here via `handleStepRequest`; production Node deployments normally
-// use the node runtime package.
+// use the Postgres-backed driver below.
 const handler: StepHandler = async (req) => handleStepRequest(req);
 
 const store = createInMemoryRunStore();
@@ -54,7 +53,10 @@ const record = await trigger(
   exposed for advanced composition (e.g. custom scheduling, alarm
   handlers).
 - **`createInMemoryRunStore()`** — test-friendly `RunRecordStore`.
-  Production stores live alongside their transport adapter.
+- **`createNodeStandaloneDriver({ db })`** — production Node/Postgres
+  workflow driver for `createApp()`.
+- **`startNodeSelfHostServer(options)`** — reference Node self-host server.
+- **`runPostgresMigrations(options)`** — apply committed runtime migrations.
 
 ## Status model
 
@@ -70,6 +72,6 @@ waitpoint the tenant registered.
 The authoring SDK (`@voyant-travel/workflows`) describes workflows and
 provides the in-process executor. The orchestrator consumes that
 SDK's wire protocol — it doesn't care how the tenant runs the body,
-only about the request/response shape. Separating them keeps the
-orchestrator transport-neutral and makes it easy to test the full loop
-without any network dependency.
+only about the request/response shape. Keeping orchestration outside the
+authoring SDK prevents SDK consumers from taking on Postgres, scheduler, and
+self-host server dependencies unless they are running workflows.
