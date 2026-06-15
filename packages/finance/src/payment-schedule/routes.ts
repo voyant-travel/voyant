@@ -1,0 +1,423 @@
+/**
+ * Booking payment-schedule route module — owned by `@voyant-travel/finance`.
+ *
+ * Hosts the admin + public payment-policy surface plus the schedule-generation
+ * orchestration that backs the `booking.confirmed` subscriber:
+ *
+ *   POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate
+ *   POST /v1/public/payment-policy/resolve
+ *
+ * The policy cascade (booking → listing → category → supplier → operator
+ * default) is deployment-specific — the resolvers read across vertical modules
+ * (cruises / accommodations / products / suppliers / categories) that the
+ * finance package must not statically import. They are therefore INJECTED via
+ * {@link BookingScheduleRoutesOptions}, alongside the operator-default resolver.
+ *
+ * The bookings schema (`bookings`, `bookingActivityLog`) and the action-ledger
+ * appender are imported directly: `@voyant-travel/finance` already depends on
+ * both `@voyant-travel/bookings` and `@voyant-travel/action-ledger` acyclically
+ * (neither depends back on finance), so no injection is needed there.
+ *
+ * All handler behavior, cascade precedence, idempotency, and the activity-log
+ * entry are preserved byte-for-byte from the operator's previous
+ * `booking-schedule.ts`.
+ */
+
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
+import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
+import { parseJsonBody } from "@voyant-travel/hono"
+import { asc, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { type Context, Hono } from "hono"
+import { z } from "zod"
+
+import {
+  computePaymentSchedule,
+  noDepositPolicy,
+  type PaymentPolicy,
+  type PaymentPolicySource,
+  resolveEffectivePaymentPolicy,
+} from "../payment-policy.js"
+import { bookingPaymentSchedules } from "../schema/booking-billing.js"
+import { financeService } from "../service.js"
+
+/**
+ * Storefront-preview entity context passed to the per-entity cascade
+ * resolvers. Structural mirror of the operator's `PaymentPolicyEntityContext`
+ * — the resolvers walk these journey selections to find the listing/category/
+ * supplier policy without a persisted booking row.
+ */
+export interface PaymentPolicyEntityContext {
+  entityModule: string
+  entityId: string
+  /** Cruise journey selection — resolves cabin → sailing → cruise. */
+  sailingId?: string
+  cabinCategoryId?: string
+  /** Accommodation journey selection — resolves the rate plan's policy. */
+  ratePlanId?: string
+}
+
+/**
+ * Deployment-supplied options for the booking payment-schedule route module.
+ *
+ * The cascade resolvers + operator default are INJECTED because they read
+ * across vertical modules (cruises / accommodations / products / suppliers /
+ * product categories) that finance must not statically import. The bookings
+ * schema and action-ledger appender are NOT injected — finance already depends
+ * on both acyclically and imports them directly.
+ */
+export interface BookingScheduleRoutesOptions {
+  /** Resolve the per-request drizzle db from the Hono context (`c.get("db")`). */
+  resolveDb(c: Context): PostgresJsDatabase
+  /** Operator-default payment policy (the cascade's last-resort layer). */
+  resolveOperatorDefaultPaymentPolicy(db: PostgresJsDatabase): Promise<PaymentPolicy | null>
+
+  // ── Booking-keyed cascade (booking.confirmed + regenerate paths) ──────────
+  /** Phase 2: supplier-layer override keyed off the booking's supplier link. */
+  resolveSupplierPolicy(db: PostgresJsDatabase, bookingId: string): Promise<PaymentPolicy | null>
+  /** Phase 3: product-category override (first category by sortOrder). */
+  resolveCategoryPolicy(db: PostgresJsDatabase, bookingId: string): Promise<PaymentPolicy | null>
+  /** Phase 4: per-listing override (first booking-item product policy). */
+  resolveListingPolicy(db: PostgresJsDatabase, bookingId: string): Promise<PaymentPolicy | null>
+
+  // ── Entity-keyed cascade (storefront resolve path) ────────────────────────
+  resolveListingPolicyForEntity(
+    db: PostgresJsDatabase,
+    ctx: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+  resolveCategoryPolicyForEntity(
+    db: PostgresJsDatabase,
+    ctx: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+  resolveSupplierPolicyForEntity(
+    db: PostgresJsDatabase,
+    ctx: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+
+  // ── Policy-source bookkeeping on the booking row ──────────────────────────
+  /** Persist the winning cascade source onto the booking's internalNotes. */
+  stampPolicySourceOnBooking(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    source: PaymentPolicySource,
+  ): Promise<void>
+  /** Read the stamped cascade source back off internalNotes (regenerate response). */
+  readPolicySourceFromInternalNotes(internalNotes: string): PaymentPolicySource | null
+}
+
+/**
+ * Generate (or regenerate) the payment schedule for a booking.
+ *
+ * Resolves the effective customer payment policy (cascade: booking → listing →
+ * category → supplier → operator default), runs {@link computePaymentSchedule},
+ * persists the rows via `financeService.applyComputedPaymentSchedule`, stamps
+ * the cascade source on the booking, and writes a `system_action` activity-log
+ * entry.
+ *
+ * Idempotent: when any schedule row already exists for the booking (in any
+ * status) it returns early so a re-fired `booking.confirmed` event doesn't wipe
+ * outstanding rows and double-bill the customer on paper.
+ */
+export async function generatePaymentScheduleForBooking(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  options: BookingScheduleRoutesOptions,
+): Promise<void> {
+  const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  if (!booking) return
+  if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return
+
+  // Idempotency: this subscriber fires on every `booking.confirmed`
+  // emission, which includes re-confirmations during the
+  // checkout-finalize workflow when an existing booking transitions
+  // to confirmed after a late payment. If a schedule already exists
+  // (in any status — pending/due/paid/etc.), regenerating would wipe
+  // the outstanding rows and insert a fresh full-amount plan as if
+  // the booking had never been touched, double-billing the customer
+  // on paper.
+  const [existingSchedule] = await db
+    .select({ id: bookingPaymentSchedules.id })
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.bookingId, bookingId))
+    .limit(1)
+  if (existingSchedule) return
+
+  const operatorDefault = (await options.resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
+
+  // Phase 2: supplier-layer override. Falls back to operator
+  // default when the booking has no supplier link or the supplier
+  // hasn't configured a custom policy.
+  const supplierPolicy = await options.resolveSupplierPolicy(db, bookingId)
+
+  // Phase 3: product-category override. Walks the booking's
+  // products → categories and picks the first category (by
+  // productCategoryProducts.sortOrder ascending) that defines a
+  // policy. Wins over supplier per the cascade order.
+  const categoryPolicy = await options.resolveCategoryPolicy(db, bookingId)
+
+  // Phase 4: per-listing override. The first booking-item's product
+  // with a non-null customerPaymentPolicy wins. Most specific catalog
+  // layer — beats category, supplier, and operator default.
+  const listingPolicy = await options.resolveListingPolicy(db, bookingId)
+
+  // Phase 5: booking-level override. The booking's own
+  // customerPaymentPolicy column wins over every catalog layer.
+  // Reserved for ops adjustments — most bookings leave this null.
+  const bookingPolicy = (booking.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
+
+  const { policy, source } = resolveEffectivePaymentPolicy({
+    bookingPolicy,
+    listingPolicy,
+    categoryPolicy,
+    supplierPolicy,
+    operatorDefault,
+  })
+
+  const entries = computePaymentSchedule(
+    {
+      totalCents: booking.sellAmountCents,
+      currency: booking.sellCurrency,
+      departureDate: booking.startDate,
+    },
+    policy,
+  )
+
+  await financeService.applyComputedPaymentSchedule(db, bookingId, entries, { replace: true })
+
+  // Stash the source on the booking's internalNotes so the contract
+  // resolver can echo it via `booking.paymentPolicy.source`. The
+  // source enum is small (booking | listing | category | supplier |
+  // operator_default) so a single marker line is enough.
+  await options.stampPolicySourceOnBooking(db, bookingId, source)
+
+  // Audit trail — record what cascade layer applied, which policy
+  // was used, and the resulting schedule snapshot. Lets ops trace
+  // why a particular schedule was generated. The structured metadata
+  // (`kind: payment_schedule_regenerated`) distinguishes this row
+  // from other system-issued activity entries.
+  await db.insert(bookingActivityLog).values({
+    bookingId,
+    actorId: "system",
+    activityType: "system_action",
+    description: `Payment schedule regenerated from ${source} policy (${entries.length} row${
+      entries.length === 1 ? "" : "s"
+    })`,
+    metadata: {
+      kind: "payment_schedule_regenerated",
+      policySource: source,
+      policy,
+      entries,
+    },
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Admin route: update booking-level policy + regenerate schedule
+// ─────────────────────────────────────────────────────────────────
+
+const depositRuleApiSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const policyApiSchema = z.object({
+  deposit: depositRuleApiSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+const regenerateScheduleBodySchema = z.object({
+  /**
+   * Optional booking-level override. When provided, persists onto
+   * `bookings.customerPaymentPolicy` before running the resolver.
+   * Pass `null` to clear an existing override (cascade falls back
+   * to listing/category/supplier/operator default).
+   */
+  customerPaymentPolicy: policyApiSchema.nullable().optional(),
+})
+
+async function handleRegenerateSchedule(
+  c: Context,
+  options: BookingScheduleRoutesOptions,
+): Promise<Response> {
+  const db = options.resolveDb(c)
+  const bookingId = c.req.param("bookingId")
+  if (!bookingId) {
+    return c.json({ error: "missing_booking_id" }, 400)
+  }
+
+  let body: z.infer<typeof regenerateScheduleBodySchema>
+  try {
+    body = await parseJsonBody(c, regenerateScheduleBodySchema)
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "invalid_body" }, 400)
+  }
+
+  // Persist the override (or clear it) before running the resolver.
+  if (Object.hasOwn(body, "customerPaymentPolicy")) {
+    const [before] = await db
+      .select({ customerPaymentPolicy: bookings.customerPaymentPolicy })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+
+    await db
+      .update(bookings)
+      .set({
+        customerPaymentPolicy: (body.customerPaymentPolicy ?? null) as unknown,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, bookingId))
+
+    const overrideChanged =
+      JSON.stringify(before?.customerPaymentPolicy ?? null) !==
+      JSON.stringify(body.customerPaymentPolicy ?? null)
+    if (overrideChanged) {
+      await appendActionLedgerMutation(db, {
+        context: getPaymentScheduleActionLedgerRequestContext(c),
+        actionName: "booking.payment_policy.override",
+        actionVersion: "v1",
+        actionKind: "update",
+        evaluatedRisk: "high",
+        targetType: "booking",
+        targetId: bookingId,
+        routeOrToolName: "bookings.payment-schedule.regenerate",
+        authorizationSource: "operator.booking-schedule.route",
+        mutationDetail: {
+          summary:
+            body.customerPaymentPolicy === null
+              ? "Cleared booking payment policy override"
+              : "Updated booking payment policy override",
+          reversalKind: "none",
+        },
+      })
+    }
+  }
+
+  await generatePaymentScheduleForBooking(db, bookingId, options)
+
+  const rows = await db
+    .select()
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.bookingId, bookingId))
+    .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
+
+  const [updatedBooking] = await db
+    .select({
+      customerPaymentPolicy: bookings.customerPaymentPolicy,
+      internalNotes: bookings.internalNotes,
+    })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  return c.json({
+    data: {
+      schedule: rows,
+      bookingPolicy: updatedBooking?.customerPaymentPolicy ?? null,
+      cascadeSource:
+        options.readPolicySourceFromInternalNotes(updatedBooking?.internalNotes ?? "") ??
+        "operator_default",
+    },
+  })
+}
+
+function getPaymentScheduleActionLedgerRequestContext(
+  c: Context,
+): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Public route: resolve policy for an entity (storefront preview)
+// ─────────────────────────────────────────────────────────────────
+
+const resolvePolicyBodySchema = z.object({
+  entityModule: z.string(),
+  entityId: z.string(),
+  /** Cruise journey selections — resolver walks cabin → sailing →
+   *  cruise once these are picked. Optional because the customer
+   *  may not have selected a cabin yet. */
+  sailingId: z.string().optional(),
+  cabinCategoryId: z.string().optional(),
+  /** Accommodation journey selection — resolver picks the rate plan's
+   *  policy when present. */
+  ratePlanId: z.string().optional(),
+})
+
+async function handleResolvePolicy(
+  c: Context,
+  options: BookingScheduleRoutesOptions,
+): Promise<Response> {
+  const db = options.resolveDb(c)
+
+  let body: z.infer<typeof resolvePolicyBodySchema>
+  try {
+    body = await parseJsonBody(c, resolvePolicyBodySchema)
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "invalid_body" }, 400)
+  }
+
+  const operatorDefault = (await options.resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
+
+  // Vertical-specific listing lookups — same source-of-truth queries
+  // as the booking-confirmed path, just keyed off the journey
+  // selections instead of a persisted booking_items row.
+  const listingPolicy = await options.resolveListingPolicyForEntity(db, body)
+  const categoryPolicy = await options.resolveCategoryPolicyForEntity(db, body)
+  const supplierPolicy = await options.resolveSupplierPolicyForEntity(db, body)
+
+  const { policy, source } = resolveEffectivePaymentPolicy({
+    listingPolicy,
+    categoryPolicy,
+    supplierPolicy,
+    operatorDefault,
+  })
+
+  return c.json({
+    data: {
+      policy,
+      source,
+    },
+  })
+}
+
+/**
+ * Admin payment-schedule routes (relative paths; mount at `/v1/admin/bookings`).
+ *
+ *   POST /:bookingId/payment-schedule/regenerate
+ */
+export function createBookingScheduleAdminRoutes(options: BookingScheduleRoutesOptions): Hono {
+  const hono = new Hono()
+  hono.post("/:bookingId/payment-schedule/regenerate", (c) => handleRegenerateSchedule(c, options))
+  return hono
+}
+
+/**
+ * Public payment-policy routes (relative paths; mount at
+ * `/v1/public/payment-policy`).
+ *
+ *   POST /resolve  — anonymous storefront preview of the effective policy.
+ */
+export function createPaymentPolicyPublicRoutes(options: BookingScheduleRoutesOptions): Hono {
+  const hono = new Hono()
+  hono.post("/resolve", (c) => handleResolvePolicy(c, options))
+  return hono
+}
