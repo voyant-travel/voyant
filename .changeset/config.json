@@ -24,9 +24,7 @@
     [
       "@voyant-travel/workflow-runs",
       "@voyant-travel/workflows",
-      "@voyant-travel/workflows-cloud-adapter",
       "@voyant-travel/workflows-orchestrator",
-      "@voyant-travel/workflows-orchestrator-cloudflare",
       "@voyant-travel/workflows-orchestrator-node",
       "@voyant-travel/workflows-react"
     ]

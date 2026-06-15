@@ -6,10 +6,7 @@ const repoRoot = process.cwd()
 const allowedPublicPackages = new Set([
   "@voyant-travel/workflow-runs",
   "@voyant-travel/workflows",
-  "@voyant-travel/workflows-cloud-adapter",
-  "@voyant-travel/workflows-node-step-container",
   "@voyant-travel/workflows-orchestrator",
-  "@voyant-travel/workflows-orchestrator-cloudflare",
   "@voyant-travel/workflows-orchestrator-node",
   "@voyant-travel/workflows-react",
   "@voyant-travel/workflows-react/ui",
@@ -17,6 +14,9 @@ const allowedPublicPackages = new Set([
 
 const removedWrapperNames = new Set([
   ["@voyant-travel", "workflow-runs-ui"].join("/"),
+  ["@voyant-travel", "workflows-cloud-adapter"].join("/"),
+  ["@voyant-travel", "workflows-node-step-container"].join("/"),
+  ["@voyant-travel", "workflows-orchestrator-cloudflare"].join("/"),
   ...["bindings", "config", "errors"].map((suffix) =>
     ["@voyant-travel", `workflows-${suffix}`].join("/"),
   ),

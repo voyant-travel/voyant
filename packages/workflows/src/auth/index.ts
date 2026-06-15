@@ -25,34 +25,10 @@
 export const AUTH_HEADER = "x-voyant-dispatch-auth" as const
 
 /**
- * HMAC header carried on legacy external step-server dispatches
- * (`POST /step`). Signed over the raw request body with the shared
- * `VOYANT_WORKFLOW_STEP_AUTH_SECRET`.
- */
-export const STEP_AUTH_HEADER = "x-voyant-step-auth" as const
-
-/**
- * HMAC header returned by the node-step-container on successful `/step`
- * responses. Signed over the raw JSON response body with the same
- * `VOYANT_WORKFLOW_STEP_AUTH_SECRET` so the orchestrator can reject
- * forged step journal entries before committing run state.
- */
-export const STEP_RESPONSE_AUTH_HEADER = "x-voyant-step-response-auth" as const
-
-/** Parse a comma-separated token/origin list env var into trimmed, non-empty entries. */
-export function parseTokenList(raw: string | null | undefined): string[] {
-  return (raw ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-}
-
-/**
  * Returns a verifier that accepts `Authorization: Bearer <token>`
  * where `<token>` matches any of the `validTokens` (case-sensitive,
- * constant-time compared). Usable as the `verifyRequest` dep on
- * `handleWorkerRequest` / `createStepHandler` for the public-facing
- * surface of an orchestrator or tenant Worker.
+ * constant-time compared). Usable as the `verifyRequest` dep on HTTP
+ * workflow handlers and `createStepHandler`.
  *
  * Intended for dev + single-tenant deployments. Production should
  * issue per-tenant, short-lived tokens from a control plane.
@@ -97,8 +73,8 @@ function constantTimeEquals(a: string, b: string): boolean {
 /**
  * Error thrown by verifiers produced in this module. Carries an HTTP
  * `status` + machine-readable `code` so HTTP surfaces
- * (`handleWorkerRequest`, the node dashboard server, step handlers)
- * can map auth failures to the right response instead of a blanket 401.
+ * (the node dashboard server and step handlers) can map auth failures
+ * to the right response instead of a blanket 401.
  */
 export class RequestAuthError extends Error {
   readonly status: number
@@ -196,10 +172,10 @@ export function createBearerAuthorizer(
 
 /**
  * Resolve a `verifyRequest` hook (the dep consumed by
- * `handleWorkerRequest` / `createStepHandler`) with fail-closed
- * defaults — the missing-token case yields a verifier that rejects
- * every request with a 503 `auth_not_configured` `RequestAuthError`
- * instead of `undefined` (which would skip auth entirely).
+ * `createStepHandler`) with fail-closed defaults — the missing-token
+ * case yields a verifier that rejects every request with a 503
+ * `auth_not_configured` `RequestAuthError` instead of `undefined`
+ * (which would skip auth entirely).
  *
  * Returns `undefined` (auth skipped) ONLY when no tokens are
  * configured AND `allowUnauthenticated` is explicitly set.
@@ -257,98 +233,6 @@ export async function createHmacVerifier(secret: string): Promise<(req: Request)
     const ok = await crypto.subtle.verify("HMAC", key, sig, encode(body))
     if (!ok) {
       throw new Error(`${AUTH_HEADER} signature does not match request body`)
-    }
-  }
-}
-
-/**
- * Returns a verifier over a raw body string + detached base64 HMAC
- * signature (the value of `STEP_AUTH_HEADER`). Suitable for servers
- * that have already buffered the request body (e.g. the node step
- * container). `crypto.subtle.verify` is constant-time; malformed
- * base64 or a missing signature simply yields `false`.
- */
-export async function createHmacBodyVerifier(
-  secret: string,
-): Promise<(body: string, signatureBase64: string | null | undefined) => Promise<boolean>> {
-  const key = await importKey(secret, ["verify"])
-  return async (body, signatureBase64) => {
-    if (!signatureBase64) return false
-    let sig: ArrayBuffer
-    try {
-      sig = fromBase64(signatureBase64)
-    } catch {
-      return false
-    }
-    return crypto.subtle.verify("HMAC", key, sig, encode(body))
-  }
-}
-
-// ---- Bundle URL origin policy ----
-
-export type BundleUrlDecision = { ok: true } | { ok: false; message: string }
-
-/**
- * Default bundle source: Cloudflare R2's S3 endpoint
- * (`<account>.r2.cloudflarestorage.com`), which is where deploy
- * pipelines stage `container.mjs` and the orchestrator mints
- * short-lived signed URLs. Anything else must be explicitly
- * allowlisted via `allowedOrigins`.
- */
-const R2_HOST_SUFFIX = ".r2.cloudflarestorage.com"
-
-/**
- * Build an origin allowlist check for caller-supplied `bundle.url`
- * values (the node step container dynamically `import()`s the fetched
- * bytes, so an unrestricted URL is remote-code-execution-adjacent —
- * the SHA-256 hash pin is supplied by the same caller and is not a
- * security control on its own).
- *
- *   - `allowedOrigins` set (e.g. from `VOYANT_BUNDLE_ALLOWED_ORIGINS`):
- *     the URL's origin must match one of the entries exactly.
- *     Invalid entries throw at creation time (misconfiguration should
- *     fail loudly, not silently widen).
- *   - unset/empty: only HTTPS URLs on `*.r2.cloudflarestorage.com`
- *     are allowed — the production bundle source.
- */
-export function createBundleUrlPolicy(opts?: {
-  allowedOrigins?: readonly string[]
-}): (url: string) => BundleUrlDecision {
-  const entries = (opts?.allowedOrigins ?? []).filter((entry) => entry.length > 0)
-  const allowed = new Set<string>()
-  for (const entry of entries) {
-    let parsed: URL
-    try {
-      parsed = new URL(entry)
-    } catch {
-      throw new Error(`createBundleUrlPolicy: invalid origin in allowlist: "${entry}"`)
-    }
-    allowed.add(parsed.origin)
-  }
-  return (url) => {
-    let parsed: URL
-    try {
-      parsed = new URL(url)
-    } catch {
-      return { ok: false, message: `bundle url is not a valid URL: "${url}"` }
-    }
-    if (allowed.size > 0) {
-      if (allowed.has(parsed.origin)) return { ok: true }
-      return {
-        ok: false,
-        message:
-          `bundle url origin "${parsed.origin}" is not in the configured allowlist ` +
-          "(VOYANT_BUNDLE_ALLOWED_ORIGINS)",
-      }
-    }
-    if (parsed.protocol === "https:" && parsed.hostname.endsWith(R2_HOST_SUFFIX)) {
-      return { ok: true }
-    }
-    return {
-      ok: false,
-      message:
-        `bundle url origin "${parsed.origin}" rejected: with no VOYANT_BUNDLE_ALLOWED_ORIGINS ` +
-        `configured, only https://*${R2_HOST_SUFFIX} bundle sources are allowed`,
     }
   }
 }

@@ -3,8 +3,8 @@
 Reference orchestrator for Voyant Workflows. Drives runs through the
 tenant step handler over the v1 wire protocol. Transport- and
 storage-agnostic: compose with a `RunRecordStore` of your choice
-(in-memory for tests, Postgres-backed for production, DO-backed via
-[`@voyant-travel/workflows-orchestrator-cloudflare`](../workflows-orchestrator-cloudflare)).
+(in-memory for tests, Postgres-backed for production through
+[`@voyant-travel/workflows-orchestrator-node`](../workflows-orchestrator-node)).
 
 See [`docs/runtime-protocol.md`](../../docs/runtime-protocol.md) §2 +
 §5 for the contract this implements.
@@ -20,8 +20,8 @@ import {
 import { handleStepRequest } from "@voyant-travel/workflows/handler";
 
 // A StepHandler calls into the tenant's workflow code. In-process
-// here via `handleStepRequest`; over HTTP in production via
-// @voyant-travel/workflows-orchestrator-cloudflare's dispatch-namespace adapter.
+// here via `handleStepRequest`; production Node deployments normally
+// use the node runtime package.
 const handler: StepHandler = async (req) => handleStepRequest(req);
 
 const store = createInMemoryRunStore();
@@ -71,6 +71,5 @@ The authoring SDK (`@voyant-travel/workflows`) describes workflows and
 provides the in-process executor. The orchestrator consumes that
 SDK's wire protocol — it doesn't care how the tenant runs the body,
 only about the request/response shape. Separating them keeps the
-orchestrator transport-neutral (in-process, HTTP, Durable Objects,
-future adapters) and makes it easy to test the full loop without
-any network or Cloudflare dependency.
+orchestrator transport-neutral and makes it easy to test the full loop
+without any network dependency.

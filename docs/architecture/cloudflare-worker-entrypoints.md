@@ -13,7 +13,7 @@ definition files from Cloudflare SSR entrypoints.
 Prefer:
 
 - cache a dynamic `import("./api/app")` inside the `/api/*` branch
-- cache dynamic workflow runtime imports inside Durable Object step handling
+- cache dynamic workflow/client imports inside the API or scheduled branches
 - import only lightweight constants from leaf files
 - route scheduled events by cron string, then dynamic-import the matching job
 

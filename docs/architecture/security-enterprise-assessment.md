@@ -119,7 +119,7 @@ The shipped authoring snippets reinforce the unsafe pattern (`{{ traveler.firstN
 **Fix:** Set `outputEscape: "escape"` on the Liquid engines for `html` body formats; HTML-escape in `renderMustacheTemplate`/`stringifyValue`; sanitize (e.g. `sanitize-html`, already a dep in products) before handing HTML to Browser Rendering; render the PDF path with JS disabled or a `default-src 'none'` CSP. See also dependency advisory M11 (liquidjs RCE).
 
 ### H4 — Workflow orchestrator fails open; run state is forgeable
-**`apps/workflows-orchestrator-worker/src/worker.ts:78-91`, `packages/workflows-orchestrator/src/resume-run.ts:77`, `packages/workflows-orchestrator-node/src/dashboard-server.ts`**
+**`packages/workflows-orchestrator/src/resume-run.ts:77`, `packages/workflows-orchestrator-node/src/dashboard-server.ts`**
 
 The orchestrator's auth gate is skipped entirely when no token is configured (`verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined`), and its own comment admits this is "dangerous in production." The Node self-host server (`apps/workflows-selfhost-node-server`) has no auth hook at all. Separately, `POST /api/runs/:id/resume` accepts `seedResults` (validated only as "an object") and writes them verbatim into the new run's journal before resuming, and runs are addressed by an attacker-suppliable `runId` with weak default ids (`run_<ts36>_<Math.random()*1e6>`), with no per-tenant authorization.
 
@@ -202,20 +202,11 @@ Records are keyed by `(scope, key)` where `scope` defaults to `${method} ${pathn
 **`packages/auth/src/server.ts:104-119`**
 `getAuthSecret()` returns the constant `"build-phase-placeholder-secret-not-used-at-runtime!!"` whenever `process.env.NEXT_PHASE` is set — a generic Next.js env var easily leaked via a shared `.env`. Anything signing/verifying with it becomes forgeable. **Fix:** never return a usable secret; gate on a build-only flag that cannot exist at runtime, or fail loudly.
 
-### M9 — Legacy external step-server auth must stay fail-closed
-**`apps/workflows-node-step-container/src/server.ts`**
-Historical note: the Cloudflare container dispatch path was removed from the
-public adapter. The remaining legacy step server requires
-`VOYANT_WORKFLOW_STEP_AUTH_SECRET` unless
-`VOYANT_WORKFLOW_STEP_ALLOW_UNAUTHENTICATED=1` is explicitly set, and signs step
-responses when the secret is configured. Keep that fail-closed behavior if this
-legacy server changes.
-
-### M10 — Supply-chain: publish not gated by tests; floating action tags; no automated dep management
+### M9 — Supply-chain: publish not gated by tests; floating action tags; no automated dep management
 **`.github/workflows/release.yml`, repo root**
 The `release` job runs build + export/tarball verification then `pnpm release`, but **never runs tests/lint/typecheck** (CI runs in parallel and does not gate publishing). All third-party actions float on major tags in a job holding `id-token: write` + `contents: write`. No Renovate/Dependabot. `pnpm audit`: 4 critical / 21 high / 37 moderate / 5 low (mostly dev-only, but see M11). **Fix:** make publish `needs:` the CI/test job; pin actions to commit SHAs; add Renovate + a `pnpm audit` triage gate; enable `npm publish --provenance`.
 
-### M11 — Vulnerable runtime dependencies (liquidjs RCE, axios HIGHs)
+### M10 — Vulnerable runtime dependencies (liquidjs RCE, axios HIGHs)
 **`packages/notifications/package.json`, `starters/operator` → typesense → axios**
 `liquidjs@10.25.5` (runtime, used for email templates) carries a CRITICAL "Remote Code Execution" advisory (fixed ≥10.26.0) plus ReDoS advisories — reachable if any user/partner-influenced data is rendered (see H3). `typesense@^3.0.6` pulls `axios@1.15.2` with HIGH advisories (proxy-auth credential leak, prototype-pollution MitM, ReDoS); the root override `axios: ">=1.15.0"` is too loose and resolved the vulnerable version. **Fix:** bump liquidjs to ≥10.26.0; tighten the axios override to `">=1.16.0"`.
 

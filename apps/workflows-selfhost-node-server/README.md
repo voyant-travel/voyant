@@ -2,11 +2,9 @@
 
 Reference Node/Docker self-host server for Voyant Workflows.
 
-This target is the Node-only counterpart to
-[`apps/workflows-selfhost-cloudflare-worker`](../selfhost-cloudflare-worker). It
-runs the workflow bundle in-process, persists dashboard-facing run
-snapshots on local disk, and exposes the same `/api/runs/*` HTTP
-surface used by the local dashboard.
+This target runs the workflow bundle in-process, persists dashboard-facing run
+snapshots on local disk, and exposes the `/api/runs/*` HTTP surface used by the
+local dashboard.
 
 ## What you get
 

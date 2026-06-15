@@ -43,8 +43,8 @@ const fetch = createWorkerFetch<CloudflareBindings>({
 export default { fetch }
 ```
 
-Scheduled (cron) handlers, Durable Objects, and workflow wiring remain
-app-owned composition — see RFC §4.4.
+Scheduled (cron) handlers and workflow wiring remain app-owned composition —
+see RFC §4.4.
 
 ## License
 

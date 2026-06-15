@@ -16,10 +16,7 @@ These workflow packages are intentionally public:
 | `@voyant-travel/workflows-react/ui` | Canonical importable workflow run admin UI. |
 | `@voyant-travel/workflow-runs` | Operator observability module: schema, recorder, admin routes, and rerun/resume registry. |
 | `@voyant-travel/workflows-orchestrator` | Transport-neutral orchestrator engine and compliance tests. |
-| `@voyant-travel/workflows-orchestrator-cloudflare` | Legacy Cloudflare Worker/Durable Object adapter. Compatibility only; not the managed Cloud runtime. |
 | `@voyant-travel/workflows-orchestrator-node` | Supported Node/Postgres self-host runtime primitives. |
-| `@voyant-travel/workflows-cloud-adapter` | Legacy tenant-worker adapter for old Cloudflare workflow experiments. |
-| `@voyant-travel/workflows-node-step-container` | Legacy standalone Node step-server artifact. Not used by the current managed Cloud runtime. |
 
 ## Managed Cloud Versus Self-Host Adapters
 
@@ -29,10 +26,9 @@ Cloud; workflow definitions and Node/server-only dependencies live in a separate
 workflow bundle that Cloud executes. Workflow releases are created by Cloud
 deployment flows, not by deployed app runtimes.
 
-The Cloudflare adapter packages remain self-host/legacy compatibility for
-operators running their own workflow runtime. They should not be presented as
-the managed Voyant Cloud execution model, and they should not grow a new
-edge/node runtime split.
+Self-host workflow runtime work should use the Node/Postgres package. Managed
+Cloud app bundles should use `@voyant-travel/workflows/client`; they do not
+embed workflow definitions or runner internals.
 
 ## Folded Subpaths
 
@@ -45,8 +41,14 @@ These formerly separate package concepts now live under `@voyant-travel/workflow
 | Workflow bindings wrapper | `@voyant-travel/workflows/bindings` |
 
 The old workflow runs UI wrapper is replaced by `@voyant-travel/workflows-react/ui`.
-The workspace compatibility packages have been removed; do not reintroduce
-them.
+The workspace compatibility packages and retired split-runner packages have
+been removed; do not reintroduce them.
+
+| Removed package concept | Replacement |
+| --- | --- |
+| Cloudflare Worker/Durable Object workflow adapter | Use `@voyant-travel/workflows-orchestrator-node` for self-host runtime work, or `@voyant-travel/workflows/client` for managed Cloud app forwarding. |
+| Cloudflare tenant-worker adapter | Use `@voyant-travel/workflows/client` from app bundles and deploy workflow bundles to the managed Cloud runtime. |
+| Standalone external node step server | Use the Node self-host runtime package or the managed Cloud Node runner. |
 
 ## `workflow-runs` Exception
 
