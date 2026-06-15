@@ -19,6 +19,12 @@ import {
 } from "./payment-config"
 import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
 
+const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+
+function cachePublicPaymentLinkConfig(c: Context) {
+  c.header("Cache-Control", PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL)
+}
+
 type OperatorContext = Context
 
 function requireRouteParam(c: OperatorContext, name: string): string | Response {
@@ -83,6 +89,7 @@ export async function handlePaymentLinkConfig(c: OperatorContext) {
     paymentInstructions,
     c.env as Record<string, unknown>,
   )
+  cachePublicPaymentLinkConfig(c)
   return c.json({
     data: {
       publicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings(

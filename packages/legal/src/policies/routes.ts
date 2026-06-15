@@ -1,5 +1,6 @@
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
 import { policiesService } from "./service.js"
@@ -25,6 +26,12 @@ type Env = {
     db: PostgresJsDatabase
     userId?: string
   }
+}
+
+const PUBLIC_LEGAL_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+
+function cachePublicLegalRead(c: Context) {
+  c.header("Cache-Control", PUBLIC_LEGAL_CACHE_CONTROL)
 }
 
 // ============================================================================
@@ -230,6 +237,7 @@ export const policiesPublicRoutes = new Hono<Env>()
     if (!version || version.status !== "published") {
       return c.json({ error: "Policy has no published version" }, 404)
     }
+    cachePublicLegalRead(c)
     return c.json({ data: { policy, version } })
   })
 

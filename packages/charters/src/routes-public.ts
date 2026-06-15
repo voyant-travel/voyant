@@ -1,5 +1,6 @@
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 
@@ -14,6 +15,12 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
   }
+}
+
+const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
+
+function cachePublicRead(c: Context) {
+  c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
 const perSuiteQuotePayload = z.object({
@@ -67,6 +74,7 @@ export const chartersPublicRoutes = new Hono<Env>()
         })
       }
     }
+    cachePublicRead(c)
     return c.json({
       data: [...localItems, ...adapterItems],
       total: local.total + adapterItems.length,
@@ -85,6 +93,7 @@ export const chartersPublicRoutes = new Hono<Env>()
       const yacht = product.defaultYachtRef
         ? await adapter.fetchYacht(product.defaultYachtRef)
         : null
+      cachePublicRead(c)
       return c.json({
         data: {
           source: "external",
@@ -102,6 +111,7 @@ export const chartersPublicRoutes = new Hono<Env>()
         withYacht: true,
       })
       if (!detail || detail.status !== "live") return c.json({ error: "not_found" }, 404)
+      cachePublicRead(c)
       return c.json({ data: detail })
     }
     // parsed.kind === "invalid": treat the raw param as a slug lookup
@@ -117,11 +127,13 @@ export const chartersPublicRoutes = new Hono<Env>()
       withYacht: true,
     })
     if (!detail || detail.status !== "live") return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
     return c.json({ data: detail })
   })
   .get("/voyages", async (c) => {
     const query = parseQuery(c, voyageListQuerySchema)
     const result = await chartersService.listVoyages(c.get("db"), query)
+    cachePublicRead(c)
     return c.json(result)
   })
   .get("/voyages/:key", async (c) => {
@@ -137,6 +149,7 @@ export const chartersPublicRoutes = new Hono<Env>()
         adapter.fetchVoyageSuites(ref),
         adapter.fetchVoyageSchedule(ref),
       ])
+      cachePublicRead(c)
       return c.json({
         data: {
           source: "external",
@@ -153,6 +166,7 @@ export const chartersPublicRoutes = new Hono<Env>()
       withSchedule: true,
     })
     if (!row) return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
     return c.json({ data: row })
   })
   .post("/voyages/:key/quote/per-suite", async (c) => {
@@ -219,10 +233,12 @@ export const chartersPublicRoutes = new Hono<Env>()
       if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
       const yacht = await adapter.fetchYacht({ externalId: parsed.ref })
       if (!yacht) return c.json({ error: "not_found" }, 404)
+      cachePublicRead(c)
       return c.json({ data: yacht })
     }
     const row = await chartersService.getYachtById(c.get("db"), parsed.id)
     if (!row) return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
     return c.json({ data: row })
   })
 

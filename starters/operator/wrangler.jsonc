@@ -24,6 +24,21 @@
       "bucket_name": "voyant-documents"
     }
   ],
+  // Public response caching and auth/rate-limit middleware require KV bindings
+  // in Cloudflare deployments. Replace these placeholder IDs with the values
+  // returned by `wrangler kv namespace create CACHE` and
+  // `wrangler kv namespace create RATE_LIMIT`; Voyant Cloud publishers inject
+  // tenant-specific namespace IDs during managed deployment.
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "replace-with-cache-kv-namespace-id"
+    },
+    {
+      "binding": "RATE_LIMIT",
+      "id": "replace-with-rate-limit-kv-namespace-id"
+    }
+  ],
   // Workflow runtime — managed Cloud forwarding. Configure
   // VOYANT_CLOUD_WORKFLOWS_URL, VOYANT_CLOUD_APP_SLUG, and the secret
   // VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN for deployments that use workflows.

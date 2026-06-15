@@ -162,6 +162,9 @@ Rule:
 
 Cache read-heavy derived data, not primary mutable business state.
 
+For public API route classification and the route-level `Cache-Control` matrix,
+see [`public-route-cache-policy.md`](./public-route-cache-policy.md).
+
 For the boundary between cacheable read models and explicit derived
 projections, see
 [`cross-module-indexing-and-projection-policy.md`](./cross-module-indexing-and-projection-policy.md).
