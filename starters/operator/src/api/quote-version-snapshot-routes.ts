@@ -1,133 +1,29 @@
-import { parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
+/**
+ * Operator glue for the quote-version Trip-snapshot route.
+ *
+ * The route logic + the pure `tripSnapshotToQuoteVersionApply` mapper live in
+ * `@voyant-travel/quotes` (`./proposal-routes`); this file wires the
+ * deployment-specific options via `./quote-proposal-runtime` and exposes the
+ * `quote-version-snapshot` extension on the `trips` module:
+ * `POST /v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot`.
+ *
+ * See docs/architecture/api-route-ownership-and-composition.md.
+ */
+
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import {
-  type QuoteVersion,
-  QuoteVersionConflictError,
-  type QuoteVersionLine,
-  quotesService,
+  createQuoteVersionSnapshotRoutes,
+  tripSnapshotToQuoteVersionApply,
 } from "@voyant-travel/quotes"
-import {
-  type TripSnapshot,
-  type TripSnapshotProposalLine,
-  TripsInvariantError,
-  tripsService,
-} from "@voyant-travel/trips"
-import { type Context, Hono } from "hono"
-import { z } from "zod"
-import { operatorPostgresDb } from "./operator-runtime-adapter"
 
-type OperatorQuoteVersionSnapshotRouteEnv = {
-  Variables: {
-    db: VoyantDb
-    userId?: string
-  }
-}
+import { createQuoteProposalRoutesOptions } from "./quote-proposal-runtime"
 
-type ApplyTripSnapshotPayload = Parameters<typeof quotesService.applyTripSnapshotToQuoteVersion>[2]
+export { tripSnapshotToQuoteVersionApply }
 
-export type ApplyTripSnapshotToQuoteVersionResult = {
-  snapshot: TripSnapshot
-  quoteVersion: QuoteVersion
-  lines: QuoteVersionLine[]
-}
-
-const freezeQuoteVersionSnapshotBodySchema = z.object({
-  createdBy: z.string().min(1).nullable().optional(),
-})
-
-/**
- * Quote-version snapshot route as a composed extension on the `trips`
- * module: `POST /v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot`.
- *
- * Replaces the former `mountOperatorQuoteVersionSnapshotRoutes(...)`
- * additionalRoutes hop; the handler body is unchanged. See
- * docs/architecture/api-route-ownership-and-composition.md.
- */
+/** Build the quote-version-snapshot extension wired with this deployment's options. */
 export function createOperatorQuoteVersionSnapshotExtension(): HonoExtension {
-  const adminRoutes = new Hono<OperatorQuoteVersionSnapshotRouteEnv>()
-  adminRoutes.post(
-    "/:envelopeId/quote-versions/:quoteVersionId/snapshot",
-    handleFreezeQuoteVersionSnapshot,
-  )
   return {
     extension: { name: "quote-version-snapshot", module: "trips" },
-    adminRoutes,
-  }
-}
-
-export async function handleFreezeQuoteVersionSnapshot(
-  c: Context<OperatorQuoteVersionSnapshotRouteEnv>,
-) {
-  const envelopeId = c.req.param("envelopeId")
-  const quoteVersionId = c.req.param("quoteVersionId")
-  if (!envelopeId) return c.json({ error: "Trip envelope id is required" }, 400)
-  if (!quoteVersionId) return c.json({ error: "Quote version id is required" }, 400)
-
-  const db = operatorPostgresDb(c.get("db"))
-  const body = await parseJsonBody(c, freezeQuoteVersionSnapshotBodySchema)
-
-  try {
-    const quoteVersion = await quotesService.getQuoteVersionById(db, quoteVersionId)
-    if (!quoteVersion) return c.json({ error: "Quote version not found" }, 404)
-    if (quoteVersion.status !== "draft") {
-      return c.json({ error: "Trip snapshots can only be applied to draft Quote Versions" }, 409)
-    }
-
-    const userId = c.get("userId")
-    const snapshot = await tripsService.freezeTripSnapshot(db, {
-      envelopeId,
-      createdBy: typeof userId === "string" ? userId : (body.createdBy ?? undefined),
-    })
-    const applied = await quotesService.applyTripSnapshotToQuoteVersion(
-      db,
-      quoteVersionId,
-      tripSnapshotToQuoteVersionApply(snapshot),
-    )
-
-    if (!applied) return c.json({ error: "Quote version not found" }, 404)
-
-    return c.json(
-      {
-        data: {
-          snapshot,
-          quoteVersion: applied.quoteVersion,
-          lines: applied.lines,
-        } satisfies ApplyTripSnapshotToQuoteVersionResult,
-      },
-      201,
-    )
-  } catch (error) {
-    if (error instanceof TripsInvariantError) {
-      return c.json({ error: error.message }, error.message.includes("was not found") ? 404 : 409)
-    }
-    if (error instanceof QuoteVersionConflictError) {
-      return c.json({ error: error.message }, 409)
-    }
-    throw error
-  }
-}
-
-export function tripSnapshotToQuoteVersionApply(snapshot: TripSnapshot): ApplyTripSnapshotPayload {
-  const proposal = snapshot.proposal
-  return {
-    tripSnapshotId: snapshot.id,
-    currency: proposal.currency,
-    subtotalAmountCents: proposal.subtotalAmountCents,
-    taxAmountCents: proposal.taxAmountCents,
-    totalAmountCents: proposal.totalAmountCents,
-    lines: proposal.lines.map(tripSnapshotLineToQuoteVersionLine),
-  }
-}
-
-function tripSnapshotLineToQuoteVersionLine(line: TripSnapshotProposalLine) {
-  return {
-    componentId: line.componentId,
-    productId: line.entityModule === "products" ? line.entityId : null,
-    supplierServiceId: line.entityModule === "supplier_services" ? line.entityId : null,
-    description: line.description,
-    quantity: 1,
-    unitPriceAmountCents: line.subtotalAmountCents,
-    totalAmountCents: line.totalAmountCents,
-    currency: line.currency,
+    adminRoutes: createQuoteVersionSnapshotRoutes(createQuoteProposalRoutesOptions()),
   }
 }

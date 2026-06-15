@@ -44,6 +44,22 @@ export {
   quotesBookingExtension,
 } from "./booking-extension.js"
 export type {
+  AcceptPublicProposalResult,
+  ApplyTripSnapshotToQuoteVersionResult,
+  DeclinePublicProposalResult,
+  PublicQuoteVersionProposal,
+  PublicQuoteVersionProposalLine,
+  QuoteProposalRoutesOptions,
+  SendQuoteVersionResult,
+} from "./proposal-routes.js"
+export {
+  buildQuoteVersionProposalUrl,
+  createQuoteProposalAdminRoutes,
+  createQuoteProposalPublicRoutes,
+  createQuoteVersionSnapshotRoutes,
+  tripSnapshotToQuoteVersionApply,
+} from "./proposal-routes.js"
+export type {
   NewPipeline,
   NewQuote,
   NewQuoteParticipant,
