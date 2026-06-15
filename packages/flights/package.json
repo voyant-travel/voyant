@@ -13,7 +13,8 @@
     "./snapshot": "./src/snapshot.ts",
     "./reference/contract": "./src/reference/contract.ts",
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
-    "./reference/static-bundle": "./src/reference/static-bundle.ts"
+    "./reference/static-bundle": "./src/reference/static-bundle.ts",
+    "./hono": "./src/hono.ts"
   },
   "voyant": {
     "schema": "./reference/local-postgres",
@@ -84,6 +85,11 @@
         "types": "./dist/reference/static-bundle.d.ts",
         "import": "./dist/reference/static-bundle.js",
         "default": "./dist/reference/static-bundle.js"
+      },
+      "./hono": {
+        "types": "./dist/hono.d.ts",
+        "import": "./dist/hono.js",
+        "default": "./dist/hono.js"
       }
     },
     "main": "./dist/index.js",
@@ -93,7 +99,9 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {

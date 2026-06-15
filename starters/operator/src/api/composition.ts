@@ -504,7 +504,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // lazily; the framework mounts + caches them and bridges request context.
     "@voyant-travel/flights": () => ({
       module: { name: "flights" },
-      lazyAdminRoutes: () => import("./flights").then((m) => m.createFlightAdminRoutes()),
+      // Routes live in @voyant-travel/flights; this deployment supplies the
+      // connector + payment options via ./flights-runtime.
+      lazyAdminRoutes: () => import("./flights-runtime").then((m) => m.buildFlightAdminRoutes()),
     }),
     "operator/mcp": () => ({
       module: { name: "mcp" },

@@ -1,0 +1,355 @@
+/**
+ * Flight admin HTTP routes, owned by the flights module.
+ *
+ * agent-quality: file-size exception -- the flight admin surface (search,
+ * ancillaries, seatmap, price, book, orders, reference) is one cohesive route
+ * family; splitting it would scatter a single connector-backed contract.
+ *
+ *   POST   /search                   — adapter.searchFlights
+ *   POST   /ancillaries              — adapter.getAncillaries
+ *   POST   /seatmap                  — adapter.getSeatMap
+ *   POST   /price                    — adapter.priceOffer
+ *   POST   /book                     — adapter.bookFlight (+ optional payment session on hold)
+ *   GET    /orders                   — adapter.listOrders (+ optional payment status)
+ *   GET    /orders/:orderId          — adapter.getOrder (+ optional payment session)
+ *   POST   /orders/:orderId/cancel   — adapter.cancelOrder
+ *   GET    /reference/airports?q=&limit=
+ *   GET    /reference/airlines
+ *   GET    /reference/aircraft
+ *
+ * The deployment supplies the connector (`resolveAdapter`) and, optionally, a
+ * payment integration for hold orders (`payment`). The routes mount at
+ * `/v1/admin/flights` via `createFlightsHonoModule(...)`.
+ */
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { HonoModule } from "@voyant-travel/hono"
+import { ilike, or } from "drizzle-orm"
+import { type Context, Hono } from "hono"
+
+import type {
+  FlightCancelReason,
+  FlightConnectorAdapter,
+  FlightPriceRequest,
+} from "./contract/adapter.js"
+import type {
+  AncillaryRequest,
+  FlightBookRequest,
+  FlightOrder,
+  FlightOrderStatus,
+  FlightSearchRequest,
+  SeatMapRequest,
+} from "./contract/types.js"
+import {
+  referenceAircraft,
+  referenceAirlines,
+  referenceAirports,
+} from "./reference/local-postgres.js"
+
+/** A resolved payment session for a flight hold order. */
+export interface FlightOrderPaymentSummary {
+  sessionId: string
+  status: string
+}
+
+/**
+ * Deployment-supplied payment integration for flight hold orders. The flights
+ * module stays payment-provider agnostic; the deployment wires its finance /
+ * payment provider here.
+ */
+export interface FlightPaymentIntegration {
+  /** Ensure (idempotently) a payment session exists for a hold order. */
+  ensureOrderSession(
+    c: Context,
+    order: FlightOrder,
+    contact?: { email?: string; phone?: string },
+  ): Promise<FlightOrderPaymentSummary | null>
+  /** Bulk-resolve the most relevant payment session per order id (no N+1). */
+  fetchOrderSessions(
+    c: Context,
+    orderIds: string[],
+  ): Promise<Map<string, FlightOrderPaymentSummary>>
+}
+
+export interface FlightsRouteOptions {
+  /**
+   * Resolve the flight connector adapter for a request. The deployment picks
+   * the demo connector or a real GDS (Sabre / Amadeus / Duffel).
+   */
+  resolveAdapter(c: Context): FlightConnectorAdapter
+  /** Optional payment-link integration for hold orders. */
+  payment?: FlightPaymentIntegration
+}
+
+export type FlightsHonoModuleOptions = FlightsRouteOptions
+
+function buildContext(c: Context): { connectionId: string; correlationId?: string } {
+  return {
+    connectionId: "demo",
+    correlationId: c.req.header("x-request-id") ?? undefined,
+  }
+}
+
+// `c.var.db` is set by the createApp DB middleware; the global ContextVariableMap
+// doesn't declare it, so cast at the call site to keep type-safety local.
+function getDb(c: Context): AnyDrizzleDb {
+  return (c.var as { db: AnyDrizzleDb }).db
+}
+
+function attachPaymentSession<T extends FlightOrder>(
+  order: T,
+  summary: FlightOrderPaymentSummary | null,
+): T {
+  if (!summary) return order
+  return {
+    ...order,
+    providerData: {
+      ...(order.providerData ?? {}),
+      paymentSessionId: summary.sessionId,
+      paymentStatus: summary.status,
+    },
+  }
+}
+
+/** Build the flight admin routes (relative paths; mount at `/v1/admin/flights`). */
+export function createFlightAdminRoutes(options: FlightsRouteOptions): Hono {
+  const { resolveAdapter, payment } = options
+  const hono = new Hono()
+
+  // ── Search ──────────────────────────────────────────────────────────────
+  hono.post("/search", async (c) => {
+    let body: FlightSearchRequest
+    try {
+      body = await c.req.json<FlightSearchRequest>()
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400)
+    }
+    if (!body.slices?.length) return c.json({ error: "slices is required" }, 400)
+    if (!body.passengers?.adults || body.passengers.adults < 1) {
+      return c.json({ error: "passengers.adults must be at least 1" }, 400)
+    }
+    try {
+      const response = await resolveAdapter(c).searchFlights(buildContext(c), body)
+      return c.json(response)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  // ── Ancillaries ─────────────────────────────────────────────────────────
+  hono.post("/ancillaries", async (c) => {
+    let body: AncillaryRequest
+    try {
+      body = await c.req.json<AncillaryRequest>()
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400)
+    }
+    if (!body.offerId) return c.json({ error: "offerId is required" }, 400)
+    const adapter = resolveAdapter(c)
+    if (!adapter.getAncillaries) {
+      return c.json({ error: "Connector does not declare flight/ancillaries capability" }, 501)
+    }
+    try {
+      const response = await adapter.getAncillaries(buildContext(c), body)
+      return c.json(response)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  // ── Seat map ────────────────────────────────────────────────────────────
+  hono.post("/seatmap", async (c) => {
+    let body: SeatMapRequest
+    try {
+      body = await c.req.json<SeatMapRequest>()
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400)
+    }
+    if (!body.offerId) return c.json({ error: "offerId is required" }, 400)
+    if (!body.segmentId) return c.json({ error: "segmentId is required" }, 400)
+    const adapter = resolveAdapter(c)
+    if (!adapter.getSeatMap) {
+      return c.json({ error: "Connector does not declare flight/seatmap capability" }, 501)
+    }
+    try {
+      const response = await adapter.getSeatMap(buildContext(c), body)
+      return c.json(response)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+    }
+  })
+
+  // ── Re-price ────────────────────────────────────────────────────────────
+  hono.post("/price", async (c) => {
+    let body: FlightPriceRequest
+    try {
+      body = await c.req.json<FlightPriceRequest>()
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400)
+    }
+    if (!body.offerId) return c.json({ error: "offerId is required" }, 400)
+    try {
+      const response = await resolveAdapter(c).priceOffer(buildContext(c), body)
+      return c.json(response)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  // ── Book ────────────────────────────────────────────────────────────────
+  hono.post("/book", async (c) => {
+    let body: FlightBookRequest
+    try {
+      body = await c.req.json<FlightBookRequest>()
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400)
+    }
+    if (!body.offerId) return c.json({ error: "offerId is required" }, 400)
+    if (!body.passengers?.length) return c.json({ error: "passengers is required" }, 400)
+    try {
+      const response = await resolveAdapter(c).bookFlight(buildContext(c), body)
+      // Hold is the default intent; eagerly create the payment session so the
+      // order page can show the shareable link immediately.
+      const isHold = !body.paymentIntent || body.paymentIntent.type === "hold"
+      if (isHold && response.order && payment) {
+        const summary = await payment.ensureOrderSession(c, response.order, body.contact)
+        response.order = attachPaymentSession(response.order, summary)
+      }
+      return c.json(response)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  // ── List orders ─────────────────────────────────────────────────────────
+  hono.get("/orders", async (c) => {
+    const adapter = resolveAdapter(c)
+    if (!adapter.listOrders) {
+      return c.json({ error: "Adapter does not support listing orders" }, 501)
+    }
+    const url = new URL(c.req.url)
+    const limitParam = url.searchParams.get("limit")
+    const cursor = url.searchParams.get("cursor") ?? undefined
+    const search = url.searchParams.get("q") ?? url.searchParams.get("search") ?? undefined
+    const statusParam = url.searchParams.getAll("status")
+    const status = statusParam.length > 0 ? (statusParam as FlightOrderStatus[]) : undefined
+    const limit = limitParam
+      ? Math.max(1, Math.min(100, Number.parseInt(limitParam, 10)))
+      : undefined
+    const paymentStatusParam = url.searchParams.getAll("paymentStatus")
+    const paymentStatusFilter = paymentStatusParam.length > 0 ? new Set(paymentStatusParam) : null
+    try {
+      const response = await adapter.listOrders(buildContext(c), {
+        ...(limit !== undefined ? { limit } : {}),
+        ...(cursor !== undefined ? { cursor } : {}),
+        ...(search !== undefined ? { search } : {}),
+        ...(status !== undefined ? { status } : {}),
+      })
+
+      if (payment) {
+        const sessionByOrderId = await payment.fetchOrderSessions(
+          c,
+          response.orders.map((o) => o.orderId),
+        )
+        response.orders = response.orders.map((order) =>
+          attachPaymentSession(order, sessionByOrderId.get(order.orderId) ?? null),
+        )
+      }
+
+      if (paymentStatusFilter) {
+        response.orders = response.orders.filter((o) =>
+          paymentStatusFilter.has((o.providerData?.paymentStatus as string | undefined) ?? "none"),
+        )
+      }
+      return c.json(response)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  // ── Get order ───────────────────────────────────────────────────────────
+  hono.get("/orders/:orderId", async (c) => {
+    const orderId = c.req.param("orderId")
+    if (!orderId) return c.json({ error: "orderId is required" }, 400)
+    try {
+      const response = await resolveAdapter(c).getOrder(buildContext(c), orderId)
+      if (response.order && payment) {
+        const summary = await payment.ensureOrderSession(c, response.order, response.order.contact)
+        response.order = attachPaymentSession(response.order, summary)
+      }
+      return c.json(response)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+    }
+  })
+
+  // ── Cancel order ────────────────────────────────────────────────────────
+  hono.post("/orders/:orderId/cancel", async (c) => {
+    const orderId = c.req.param("orderId")
+    if (!orderId) return c.json({ error: "orderId is required" }, 400)
+    let body: { reason?: FlightCancelReason } = {}
+    try {
+      body = await c.req.json<{ reason?: FlightCancelReason }>()
+    } catch {
+      // Body is optional for cancel.
+    }
+    try {
+      const response = await resolveAdapter(c).cancelOrder(buildContext(c), orderId, body.reason)
+      return c.json(response)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return c.json({ error: message }, /not found/i.test(message) ? 404 : 500)
+    }
+  })
+
+  // ── Reference: airports (with substring search) ───────────────────────────
+  hono.get("/reference/airports", async (c) => {
+    const db = getDb(c)
+    const q = c.req.query("q")?.trim()
+    const limit = Math.min(Number(c.req.query("limit") ?? 50), 200)
+    let rows: Array<typeof referenceAirports.$inferSelect>
+    if (q) {
+      const pattern = `%${q}%`
+      rows = await db
+        .select()
+        .from(referenceAirports)
+        .where(
+          or(
+            ilike(referenceAirports.iataCode, pattern),
+            ilike(referenceAirports.city, pattern),
+            ilike(referenceAirports.name, pattern),
+          ),
+        )
+        .limit(limit)
+    } else {
+      rows = await db.select().from(referenceAirports).limit(limit)
+    }
+    return c.json({ data: rows })
+  })
+
+  // ── Reference: airlines (full list) ───────────────────────────────────────
+  hono.get("/reference/airlines", async (c) => {
+    const rows = await getDb(c).select().from(referenceAirlines)
+    return c.json({ data: rows })
+  })
+
+  // ── Reference: aircraft (full list) ────────────────────────────────────────
+  hono.get("/reference/aircraft", async (c) => {
+    const rows = await getDb(c).select().from(referenceAircraft)
+    return c.json({ data: rows })
+  })
+
+  return hono
+}
+
+/**
+ * The flights route module — mounts the admin routes at `/v1/admin/flights`.
+ * A deployment composes this and supplies the connector + payment options.
+ */
+export function createFlightsHonoModule(options: FlightsHonoModuleOptions): HonoModule {
+  return {
+    module: { name: "flights" },
+    adminRoutes: createFlightAdminRoutes(options),
+  }
+}
