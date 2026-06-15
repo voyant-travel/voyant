@@ -17,7 +17,7 @@ import {
   createCatalogCheckoutRoutes,
   startCatalogCheckout as packageStartCatalogCheckout,
 } from "@voyant-travel/commerce/checkout"
-import type { Hono } from "hono"
+import type { Context, Hono } from "hono"
 import { createOperatorCheckoutStartOptions } from "../runtime/catalog-checkout-options"
 
 export {
@@ -27,16 +27,19 @@ export {
 } from "@voyant-travel/commerce/checkout"
 
 export function createCatalogCheckoutPublicRoutes(): Hono {
-  return createCatalogCheckoutRoutes(createOperatorCheckoutStartOptions())
+  // Pass a per-request options factory so the injected Netopia card-payment
+  // start can capture the request `Context` for per-request container access.
+  return createCatalogCheckoutRoutes((c) => createOperatorCheckoutStartOptions(c))
 }
 
 /** Drive the checkout-start service with this deployment's injected options. */
 export function startCatalogCheckout(
-  context: Omit<CatalogCheckoutStartContext, "options">,
+  context: Omit<CatalogCheckoutStartContext, "options"> & { c?: Context },
   body: CheckoutStartInput,
 ): Promise<CatalogCheckoutStartResult> {
+  const { c, ...rest } = context
   return packageStartCatalogCheckout(
-    { ...context, options: createOperatorCheckoutStartOptions() },
+    { ...rest, options: createOperatorCheckoutStartOptions(c) },
     body,
   )
 }

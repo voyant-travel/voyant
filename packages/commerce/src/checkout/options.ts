@@ -72,4 +72,22 @@ export interface CheckoutStartOptions extends CheckoutModuleOptions {
     db: PostgresJsDatabase,
     env: Record<string, string | undefined>,
   ): Promise<CheckoutBankTransferInstructions>
+  /**
+   * Start the card-payment provider session for the `card` checkout intent.
+   * INJECTED so commerce never imports a specific payment provider (which
+   * would pull a provider package into the retail-spine closure). The
+   * deployment owns the provider choice (e.g. Netopia) and the
+   * provider-specific placeholder billing.
+   *
+   * Returns `{ redirectUrl }` to redirect the customer to the provider, or
+   * `null`/`undefined` when no card provider is configured — in which case
+   * the checkout falls back to the `card_pending` confirmation-page poll.
+   */
+  startCardPayment?(params: {
+    db: PostgresJsDatabase
+    sessionId: string
+    billing: { email: string; firstName: string; lastName: string }
+    description: string
+    returnUrl?: string
+  }): Promise<{ redirectUrl: string | null } | null>
 }

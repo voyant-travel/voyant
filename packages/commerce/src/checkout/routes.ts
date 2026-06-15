@@ -22,9 +22,19 @@ import {
   startCatalogCheckout,
 } from "./start-service.js"
 
-export function createCatalogCheckoutRoutes(options: CheckoutStartOptions): Hono {
+/**
+ * Build the storefront checkout routes. `options` may be a value or a
+ * per-request factory — the deployment passes a factory when an injected
+ * option needs to capture the request `Context` (e.g. resolving a payment
+ * provider runtime from the per-request container).
+ */
+export function createCatalogCheckoutRoutes(
+  options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
+): Hono {
   const routes = new Hono()
-  routes.post("/checkout/start", (c) => handleCheckoutStart(c, options))
+  routes.post("/checkout/start", (c) =>
+    handleCheckoutStart(c, typeof options === "function" ? options(c) : options),
+  )
   return routes
 }
 

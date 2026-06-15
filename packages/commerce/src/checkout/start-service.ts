@@ -9,11 +9,6 @@ import {
   financeService,
   issueProformaFromBooking,
 } from "@voyant-travel/finance"
-import {
-  NETOPIA_RUNTIME_CONTAINER_KEY,
-  netopiaService,
-  type ResolvedNetopiaRuntimeOptions,
-} from "@voyant-travel/plugin-netopia"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
@@ -309,11 +304,10 @@ async function startCardCheckout(
   body: CheckoutStartInput,
 ): Promise<CatalogCheckoutStartResult> {
   const db = context.db
-  const runtime = resolveNetopiaRuntime(context)
 
-  // Without Netopia configured, fall back to a placeholder redirect
-  // — the storefront's confirmation page polls booking status and
-  // surfaces "we're still processing" until ops marks payment
+  // Without a card provider configured, fall back to a placeholder
+  // redirect — the storefront's confirmation page polls booking status
+  // and surfaces "we're still processing" until ops marks payment
   // received manually. Useful for demos without sandbox creds.
   const amountCents = booking.sellAmountCents ?? 0
   const currency = booking.sellCurrency ?? "EUR"
@@ -335,12 +329,44 @@ async function startCardCheckout(
     throw new CatalogCheckoutStartError("could_not_create_payment_session", 500)
   }
 
-  if (!runtime) {
-    // No Netopia configured — surface the booking on the standard
-    // confirmation page in `card_pending` mode. The page polls
-    // booking status and unlocks contract/invoice download links
-    // once the operator marks payment received via the booking
-    // detail's pending-payment-sessions panel.
+  // Derive billing name from the payer name; the deployment-supplied
+  // `startCardPayment` fills in any provider-specific placeholder billing
+  // (city, country code, postal code, etc).
+  const [firstName, ...rest] = (body.payerName ?? "").trim().split(/\s+/)
+  const lastName = rest.length > 0 ? rest.join(" ") : "Customer"
+
+  let started: { redirectUrl: string | null } | null = null
+  try {
+    started =
+      (await context.options.startCardPayment?.({
+        db,
+        sessionId: session.id,
+        billing: {
+          email: body.payerEmail ?? "tbd@example.com",
+          firstName: firstName || "Customer",
+          lastName,
+        },
+        description: `Booking ${booking.bookingNumber}`,
+        // The provider redirects the customer back to this URL after 3DS.
+        // Land them on the confirmation page in card_pending mode — the
+        // provider webhook does the actual booking confirmation in the
+        // background; this page just polls until the booking flips to
+        // `confirmed`.
+        returnUrl: body.returnOrigin
+          ? `${body.returnOrigin}/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending`
+          : undefined,
+      })) ?? null
+  } catch (err) {
+    console.error("[catalog-checkout] startCardPayment failed", err)
+    throw new CatalogCheckoutStartError("payment_provider_failed", 502)
+  }
+
+  if (!started) {
+    // No card provider configured — surface the booking on the standard
+    // confirmation page in `card_pending` mode. The page polls booking
+    // status and unlocks contract/invoice download links once the
+    // operator marks payment received via the booking detail's
+    // pending-payment-sessions panel.
     return {
       kind: "card_redirect",
       bookingId: booking.id,
@@ -350,58 +376,11 @@ async function startCardCheckout(
     }
   }
 
-  const [firstName, ...rest] = (body.payerName ?? "").trim().split(/\s+/)
-  const lastName = rest.length > 0 ? rest.join(" ") : "Customer"
-  try {
-    const started = await netopiaService.startPaymentSession(
-      db,
-      session.id,
-      {
-        billing: {
-          email: body.payerEmail ?? "tbd@example.com",
-          phone: "0000000000",
-          firstName: firstName || "Customer",
-          lastName,
-          city: "TBD",
-          country: 642,
-          state: "TBD",
-          postalCode: "00000",
-          details: "Pending — customer to confirm at payment.",
-        },
-        description: `Booking ${booking.bookingNumber}`,
-        // Netopia redirects the customer back to this URL after 3DS.
-        // Land them on the confirmation page in card_pending mode —
-        // the webhook (NETOPIA_NOTIFY_URL) does the actual booking
-        // confirmation in the background; this page just polls until
-        // the booking flips to `confirmed`.
-        returnUrl: body.returnOrigin
-          ? `${body.returnOrigin}/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending`
-          : undefined,
-      },
-      runtime,
-      undefined,
-    )
-    return {
-      kind: "card_redirect",
-      bookingId: booking.id,
-      paymentSessionId: session.id,
-      redirectUrl: started.providerResponse.payment?.paymentURL ?? null,
-    }
-  } catch (err) {
-    console.error("[catalog-checkout] netopia startPaymentSession failed", err)
-    throw new CatalogCheckoutStartError("payment_provider_failed", 502)
-  }
-}
-
-function resolveNetopiaRuntime(
-  context: CatalogCheckoutStartContext,
-): ResolvedNetopiaRuntimeOptions | undefined {
-  try {
-    return context.resolveRuntime?.(NETOPIA_RUNTIME_CONTAINER_KEY) as
-      | ResolvedNetopiaRuntimeOptions
-      | undefined
-  } catch {
-    return undefined
+  return {
+    kind: "card_redirect",
+    bookingId: booking.id,
+    paymentSessionId: session.id,
+    redirectUrl: started.redirectUrl,
   }
 }
 

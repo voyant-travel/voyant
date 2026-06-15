@@ -291,6 +291,7 @@ export async function startComponentCheckout(
           eventBus: getEventBus(c),
           resolveRuntime: (key) => getContainer(c)?.resolve(key),
           requestMeta: checkoutRequestMeta(c),
+          c,
         },
         checkoutInput,
       ),

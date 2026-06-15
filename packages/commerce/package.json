@@ -24,10 +24,7 @@
     "@voyant-travel/distribution": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "@voyant-travel/legal": "workspace:^",
-    "@voyant-travel/plugin-netopia": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
-    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
@@ -35,7 +32,21 @@
     "rrule": "^2.8.1",
     "zod": "^4.3.6"
   },
+  "peerDependencies": {
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@voyant-travel/legal": {
+      "optional": true
+    },
+    "@voyant-travel/quotes": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
