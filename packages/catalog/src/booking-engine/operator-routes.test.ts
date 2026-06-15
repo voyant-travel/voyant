@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
+import { readSourcedEntry } from "../services/sourced-entry-service.js"
 import { cancelEntity } from "./cancel.js"
 import { BookingEngineError } from "./errors.js"
 import {
@@ -18,6 +18,10 @@ vi.mock("./orders.js", () => ({
 
 vi.mock("./cancel.js", () => ({
   cancelEntity: vi.fn(),
+}))
+
+vi.mock("../services/sourced-entry-service.js", () => ({
+  readSourcedEntry: vi.fn(),
 }))
 
 // The booking-engine routes (quote/book/drafts/holds) are exercised by
@@ -46,6 +50,9 @@ function makeOptions(
       resolveOwnedHandlers: () => ({}) as never,
     } as never,
     resolveRegistry: () => registry,
+    getProductContent: vi.fn(async () => null),
+    listAvailabilitySlots: vi.fn(async () => []),
+    getOwnedProductById: vi.fn(async () => null),
     ...overrides,
   }
 }
@@ -56,10 +63,28 @@ function ordersApp(options = makeOptions()) {
   return app
 }
 
+/**
+ * A fake drizzle db whose `select(...).from(...).where(...).limit(...)`
+ * chain resolves to the next queued result array. The snapshot path issues
+ * two reads (snapshot row, then sourced-entries projection); queue results
+ * in call order.
+ */
+function makeFakeDb(results: unknown[][]) {
+  let call = 0
+  const next = () => results[call++] ?? []
+  const chain = {
+    from: () => chain,
+    where: () => chain,
+    limit: () => Promise.resolve(next()),
+  }
+  return { select: () => chain } as never
+}
+
 beforeEach(() => {
   vi.mocked(listOrders).mockReset()
   vi.mocked(getOrderById).mockReset()
   vi.mocked(cancelEntity).mockReset()
+  vi.mocked(readSourcedEntry).mockReset()
 })
 
 describe("createCatalogBookingOrdersRoutes", () => {
@@ -205,5 +230,177 @@ describe("mountCatalogBookingRoutes", () => {
 
     expect(res.status).toBe(200)
     expect(listOrders).toHaveBeenCalled()
+  })
+})
+
+describe("GET /catalog/slots", () => {
+  it("400s when entityModule/entityId are missing", async () => {
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, makeOptions())
+
+    const res = await app.request("/v1/admin/catalog/slots?entityModule=products")
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: "entityModule and entityId are required" })
+  })
+
+  it("returns empty rows for non-products entities", async () => {
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, makeOptions())
+
+    const res = await app.request("/v1/public/catalog/slots?entityModule=cruises&entityId=crz_1")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ rows: [] })
+  })
+
+  it("maps sourced product departures via getProductContent", async () => {
+    vi.mocked(readSourcedEntry).mockResolvedValue({ entity_id: "prod_1" } as never)
+    const getProductContent = vi.fn(async () => ({
+      content: {
+        departures: [
+          {
+            id: "dep_1",
+            starts_at: "2999-01-01T08:00:00Z",
+            ends_at: "2999-01-01T12:00:00Z",
+            status: "open",
+            capacity: 10,
+            remaining: 4,
+          },
+          // Filtered out — sold_out.
+          { id: "dep_2", starts_at: "2999-02-01T08:00:00Z", status: "sold_out" },
+          // Filtered out — in the past.
+          { id: "dep_3", starts_at: "2000-01-01T08:00:00Z", status: "open" },
+        ],
+      },
+    }))
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, makeOptions({ getProductContent }))
+
+    const res = await app.request("/v1/admin/catalog/slots?entityModule=products&entityId=prod_1")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      rows: [
+        {
+          id: "dep_1",
+          dateLocal: "2999-01-01",
+          startsAt: "2999-01-01T08:00:00Z",
+          endsAt: "2999-01-01T12:00:00Z",
+          timezone: "UTC",
+          status: "open",
+          unlimited: false,
+          remainingPax: 4,
+          initialPax: 10,
+          nights: null,
+          days: null,
+        },
+      ],
+    })
+    expect(getProductContent).toHaveBeenCalledWith(
+      expect.anything(),
+      "prod_1",
+      { preferredLocales: ["en-GB"] },
+      expect.objectContaining({ forceFresh: true }),
+    )
+  })
+
+  it("falls back to owned availability slots when not sourced", async () => {
+    vi.mocked(readSourcedEntry).mockResolvedValue(null)
+    const ownedRows = [{ id: "slot_1", dateLocal: "2999-01-01" }]
+    const listAvailabilitySlots = vi.fn(async () => ownedRows as never)
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, makeOptions({ listAvailabilitySlots }))
+
+    const res = await app.request("/v1/public/catalog/slots?entityModule=products&entityId=prod_1")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ rows: ownedRows })
+    expect(listAvailabilitySlots).toHaveBeenCalledWith(
+      expect.anything(),
+      "prod_1",
+      expect.any(String),
+    )
+  })
+})
+
+describe("GET /admin/bookings/:id/catalog-snapshot", () => {
+  it("404s when no snapshot exists", async () => {
+    const options = makeOptions()
+    options.booking.resolveDb = () => makeFakeDb([[]])
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, options)
+
+    const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
+
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: "snapshot_not_found" })
+  })
+
+  it("returns the snapshot enriched with resolved labels", async () => {
+    const snapshot = {
+      booking_id: "bk_1",
+      entity_module: "products",
+      entity_id: "prod_1",
+      source_kind: "demo",
+      source_provider: "demo",
+      frozen_payload: {},
+    }
+    // First read → snapshot row; second read → sourced-entries projection.
+    const db = makeFakeDb([
+      [snapshot],
+      [{ projection: { name: "Northern Lights Hunt", description: "A tour" } }],
+    ])
+    const options = makeOptions()
+    options.booking.resolveDb = () => db
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, options)
+
+    const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      data: {
+        booking_id: string
+        resolved: {
+          entity: { title: string | null; description: string | null }
+          source: { label: string }
+        }
+      }
+    }
+    expect(body.data.booking_id).toBe("bk_1")
+    expect(body.data.resolved.entity.title).toBe("Northern Lights Hunt")
+    expect(body.data.resolved.entity.description).toBe("A tour")
+    expect(body.data.resolved.source.label).toBe("Demo Catalog")
+  })
+
+  it("falls back to owned product when the sourced projection is empty", async () => {
+    const snapshot = {
+      booking_id: "bk_1",
+      entity_module: "products",
+      entity_id: "prod_1",
+      source_kind: "owned",
+      source_provider: null,
+      frozen_payload: {},
+    }
+    const db = makeFakeDb([[snapshot], []])
+    const getOwnedProductById = vi.fn(async () => ({
+      name: "Owned Tour",
+      description: "Owned desc",
+    }))
+    const options = makeOptions({ getOwnedProductById })
+    options.booking.resolveDb = () => db
+    const app = new Hono()
+    mountCatalogBookingRoutes(app, options)
+
+    const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      data: { resolved: { entity: { title: string | null }; source: { label: string } } }
+    }
+    expect(body.data.resolved.entity.title).toBe("Owned Tour")
+    expect(body.data.resolved.source.label).toBe("Owned (this operator)")
+    expect(getOwnedProductById).toHaveBeenCalledWith(expect.anything(), "prod_1")
   })
 })

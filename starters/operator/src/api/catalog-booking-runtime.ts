@@ -1,17 +1,22 @@
 import {
+  type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
+  mountCatalogBookingRoutes as mountPackageCatalogBookingRoutes,
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
+  type SlotRow,
 } from "@voyant-travel/catalog/booking-engine"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { suppliers } from "@voyant-travel/distribution"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyant-travel/finance"
-import { products } from "@voyant-travel/inventory"
-import { eq } from "drizzle-orm"
+import { products, productsService } from "@voyant-travel/inventory"
+import { getProductContent } from "@voyant-travel/inventory/service-content"
+import { availabilitySlots } from "@voyant-travel/operations"
+import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context } from "hono"
+import type { Context, Hono } from "hono"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
@@ -48,6 +53,71 @@ export function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoute
       console.warn("[catalog-booking] markDraftConsumed failed:", error)
     },
   }
+}
+
+/**
+ * Read the owned `availability_slots` rows for a product (owned slots path).
+ * Lives in the deployment because `@voyant-travel/operations` depends on
+ * `@voyant-travel/catalog` — injecting this keeps the catalog package free of
+ * a static operations import. Maps rows into the package's `SlotRow` shape.
+ */
+async function listAvailabilitySlots(
+  db: AnyDrizzleDb,
+  productId: string,
+  todayIso: string,
+): Promise<SlotRow[]> {
+  return (db as PostgresJsDatabase)
+    .select({
+      id: availabilitySlots.id,
+      dateLocal: availabilitySlots.dateLocal,
+      startsAt: availabilitySlots.startsAt,
+      endsAt: availabilitySlots.endsAt,
+      timezone: availabilitySlots.timezone,
+      status: availabilitySlots.status,
+      unlimited: availabilitySlots.unlimited,
+      remainingPax: availabilitySlots.remainingPax,
+      initialPax: availabilitySlots.initialPax,
+      nights: availabilitySlots.nights,
+      days: availabilitySlots.days,
+    })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, productId),
+        eq(availabilitySlots.status, "open"),
+        gte(availabilitySlots.dateLocal, todayIso),
+      ),
+    )
+    .orderBy(asc(availabilitySlots.startsAt))
+    .limit(60)
+}
+
+/**
+ * Build the full catalog booking-engine route-module options for this
+ * deployment, including the three cross-package readers the package can't
+ * import statically (would cycle through inventory/operations → catalog).
+ */
+export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
+  return {
+    booking: createOperatorCatalogBookingRoutesOptions(),
+    resolveRegistry: getBookingEngineRegistryFromContext,
+    getProductContent: (db, productId, scope, ctx) => getProductContent(db, productId, scope, ctx),
+    listAvailabilitySlots,
+    getOwnedProductById: async (db, productId) => {
+      const product = await productsService.getProductById(db as PostgresJsDatabase, productId)
+      if (!product) return null
+      return { name: product.name, description: product.description }
+    },
+  }
+}
+
+/**
+ * Mount the full catalog booking-engine surface (lifecycle + orders + slots +
+ * catalog-snapshot) onto an absolute-path Hono app, wired with this
+ * deployment's options + cross-package readers.
+ */
+export function mountCatalogBookingRoutes(hono: Hono): void {
+  mountPackageCatalogBookingRoutes(hono, createOperatorCatalogBookingRouteModuleOptions())
 }
 
 function positiveMinutes(value: number | null | undefined) {

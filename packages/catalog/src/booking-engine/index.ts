@@ -139,8 +139,14 @@ export {
 } from "./errors.js"
 export {
   type CatalogBookingRouteModuleOptions,
+  type CatalogOwnedProductSummary,
+  type CatalogProductContentReadContext,
+  type CatalogProductContentScope,
+  type CatalogResolvedDeparture,
+  type CatalogResolvedProductContent,
   createCatalogBookingOrdersRoutes,
   mountCatalogBookingRoutes,
+  type SlotRow,
 } from "./operator-routes.js"
 export {
   getOrderById,

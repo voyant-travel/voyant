@@ -526,7 +526,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       lazyRoutes: {
         paths: OPERATOR_CATALOG_BOOKING_ROUTE_PATHS,
         load: () =>
-          import("./catalog-booking").then((m) => {
+          import("./catalog-booking-runtime").then((m) => {
             const app = new Hono()
             m.mountCatalogBookingRoutes(app)
             return app

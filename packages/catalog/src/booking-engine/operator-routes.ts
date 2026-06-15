@@ -21,21 +21,28 @@
  *   GET    /v1/admin/catalog/orders                   → listOrders
  *   GET    /v1/admin/catalog/orders/:id               → getOrderById
  *   POST   /v1/admin/catalog/orders/:id/cancel        → cancelEntity
+ *   GET    /v1/{admin,public}/catalog/slots           → availability slots
+ *   GET    /v1/admin/bookings/:id/catalog-snapshot    → frozen catalog snapshot
  *
  * Auth posture comes from the deployment's `createApp` middleware chain —
  * `/v1/admin/...` requires staff, `/v1/public/...` accepts the configured
  * public actors. Per booking-journey-architecture §10 Phase B.
  *
- * The catalog-snapshot (`/v1/admin/bookings/:id/catalog-snapshot`) and slots
- * (`/v1/{admin,public}/catalog/slots`) handlers are intentionally NOT here:
- * they read `@voyant-travel/inventory` / `@voyant-travel/operations`, both of
- * which already depend on `@voyant-travel/catalog`. Hosting them here would
- * create an import cycle, so they stay in the deployment as a thin extension.
+ * The slots + catalog-snapshot handlers read across module boundaries
+ * (`@voyant-travel/inventory` / `@voyant-travel/operations`), both of which
+ * already depend on `@voyant-travel/catalog`. Statically importing them here
+ * would create an import cycle, so the cross-package reads are supplied by the
+ * deployment as INJECTED option functions — the package never imports those
+ * modules, it only calls the readers the deployment hands it.
  */
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { and, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
+import { bookingCatalogSnapshotTable, catalogSourcedEntriesTable } from "../schema.js"
+import { readSourcedEntry } from "../services/sourced-entry-service.js"
 import { cancelEntity } from "./cancel.js"
 import {
   BookingEngineError,
@@ -53,8 +60,56 @@ import type { SourceAdapterRegistry } from "./registry.js"
 import { type CatalogBookingRoutesOptions, createCatalogBookingRoutes } from "./routes.js"
 
 /**
+ * A single resolved departure/slot as projected by `getProductContent`.
+ * Structural mirror of `@voyant-travel/inventory`'s `ProductDeparture` so the
+ * package needn't import inventory — only the fields the slots handler maps.
+ */
+export interface CatalogResolvedDeparture {
+  id: string
+  starts_at: string
+  ends_at?: string | null
+  status?: string | null
+  capacity?: number | null
+  remaining?: number | null
+}
+
+/**
+ * Structural result of the injected `getProductContent` reader. Mirrors
+ * `@voyant-travel/inventory/service-content`'s `ResolvedProductContent`, but
+ * narrowed to the only field the slots handler reads (`content.departures`).
+ */
+export interface CatalogResolvedProductContent {
+  content: { departures?: ReadonlyArray<CatalogResolvedDeparture> }
+}
+
+/** Locale scope passed to the injected `getProductContent` reader. */
+export interface CatalogProductContentScope {
+  preferredLocales: ReadonlyArray<string>
+}
+
+/** Adapter/runtime context passed to the injected `getProductContent` reader. */
+export interface CatalogProductContentReadContext {
+  registry: SourceAdapterRegistry
+  forceFresh?: boolean
+}
+
+/**
+ * Owned-product summary returned by the injected `getOwnedProductById` reader.
+ * Structural mirror of the inventory `productsService.getProductById` result,
+ * narrowed to the two fields the snapshot fallback reads.
+ */
+export interface CatalogOwnedProductSummary {
+  name: string | null
+  description: string | null
+}
+
+/**
  * Deployment-supplied options for the catalog booking-engine route module.
- * Structural only — no deployment imports, no platform bindings.
+ * Structural only — no deployment imports, no platform bindings. The three
+ * cross-package readers (`getProductContent`, `listAvailabilitySlots`,
+ * `getOwnedProductById`) are INJECTED so the package can host the slots +
+ * snapshot handlers without statically importing `@voyant-travel/inventory`
+ * or `@voyant-travel/operations` (both of which depend on catalog).
  */
 export interface CatalogBookingRouteModuleOptions {
   /**
@@ -68,6 +123,52 @@ export interface CatalogBookingRouteModuleOptions {
    * the order-cancel handler to dispatch to the registered adapter.
    */
   resolveRegistry(c: Context): SourceAdapterRegistry
+  /**
+   * Read the resolved product content for a sourced product (slots path).
+   * Modelled on `@voyant-travel/inventory/service-content`'s
+   * `getProductContent`; structural so catalog doesn't import inventory.
+   */
+  getProductContent(
+    db: AnyDrizzleDb,
+    productId: string,
+    scope: CatalogProductContentScope,
+    ctx: CatalogProductContentReadContext,
+  ): Promise<CatalogResolvedProductContent | null>
+  /**
+   * Read the owned `availability_slots` rows for a product (owned slots path).
+   * The deployment owns the drizzle query against
+   * `@voyant-travel/operations`; this returns the already-mapped rows.
+   */
+  listAvailabilitySlots(db: AnyDrizzleDb, productId: string, todayIso: string): Promise<SlotRow[]>
+  /**
+   * Read an owned product by id for the snapshot fallback. Structural mirror
+   * of inventory `productsService.getProductById`; returns `{ name,
+   * description } | null`.
+   */
+  getOwnedProductById(
+    db: AnyDrizzleDb,
+    productId: string,
+  ): Promise<CatalogOwnedProductSummary | null>
+}
+
+/**
+ * The slot row shape returned by both the sourced and owned slots paths.
+ * Date-bearing fields accept `Date | string` because the owned path forwards
+ * raw drizzle timestamp columns (serialized to ISO strings by `c.json`),
+ * while the sourced path projects ISO strings directly.
+ */
+export interface SlotRow {
+  id: string
+  dateLocal: string
+  startsAt: string | Date
+  endsAt: string | Date | null
+  timezone: string
+  status: string
+  unlimited: boolean
+  remainingPax: number | null
+  initialPax: number | null
+  nights: number | null
+  days: number | null
 }
 
 interface CancelBody {
@@ -112,6 +213,23 @@ export function mountCatalogBookingRoutes(
 
   // Admin-only — order management (list / get / cancel).
   hono.route("/v1/admin/catalog", createCatalogBookingOrdersRoutes(options))
+
+  // List available departures / slots for a product. Drives the
+  // storefront's departure-select on the product detail page —
+  // customers pick from real available options, not a free-form
+  // calendar (per booking-journey-architecture §10).
+  for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
+    hono.get(`${prefix}/slots`, async (c) => handleListSlots(c, options))
+  }
+
+  // Admin-only — read the catalog snapshot tied to a booking.
+  // Backs the BookingCatalogSourceCard on the booking detail page;
+  // surfaces the frozen entity reference + pricing + (optionally) the
+  // captured content payload so operators can see exactly what the
+  // customer was quoted at booking time.
+  hono.get("/v1/admin/bookings/:id/catalog-snapshot", async (c) =>
+    handleGetBookingSnapshot(c, options),
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -188,6 +306,239 @@ async function handleCancel(
   } catch (err) {
     return errorResponse(c, err)
   }
+}
+
+async function handleListSlots(
+  c: Context,
+  options: CatalogBookingRouteModuleOptions,
+): Promise<Response> {
+  const url = new URL(c.req.url)
+  const entityModule = url.searchParams.get("entityModule")
+  const entityId = url.searchParams.get("entityId")
+  if (!entityModule || !entityId) {
+    return c.json({ error: "entityModule and entityId are required" }, 400)
+  }
+  // Cruises + accommodations have vertical-specific scheduling
+  // (sailings, rate plans) surfaced by the detail page directly off
+  // their content payloads. This endpoint only serves products.
+  if (entityModule !== "products") {
+    return c.json({ rows: [] })
+  }
+
+  const db = getDb(options, c) as PostgresJsDatabase
+
+  // Sourced products carry their schedule in the sourced-content
+  // payload — the upstream's `getContent` is the source of truth, not
+  // any owned `availability_slots` row. Owned products keep using the
+  // owned table since `buildOwnedProductContent` doesn't project
+  // availability_slots into ProductContent.departures.
+  const sourcedEntry = await readSourcedEntry(db, "products", entityId)
+  if (sourcedEntry) {
+    const registry = options.resolveRegistry(c)
+    const acceptHeader = c.req.header("accept-language") ?? ""
+    const preferredLocales = acceptHeader
+      .split(",")
+      .map((s) => s.split(";")[0]?.trim())
+      .filter((s): s is string => Boolean(s))
+    const resolved = await options.getProductContent(
+      db,
+      entityId,
+      { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
+      { registry, forceFresh: true },
+    )
+    const today = new Date().toISOString().slice(0, 10)
+    const rows: SlotRow[] = (resolved?.content.departures ?? [])
+      .filter((d) => {
+        if (d.status === "sold_out" || d.status === "closed") return false
+        return d.starts_at.slice(0, 10) >= today
+      })
+      .slice(0, 60)
+      .map((d) => ({
+        id: d.id,
+        dateLocal: d.starts_at.slice(0, 10),
+        startsAt: d.starts_at,
+        endsAt: d.ends_at ?? null,
+        timezone: "UTC",
+        status: d.status ?? "open",
+        unlimited: d.capacity == null && d.remaining == null,
+        remainingPax: d.remaining ?? null,
+        initialPax: d.capacity ?? null,
+        nights: null,
+        days: null,
+      }))
+    return c.json({ rows })
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+  const rows = await options.listAvailabilitySlots(db, entityId, today)
+
+  return c.json({ rows })
+}
+
+/**
+ * GET /v1/admin/bookings/:id/catalog-snapshot
+ *
+ * Returns the `booking_catalog_snapshot` row for this booking — the
+ * frozen view of what the customer actually purchased: which entity
+ * (product / cruise / accommodations), which source (owned / Bokun / Mews),
+ * the quoted pricing breakdown, and the captured content payload.
+ *
+ * The response is **enriched server-side** with operator-friendly
+ * resolved fields so the admin UI doesn't have to chase ids:
+ *   - `resolved.entity.title`       — human title from the sourced
+ *     projection (`name`/`title`) or the owned product's `name`.
+ *   - `resolved.entity.description` — short description when present.
+ *   - `resolved.entity.supplierName` — supplier label when present.
+ *   - `resolved.source.label`       — friendly source name.
+ *
+ * Used by the booking detail page's "Catalog source" card so
+ * operators see "Demo · Reykjavík Northern Lights Hunt" instead of
+ * `cdmi_01kqp28138f69btmp1n15yjj7r`. Returns 404 when no snapshot
+ * exists (legacy bookings).
+ */
+async function handleGetBookingSnapshot(
+  c: Context,
+  options: CatalogBookingRouteModuleOptions,
+): Promise<Response> {
+  const bookingId = c.req.param("id")
+  if (!bookingId) return c.json({ error: "id is required" }, 400)
+  const db = getDb(options, c) as PostgresJsDatabase
+
+  const [snapshot] = await db
+    .select()
+    .from(bookingCatalogSnapshotTable)
+    .where(eq(bookingCatalogSnapshotTable.booking_id, bookingId))
+    .limit(1)
+
+  if (!snapshot) {
+    return c.json({ error: "snapshot_not_found" }, 404)
+  }
+
+  const resolved = await resolveSnapshotForAdmin(db, options, {
+    entity_module: snapshot.entity_module,
+    entity_id: snapshot.entity_id,
+    source_kind: snapshot.source_kind,
+    source_provider: snapshot.source_provider,
+    frozen_payload: (snapshot.frozen_payload ?? {}) as Record<string, unknown>,
+  })
+  return c.json({ data: { ...snapshot, resolved } })
+}
+
+interface ResolvedSnapshotEntity {
+  title: string | null
+  description: string | null
+  supplierName: string | null
+  imageUrl: string | null
+}
+
+interface ResolvedSnapshotSource {
+  label: string
+  providerLabel: string | null
+}
+
+/**
+ * Resolve admin-friendly labels for a booking_catalog_snapshot row.
+ * Tries the sourced-entry projection first (covers demo, Bokun, etc.),
+ * falls back to owned products. Returns null fields rather than
+ * throwing when sources are missing — the admin UI treats nulls as
+ * "fall back to id".
+ */
+async function resolveSnapshotForAdmin(
+  db: PostgresJsDatabase,
+  options: CatalogBookingRouteModuleOptions,
+  snapshot: {
+    entity_module: string
+    entity_id: string
+    source_kind: string
+    source_provider: string | null
+    frozen_payload: Record<string, unknown>
+  },
+): Promise<{ entity: ResolvedSnapshotEntity; source: ResolvedSnapshotSource }> {
+  const entity: ResolvedSnapshotEntity = {
+    title: null,
+    description: null,
+    supplierName: null,
+    imageUrl: null,
+  }
+
+  // Attempt 1: sourced_entries projection. Covers demo + every
+  // upstream provider that registers via the sourced-entry write path.
+  try {
+    const [sourced] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourced?.projection) {
+      const p = sourced.projection as Record<string, unknown>
+      entity.title = pickString(p.name, p.title)
+      entity.description = pickString(p.description, p.summary)
+      entity.supplierName = pickString(p.supplierId, p.supplier_name, p.supplierName)
+      entity.imageUrl = pickString(p.heroImageUrl, p.image_url, p.imageUrl)
+    }
+  } catch {
+    // ignore, fall through
+  }
+
+  // Attempt 2: owned products row.
+  if (!entity.title && snapshot.entity_module === "products") {
+    try {
+      const product = await options.getOwnedProductById(db, snapshot.entity_id)
+      if (product) {
+        entity.title = product.name
+        entity.description = product.description
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Attempt 3: pull from the snapshot's frozen upstream payload as
+  // last resort (sourced quotes capture the upstream object inline).
+  if (!entity.title) {
+    const upstream = (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)
+      ?.upstream_payload as Record<string, unknown> | undefined
+    if (upstream) {
+      entity.title = pickString(upstream.name, upstream.title)
+      entity.description = pickString(upstream.description, upstream.summary)
+    }
+  }
+
+  const source: ResolvedSnapshotSource = {
+    label: friendlySourceLabel(snapshot.source_kind),
+    providerLabel: snapshot.source_provider,
+  }
+
+  return { entity, source }
+}
+
+function pickString(...candidates: unknown[]): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c
+  }
+  return null
+}
+
+/**
+ * Map raw `source_kind` strings to the labels operators recognise.
+ * "demo" → "Demo Catalog", "owned" → "Owned (this operator)", etc.
+ * Anything we don't recognise comes back title-cased.
+ */
+function friendlySourceLabel(sourceKind: string): string {
+  const map: Record<string, string> = {
+    demo: "Demo Catalog",
+    owned: "Owned (this operator)",
+    bokun: "Bókun",
+    mews: "Mews",
+    fareharbor: "FareHarbor",
+    rezdy: "Rezdy",
+  }
+  return map[sourceKind] ?? sourceKind.replace(/^./, (c) => c.toUpperCase())
 }
 
 // ─────────────────────────────────────────────────────────────────
