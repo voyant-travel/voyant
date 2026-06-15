@@ -1,6 +1,5 @@
 "use client"
 
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import {
   Table,
@@ -12,19 +11,17 @@ import {
 } from "@voyant-travel/ui/components/table"
 
 const SKELETON_ROWS = 6
+const HEADER_WIDTHS = ["w-16", "w-14", "w-20", "w-8", "w-20"] as const
 const COLUMN_WIDTHS = ["w-48", "w-16", "w-24", "w-8", "w-24"] as const
 
 /**
  * Route-level placeholder for the products list page. Matches
  * `ProductsPage`'s header row, the search input, and the 5-column product
  * table exactly. Kept in its own lean module (ui skeleton + table + the
- * operator admin messages hook only) so the extension factory can attach it
- * as a `pendingComponent` without pinning the products data layer into the
- * workspace-chrome chunk.
+ * table only) so the extension factory can attach it as a `pendingComponent`
+ * without pinning the products data layer into the workspace-chrome chunk.
  */
 export function ProductsListSkeleton() {
-  const productMessages = useOperatorAdminMessages().products.core
-
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header: title + description + "New product" button */}
@@ -44,11 +41,14 @@ export function ProductsListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{productMessages.tableName}</TableHead>
-              <TableHead>{productMessages.tableStatus}</TableHead>
-              <TableHead>{productMessages.tableSellAmount}</TableHead>
-              <TableHead>{productMessages.tablePax}</TableHead>
-              <TableHead>{productMessages.tableStartDate}</TableHead>
+              {HEADER_WIDTHS.map((width, column) => (
+                <TableHead
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: inventory-react; existing suppression is intentional pending typed cleanup.
+                  key={column}
+                >
+                  <Skeleton className={`h-3.5 ${width}`} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>

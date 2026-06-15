@@ -1,6 +1,6 @@
 "use client"
 
-import { useLocale } from "@voyant-travel/admin"
+import { useLocale } from "@voyant-travel/admin/providers/locale"
 import { useBooking } from "@voyant-travel/bookings-react"
 import { BookingDetailHost } from "@voyant-travel/bookings-react/admin/booking-detail-host"
 import type { BookingDetailTabValue } from "@voyant-travel/bookings-react/components/booking-detail-page"

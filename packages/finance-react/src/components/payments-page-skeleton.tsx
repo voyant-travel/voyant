@@ -8,26 +8,23 @@ import {
   TableRow,
 } from "@voyant-travel/ui/components/table"
 
-import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
-
 const PAYMENT_WIDTHS = ["w-20", "w-32", "w-32", "w-24", "w-20", "w-24", "w-24"]
+const PAYMENT_HEADER_WIDTHS = ["w-12", "w-20", "w-12", "w-16", "w-14", "w-12", "w-16"]
 
 export function PaymentsTableSkeleton({ rows = 8 }: { rows?: number }) {
-  const messages = useFinanceUiMessagesOrDefault()
-  const columns = messages.paymentsPage.columns
-
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{columns.kind}</TableHead>
-            <TableHead>{columns.reference}</TableHead>
-            <TableHead>{columns.party}</TableHead>
-            <TableHead>{columns.amount}</TableHead>
-            <TableHead>{columns.status}</TableHead>
-            <TableHead>{columns.date}</TableHead>
-            <TableHead>{columns.method}</TableHead>
+            {PAYMENT_HEADER_WIDTHS.map((width, columnIndex) => (
+              <TableHead
+                // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: finance-react; existing suppression is intentional pending typed cleanup.
+                key={columnIndex}
+              >
+                <Skeleton className={`h-3.5 ${width}`} />
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>

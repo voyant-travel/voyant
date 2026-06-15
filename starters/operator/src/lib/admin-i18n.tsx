@@ -4,4 +4,4 @@ export {
   type OperatorAdminMessages as AdminMessages,
   OperatorAdminMessagesProvider as AdminI18nProvider,
   useOperatorAdminMessages as useAdminMessages,
-} from "@voyant-travel/admin"
+} from "@voyant-travel/admin/providers/operator-admin-messages"

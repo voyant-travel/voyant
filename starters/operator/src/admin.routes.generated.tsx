@@ -11,7 +11,10 @@
 // To eject a route, remove it here (and from the maps below) and add a
 // hand-written route file — the generator skips files without this header.
 import { createRoute } from "@tanstack/react-router"
-import { adminExtensionChildRoutes, adminExtensionRouteOptions } from "@voyant-travel/admin-app"
+import {
+  adminExtensionChildRoutes,
+  adminExtensionRouteOptions,
+} from "@voyant-travel/admin-app/extension-routes"
 import {
   bookingDetailSearchSchema,
   bookingJourneySearchSchema,

@@ -2,7 +2,6 @@ import { createApp } from "@voyant-travel/hono"
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
-import { mountActionLedgerHealthRoutes } from "./action-ledger-health"
 import authHandler, {
   hasAuthPermission,
   resolveAuthRequest,
@@ -13,34 +12,21 @@ import {
   mountBookingPaymentScheduleRoutes,
   mountPublicPaymentPolicyRoutes,
 } from "./booking-schedule"
-import { mountBookingTaxPreviewRoutes } from "./booking-tax-preview"
-import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
-import { mountCatalogCheckoutRoutes } from "./catalog-checkout"
 import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
-import { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization"
-import { mountCatalogContentRoutes } from "./catalog-content"
-import { mountCatalogOffersRoutes } from "./catalog-offers"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import {
   buildOperatorCapabilities,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
-import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
-import { mountFlightRoutes } from "./flights"
-import { createInvitationsRoutes } from "./invitations"
 import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
+import { mountLazyRouteApp } from "./lazy-route-app"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { mountOperatorAgentToolRoutes } from "./mcp"
-import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
-  operatorPostgresDb,
 } from "./operator-runtime-adapter"
-import { mountOperatorProposalRoutes } from "./proposal-routes"
-import { mountOperatorQuoteVersionSnapshotRoutes } from "./quote-version-snapshot-routes"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
 import { tripsPaymentBundle } from "./trips-runtime"
@@ -68,6 +54,34 @@ const { modules, extensions } = composeFromManifest(
   operatorComposition,
   buildOperatorCapabilities(),
 )
+
+const catalogBookingRoutePaths = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/drafts/:id",
+  "/v1/admin/catalog/holds/place",
+  "/v1/admin/catalog/holds/release",
+  "/v1/admin/catalog/slots",
+  "/v1/admin/catalog/orders",
+  "/v1/admin/catalog/orders/:id",
+  "/v1/admin/catalog/orders/:id/cancel",
+  "/v1/admin/bookings/:id/catalog-snapshot",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/drafts/:id",
+  "/v1/public/catalog/holds/place",
+  "/v1/public/catalog/holds/release",
+  "/v1/public/catalog/slots",
+] as const
+
+const catalogOfferRoutePaths = [
+  "/v1/admin/catalog/package-offers",
+  "/v1/admin/catalog/package-detail",
+  "/v1/admin/catalog/package-search",
+  "/v1/admin/catalog/departure-airports",
+  "/v1/admin/catalog/cruise-price",
+  "/v1/admin/catalog/cruise-sailing-pricing",
+] as const
 
 export const app = createApp<CloudflareBindings>({
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
@@ -202,11 +216,27 @@ export const app = createApp<CloudflareBindings>({
   additionalRoutes: (hono) => {
     // Admin-issued invitation flow (single-tenant sign-up is otherwise gated
     // at the Better Auth layer).
-    hono.route("/", createInvitationsRoutes())
+    mountLazyRouteApp(
+      hono,
+      [
+        "/v1/admin/invitations",
+        "/v1/admin/invitations/:id",
+        "/v1/public/invitations/:token",
+        "/v1/public/invitations/:token/redeem",
+      ],
+      () =>
+        import("./invitations").then(
+          (module) => (app) => app.route("/", module.createInvitationsRoutes()),
+        ),
+    )
 
     // Action ledger diagnostics. GET is read-only drift health; POST writes
     // a synthetic canary action and verifies the relay row is visible.
-    mountActionLedgerHealthRoutes(hono)
+    mountLazyRouteApp(
+      hono,
+      ["/v1/admin/action-ledger/health", "/v1/admin/action-ledger/health/check"],
+      () => import("./action-ledger-health").then((module) => module.mountActionLedgerHealthRoutes),
+    )
 
     // Operator profile, payment instructions, and booking payment defaults.
     mountOperatorSettingsRoutes(hono)
@@ -217,7 +247,9 @@ export const app = createApp<CloudflareBindings>({
 
     // Real-time tax preview for the admin booking-create dialog.
     // POST /v1/admin/bookings/tax-preview
-    mountBookingTaxPreviewRoutes(hono)
+    mountLazyRouteApp(hono, ["/v1/admin/bookings/tax-preview"], () =>
+      import("./booking-tax-preview").then((module) => module.mountBookingTaxPreviewRoutes),
+    )
 
     // Rebuild `booking_item_tax_lines` from the catalog snapshot for a
     // booking. Repairs bookings created before the snapshot fallback in
@@ -228,6 +260,10 @@ export const app = createApp<CloudflareBindings>({
     hono.post("/v1/admin/bookings/:bookingId/rebuild-tax-lines", async (c) => {
       const bookingId = c.req.param("bookingId")
       try {
+        const [{ rebuildBookingItemTaxLines }, { operatorPostgresDb }] = await Promise.all([
+          import("./catalog-checkout-materialization"),
+          import("./operator-runtime-adapter"),
+        ])
         const result = await rebuildBookingItemTaxLines(operatorPostgresDb(c.get("db")), bookingId)
         return c.json({ data: result })
       } catch (err) {
@@ -236,7 +272,14 @@ export const app = createApp<CloudflareBindings>({
       }
     })
 
-    mountOperatorContractDocumentRoutes(hono)
+    mountLazyRouteApp(
+      hono,
+      ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
+      () =>
+        import("./contract-document-routes").then(
+          (module) => module.mountOperatorContractDocumentRoutes,
+        ),
+    )
 
     // Storefront preview policy resolution. The customer-facing
     // booking journey calls this on mount + whenever the
@@ -245,21 +288,70 @@ export const app = createApp<CloudflareBindings>({
     // POST /v1/public/payment-policy/resolve
     mountPublicPaymentPolicyRoutes(hono)
 
-    mountOperatorMediaUploadRoutes(hono)
+    mountLazyRouteApp(
+      hono,
+      [
+        "/v1/admin/products/:id/brochure/generate",
+        "/v1/uploads",
+        "/v1/admin/uploads",
+        "/v1/uploads/video",
+        "/v1/admin/uploads/video",
+        "/v1/media/*",
+        "/v1/admin/media/*",
+      ],
+      () => import("./media-upload-routes").then((module) => module.mountOperatorMediaUploadRoutes),
+    )
 
-    mountOperatorProposalRoutes(hono)
+    mountLazyRouteApp(
+      hono,
+      [
+        "/v1/admin/quote-versions/:quoteVersionId/send",
+        "/v1/public/proposals/:quoteVersionId",
+        "/v1/public/proposals/:quoteVersionId/accept",
+        "/v1/public/proposals/:quoteVersionId/decline",
+      ],
+      () => import("./proposal-routes").then((module) => module.mountOperatorProposalRoutes),
+    )
 
-    mountOperatorQuoteVersionSnapshotRoutes(hono)
+    mountLazyRouteApp(
+      hono,
+      ["/v1/admin/trips/:envelopeId/quote-versions/:quoteVersionId/snapshot"],
+      () =>
+        import("./quote-version-snapshot-routes").then(
+          (module) => module.mountOperatorQuoteVersionSnapshotRoutes,
+        ),
+    )
 
     mountOperatorLazyAdditionalRoutes(hono)
 
-    mountOperatorAgentToolRoutes(hono)
-    mountCatalogBookingRoutes(hono)
-    mountCatalogCheckoutRoutes(hono)
-    mountCatalogContentRoutes(hono)
-    mountCatalogOffersRoutes(hono)
+    mountLazyRouteApp(hono, ["/v1/admin/mcp/tools/:tool"], () =>
+      import("./mcp").then((module) => module.mountOperatorAgentToolRoutes),
+    )
+    mountLazyRouteApp(hono, catalogBookingRoutePaths, () =>
+      import("./catalog-booking").then((module) => module.mountCatalogBookingRoutes),
+    )
+    mountLazyRouteApp(hono, ["/v1/public/catalog/checkout/start"], () =>
+      import("./catalog-checkout").then((module) => module.mountCatalogCheckoutRoutes),
+    )
+    mountLazyRouteApp(
+      hono,
+      [
+        "/v1/admin/products/:id/content",
+        "/v1/public/products/:id/content",
+        "/v1/admin/cruises/:id/content",
+        "/v1/public/cruises/:id/content",
+        "/v1/admin/accommodations/:id/content",
+        "/v1/public/accommodations/:id/content",
+      ],
+      () => import("./catalog-content").then((module) => module.mountCatalogContentRoutes),
+    )
+    mountLazyRouteApp(hono, catalogOfferRoutePaths, () =>
+      import("./catalog-offers").then((module) => module.mountCatalogOffersRoutes),
+    )
     mountChannelPushAdminRoutes(hono)
-    mountFlightRoutes(hono)
+    mountLazyRouteApp(hono, ["/v1/admin/flights/*"], () =>
+      import("./flights").then((module) => module.mountFlightRoutes),
+    )
 
     // Workflow runs admin surface — list/get + rerun/resume actions
     // feeding the standalone dashboard SPA in

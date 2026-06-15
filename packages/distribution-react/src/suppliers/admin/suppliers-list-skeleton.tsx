@@ -2,14 +2,12 @@
 
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 
-import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
-
 const COLUMNS = [
-  { id: "name", width: "w-40" },
-  { id: "type", width: "w-20" },
-  { id: "status", width: "w-16" },
-  { id: "country", width: "w-20" },
-  { id: "currency", width: "w-12" },
+  { id: "name", headerWidth: "w-16", width: "w-40" },
+  { id: "type", headerWidth: "w-12", width: "w-20" },
+  { id: "status", headerWidth: "w-16", width: "w-16" },
+  { id: "country", headerWidth: "w-16", width: "w-20" },
+  { id: "currency", headerWidth: "w-16", width: "w-12" },
 ] as const
 
 /**
@@ -20,10 +18,6 @@ const COLUMNS = [
  *   - Summary + pagination footer
  */
 export function SuppliersListSkeleton() {
-  const messages = useSuppliersUiMessagesOrDefault()
-  const columns = messages.suppliersPage.columns
-  const titles = [columns.name, columns.type, columns.status, columns.country, columns.currency]
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -43,9 +37,9 @@ export function SuppliersListSkeleton() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              {titles.map((title) => (
-                <th key={title} className="px-4 py-3 font-medium">
-                  {title}
+              {COLUMNS.map((column) => (
+                <th key={column.id} className="px-4 py-3 font-medium">
+                  <Skeleton className={`h-3.5 ${column.headerWidth}`} />
                 </th>
               ))}
             </tr>

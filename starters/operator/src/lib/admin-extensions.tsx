@@ -2,9 +2,11 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
+  type AdminRouteMessagesProvider,
+  type AdminUiRouteContribution,
   adminRoutePageModule,
   createAdminExtensionRegistry,
-} from "@voyant-travel/admin"
+} from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { Button } from "@voyant-travel/ui/components/button"
 import { Building, Route, ScrollText, Tag } from "lucide-react"
@@ -71,6 +73,180 @@ type AdminExtensionNavMessages = Pick<
   | "suppliers"
   | "trips"
 >
+
+type RouteMessagesProviderLoader = NonNullable<AdminUiRouteContribution["routeMessagesProvider"]>
+
+function loadProvider<TModule>(
+  importer: () => Promise<TModule>,
+  pick: (module: TModule) => AdminRouteMessagesProvider,
+): RouteMessagesProviderLoader {
+  return () => importer().then((module) => ({ default: pick(module) }))
+}
+
+function composeProviderLoaders(
+  ...loaders: readonly RouteMessagesProviderLoader[]
+): RouteMessagesProviderLoader {
+  return async () => {
+    const modules = await Promise.all(loaders.map((loader) => loader()))
+    const Providers = modules.map((module) => module.default)
+
+    const RouteMessagesProvider: AdminRouteMessagesProvider = ({ children, locale }) =>
+      Providers.reduceRight(
+        (content, Provider, index) => (
+          <Provider key={Provider.displayName ?? Provider.name ?? index} locale={locale}>
+            {content}
+          </Provider>
+        ),
+        children,
+      )
+
+    RouteMessagesProvider.displayName = "OperatorRouteMessagesProvider"
+    return { default: RouteMessagesProvider }
+  }
+}
+
+const authMessagesProvider = loadProvider(
+  () => import("@voyant-travel/auth-react/i18n"),
+  (module) => module.AuthUiMessagesProvider,
+)
+const bookingsMessagesProvider = loadProvider(
+  () => import("@voyant-travel/bookings-react/i18n"),
+  (module) => module.BookingsUiMessagesProvider,
+)
+const catalogMessagesProvider = loadProvider(
+  () => import("@voyant-travel/catalog-react/i18n"),
+  (module) => module.CatalogUiMessagesProvider,
+)
+const commerceMessagesProvider = loadProvider(
+  () => import("@voyant-travel/commerce-react/i18n"),
+  (module) => module.CommerceUiMessagesProvider,
+)
+const distributionMessagesProvider = loadProvider(
+  () => import("@voyant-travel/distribution-react/i18n"),
+  (module) => module.DistributionUiMessagesProvider,
+)
+const suppliersMessagesProvider = loadProvider(
+  () => import("@voyant-travel/distribution-react/suppliers/i18n"),
+  (module) => module.SuppliersUiMessagesProvider,
+)
+const financeMessagesProvider = loadProvider(
+  () => import("@voyant-travel/finance-react/i18n"),
+  (module) => module.FinanceUiMessagesProvider,
+)
+const flightsMessagesProvider = loadProvider(
+  () => import("@voyant-travel/flights-react/i18n"),
+  (module) => module.FlightsUiMessagesProvider,
+)
+const productsMessagesProvider = loadProvider(
+  () => import("@voyant-travel/inventory-react/i18n"),
+  (module) => module.ProductsUiMessagesProvider,
+)
+const legalMessagesProvider = loadProvider(
+  () => import("@voyant-travel/legal-react/i18n"),
+  (module) => module.LegalUiMessagesProvider,
+)
+const notificationsMessagesProvider = loadProvider(
+  () => import("@voyant-travel/notifications-react/i18n"),
+  (module) => module.NotificationsUiMessagesProvider,
+)
+const allocationMessagesProvider = loadProvider(
+  () => import("@voyant-travel/operations-react/availability/allocation/i18n"),
+  (module) => module.AllocationUiMessagesProvider,
+)
+const availabilityMessagesProvider = loadProvider(
+  () => import("@voyant-travel/operations-react/availability/i18n"),
+  (module) => module.AvailabilityUiMessagesProvider,
+)
+const resourcesMessagesProvider = loadProvider(
+  () => import("@voyant-travel/operations-react/resources/i18n"),
+  (module) => module.ResourcesUiMessagesProvider,
+)
+const crmMessagesProvider = loadProvider(
+  () => import("@voyant-travel/relationships-react/i18n"),
+  (module) => module.CrmUiMessagesProvider,
+)
+
+const bookingRouteMessagesProvider = composeProviderLoaders(
+  bookingsMessagesProvider,
+  financeMessagesProvider,
+  crmMessagesProvider,
+  productsMessagesProvider,
+  catalogMessagesProvider,
+)
+const distributionRouteMessagesProvider = composeProviderLoaders(
+  distributionMessagesProvider,
+  suppliersMessagesProvider,
+)
+const operationsRouteMessagesProvider = composeProviderLoaders(
+  availabilityMessagesProvider,
+  allocationMessagesProvider,
+  resourcesMessagesProvider,
+)
+const relationshipsRouteMessagesProvider = composeProviderLoaders(
+  crmMessagesProvider,
+  bookingsMessagesProvider,
+)
+
+const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
+  "core-account": authMessagesProvider,
+  "core-settings-api-tokens": authMessagesProvider,
+  "core-settings-channels": distributionMessagesProvider,
+  "core-settings-taxes": financeMessagesProvider,
+  "core-settings-cost-categories": financeMessagesProvider,
+  "core-settings-pricing-categories": commerceMessagesProvider,
+  "core-settings-price-catalogs": commerceMessagesProvider,
+  "core-settings-product-types": productsMessagesProvider,
+  "core-settings-product-tags": productsMessagesProvider,
+}
+
+const extensionRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | undefined> = {
+  bookings: bookingRouteMessagesProvider,
+  catalog: catalogMessagesProvider,
+  commerce: commerceMessagesProvider,
+  distribution: distributionRouteMessagesProvider,
+  finance: financeMessagesProvider,
+  flights: flightsMessagesProvider,
+  inventory: productsMessagesProvider,
+  legal: legalMessagesProvider,
+  notifications: notificationsMessagesProvider,
+  operations: operationsRouteMessagesProvider,
+  relationships: relationshipsRouteMessagesProvider,
+}
+
+function withRouteMessagesProvider(
+  extension: AdminExtension,
+  routeMessagesProvider: RouteMessagesProviderLoader | undefined,
+): AdminExtension {
+  if (!extension.routes?.length) return extension
+
+  const applyToRoute = (route: AdminUiRouteContribution): AdminUiRouteContribution => {
+    const provider =
+      extension.id === "core"
+        ? coreRouteMessagesProviders[route.id]
+        : route.redirectTo
+          ? undefined
+          : routeMessagesProvider
+
+    return {
+      ...route,
+      routeMessagesProvider: route.routeMessagesProvider ?? provider,
+      children: route.children?.map(applyToRoute),
+    }
+  }
+
+  return {
+    ...extension,
+    routes: extension.routes.map(applyToRoute),
+  }
+}
+
+function withOperatorRouteMessagesProviders(
+  extensions: ReadonlyArray<AdminExtension>,
+): ReadonlyArray<AdminExtension> {
+  return extensions.map((extension) =>
+    withRouteMessagesProvider(extension, extensionRouteMessagesProviders[extension.id]),
+  )
+}
 
 // The CORE admin surfaces — dashboard, account, settings — are
 // package-delivered by `@voyant-travel/admin-app/core-extension` (packaged-admin RFC §4.2): the
@@ -432,21 +608,23 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
 export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
-  return createAdminExtensionRegistry(
-    createCoreExtension(),
-    createOperationsExtension(messages),
-    createBookingsExtension(messages),
-    createCatalogExtension(messages),
-    createProductsExtension(messages),
-    createRelationshipsExtension(messages),
-    createDistributionExtension(messages),
-    createFinanceExtension(messages),
-    createFlightsExtension(messages),
-    createLegalExtension(messages),
-    createNotificationsExtension(messages),
-    createPromotionsExtension(messages),
-    createTripsExtension(messages),
-    createActionLedgerExtension(messages),
+  return withOperatorRouteMessagesProviders(
+    createAdminExtensionRegistry(
+      createCoreExtension(),
+      createOperationsExtension(messages),
+      createBookingsExtension(messages),
+      createCatalogExtension(messages),
+      createProductsExtension(messages),
+      createRelationshipsExtension(messages),
+      createDistributionExtension(messages),
+      createFinanceExtension(messages),
+      createFlightsExtension(messages),
+      createLegalExtension(messages),
+      createNotificationsExtension(messages),
+      createPromotionsExtension(messages),
+      createTripsExtension(messages),
+      createActionLedgerExtension(messages),
+    ),
   )
 }
 

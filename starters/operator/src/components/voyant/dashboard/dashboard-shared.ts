@@ -16,4 +16,4 @@ export {
   pickPrimaryCurrency,
   revenueChartConfig,
   type SuppliersAggregates,
-} from "@voyant-travel/admin"
+} from "@voyant-travel/admin/dashboard/query-options"

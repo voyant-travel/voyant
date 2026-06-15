@@ -7,4 +7,4 @@ export {
   DashboardPieChartSkeleton,
   DashboardSkeleton,
   DashboardUpcomingListSkeleton,
-} from "@voyant-travel/admin"
+} from "@voyant-travel/admin/dashboard/skeleton"

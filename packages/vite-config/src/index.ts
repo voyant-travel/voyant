@@ -24,6 +24,7 @@ export function voyantVendorChunk(id: string): string | undefined {
   ) {
     return "react"
   }
+  if (id.includes("/clsx/") || id.includes("/tailwind-merge/")) return "class-utils"
   if (id.includes("/@tiptap/") || id.includes("/prosemirror-")) return "tiptap"
   if (id.includes("/recharts/")) return "recharts"
   if (id.includes("/pdf-lib/") || id.includes("/@pdf-lib/")) return "pdf-lib"
@@ -61,7 +62,7 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
  * not route files. Pass to `tanstackStart({ router: { routeFileIgnorePattern } })`.
  */
 export const VOYANT_ROUTE_FILE_IGNORE_PATTERN =
-  "^(_components|_hooks|_stores|_sections|_contexts|_lib|_tabs|utils|types\\.ts|.*(?:^|[-])(shared|page(?:-[a-z0-9-]+)?|dialogs?(?:-[a-z0-9-]+)?|sections|service-row|day-row|version-row|contact-tab|questions-row|questions-tab|section-header|kanban|queries)\\.(?:ts|tsx))$"
+  "^(_components|_hooks|_stores|_sections|_contexts|_lib|_tabs|utils|types\\.ts|shop-product-detail-(?:content|accommodations|cruises|products)\\.(?:ts|tsx)|.*(?:^|[-])(shared|page(?:-[a-z0-9-]+)?|dialogs?(?:-[a-z0-9-]+)?|sections|service-row|day-row|version-row|contact-tab|questions-row|questions-tab|section-header|kanban|queries)\\.(?:ts|tsx))$"
 
 type VisualizerModule = {
   visualizer: (options: {

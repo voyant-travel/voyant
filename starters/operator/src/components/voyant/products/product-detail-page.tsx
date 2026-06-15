@@ -1,7 +1,8 @@
 "use client"
 
 import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs, useLocale } from "@voyant-travel/admin"
+import { useAdminBreadcrumbs } from "@voyant-travel/admin/components/admin-breadcrumbs"
+import { useLocale } from "@voyant-travel/admin/providers/locale"
 import {
   type ProductDetailBreadcrumb,
   ProductDetailHostProvider,

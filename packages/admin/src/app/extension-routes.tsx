@@ -17,6 +17,7 @@ import {
   type ImplementedAdminRoute,
   requireImplementedAdminRoute,
 } from "../extensions.js"
+import { useLocale } from "../providers/locale.js"
 
 import type { AdminRouterContext } from "./router.js"
 
@@ -130,6 +131,32 @@ function createAdminRoutePageComponent(route: ImplementedAdminRoute): Preloadabl
   return AdminExtensionRoutePage
 }
 
+function withRouteMessagesProvider(
+  route: ImplementedAdminRoute,
+  Component: PreloadableComponent | undefined,
+): PreloadableComponent | undefined {
+  const loadProvider = route.routeMessagesProvider
+  if (!loadProvider || !Component) return Component
+
+  const WrappedComponent = Component
+  const LazyProvider = React.lazy(loadProvider)
+
+  function AdminExtensionRouteMessagesProvider() {
+    const { resolvedLocale } = useLocale()
+    return (
+      <LazyProvider locale={resolvedLocale}>
+        <WrappedComponent />
+      </LazyProvider>
+    )
+  }
+
+  AdminExtensionRouteMessagesProvider.displayName = `AdminExtensionRouteMessagesProvider(${route.id})`
+  AdminExtensionRouteMessagesProvider.preload = async () => {
+    await Promise.all([WrappedComponent.preload?.(), loadProvider().then(() => undefined)])
+  }
+  return AdminExtensionRouteMessagesProvider
+}
+
 /**
  * Resolve an extension route contribution by id and return the route
  * options the host's generated admin route module spreads into a
@@ -153,9 +180,10 @@ function adminRouteOptionsFromContribution(
   runtime: AdminExtensionRouteRuntime,
 ): AdminExtensionRouteOptions {
   const redirectTo = route.redirectTo
-  const component = route.page
+  const baseComponent = route.page
     ? createAdminRoutePageComponent(route)
     : (route.component as PreloadableComponent | undefined)
+  const component = withRouteMessagesProvider(route, baseComponent)
 
   return {
     component,
@@ -171,7 +199,7 @@ function adminRouteOptionsFromContribution(
         params,
       }),
     ssr: route.ssr,
-    wrapInSuspense: route.page ? true : undefined,
+    wrapInSuspense: route.page || route.routeMessagesProvider ? true : undefined,
     pendingComponent: route.pendingComponent as React.FunctionComponent | undefined,
     errorComponent: route.errorComponent as
       | React.FunctionComponent<{ error: Error; reset: () => void }>

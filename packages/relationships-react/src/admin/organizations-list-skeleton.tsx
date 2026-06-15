@@ -3,8 +3,9 @@
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyant-travel/ui/components/table"
 
-import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { SkeletonRows } from "./crm-skeleton-rows.js"
+
+const ORGANIZATION_HEADER_WIDTHS = ["w-16", "w-20", "w-16", "w-16", "w-16"] as const
 
 /**
  * Route-level placeholder for the organizations list. Matches
@@ -13,8 +14,6 @@ import { SkeletonRows } from "./crm-skeleton-rows.js"
  * Website / Updated), pagination.
  */
 export function OrganizationsListSkeleton() {
-  const columns = useCrmUiMessagesOrDefault().organizationList.columns
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -31,11 +30,14 @@ export function OrganizationsListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{columns.name}</TableHead>
-              <TableHead>{columns.industry}</TableHead>
-              <TableHead>{columns.relation}</TableHead>
-              <TableHead>{columns.website}</TableHead>
-              <TableHead>{columns.updated}</TableHead>
+              {ORGANIZATION_HEADER_WIDTHS.map((width, column) => (
+                <TableHead
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders -- owner: relationships-react; existing suppression is intentional pending typed cleanup.
+                  key={column}
+                >
+                  <Skeleton className={`h-3.5 ${width}`} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <SkeletonRows rows={8} widths={["w-40", "w-24", "w-16", "w-48", "w-20"]} />

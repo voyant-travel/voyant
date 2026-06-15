@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { formatMessage } from "@voyant-travel/admin"
+import { formatMessage } from "@voyant-travel/admin/lib/i18n"
 import {
   Button,
   Card,
