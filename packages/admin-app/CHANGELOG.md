@@ -1,5 +1,16 @@
 # @voyant-travel/admin-app
 
+## 0.11.2
+
+### Patch Changes
+
+- ecec979: Improve operator bundle boundaries by adding route-local admin message provider support, exposing admin extension route helpers, keeping pending skeletons structural, and tightening Vite route ignores and vendor chunk splitting so heavy admin route dependencies stay out of the initial entry.
+- Updated dependencies [ecec979]
+  - @voyant-travel/admin@0.111.3
+  - @voyant-travel/distribution-react@0.110.5
+  - @voyant-travel/finance-react@0.120.2
+  - @voyant-travel/inventory-react@0.2.2
+
 ## 0.11.1
 
 ### Patch Changes
