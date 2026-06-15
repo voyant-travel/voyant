@@ -26,6 +26,7 @@ const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
 const REUSE_DIST =
   process.argv.includes("--reuse-dist") || process.env.VOYANT_PACK_REUSE_DIST === "1"
 const PACKAGE_FILTERS = getPackageFilters(process.argv.slice(2))
+const LEGACY_VOYANT_SCOPE = `@voyant${"js"}/`
 
 const rootDir = process.cwd()
 const packageRoots = ["packages", "apps"].map((dir) => path.join(rootDir, dir))
@@ -243,6 +244,34 @@ function collectPackedExtensionlessRelativeSpecifiers(extractRoot, packInfo) {
   return problems
 }
 
+function collectPackedLegacyVoyantSpecifiers(extractRoot, packInfo) {
+  const problems = []
+  const legacySpecifierPattern = new RegExp(`${LEGACY_VOYANT_SCOPE}[A-Za-z0-9._-]+`, "g")
+  const scannedFiles = packInfo.files
+    .map((file) => file.path)
+    .filter(
+      (filePath) =>
+        filePath === "package.json" ||
+        (filePath.startsWith("dist/") && /\.(?:c?js|mjs|d\.ts|d\.mts|d\.cts)$/.test(filePath)),
+    )
+
+  for (const filePath of scannedFiles) {
+    const source = fs.readFileSync(path.join(extractRoot, filePath), "utf8")
+    const matches = [...source.matchAll(legacySpecifierPattern)]
+    if (matches.length === 0) continue
+
+    const seen = new Set()
+    for (const match of matches) {
+      if (!match[0] || seen.has(match[0])) continue
+      seen.add(match[0])
+      const line = source.slice(0, match.index).split("\n").length
+      problems.push(`${filePath}:${line} references ${match[0]}`)
+    }
+  }
+
+  return problems
+}
+
 function collectWorkspaceProtocolDependencies(pkg) {
   const problems = []
   const dependencyFields = [
@@ -321,6 +350,7 @@ async function packAndInspectPackage(packageDir) {
   }
 
   let extensionlessRelativeSpecifiers = []
+  let legacyVoyantSpecifiers = []
   let extracted
   try {
     ;[packInfo] = getPackJson(stdout)
@@ -330,6 +360,7 @@ async function packAndInspectPackage(packageDir) {
       extracted.root,
       packInfo,
     )
+    legacyVoyantSpecifiers = collectPackedLegacyVoyantSpecifiers(extracted.root, packInfo)
   } catch (error) {
     return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
@@ -337,11 +368,11 @@ async function packAndInspectPackage(packageDir) {
     fs.rmSync(packDestination, { recursive: true, force: true })
   }
 
-  return { packInfo, packedManifest, extensionlessRelativeSpecifiers }
+  return { packInfo, packedManifest, extensionlessRelativeSpecifiers, legacyVoyantSpecifiers }
 }
 
 function collectTarballProblems(
-  { packInfo, packedManifest, extensionlessRelativeSpecifiers },
+  { packInfo, packedManifest, extensionlessRelativeSpecifiers, legacyVoyantSpecifiers },
   sourceFiles,
 ) {
   const expectedTargets = getPublishedTargets(packedManifest)
@@ -362,6 +393,13 @@ function collectTarballProblems(
   if (extensionlessRelativeSpecifiers.length > 0) {
     problems.push(
       `extensionless relative ESM specifiers in dist files: ${extensionlessRelativeSpecifiers.join(
+        ", ",
+      )}`,
+    )
+  }
+  if (legacyVoyantSpecifiers.length > 0) {
+    problems.push(
+      `legacy Voyant package scope specifiers in packed artifacts: ${legacyVoyantSpecifiers.join(
         ", ",
       )}`,
     )

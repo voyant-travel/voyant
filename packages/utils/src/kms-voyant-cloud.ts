@@ -1,6 +1,6 @@
 import type { KeyRef, KmsDataKey, KmsProvider, KmsUnwrappedDataKey } from "./kms.js"
 
-const DEFAULT_API_URL = "https://api.voyantjs.com"
+const DEFAULT_API_URL = "https://api.voyant.travel"
 
 export interface VoyantCloudKmsConfig {
   apiKey: string

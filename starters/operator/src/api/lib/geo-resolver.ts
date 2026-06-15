@@ -19,7 +19,7 @@ export interface GeoNameResolver {
 
 export interface GeoNameResolverOptions {
   apiKey: string
-  /** Voyant Cloud base URL; defaults to the SDK's `https://api.voyantjs.com`. */
+  /** Voyant Cloud base URL; defaults to the SDK's `https://api.voyant.travel`. */
   baseUrl?: string
   /** BCP 47 language for resolved names. Defaults to `en`. */
   lang?: string
