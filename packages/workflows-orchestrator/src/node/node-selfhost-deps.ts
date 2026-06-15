@@ -20,7 +20,7 @@ import {
 } from "./dashboard-static.js"
 import type {
   HealthReport,
-  NodeSelfHostServerOptions,
+  SelfHostServerOptions,
   ServeDeps,
   ServeHandle,
 } from "./dashboard-types.js"
@@ -47,10 +47,8 @@ type WorkflowRegistryModule = Pick<
   "__resetRegistry" | "__listRegisteredWorkflows"
 >
 
-export async function startNodeSelfHostServer(
-  opts: NodeSelfHostServerOptions,
-): Promise<ServeHandle> {
-  const deps = await createNodeSelfHostDeps(opts)
+export async function startSelfHostServer(opts: SelfHostServerOptions): Promise<ServeHandle> {
+  const deps = await createSelfHostDeps(opts)
   return startServer(
     {
       port: opts.port ?? 3232,
@@ -60,9 +58,9 @@ export async function startNodeSelfHostServer(
   )
 }
 
-export async function createNodeSelfHostDeps(
+export async function createSelfHostDeps(
   opts: Pick<
-    NodeSelfHostServerOptions,
+    SelfHostServerOptions,
     | "entryFile"
     | "staticDir"
     | "cacheBustEntry"

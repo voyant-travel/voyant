@@ -5,5 +5,5 @@ export const localTenantMeta = {
 }
 
 export function createDefaultWakeupLeaseOwner(): string {
-  return `node-selfhost-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+  return `selfhost-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
 }

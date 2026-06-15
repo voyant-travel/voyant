@@ -48,9 +48,8 @@ Supported flags:
 The CLI flags intentionally cover only entry loading, HTTP binding, static
 assets, and storage. Workflows that call `ctx.services.resolve(...)` need a
 host-provided service resolver. For those, either start the server from code
-with `startNodeSelfHostServer({ services })`, or prefer the app-integrated
-Node path with `createApp({ workflows: { driver: () =>
-createNodeStandaloneDriver({ db }) } })`. See
+with `startSelfHostServer({ services })`, or prefer the app-integrated
+path with `createApp({ workflows: { driver: () => createStandaloneDriver({ db }) } })`. See
 [`@voyant-travel/workflows-orchestrator`](../../packages/workflows-orchestrator/README.md)
 for an example using the promotions catalog reindex workflow.
 
@@ -66,7 +65,7 @@ status, and persisted wakeup count.
 
 ## Docker
 
-The Node self-host target now includes a reference container flow:
+The self-host target now includes a reference container flow:
 
 - [Dockerfile](./Dockerfile)
 - [docker-compose.yml](./docker-compose.yml)

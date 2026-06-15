@@ -1,6 +1,6 @@
 import type { StoredRun } from "./snapshot-run-store.js"
 
-export interface NodeSelfHostWorkflowClientOptions {
+export interface SelfHostWorkflowClientOptions {
   baseUrl: string
   fetch?: typeof fetch
 }
@@ -29,14 +29,14 @@ export interface SelfHostResumeRunResult {
   resumeFromStep: string
 }
 
-export interface NodeSelfHostWorkflowClient {
+export interface SelfHostWorkflowClient {
   trigger(input: SelfHostTriggerRunInput): Promise<StoredRun>
   resume(parentRunId: string, input?: SelfHostResumeRunInput): Promise<SelfHostResumeRunResult>
 }
 
-export function createNodeSelfHostWorkflowClient(
-  opts: NodeSelfHostWorkflowClientOptions,
-): NodeSelfHostWorkflowClient {
+export function createSelfHostWorkflowClient(
+  opts: SelfHostWorkflowClientOptions,
+): SelfHostWorkflowClient {
   const fetchImpl = opts.fetch ?? fetch
   const baseUrl = opts.baseUrl.replace(/\/+$/, "")
   return {

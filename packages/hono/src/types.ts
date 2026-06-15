@@ -340,7 +340,7 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
  * **Node / InMemory** — wrap your direct factory:
  *
  *     workflows: {
- *       driver: () => createNodeStandaloneDriver({ db }),
+ *       driver: () => createStandaloneDriver({ db }),
  *     }
  *
  * **Managed Cloud forwarding** — pull credentials off `env`:

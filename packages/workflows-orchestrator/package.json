@@ -1,7 +1,7 @@
 {
   "name": "@voyant-travel/workflows-orchestrator",
   "version": "0.108.0",
-  "description": "Node/Postgres orchestrator runtime for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
+  "description": "Postgres self-host orchestrator runtime for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./node": {
+    "./selfhost": {
       "types": "./src/node/index.ts",
       "development": "./src/node/index.ts",
       "node": "./dist/node/index.js",
@@ -75,7 +75,7 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./node": {
+      "./selfhost": {
         "types": "./dist/node/index.d.ts",
         "node": "./dist/node/index.js",
         "import": "./dist/node/index.js",

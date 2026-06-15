@@ -1,5 +1,5 @@
 // Node/Postgres driver compliance — runs the parameterized suite from
-// `@voyant-travel/workflows-orchestrator/testing` against `createNodeStandaloneDriver`.
+// `@voyant-travel/workflows-orchestrator/testing` against `createStandaloneDriver`.
 //
 // Gated on `TEST_DATABASE_URL`. Mirrors the pattern from
 // `postgres-integration.test.ts`: applies migrations once, truncates
@@ -12,7 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe } from "vitest"
 import { runDriverComplianceSuite } from "../../testing/driver-compliance.js"
 
 import { runPostgresMigrations } from "../migrate.js"
-import { createNodeStandaloneDriver } from "../node-standalone-driver.js"
+import { createStandaloneDriver } from "../node-standalone-driver.js"
 import { createPostgresConnection } from "../postgres.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -51,6 +51,6 @@ describeIfDb("Node/Postgres driver compliance", () => {
   // (the only suite that needs the wheel) is its own test file with its
   // own truncate + driver lifecycle.
   runDriverComplianceSuite("Node/Postgres", () =>
-    createNodeStandaloneDriver({ db: connection.db, disableTimeWheel: true }),
+    createStandaloneDriver({ db: connection.db, disableTimeWheel: true }),
   )
 })

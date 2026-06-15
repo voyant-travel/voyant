@@ -1,6 +1,6 @@
 // Node/Postgres sleep-resume integration test — verifies that workflows
 // parked on `ctx.sleep(...)` actually wake up via the wakeup poller
-// wired into `createNodeStandaloneDriver`. Closes the gap reviewer P1.2
+// wired into `createStandaloneDriver`. Closes the gap reviewer P1.2
 // flagged: prior to wiring `createPersistentWakeupManager` into the
 // driver, parked runs would persist as `waiting` and never resume.
 //
@@ -14,7 +14,7 @@ import { sql } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest"
 
 import { runPostgresMigrations } from "../migrate.js"
-import { createNodeStandaloneDriver } from "../node-standalone-driver.js"
+import { createStandaloneDriver } from "../node-standalone-driver.js"
 import { createPostgresConnection } from "../postgres.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -49,7 +49,7 @@ describeIfDb("Node/Postgres sleep-resume", () => {
 
   test("ctx.sleep parks then resumes via the wakeup poller", async () => {
     // Aggressive interval so the test stays fast.
-    const driver = createNodeStandaloneDriver({
+    const driver = createStandaloneDriver({
       db: connection.db,
       wakeupPollIntervalMs: 100,
       wakeupLeaseMs: 1_000,
@@ -112,7 +112,7 @@ describeIfDb("Node/Postgres sleep-resume", () => {
   }, 10_000)
 
   test("driver.shutdown stops the poller (process can exit cleanly)", async () => {
-    const driver = createNodeStandaloneDriver({
+    const driver = createStandaloneDriver({
       db: connection.db,
       wakeupPollIntervalMs: 50,
     })({

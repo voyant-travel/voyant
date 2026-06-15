@@ -1,9 +1,9 @@
 # @voyant-travel/workflows-orchestrator
 
-Node/Postgres orchestrator runtime for Voyant Workflows. Drives runs through
+Postgres self-host orchestrator runtime for Voyant Workflows. Drives runs through
 the tenant step handler over the v1 wire protocol. The package includes the
 core state machine, in-memory test store, Postgres-backed production stores,
-scheduler/wakeup support, and the Node self-host server helpers.
+scheduler/wakeup support, and the self-host server helpers.
 
 See [`docs/runtime-protocol.md`](../../docs/runtime-protocol.md) §2 +
 §5 for the contract this implements.
@@ -19,7 +19,7 @@ import {
 import { handleStepRequest } from "@voyant-travel/workflows/handler";
 
 // A StepHandler calls into the tenant's workflow code. In-process
-// here via `handleStepRequest`; production Node deployments normally
+// here via `handleStepRequest`; production self-host deployments normally
 // use the Postgres-backed driver below.
 const handler: StepHandler = async (req) => handleStepRequest(req);
 
@@ -53,9 +53,9 @@ const record = await trigger(
   exposed for advanced composition (e.g. custom scheduling, alarm
   handlers).
 - **`createInMemoryRunStore()`** — test-friendly `RunRecordStore`.
-- **`createNodeStandaloneDriver({ db })`** — production Node/Postgres
+- **`createStandaloneDriver({ db })`** — production Postgres
   workflow driver for `createApp()`.
-- **`startNodeSelfHostServer(options)`** — reference Node self-host server.
+- **`startSelfHostServer(options)`** — reference self-host server.
 - **`runPostgresMigrations(options)`** — apply committed runtime migrations.
 
 ## Status model

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-import { type ServeHandle, startNodeSelfHostServer } from "../dashboard-server.js"
+import { type ServeHandle, startSelfHostServer } from "../dashboard-server.js"
 import { runPostgresMigrations } from "../migrate.js"
 import { createPostgresConnection } from "../postgres.js"
 import { createPostgresSnapshotRunStore } from "../postgres-snapshot-run-store.js"
@@ -76,7 +76,7 @@ describeIfDb("node self-host server over postgres", () => {
     })
 
     const port = await getFreePort()
-    server = await startNodeSelfHostServer({
+    server = await startSelfHostServer({
       entryFile,
       host: "127.0.0.1",
       port,

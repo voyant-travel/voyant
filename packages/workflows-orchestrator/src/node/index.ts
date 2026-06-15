@@ -2,7 +2,7 @@ export {
   type ChunkBus,
   type ChunkEvent,
   createChunkBus,
-  createNodeSelfHostDeps,
+  createSelfHostDeps,
   createStaticReader,
   findDashboardDir,
   type HandlerResponse,
@@ -10,12 +10,12 @@ export {
   handleRunSseStream,
   handleSseStream,
   type MetricsSnapshot,
-  type NodeSelfHostServerOptions,
   type RequestHandlerDeps,
   renderMetrics,
+  type SelfHostServerOptions,
   type ServeDeps,
   type ServeHandle,
-  startNodeSelfHostServer,
+  startSelfHostServer,
   startServer,
 } from "./dashboard-server.js"
 export {
@@ -40,8 +40,8 @@ export {
   runPostgresMigrations,
 } from "./migrate.js"
 export {
-  createNodeStandaloneDriver,
-  type NodeStandaloneDriverOptions,
+  createStandaloneDriver,
+  type StandaloneDriverOptions,
 } from "./node-standalone-driver.js"
 export {
   createPersistentWakeupManager,
@@ -105,12 +105,12 @@ export {
   toMs,
 } from "./scheduler.js"
 export {
-  createNodeSelfHostWorkflowClient,
-  type NodeSelfHostWorkflowClient,
-  type NodeSelfHostWorkflowClientOptions,
+  createSelfHostWorkflowClient,
   type SelfHostResumeRunInput,
   type SelfHostResumeRunResult,
   type SelfHostTriggerRunInput,
+  type SelfHostWorkflowClient,
+  type SelfHostWorkflowClientOptions,
 } from "./selfhost-client.js"
 export {
   createSleepAlarmManager,

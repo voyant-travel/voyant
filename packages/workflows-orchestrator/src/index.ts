@@ -1,6 +1,6 @@
 // @voyant-travel/workflows-orchestrator
 //
-// Node/Postgres orchestrator runtime for Voyant Workflows. Drives runs
+// Postgres self-host orchestrator runtime for Voyant Workflows. Drives runs
 // through the tenant step handler over the v1 wire protocol and exports
 // the core engine, in-memory test stores, Postgres stores, scheduler,
 // and self-host server helpers.

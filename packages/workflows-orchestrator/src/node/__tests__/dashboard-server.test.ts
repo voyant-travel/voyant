@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { createNodeSelfHostDeps, handleRequest } from "../dashboard-server.js"
+import { createSelfHostDeps, handleRequest } from "../dashboard-server.js"
 import type { SnapshotRunStore } from "../snapshot-run-store.js"
 import { createFsSnapshotRunStore } from "../snapshot-run-store.js"
 
@@ -96,10 +96,10 @@ describe("handleRequest health endpoints", () => {
   })
 })
 
-describe("createNodeSelfHostDeps validation", () => {
+describe("createSelfHostDeps validation", () => {
   it("fails clearly when the workflow entry file does not exist", async () => {
     await expect(
-      createNodeSelfHostDeps({
+      createSelfHostDeps({
         entryFile: "./definitely-missing-workflows.mjs",
       }),
     ).rejects.toThrow(/workflow entry not found/i)
@@ -114,7 +114,7 @@ describe("createNodeSelfHostDeps validation", () => {
       await writeFile(entryFile, "export const nothing = true;\n", "utf8")
 
       await expect(
-        createNodeSelfHostDeps({
+        createSelfHostDeps({
           entryFile,
           staticDir,
           cacheBustEntry: true,
@@ -127,7 +127,7 @@ describe("createNodeSelfHostDeps validation", () => {
 
   it("surfaces configured services to self-host workflow bodies", async () => {
     const root = await mkdtemp(join(process.cwd(), ".tmp-services-workflow-entry-"))
-    let deps: Awaited<ReturnType<typeof createNodeSelfHostDeps>> | undefined
+    let deps: Awaited<ReturnType<typeof createSelfHostDeps>> | undefined
     try {
       const entryFile = join(root, "services-workflows.mjs")
       const staticDir = join(root, "static")
@@ -144,7 +144,7 @@ describe("createNodeSelfHostDeps validation", () => {
         "utf8",
       )
 
-      deps = await createNodeSelfHostDeps({
+      deps = await createSelfHostDeps({
         entryFile,
         staticDir,
         cacheBustEntry: true,
@@ -190,7 +190,7 @@ describe("createNodeSelfHostDeps validation", () => {
   it("resumes a failed self-host run from its seeded successful steps", async () => {
     const root = await mkdtemp(join(process.cwd(), ".tmp-resume-workflow-entry-"))
     const previousProbe = (globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA
-    let deps: Awaited<ReturnType<typeof createNodeSelfHostDeps>> | undefined
+    let deps: Awaited<ReturnType<typeof createSelfHostDeps>> | undefined
     try {
       ;(globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA = 0
       const entryFile = join(root, "resume-workflows.mjs")
@@ -215,7 +215,7 @@ describe("createNodeSelfHostDeps validation", () => {
         "utf8",
       )
 
-      deps = await createNodeSelfHostDeps({
+      deps = await createSelfHostDeps({
         entryFile,
         staticDir,
         cacheBustEntry: true,

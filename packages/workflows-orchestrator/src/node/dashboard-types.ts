@@ -89,7 +89,7 @@ export interface ServeHandle {
   url: string
 }
 
-export interface NodeSelfHostServerOptions {
+export interface SelfHostServerOptions {
   entryFile: string
   port?: number
   host?: string

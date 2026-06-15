@@ -9,9 +9,9 @@ export type {
   HandlerResponse,
   HealthReport,
   MetricsSnapshot,
-  NodeSelfHostServerOptions,
   RequestHandlerDeps,
+  SelfHostServerOptions,
   ServeDeps,
   ServeHandle,
 } from "./dashboard-types.js"
-export { createNodeSelfHostDeps, startNodeSelfHostServer } from "./node-selfhost-deps.js"
+export { createSelfHostDeps, startSelfHostServer } from "./node-selfhost-deps.js"

@@ -15,7 +15,7 @@ compatibility annotations, but those fields do not select a lane. Any legacy
 
 The supported deployment shapes are:
 
-- **Node self-host**: `@voyant-travel/workflows-orchestrator/node` runs the
+- **Self-host**: `@voyant-travel/workflows-orchestrator/selfhost` runs the
   orchestrator, workflow bodies, manifest store, schedules, wakeups, and admin
   reads against Postgres.
 - **Managed Cloud**: app bundles use `@voyant-travel/workflows/client` and
@@ -58,19 +58,19 @@ platform, but hosted workflow execution itself is Node-only.
 - the app-safe Cloud client under `@voyant-travel/workflows/client`.
 
 `@voyant-travel/workflows-orchestrator` owns the state machine, event routing,
-dispatch contracts, compliance tests, and the supported Node/Postgres self-host
-runtime. Node runtime imports use `@voyant-travel/workflows-orchestrator/node`,
+dispatch contracts, compliance tests, and the supported Postgres self-host
+runtime. Self-host runtime imports use `@voyant-travel/workflows-orchestrator/selfhost`,
 which uses Postgres for run records, wakeups, manifests, schedules, and admin
 queries.
 
 ## Application Wiring
 
-Self-host Node apps wire a Node driver:
+Self-host apps wire the Postgres driver:
 
 ```ts
 createApp({
   workflows: {
-    driver: () => createNodeStandaloneDriver({ db }),
+    driver: () => createStandaloneDriver({ db }),
   },
 })
 ```

@@ -1,8 +1,8 @@
-import { startNodeSelfHostServer } from "@voyant-travel/workflows-orchestrator/node"
+import { startSelfHostServer } from "@voyant-travel/workflows-orchestrator/selfhost"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
-  const handle = await startNodeSelfHostServer(options)
+  const handle = await startSelfHostServer(options)
   console.error(`voyant workflows selfhost: listening at ${handle.url}`)
 
   let shuttingDown = false

@@ -1,4 +1,4 @@
-// Node/Postgres workflow driver.
+// Postgres workflow driver.
 // agent-quality: file-size exception -- Public driver factory currently owns manifest, trigger, event-ingest, schedule, and admin wiring; split only with a dedicated driver-surface refactor.
 //
 // Returns a `DriverFactory` (per architecture doc §6.3) that the framework
@@ -65,7 +65,7 @@ type Db = ReturnType<typeof drizzle>
 
 // ---- Public factory options ----
 
-export interface NodeStandaloneDriverOptions {
+export interface StandaloneDriverOptions {
   /** Long-lived Postgres connection (drizzle-orm `node-postgres` adapter). */
   db: Db
   /** Default environment for `trigger()` calls that don't specify one. */
@@ -212,7 +212,7 @@ function normalizeManifestCapabilities(
 }
 
 /**
- * Build the Node/Postgres driver factory. The factory closes over its options
+ * Build the Postgres driver factory. The factory closes over its options
  * and returns a fresh `WorkflowDriver` when `createApp()` (or a test)
  * calls it with `DriverFactoryDeps`.
  *
@@ -220,15 +220,15 @@ function normalizeManifestCapabilities(
  *
  *     createApp({
  *       workflows: {
- *         driver: createNodeStandaloneDriver({ db, defaultEnvironment: "production" }),
+ *         driver: createStandaloneDriver({ db, defaultEnvironment: "production" }),
  *       },
  *     })
  *
  * Or in compliance tests:
  *
- *     const driver = createNodeStandaloneDriver({ db: testDb })(testFactoryDeps())
+ *     const driver = createStandaloneDriver({ db: testDb })(testFactoryDeps())
  */
-export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): DriverFactory {
+export function createStandaloneDriver(opts: StandaloneDriverOptions): DriverFactory {
   return (deps: DriverFactoryDeps): WorkflowDriver => {
     const runStore = createPostgresRunRecordStore({ db: opts.db })
     const manifestStore = createPostgresManifestStore({ db: opts.db })
@@ -237,7 +237,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
     const tenantMeta = opts.tenantMeta ?? DEFAULT_TENANT_META
     const defaultEnv = opts.defaultEnvironment ?? "development"
     const keep = opts.manifestVersionsToKeep ?? DEFAULT_MANIFEST_KEEP
-    const leaseOwner = opts.wakeupLeaseOwner ?? `node-standalone-${randomToken()}`
+    const leaseOwner = opts.wakeupLeaseOwner ?? `selfhost-standalone-${randomToken()}`
 
     // Wire the framework-supplied service container through to step bodies.
     // The handler closes over `deps.services` so every step invocation
@@ -250,7 +250,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
     // Persistent wakeup manager — polls `voyant_wakeups` for runs
     // parked on DATETIME waitpoints and resumes them via the orchestrator's
     // `resumeDueAlarms`. This is what makes `ctx.sleep(...)` actually
-    // wake up in the Node/Postgres runtime.
+    // wake up in the Postgres runtime.
     const wakeupManager: PersistentWakeupManager<RunRecord> = createPersistentWakeupManager({
       wakeupStore,
       handler,
@@ -259,7 +259,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       intervalMs: opts.wakeupPollIntervalMs,
       now,
       logger: (level, message, data) => deps.logger(level, message, data),
-      // For the Node/Postgres driver, the "stored" representation is the RunRecord.
+      // For the Postgres driver, the "stored" representation is the RunRecord.
       // postgres-run-record-store carries the full state on `run_record`
       // JSONB. So toRecord/fromRecord are identity.
       async getRun(runId) {
@@ -523,7 +523,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       )
     }
 
-    // ---- WorkflowAdmin (full; Node/Postgres has native query support) ----
+    // ---- WorkflowAdmin (full; Postgres has native query support) ----
 
     const admin: WorkflowAdmin = {
       async listRuns(listOpts?: ListRunsOptions) {
@@ -609,7 +609,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
 
 function assertNotShutdown(shuttingDown: boolean): void {
   if (shuttingDown) {
-    throw new Error("NodeStandaloneDriver: shutdown() has been called; new operations are refused.")
+    throw new Error("StandaloneDriver: shutdown() has been called; new operations are refused.")
   }
 }
 

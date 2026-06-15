@@ -5,7 +5,7 @@
 // The snapshot table already carries a `run_record` JSONB column; this
 // store uses that for the full RunRecord plus the indexed columns
 // (`workflow_id`, `status`, `started_at`, etc.) for queries. The Node driver
-// `createNodeStandaloneDriver` plugs this into the orchestrator core's
+// `createStandaloneDriver` plugs this into the orchestrator core's
 // pure trigger/resume/cancel functions.
 //
 // The new `idempotency_key` column populated from `RunRecord.idempotencyKey`
