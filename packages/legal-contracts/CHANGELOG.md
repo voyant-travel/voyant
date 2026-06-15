@@ -1,5 +1,16 @@
 # @voyant-travel/legal-contracts
 
+## 0.105.0
+
+### Minor Changes
+
+- c3f4fa0: Move Legal acceptance, contract, and term records to target refs with explicit legacy transaction compatibility fields.
+
+### Patch Changes
+
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/schema-kit@0.105.3
+
 ## 0.104.2
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @voyant-travel/trips
 
+## 0.111.0
+
+### Minor Changes
+
+- f374a58: Rename the Travel Composer runtime and React packages to Trips, including package names, route prefixes, admin extension ids, operator manifests, and template imports.
+
+### Patch Changes
+
+- c9ec9f8: Fold catalog semantic-search primitives into `@voyant-travel/catalog` and retire the first-party catalog MCP package.
+
+  `@voyant-travel/catalog` now exports embedding providers, model compatibility helpers, semantic/BYO-vector search, and cross-audience federation from catalog-owned subpaths. `@voyant-travel/trips` now owns the small local tool registry needed by its trips agent commands instead of depending on catalog MCP tooling.
+
+- e80e3d3: Add Trips reservation plans and route active plan submission through Bookings.
+- Updated dependencies [c9ec9f8]
+- Updated dependencies [6bff46f]
+  - @voyant-travel/catalog@0.118.0
+  - @voyant-travel/hono@0.110.0
+
 ## 0.110.2
 
 ## 0.110.1

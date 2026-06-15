@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-orchestrator-cloudflare
 
+## 0.107.11
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.107.11
+- @voyant-travel/workflows-orchestrator@0.107.11
+
 ## 0.107.10
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyant-travel/schema-kit
 
+## 0.105.3
+
+### Patch Changes
+
+- e80e3d3: Add Trips reservation plans and route active plan submission through Bookings.
+
 ## 0.105.2
 
 ### Patch Changes

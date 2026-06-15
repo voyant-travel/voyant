@@ -1,5 +1,12 @@
 # @voyant-travel/admin-client
 
+## 0.111.1
+
+### Patch Changes
+
+- Updated dependencies [c8189fc]
+  - @voyant-travel/admin-contracts@0.104.5
+
 ## 0.111.0
 
 ## 0.110.0

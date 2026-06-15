@@ -1,5 +1,13 @@
 # @voyant-travel/extras-contracts
 
+## 0.104.2
+
+### Patch Changes
+
+- 3cc83b6: Move extras runtime and React source behind Inventory and Bookings owner
+  subpaths. The old runtime and React extras package names are removed from v1;
+  first-party imports use the Inventory and Bookings owner paths.
+
 ## 0.104.1
 
 ## 0.104.0

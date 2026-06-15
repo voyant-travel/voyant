@@ -1,5 +1,22 @@
 # @voyant-travel/bookings-contracts
 
+## 0.105.0
+
+### Minor Changes
+
+- 2c9c4a4: Retire the runtime Transactions packages before v1. The default Bookings/OCTO
+  bridge now reads booking origin/provenance records instead of the legacy
+  booking-to-transaction detail table, and the public `@voyant-travel/transactions`
+  and `@voyant-travel/transactions-react` workspaces have been removed. The
+  legacy `@voyant-travel/transactions-contracts` workspace is removed as well;
+  use the owning domain contract/runtime package for replacement validation
+  schemas.
+
+### Patch Changes
+
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/schema-kit@0.105.3
+
 ## 0.104.3
 
 ### Patch Changes

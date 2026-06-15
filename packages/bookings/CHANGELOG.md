@@ -1,5 +1,57 @@
 # @voyant-travel/bookings
 
+## 0.120.0
+
+### Minor Changes
+
+- efc803c: Add Booking-owned origin/provenance records for quote, trip, catalog,
+  provider/source, and legacy transaction handoffs. Legacy transaction-backed
+  reservation flows now persist compatibility ids through booking origins.
+- 3cc83b6: Move extras runtime and React source behind Inventory and Bookings owner
+  subpaths. The old runtime and React extras package names are removed from v1;
+  first-party imports use the Inventory and Bookings owner paths.
+- 2c9c4a4: Retire the runtime Transactions packages before v1. The default Bookings/OCTO
+  bridge now reads booking origin/provenance records instead of the legacy
+  booking-to-transaction detail table, and the public `@voyant-travel/transactions`
+  and `@voyant-travel/transactions-react` workspaces have been removed. The
+  legacy `@voyant-travel/transactions-contracts` workspace is removed as well;
+  use the owning domain contract/runtime package for replacement validation
+  schemas.
+
+### Patch Changes
+
+- 2f1228a: Move booking extras runtime routes and services behind the Bookings extras owner
+  path.
+- d92d1a8: Stamp Booking-owned origin records for direct storefront booking sessions and
+  Trips catalog reservation handoffs. This keeps active reservation
+  provenance in Bookings while preserving existing storefront and trips
+  route behavior.
+- 6bff46f: Add Commerce runtime wiring for the pricing, markets, sellability, and
+  promotions cluster. Templates can now declare one Commerce runtime entry while
+  preserving the existing package route prefixes during the v1 migration.
+
+  Allow manifest module factories in `@voyant-travel/hono/composition` to expand to
+  multiple Hono modules. Remove the Promotions package's direct Storefront
+  dependency by keeping the storefront offer resolver structurally typed.
+
+- 44c3875: Move booking requirements backend and React surfaces under the Bookings package
+  family. New imports are available from `@voyant-travel/bookings/requirements*` and
+  `@voyant-travel/bookings-react/requirements*`; the old standalone package names are
+  removed from v1. Existing
+  `/v1/booking-requirements/*` and `/v1/public/booking-requirements/*` API paths
+  continue to be mounted by the operator starter.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- e80e3d3: Add Trips reservation plans and route active plan submission through Bookings.
+- Updated dependencies [6bff46f]
+- Updated dependencies [2c9c4a4]
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/bookings-contracts@0.105.0
+  - @voyant-travel/action-ledger@0.104.11
+
 ## 0.119.3
 
 ### Patch Changes
@@ -2685,7 +2737,10 @@
   Also adds `accessibilityNeeds` to `upsertTravelerTravelDetailsSchema` (the underlying PII service has always supported it; the public-facing schema was missing it).
 
   ```ts
-  import { bookingsService, createBookingPiiService } from "@voyant-travel/bookings";
+  import {
+    bookingsService,
+    createBookingPiiService,
+  } from "@voyant-travel/bookings";
 
   const pii = createBookingPiiService({ kms });
 

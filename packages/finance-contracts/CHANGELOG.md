@@ -1,5 +1,17 @@
 # @voyant-travel/finance-contracts
 
+## 0.104.5
+
+### Patch Changes
+
+- 9e970a5: Move checkout collection orchestration and React payment collection surfaces
+  behind Finance owner paths. The old Checkout workspace packages are removed
+  from the v1 branch while payment plugins, storefront SDK helpers, and the
+  operator starter retarget Finance checkout interfaces.
+- b711b04: Reject generic payment `orderId` request fields and keep legacy order references behind explicit `legacyOrderId` targets.
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/schema-kit@0.105.3
+
 ## 0.104.4
 
 ### Patch Changes

@@ -1,5 +1,64 @@
 # @voyant-travel/storefront
 
+## 0.121.0
+
+### Minor Changes
+
+- 23fc4bd: Fold storefront verification into the storefront package under
+  `@voyant-travel/storefront/verification`, including the public challenge routes,
+  service helpers, validation schemas, and Drizzle schema entrypoint.
+- 6196b3b: Move customer portal runtime and React surfaces under Storefront owner paths and
+  remove the old customer-portal workspace packages. Remove the retired Checkout
+  workspace packages now that Finance and Finance React own checkout collection
+  services, hooks, and UI.
+
+### Patch Changes
+
+- 3cc83b6: Move extras runtime and React source behind Inventory and Bookings owner
+  subpaths. The old runtime and React extras package names are removed from v1;
+  first-party imports use the Inventory and Bookings owner paths.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- c8189fc: Split the legacy `@voyant-travel/crm-contracts` package into
+  `@voyant-travel/relationships-contracts` and
+  `@voyant-travel/quotes-contracts`. Runtime packages and public validation
+  imports now depend on the domain-specific contract packages.
+- f916094: Remove Storefront runtime dependencies on Product and Availability packages.
+  Public departure, pricing, itinerary, and booking-session reads now use
+  Storefront-owned SQL boundary queries, while Product and Availability remain
+  dev/test dependencies for integration coverage.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [e388bc9]
+- Updated dependencies [6bff46f]
+- Updated dependencies [a4e0909]
+- Updated dependencies [eb17d3d]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [0fa993c]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [3e160d3]
+- Updated dependencies [c3f4fa0]
+- Updated dependencies [47fef18]
+- Updated dependencies [063f2b5]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [c8189fc]
+- Updated dependencies [6196b3b]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/commerce@0.2.0
+  - @voyant-travel/hono@0.110.0
+  - @voyant-travel/finance@0.120.0
+  - @voyant-travel/legal@0.120.0
+  - @voyant-travel/relationships@0.119.3
+  - @voyant-travel/relationships-contracts@0.107.0
+  - @voyant-travel/identity@0.120.0
+
 ## 0.120.1
 
 ### Patch Changes

@@ -1,5 +1,49 @@
 # @voyant-travel/finance-react
 
+## 0.120.0
+
+### Minor Changes
+
+- 9e970a5: Move checkout collection orchestration and React payment collection surfaces
+  behind Finance owner paths. The old Checkout workspace packages are removed
+  from the v1 branch while payment plugins, storefront SDK helpers, and the
+  operator starter retarget Finance checkout interfaces.
+
+### Patch Changes
+
+- 3408b2a: Move availability, allocation UI, resources, ground logistics, and places source
+  under Operations owner paths. The old operated-execution package names are
+  removed from the v1 workspace surface while first-party runtime, React, and
+  operator imports use `@voyant-travel/operations` and `@voyant-travel/operations-react`
+  surfaces.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- 6196b3b: Move customer portal runtime and React surfaces under Storefront owner paths and
+  remove the old customer-portal workspace packages. Remove the retired Checkout
+  workspace packages now that Finance and Finance React own checkout collection
+  services, hooks, and UI.
+- Updated dependencies [dd71543]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [0fa993c]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [3408b2a]
+- Updated dependencies [3e160d3]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [47fef18]
+- Updated dependencies [6196b3b]
+  - @voyant-travel/admin@0.111.1
+  - @voyant-travel/inventory-react@0.2.0
+  - @voyant-travel/bookings-react@0.120.0
+  - @voyant-travel/finance@0.120.0
+  - @voyant-travel/operations-react@0.1.0
+  - @voyant-travel/distribution-react@0.110.0
+
 ## 0.119.5
 
 ### Patch Changes

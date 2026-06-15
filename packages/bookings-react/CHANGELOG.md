@@ -1,5 +1,62 @@
 # @voyant-travel/bookings-react
 
+## 0.120.0
+
+### Minor Changes
+
+- 3cc83b6: Move extras runtime and React source behind Inventory and Bookings owner
+  subpaths. The old runtime and React extras package names are removed from v1;
+  first-party imports use the Inventory and Bookings owner paths.
+
+### Patch Changes
+
+- 44c3875: Move booking requirements backend and React surfaces under the Bookings package
+  family. New imports are available from `@voyant-travel/bookings/requirements*` and
+  `@voyant-travel/bookings-react/requirements*`; the old standalone package names are
+  removed from v1. Existing
+  `/v1/booking-requirements/*` and `/v1/public/booking-requirements/*` API paths
+  continue to be mounted by the operator starter.
+- 3408b2a: Move availability, allocation UI, resources, ground logistics, and places source
+  under Operations owner paths. The old operated-execution package names are
+  removed from the v1 workspace surface while first-party runtime, React, and
+  operator imports use `@voyant-travel/operations` and `@voyant-travel/operations-react`
+  surfaces.
+- 47fef18: Retarget first-party imports from the removed beta package names to their owner
+  packages. Operated product UI now imports Inventory React, commercial UI imports
+  Commerce React, supplier UI imports Distribution React, checkout UI imports
+  Finance React, and operated place/availability schema references import
+  Operations owner paths.
+- Updated dependencies [dd71543]
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [97d520c]
+- Updated dependencies [85f9ce1]
+- Updated dependencies [6bff46f]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [9e970a5]
+- Updated dependencies [44c3875]
+- Updated dependencies [3408b2a]
+- Updated dependencies [3e160d3]
+- Updated dependencies [65b3782]
+- Updated dependencies [a101971]
+- Updated dependencies [c3f4fa0]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [6196b3b]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/admin@0.111.1
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/commerce-react@0.2.0
+  - @voyant-travel/inventory-react@0.2.0
+  - @voyant-travel/finance-react@0.120.0
+  - @voyant-travel/operations-react@0.1.0
+  - @voyant-travel/distribution-react@0.110.0
+  - @voyant-travel/legal-react@0.120.0
+  - @voyant-travel/catalog-react@0.118.0
+  - @voyant-travel/identity-react@0.120.0
+  - @voyant-travel/relationships-react@0.120.0
+
 ## 0.119.3
 
 ### Patch Changes

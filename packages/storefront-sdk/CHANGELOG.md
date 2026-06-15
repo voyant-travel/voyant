@@ -1,5 +1,33 @@
 # @voyant-travel/storefront-sdk
 
+## 0.121.0
+
+### Patch Changes
+
+- 9e970a5: Move checkout collection orchestration and React payment collection surfaces
+  behind Finance owner paths. The old Checkout workspace packages are removed
+  from the v1 branch while payment plugins, storefront SDK helpers, and the
+  operator starter retarget Finance checkout interfaces.
+- Updated dependencies [2f1228a]
+- Updated dependencies [efc803c]
+- Updated dependencies [d92d1a8]
+- Updated dependencies [6bff46f]
+- Updated dependencies [3cc83b6]
+- Updated dependencies [0fa993c]
+- Updated dependencies [9e970a5]
+- Updated dependencies [b711b04]
+- Updated dependencies [44c3875]
+- Updated dependencies [23fc4bd]
+- Updated dependencies [47fef18]
+- Updated dependencies [2c9c4a4]
+- Updated dependencies [c8189fc]
+- Updated dependencies [f916094]
+- Updated dependencies [6196b3b]
+- Updated dependencies [e80e3d3]
+  - @voyant-travel/bookings@0.120.0
+  - @voyant-travel/storefront@0.121.0
+  - @voyant-travel/finance@0.120.0
+
 ## 0.120.1
 
 ### Patch Changes
