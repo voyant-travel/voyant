@@ -32,9 +32,9 @@ export const sendBookingReminders = workflow({
   definitions, runner code, or Node-only workflow dependencies.
 - `@voyant-travel/workflows/testing` — in-process test harness
   (`runWorkflowForTest`, `resumeWorkflowForTest`).
-- `@voyant-travel/workflows/handler` — tenant-side step handler for the
-  v1 wire protocol. Mount at `POST /__voyant/workflow-step` in your
-  Worker: `export default { fetch: createStepHandler() }`.
+- `@voyant-travel/workflows/handler` — node-side step handler for the
+  v1 wire protocol. Self-host runtimes can call it directly or mount it at
+  an internal HTTP boundary.
 - `@voyant-travel/workflows/auth` — paired HMAC signer + verifier for the
   `X-Voyant-Dispatch-Auth` header. Wires into the orchestrator's
   `sign` hook and the handler's `verifyRequest` hook with a shared
@@ -48,9 +48,9 @@ export const sendBookingReminders = workflow({
 - `@voyant-travel/workflows/protocol` — wire-protocol types shared with the
   orchestrator.
 
-## Managed Cloud runtime split
+## Managed Cloud runtime
 
-Managed Voyant Cloud runs workflow bundles in the hosted Cloud runtime. App
+Managed Voyant Cloud runs workflow bundles in the hosted Node runtime. App
 bundles should import only `@voyant-travel/workflows/client` and call
 `workflows.trigger(...)`; workflow definition files keep importing
 `workflow(...)`, `ctx.step(...)`, `ctx.sleep(...)`, and `trigger.on(...)` from
@@ -68,9 +68,8 @@ VOYANT_CLOUD_ENVIRONMENT
 The client posts trigger calls to the app-scoped Cloud API. The Cloud-mode
 driver forwards event ingest to the same boundary, but workflow release
 registration is disabled by default: Cloud creates releases from deployments,
-artifacts, hashes, and environment snapshots. Existing self-host Node/Docker
-and Cloudflare runtimes continue to use the driver/orchestrator packages
-directly.
+artifacts, hashes, and environment snapshots. Self-host deployments should use
+the Node/Postgres driver and orchestrator packages directly.
 
 ## Full contract
 

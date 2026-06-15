@@ -1,4 +1,4 @@
-// Mode 2 driver — pure Node, Postgres-backed.
+// Node/Postgres workflow driver.
 // agent-quality: file-size exception -- Public driver factory currently owns manifest, trigger, event-ingest, schedule, and admin wiring; split only with a dedicated driver-surface refactor.
 //
 // Returns a `DriverFactory` (per architecture doc §6.3) that the framework
@@ -16,7 +16,7 @@
 // the returned driver's `start()` lifecycle helper or — when used from
 // `createApp()` — by the framework's bootstrap.
 //
-// See architecture doc §7 for the full Mode 2 design.
+// See docs/architecture/workflows-runtime-architecture.md.
 
 import type {
   ListRunsOptions,
@@ -212,7 +212,7 @@ function normalizeManifestCapabilities(
 }
 
 /**
- * Build the Mode 2 driver factory. The factory closes over its options
+ * Build the Node/Postgres driver factory. The factory closes over its options
  * and returns a fresh `WorkflowDriver` when `createApp()` (or a test)
  * calls it with `DriverFactoryDeps`.
  *
@@ -250,7 +250,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
     // Persistent wakeup manager — polls `voyant_wakeups` for runs
     // parked on DATETIME waitpoints and resumes them via the orchestrator's
     // `resumeDueAlarms`. This is what makes `ctx.sleep(...)` actually
-    // wake up in Mode 2 (architecture doc §7.2).
+    // wake up in the Node/Postgres runtime.
     const wakeupManager: PersistentWakeupManager<RunRecord> = createPersistentWakeupManager({
       wakeupStore,
       handler,
@@ -259,7 +259,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       intervalMs: opts.wakeupPollIntervalMs,
       now,
       logger: (level, message, data) => deps.logger(level, message, data),
-      // For Mode 2 the "stored" representation IS the RunRecord — the
+      // For the Node/Postgres driver, the "stored" representation is the RunRecord.
       // postgres-run-record-store carries the full state on `run_record`
       // JSONB. So toRecord/fromRecord are identity.
       async getRun(runId) {
@@ -273,7 +273,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       fromRecord: (record) => record,
       async listRuns() {
         // Bootstrap-time list of currently-parked runs to seed the wakeup
-        // store. Mode 2 uses status="waiting" filter on the run-record store.
+        // store. The Node driver uses status="waiting" on the run-record store.
         return runStore.list({ status: "waiting" })
       },
     })
@@ -523,7 +523,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       )
     }
 
-    // ---- WorkflowAdmin (full; Mode 2 has Postgres-native query support) ----
+    // ---- WorkflowAdmin (full; Node/Postgres has native query support) ----
 
     const admin: WorkflowAdmin = {
       async listRuns(listOpts?: ListRunsOptions) {

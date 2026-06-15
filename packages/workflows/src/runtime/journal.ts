@@ -14,11 +14,9 @@ export interface StepJournalEntry {
   startedAt: number
   finishedAt: number
   /**
-   * Which runtime actually executed the step. Set by the executor when
-   * routing between `stepRunner` (edge) and `nodeStepRunner`.
-   * Informational only — doesn't affect replay.
+   * Runtime that executed the step. Informational only — doesn't affect replay.
    */
-  runtime?: "edge" | "node"
+  runtime?: "node"
 }
 
 export interface WaitpointResolutionEntry {

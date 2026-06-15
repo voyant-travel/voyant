@@ -47,7 +47,7 @@ function makeManifest(
       version: "1",
       steps: [],
       schedules: w.schedules,
-      defaultRuntime: "edge",
+      defaultRuntime: "node",
       hasCompensation: false,
       sourceLocation: { file: "test.ts", line: 1 },
     })),

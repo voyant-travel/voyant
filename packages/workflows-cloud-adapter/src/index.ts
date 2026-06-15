@@ -1,25 +1,16 @@
 // agent-quality: file-size exception -- owner: workflows-cloud-adapter; existing module stays co-located until a dedicated split preserves behavior and tests.
 // @voyant-travel/workflows-cloud-adapter
 //
-// Tenant Worker adapter for Voyant Cloud's workflows runtime. The package
-// keeps tenant entrypoints small while preserving the same Cloudflare
-// Durable Object run model used by the lower-level orchestrator adapter.
+// Legacy Tenant Worker adapter for Cloudflare-hosted workflow experiments.
 
-import { createBearerVerifier, createHmacSigner } from "@voyant-travel/workflows/auth"
-import {
-  handleStepRequest,
-  type StepJournalEntry,
-  type StepRunner,
-} from "@voyant-travel/workflows/handler"
+import { createBearerVerifier } from "@voyant-travel/workflows/auth"
+import { handleStepRequest } from "@voyant-travel/workflows/handler"
 import { createInMemoryRateLimiter } from "@voyant-travel/workflows/rate-limit"
 import type { StepHandler } from "@voyant-travel/workflows-orchestrator"
 import {
   type CfManifestStore,
-  type ContainerNamespaceLike,
-  createCfContainerStepRunner,
   createInlineDispatcher,
   createKvManifestStore,
-  createR2Presigner,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
   handleDurableObjectAlarm,
@@ -43,12 +34,6 @@ export interface CloudWorkflowsEnv {
   /** Per-run Durable Object namespace declared by the tenant Worker. */
   WORKFLOW_RUN_DO: DurableObjectNamespaceLike
   /**
-   * Platform-injected namespace for the node step-runner Container fleet.
-   * The binding may target the shared platform fleet or a platform-operated
-   * per-org dedicated runner; the tenant adapter treats both the same.
-   */
-  STEP_RUNNER?: ContainerNamespaceLike
-  /**
    * Optional KV namespace for workflow manifests. When present,
    * `/api/manifests*` and `/api/events` are enabled.
    */
@@ -64,29 +49,6 @@ export interface CloudWorkflowsEnv {
    * injects this on tenant workers; defaults to `"production"` when unset.
    */
   VOYANT_WORKFLOWS_ENVIRONMENT?: "production" | "preview" | "development" | string
-  /**
-   * Prefix for the R2 S3 API URL that hosts the container bundle.
-   * Expected form: `https://<account>.r2.cloudflarestorage.com/<bucket>`.
-   */
-  VOYANT_WORKFLOW_BUNDLE_URL_PREFIX?: string
-  /** R2 object key for this tenant Worker version's `container.mjs`. */
-  VOYANT_WORKFLOW_BUNDLE_KEY?: string
-  /** SHA-256 hex, or `sha256:<hex>`, for the container bundle bytes. */
-  VOYANT_WORKFLOW_BUNDLE_HASH?: string
-  /** R2 read-only access key id used to mint short-lived signed bundle URLs. */
-  VOYANT_WORKFLOW_BUNDLE_R2_ACCESS_KEY_ID?: string
-  /** R2 read-only secret access key used to mint short-lived signed bundle URLs. */
-  VOYANT_WORKFLOW_BUNDLE_R2_SECRET_ACCESS_KEY?: string
-  /** Optional explicit R2 account id. Defaults to parsing URL_PREFIX. */
-  VOYANT_WORKFLOW_BUNDLE_R2_ACCOUNT_ID?: string
-  /** Optional explicit R2 bucket. Defaults to parsing URL_PREFIX. */
-  VOYANT_WORKFLOW_BUNDLE_R2_BUCKET?: string
-  /** Optional signed URL TTL in seconds. Defaults to 300. */
-  VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS?: string
-  /** Platform-managed Cloud Run node step runner endpoint. */
-  VOYANT_WORKFLOW_NODE_RUNNER_URL?: string
-  /** Shared secret used to sign dispatches to the platform step runner. */
-  VOYANT_WORKFLOW_STEP_AUTH_SECRET?: string
 }
 
 export interface DurableObjectStateLike {
@@ -343,7 +305,7 @@ async function buildStepHandler<Env extends CloudWorkflowsEnv>(
   env: Env,
   options: CloudExecutionOptions<Env> = defaultExecutionOptions as CloudExecutionOptions<Env>,
 ): Promise<StepHandler> {
-  const nodeStepRunner = await createNodeStepRunner(env, options)
+  void env
   const rateLimiter = createInMemoryRateLimiter()
 
   return (req, stepOptions) =>
@@ -351,293 +313,12 @@ async function buildStepHandler<Env extends CloudWorkflowsEnv>(
       req,
       {
         rateLimiter,
-        nodeStepRunner,
         services: options.services,
         now: options.now,
         logger: options.logger,
       },
       stepOptions,
     )
-}
-
-async function createNodeStepRunner<Env extends CloudWorkflowsEnv>(
-  env: Env,
-  options: CloudExecutionOptions<Env>,
-): Promise<StepRunner> {
-  if (env.VOYANT_WORKFLOW_NODE_RUNNER_URL) {
-    return createHttpNodeStepRunner(env, options)
-  }
-
-  if (!env.STEP_RUNNER) {
-    return createInlineNodeStepRunner(options.now)
-  }
-
-  const bundle = resolveBundleConfig(env)
-  const presign = createR2Presigner({
-    accountId: bundle.accountId,
-    accessKeyId: bundle.accessKeyId,
-    secretAccessKey: bundle.secretAccessKey,
-    bucket: bundle.bucket,
-  })
-  const sign = env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
-    ? await createHmacSigner(env.VOYANT_WORKFLOW_STEP_AUTH_SECRET)
-    : undefined
-
-  return createCfContainerStepRunner({
-    namespace: env.STEP_RUNNER,
-    sign,
-    logger: options.logger,
-    resolveBundle: async () => ({
-      url: await presign({
-        key: bundle.key,
-        expiresIn: bundle.expiresIn,
-      }),
-      hash: bundle.hash,
-    }),
-  })
-}
-
-async function createHttpNodeStepRunner<Env extends CloudWorkflowsEnv>(
-  env: Env,
-  options: CloudExecutionOptions<Env>,
-): Promise<StepRunner> {
-  const serviceUrl = env.VOYANT_WORKFLOW_NODE_RUNNER_URL?.replace(/\/+$/, "")
-  if (!serviceUrl) {
-    throw new Error(
-      "@voyant-travel/workflows-cloud-adapter: VOYANT_WORKFLOW_NODE_RUNNER_URL is empty",
-    )
-  }
-  const key = env.VOYANT_WORKFLOW_BUNDLE_KEY
-  const hash = env.VOYANT_WORKFLOW_BUNDLE_HASH
-  const missing = [
-    ["VOYANT_WORKFLOW_BUNDLE_KEY", key],
-    ["VOYANT_WORKFLOW_BUNDLE_HASH", hash],
-  ].filter(([, value]) => typeof value !== "string" || value.length === 0)
-  if (missing.length > 0) {
-    throw new Error(
-      `@voyant-travel/workflows-cloud-adapter: Cloud Run node runner is configured but bundle env is incomplete: ${missing
-        .map(([name]) => name)
-        .join(", ")}`,
-    )
-  }
-  const sign = env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
-    ? await createHmacSigner(env.VOYANT_WORKFLOW_STEP_AUTH_SECRET)
-    : undefined
-
-  return async ({
-    stepId,
-    attempt,
-    input,
-    stepCtx,
-    runId,
-    workflowId,
-    workflowVersion,
-    projectId,
-    organizationId,
-    options: stepOptions,
-    journal,
-  }): Promise<StepJournalEntry> => {
-    const startedAt = Date.now()
-    const payload = {
-      runId,
-      workflowId,
-      workflowVersion,
-      projectId,
-      organizationId,
-      stepId,
-      attempt,
-      input,
-      options: {
-        machine: stepOptions.machine,
-        timeout:
-          typeof stepOptions.timeout === "string" || typeof stepOptions.timeout === "number"
-            ? stepOptions.timeout
-            : undefined,
-      },
-      bundle: {
-        key,
-        hash,
-      },
-      journal,
-    }
-    const body = JSON.stringify(payload)
-    const headers: Record<string, string> = {
-      "content-type": "application/json; charset=utf-8",
-    }
-    if (sign) headers["x-voyant-step-auth"] = await sign(body)
-
-    let response: Response
-    try {
-      response = await fetch(`${serviceUrl}/step`, {
-        method: "POST",
-        headers,
-        body,
-        signal: stepCtx.signal,
-      })
-    } catch (err) {
-      options.logger?.("error", "cloud-run-node: fetch threw", {
-        runId,
-        stepId,
-        error: err instanceof Error ? err.message : String(err),
-      })
-      return failedNodeStep(attempt, startedAt, "NODE_RUNNER_DISPATCH_FAILED", err)
-    }
-
-    const text = await response.text()
-    if (!response.ok) {
-      options.logger?.("warn", "cloud-run-node: non-2xx response", {
-        runId,
-        stepId,
-        status: response.status,
-        body: text.slice(0, 500),
-      })
-      return failedNodeStep(
-        attempt,
-        startedAt,
-        "NODE_RUNNER_HTTP_ERROR",
-        new Error(`node runner returned HTTP ${response.status}: ${text}`),
-      )
-    }
-
-    try {
-      return JSON.parse(text) as StepJournalEntry
-    } catch (err) {
-      return failedNodeStep(
-        attempt,
-        startedAt,
-        "NODE_RUNNER_INVALID_RESPONSE",
-        new Error(`node runner returned non-JSON body: ${String(err)}`),
-      )
-    }
-  }
-}
-
-function failedNodeStep(
-  attempt: number,
-  startedAt: number,
-  code: string,
-  err: unknown,
-): StepJournalEntry {
-  const e = err instanceof Error ? err : new Error(String(err))
-  return {
-    attempt,
-    status: "err",
-    startedAt,
-    finishedAt: Date.now(),
-    runtime: "node",
-    error: {
-      category: "RUNTIME_ERROR",
-      code,
-      message: e.message,
-      name: e.name,
-      stack: e.stack,
-    },
-  }
-}
-
-function createInlineNodeStepRunner(now = () => Date.now()): StepRunner {
-  return async ({ attempt, fn, stepCtx }): Promise<StepJournalEntry> => {
-    const startedAt = now()
-    try {
-      return {
-        attempt,
-        status: "ok",
-        output: await fn(stepCtx),
-        startedAt,
-        finishedAt: now(),
-      }
-    } catch (err) {
-      const e = err as Error
-      return {
-        attempt,
-        status: "err",
-        startedAt,
-        finishedAt: now(),
-        error: {
-          category: "USER_ERROR",
-          code:
-            typeof (err as { code?: unknown }).code === "string"
-              ? (err as { code: string }).code
-              : "UNKNOWN",
-          message: e?.message ?? String(err),
-          name: e?.name,
-          stack: e?.stack,
-        },
-      }
-    }
-  }
-}
-
-function resolveBundleConfig(env: CloudWorkflowsEnv): {
-  accountId: string
-  bucket: string
-  accessKeyId: string
-  secretAccessKey: string
-  key: string
-  hash: string
-  expiresIn: number
-} {
-  const parsedPrefix = parseBundleUrlPrefix(env.VOYANT_WORKFLOW_BUNDLE_URL_PREFIX)
-  const accountId = env.VOYANT_WORKFLOW_BUNDLE_R2_ACCOUNT_ID ?? parsedPrefix.accountId
-  const bucket = env.VOYANT_WORKFLOW_BUNDLE_R2_BUCKET ?? parsedPrefix.bucket
-  const accessKeyId = env.VOYANT_WORKFLOW_BUNDLE_R2_ACCESS_KEY_ID
-  const secretAccessKey = env.VOYANT_WORKFLOW_BUNDLE_R2_SECRET_ACCESS_KEY
-  const key = env.VOYANT_WORKFLOW_BUNDLE_KEY
-  const hash = env.VOYANT_WORKFLOW_BUNDLE_HASH
-
-  const missing = [
-    ["VOYANT_WORKFLOW_BUNDLE_R2_ACCESS_KEY_ID", accessKeyId],
-    ["VOYANT_WORKFLOW_BUNDLE_R2_SECRET_ACCESS_KEY", secretAccessKey],
-    ["VOYANT_WORKFLOW_BUNDLE_KEY", key],
-    ["VOYANT_WORKFLOW_BUNDLE_HASH", hash],
-  ].filter(([, value]) => typeof value !== "string" || value.length === 0)
-
-  if (!env.VOYANT_WORKFLOW_BUNDLE_URL_PREFIX && (!accountId || !bucket)) {
-    missing.push(["VOYANT_WORKFLOW_BUNDLE_URL_PREFIX", env.VOYANT_WORKFLOW_BUNDLE_URL_PREFIX])
-  }
-  if (!accountId) missing.push(["VOYANT_WORKFLOW_BUNDLE_R2_ACCOUNT_ID", accountId])
-  if (!bucket) missing.push(["VOYANT_WORKFLOW_BUNDLE_R2_BUCKET", bucket])
-  if (missing.length > 0) {
-    throw new Error(
-      `@voyant-travel/workflows-cloud-adapter: STEP_RUNNER is configured but bundle env is incomplete: ${missing
-        .map(([name]) => name)
-        .join(", ")}`,
-    )
-  }
-
-  const expiresIn = Number(env.VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS ?? 300)
-  if (!Number.isFinite(expiresIn) || expiresIn < 1 || expiresIn > 604_800) {
-    throw new Error(
-      "@voyant-travel/workflows-cloud-adapter: VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS must be 1..604800",
-    )
-  }
-
-  return {
-    accountId: accountId!,
-    bucket: bucket!,
-    accessKeyId: accessKeyId!,
-    secretAccessKey: secretAccessKey!,
-    key: key!,
-    hash: hash!,
-    expiresIn,
-  }
-}
-
-function parseBundleUrlPrefix(prefix: string | undefined): {
-  accountId?: string
-  bucket?: string
-} {
-  if (!prefix) return {}
-  const url = new URL(prefix)
-  const suffix = ".r2.cloudflarestorage.com"
-  const accountId = url.hostname.endsWith(suffix)
-    ? url.hostname.slice(0, -suffix.length)
-    : undefined
-  const bucket = url.pathname.replace(/^\/+/, "").split("/")[0]
-  return {
-    accountId: accountId && accountId.length > 0 ? accountId : undefined,
-    bucket: bucket && bucket.length > 0 ? bucket : undefined,
-  }
 }
 
 function cacheFor(env: object): EnvCache {

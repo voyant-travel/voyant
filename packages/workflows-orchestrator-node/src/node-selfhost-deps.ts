@@ -32,7 +32,6 @@ import {
   requireExternalResumeFromStep,
   requireExternalSeedResults,
 } from "./node-selfhost-resume-input.js"
-import { nodeStepRunner } from "./node-step-runner.js"
 import { createPersistentWakeupManager } from "./persistent-wakeup-manager.js"
 import { createPostgresConnection } from "./postgres.js"
 import { createPostgresSnapshotRunStore } from "./postgres-snapshot-run-store.js"
@@ -101,7 +100,7 @@ export async function createNodeSelfHostDeps(
   const chunkBus = createChunkBus()
 
   const stepHandler: StepHandler = async (req, stepOpts) =>
-    handleStepRequest(req, { rateLimiter, nodeStepRunner, services: opts.services }, stepOpts)
+    handleStepRequest(req, { rateLimiter, services: opts.services }, stepOpts)
 
   const wakeupStore = pg ? createPostgresWakeupStore({ db: pg.db }) : createFsWakeupStore()
   const leaseOwner = opts.wakeupLeaseOwner ?? createDefaultWakeupLeaseOwner()

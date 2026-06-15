@@ -334,21 +334,23 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
  * crucially — after runtime bindings are available.
  *
  * `driver` is **always** a function-of-bindings: `(env) => DriverFactory`.
- * This unambiguous shape works for all deployment modes:
+ * This unambiguous shape works for local node runtimes and managed-cloud
+ * forwarding drivers:
  *
- * **Mode 2 / InMemory** — wrap your direct factory:
+ * **Node / InMemory** — wrap your direct factory:
  *
  *     workflows: {
  *       driver: () => createNodeStandaloneDriver({ db }),
  *     }
  *
- * **Mode 1 (CF edge)** — pull options off `env`:
+ * **Managed Cloud forwarding** — pull credentials off `env`:
  *
  *     workflows: {
- *       driver: (env) => createCloudflareEdgeDriver({
- *         orchestratorNamespace: env.WORKFLOW_RUN_DO,
- *         manifestKv: env.WORKFLOW_MANIFESTS,
- *         tenantScript: "tenant-bundle",
+ *       driver: (env) => () => createCloudWorkflowDriver({
+ *         baseUrl: env.VOYANT_CLOUD_WORKFLOWS_URL,
+ *         triggerToken: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
+ *         appSlug: env.VOYANT_CLOUD_APP_SLUG,
+ *         environment: env.VOYANT_CLOUD_ENVIRONMENT,
  *       }),
  *     }
  *

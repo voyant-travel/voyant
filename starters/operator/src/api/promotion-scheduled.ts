@@ -10,15 +10,13 @@
  *   - `affected.kind === "all"`      → forward a `promotion.changed`
  *     envelope into the workflow driver (`driver.ingestEvent`). The
  *     `trigger.on()` filter declared by the promotions module routes
- *     it into the bulk-reindex workflow, which fans out per-product
- *     steps so each one stays inside Worker CPU limits.
+ *     it into the bulk-reindex workflow.
  *
  * Why dispatch directly instead of emitting through the in-process
- * EventBus: Cloudflare Workers scheduled handlers run in their own
- * isolate-call and don't share an in-process `EventBus` with the
- * running app. The workflow driver, by contrast, persists state in
- * the durable `WORKFLOW_RUN_DO` + `WORKFLOW_MANIFESTS` bindings, so
- * a fresh per-tick instance still routes correctly.
+ * EventBus: scheduled handlers run in their own isolate-call and don't
+ * share an in-process `EventBus` with the running app. The managed Cloud
+ * workflow driver forwards events to the hosted runtime, so a fresh
+ * per-tick instance still routes correctly.
  *
  * Per docs/architecture/promotions-architecture.md §9.2.
  */
@@ -29,7 +27,7 @@ import {
   PROMOTION_CHANGED_EVENT,
   runPromotionBoundaryScheduler,
 } from "@voyant-travel/commerce"
-import { createCloudflareEdgeDriver } from "@voyant-travel/workflows-orchestrator-cloudflare"
+import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 
 import {
   buildEmbeddingProvider,
@@ -40,6 +38,7 @@ import {
   withEmbedding,
 } from "./lib/catalog-runtime"
 import { withDbFromEnv } from "./lib/db"
+import { operatorWorkflowCloudEnv } from "./operator-runtime-adapter"
 
 /** Cron expression — declared in `wrangler.jsonc` and matched against `event.cron` in `entry.ts`. */
 export { PROMOTION_BOUNDARY_SCHEDULER_CRON } from "../scheduled-crons"
@@ -91,21 +90,11 @@ export async function runScheduledPromotionBoundary(
         reindexedProductIds++
       }
 
-      // Forward `affected.kind === "all"` crossings into the workflow
-      // runtime so the bulk-reindex workflow fires the same way it does
-      // when CRUD routes emit `promotion.changed`. Build a per-tick
-      // driver from the same bindings `createApp` uses; the manifest
-      // lives in KV so a fresh isolate finds the same routing config.
+      // Forward `affected.kind === "all"` crossings into the managed
+      // workflow runtime so the bulk-reindex workflow fires the same way
+      // it does when CRUD routes emit `promotion.changed`.
       if (allCrossings.length > 0) {
-        const driverFactory = createCloudflareEdgeDriver({
-          orchestratorNamespace: env.WORKFLOW_RUN_DO,
-          manifestKv: env.WORKFLOW_MANIFESTS,
-        })
-        const driver = driverFactory({
-          services: { has: () => false, resolve: () => undefined as never },
-          logger: (level, msg, data) =>
-            console[level === "debug" ? "info" : level](`[workflows] ${msg}`, data ?? {}),
-        })
+        const driver = createCloudWorkflowDriver({ env: operatorWorkflowCloudEnv(env) })
         for (const crossing of allCrossings) {
           await driver.ingestEvent({
             environment: "development",

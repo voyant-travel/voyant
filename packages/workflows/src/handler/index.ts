@@ -60,20 +60,6 @@ export interface StepHandlerDeps {
    */
   rateLimiter?: RateLimiter
   /**
-   * Runner for steps declared with `options.runtime === "node"`.
-   * Leave unset for handlers that only run edge steps; any node step
-   * will then fail with `NODE_RUNTIME_UNAVAILABLE`.
-   *
-   * Typical impl dispatches to a separate sandboxed context:
-   *   - Local dev: an in-process passthrough (same Node process).
-   *   - CF production: a Cloudflare Container binding, via
-   *     `createCfContainerStepRunner` from `@voyant-travel/workflows-orchestrator-cloudflare`.
-   *
-   * This is bring-your-own because the right dispatch shape depends on
-   * the target runtime; the executor only cares that a runner exists.
-   */
-  nodeStepRunner?: StepRunner
-  /**
    * Read-only service resolver, surfaced to step bodies as `ctx.services`.
    * The framework's `createApp()` wires this from its `ModuleContainer`;
    * raw orchestrator harnesses (tests, ad-hoc scripts) typically leave
@@ -252,7 +238,6 @@ async function runStepInner(
       runStartedAt: reqBody.runMeta.startedAt,
       tags: reqBody.runMeta.tags,
       stepRunner,
-      nodeStepRunner: deps.nodeStepRunner,
       rateLimiter: deps.rateLimiter,
       services: deps.services,
       now,
@@ -273,8 +258,8 @@ async function runStepInner(
 
 /**
  * Build a step runner that executes the step body in the same
- * process. Suitable for `runtime: "edge"`. Container-runtime steps
- * will swap this for a dispatching runner that POSTs to a pod.
+ * process. Hosted runtimes can replace this with a dispatching runner
+ * that POSTs to a Node execution service.
  */
 function createInProcessStepRunner(now: () => number): StepRunner {
   return async ({ stepId: _stepId, attempt, fn, stepCtx }): Promise<StepJournalEntry> => {

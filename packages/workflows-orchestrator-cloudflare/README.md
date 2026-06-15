@@ -1,10 +1,14 @@
 # @voyant-travel/workflows-orchestrator-cloudflare
 
-Cloudflare Worker + Durable Object adapter for
+Legacy Cloudflare Worker + Durable Object adapter for
 [`@voyant-travel/workflows-orchestrator`](../workflows-orchestrator). Composes
 the protocol-agnostic state machine with DO-backed storage and a
 pluggable **step dispatcher** that delivers step requests to wherever
 workflow code lives.
+
+Current managed Voyant Cloud workflow execution is Node-only and lives in the
+cloud repository. Use this package only for legacy/self-host Cloudflare Worker
+deployments.
 
 This package is the building block; the deployable artifact lives in
 [`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker),

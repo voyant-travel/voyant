@@ -1,11 +1,9 @@
 import { __resetRegistry, workflow } from "@voyant-travel/workflows"
-import { createHmacSigner } from "@voyant-travel/workflows/auth"
 import type { DurableObjectStorageLike } from "@voyant-travel/workflows-orchestrator-cloudflare"
 import { beforeEach, describe, expect, it } from "vitest"
 import {
   type CloudWorkflowsEnv,
   createCloudOrchestrator,
-  handleCloudFetch,
   mountWorkflows,
   WorkflowRunDO,
   type WorkflowRunDOClass,
@@ -100,7 +98,7 @@ beforeEach(() => {
 })
 
 describe("createCloudOrchestrator", () => {
-  it("falls back to inline execution for runtime=node steps when STEP_RUNNER is absent", async () => {
+  it("executes runtime=node steps through the single SDK runner path", async () => {
     workflow<{ n: number }, number>({
       id: "inline-node",
       async run(input, ctx) {
@@ -158,137 +156,6 @@ describe("createCloudOrchestrator", () => {
     const body = (await response.json()) as { status: string; output: unknown }
     expect(body.status).toBe("completed")
     expect(body.output).toBe("from-services")
-  })
-
-  it("dispatches runtime=node steps to STEP_RUNNER with a signed R2 bundle", async () => {
-    workflow<{ n: number }, unknown>({
-      id: "platform-node",
-      async run(input, ctx) {
-        return ctx.step("compute", { runtime: "node" }, async () => input.n + 1)
-      },
-    })
-
-    let capturedBody: {
-      bundle?: { url: string; hash: string }
-      workflowId?: string
-      stepId?: string
-    } = {}
-    let capturedAuth: string | null = null
-    const sign = await createHmacSigner("step-secret")
-    const stepRunner = {
-      idFromName(name: string) {
-        return name
-      },
-      get() {
-        return {
-          async fetch(request: Request): Promise<Response> {
-            capturedAuth = request.headers.get("x-voyant-step-auth")
-            capturedBody = (await request.json()) as typeof capturedBody
-            const body = JSON.stringify({
-              attempt: 1,
-              status: "ok",
-              output: "from-container",
-              startedAt: 10,
-              finishedAt: 20,
-              runtime: "node",
-            })
-            return new Response(body, {
-              status: 200,
-              headers: {
-                "content-type": "application/json",
-                "x-voyant-step-response-auth": await sign(body),
-              },
-            })
-          },
-        }
-      },
-    }
-
-    const envRef: { env?: CloudWorkflowsEnv } = {}
-    const env: CloudWorkflowsEnv = {
-      WORKFLOW_RUN_DO: makeRunNamespace(envRef),
-      STEP_RUNNER: stepRunner,
-      VOYANT_WORKFLOW_BUNDLE_URL_PREFIX: "https://abc123.r2.cloudflarestorage.com/voyant-bundles",
-      VOYANT_WORKFLOW_BUNDLE_KEY: "prj_test/v1/container.mjs",
-      VOYANT_WORKFLOW_BUNDLE_HASH: "sha256:abcd",
-      VOYANT_WORKFLOW_BUNDLE_R2_ACCESS_KEY_ID: "access-key-id",
-      VOYANT_WORKFLOW_BUNDLE_R2_SECRET_ACCESS_KEY: "secret-access-key",
-      VOYANT_WORKFLOW_STEP_AUTH_SECRET: "step-secret",
-    }
-    envRef.env = env
-
-    const response = await handleCloudFetch(triggerRequest("platform-node", "run_platform"), env)
-    expect(response.status).toBe(200)
-    const body = (await response.json()) as { status: string; output: unknown }
-    expect(body.status).toBe("completed")
-    expect(body.output).toBe("from-container")
-    expect(capturedAuth).toEqual(expect.any(String))
-    expect(capturedBody.workflowId).toBe("platform-node")
-    expect(capturedBody.stepId).toBe("compute")
-    expect(capturedBody.bundle?.hash).toBe("sha256:abcd")
-    expect(capturedBody.bundle?.url).toContain("abc123.r2.cloudflarestorage.com")
-    expect(capturedBody.bundle?.url).toContain("/voyant-bundles/prj_test/v1/container.mjs")
-    expect(capturedBody.bundle?.url).toContain("X-Amz-Signature=")
-  })
-
-  it("dispatches runtime=node steps to the Cloud Run node runner", async () => {
-    workflow<{ n: number }, unknown>({
-      id: "cloud-run-node",
-      async run(input, ctx) {
-        return ctx.step("compute", { runtime: "node" }, async () => input.n + 1)
-      },
-    })
-
-    let capturedBody: {
-      bundle?: { key: string; hash: string }
-      workflowId?: string
-      stepId?: string
-    } = {}
-    let capturedAuth: string | null = null
-    const originalFetch = globalThis.fetch
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = new Request(input, init)
-      capturedAuth = request.headers.get("x-voyant-step-auth")
-      capturedBody = JSON.parse(await request.text()) as typeof capturedBody
-      return new Response(
-        JSON.stringify({
-          attempt: 1,
-          status: "ok",
-          output: "from-cloud-run",
-          startedAt: 10,
-          finishedAt: 20,
-          runtime: "node",
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )
-    }) as typeof fetch
-
-    try {
-      const envRef: { env?: CloudWorkflowsEnv } = {}
-      const env: CloudWorkflowsEnv = {
-        WORKFLOW_RUN_DO: makeRunNamespace(envRef),
-        VOYANT_WORKFLOW_NODE_RUNNER_URL: "https://node-runner.example",
-        VOYANT_WORKFLOW_BUNDLE_KEY: "artifacts/acme/container.mjs",
-        VOYANT_WORKFLOW_BUNDLE_HASH: "sha256:abcd",
-        VOYANT_WORKFLOW_STEP_AUTH_SECRET: "step-secret",
-      }
-      envRef.env = env
-
-      const response = await handleCloudFetch(triggerRequest("cloud-run-node", "run_cloudrun"), env)
-      expect(response.status).toBe(200)
-      const body = (await response.json()) as { status: string; output: unknown }
-      expect(body.status).toBe("completed")
-      expect(body.output).toBe("from-cloud-run")
-      expect(capturedAuth).toEqual(expect.any(String))
-      expect(capturedBody.workflowId).toBe("cloud-run-node")
-      expect(capturedBody.stepId).toBe("compute")
-      expect(capturedBody.bundle).toEqual({
-        key: "artifacts/acme/container.mjs",
-        hash: "sha256:abcd",
-      })
-    } finally {
-      globalThis.fetch = originalFetch
-    }
   })
 })
 

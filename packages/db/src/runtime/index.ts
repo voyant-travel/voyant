@@ -1,4 +1,4 @@
-// Runtime exports for compatibility with edge/node adapters
+// Runtime exports for server-side adapters.
 export {
   createDbClient,
   createServerlessDbClient,

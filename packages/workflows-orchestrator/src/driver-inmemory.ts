@@ -387,10 +387,10 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         }
       },
 
-      // streamRun is not implemented for InMemory in PR1. Dashboards that
+      // streamRun is not implemented for InMemory. Dashboards that
       // probe `driver.admin.streamRun` get `undefined` and fall back to
-      // their non-streaming view. Mode 2 + Mode 1 implement this in later
-      // PRs against their respective journal sources.
+      // their non-streaming view. Node/Postgres and legacy Cloudflare
+      // drivers can provide their own journal streams.
     }
 
     return {

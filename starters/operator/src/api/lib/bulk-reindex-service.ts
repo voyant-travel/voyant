@@ -3,11 +3,7 @@
  * `@voyant-travel/commerce`. Bridges the workflow runtime back into the
  * operator's catalog plane: enumerate every owned product, then reindex
  * one at a time. The promotions workflow drives the loop with
- * `ctx.parallel` so each per-product reindex stays inside Worker CPU
- * limits.
- *
- * Wired into the workflow step handler via `ctx.services.resolve(...)`
- * — see `entry.ts`'s WorkflowRunDO + `BULK_REINDEX_SERVICE_KEY`.
+ * `ctx.parallel` so each per-product reindex stays bounded.
  */
 
 import { createIndexerService } from "@voyant-travel/catalog"

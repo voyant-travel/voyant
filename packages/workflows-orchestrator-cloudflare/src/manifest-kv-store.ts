@@ -1,6 +1,6 @@
 // KV-backed manifest store for the Cloudflare orchestrator.
 //
-// Mirrors the Mode 2 ManifestStore contract from
+// Mirrors the Node/Postgres ManifestStore contract from
 // `@voyant-travel/workflows-orchestrator-node`'s `createPostgresManifestStore`,
 // just against KV instead of Postgres. Both are consumed by their
 // respective driver factories — the orchestrator's `WorkflowDriver`
@@ -22,7 +22,7 @@
 /**
  * Structural view of a `WorkflowManifest` envelope. Mirrors the shape
  * `@voyant-travel/workflows-orchestrator-node`'s manifest store uses, declared
- * locally so this package stays free of the Mode 2 dep.
+ * locally so this package stays free of the Node adapter dependency.
  */
 export interface CfManifestEnvelope {
   environment: string

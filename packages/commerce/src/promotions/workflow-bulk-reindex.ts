@@ -6,10 +6,10 @@
  *     bridge reindexes inline on the in-process EventBus subscriber.
  *   - `{ kind: "all" }` — every owned product (global / market / audience-
  *     scoped offers). Inline enumeration would burn the request handler's
- *     CPU budget on a sizeable catalog, so this branch routes through a
+ *     request budget on a sizeable catalog, so this branch routes through a
  *     workflow that breaks the work into one step per product. The
  *     orchestrator schedules them in parallel so each individual step stays
- *     inside Worker CPU limits.
+ *     bounded.
  *
  * The workflow body delegates catalog access to a service the operator
  * template registers under `BULK_REINDEX_SERVICE_KEY`. The promotions
@@ -41,7 +41,7 @@ export const bulkReindexProductsWorkflow = workflow<
   BulkReindexProductsOutput
 >({
   id: "promotions.reindex-all-products",
-  defaultRuntime: "edge",
+  defaultRuntime: "node",
   async run(_input, ctx) {
     const svc = ctx.services.resolve<BulkReindexProductsService>(BULK_REINDEX_SERVICE_KEY)
 

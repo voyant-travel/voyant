@@ -69,7 +69,7 @@ describe("createApp workflows wiring", () => {
         // Wrap the factory so we can capture the constructed driver for
         // post-emit inspection. createApp normally uses the result
         // internally only.
-        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // function-of-bindings (Node/InMemory wrap with `() =>`); inner
         // factory is called by createApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
@@ -80,8 +80,8 @@ describe("createApp workflows wiring", () => {
     })
 
     // Fire the lazy bootstrap explicitly. Production code does this via
-    // first-request middleware; tests + Mode 2 sibling processes use
-    // app.ready() (architecture doc §18.1).
+    // first-request middleware; tests + Node sibling processes use
+    // app.ready().
     await app.ready()
     expect(driverHandle).toBeTruthy()
 
@@ -217,7 +217,7 @@ describe("createApp workflows wiring", () => {
       modules: [module],
       eventBus,
       workflows: {
-        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // function-of-bindings (Node/InMemory wrap with `() =>`); inner
         // factory is called by createApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
@@ -248,7 +248,7 @@ describe("createApp workflows wiring", () => {
       modules: [module],
       eventBus,
       workflows: {
-        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // function-of-bindings (Node/InMemory wrap with `() =>`); inner
         // factory is called by createApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
@@ -444,7 +444,7 @@ describe("createApp workflows wiring", () => {
   })
 
   test("ready(bindings) forwards real bindings to the driver factory", async () => {
-    // Mode 1 (CF-edge) callers that want eager boot must pass the real
+    // Binding-derived drivers that want eager boot must pass the real
     // env to ready() — otherwise the memoized bootstrap promise locks in
     // a driver built from `{}`, and every later request reuses that
     // broken instance with missing DO/KV bindings.

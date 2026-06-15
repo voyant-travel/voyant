@@ -1,4 +1,4 @@
-// Mode 2 driver compliance — runs the parameterized suite from
+// Node/Postgres driver compliance — runs the parameterized suite from
 // `@voyant-travel/workflows-orchestrator/testing` against `createNodeStandaloneDriver`.
 //
 // Gated on `TEST_DATABASE_URL`. Mirrors the pattern from
@@ -20,7 +20,7 @@ const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip
 const migrationsFolder = resolve(fileURLToPath(new URL("../../", import.meta.url)), "drizzle")
 
-describeIfDb("Mode 2 (Postgres) driver compliance", () => {
+describeIfDb("Node/Postgres driver compliance", () => {
   let connection: ReturnType<typeof createPostgresConnection>
 
   beforeAll(async () => {
@@ -51,7 +51,7 @@ describeIfDb("Mode 2 (Postgres) driver compliance", () => {
   // rogue pollers running against the shared DB across tests. Sleep-resume
   // (the only suite that needs the wheel) is its own test file with its
   // own truncate + driver lifecycle.
-  runDriverComplianceSuite("Mode 2 (Postgres)", () =>
+  runDriverComplianceSuite("Node/Postgres", () =>
     createNodeStandaloneDriver({ db: connection.db, disableTimeWheel: true }),
   )
 })

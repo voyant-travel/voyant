@@ -81,7 +81,7 @@ function buildRateLimitPolicy<TBindings extends VoyantBindings>(
 /**
  * App handle returned alongside the Hono instance. Carries `ready()` for
  * headless / sibling-process deployments that need to fire the lazy
- * bootstrap before the first HTTP request — workflow runtimes (Mode 2's
+ * bootstrap before the first HTTP request — workflow runtimes (node
  * sibling-process pattern, tests) call this so the time wheel and
  * manifest registration kick off without traffic.
  *
@@ -92,17 +92,15 @@ function buildRateLimitPolicy<TBindings extends VoyantBindings>(
 export interface VoyantAppExtensions<TBindings = unknown> {
   /**
    * Resolves once the lazy bootstrap completes. Idempotent — multiple
-   * calls share the same promise. Use from tests + Mode 2 sibling
+   * calls share the same promise. Use from tests + node sibling
    * processes where no request will arrive to trigger boot. See
    * architecture doc §18 + §18.1.
    *
    * Accepts the runtime bindings that the bootstrap should run with. For
-   * binding-dependent configs (e.g. Mode 1 / Cloudflare, where the driver
-   * factory reads DO + KV bindings off `env`) callers MUST pass the real
-   * bindings; otherwise the memoized bootstrap promise locks in a driver
-   * built from `{}` and every later request reuses that broken instance.
-   * Mode 2 / InMemory drivers ignore bindings, so the no-arg form is safe
-   * there (defaults to `{}` for back-compat with tests).
+   * binding-dependent configs (for example a managed-cloud forwarding
+   * driver that reads credentials from `env`) callers MUST pass the real
+   * bindings. Node and InMemory drivers usually ignore bindings, so the
+   * no-arg form is safe there (defaults to `{}` for back-compat with tests).
    */
   ready(bindings?: TBindings): Promise<void>
   /**
@@ -182,12 +180,9 @@ export function createApp<TBindings extends VoyantBindings>(
   }
 
   // Workflow driver construction is **deferred** to the lazy bootstrap
-  // path so CF-edge users (whose driver options come from `env.*`
-  // bindings only available at request time) can pass a function-of-
-  // bindings shape — `(env) => createCloudflareEdgeDriver({...})` —
-  // rather than constructing at module-load time. Mode 2 / InMemory
-  // users pass a direct factory; the framework adapts both shapes.
-  // See reviewer feedback P2.1 + architecture doc §6.3.
+  // path so callers whose driver options come from `env.*` bindings can
+  // pass a function-of-bindings shape. Node / InMemory users usually
+  // return a direct factory from that function.
   let workflowDriver: WorkflowDriver | undefined
 
   let bootstrapPromise: Promise<void> | null = null
@@ -205,8 +200,8 @@ export function createApp<TBindings extends VoyantBindings>(
         if (config.workflows) {
           // `driver` is always a function-of-bindings (per
           // VoyantWorkflowsConfig — see types.ts + reviewer feedback P2.1).
-          // Mode 2 / InMemory users wrap with `() => createXxxDriver({...})`.
-          // CF-edge users use `(env) => createCloudflareEdgeDriver({ env.* })`.
+          // Node / InMemory users wrap with `() => createXxxDriver({...})`.
+          // Managed-cloud users can derive a forwarding driver from `env`.
           // We invoke with bindings, then the resulting DriverFactory
           // with framework deps.
           const factoryDeps = {
@@ -523,13 +518,12 @@ export function createApp<TBindings extends VoyantBindings>(
 
   // Attach `ready()` directly to the Hono instance. Fires the lazy
   // bootstrap with the supplied bindings (or `{}` for back-compat with
-  // Mode 2 / InMemory drivers that ignore them). Production code never
+  // node / InMemory drivers that ignore them). Production code never
   // calls `ready()` — the first request triggers the same boot via
-  // `ensureRuntimeBootstrapped(c.env)`. Tests + Mode 2 sibling processes
+  // `ensureRuntimeBootstrapped(c.env)`. Tests + node sibling processes
   // use this so the time wheel + manifest registration happen without
-  // traffic; CF-edge users that want eager boot must pass the real `env`
-  // (otherwise the memoized bootstrap promise locks in a driver built
-  // from `{}` and every later request reuses that broken instance).
+  // traffic. Binding-dependent drivers that want eager boot must pass
+  // the real `env`.
   const augmented = app as Hono<{ Bindings: TBindings; Variables: VoyantVariables }> &
     VoyantAppExtensions<TBindings>
   augmented.eventBus = eventBus

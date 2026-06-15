@@ -1,5 +1,5 @@
-// Mode 1 driver — Cloudflare edge composition.
-// agent-quality: file-size exception -- Public edge driver factory currently owns manifest, trigger, event-ingest, concurrency, and admin wiring; split only with a dedicated driver-surface refactor.
+// Legacy Cloudflare Worker/DO driver.
+// agent-quality: file-size exception -- Public Cloudflare driver factory currently owns manifest, trigger, event-ingest, concurrency, and admin wiring; split only with a dedicated driver-surface refactor.
 //
 // `createApp({ workflows: { driver: createCloudflareEdgeDriver({ ... }) } })`
 // is the entry point for any deployment that runs the orchestrator on
@@ -16,7 +16,7 @@
 // `ModuleContainer` is built — see architecture doc §6.3 for the
 // `DriverFactory` contract.
 //
-// See architecture doc §8.
+// See docs/architecture/workflows-runtime-architecture.md.
 
 import type {
   EnvironmentName,
@@ -516,10 +516,9 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
       shuttingDown = true
     }
 
-    // ---- WorkflowAdmin (partial — Mode 1 has no native cross-run query
-    //      layer; getRun + cancelRun are direct DO RPC; listRuns +
-    //      streamRun are explicitly unsupported per architecture
-    //      doc §8.3) ----
+    // ---- WorkflowAdmin (partial — legacy Cloudflare has no native
+    //      cross-run query layer; getRun + cancelRun are direct DO RPC;
+    //      listRuns + streamRun are explicitly unsupported) ----
 
     async function getRunDetail(runId: string): Promise<RunDetail | null> {
       try {
@@ -586,8 +585,8 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
       },
 
       async listRuns(_listOpts?: ListRunsOptions) {
-        // Self-host Mode 1 has no native cross-run query layer; voyant-cloud
-        // provides one in its index repo. Surface the limit to consumers
+        // Legacy Cloudflare has no native cross-run query layer. Surface the
+        // limit to consumers
         // (the dashboard) so they can fall back gracefully.
         return { runs: [], nextCursor: undefined }
       },

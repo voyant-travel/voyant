@@ -5,7 +5,7 @@
 
 export type Duration = number | `${number}${"ms" | "s" | "m" | "h" | "d" | "w"}`
 
-/** Cloudflare Container instance types — see `@voyant-travel/workflows` for the size table. */
+/** Hosted/self-hosted Node runner profile. */
 export type MachineType =
   | "lite"
   | "basic"
@@ -18,8 +18,7 @@ export type MachineType =
 export type EnvironmentName = "production" | "preview" | "development"
 
 export type MeterKey =
-  | "edgeCpuMs"
-  | "containerSeconds"
+  | "runnerSeconds"
   | "warmSlotHours"
   | "runCount"
   | "activeScheduleHours"

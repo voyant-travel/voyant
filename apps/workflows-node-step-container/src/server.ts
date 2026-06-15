@@ -1,5 +1,5 @@
-// Reference HTTP server for executing `runtime: "node"` steps inside a
-// Cloudflare Container.
+// Legacy HTTP server for executing a single workflow step from an
+// external dispatcher.
 //
 // Two modes, selected at dispatch time:
 //
@@ -11,11 +11,7 @@
 //      `bundle: { url, hash }` pointing at an R2 signed URL. The
 //      container fetches the body, verifies its SHA-256 matches the
 //      hash, imports it once (cached by hash), and runs the step
-//      against the loaded workflow registry. This is the multi-tenant
-//      production path — one image serves every tenant's code.
-//
-// See `packages/workflows-orchestrator-cloudflare/src/cf-container-runner.ts`
-// for the dispatching side.
+//      against the loaded workflow registry.
 
 import { createHash } from "node:crypto"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"

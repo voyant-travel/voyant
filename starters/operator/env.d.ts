@@ -8,16 +8,11 @@ interface CloudflareBindings {
   // KV namespaces
   RATE_LIMIT: KVNamespace
   CACHE: KVNamespace
-  /** Workflow manifest store — written at app boot, read on event ingest. */
-  WORKFLOW_MANIFESTS: KVNamespace
 
   // R2 (public media storage)
   MEDIA_BUCKET: R2Bucket
   // R2 (private document storage)
   DOCUMENTS_BUCKET: R2Bucket
-
-  /** Per-run Durable Object namespace; class is `WorkflowRunDO` exported from entry.ts. */
-  WORKFLOW_RUN_DO: DurableObjectNamespace
 
   // Secrets
   INTERNAL_API_KEY: string
@@ -60,8 +55,11 @@ interface CloudflareBindings {
   VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?: string
   VOYANT_CLOUD_ADMIN_AUTH_START_URL?: string
   VOYANT_CLOUD_APP_ID?: string
+  VOYANT_CLOUD_APP_SLUG?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ENVIRONMENT?: string
+  VOYANT_CLOUD_WORKFLOWS_URL?: string
+  VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?: string
   VOYANT_OPERATOR_BROWSER_EVIDENCE?: string
   VOYANT_AUTH_LOG_SECRET_FALLBACKS?: string
 

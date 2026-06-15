@@ -1,191 +1,43 @@
 # apps/workflows-orchestrator-worker
 
-A reference Cloudflare Worker that hosts the Voyant Workflows
-orchestrator. Composes [`@voyant-travel/workflows-orchestrator-cloudflare`](../../packages/workflows-orchestrator-cloudflare)
-into a deployable Worker + Durable Object pair.
+Legacy Cloudflare Worker that hosts the Voyant Workflows orchestrator with a
+Durable Object per run. The current supported workflow execution model is
+node-only: use `@voyant-travel/workflows-orchestrator-node` for self-hosting or
+`@voyant-travel/workflows/client` for managed Cloud forwarding.
 
-## What you get
+This app remains as a compatibility reference for older Worker/DO deployments.
+It does not provide a Cloudflare edge/Node step split, container pool, R2 bundle
+loader, or managed Cloud runtime.
 
-- `src/worker.ts` — default `fetch` handler + `WorkflowRunDO` class.
-- `wrangler.jsonc` — Durable Object binding, Workers-for-Platforms
-  dispatch namespace binding, SQLite-backed DO storage, `nodejs_compat`
-  compatibility flag.
-- Unit tests proving the exports + DO wiring.
+## What You Get
 
-Public HTTP surface (see `@voyant-travel/workflows-orchestrator-cloudflare` for the
-full contract):
+- `src/worker.ts`: default `fetch` handler and `WorkflowRunDO` class.
+- `wrangler.jsonc`: `WORKFLOW_RUN_DO`, optional manifest/schedule KV bindings,
+  and a service binding to a sibling workflows Worker.
+- Unit tests proving the exports and DO routing.
+
+Public HTTP surface is provided by
+`@voyant-travel/workflows-orchestrator-cloudflare`:
 
 | Verb + path | Purpose |
-|---|---|
-| `POST /api/runs` | Trigger a new run. |
-| `GET  /api/runs/:id` | Fetch a run's current `RunRecord`. |
-| `POST /api/runs/:id/events` | Inject an EVENT waitpoint resolution. |
-| `POST /api/runs/:id/signals` | Inject a SIGNAL waitpoint resolution. |
-| `POST /api/runs/:id/tokens/:tokenId` | Inject a MANUAL (token) waitpoint. |
+| --- | --- |
+| `POST /api/runs` | Trigger a run. |
+| `GET /api/runs/:id` | Fetch a run record. |
+| `POST /api/manifests` | Register a workflow manifest when KV is configured. |
+| `POST /api/events` | Route an event through the registered manifest. |
+| `POST /api/runs/:id/events` | Resolve an event waitpoint. |
+| `POST /api/runs/:id/signals` | Resolve a signal waitpoint. |
+| `POST /api/runs/:id/tokens/:tokenId` | Resolve a manual token waitpoint. |
 | `POST /api/runs/:id/cancel` | Cancel a parked or running run. |
-
-Every `POST /api/runs` request body must include:
-
-```jsonc
-{
-  "workflowId": "send-reminder",
-  "workflowVersion": "1a2b3c4d",
-  "input": { /* arbitrary */ },
-  "tenantMeta": {
-    "tenantId": "tnt_x",
-    "projectId": "prj_x",
-    "organizationId": "org_x",
-    // dispatch-namespace script name for this tenant's bundle:
-    "tenantScript": "my-tenant"
-  }
-}
-```
-
-## Prerequisites on your Cloudflare account
-
-1. **Workers for Platforms** enabled on the account.
-2. A **dispatch namespace** named `voyant-tenants` (or edit
-   `wrangler.jsonc` to rename). Tenant Workers bundled with
-   `voyant workflows build` upload into this namespace under a chosen
-   script name — that name is what each run passes in
-   `tenantMeta.tenantScript`.
-3. A **Durable Object migration** (first deploy only — Wrangler takes
-   care of this from `wrangler.jsonc → migrations`).
 
 ## Running
 
 ```bash
-# Type-check only — catches signature drift against the adapter.
 pnpm --filter @voyant-travel/workflows-orchestrator-worker check-types
-
-# Unit tests (plain Node, no miniflare).
 pnpm --filter @voyant-travel/workflows-orchestrator-worker test
-
-# Local dev against Cloudflare's wrangler dev server.
-#   - DO storage is in-memory for the session.
-#   - DISPATCHER binding requires a real dispatch namespace; for
-#     fully local work, stub it with --dispatch-namespace or develop
-#     against `voyant workflows serve` instead.
 pnpm --filter @voyant-travel/workflows-orchestrator-worker dev
-
-# Deploy.
 pnpm --filter @voyant-travel/workflows-orchestrator-worker deploy
 ```
 
-## Deploying with `runtime: "node"` support
-
-This Worker's `wrangler.jsonc` declares the full set of bindings
-needed for `runtime: "node"` steps end-to-end:
-
-1. **`NODE_STEP_POOL`** — Durable Object namespace backing the
-   `NodeStepContainer` class (exported from `src/worker.ts`). The
-   class extends `Container` from `@cloudflare/containers` and
-   materializes one CF Container instance per addressable id.
-2. **Container image** — built from
-   `../workflows-node-step-container/Dockerfile` at `wrangler deploy` time.
-3. **`BUNDLE_R2`** — R2 bucket that stores per-tenant
-   `<projectId>/<workflowVersion>/container.mjs` artifacts.
-4. **`BUNDLE_HASHES`** — KV namespace that stores each bundle's
-   deploy-time SHA-256, keyed `<projectId>:<workflowVersion>`.
-5. **`WORKFLOW_MANIFESTS`** — optional KV namespace storing the active
-   manifest per environment for `/api/manifests`, `/api/events`, and
-   `/api/schedules/:env`.
-6. **`WORKFLOW_SCHEDULE_STATE`** — optional KV namespace storing
-   schedule fire/run/error state exposed on `/api/schedules/:env`.
-
-### Who actually calls the container?
-
-Not this Worker. When a workflow body hits a `runtime: "node"` step,
-the dispatch happens from the **tenant Worker** (the bundle voyant-cloud
-uploads into the dispatch namespace), which wires
-`createCfContainerStepRunner` on its `createStepHandler`:
-
-```ts
-// Tenant Worker (generated by voyant-cloud's deploy pipeline):
-import { createStepHandler } from "@voyant-travel/workflows/handler";
-import { createCfContainerStepRunner } from "@voyant-travel/workflows-orchestrator-cloudflare";
-
-export default {
-  fetch: createStepHandler({
-    nodeStepRunner: createCfContainerStepRunner({
-      namespace: env.NODE_STEP_POOL,
-      async resolveBundle({ projectId, workflowVersion }) {
-        // Sign an R2 URL for this specific bundle, short TTL.
-        const key = `${projectId}/${workflowVersion}/container.mjs`;
-        const url = await env.BUNDLE_R2.createPresignedUrl?.(key, {
-          expiresIn: 300,
-        });
-        const hash = await env.BUNDLE_HASHES.get(
-          `${projectId}:${workflowVersion}`,
-        );
-        if (!hash) throw new Error(`no bundle hash registered`);
-        return { url, hash };
-      },
-    }),
-  }),
-};
-```
-
-The tenant-Worker wrapper above is **not emitted by `voyant workflows
-build`** — the CLI only emits the raw bundle today. voyant-cloud's
-deploy pipeline is responsible for wrapping it, uploading the wrapped
-Worker to the dispatch namespace, staging `container.mjs` in
-`BUNDLE_R2`, and registering its SHA-256 in `BUNDLE_HASHES`.
-
-### Pre-deploy setup on your CF account
-
-Once per account:
-
-```bash
-# Dispatch namespace (hosts tenant Workers).
-wrangler dispatch-namespace create voyant-tenants
-
-# R2 bucket for bundles.
-wrangler r2 bucket create voyant-bundles
-
-# KV namespace for bundle hashes (copy the id into wrangler.jsonc).
-wrangler kv namespace create BUNDLE_HASHES
-```
-
-Containers requires Workers Paid plan and an
-account with Containers enabled (public beta at time of writing).
-
-### Known gaps
-
-- **`wrangler deploy` has not been run against a real account** from
-  this repo. The configuration has been validated via
-  `wrangler deploy --dry-run` (which successfully builds the container
-  image from the monorepo root) but no Cloudflare account has
-  received a deploy yet.
-- **R2 presigner configuration** — the tenant Worker needs
-  `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` set
-  via `wrangler secret put`. The runner uses
-  `createR2Presigner` (in `@voyant-travel/workflows-orchestrator-cloudflare`) to sign
-  URLs; no AWS SDK required.
-
-## What this Worker intentionally does NOT include
-
-These are out of scope for a reference implementation and should be
-added on the production side (voyant-cloud):
-
-- **Authentication.** `verifyRequest` is wired but unset. In
-  production, inspect a bearer token or HMAC the orchestrator's
-  control-plane signed.
-- **Cross-run list / filter queries.** Each run lives in its own DO;
-  listing all runs for a tenant requires a Postgres (or equivalent)
-  index that tracks run metadata as it changes. voyant-cloud owns that
-  index.
-- **Stream chunk egress.** Accumulated on the `RunRecord` for now. A
-  production deployment would fan chunks out via a Queue to dashboards
-  + logs as they arrive, instead of on the final response.
-- **Idempotency keys.** Retries of `POST /api/runs` with the same
-  `runId` should no-op; today they replace the existing record.
-
-## Why the adapter types are structural
-
-The adapter in `@voyant-travel/workflows-orchestrator-cloudflare` uses structurally
-typed interfaces (`DurableObjectStorageLike`,
-`DispatchNamespaceLike`, `DurableObjectNamespaceLike`) so tests can
-run in plain Node with in-memory fakes. The real `@cloudflare/workers-types`
-in this app assign cleanly — they're a structural supertype of what
-the adapter expects.
+For new production deployments, prefer the Node/Postgres runtime instead of this
+legacy Worker/DO adapter.

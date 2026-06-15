@@ -101,7 +101,6 @@
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "@voyant-travel/workflows-orchestrator": "workspace:^",
-    "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^",
     "better-auth": "1.6.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
