@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-local-dashboard
 
+## 0.0.5
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.109.0
+- @voyant-travel/workflows-react@0.109.0
+
 ## 0.0.4
 
 ### Patch Changes

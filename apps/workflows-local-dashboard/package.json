@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/workflows-local-dashboard",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Local dev dashboard served by `voyant workflows serve` / `voyant dev`. Embeds @voyant-travel/workflows-react/ui against the local run store API.",
   "license": "Apache-2.0",
   "private": true,
