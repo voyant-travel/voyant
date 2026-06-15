@@ -31,7 +31,11 @@ export interface WorkflowConfig<TInput, TOutput> {
   concurrency?: ConcurrencyPolicy<TInput>
   retry?: RetryPolicy
   timeout?: Duration
-  defaultRuntime?: "edge" | "node"
+  /**
+   * Workflows execute on the Node runtime. Kept as an optional field so
+   * existing manifests/configs can annotate the runtime explicitly.
+   */
+  defaultRuntime?: "node"
   tags?: string[]
   run: (input: TInput, ctx: WorkflowContext<TInput>) => Promise<TOutput>
 }
@@ -202,7 +206,11 @@ export interface StepContext {
 }
 
 export interface StepOptions<T = unknown> {
-  runtime?: "edge" | "node"
+  /**
+   * Steps execute on the Node runtime. Kept as an optional no-op annotation
+   * for callers that already specify `runtime: "node"`.
+   */
+  runtime?: "node"
   machine?: MachineType
   timeout?: Duration
   retry?: RetryPolicy | { max: 0 }

@@ -33,12 +33,6 @@
 // design this adapter implements.
 
 export {
-  type BundleLocation,
-  type CfContainerRunnerDeps,
-  type ContainerNamespaceLike,
-  createCfContainerStepRunner,
-} from "./cf-container-runner.js"
-export {
   type CloudflareEdgeDriverOptions,
   createCloudflareEdgeDriver,
 } from "./cloudflare-edge-driver.js"
@@ -72,11 +66,6 @@ export {
   createKvManifestStore,
   type KvNamespaceLike,
 } from "./manifest-kv-store.js"
-export {
-  createR2Presigner,
-  type PresignArgs,
-  type R2PresignerOptions,
-} from "./r2-sign.js"
 export {
   handleGetSchedules,
   type ScheduleHandlerDeps,

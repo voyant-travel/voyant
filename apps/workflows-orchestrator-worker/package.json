@@ -14,7 +14,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@cloudflare/containers": "^0.3.2",
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "@voyant-travel/workflows-orchestrator-cloudflare": "workspace:^",
     "@voyant-travel/workflows": "workspace:^"

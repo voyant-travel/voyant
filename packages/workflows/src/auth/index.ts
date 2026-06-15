@@ -25,10 +25,9 @@
 export const AUTH_HEADER = "x-voyant-dispatch-auth" as const
 
 /**
- * HMAC header carried on orchestrator → node-step-container dispatches
+ * HMAC header carried on legacy external step-server dispatches
  * (`POST /step`). Signed over the raw request body with the shared
- * `VOYANT_WORKFLOW_STEP_AUTH_SECRET`. See `createCfContainerStepRunner`
- * (signing side) and `apps/workflows-node-step-container` (verifying side).
+ * `VOYANT_WORKFLOW_STEP_AUTH_SECRET`.
  */
 export const STEP_AUTH_HEADER = "x-voyant-step-auth" as const
 

@@ -13,47 +13,17 @@
       {
         "name": "WORKFLOW_RUN_DO",
         "class_name": "WorkflowRunDO"
-      },
-      {
-        "name": "NODE_STEP_POOL",
-        "class_name": "NodeStepContainer"
       }
     ]
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["WorkflowRunDO", "NodeStepContainer"]
-    }
-  ],
-  "containers": [
-    {
-      "class_name": "NodeStepContainer",
-      "image": "../workflows-node-step-container/Dockerfile",
-      "image_build_context": "../../",
-      "instance_type": "standard-2",
-      "max_instances": 50
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "BUNDLE_R2",
-      "bucket_name": "voyant-bundles"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "BUNDLE_HASHES",
-      "id": "replace-me-after-wrangler-kv-namespace-create"
+      "new_sqlite_classes": ["WorkflowRunDO"]
     }
   ],
   // Secrets are set separately with `wrangler secret put`, including
-  // R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, VOYANT_API_TOKENS, and
-  // VOYANT_WORKFLOW_STEP_AUTH_SECRET when container support is enabled.
-  "vars": {
-    "R2_ACCOUNT_ID": "replace-with-your-cf-account-id",
-    "R2_BUCKET": "voyant-bundles"
-  },
+  // VOYANT_API_TOKENS.
   "observability": {
     "enabled": true
   }

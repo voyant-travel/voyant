@@ -3,25 +3,7 @@
 
 export type Duration = number | `${number}${"ms" | "s" | "m" | "h" | "d" | "w"}`
 
-/**
- * Cloudflare Container instance types — the set Voyant Cloud honors
- * for `runtime: "node"` steps. Match the sizes published at
- * https://developers.cloudflare.com/containers/ (as of
- * compat-date 2026-04-01).
- *
- * | name        | vCPU  | memory  | disk  |
- * | ----------- | ----- | ------- | ----- |
- * | lite        | 1/16  | 256 MiB | 2 GB  |
- * | basic       | 1/4   | 1 GiB   | 4 GB  |
- * | standard-1  | 1/2   | 4 GiB   | 8 GB  |
- * | standard-2  | 1     | 6 GiB   | 12 GB |
- * | standard-3  | 2     | 8 GiB   | 16 GB |
- * | standard-4  | 4     | 12 GiB  | 20 GB |
- *
- * The open `(string & {})` escape hatch accepts CF custom instance
- * types (up to 4 vCPU / 12 GiB / 20 GB, min 3 GiB RAM per vCPU) —
- * rendered as `"custom-<vcpu>-<ramGiB>"` by convention.
- */
+/** Hosted/self-hosted Node runner profile. */
 export type MachineType =
   | "lite"
   | "basic"

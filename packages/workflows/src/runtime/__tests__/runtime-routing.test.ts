@@ -8,13 +8,12 @@ beforeEach(() => {
 })
 
 interface RouteLog {
-  runtime: "edge" | "node"
   stepId: string
 }
 
-function makeTracker(runtime: "edge" | "node", log: RouteLog[]): StepRunner {
+function makeTracker(log: RouteLog[]): StepRunner {
   return async ({ stepId, attempt, fn, stepCtx }) => {
-    log.push({ runtime, stepId })
+    log.push({ stepId })
     const output = await fn(stepCtx)
     return { attempt, status: "ok", output, startedAt: 0, finishedAt: 0 }
   }
@@ -48,8 +47,8 @@ function baseReq(workflowId: string) {
   }
 }
 
-describe("step runtime routing", () => {
-  it("routes steps without options.runtime through the edge runner", async () => {
+describe("node-only step execution", () => {
+  it("routes steps without options.runtime through the node runner", async () => {
     workflow<void, string>({
       id: "rt.default",
       async run(_, ctx) {
@@ -61,18 +60,18 @@ describe("step runtime routing", () => {
     const def = getWorkflow("rt.default")!
     const response = await executeWorkflowStep(def, {
       ...baseReq("rt.default"),
-      stepRunner: makeTracker("edge", log),
+      stepRunner: makeTracker(log),
     })
 
     expect(response.status).toBe("completed")
-    expect(log).toEqual([{ runtime: "edge", stepId: "a" }])
+    expect(log).toEqual([{ stepId: "a" }])
   })
 
-  it("routes runtime=node through the node runner when wired", async () => {
+  it("accepts runtime=node as an explicit node-only annotation", async () => {
     workflow<void, string>({
       id: "rt.node",
       async run(_, ctx) {
-        const a = await ctx.step("edge-step", () => "a")
+        const a = await ctx.step("default-step", () => "a")
         const b = await ctx.step("node-step", { runtime: "node" }, () => "b")
         return `${a}${b}`
       },
@@ -82,66 +81,45 @@ describe("step runtime routing", () => {
     const def = getWorkflow("rt.node")!
     const response = await executeWorkflowStep(def, {
       ...baseReq("rt.node"),
-      stepRunner: makeTracker("edge", log),
-      nodeStepRunner: makeTracker("node", log),
+      stepRunner: makeTracker(log),
     })
 
     expect(response.status).toBe("completed")
     if (response.status === "completed") {
       expect(response.output).toBe("ab")
     }
-    expect(log).toEqual([
-      { runtime: "edge", stepId: "edge-step" },
-      { runtime: "node", stepId: "node-step" },
-    ])
+    expect(log).toEqual([{ stepId: "default-step" }, { stepId: "node-step" }])
   })
 
-  it("fails with NODE_RUNTIME_UNAVAILABLE when a node step has no runner", async () => {
+  it("fails clearly when legacy runtime=edge is requested", async () => {
     workflow<void, string>({
-      id: "rt.missing",
+      id: "rt.edge",
       async run(_, ctx) {
-        return await ctx.step("c", { runtime: "node", retry: { max: 0 } }, () => "x")
+        return await ctx.step(
+          "legacy-edge",
+          { runtime: "edge", retry: { max: 0 } } as never,
+          () => "x",
+        )
       },
     })
 
-    const def = getWorkflow("rt.missing")!
+    const def = getWorkflow("rt.edge")!
     const response = await executeWorkflowStep(def, {
-      ...baseReq("rt.missing"),
-      stepRunner: makeTracker("edge", []),
-      // no nodeStepRunner
+      ...baseReq("rt.edge"),
+      stepRunner: makeTracker([]),
     })
 
     expect(response.status).toBe("failed")
     if (response.status === "failed") {
-      expect(response.error.code).toBe("NODE_RUNTIME_UNAVAILABLE")
+      expect(response.error.code).toBe("UNSUPPORTED_WORKFLOW_RUNTIME")
     }
-  })
-
-  it("honors explicit runtime=edge even when a node runner is wired", async () => {
-    workflow<void, string>({
-      id: "rt.explicit-edge",
-      async run(_, ctx) {
-        return await ctx.step("a", { runtime: "edge" }, () => "ok")
-      },
-    })
-
-    const log: RouteLog[] = []
-    const def = getWorkflow("rt.explicit-edge")!
-    const response = await executeWorkflowStep(def, {
-      ...baseReq("rt.explicit-edge"),
-      stepRunner: makeTracker("edge", log),
-      nodeStepRunner: makeTracker("node", log),
-    })
-
-    expect(response.status).toBe("completed")
-    expect(log).toEqual([{ runtime: "edge", stepId: "a" }])
   })
 
   it("stamps the runtime on the returned journal entry", async () => {
     workflow<void, string>({
       id: "rt.stamp",
       async run(_, ctx) {
-        const a = await ctx.step("edge-a", () => "A")
+        const a = await ctx.step("node-a", () => "A")
         const b = await ctx.step("node-b", { runtime: "node" }, () => "B")
         return `${a}${b}`
       },
@@ -151,13 +129,12 @@ describe("step runtime routing", () => {
     const req = baseReq("rt.stamp")
     const response = await executeWorkflowStep(def, {
       ...req,
-      stepRunner: makeTracker("edge", []),
-      nodeStepRunner: makeTracker("node", []),
+      stepRunner: makeTracker([]),
     })
 
     expect(response.status).toBe("completed")
     const journal = response.journal
-    expect(journal.stepResults["edge-a"]!.runtime).toBe("edge")
+    expect(journal.stepResults["node-a"]!.runtime).toBe("node")
     expect(journal.stepResults["node-b"]!.runtime).toBe("node")
   })
 })

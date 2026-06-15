@@ -3,8 +3,8 @@
 // A driver is the runtime-side object that backs `createApp({ workflows })`:
 // it owns manifest registration, run triggering, event ingest, and (optionally)
 // admin reads. Concrete drivers live in downstream packages
-// (`@voyant-travel/workflows-orchestrator` for InMemory, `-node` for Mode 2 / Postgres,
-// `-cloudflare` for Mode 1 / DO+KV).
+// (`@voyant-travel/workflows-orchestrator` for InMemory and
+// `-node` for Postgres-backed self-hosting).
 //
 // Drivers are constructed via *factories* — `DriverFactory` is a function the
 // framework invokes after `createApp()` has assembled its `ModuleContainer`.
@@ -139,9 +139,9 @@ export type IngestEventResponse =
 // ---- Driver — execution contract ----
 
 /**
- * The mandatory driver contract. Every concrete driver — InMemory, Mode 2
- * (Postgres), Mode 1 (CF edge) — implements all five methods. The compliance
- * test suite (`driver-compliance.test.ts`) is the contract.
+ * The mandatory driver contract. Every concrete driver implements all five
+ * methods. The compliance test suite (`driver-compliance.test.ts`) is the
+ * contract.
  */
 export interface WorkflowDriver {
   /**
@@ -194,10 +194,9 @@ export interface WorkflowDriver {
 // ---- Driver — admin (optional) ----
 
 /**
- * Read-side operations. Implemented natively by the Mode 2 driver against
- * Postgres, partially by Mode 1 (single-run reads only — `listRuns` is not
- * implemented in self-host Mode 1; voyant-cloud provides an index layer).
- * See architecture doc §6.2 + §8.3.
+ * Read-side operations. Implemented natively by the Postgres-backed Node
+ * driver; other drivers expose the subset they can support.
+ * See architecture doc §6.2.
  */
 export interface WorkflowAdmin {
   listRuns(opts?: ListRunsOptions): Promise<{ runs: RunSummary[]; nextCursor?: string }>
@@ -217,7 +216,7 @@ export interface WorkflowAdmin {
  */
 export type AdminStreamEvent =
   | { kind: "run.snapshot"; at: number; status: string; metadata: Record<string, unknown> }
-  | { kind: "step.started"; at: number; stepId: string; runtime: "edge" | "node" }
+  | { kind: "step.started"; at: number; stepId: string; runtime: "node" }
   | { kind: "step.ok"; at: number; stepId: string; durationMs: number }
   | { kind: "step.err"; at: number; stepId: string; error: { code: string; message: string } }
   | { kind: "waitpoint.registered"; at: number; waitpointId: string; waitpointKind: WaitpointKind }

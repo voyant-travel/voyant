@@ -23,11 +23,10 @@ export type StepRunner = (
   /**
    * Executes a step body and returns the journal entry to record.
    *
-   * In-process runners (the default edge runner, local-dev passthrough)
-   * call `fn(stepCtx)` directly. Dispatching runners (e.g. the CF
-   * Container runner) ignore `fn` — they can't serialize a closure —
-   * and use the run/workflow identity + step options to address the
-   * remote container and POST the required context.
+   * In-process runners call `fn(stepCtx)` directly. Dispatching runners
+   * ignore `fn` — they can't serialize a closure — and use the
+   * run/workflow identity + step options to address a remote Node runner
+   * and POST the required context.
    */
   args: {
     stepId: string
@@ -43,7 +42,7 @@ export type StepRunner = (
      *  dispatching runners to resolve per-tenant bundle storage keys. */
     projectId: string
     organizationId: string
-    /** Merged step options (runtime, machine, timeout, …). */
+    /** Merged step options (machine, timeout, …). */
     options: import("../workflow.js").StepOptions<unknown>
     /**
      * Current journal slice at dispatch time — steps already completed,
@@ -99,21 +98,10 @@ export interface ExecuteWorkflowStepRequest {
   tags: string[]
   abortSignal?: AbortSignal
   /**
-   * Default step executor (the "edge" runtime) — runs step bodies
-   * in-process. Used for any step whose `options.runtime` is unset or
-   * explicitly `"edge"`.
+   * Step executor. The default handler runs step bodies in-process on Node.
+   * Hosted runtimes may replace it with a dispatching runner.
    */
   stepRunner: StepRunner
-  /**
-   * Optional runner for steps declared with `options.runtime === "node"`.
-   * Typical impl dispatches to a Cloudflare Container sized for the
-   * step (or, in local dev, an in-process passthrough).
-   *
-   * If a step requests `"node"` and this is unset, the step fails with
-   * `NODE_RUNTIME_UNAVAILABLE` — declaring a runtime and then silently
-   * falling back to edge would hide deployment bugs.
-   */
-  nodeStepRunner?: StepRunner
   /**
    * Optional rate limiter. When a step declares `options.rateLimit`,
    * the executor calls `rateLimiter.acquire(...)` before invoking the
@@ -225,17 +213,17 @@ export async function executeWorkflowStep(
           signal: abortSignal,
         })
       }
-      const runtime = args.options.runtime ?? "edge"
-      const runner = runtime === "node" ? req.nodeStepRunner : req.stepRunner
-      if (!runner) {
+      const requestedRuntime = (args.options as { runtime?: unknown }).runtime
+      if (requestedRuntime !== undefined && requestedRuntime !== "node") {
         const e = new Error(
-          `step "${args.stepId}" declared runtime="node" but the handler has no nodeStepRunner wired; ` +
-            `pass { nodeStepRunner } to createStepHandler() or remove options.runtime`,
+          `step "${args.stepId}" declared runtime="${String(
+            requestedRuntime,
+          )}" but workflows are node-only; remove options.runtime or use runtime="node"`,
         )
-        ;(e as Error & { code?: string }).code = "NODE_RUNTIME_UNAVAILABLE"
+        ;(e as Error & { code?: string }).code = "UNSUPPORTED_WORKFLOW_RUNTIME"
         throw e
       }
-      const entry = await runner({
+      const entry = await req.stepRunner({
         stepId: args.stepId,
         attempt: args.attempt,
         input: args.input,
@@ -249,10 +237,9 @@ export async function executeWorkflowStep(
         options: args.options,
         journal: req.journal,
       })
-      // Stamp the runtime on the journal entry so downstream consumers
-      // (journal persistence, dashboard events) can report where each
-      // step actually ran.
-      entry.runtime = runtime
+      // Keep the runtime stamp for downstream consumers that display
+      // execution metadata. There is one supported runtime now.
+      entry.runtime = "node"
       return entry
     },
     registerWaitpoint(args) {

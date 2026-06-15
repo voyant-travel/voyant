@@ -1,6 +1,5 @@
-# Reference image for `runtime: "node"` step execution on Cloudflare
-# Containers. The workflow bundle can be baked in at build time or
-# resolved per dispatch from a signed R2 URL. See
+# Legacy image for external Node step execution. The workflow bundle can
+# be baked in at build time or resolved per dispatch from a signed URL. See
 # `apps/workflows-node-step-container/README.md`.
 
 FROM node:20-slim AS builder

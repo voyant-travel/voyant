@@ -38,7 +38,7 @@ describe("InMemory driver schedule runner", () => {
           name: "once",
         },
       ],
-      defaultRuntime: "edge",
+      defaultRuntime: "node",
       hasCompensation: false,
       sourceLocation: { file: "<test>", line: 1 },
     })
@@ -78,7 +78,7 @@ describe("InMemory driver schedule runner", () => {
       version: "v1",
       steps: [],
       schedules: [{ every: "1s", environments: ["preview"] }],
-      defaultRuntime: "edge",
+      defaultRuntime: "node",
       hasCompensation: false,
       sourceLocation: { file: "<test>", line: 1 },
     })

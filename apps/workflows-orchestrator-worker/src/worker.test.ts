@@ -9,14 +9,6 @@ function unusedDurableObjectNamespace(): DurableObjectNamespace {
   return testBinding<DurableObjectNamespace>()
 }
 
-function unusedR2Bucket(): R2Bucket {
-  return testBinding<R2Bucket>()
-}
-
-function unusedKvNamespace(): KVNamespace {
-  return testBinding<KVNamespace>()
-}
-
 function testFetcher(): Fetcher {
   return testBinding<Fetcher>({
     fetch: async () => new Response(),
@@ -61,9 +53,6 @@ describe("worker entry", () => {
     const env = {
       WORKFLOW_RUN_DO: unusedDurableObjectNamespace(),
       WORKFLOWS: testFetcher(),
-      NODE_STEP_POOL: unusedDurableObjectNamespace(),
-      BUNDLE_R2: unusedR2Bucket(),
-      BUNDLE_HASHES: unusedKvNamespace(),
     } satisfies Env
 
     const instance = new WorkflowRunDO(state, env)
@@ -92,9 +81,6 @@ describe("worker entry", () => {
     const env = {
       WORKFLOW_RUN_DO: fakeNS,
       WORKFLOWS: testFetcher(),
-      NODE_STEP_POOL: unusedDurableObjectNamespace(),
-      BUNDLE_R2: unusedR2Bucket(),
-      BUNDLE_HASHES: unusedKvNamespace(),
       VOYANT_API_TOKENS: "test-token",
     } satisfies Env
 

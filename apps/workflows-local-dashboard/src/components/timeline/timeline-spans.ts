@@ -31,12 +31,11 @@ export function buildSpans(run: StoredRun): Span[] {
         const stepId = String(d.stepId ?? "?")
         const attempt = typeof d.attempt === "number" ? d.attempt : 1
         const id = `step:${stepId}#${attempt}`
-        const runtime = d.runtime === "edge" || d.runtime === "node" ? d.runtime : undefined
+        const runtime = d.runtime === "node" ? d.runtime : undefined
         const sublabelParts: string[] = []
         if (attempt > 1) sublabelParts.push(`attempt ${attempt}`)
-        // Show runtime as a sublabel only when non-default, so edge steps
-        // stay uncluttered. Future non-edge runtimes (bun, python) land here too.
-        if (runtime && runtime !== "edge") sublabelParts.push(runtime)
+        // Show runtime only when older run records include it explicitly.
+        if (runtime) sublabelParts.push(runtime)
         const span: Span = {
           id,
           kind: "step",

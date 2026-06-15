@@ -1,7 +1,7 @@
 {
   "name": "@voyant-travel/workflows-node-step-container",
   "version": "0.107.10",
-  "description": "Reference Node container image for executing `runtime: \"node\"` steps. Deployed alongside the orchestrator as a Cloudflare Container.",
+  "description": "Legacy standalone Node HTTP server for executing workflow steps from an external dispatcher.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

@@ -1,16 +1,16 @@
 // Optional HTTP ingest adapter — mounts `/api/manifests` and `/api/events`
 // on a Hono-shaped app, forwarding into a `WorkflowDriver`.
 //
-// Self-host Mode 2 deployments mount this when external emitters need to
+// Self-host Node deployments mount this when external emitters need to
 // fire events into the runtime (storefront BFF, third-party webhooks,
-// sibling-process pairs across machines). voyant-cloud always mounts it
-// at its HTTP boundary.
+// sibling-process pairs across machines). Managed Cloud mounts its own
+// HTTP boundary in the cloud repository.
 //
 // Transport-agnostic: takes a minimal `HttpAppLike` interface so the SDK
 // stays a leaf package (no `hono` dep). `@voyant-travel/voyant-hono`'s `Hono`
 // instance satisfies the shape via TypeScript structural compat.
 //
-// Architecture: docs/architecture/workflows-runtime-architecture.md §15.4.
+// Architecture: docs/architecture/workflows-runtime-architecture.md.
 
 import type { IngestEventArgs, WorkflowDriver } from "./driver.js"
 import type { EnvironmentName } from "./types.js"

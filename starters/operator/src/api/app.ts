@@ -100,17 +100,9 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/trips",
     "/v1/trips",
   ],
-  // Workflow runtime — Cloudflare edge composition. Per-run state lives
-  // in the `WorkflowRunDO` Durable Object exported from `entry.ts`;
-  // serialized manifests live in the `WORKFLOW_MANIFESTS` KV namespace.
-  // Step bodies dispatch through `createInlineDispatcher` (set up inside
-  // the DO), so workflow code lives in this same Worker.
-  //
-  // The `driver` field is a function-of-bindings: createApp invokes it
-  // at lazy bootstrap time once env bindings are resolved. Uncomment
-  // the durable_objects + kv_namespaces blocks in wrangler.jsonc and
-  // run `wrangler kv namespace create WORKFLOW_MANIFESTS` to provision
-  // the bindings; without them, bootstrap fails with a clear error.
+  // Workflow runtime — managed Cloud forwarding. App code forwards
+  // trigger/event calls to Voyant Cloud; workflow bundles execute in the
+  // hosted Node runtime.
   workflows: {
     driver: createOperatorWorkflowDriver,
   },

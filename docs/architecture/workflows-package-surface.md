@@ -16,22 +16,23 @@ These workflow packages are intentionally public:
 | `@voyant-travel/workflows-react/ui` | Canonical importable workflow run admin UI. |
 | `@voyant-travel/workflow-runs` | Operator observability module: schema, recorder, admin routes, and rerun/resume registry. |
 | `@voyant-travel/workflows-orchestrator` | Transport-neutral orchestrator engine and compliance tests. |
-| `@voyant-travel/workflows-orchestrator-cloudflare` | Cloudflare Worker/Durable Object adapter. |
-| `@voyant-travel/workflows-orchestrator-node` | Node/Docker/Postgres adapter primitives. |
-| `@voyant-travel/workflows-cloud-adapter` | Voyant Cloud tenant-worker adapter. |
-| `@voyant-travel/workflows-node-step-container` | Publishable Node step-runner container artifact. |
+| `@voyant-travel/workflows-orchestrator-cloudflare` | Legacy Cloudflare Worker/Durable Object adapter. Compatibility only; not the managed Cloud runtime. |
+| `@voyant-travel/workflows-orchestrator-node` | Supported Node/Postgres self-host runtime primitives. |
+| `@voyant-travel/workflows-cloud-adapter` | Legacy tenant-worker adapter for old Cloudflare workflow experiments. |
+| `@voyant-travel/workflows-node-step-container` | Legacy standalone Node step-server artifact. Not used by the current managed Cloud runtime. |
 
 ## Managed Cloud Versus Self-Host Adapters
 
-Managed Voyant Cloud uses a hosted workflow runtime. App/Worker bundles import
-`@voyant-travel/workflows/client` and forward trigger/event calls to Cloud; workflow
-definitions and Node/server-only dependencies live in a separate workflow bundle
-that Cloud executes. Workflow releases are created by Cloud deployment flows,
-not by deployed app runtimes.
+Managed Voyant Cloud uses a hosted Node workflow runtime. App/Worker bundles
+import `@voyant-travel/workflows/client` and forward trigger/event calls to
+Cloud; workflow definitions and Node/server-only dependencies live in a separate
+workflow bundle that Cloud executes. Workflow releases are created by Cloud
+deployment flows, not by deployed app runtimes.
 
 The Cloudflare adapter packages remain self-host/legacy compatibility for
 operators running their own workflow runtime. They should not be presented as
-the managed Voyant Cloud execution model.
+the managed Voyant Cloud execution model, and they should not grow a new
+edge/node runtime split.
 
 ## Folded Subpaths
 

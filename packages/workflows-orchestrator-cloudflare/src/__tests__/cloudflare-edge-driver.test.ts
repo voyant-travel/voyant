@@ -1,4 +1,4 @@
-// Mode 1 (CF edge) driver compliance — runs the parameterized suite from
+// Legacy Cloudflare Worker/DO driver compliance — runs the parameterized suite from
 // `@voyant-travel/workflows-orchestrator/testing` against `createCloudflareEdgeDriver`,
 // wired to an in-process fake DO namespace that delegates back to the same
 // orchestrator state machine production uses.
@@ -202,13 +202,13 @@ function inProcessConcurrencyDONamespace(
 }
 
 // Run the parameterized compliance suite. Each call to the factory builds
-// a fresh driver wired against fresh fakes — same pattern Mode 2 uses.
+// a fresh driver wired against fresh fakes — same pattern the Node suite uses.
 //
 // `servicesThreading: false` opts out of the `ctx.services` contract:
-// Mode 1's orchestrator and tenant live in separate Worker isolates
+// Legacy Cloudflare orchestrator and tenant code can live in separate Worker isolates
 // (Workers-for-Platforms), so the framework's `ModuleContainer` doesn't
 // cross the boundary by design. Tenant code wires its own container at
-// its own `createApp()` boundary. See architecture doc §8.
+// its own `createApp()` boundary.
 runDriverComplianceSuite(
   "CloudflareEdge",
   () => {
@@ -223,7 +223,7 @@ runDriverComplianceSuite(
   },
   // servicesThreading: orchestrator and step handlers can run in
   //                    separate Worker isolates depending on dispatcher.
-  // crossRunQueries:   self-host Mode 1 has no native query layer per §8.3.
+  // crossRunQueries:   legacy Cloudflare has no native query layer.
   { servicesThreading: false, crossRunQueries: false },
 )
 

@@ -1,7 +1,10 @@
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
 import { createVoyantDataFxExchangeRateResolver } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
-import { createCloudflareEdgeDriver } from "@voyant-travel/workflows-orchestrator-cloudflare"
+import {
+  type CloudWorkflowsClientEnv,
+  createCloudWorkflowDriver,
+} from "@voyant-travel/workflows/client"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveVoyantApiKey } from "../lib/voyant-cloud"
 import {
@@ -74,12 +77,18 @@ export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
   return createSmartbillSettlementPollers(operatorBindings(bindings))
 }
 
+export function operatorWorkflowCloudEnv(env: CloudflareBindings): CloudWorkflowsClientEnv {
+  return {
+    VOYANT_CLOUD_WORKFLOWS_URL: env.VOYANT_CLOUD_WORKFLOWS_URL,
+    VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
+    VOYANT_CLOUD_APP_SLUG: env.VOYANT_CLOUD_APP_SLUG ?? "operator",
+    VOYANT_CLOUD_ENVIRONMENT: env.VOYANT_CLOUD_ENVIRONMENT,
+  }
+}
+
 export function createOperatorWorkflowDriver(bindings: unknown) {
   const env = operatorBindings(bindings)
-  return createCloudflareEdgeDriver({
-    orchestratorNamespace: env.WORKFLOW_RUN_DO,
-    manifestKv: env.WORKFLOW_MANIFESTS,
-  })
+  return () => createCloudWorkflowDriver({ env: operatorWorkflowCloudEnv(env) })
 }
 
 export { generateContractPdfForBooking }

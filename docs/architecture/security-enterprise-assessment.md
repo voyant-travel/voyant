@@ -202,9 +202,14 @@ Records are keyed by `(scope, key)` where `scope` defaults to `${method} ${pathn
 **`packages/auth/src/server.ts:104-119`**
 `getAuthSecret()` returns the constant `"build-phase-placeholder-secret-not-used-at-runtime!!"` whenever `process.env.NEXT_PHASE` is set — a generic Next.js env var easily leaked via a shared `.env`. Anything signing/verifying with it becomes forgeable. **Fix:** never return a usable secret; gate on a build-only flag that cannot exist at runtime, or fail loudly.
 
-### M9 — Step results cross the orchestrator↔container boundary unsigned
-**`packages/workflows-orchestrator-cloudflare/src/cf-container-runner.ts:262`, `apps/workflows-node-step-container/src/server.ts`**
-Outbound dispatch is HMAC-signed (`X-Voyant-Step-Auth`), but the step *response* (journal entry: status, output, error) is parsed and committed to DO run state with no signature or strict schema validation — a compromised step container can forge authoritative run state. The node step container additionally accepts `POST /step` with no auth and dynamically `import()`s a fetched bundle URL (the caller-supplied hash is not a security control). **Fix:** sign step responses (HMAC per tenant) and verify before committing; require `X-Voyant-Step-Auth` in the container; allowlist the bundle host.
+### M9 — Legacy external step-server auth must stay fail-closed
+**`apps/workflows-node-step-container/src/server.ts`**
+Historical note: the Cloudflare container dispatch path was removed from the
+public adapter. The remaining legacy step server requires
+`VOYANT_WORKFLOW_STEP_AUTH_SECRET` unless
+`VOYANT_WORKFLOW_STEP_ALLOW_UNAUTHENTICATED=1` is explicitly set, and signs step
+responses when the secret is configured. Keep that fail-closed behavior if this
+legacy server changes.
 
 ### M10 — Supply-chain: publish not gated by tests; floating action tags; no automated dep management
 **`.github/workflows/release.yml`, repo root**

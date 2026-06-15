@@ -34,7 +34,7 @@ export interface BuildManifestArgs {
       description?: string
       input?: unknown
       output?: unknown
-      defaultRuntime?: "edge" | "node"
+      defaultRuntime?: "node"
       concurrency?: ConcurrencyPolicy<unknown>
       retry?: unknown
       timeout?: unknown
@@ -87,7 +87,7 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
         steps: [],
         concurrency: serializeConcurrency(wf.config?.concurrency),
         schedules,
-        defaultRuntime: wf.config?.defaultRuntime ?? "edge",
+        defaultRuntime: wf.config?.defaultRuntime ?? "node",
         hasCompensation: false,
         sourceLocation: { file: "<runtime>", line: 0 },
       }

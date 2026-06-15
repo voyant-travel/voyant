@@ -69,7 +69,7 @@ export interface WorkflowManifestEntry {
   concurrency?: ManifestConcurrencyPolicy
   steps: ManifestStep[]
   schedules: ManifestSchedule[]
-  defaultRuntime: "edge" | "node"
+  defaultRuntime: "node"
   hasCompensation: boolean
   sourceLocation: { file: string; line: number }
 }
@@ -145,7 +145,7 @@ export interface ManifestConcurrencyPolicy {
 
 export interface ManifestStep {
   id: string
-  runtime: "edge" | "node"
+  runtime: "node"
   hasCompensation: boolean
   sourceLocation: { file: string; line: number }
 }
@@ -382,7 +382,7 @@ export type StreamEvent =
       eventId: string
       at: number
       stepId: string
-      runtime: "edge" | "node"
+      runtime: "node"
       machine?: string
     }
   | {
@@ -458,7 +458,7 @@ export type StreamEvent =
     }
 
 // Shared envelope for journal events written by the orchestrator,
-// the tenant worker, or a node-runtime container. Concrete `kind`
+// tenant runtime, or Node runner. Concrete `kind`
 // discriminants are owned by the emitting layer.
 export interface JournalEventEnvelope<TKind extends string = string, TData = unknown> {
   eventId: string

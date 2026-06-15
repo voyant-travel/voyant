@@ -2,11 +2,11 @@
 // filters match and produce the per-match descriptors drivers feed into
 // `trigger()`.
 //
-// Drivers (InMemory, Mode 2 / Postgres, Mode 1 / CF edge) wrap this in
+// Drivers (InMemory, Node/Postgres, legacy Cloudflare Worker/DO) wrap this in
 // their own `ingestEvent` impl: they fetch the manifest from their store,
 // call `routeEvent(...)`, then invoke `trigger()` per match.
 //
-// Architecture: docs/architecture/workflows-runtime-architecture.md §15.
+// Architecture: docs/architecture/workflows-runtime-architecture.md.
 
 import {
   evaluatePredicate,

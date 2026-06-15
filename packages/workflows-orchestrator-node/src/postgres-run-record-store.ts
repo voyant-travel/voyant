@@ -4,7 +4,7 @@
 //
 // The snapshot table already carries a `run_record` JSONB column; this
 // store uses that for the full RunRecord plus the indexed columns
-// (`workflow_id`, `status`, `started_at`, etc.) for queries. Mode 2's
+// (`workflow_id`, `status`, `started_at`, etc.) for queries. The Node driver
 // `createNodeStandaloneDriver` plugs this into the orchestrator core's
 // pure trigger/resume/cancel functions.
 //

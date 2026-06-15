@@ -15,7 +15,7 @@ function makeRecord(overrides: Partial<RunRecord> = {}): RunRecord {
       stepResults: {
         fetch: {
           attempt: 1,
-          runtime: "edge",
+          runtime: "node",
           status: "ok",
           startedAt: 10,
           finishedAt: 25,

@@ -1,4 +1,4 @@
-// Mode 2 sleep-resume integration test — verifies that workflows
+// Node/Postgres sleep-resume integration test — verifies that workflows
 // parked on `ctx.sleep(...)` actually wake up via the wakeup poller
 // wired into `createNodeStandaloneDriver`. Closes the gap reviewer P1.2
 // flagged: prior to wiring `createPersistentWakeupManager` into the
@@ -21,7 +21,7 @@ const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip
 const migrationsFolder = resolve(fileURLToPath(new URL("../../", import.meta.url)), "drizzle")
 
-describeIfDb("Mode 2 sleep-resume", () => {
+describeIfDb("Node/Postgres sleep-resume", () => {
   let connection: ReturnType<typeof createPostgresConnection>
 
   beforeAll(async () => {

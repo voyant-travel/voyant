@@ -9,41 +9,8 @@
   "compatibility_date": "2025-01-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // The tenant Worker does NOT own the container pool, R2 bucket, or
-  // KV namespace — those are provisioned by the orchestrator-worker
-  // deploy. Bindings here are SERVICE-level references that resolve
-  // to the orchestrator's resources at dispatch-namespace-put time.
-  // voyant-cloud's deploy pipeline is responsible for matching these
-  // binding names across the orchestrator and tenant deploys.
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "NODE_STEP_POOL",
-        "class_name": "NodeStepContainer",
-        "script_name": "voyant-orchestrator"
-      }
-    ]
-  },
-  "r2_buckets": [
-    {
-      "binding": "BUNDLE_R2",
-      "bucket_name": "voyant-bundles"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "BUNDLE_HASHES",
-      "id": "replace-me-with-the-same-id-as-orchestrator"
-    }
-  ],
-
-  // Non-secret R2 config. The credential is set separately via
-  // `wrangler secret put R2_ACCESS_KEY_ID` + `R2_SECRET_ACCESS_KEY`
-  // + `VOYANT_DISPATCH_SECRET` + `VOYANT_WORKFLOW_STEP_AUTH_SECRET`.
-  "vars": {
-    "R2_ACCOUNT_ID": "replace-with-your-cf-account-id",
-    "R2_BUCKET": "voyant-bundles"
-  },
+  // The credential is set separately via
+  // `wrangler secret put VOYANT_DISPATCH_SECRET`.
 
   "observability": {
     "enabled": true

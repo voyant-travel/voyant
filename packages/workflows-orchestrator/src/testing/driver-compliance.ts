@@ -2,7 +2,7 @@
 //
 // `runDriverComplianceSuite(name, makeDriver)` is parameterized over a
 // driver factory. It runs identical assertions against every implementation
-// we ship: InMemory, Mode 2 / Postgres, Mode 1 / CF edge.
+// we ship: InMemory, Node/Postgres, and legacy Cloudflare Worker/DO.
 //
 // Importable from a regular `.ts` file so downstream packages
 // (`@voyant-travel/workflows-orchestrator-node`, `-cloudflare`) can run the
@@ -16,7 +16,7 @@
 // idempotency dedup, ingestEvent's manifest-not-registered + no-filters
 // paths, ctx.services, basic admin reads, shutdown.
 //
-// Architecture: docs/architecture/workflows-runtime-architecture.md §6.4.
+// Architecture: docs/architecture/workflows-runtime-architecture.md.
 
 import { __resetRegistry, workflow } from "@voyant-travel/workflows"
 import type {
@@ -100,7 +100,7 @@ function testReleaseCapabilities(): WorkflowManifest["capabilities"] {
 }
 
 // Per-test counter so workflow ids stay unique across tests in a suite —
-// some persistent stores (Mode 2's Postgres) carry state between tests in
+// some persistent stores (Node/Postgres) carry state between tests in
 // the same run, and a duplicate id would HMR-warn at minimum and
 // pollute results at worst.
 let suiteCounter = 0
@@ -115,22 +115,23 @@ const DATETIME_WAKEUP_TEST_TIMEOUT_MS = 5_000
 /**
  * Opt-in capability flags for drivers that don't share a process with
  * step bodies. Default to `true` because in-process drivers (InMemory,
- * Mode 2) satisfy every contract. Out-of-process drivers (Mode 1 / CF
- * edge — orchestrator and tenant live in separate Worker isolates) opt
- * out of in-process-only assertions like `ctx.services` threading.
+ * Node/Postgres) satisfy every contract. Out-of-process drivers (legacy
+ * Cloudflare Worker/DO deployments, where orchestrator and tenant live in
+ * separate Worker isolates) opt out of in-process-only assertions like
+ * `ctx.services` threading.
  */
 export interface DriverComplianceCapabilities {
   /**
    * When true, the framework's `ModuleContainer` is plumbed to step
-   * bodies via `ctx.services`. False for Mode 1, where the orchestrator
-   * and tenant are separate Workers and a per-tenant container would
-   * have to ship across a serialization boundary.
+   * bodies via `ctx.services`. False for legacy Cloudflare deployments,
+   * where the orchestrator and tenant are separate Workers and a per-tenant
+   * container would have to ship across a serialization boundary.
    */
   servicesThreading?: boolean
   /**
    * When true, `admin.listRuns(...)` returns runs the driver knows about.
-   * False for self-host Mode 1, which has no native cross-run query
-   * layer (per architecture doc §8.3) — `listRuns` exists but returns
+   * False for legacy Cloudflare deployments, which have no native cross-run
+   * query layer — `listRuns` exists but returns
    * an empty page; voyant-cloud provides an index in its repo.
    */
   crossRunQueries?: boolean
@@ -142,7 +143,7 @@ export interface DriverComplianceCapabilities {
   autoDatetimeWakeups?: boolean
   /**
    * When true, workflow-level `WorkflowConfig.concurrency` is enforced
-   * for in-process workflow definitions. False for Mode 1 / Cloudflare
+   * for in-process workflow definitions. False for legacy Cloudflare
    * until it grows a cross-run coordination DO.
    */
   workflowConcurrency?: boolean
