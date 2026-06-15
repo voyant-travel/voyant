@@ -1,5 +1,6 @@
 import { parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
 import { bookingRequirementsService } from "./service.js"
@@ -11,6 +12,12 @@ type Env = {
     db: PostgresJsDatabase
     userId?: string
   }
+}
+
+const PUBLIC_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+
+function cachePublicRead(c: Context) {
+  c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
 export interface PublicBookingRequirementsRoutesOptions {
@@ -34,6 +41,7 @@ export function createPublicBookingRequirementsRoutes(
       return c.json({ error: "Product not found" }, 404)
     }
 
+    cachePublicRead(c)
     return c.json({ data: result })
   })
 }

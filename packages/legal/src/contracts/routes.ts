@@ -68,6 +68,17 @@ type Env = {
   }
 }
 
+const PUBLIC_LEGAL_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+const PRIVATE_NO_STORE_CACHE_CONTROL = "private, no-store"
+
+function cachePublicLegalRead(c: Context) {
+  c.header("Cache-Control", PUBLIC_LEGAL_CACHE_CONTROL)
+}
+
+function preventSharedCache(c: Context) {
+  c.header("Cache-Control", PRIVATE_NO_STORE_CACHE_CONTROL)
+}
+
 export type ContractDocumentGenerator = Parameters<
   typeof contractsService.generateContractDocument
 >[3]["generator"]
@@ -806,6 +817,7 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
         const query = parseQuery(c, contractTemplateDefaultQuerySchema)
         const row = await contractsService.getDefaultTemplate(c.get("db"), query)
         if (!row) return c.json({ error: "Template not found" }, 404)
+        cachePublicLegalRead(c)
         return c.json({ data: row })
       })
       .post("/templates/:id/preview", renderPublicTemplatePreview)
@@ -819,12 +831,14 @@ export function createContractsPublicRoutes(options: ContractsRouteOptions = {})
       .post("/templates/by-slug/:slug/preview", renderPublicTemplatePreviewBySlug)
       .post("/templates/by-slug/:slug/render-preview", renderPublicTemplatePreviewBySlug)
       .get("/:id", async (c) => {
+        preventSharedCache(c)
         const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
         if (!row) return c.json({ error: "Contract not found" }, 404)
         const { metadata: _metadata, ...publicContract } = row
         return c.json({ data: publicContract })
       })
       .post("/:id/sign", async (c) => {
+        preventSharedCache(c)
         const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
         const input = await parseJsonBody(c, insertContractSignatureSchema)
         const result = await contractsService.signContract(

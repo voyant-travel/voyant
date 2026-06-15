@@ -26,6 +26,12 @@ import {
   operatorProfile,
 } from "../db/schema.js"
 
+const PUBLIC_OPERATOR_SETTINGS_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+
+function cachePublicOperatorSettings(c: Context) {
+  c.header("Cache-Control", PUBLIC_OPERATOR_SETTINGS_CACHE_CONTROL)
+}
+
 const depositRuleSchema = z.object({
   kind: z.enum(["none", "percent", "fixed_cents"]),
   percent: z.number().min(0).max(100).optional(),
@@ -408,6 +414,7 @@ async function handleGetPublicOperatorProfile(c: Context): Promise<Response> {
     getOperatorProfile(db),
     getOperatorPaymentDefaults(db),
   ])
+  cachePublicOperatorSettings(c)
   if (!profile) return c.json({ data: null })
   return c.json({ data: toPublicOperatorProfile(profile, defaults) })
 }
@@ -426,6 +433,7 @@ async function handlePatchOperatorSettings(c: Context): Promise<Response> {
 async function handleGetPublicOperatorSettings(c: Context): Promise<Response> {
   const db = c.get("db") as PostgresJsDatabase
   const row = await getOperatorSettings(db)
+  cachePublicOperatorSettings(c)
   if (!row) return c.json({ data: null })
   return c.json({ data: toPublicOperatorSettings(row) })
 }

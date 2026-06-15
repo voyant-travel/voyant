@@ -1,5 +1,6 @@
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 
@@ -15,6 +16,12 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
   }
+}
+
+const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
+
+function cachePublicRead(c: Context) {
+  c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
 const TYPEID_RE = /^[a-z]+_[0-9a-zA-Z]+$/
@@ -111,6 +118,7 @@ export const cruisePublicRoutes = new Hono<Env>()
   .get("/", async (c) => {
     const query = parseQuery(c, searchIndexQuerySchema)
     const result = await cruisesSearchService.query(c.get("db"), query)
+    cachePublicRead(c)
     return c.json(result)
   })
   .get("/:slug", async (c) => {
@@ -124,6 +132,7 @@ export const cruisePublicRoutes = new Hono<Env>()
         withDays: true,
       })
       if (!detail) return c.json({ error: "not_found" }, 404)
+      cachePublicRead(c)
       return c.json({
         data: {
           source: "local" as const,
@@ -154,6 +163,7 @@ export const cruisePublicRoutes = new Hono<Env>()
       const cruise = await adapter.fetchCruise(adapterRef)
       if (!cruise) return c.json({ error: "not_found" }, 404)
       const sailings = await adapter.listSailingsForCruise(adapterRef)
+      cachePublicRead(c)
       return c.json({
         data: {
           source: "external" as const,
@@ -176,6 +186,7 @@ export const cruisePublicRoutes = new Hono<Env>()
         withItinerary: true,
       })
       if (!sailing) return c.json({ error: "not_found" }, 404)
+      cachePublicRead(c)
       return c.json({ data: { source: "local", sailing } })
     }
     const parsed = resolveExternalKey(key)
@@ -188,6 +199,7 @@ export const cruisePublicRoutes = new Hono<Env>()
       adapter.fetchSailingPricing(parsed.sourceRef),
       adapter.fetchSailingItinerary(parsed.sourceRef),
     ])
+    cachePublicRead(c)
     return c.json({
       data: { source: "external", sourceProvider: adapter.name, sailing, pricing, itinerary },
     })
@@ -271,6 +283,7 @@ export const cruisePublicRoutes = new Hono<Env>()
         cruisesService.listShipDecks(c.get("db"), key),
         cruisesService.listShipCabinCategories(c.get("db"), key),
       ])
+      cachePublicRead(c)
       return c.json({ data: { ...ship, decks, categories } })
     }
     const parsed = resolveExternalKey(key)
@@ -279,6 +292,7 @@ export const cruisePublicRoutes = new Hono<Env>()
     if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
     const ship = await adapter.fetchShip(parsed.sourceRef)
     if (!ship) return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
     return c.json({ data: ship })
   })
 
