@@ -16,14 +16,11 @@ import {
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
-import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
-import { mountLazyRouteApp } from "./lazy-route-app"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
 } from "./operator-runtime-adapter"
-import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
 import { tripsPaymentBundle } from "./trips-runtime"
 
@@ -50,25 +47,6 @@ const { modules, extensions } = composeFromManifest(
   operatorComposition,
   buildOperatorCapabilities(),
 )
-
-const catalogBookingRoutePaths = [
-  "/v1/admin/catalog/quote",
-  "/v1/admin/catalog/book",
-  "/v1/admin/catalog/drafts/:id",
-  "/v1/admin/catalog/holds/place",
-  "/v1/admin/catalog/holds/release",
-  "/v1/admin/catalog/slots",
-  "/v1/admin/catalog/orders",
-  "/v1/admin/catalog/orders/:id",
-  "/v1/admin/catalog/orders/:id/cancel",
-  "/v1/admin/bookings/:id/catalog-snapshot",
-  "/v1/public/catalog/quote",
-  "/v1/public/catalog/book",
-  "/v1/public/catalog/drafts/:id",
-  "/v1/public/catalog/holds/place",
-  "/v1/public/catalog/holds/release",
-  "/v1/public/catalog/slots",
-] as const
 
 export const app = createApp<CloudflareBindings>({
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
@@ -201,78 +179,10 @@ export const app = createApp<CloudflareBindings>({
     validateApiKey: async ({ env, db, apiKey }) => validateApiTokenAccess(env, db, apiKey),
   },
   additionalRoutes: (hono) => {
-    // Invitations, action-ledger health, MCP agent tools, flights, proposals,
-    // and catalog offers/checkout are now composed route modules/extensions —
-    // see composition.ts.
-
-    // Operator profile, payment instructions, and booking payment defaults.
-    mountOperatorSettingsRoutes(hono)
-
-    // Booking payment-schedule (admin regenerate + public policy preview)
-    // and booking-tax preview are now composed extensions on the bookings
-    // module — see composition.ts.
-
-    // Rebuild `booking_item_tax_lines` from the catalog snapshot for a
-    // booking. Repairs bookings created before the snapshot fallback in
-    // `materializeBookingItemTaxLine` shipped — without this, invoices
-    // generated from such bookings end up with 0 tax even though the
-    // booking page shows the upstream tax from its catalog snapshot.
-    // POST /v1/admin/bookings/:bookingId/rebuild-tax-lines
-    hono.post("/v1/admin/bookings/:bookingId/rebuild-tax-lines", async (c) => {
-      const bookingId = c.req.param("bookingId")
-      try {
-        const [{ rebuildBookingItemTaxLines }, { operatorPostgresDb }] = await Promise.all([
-          import("./catalog-checkout-materialization"),
-          import("./operator-runtime-adapter"),
-        ])
-        const result = await rebuildBookingItemTaxLines(operatorPostgresDb(c.get("db")), bookingId)
-        return c.json({ data: result })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        return c.json({ error: message }, 500)
-      }
-    })
-
-    mountLazyRouteApp(
-      hono,
-      ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
-      () =>
-        import("./contract-document-routes").then(
-          (module) => module.mountOperatorContractDocumentRoutes,
-        ),
-    )
-
-    mountLazyRouteApp(
-      hono,
-      [
-        "/v1/admin/products/:id/brochure/generate",
-        "/v1/uploads",
-        "/v1/admin/uploads",
-        "/v1/uploads/video",
-        "/v1/admin/uploads/video",
-        "/v1/media/*",
-        "/v1/admin/media/*",
-      ],
-      () => import("./media-upload-routes").then((module) => module.mountOperatorMediaUploadRoutes),
-    )
-
-    mountOperatorLazyAdditionalRoutes(hono)
-
-    mountLazyRouteApp(hono, catalogBookingRoutePaths, () =>
-      import("./catalog-booking").then((module) => module.mountCatalogBookingRoutes),
-    )
-    mountLazyRouteApp(
-      hono,
-      [
-        "/v1/admin/products/:id/content",
-        "/v1/public/products/:id/content",
-        "/v1/admin/cruises/:id/content",
-        "/v1/public/cruises/:id/content",
-        "/v1/admin/accommodations/:id/content",
-        "/v1/public/accommodations/:id/content",
-      ],
-      () => import("./catalog-content").then((module) => module.mountCatalogContentRoutes),
-    )
+    // Every domain + deployment-local route family is now composed through the
+    // registry (see composition.ts). The only thing left here is the workflow-
+    // runs admin surface, which is coupled to the app-level runner registry that
+    // bundle bootstraps populate at construction time.
 
     // Workflow runs admin surface — list/get + rerun/resume actions
     // feeding the standalone dashboard SPA in

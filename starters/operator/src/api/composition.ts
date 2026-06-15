@@ -45,7 +45,7 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
+import { createPublicDocumentDeliveryHonoModule, type VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
@@ -100,6 +100,26 @@ const operatorExtrasHonoModule: HonoModule = {
   module: { name: "extras" },
   routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
 }
+
+/** Explicit matchers for the catalog booking-engine + order/snapshot routes. */
+const OPERATOR_CATALOG_BOOKING_ROUTE_PATHS = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/drafts/:id",
+  "/v1/admin/catalog/holds/place",
+  "/v1/admin/catalog/holds/release",
+  "/v1/admin/catalog/slots",
+  "/v1/admin/catalog/orders",
+  "/v1/admin/catalog/orders/:id",
+  "/v1/admin/catalog/orders/:id/cancel",
+  "/v1/admin/bookings/:id/catalog-snapshot",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/drafts/:id",
+  "/v1/public/catalog/holds/place",
+  "/v1/public/catalog/holds/release",
+  "/v1/public/catalog/slots",
+] as const
 
 type NotificationDeliveryLike = {
   id: string
@@ -246,6 +266,12 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/flights",
     "operator/mcp",
     "operator/invitations",
+    "operator/catalog-booking",
+    "operator/catalog-content",
+    "operator/media",
+    "operator/payment-link",
+    "operator/operator-settings",
+    "operator/contract-document",
   ],
   extensions: [
     "@voyant-travel/bookings/booking-supplier-extension",
@@ -258,6 +284,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "@voyant-travel/finance/booking-tax-extension",
     "operator/booking-schedule-extension",
     "operator/quote-version-snapshot-extension",
+    "operator/booking-maintenance-extension",
     "operator/action-ledger-health-extension",
     "operator/proposal-extension",
     "operator/catalog-offers-extension",
@@ -483,6 +510,108 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       lazyPublicRoutes: () =>
         import("./invitations").then((m) => m.createInvitationsPublicRoutes()),
     }),
+    // Multi-prefix deployment-local families: the route bundles span several
+    // absolute prefixes, so they compose via `lazyRoutes` (explicit paths +
+    // context bridging) over their existing absolute-route mount functions.
+    "operator/catalog-booking": () => ({
+      module: { name: "catalog-booking" },
+      lazyRoutes: {
+        paths: OPERATOR_CATALOG_BOOKING_ROUTE_PATHS,
+        load: () =>
+          import("./catalog-booking").then((m) => {
+            const app = new Hono()
+            m.mountCatalogBookingRoutes(app)
+            return app
+          }),
+      },
+    }),
+    "operator/catalog-content": () => ({
+      module: { name: "catalog-content" },
+      lazyRoutes: {
+        paths: [
+          "/v1/admin/products/:id/content",
+          "/v1/public/products/:id/content",
+          "/v1/admin/cruises/:id/content",
+          "/v1/public/cruises/:id/content",
+          "/v1/admin/accommodations/:id/content",
+          "/v1/public/accommodations/:id/content",
+        ],
+        load: () =>
+          import("./catalog-content").then((m) => {
+            const app = new Hono()
+            m.mountCatalogContentRoutes(app)
+            return app
+          }),
+      },
+    }),
+    "operator/media": () => ({
+      module: { name: "media" },
+      lazyRoutes: {
+        paths: [
+          "/v1/admin/products/:id/brochure/generate",
+          "/v1/uploads",
+          "/v1/admin/uploads",
+          "/v1/uploads/video",
+          "/v1/admin/uploads/video",
+          "/v1/media/*",
+          "/v1/admin/media/*",
+        ],
+        load: () =>
+          import("./media-upload-routes").then((m) => {
+            const app = new Hono()
+            m.mountOperatorMediaUploadRoutes(app as never)
+            return app
+          }),
+      },
+    }),
+    "operator/payment-link": () => ({
+      module: { name: "payment-link" },
+      lazyRoutes: {
+        paths: [
+          "/v1/public/payment-link-config",
+          "/v1/public/payment-link/:sessionId/retry",
+          "/v1/public/payment-link/resolve",
+          "/v1/public/payment-link/:sessionId/start-card",
+          "/v1/public/payment-link/:sessionId/trip-summary",
+          "/v1/public/payment-link/:sessionId/booking-summary",
+          "/v1/public/bookings/:bookingId/checkout-status",
+        ],
+        load: () =>
+          import("./lazy-additional-routes").then((m) => {
+            const app = new Hono()
+            m.mountOperatorLazyAdditionalRoutes(app)
+            return app
+          }),
+      },
+    }),
+    "operator/operator-settings": () => ({
+      module: { name: "operator-settings" },
+      lazyRoutes: {
+        paths: [
+          "/v1/admin/settings/*",
+          "/v1/public/operator-profile",
+          "/v1/public/settings/operator",
+        ],
+        load: () =>
+          import("./settings").then((m) => {
+            const app = new Hono()
+            m.mountOperatorSettingsRoutes(app)
+            return app
+          }),
+      },
+    }),
+    "operator/contract-document": () => ({
+      module: { name: "contract-document" },
+      lazyRoutes: {
+        paths: ["/v1/admin/bookings/:bookingId/generate-contract", "/v1/admin/documents/files/*"],
+        load: () =>
+          import("./contract-document-routes").then((m) => {
+            const app = new Hono()
+            m.mountOperatorContractDocumentRoutes(app as never)
+            return app
+          }),
+      },
+    }),
   },
   extensions: {
     "@voyant-travel/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
@@ -497,6 +626,30 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/booking-schedule-extension": () => createBookingScheduleExtension(),
     "operator/quote-version-snapshot-extension": () =>
       createOperatorQuoteVersionSnapshotExtension(),
+    // Booking tax-line repair (single maintenance route on the bookings surface).
+    "operator/booking-maintenance-extension": () => ({
+      extension: { name: "booking-maintenance", module: "bookings" },
+      lazyAdminRoutes: async () => {
+        const app = new Hono<{ Variables: { db: VoyantDb } }>()
+        app.post("/:bookingId/rebuild-tax-lines", async (c) => {
+          const bookingId = c.req.param("bookingId")
+          try {
+            const [{ rebuildBookingItemTaxLines }, { operatorPostgresDb }] = await Promise.all([
+              import("./catalog-checkout-materialization"),
+              import("./operator-runtime-adapter"),
+            ])
+            const result = await rebuildBookingItemTaxLines(
+              operatorPostgresDb(c.get("db")),
+              bookingId,
+            )
+            return c.json({ data: result })
+          } catch (err) {
+            return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+          }
+        })
+        return app
+      },
+    }),
     "operator/action-ledger-health-extension": () => ({
       extension: { name: "action-ledger-health", module: "action-ledger" },
       lazyAdminRoutes: () =>

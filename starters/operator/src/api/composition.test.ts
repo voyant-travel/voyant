@@ -38,9 +38,9 @@ describe("operator runtime composition", () => {
 
     // 20 manifest entries expand to 25 mounted modules because Commerce and
     // Distribution each mount multiple internal Hono modules.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(23)
-    expect(composed.modules).toHaveLength(28)
-    expect(composed.extensions).toHaveLength(14)
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(29)
+    expect(composed.modules).toHaveLength(34)
+    expect(composed.extensions).toHaveLength(15)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
