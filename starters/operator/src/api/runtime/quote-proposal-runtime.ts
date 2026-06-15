@@ -14,10 +14,9 @@
  */
 import type { QuoteProposalRoutesOptions } from "@voyant-travel/quotes"
 import type { Context } from "hono"
-
+import { getOperatorSettings, toPublicOperatorSettings } from "../routes/settings"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
-import { getOperatorSettings, toPublicOperatorSettings } from "./settings"
 import { createReserveTripDeps, createStartCheckoutDeps } from "./trips-runtime"
 
 /** Build the quotes proposal/snapshot route options for this deployment. */

@@ -22,7 +22,7 @@ import { createCruiseContentRoutes } from "@voyant-travel/cruises/routes-content
 import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
 import type { Hono } from "hono"
 
-import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
+import { getBookingEngineRegistryFromContext } from "../lib/booking-engine-runtime"
 
 export function mountCatalogContentRoutes(hono: Hono): void {
   // ── Products ─────────────────────────────────────────────────

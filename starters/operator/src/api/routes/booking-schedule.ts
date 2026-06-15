@@ -30,7 +30,7 @@ import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
+import { withDbFromEnv } from "../lib/db"
 import {
   readPolicySourceFromInternalNotes,
   resolveCategoryPolicy,
@@ -40,8 +40,7 @@ import {
   resolveSupplierPolicy,
   resolveSupplierPolicyForEntity,
   stampPolicySourceOnBooking,
-} from "./booking-payment-policy-runtime"
-import { withDbFromEnv } from "./lib/db"
+} from "../runtime/booking-payment-policy-runtime"
 import { resolveOperatorDefaultPaymentPolicy } from "./settings"
 
 interface BookingConfirmedPayload {

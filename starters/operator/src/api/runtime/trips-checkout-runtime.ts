@@ -26,7 +26,7 @@ import {
 } from "@voyant-travel/trips/checkout"
 import type { Context } from "hono"
 
-import { resolveVoyantApiKey } from "../lib/voyant-cloud"
+import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
 
 // Re-export the billing helpers so existing operator callers keep their import
 // surface (now sourced from the trips package).

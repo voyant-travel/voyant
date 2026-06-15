@@ -31,12 +31,11 @@ import { tripComponents, tripEnvelopes } from "@voyant-travel/trips/schema"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
-
+import { getOperatorPaymentInstructions, getOperatorProfile } from "../routes/settings"
 import {
   bankTransferDetailsFromOperatorSettings,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
-import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
 
 function getDb(c: Context): PostgresJsDatabase {
   return c.get("db") as PostgresJsDatabase

@@ -38,8 +38,8 @@ import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { Hono } from "hono"
 
-import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
-import { withDbFromEnv } from "./lib/db"
+import { type BookingEngineEnv, getBookingEngineRegistry } from "../lib/booking-engine-runtime"
+import { withDbFromEnv } from "../lib/db"
 
 interface BookingConfirmedPayload {
   bookingId: string

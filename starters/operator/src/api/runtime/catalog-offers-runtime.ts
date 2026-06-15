@@ -23,7 +23,7 @@ import {
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { Context, Hono } from "hono"
 
-import { createDestinationNameResolver } from "./lib/geo-resolver"
+import { createDestinationNameResolver } from "../lib/geo-resolver"
 
 interface PackageOffersEnv {
   VOYANT_API_KEY?: string

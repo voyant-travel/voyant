@@ -18,7 +18,7 @@ import {
   startCatalogCheckout as packageStartCatalogCheckout,
 } from "@voyant-travel/commerce/checkout"
 import type { Hono } from "hono"
-import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
+import { createOperatorCheckoutStartOptions } from "../runtime/catalog-checkout-options"
 
 export {
   CatalogCheckoutStartError,

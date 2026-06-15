@@ -22,8 +22,8 @@ import type { EventBus } from "@voyant-travel/core"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { withDbFromEnv } from "./lib/db"
-import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter"
+import { withDbFromEnv } from "../lib/db"
+import { operatorBindings, operatorPostgresDb } from "../runtime/operator-runtime-adapter"
 
 interface PaymentCompletedPayload {
   bookingId: string | null

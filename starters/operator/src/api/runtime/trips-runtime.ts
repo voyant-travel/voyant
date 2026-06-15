@@ -11,7 +11,7 @@ import {
 } from "@voyant-travel/trips"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { withDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "../lib/db"
 import {
   cancelComponent,
   previewComponentCancellation,

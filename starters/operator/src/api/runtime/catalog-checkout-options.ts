@@ -20,7 +20,7 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
-} from "./settings"
+} from "../routes/settings"
 
 /** Resolve an owned product's display name (cycle-avoiding inventory read). */
 async function getOwnedProductName(

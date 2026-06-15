@@ -11,7 +11,7 @@ import {
   createQuoteProposalPublicRoutes,
 } from "@voyant-travel/quotes"
 
-import { createQuoteProposalRoutesOptions } from "./quote-proposal-runtime"
+import { createQuoteProposalRoutesOptions } from "../runtime/quote-proposal-runtime"
 
 export { buildQuoteVersionProposalUrl }
 

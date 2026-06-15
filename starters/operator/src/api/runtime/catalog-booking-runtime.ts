@@ -20,8 +20,8 @@ import type { Context, Hono } from "hono"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
-} from "./lib/booking-engine-runtime"
-import { resolveBookingTaxSettings } from "./settings"
+} from "../lib/booking-engine-runtime"
+import { resolveBookingTaxSettings } from "../routes/settings"
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 

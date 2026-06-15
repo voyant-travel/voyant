@@ -9,17 +9,17 @@
 import { createIndexerService } from "@voyant-travel/catalog"
 import { refreshExternalCruiseCatalog } from "@voyant-travel/cruises/service-external-refresh"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
+import { type BookingEngineEnv, getBookingEngineRegistry } from "../lib/booking-engine-runtime"
 import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "./lib/catalog-runtime"
-import { withDbFromEnv } from "./lib/db"
+} from "../lib/catalog-runtime"
+import { withDbFromEnv } from "../lib/db"
 
-export { EXTERNAL_CRUISE_CATALOG_REFRESH_CRON } from "../scheduled-crons"
+export { EXTERNAL_CRUISE_CATALOG_REFRESH_CRON } from "../../scheduled-crons"
 
 export async function runScheduledExternalCruiseCatalogRefresh(
   _event: ScheduledController,

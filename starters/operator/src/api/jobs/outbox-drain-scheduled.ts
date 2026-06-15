@@ -6,7 +6,7 @@ import {
 } from "@voyant-travel/db/outbox"
 import { expireStaleWriteIntents } from "@voyant-travel/db/write-intents"
 
-import { withDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "../lib/db"
 
 /**
  * Scheduled event-outbox drain (RFC voyant#1687 Phase 2.1).
@@ -22,7 +22,7 @@ export async function runScheduledOutboxDrain(
   _event: ScheduledController,
   env: CloudflareBindings,
 ): Promise<DrainOutboxResult & { pendingAfter: number; deadLettered: number }> {
-  const { app } = await import("./app")
+  const { app } = await import("../app")
   await app.ready(env)
 
   return withDbFromEnv(env, async (db) => {

@@ -29,10 +29,10 @@ import {
   type BookingEngineEnv,
   getBookingEngineRegistry,
   getOwnedBookingHandlerRegistry,
-} from "./lib/booking-engine-runtime"
-import { withDbFromEnv } from "./lib/db"
+} from "../lib/booking-engine-runtime"
+import { withDbFromEnv } from "../lib/db"
 
-export { DRAFT_REAPER_CRON } from "../scheduled-crons"
+export { DRAFT_REAPER_CRON } from "../../scheduled-crons"
 
 export interface ReaperResult {
   scanned: number

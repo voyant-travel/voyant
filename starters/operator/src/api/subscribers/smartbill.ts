@@ -20,9 +20,9 @@ import { organizations, people } from "@voyant-travel/relationships/schema"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { withDbFromEnv } from "./lib/db"
-import { createDocumentStorage } from "./lib/storage"
-import { resolveBookingTaxSettings } from "./settings"
+import { withDbFromEnv } from "../lib/db"
+import { createDocumentStorage } from "../lib/storage"
+import { resolveBookingTaxSettings } from "../routes/settings"
 
 type SmartbillEnv = CloudflareBindings & {
   SMARTBILL_USERNAME?: string

@@ -21,10 +21,10 @@ import { createProductBrochureRoutes } from "@voyant-travel/inventory/routes-bro
 import { createMediaRoutes, type VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
 import { type Context, Hono } from "hono"
 
-import { createProductBrochurePrinter } from "../lib/brochure-printer"
-import { createVideoUploadTicket } from "../lib/video-uploads"
-import { tryGetCloudClient } from "../lib/voyant-cloud"
-import { createMediaStorage, guessMimeType } from "./lib/storage"
+import { createProductBrochurePrinter } from "../../lib/brochure-printer"
+import { createVideoUploadTicket } from "../../lib/video-uploads"
+import { tryGetCloudClient } from "../../lib/voyant-cloud"
+import { createMediaStorage, guessMimeType } from "../lib/storage"
 
 /** Resolve the R2-backed media storage provider for a request (or null → 503). */
 function resolveStorage(c: Context) {

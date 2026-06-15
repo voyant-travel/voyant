@@ -7,22 +7,22 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { bookingScheduleBundle } from "./booking-schedule"
-import { catalogBridgeBundle } from "./catalog-bridge"
-import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
-import { channelPushBundle } from "./channel-push"
 import {
   buildOperatorCapabilities,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
+import { bookingScheduleBundle } from "./routes/booking-schedule"
+import { channelPushBundle } from "./routes/channel-push"
 import {
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
-} from "./operator-runtime-adapter"
-import { smartbillOperatorBundle } from "./smartbill"
-import { tripsPaymentBundle } from "./trips-runtime"
+} from "./runtime/operator-runtime-adapter"
+import { tripsPaymentBundle } from "./runtime/trips-runtime"
+import { catalogBridgeBundle } from "./subscribers/catalog-bridge"
+import { createCatalogCheckoutBundle } from "./subscribers/catalog-checkout-finalize-runtime"
+import { smartbillOperatorBundle } from "./subscribers/smartbill"
 
 /**
  * Process-wide registry of workflow runners. Bundles register their

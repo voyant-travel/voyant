@@ -19,7 +19,7 @@ import {
 } from "@voyant-travel/trips"
 import type { Context, Hono } from "hono"
 
-import { DEFAULT_SLICES } from "./lib/catalog-runtime"
+import { DEFAULT_SLICES } from "../lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
 /** Build the trips MCP admin routes wired with this deployment's options. */

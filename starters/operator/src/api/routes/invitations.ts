@@ -26,9 +26,9 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { resolveEmailReplyTo } from "../lib/notifications"
-import { tryGetCloudClient } from "../lib/voyant-cloud"
-import { withDbFromEnv } from "./lib/db"
+import { resolveEmailReplyTo } from "../../lib/notifications"
+import { tryGetCloudClient } from "../../lib/voyant-cloud"
+import { withDbFromEnv } from "../lib/db"
 
 type InvitationsBindings = CloudflareBindings
 type InvitationsVariables = {

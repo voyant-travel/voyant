@@ -34,17 +34,17 @@ import {
 } from "@voyant-travel/trips"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { applyOperatorTaxToQuoteResult } from "./catalog-booking-runtime"
+import {
+  getBookingEngineRegistryFromContext,
+  getOwnedBookingHandlerRegistryFromContext,
+} from "../lib/booking-engine-runtime"
 import {
   CatalogCheckoutStartError,
   type CatalogCheckoutStartResult,
   type CheckoutStartInput,
   startCatalogCheckout,
-} from "./catalog-checkout"
-import {
-  getBookingEngineRegistryFromContext,
-  getOwnedBookingHandlerRegistryFromContext,
-} from "./lib/booking-engine-runtime"
+} from "../routes/catalog-checkout"
+import { applyOperatorTaxToQuoteResult } from "./catalog-booking-runtime"
 
 export async function quoteCatalogComponent(
   c: Context,

@@ -69,8 +69,8 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "./lib/catalog-runtime"
-import { withDbFromEnv } from "./lib/db"
+} from "../lib/catalog-runtime"
+import { withDbFromEnv } from "../lib/db"
 
 interface ProductEventPayload {
   id: string

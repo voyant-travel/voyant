@@ -31,7 +31,7 @@ export default {
   ): Promise<void> {
     if (event.cron === OUTBOX_DRAIN_CRON) {
       ctx.waitUntil(
-        import("./api/outbox-drain-scheduled")
+        import("./api/jobs/outbox-drain-scheduled")
           .then((mod) => mod.runScheduledOutboxDrain(event, env))
           .then((result) => {
             if (result.claimed > 0 || result.deadLettered > 0) {
@@ -43,7 +43,7 @@ export default {
     }
     if (event.cron === DRAFT_REAPER_CRON) {
       ctx.waitUntil(
-        import("./api/draft-reaper-scheduled")
+        import("./api/jobs/draft-reaper-scheduled")
           .then((mod) => mod.runScheduledDraftReaper(event, env))
           .then((result) => {
             console.info("[draft-reaper] result", result)
@@ -53,7 +53,7 @@ export default {
     }
     if (event.cron === PROMOTION_BOUNDARY_SCHEDULER_CRON) {
       ctx.waitUntil(
-        import("./api/promotion-scheduled")
+        import("./api/jobs/promotion-scheduled")
           .then((mod) => mod.runScheduledPromotionBoundary(event, env))
           .then((result) => {
             console.info("[promotion-scheduler] result", result)
@@ -67,7 +67,7 @@ export default {
       event.cron === CHANNEL_PUSH_CONTENT_CRON
     ) {
       ctx.waitUntil(
-        import("./api/channel-push-scheduled").then((mod) =>
+        import("./api/jobs/channel-push-scheduled").then((mod) =>
           mod.runScheduledChannelPushReconciler(event, env),
         ),
       )
@@ -75,7 +75,7 @@ export default {
     }
     if (event.cron === EXTERNAL_CRUISE_CATALOG_REFRESH_CRON) {
       ctx.waitUntil(
-        import("./api/external-cruise-refresh-scheduled")
+        import("./api/jobs/external-cruise-refresh-scheduled")
           .then((mod) => mod.runScheduledExternalCruiseCatalogRefresh(event, env))
           .then((result) => {
             console.info("[external-cruise-refresh] result", result)

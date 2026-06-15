@@ -24,7 +24,7 @@ import {
   operatorPaymentDefaults,
   operatorPaymentInstructions,
   operatorProfile,
-} from "../db/schema.js"
+} from "../../db/schema.js"
 
 const PUBLIC_OPERATOR_SETTINGS_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
 

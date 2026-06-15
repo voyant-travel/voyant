@@ -8,13 +8,13 @@ import {
 } from "@voyant-travel/legal"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { tryGetCloudClient } from "../lib/voyant-cloud"
+import { tryGetCloudClient } from "../../lib/voyant-cloud"
+import { createDocumentStorage, guessMimeType } from "../lib/storage"
 import {
   AUTO_GENERATE_CONTRACT_OPTIONS,
   contractVariableBindings,
   DEFAULT_CONTRACT_SERIES_NAME,
 } from "./contract-document-variables"
-import { createDocumentStorage, guessMimeType } from "./lib/storage"
 
 export { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
 

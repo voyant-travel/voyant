@@ -4,8 +4,8 @@ import type { AutoGenerateContractOptions } from "@voyant-travel/legal"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { getOperatorPaymentInstructions, getOperatorProfile } from "../routes/settings"
 import { readPolicySourceFromInternalNotes } from "./booking-payment-policy-runtime"
-import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
 
 export const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"
 

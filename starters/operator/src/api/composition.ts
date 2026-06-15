@@ -76,13 +76,14 @@ import { createTripsHonoModule } from "@voyant-travel/trips"
 import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
-import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
-import { createBookingScheduleExtension } from "./booking-schedule"
-import { createChannelPushExtension } from "./channel-push"
-import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createDocumentStorage } from "./lib/storage"
+import { createBookingScheduleExtension } from "./routes/booking-schedule"
+import { createChannelPushExtension } from "./routes/channel-push"
+import { createOperatorQuoteVersionSnapshotExtension } from "./routes/quote-version-snapshot-routes"
+import { resolveBookingTaxSettings, updateBookingTaxSettings } from "./routes/settings"
+import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-runtime"
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
@@ -92,15 +93,14 @@ import {
   resolveOperatorContractDocumentGenerator,
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
-} from "./operator-runtime-adapter"
+} from "./runtime/operator-runtime-adapter"
 import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
-} from "./payment-config"
-import { createOperatorQuoteVersionSnapshotExtension } from "./quote-version-snapshot-routes"
-import { resolveBookingTaxSettings, updateBookingTaxSettings } from "./settings"
-import { createRelationshipsStorefrontIntakePersistence } from "./storefront-intake-runtime"
-import { createOperatorTripsRoutesOptions } from "./trips-runtime"
+} from "./runtime/payment-config"
+import { createRelationshipsStorefrontIntakePersistence } from "./runtime/storefront-intake-runtime"
+import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
+import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
 const operatorExtrasHonoModule: HonoModule = {
   module: { name: "extras" },
@@ -506,19 +506,21 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       module: { name: "flights" },
       // Routes live in @voyant-travel/flights; this deployment supplies the
       // connector + payment options via ./flights-runtime.
-      lazyAdminRoutes: () => import("./flights-runtime").then((m) => m.buildFlightAdminRoutes()),
+      lazyAdminRoutes: () =>
+        import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes()),
     }),
     "operator/mcp": () => ({
       module: { name: "mcp" },
       // Route + trips tools live in @voyant-travel/trips/mcp; this deployment
       // supplies the tool context + trips service wiring via ./mcp-runtime.
-      lazyAdminRoutes: () => import("./mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
+      lazyAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     }),
     "operator/invitations": () => ({
       module: { name: "invitations" },
-      lazyAdminRoutes: () => import("./invitations").then((m) => m.createInvitationsAdminRoutes()),
+      lazyAdminRoutes: () =>
+        import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
       lazyPublicRoutes: () =>
-        import("./invitations").then((m) => m.createInvitationsPublicRoutes()),
+        import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
     }),
     // Multi-prefix deployment-local families: the route bundles span several
     // absolute prefixes, so they compose via `lazyRoutes` (explicit paths +
@@ -528,7 +530,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       lazyRoutes: {
         paths: OPERATOR_CATALOG_BOOKING_ROUTE_PATHS,
         load: () =>
-          import("./catalog-booking-runtime").then((m) => {
+          import("./runtime/catalog-booking-runtime").then((m) => {
             const app = new Hono()
             m.mountCatalogBookingRoutes(app)
             return app
@@ -547,7 +549,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/public/accommodations/:id/content",
         ],
         load: () =>
-          import("./catalog-content").then((m) => {
+          import("./routes/catalog-content").then((m) => {
             const app = new Hono()
             m.mountCatalogContentRoutes(app)
             return app
@@ -566,7 +568,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/media/*",
           "/v1/admin/media/*",
         ],
-        load: () => import("./media-runtime").then((m) => m.buildOperatorMediaRoutes()),
+        load: () => import("./runtime/media-runtime").then((m) => m.buildOperatorMediaRoutes()),
       },
     }),
     "operator/payment-link": () => ({
@@ -582,7 +584,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/public/bookings/:bookingId/checkout-status",
         ],
         load: () =>
-          import("./payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
+          import("./runtime/payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
       },
     }),
     "operator/operator-settings": () => ({
@@ -594,7 +596,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           "/v1/public/settings/operator",
         ],
         load: () =>
-          import("./settings").then((m) => {
+          import("./routes/settings").then((m) => {
             const app = new Hono()
             m.mountOperatorSettingsRoutes(app)
             return app
@@ -608,7 +610,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
       lazyRoutes: {
         paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
         load: () =>
-          import("./contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
+          import("./runtime/contract-document-runtime").then((m) =>
+            m.buildContractDocumentRoutes(),
+          ),
       },
     }),
   },
@@ -639,8 +643,8 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
               { resolveBookingTaxSettings },
             ] = await Promise.all([
               import("@voyant-travel/commerce/checkout"),
-              import("./operator-runtime-adapter"),
-              import("./settings"),
+              import("./runtime/operator-runtime-adapter"),
+              import("./routes/settings"),
             ])
             const result = await rebuildBookingItemTaxLines(
               operatorPostgresDb(c.get("db")),
@@ -658,7 +662,7 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/action-ledger-health-extension": () => ({
       extension: { name: "action-ledger-health", module: "action-ledger" },
       lazyAdminRoutes: () =>
-        import("./action-ledger-health-runtime").then((m) =>
+        import("./runtime/action-ledger-health-runtime").then((m) =>
           m.createActionLedgerHealthAdminRoutes(),
         ),
     }),
@@ -667,23 +671,24 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/proposal-extension": () => ({
       extension: { name: "proposal", module: "quote-versions" },
       publicPath: "proposals",
-      lazyAdminRoutes: () => import("./proposal-routes").then((m) => m.createProposalAdminRoutes()),
+      lazyAdminRoutes: () =>
+        import("./routes/proposal-routes").then((m) => m.createProposalAdminRoutes()),
       lazyPublicRoutes: () =>
-        import("./proposal-routes").then((m) => m.createProposalPublicRoutes()),
+        import("./routes/proposal-routes").then((m) => m.createProposalPublicRoutes()),
     }),
     // Catalog admin offer/search + public checkout, mounted under the catalog
     // module's /v1/admin/catalog and /v1/public/catalog surfaces.
     "operator/catalog-offers-extension": () => ({
       extension: { name: "catalog-offers", module: "catalog" },
       lazyAdminRoutes: () =>
-        import("./catalog-offers-runtime").then((m) =>
+        import("./runtime/catalog-offers-runtime").then((m) =>
           m.createCatalogOffersAdminRoutesForOperator(),
         ),
     }),
     "operator/catalog-checkout-extension": () => ({
       extension: { name: "catalog-checkout", module: "catalog" },
       lazyPublicRoutes: () =>
-        import("./catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
+        import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
     }),
   },
 }
