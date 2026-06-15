@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@voyant-travel/bookings": "workspace:^",
-    "@voyant-travel/cloud-sdk": "npm:@voyantjs/cloud-sdk@^0.8.0",
+    "@voyant-travel/cloud-sdk": "^0.9.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
