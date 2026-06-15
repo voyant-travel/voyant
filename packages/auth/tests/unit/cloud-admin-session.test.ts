@@ -8,10 +8,10 @@ describe("createVoyantCloudAdminAuthPlugin", () => {
       db: {} as never,
       cookieSecret: "test-cloud-auth-cookie-secret-with-more-than-32-chars",
       exchange: {
-        exchangeUrl: "https://api.voyantjs.com/dashboard/v1/admin-auth/exchange",
+        exchangeUrl: "https://api.voyant.travel/dashboard/v1/admin-auth/exchange",
         deploymentId: "dep_123",
         clientToken: "client_token_123",
-        assertionJwksUrl: "https://api.voyantjs.com/.well-known/admin-auth/jwks.json",
+        assertionJwksUrl: "https://api.voyant.travel/.well-known/admin-auth/jwks.json",
         assertionAudience: "dep_123",
       },
       onUserProvisioning: ({ isNewUser, provider }) => {

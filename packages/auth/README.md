@@ -173,9 +173,9 @@ Voyant Cloud-provisioned deployments receive these settings from Cloud:
 ```dotenv
 VOYANT_ADMIN_AUTH_MODE=voyant-cloud
 VOYANT_CLOUD_ADMIN_AUTH_START_URL=https://dash.voyantcloud.com/admin-auth/start
-VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL=https://api.voyantjs.com/cloud/v1/admin-auth/exchange
-VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL=https://api.voyantjs.com/.well-known/admin-auth/jwks.json
-VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL=https://api.voyantjs.com/cloud/v1/admin-auth/revalidate
+VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL=https://api.voyant.travel/cloud/v1/admin-auth/exchange
+VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL=https://api.voyant.travel/.well-known/admin-auth/jwks.json
+VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL=https://api.voyant.travel/cloud/v1/admin-auth/revalidate
 VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE=dep_...
 VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN=...
 VOYANT_CLOUD_DEPLOYMENT_ID=dep_...

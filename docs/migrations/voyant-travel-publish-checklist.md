@@ -2,9 +2,9 @@
 
 This repository now publishes package identities under `@voyant-travel/*`.
 The external SDK dependencies listed below are also published under
-`@voyant-travel/*`, so the operator starter no longer needs old `@voyantjs/*`
-npm alias targets.
-Do not change workspace package `name` fields back to `@voyantjs/*`.
+`@voyant-travel/*`, so the operator starter no longer needs legacy npm alias
+targets.
+Do not change workspace package `name` fields back to the legacy scope.
 
 Temporary dependency aliases: none.
 

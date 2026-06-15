@@ -1,7 +1,7 @@
 import type { CloudAdminAuthState } from "./state.js"
 import { base64UrlDecode, isRecord, normalizeAbsoluteUrl, toArrayBuffer } from "./utils.js"
 
-export const VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER = "https://api.voyantjs.com"
+export const VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER = "https://api.voyant.travel"
 
 export type CloudAdminAssertion = {
   iss: typeof VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER

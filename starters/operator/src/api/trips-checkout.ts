@@ -264,7 +264,7 @@ async function quoteFx(
     throw new Error("trip_checkout_fx_requires_voyant_api_key")
   }
 
-  const baseUrl = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(/\/$/, "")
+  const baseUrl = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.travel").replace(/\/$/, "")
   const url = new URL(
     `/data/fx/v1/fx/pair/${encodeURIComponent(sourceCurrency)}/${encodeURIComponent(
       targetCurrency,
