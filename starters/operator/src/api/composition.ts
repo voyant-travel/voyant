@@ -1,6 +1,12 @@
 /**
  * Manifest-driven runtime composition for the operator starter.
  *
+ * agent-quality: file-size exception -- this is the deployment's single
+ * composition source of truth (one factory entry per mounted module/extension,
+ * now that every route family composes here instead of ad-hoc additionalRoutes).
+ * Keeping the manifest + registry + capabilities in one file is intentional; the
+ * length scales with the module count, not with logic complexity.
+ *
  * Instead of hand-listing `createApp({ modules, extensions })`, `app.ts`
  * derives those arrays from this registry via
  * `composeFromManifest(manifest, registry, capabilities)`
