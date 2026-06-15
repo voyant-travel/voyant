@@ -178,7 +178,7 @@ export type CatalogRuntimeEnv = {
 export function buildEmbeddingProvider(env: CatalogRuntimeEnv): EmbeddingProvider | undefined {
   const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
   if (!apiKey) return undefined
-  const cloudBase = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(/\/$/, "")
+  const cloudBase = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.travel").replace(/\/$/, "")
   return createGeminiEmbeddingProvider({
     apiKey,
     auth: "bearer",

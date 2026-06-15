@@ -82,7 +82,7 @@ const cloudApiKey =
   process.env.VOYANT_CATALOG_EMBEDDINGS === "false"
     ? undefined
     : (process.env.VOYANT_API_KEY ?? process.env.VOYANT_CLOUD_API_KEY)
-const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(
+const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.travel").replace(
   /\/$/,
   "",
 )
