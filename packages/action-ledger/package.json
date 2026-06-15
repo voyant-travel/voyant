@@ -11,6 +11,7 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
+    "./health": "./src/health-routes.ts",
     "./timeline": "./src/timeline.ts",
     "./request-context": "./src/request-context.ts",
     "./routes": "./src/routes.ts"
@@ -73,6 +74,11 @@
         "types": "./dist/fingerprint.d.ts",
         "import": "./dist/fingerprint.js",
         "default": "./dist/fingerprint.js"
+      },
+      "./health": {
+        "types": "./dist/health-routes.d.ts",
+        "import": "./dist/health-routes.js",
+        "default": "./dist/health-routes.js"
       },
       "./timeline": {
         "types": "./dist/timeline.d.ts",

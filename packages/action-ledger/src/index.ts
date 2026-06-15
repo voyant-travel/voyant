@@ -35,6 +35,17 @@ export {
   sha256,
 } from "./fingerprint.js"
 export {
+  type ActionLedgerDriftCheck,
+  type ActionLedgerDriftCheckInput,
+  type ActionLedgerDriftCheckResult,
+  type ActionLedgerDriftCheckRow,
+  type ActionLedgerHealthResponse,
+  type ActionLedgerHealthRoutesOptions,
+  createActionLedgerHealthRoutes,
+  type RunActionLedgerHealthCheckInput,
+  runActionLedgerHealthCheck,
+} from "./health-routes.js"
+export {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   type ActionLedgerActorFields,
   type ActionLedgerApprovedExecutionFields,

@@ -656,7 +656,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     "operator/action-ledger-health-extension": () => ({
       extension: { name: "action-ledger-health", module: "action-ledger" },
       lazyAdminRoutes: () =>
-        import("./action-ledger-health").then((m) => m.createActionLedgerHealthAdminRoutes()),
+        import("./action-ledger-health-runtime").then((m) =>
+          m.createActionLedgerHealthAdminRoutes(),
+        ),
     }),
     // Quote-version proposal lifecycle: admin send under /v1/admin/quote-versions,
     // public accept/decline under /v1/public/proposals.
