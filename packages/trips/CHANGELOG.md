@@ -1,5 +1,11 @@
 # @voyant-travel/trips
 
+## 0.111.1
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.118.1
+
 ## 0.111.0
 
 ### Minor Changes

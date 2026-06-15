@@ -1,5 +1,11 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.6
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+
 ## 0.104.5
 
 ### Patch Changes

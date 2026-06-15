@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-react
 
+## 0.109.1
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+  - @voyant-travel/workflows@0.109.1
+
 ## 0.109.0
 
 ### Patch Changes

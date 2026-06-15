@@ -1,5 +1,11 @@
 # @voyant-travel/admin
 
+## 0.111.2
+
+### Patch Changes
+
+- eef1a00: Republish notification and UI consumer packages so stale beta artifacts no longer reference legacy notification package specifiers.
+
 ## 0.111.1
 
 ### Patch Changes
