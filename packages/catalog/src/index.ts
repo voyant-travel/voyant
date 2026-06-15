@@ -58,6 +58,11 @@ export * from "./adapter/schemas.js"
 // BookingJourney HTTP contract — root export matches the Hono module pattern
 // used by the vertical packages while keeping the ./booking-engine subpath.
 export {
+  type CatalogBookingRouteModuleOptions,
+  createCatalogBookingOrdersRoutes,
+  mountCatalogBookingRoutes,
+} from "./booking-engine/operator-routes.js"
+export {
   type CatalogBookingAdapterContextInput,
   type CatalogBookingBookBody,
   type CatalogBookingBookTransformInput,

@@ -1,47 +1,30 @@
 /**
  * Catalog booking-engine routes for the operator starter.
  *
- * Mounts the cross-vertical lifecycle from `@voyant-travel/catalog/booking-engine`
+ * The booking-engine lifecycle (quote / book / drafts / holds) and order
+ * management (orders list / get / cancel) now live in
+ * `@voyant-travel/catalog/booking-engine` — this deployment supplies the
+ * options and mounts them via `mountCatalogBookingRoutes`. The package mounts
  * on **two** surfaces:
  *
  *   /v1/admin/catalog/...   (staff actor — operator dashboard)
  *   /v1/public/catalog/...  (customer / partner / supplier — storefront,
  *                            partner portal, embedded widgets)
  *
- * Endpoints:
+ * Two handlers STAY here as a thin deployment extension because the packages
+ * they read (`@voyant-travel/inventory`, `@voyant-travel/operations`) already
+ * depend on `@voyant-travel/catalog` — hosting them in the package would
+ * create an import cycle:
  *
- *   POST /v1/{admin,public}/catalog/quote          → quoteEntity
- *   POST /v1/{admin,public}/catalog/book           → bookEntity
- *   POST /v1/admin/catalog/orders/:id/cancel       → cancelEntity
- *   GET  /v1/admin/catalog/orders                  → listOrders
- *   GET  /v1/admin/catalog/orders/:id              → getOrderById
- *   PUT  /v1/{admin,public}/catalog/drafts/:id     → upsert booking draft
- *   GET  /v1/{admin,public}/catalog/drafts/:id     → read booking draft
- *   DELETE /v1/{admin,public}/catalog/drafts/:id   → delete booking draft
- *
- * The handlers parse minimal JSON bodies, delegate to the engine, and
- * translate `BookingEngineError` codes into appropriate HTTP statuses.
+ *   GET /v1/{admin,public}/catalog/slots             → availability slots
+ *   GET /v1/admin/bookings/:id/catalog-snapshot      → frozen catalog snapshot
  *
  * Auth posture comes from the operator starter's `createApp` middleware
  * chain — `/v1/admin/...` requires staff, `/v1/public/...` accepts the
  * configured public actors. Per booking-journey-architecture §10 Phase B.
  */
 
-import {
-  BookingEngineError,
-  cancelEntity,
-  createCatalogBookingRoutes,
-  getOrderById,
-  listOrders,
-  NO_ADAPTER_REGISTERED,
-  NO_HANDLER_REGISTERED,
-  ORDER_ALREADY_CANCELLED,
-  ORDER_NOT_FOUND,
-  QUOTE_EXPIRED,
-  QUOTE_MISMATCH,
-  QUOTE_NOT_FOUND,
-  RESERVE_FAILED,
-} from "@voyant-travel/catalog/booking-engine"
+import { mountCatalogBookingRoutes as mountPackageCatalogBookingRoutes } from "@voyant-travel/catalog/booking-engine"
 import { readSourcedEntry } from "@voyant-travel/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
@@ -60,28 +43,24 @@ function getDb(c: Context): AnyDrizzleDb {
   return getCatalogBookingDb(c)
 }
 
-interface CancelBody {
-  bookingId?: string
-  entityModule?: string
-  entityId?: string
-  reason?: string
-}
-
 export function mountCatalogBookingRoutes(hono: Hono): void {
-  const options = createOperatorCatalogBookingRoutesOptions()
+  // Booking-engine lifecycle + order management live in the catalog package;
+  // this deployment only supplies the options + registry resolver.
+  mountPackageCatalogBookingRoutes(hono, {
+    booking: createOperatorCatalogBookingRoutesOptions(),
+    resolveRegistry: getBookingEngineRegistryFromContext,
+  })
+
+  // ── Deployment-local extension (cross-package — stays here to avoid a
+  //    catalog ↔ inventory/operations import cycle) ──────────────────────
+
+  // List available departures / slots for a product. Drives the
+  // storefront's departure-select on the product detail page —
+  // customers pick from real available options, not a free-form
+  // calendar (per booking-journey-architecture §10).
   for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
-    hono.route(prefix, createCatalogBookingRoutes(options))
-    // List available departures / slots for a product. Drives the
-    // storefront's departure-select on the product detail page —
-    // customers pick from real available options, not a free-form
-    // calendar (per booking-journey-architecture §10).
     hono.get(`${prefix}/slots`, handleListSlots)
   }
-
-  // Admin-only — order management.
-  hono.post("/v1/admin/catalog/orders/:id/cancel", handleCancel)
-  hono.get("/v1/admin/catalog/orders", handleListOrders)
-  hono.get("/v1/admin/catalog/orders/:id", handleGetOrder)
 
   // Admin-only — read the catalog snapshot tied to a booking.
   // Backs the BookingCatalogSourceCard on the booking detail page;
@@ -92,71 +71,8 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Handlers
+// Handlers (deployment-local — cross-package)
 // ─────────────────────────────────────────────────────────────────
-
-async function handleCancel(c: Context): Promise<Response> {
-  let body: CancelBody
-  try {
-    body = await c.req.json<CancelBody>()
-  } catch {
-    body = {}
-  }
-
-  if (!body.bookingId || !body.entityModule || !body.entityId) {
-    return c.json({ error: "bookingId, entityModule, and entityId are required in the body" }, 400)
-  }
-
-  const db = getDb(c)
-  const registry = getBookingEngineRegistryFromContext(c)
-  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
-
-  try {
-    const result = await cancelEntity(
-      db,
-      { registry },
-      {
-        bookingId: body.bookingId,
-        entityModule: body.entityModule,
-        entityId: body.entityId,
-        reason: body.reason,
-        adapterContext: { connection_id: "engine", correlation_id: correlationId },
-      },
-    )
-    return c.json(result)
-  } catch (err) {
-    return errorResponse(c, err)
-  }
-}
-
-async function handleListOrders(c: Context): Promise<Response> {
-  const db = getDb(c)
-  const url = new URL(c.req.url)
-  const bookingId = url.searchParams.get("bookingId") ?? undefined
-  const entityModule = url.searchParams.get("entityModule") ?? undefined
-  const sourceKindsParam = url.searchParams.get("sourceKinds")
-  const sourceKinds = sourceKindsParam ? sourceKindsParam.split(",") : undefined
-  const limit = Number.parseInt(url.searchParams.get("limit") ?? "50", 10)
-  const offset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
-
-  const result = await listOrders(db, {
-    bookingId,
-    entityModule,
-    sourceKinds,
-    limit: Number.isFinite(limit) ? limit : 50,
-    offset: Number.isFinite(offset) ? offset : 0,
-  })
-  return c.json({ rows: result.rows })
-}
-
-async function handleGetOrder(c: Context): Promise<Response> {
-  const db = getDb(c)
-  const id = c.req.param("id")
-  if (!id) return c.json({ error: "id is required" }, 400)
-  const row = await getOrderById(db, id)
-  if (!row) return c.json({ error: "order not found" }, 404)
-  return c.json(row)
-}
 
 async function handleListSlots(c: Context): Promise<Response> {
   const url = new URL(c.req.url)
@@ -243,45 +159,6 @@ async function handleListSlots(c: Context): Promise<Response> {
     .limit(60)
 
   return c.json({ rows })
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────
-
-function errorResponse(c: Context, err: unknown): Response {
-  if (err instanceof BookingEngineError) {
-    const status = statusForCode(err.code)
-    return c.json({ error: err.message, code: err.code, context: err.context }, status as never)
-  }
-  const message = err instanceof Error ? err.message : String(err)
-  return c.json({ error: message }, 500)
-}
-
-function statusForCode(code: string): number {
-  switch (code) {
-    case NO_ADAPTER_REGISTERED:
-    case NO_HANDLER_REGISTERED:
-      return 503
-    case QUOTE_NOT_FOUND:
-    case ORDER_NOT_FOUND:
-      return 404
-    case QUOTE_EXPIRED:
-    case QUOTE_MISMATCH:
-    case ORDER_ALREADY_CANCELLED:
-      return 409
-    case RESERVE_FAILED:
-      return 502
-    default:
-      return 500
-  }
-}
-
-function cryptoRandom(): string {
-  if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
-    return globalThis.crypto.randomUUID()
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 /**

@@ -138,6 +138,11 @@ export {
   SnapshotContentUnavailableError,
 } from "./errors.js"
 export {
+  type CatalogBookingRouteModuleOptions,
+  createCatalogBookingOrdersRoutes,
+  mountCatalogBookingRoutes,
+} from "./operator-routes.js"
+export {
   getOrderById,
   type ListOrdersQuery,
   type ListOrdersResult,
