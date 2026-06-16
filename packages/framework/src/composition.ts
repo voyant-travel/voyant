@@ -39,6 +39,7 @@ import {
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryHonoModule } from "@voyant-travel/inventory"
+import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyant-travel/legal"
 import { operationsHonoModule } from "@voyant-travel/operations"
 import { createQuotesHonoModule } from "@voyant-travel/quotes"
 import {
@@ -76,6 +77,20 @@ export interface FrameworkProviders {
   resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
   /** Deployment-built trips route options (connector, payment wiring, …). */
   createTripsRoutesOptions: () => TripsRoutesOptions
+  /** Out-of-request db handle for legal's booking.confirmed subscriber. */
+  resolveDb: NonNullable<CreateLegalHonoModuleOptions["resolveDb"]>
+  /** Per-request document storage backend (legal contract documents). */
+  createOperatorDocumentStorage: NonNullable<CreateLegalHonoModuleOptions["resolveDocumentStorage"]>
+  /** Resolves the contract-document (PDF) generator. */
+  resolveContractDocumentGenerator: NonNullable<
+    CreateLegalHonoModuleOptions["resolveDocumentGenerator"]
+  >
+  /** Resolves the booking PII service for contract rendering. */
+  createBookingPiiService: NonNullable<CreateLegalHonoModuleOptions["resolveBookingPiiService"]>
+  /** Opt-in auto-generate-contract-on-confirmed options. */
+  autoGenerateContractOnConfirmed: NonNullable<
+    CreateLegalHonoModuleOptions["autoGenerateContractOnConfirmed"]
+  >
 }
 
 /**
@@ -135,6 +150,16 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         resolveBillingOrganizationById: async (db, organizationId) =>
           (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
         closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+      }),
+    "@voyant-travel/legal": ({ capabilities }) =>
+      createLegalHonoModule({
+        resolveDb: capabilities.resolveDb,
+        resolveDocumentDownloadUrl: (bindings, storageKey) =>
+          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+        resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
+        resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
+        resolveBookingPiiService: capabilities.createBookingPiiService,
+        autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
       }),
     "@voyant-travel/storefront/customer-portal": ({ capabilities }) =>
       createCustomerPortalHonoModule({

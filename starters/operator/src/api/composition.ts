@@ -52,7 +52,7 @@ import type { HonoModule } from "@voyant-travel/hono/module"
 import { inventoryBookingExtension } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
-import { CONTRACT_DOCUMENT_ROUTE_PATHS, createLegalHonoModule } from "@voyant-travel/legal"
+import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
 import {
   createDefaultBookingDocumentAttachment,
   createNotificationService,
@@ -356,16 +356,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
             offset: result.offset,
           }
         },
-      }),
-    "@voyant-travel/legal": ({ capabilities }) =>
-      createLegalHonoModule({
-        resolveDb: capabilities.resolveDb,
-        resolveDocumentDownloadUrl: (bindings, storageKey) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-        resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
-        resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
-        resolveBookingPiiService: capabilities.createBookingPiiService,
-        autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
       }),
     "@voyant-travel/public-document-delivery": ({ capabilities }) =>
       createPublicDocumentDeliveryHonoModule({
