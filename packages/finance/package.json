@@ -10,6 +10,7 @@
     "./checkout-routes": "./src/checkout-routes.ts",
     "./checkout-validation": "./src/checkout-validation.ts",
     "./invoice-fx": "./src/invoice-fx.ts",
+    "./order-payment-sessions": "./src/order-payment-sessions.ts",
     "./payment-link": "./src/payment-link.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
@@ -81,6 +82,11 @@
         "types": "./dist/invoice-fx.d.ts",
         "import": "./dist/invoice-fx.js",
         "default": "./dist/invoice-fx.js"
+      },
+      "./order-payment-sessions": {
+        "types": "./dist/order-payment-sessions.d.ts",
+        "import": "./dist/order-payment-sessions.js",
+        "default": "./dist/order-payment-sessions.js"
       },
       "./payment-link": {
         "types": "./dist/payment-link.d.ts",

@@ -40,6 +40,18 @@ export {
 } from "./orchestration/fan-out.js"
 // Orchestration — fingerprinting + multi-connection fan-out.
 export { itineraryFingerprint } from "./orchestration/fingerprint.js"
+// Flight-specific payment integration — maps a FlightOrder onto a generic
+// order-payment-session service + an optional card provider (both structural).
+export {
+  buildFlightSummary,
+  createFlightOrderPaymentIntegration,
+  type FlightCardBilling,
+  type FlightOrderPaymentIntegrationDeps,
+  formatDay,
+  type OrderPaymentSessionsLike,
+  parseAmountToCents,
+  synthesizeBilling,
+} from "./payment-integration.js"
 // ReferenceDataProvider — swappable provider for global reference data.
 export {
   type Aircraft,

@@ -247,6 +247,15 @@ export {
   type UpdateInvoiceFxSettings,
   type VoyantDataFxResolverOptions,
 } from "./invoice-fx.js"
+export {
+  type CreateOrderPaymentSessionsOptions,
+  createOrderPaymentSessions,
+  type EnsureOrderSessionParams,
+  type OrderPaymentSessionSummary,
+  type OrderPaymentSessions,
+  type OrderPaymentSessionTargetType,
+  type StartOrderPaymentProvider,
+} from "./order-payment-sessions.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,
