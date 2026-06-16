@@ -21,7 +21,7 @@
  * `voyant.config.ts` (the schema manifest).
  */
 
-import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyant-travel/bookings"
+import { bookingsSupplierExtension } from "@voyant-travel/bookings"
 import { bookingsExtrasRoutes } from "@voyant-travel/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyant-travel/bookings/requirements"
 import {
@@ -41,7 +41,11 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import { FRAMEWORK_RUNTIME_MANIFEST, frameworkComposition } from "@voyant-travel/framework"
+import {
+  FRAMEWORK_RUNTIME_MANIFEST,
+  type FrameworkProviders,
+  frameworkComposition,
+} from "@voyant-travel/framework"
 import { createPublicDocumentDeliveryHonoModule, type VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
@@ -59,9 +63,6 @@ import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { quotesBookingExtension } from "@voyant-travel/quotes"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { createStorefrontHonoModule } from "@voyant-travel/storefront"
-import { createCustomerPortalHonoModule } from "@voyant-travel/storefront/customer-portal"
-import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront/verification"
-import { createTripsHonoModule } from "@voyant-travel/trips"
 import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -185,7 +186,12 @@ function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutRemind
  * resolver/service a module factory needs is gathered here so wiring lives in
  * one typed place rather than being threaded through `createApp`.
  */
-export interface OperatorCapabilities {
+// `extends FrameworkProviders` is the compile-time guard that this container
+// satisfies the framework's injected provider contract (so the relocated
+// `frameworkComposition` factories can read it). A future framework provider
+// addition becomes required here, failing the operator typecheck until
+// `buildOperatorCapabilities` wires it — that's the intended forcing function.
+export interface OperatorCapabilities extends FrameworkProviders {
   resolveNotificationProviders: typeof resolveNotificationProviders
   resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
   resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
@@ -296,39 +302,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
             slice,
             request,
           }),
-      }),
-    "@voyant-travel/bookings": ({ capabilities }) =>
-      createBookingsHonoModule({
-        resolveTravelSnapshot: (db, personId, { kms }) =>
-          capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
-        resolveBillingPerson: async (db, contact, ctx) => {
-          const person = await capabilities.relationshipsService.upsertPersonFromContact(
-            db,
-            contact,
-            {
-              source: ctx.source,
-              sourceRef: ctx.sourceRef,
-            },
-          )
-          return person?.id ?? null
-        },
-        resolveTravelerPerson: async (db, contact, ctx) => {
-          const person = await capabilities.relationshipsService.upsertPersonFromContact(
-            db,
-            contact,
-            {
-              source: ctx.source,
-              sourceRef: ctx.sourceRef,
-              requireContactPoint: true,
-            },
-          )
-          return person?.id ?? null
-        },
-        resolveBillingPersonById: async (db, personId) =>
-          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-        resolveBillingOrganizationById: async (db, organizationId) =>
-          (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
-        closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
       }),
     "@voyant-travel/finance": ({ capabilities }) =>
       createFinanceHonoModule({
@@ -442,21 +415,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
         intake: {
           persistence: createRelationshipsStorefrontIntakePersistence(),
         },
-      }),
-    "@voyant-travel/storefront/customer-portal": ({ capabilities }) =>
-      createCustomerPortalHonoModule({
-        resolveDocumentDownloadUrl: (bindings, storageKey) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-      }),
-    "@voyant-travel/storefront/verification": ({ capabilities }) =>
-      createStorefrontVerificationHonoModule({
-        resolveProviders: capabilities.resolveNotificationProviders,
-        email: { subject: "Your verification code" },
-      }),
-    "@voyant-travel/trips": ({ capabilities }) =>
-      createTripsHonoModule({
-        ...capabilities.createTripsRoutesOptions(),
-        publicRoutes: true,
       }),
     // Deployment-local route modules. The route bundles live in the operator
     // (vendor/demo wiring, agent tooling, Better Auth invitations) and load
