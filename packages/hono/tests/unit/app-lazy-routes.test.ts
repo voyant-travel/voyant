@@ -13,6 +13,33 @@ const TEST_CTX = {
 } as any
 
 describe("createApp lazy route mounting", () => {
+  it("propagates a throwing lazy route to createApp's error boundary (parity with eager)", async () => {
+    const boom = () => {
+      throw new Error("lazy handler boom")
+    }
+    const app = createApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
+      db: () => ({}) as any,
+      modules: [
+        // Eager route that throws — the normalization baseline.
+        { module: { name: "eager" }, adminRoutes: new Hono().get("/boom", boom) },
+        // Lazy route that throws — must match.
+        { module: { name: "lazy" }, lazyAdminRoutes: async () => new Hono().get("/boom", boom) },
+      ],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+    })
+
+    const eager = await app.request("/v1/admin/eager/boom", {}, TEST_ENV, TEST_CTX)
+    const lazy = await app.request("/v1/admin/lazy/boom", {}, TEST_ENV, TEST_CTX)
+
+    expect(lazy.status).toBe(eager.status)
+    expect(lazy.headers.get("content-type")).toContain("application/json")
+    // Normalized error shape from handleApiError — NOT a plain Hono 500 text body.
+    const body = (await lazy.json()) as { error?: string; requestId?: string }
+    expect(body.error).toBeTypeOf("string")
+    expect(body).toHaveProperty("requestId")
+  })
+
   it("mounts lazyAdminRoutes under /v1/admin/{name} and bridges the request context", async () => {
     const marker = { name: "leased-db" }
     const load = vi.fn(async () =>

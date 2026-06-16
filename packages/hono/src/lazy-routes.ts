@@ -70,6 +70,15 @@ export function createLazyRouteHandler(mountPrefix: string, load: LazyRoutesLoad
       cached = load()
         .then((routes) => {
           const wrapped = new Hono()
+          // Re-throw handler errors instead of letting the wrapper sub-app's
+          // default Hono error handler swallow them into a plain 500. This
+          // propagates the throw back through `app.fetch` to the outer
+          // `createApp` pipeline, so lazy routes hit the same `errorBoundary` /
+          // `handleApiError` normalization (JSON error shape + structured
+          // logging) as eager `app.route(...)` mounts.
+          wrapped.onError((err) => {
+            throw err
+          })
           wrapped.use("*", async (cc, next) => {
             const carried = (cc.env as Record<symbol, unknown> | undefined)?.[
               LAZY_CONTEXT_CARRIER
