@@ -1,6 +1,7 @@
 import { expireStaleBookingHolds } from "@voyant-travel/bookings/tasks"
 import { createDbClient } from "@voyant-travel/db"
 import {
+  type ChannelPushDeps,
   channelAvailabilityPushWorkflow,
   channelBookingPushWorkflow,
   channelContentPushWorkflow,
@@ -25,8 +26,19 @@ import { closeTerminalBookingPaymentSchedules } from "./api/subscribers/booking-
 import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
 
-function getDb() {
-  return createDbClient(process.env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
+const CHANNEL_PUSH_DEPS_KEY = Symbol.for("voyant.distribution.channel-push.deps")
+
+interface ChannelPushDepsHolder {
+  [CHANNEL_PUSH_DEPS_KEY]?: ChannelPushDeps
+}
+
+interface OperatorWorkflowBundleBootstrapContext {
+  env?: NodeJS.ProcessEnv
+  channelPushDeps?: ChannelPushDeps
+}
+
+function getDb(env: NodeJS.ProcessEnv = process.env) {
+  return createDbClient(env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
 }
 
 export function createLazyWorkflowDb(
@@ -57,15 +69,25 @@ export function createLazyWorkflowDb(
   })
 }
 
+function wireChannelPushDeps(deps: ChannelPushDeps): void {
+  setChannelPushDeps(deps)
+  ;(globalThis as typeof globalThis & ChannelPushDepsHolder)[CHANNEL_PUSH_DEPS_KEY] = deps
+}
+
 let channelPushDepsBootstrapped = false
 
-export async function bootstrapWorkflowBundle(): Promise<void> {
+export async function bootstrapWorkflowBundle(
+  ctx: OperatorWorkflowBundleBootstrapContext = { env: process.env },
+): Promise<void> {
   if (channelPushDepsBootstrapped) return
+  const env = ctx.env ?? process.env
   const { getBookingEngineRegistry } = await import("./api/lib/booking-engine-runtime.js")
-  setChannelPushDeps({
-    db: createLazyWorkflowDb(),
-    registry: getBookingEngineRegistry(process.env),
-  })
+  wireChannelPushDeps(
+    ctx.channelPushDeps ?? {
+      db: createLazyWorkflowDb(() => getDb(env)),
+      registry: getBookingEngineRegistry(env),
+    },
+  )
   channelPushDepsBootstrapped = true
 }
 
