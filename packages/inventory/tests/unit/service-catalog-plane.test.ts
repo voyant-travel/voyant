@@ -8,6 +8,7 @@ import { productCatalogPolicy } from "../../src/catalog-policy.js"
 import type { Product } from "../../src/schema-core.js"
 import {
   createProductStorefrontCardProjectionExtension,
+  deriveProductSupplyModel,
   listResolvedProducts,
   productProvenance,
   productRowToProjection,
@@ -85,6 +86,7 @@ describe("productRowToProjection", () => {
     expect(projection.get("sellAmountCents")).toBe(250000)
     expect(projection.get("tags[]")).toEqual(["wellness", "yoga"])
     expect(projection.get("productTypeId")).toBe("ptyp_wellness")
+    expect(projection.get("supplyModel")).toBe("scheduled")
   })
 
   it("synthesizes provenance fields for owned products", () => {
@@ -97,6 +99,20 @@ describe("productRowToProjection", () => {
     const projection = productRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
     expect(projection.get("costAmountCents")).toBe(180000)
     expect(projection.get("marginPercent")).toBe(28)
+  })
+})
+
+describe("deriveProductSupplyModel", () => {
+  it("maps fixed-date and departure-oriented inventory to scheduled browse", () => {
+    for (const bookingMode of ["date", "date_time", "transfer", "itinerary", "other"] as const) {
+      expect(deriveProductSupplyModel(bookingMode)).toBe("scheduled")
+    }
+  })
+
+  it("maps open and stay inventory to dynamic browse", () => {
+    for (const bookingMode of ["open", "stay"] as const) {
+      expect(deriveProductSupplyModel(bookingMode)).toBe("dynamic")
+    }
   })
 })
 

@@ -47,6 +47,9 @@ import { productCatalogPolicy } from "./catalog-policy.js"
 import { products } from "./schema-core.js"
 import { productDays, productItineraries, productMedia } from "./schema-itinerary.js"
 import { productLocations, productTranslations } from "./schema-settings.js"
+import type { productBookingModeEnum } from "./schema-shared.js"
+
+type ProductBookingMode = (typeof productBookingModeEnum.enumValues)[number]
 
 /**
  * Lazy-initialized registry. Built once per process; the field-policy file
@@ -96,6 +99,7 @@ export function productRowToProjection(
     // Structural
     ["status", row.status],
     ["bookingMode", row.bookingMode],
+    ["supplyModel", deriveProductSupplyModel(row.bookingMode)],
     ["capacityMode", row.capacityMode],
     ["visibility", row.visibility],
     ["activated", row.activated],
@@ -120,6 +124,20 @@ export function productRowToProjection(
     ["marginPercent", row.marginPercent],
   ])
   return projection
+}
+
+export function deriveProductSupplyModel(bookingMode: ProductBookingMode): "dynamic" | "scheduled" {
+  switch (bookingMode) {
+    case "open":
+    case "stay":
+      return "dynamic"
+    case "date":
+    case "date_time":
+    case "transfer":
+    case "itinerary":
+    case "other":
+      return "scheduled"
+  }
 }
 
 /**

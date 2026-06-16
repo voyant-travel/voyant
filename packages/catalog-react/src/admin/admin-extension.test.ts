@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { CatalogVerticalHost } from "./catalog-vertical-host.js"
+import {
+  CatalogVerticalHost,
+  resolveCatalogDefaultMarket,
+  resolveCatalogLocaleOptions,
+  resolveCatalogSelectedLocale,
+} from "./catalog-vertical-host.js"
 import { CruiseDetailHost } from "./cruise-detail-host.js"
 import { DynamicCatalogHost } from "./dynamic-catalog-host.js"
 import { createCatalogAdminExtension, productDetailSearchSchema } from "./index.js"
@@ -99,5 +104,43 @@ describe("packaged catalog admin hosts", () => {
     ]) {
       expect(typeof host).toBe("function")
     }
+  })
+})
+
+describe("catalog admin locale defaults", () => {
+  const markets = [
+    {
+      id: "mkt_ro",
+      name: "Romania",
+      code: "RO",
+      defaultLanguageTag: "ro-RO",
+    },
+    {
+      id: "mkt_gb",
+      name: "United Kingdom",
+      code: "GB",
+      defaultLanguageTag: "en-GB",
+    },
+  ]
+
+  it("uses the first loaded active market when no market is selected", () => {
+    const market = resolveCatalogDefaultMarket(markets)
+    const localeOptions = resolveCatalogLocaleOptions(market, [
+      { languageTag: "ro" },
+      { languageTag: "ro-RO" },
+    ])
+
+    expect(market?.id).toBe("mkt_ro")
+    expect(localeOptions).toEqual(["ro", "ro-RO"])
+    expect(resolveCatalogSelectedLocale(undefined, localeOptions, market)).toBe("ro-RO")
+  })
+
+  it("keeps an explicitly selected market in control of locale fallback", () => {
+    const market = resolveCatalogDefaultMarket(markets, "mkt_gb")
+    const localeOptions = resolveCatalogLocaleOptions(market, [{ languageTag: "en" }])
+
+    expect(market?.id).toBe("mkt_gb")
+    expect(resolveCatalogSelectedLocale("en", localeOptions, market)).toBe("en")
+    expect(resolveCatalogSelectedLocale("ro-RO", localeOptions, market)).toBe("en-GB")
   })
 })
