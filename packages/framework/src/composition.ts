@@ -50,7 +50,7 @@ import { createRelationshipsHonoModule } from "@voyant-travel/relationships"
  * (catalog/bookings/finance/notifications/…) and the lazy `operator/*` route
  * loaders relocate in later tiers.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: seed contract — grows per tier.
+// biome-ignore lint/suspicious/noEmptyInterface: intentional open supertype — empty until provider-needing factories relocate (Workstream B, see docs/architecture/consolidated-deployments-rfc.md). OperatorCapabilities must stay assignable to it, so it cannot narrow to Record<string, never>.
 export interface FrameworkProviders {}
 
 /**
