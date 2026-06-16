@@ -23,16 +23,7 @@
 
 import { bookingsSupplierExtension } from "@voyant-travel/bookings"
 import { distributionBookingExtension } from "@voyant-travel/distribution"
-import {
-  bookingsCreateExtension,
-  createBookingTaxHonoExtension,
-  createFinanceHonoModule,
-} from "@voyant-travel/finance"
-import type {
-  CheckoutNotificationDelivery,
-  CheckoutPaymentStarter,
-} from "@voyant-travel/finance/checkout"
-import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
+import { bookingsCreateExtension, createBookingTaxHonoExtension } from "@voyant-travel/finance"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkProviders,
@@ -43,7 +34,6 @@ import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/ho
 import { inventoryBookingExtension } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
-import { createNotificationService, notificationsService } from "@voyant-travel/notifications"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { quotesBookingExtension } from "@voyant-travel/quotes"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -95,70 +85,6 @@ const OPERATOR_CATALOG_BOOKING_ROUTE_PATHS = [
   "/v1/public/catalog/slots",
 ] as const
 
-type NotificationDeliveryLike = {
-  id: string
-  templateSlug: string | null
-  channel: "email" | "sms"
-  provider: string
-  status: "pending" | "sent" | "failed" | "cancelled"
-  toAddress: string
-  subject: string | null
-  sentAt: Date | string | null
-  failedAt: Date | string | null
-  errorMessage: string | null
-}
-
-function optionalDateTime(value: Date | string | null | undefined) {
-  if (!value) return null
-  return value instanceof Date ? value.toISOString() : value
-}
-
-function toCheckoutNotificationDelivery(
-  delivery: NotificationDeliveryLike | null,
-): CheckoutNotificationDelivery | null {
-  if (!delivery) return null
-  return {
-    id: delivery.id,
-    templateSlug: delivery.templateSlug,
-    channel: delivery.channel,
-    provider: delivery.provider,
-    status: delivery.status,
-    toAddress: delivery.toAddress,
-    subject: delivery.subject,
-    sentAt: optionalDateTime(delivery.sentAt),
-    failedAt: optionalDateTime(delivery.failedAt),
-    errorMessage: delivery.errorMessage,
-  }
-}
-
-type NotificationReminderRunLike = Awaited<
-  ReturnType<typeof notificationsService.listReminderRuns>
->["data"][number]
-
-function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutReminderRunRecord {
-  return {
-    id: run.id,
-    reminderRuleId: run.reminderRuleId,
-    reminderRuleSlug: run.reminderRule.slug,
-    reminderRuleName: run.reminderRule.name,
-    targetType: run.targetType,
-    targetId: run.targetId,
-    bookingId: run.links.bookingId,
-    paymentSessionId: run.links.paymentSessionId,
-    notificationDeliveryId: run.links.notificationDeliveryId,
-    status: run.status,
-    deliveryStatus: run.delivery?.status ?? null,
-    channel: run.delivery?.channel ?? run.reminderRule.channel,
-    provider: run.delivery?.provider ?? run.reminderRule.provider ?? null,
-    recipient: run.recipient,
-    scheduledFor: run.scheduledFor,
-    processedAt: run.processedAt,
-    errorMessage: run.errorMessage,
-    relativeDaysFromDueDate: null,
-    createdAt: run.createdAt,
-  }
-}
-
 /**
  * The operator deployment's capability container. Every template-specific
  * resolver/service a module factory needs is gathered here so wiring lives in
@@ -176,8 +102,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   readDocumentContentBase64: typeof readOperatorDocumentContentBase64
   resolveDb: typeof resolveOperatorDb
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
-  createInvoiceExchangeRateResolver: typeof createOperatorInvoiceExchangeRateResolver
-  createInvoiceSettlementPollers: typeof createOperatorInvoiceSettlementPollers
   resolveContractDocumentGenerator: typeof resolveOperatorContractDocumentGenerator
   createBookingPiiService: typeof createOperatorBookingPiiService
   autoGenerateContractOnConfirmed: typeof AUTO_GENERATE_CONTRACT_OPTIONS
@@ -186,8 +110,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
-  /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
-  netopiaCheckoutStarter: CheckoutPaymentStarter
 }
 
 /** Build the operator capability container (gathers deployment resolvers). */
@@ -265,60 +187,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // The framework's pure singleton factories spread in here; the deployment
     // appends only its capability-shaped + deployment-local factories below.
     ...frameworkComposition.modules,
-    "@voyant-travel/finance": ({ capabilities }) =>
-      createFinanceHonoModule({
-        resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-        resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
-        resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
-        invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-          bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-        resolveNotificationDispatcher: (bindings) => {
-          const providers = capabilities.resolveNotificationProviders(bindings)
-          if (providers.length === 0) return null
-
-          const dispatcher = createNotificationService(providers)
-          return {
-            sendInvoiceNotification: async (db, invoiceId, input) =>
-              toCheckoutNotificationDelivery(
-                await notificationsService.sendInvoiceNotification(
-                  db,
-                  dispatcher,
-                  invoiceId,
-                  input,
-                ),
-              ),
-            sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
-              toCheckoutNotificationDelivery(
-                await notificationsService.sendPaymentSessionNotification(
-                  db,
-                  dispatcher,
-                  paymentSessionId,
-                  input,
-                ),
-              ),
-          }
-        },
-        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-          netopia: capabilities.netopiaCheckoutStarter,
-        }),
-        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-        listBookingReminderRuns: async (db, bookingId, query) => {
-          const result = await notificationsService.listReminderRuns(db, {
-            bookingId,
-            status: query.status,
-            limit: query.limit,
-            offset: query.offset,
-          })
-          return {
-            data: result.data.map(toCheckoutReminderRun),
-            total: result.total,
-            limit: result.limit,
-            offset: result.offset,
-          }
-        },
-      }),
     // Deployment-local route modules. The route bundles live in the operator
     // (vendor/demo wiring, agent tooling, Better Auth invitations) and load
     // lazily; the framework mounts + caches them and bridges request context.

@@ -50,6 +50,12 @@ import {
   externalRefsHonoModule,
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
+import { createFinanceHonoModule, type FinanceHonoModuleOptions } from "@voyant-travel/finance"
+import type {
+  CheckoutNotificationDelivery,
+  CheckoutPaymentStarter,
+} from "@voyant-travel/finance/checkout"
+import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
@@ -60,7 +66,9 @@ import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyan
 import {
   type CreateNotificationsHonoModuleOptions,
   createDefaultBookingDocumentAttachment,
+  createNotificationService,
   createNotificationsHonoModule,
+  notificationsService,
 } from "@voyant-travel/notifications"
 import { operationsHonoModule } from "@voyant-travel/operations"
 import { createQuotesHonoModule } from "@voyant-travel/quotes"
@@ -89,6 +97,72 @@ const extrasHonoModule = {
   module: { name: "extras" },
   routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
 } satisfies HonoModule
+
+// Finance checkout adapters — map notifications-service shapes into the
+// finance checkout DTOs the module expects.
+type NotificationDeliveryLike = {
+  id: string
+  templateSlug: string | null
+  channel: "email" | "sms"
+  provider: string
+  status: "pending" | "sent" | "failed" | "cancelled"
+  toAddress: string
+  subject: string | null
+  sentAt: Date | string | null
+  failedAt: Date | string | null
+  errorMessage: string | null
+}
+
+function optionalDateTime(value: Date | string | null | undefined) {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString() : value
+}
+
+function toCheckoutNotificationDelivery(
+  delivery: NotificationDeliveryLike | null,
+): CheckoutNotificationDelivery | null {
+  if (!delivery) return null
+  return {
+    id: delivery.id,
+    templateSlug: delivery.templateSlug,
+    channel: delivery.channel,
+    provider: delivery.provider,
+    status: delivery.status,
+    toAddress: delivery.toAddress,
+    subject: delivery.subject,
+    sentAt: optionalDateTime(delivery.sentAt),
+    failedAt: optionalDateTime(delivery.failedAt),
+    errorMessage: delivery.errorMessage,
+  }
+}
+
+type NotificationReminderRunLike = Awaited<
+  ReturnType<typeof notificationsService.listReminderRuns>
+>["data"][number]
+
+function toCheckoutReminderRun(run: NotificationReminderRunLike): CheckoutReminderRunRecord {
+  return {
+    id: run.id,
+    reminderRuleId: run.reminderRuleId,
+    reminderRuleSlug: run.reminderRule.slug,
+    reminderRuleName: run.reminderRule.name,
+    targetType: run.targetType,
+    targetId: run.targetId,
+    bookingId: run.links.bookingId,
+    paymentSessionId: run.links.paymentSessionId,
+    notificationDeliveryId: run.links.notificationDeliveryId,
+    status: run.status,
+    deliveryStatus: run.delivery?.status ?? null,
+    channel: run.delivery?.channel ?? run.reminderRule.channel,
+    provider: run.delivery?.provider ?? run.reminderRule.provider ?? null,
+    recipient: run.recipient,
+    scheduledFor: run.scheduledFor,
+    processedAt: run.processedAt,
+    errorMessage: run.errorMessage,
+    relativeDaysFromDueDate: null,
+    createdAt: run.createdAt,
+  }
+}
 
 /**
  * The injected, deployment-specific provider surface the framework's standard
@@ -142,6 +216,18 @@ export interface FrameworkProviders {
   resolveCatalogRuntime: CatalogSearchRoutesOptions["resolveRuntime"]
   /** Storefront intake persistence (relationships-backed). */
   storefrontIntakePersistence: StorefrontIntakePersistence
+  /** Resolves the invoice exchange-rate resolver (FX snapshots). */
+  createInvoiceExchangeRateResolver: NonNullable<
+    FinanceHonoModuleOptions["resolveInvoiceExchangeRateResolver"]
+  >
+  /** Resolves the invoice settlement pollers (external sync). */
+  createInvoiceSettlementPollers: NonNullable<
+    FinanceHonoModuleOptions["resolveInvoiceSettlementPollers"]
+  >
+  /** Resolves bank-transfer payment details for the checkout. */
+  resolveBankTransferDetails: NonNullable<FinanceHonoModuleOptions["resolveBankTransferDetails"]>
+  /** The configured pay-by-link starter (Netopia; env resolved lazily). */
+  netopiaCheckoutStarter: CheckoutPaymentStarter
 }
 
 /**
@@ -195,6 +281,60 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         // outbox-grade retries; the */2min cron sweeps stale intents.
         bookingIntents: { resolveDb: capabilities.resolveDb },
         intake: { persistence: capabilities.storefrontIntakePersistence },
+      }),
+    "@voyant-travel/finance": ({ capabilities }) =>
+      createFinanceHonoModule({
+        resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
+          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+        resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
+        resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
+        invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
+          bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
+        resolveNotificationDispatcher: (bindings) => {
+          const providers = capabilities.resolveNotificationProviders(bindings)
+          if (providers.length === 0) return null
+
+          const dispatcher = createNotificationService(providers)
+          return {
+            sendInvoiceNotification: async (db, invoiceId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendInvoiceNotification(
+                  db,
+                  dispatcher,
+                  invoiceId,
+                  input,
+                ),
+              ),
+            sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
+              toCheckoutNotificationDelivery(
+                await notificationsService.sendPaymentSessionNotification(
+                  db,
+                  dispatcher,
+                  paymentSessionId,
+                  input,
+                ),
+              ),
+          }
+        },
+        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
+          netopia: capabilities.netopiaCheckoutStarter,
+        }),
+        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
+        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+        listBookingReminderRuns: async (db, bookingId, query) => {
+          const result = await notificationsService.listReminderRuns(db, {
+            bookingId,
+            status: query.status,
+            limit: query.limit,
+            offset: query.offset,
+          })
+          return {
+            data: result.data.map(toCheckoutReminderRun),
+            total: result.total,
+            limit: result.limit,
+            offset: result.offset,
+          }
+        },
       }),
     "@voyant-travel/bookings": ({ capabilities }) =>
       createBookingsHonoModule({
