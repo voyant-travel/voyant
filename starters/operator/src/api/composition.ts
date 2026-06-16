@@ -22,12 +22,6 @@
  */
 
 import { bookingsSupplierExtension } from "@voyant-travel/bookings"
-import {
-  createCatalogSearchHonoModule,
-  type EmbeddingProvider,
-  executeSemanticSearch,
-} from "@voyant-travel/catalog"
-import { createCommerceStorefrontOfferResolvers } from "@voyant-travel/commerce"
 import { distributionBookingExtension } from "@voyant-travel/distribution"
 import {
   bookingsCreateExtension,
@@ -53,7 +47,6 @@ import { createNotificationService, notificationsService } from "@voyant-travel/
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { quotesBookingExtension } from "@voyant-travel/quotes"
 import { relationshipsService } from "@voyant-travel/relationships"
-import { createStorefrontHonoModule } from "@voyant-travel/storefront"
 import { Hono } from "hono"
 
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -191,7 +184,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   resolveBankTransferDetails: typeof resolveBankTransferDetails
   relationshipsService: typeof relationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
-  buildCatalogContext: typeof buildCatalogContext
   createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
   /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
@@ -215,9 +207,19 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     resolveBankTransferDetails,
     relationshipsService,
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
-    buildCatalogContext,
+    // Adapt the deployment's catalog context into the package's search runtime
+    // shape (the framework catalog factory consumes this directly).
+    resolveCatalogRuntime: (c) => {
+      const ctx = buildCatalogContext(c)
+      return {
+        indexer: ctx.catalog.indexer,
+        embeddings: ctx.catalog.embeddings,
+        defaultScope: ctx.defaultScope,
+      }
+    },
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
     resolveBookingRequirementsProductSnapshot,
+    storefrontIntakePersistence: createRelationshipsStorefrontIntakePersistence(),
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
   }
 }
@@ -263,24 +265,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // The framework's pure singleton factories spread in here; the deployment
     // appends only its capability-shaped + deployment-local factories below.
     ...frameworkComposition.modules,
-    "@voyant-travel/catalog": ({ capabilities }) =>
-      createCatalogSearchHonoModule({
-        resolveRuntime: (c) => {
-          const ctx = capabilities.buildCatalogContext(c)
-          return {
-            indexer: ctx.catalog.indexer,
-            embeddings: ctx.catalog.embeddings,
-            defaultScope: ctx.defaultScope,
-          }
-        },
-        executeSearch: ({ adapter, embeddings, slice, request }) =>
-          executeSemanticSearch({
-            adapter,
-            embeddings: embeddings as EmbeddingProvider | undefined,
-            slice,
-            request,
-          }),
-      }),
     "@voyant-travel/finance": ({ capabilities }) =>
       createFinanceHonoModule({
         resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
@@ -333,17 +317,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
             limit: result.limit,
             offset: result.offset,
           }
-        },
-      }),
-    "@voyant-travel/storefront": ({ capabilities }) =>
-      createStorefrontHonoModule({
-        offers: createCommerceStorefrontOfferResolvers(),
-        // Async booking-bootstrap intents (queued write pipeline, RFC
-        // voyant#1687 §3.2) — the handler runs on the app bus with
-        // outbox-grade retries; the */2min cron sweeps stale intents.
-        bookingIntents: { resolveDb: capabilities.resolveDb },
-        intake: {
-          persistence: createRelationshipsStorefrontIntakePersistence(),
         },
       }),
     // Deployment-local route modules. The route bundles live in the operator
