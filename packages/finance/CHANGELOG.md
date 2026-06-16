@@ -1,5 +1,11 @@
 # @voyant-travel/finance
 
+## 0.122.1
+
+### Patch Changes
+
+- fe775da: Allow card checkout invoice-target collections to use the planned document type so operators can choose proforma anchors before payment capture.
+
 ## 0.122.0
 
 ### Minor Changes
