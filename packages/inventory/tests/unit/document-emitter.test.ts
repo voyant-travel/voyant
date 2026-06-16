@@ -59,6 +59,8 @@ describe("createProductDocumentEmitter", () => {
     const doc = emitter.emit(sampleRow, customerSlice)
     // bookingMode, productTypeId, start/end dates are visibility:[staff,customer,partner]
     expect(doc.fields).toHaveProperty("bookingMode")
+    expect(doc.fields).toHaveProperty("supplyModel")
+    expect(doc.fields.supplyModel).toBe("scheduled")
     expect(doc.fields).toHaveProperty("productTypeId")
     expect(doc.fields).toHaveProperty("startDate")
     expect(doc.fields).toHaveProperty("endDate")

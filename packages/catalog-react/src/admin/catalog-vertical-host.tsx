@@ -32,6 +32,49 @@ type CatalogBrowserMessages = ReturnType<
 const DEFAULT_MARKET_VALUE = "__default__"
 const DEFAULT_CATALOG_LOCALE = "en-GB"
 
+interface CatalogMarket {
+  id: string
+  name: string
+  code: string
+  defaultLanguageTag: string
+}
+
+export function resolveCatalogDefaultMarket(
+  markets: ReadonlyArray<CatalogMarket>,
+  selectedMarketId?: string,
+): CatalogMarket | undefined {
+  return (
+    markets.find((market) => market.id === selectedMarketId) ??
+    markets.find((market) => market.code === "default") ??
+    markets[0]
+  )
+}
+
+export function resolveCatalogLocaleOptions(
+  market: CatalogMarket | undefined,
+  locales: ReadonlyArray<{ languageTag: string }>,
+): string[] {
+  const tags = new Set<string>()
+  if (market) {
+    tags.add(market.defaultLanguageTag)
+    for (const locale of locales) tags.add(locale.languageTag)
+  } else {
+    tags.add(DEFAULT_CATALOG_LOCALE)
+  }
+  return Array.from(tags).sort((left, right) => left.localeCompare(right))
+}
+
+export function resolveCatalogSelectedLocale(
+  requestedLocale: string | undefined,
+  localeOptions: ReadonlyArray<string>,
+  market: CatalogMarket | undefined,
+): string {
+  const fallbackLocale = market?.defaultLanguageTag ?? DEFAULT_CATALOG_LOCALE
+  return requestedLocale && localeOptions.includes(requestedLocale)
+    ? requestedLocale
+    : fallbackLocale
+}
+
 export interface CatalogVerticalHostProps {
   vertical: CatalogVerticalPageId
   search: CatalogSearchParams
@@ -90,29 +133,22 @@ export function CatalogVerticalHost({
   const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const suppliersQuery = useSuppliers({ limit: 100 })
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
+  const markets = marketsQuery.data?.data ?? []
   const selectedMarketId = search.market
-  const selectedMarket = (marketsQuery.data?.data ?? []).find(
-    (market) => market.id === selectedMarketId,
-  )
+  const defaultMarket = resolveCatalogDefaultMarket(markets, selectedMarketId)
+  const selectedMarket = selectedMarketId ? defaultMarket : undefined
+  const localeMarket = selectedMarket ?? defaultMarket
   const localesQuery = useMarketLocales({
-    marketId: selectedMarketId,
+    marketId: localeMarket?.id,
     active: true,
     limit: 100,
-    enabled: Boolean(selectedMarketId),
+    enabled: Boolean(localeMarket?.id),
   })
-  const localeOptions = useMemo(() => {
-    const tags = new Set<string>()
-    if (selectedMarket) {
-      tags.add(selectedMarket.defaultLanguageTag)
-      for (const locale of localesQuery.data?.data ?? []) tags.add(locale.languageTag)
-    } else {
-      tags.add(DEFAULT_CATALOG_LOCALE)
-    }
-    return Array.from(tags).sort((left, right) => left.localeCompare(right))
-  }, [localesQuery.data, selectedMarket])
-  const fallbackLocale = selectedMarket?.defaultLanguageTag ?? DEFAULT_CATALOG_LOCALE
-  const selectedLocale =
-    search.locale && localeOptions.includes(search.locale) ? search.locale : fallbackLocale
+  const localeOptions = useMemo(
+    () => resolveCatalogLocaleOptions(localeMarket, localesQuery.data?.data ?? []),
+    [localesQuery.data, localeMarket],
+  )
+  const selectedLocale = resolveCatalogSelectedLocale(search.locale, localeOptions, localeMarket)
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
