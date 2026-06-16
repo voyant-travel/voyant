@@ -1,3 +1,20 @@
+import {
+  Building,
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  DollarSign,
+  LayoutDashboard,
+  Library,
+  Mail,
+  Package,
+  Plane,
+  Radio,
+  Scale,
+  Settings,
+  Users,
+  Wrench,
+} from "lucide-react"
 import type { OperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { NavItem } from "../types.js"
 
@@ -21,6 +38,31 @@ export type OperatorAdminNavigationIconName =
 export type OperatorAdminNavigationIcons = Partial<
   Record<OperatorAdminNavigationIconName, NavItem["icon"]>
 >
+
+/**
+ * The standard operator nav icon set, shipped by the framework so deployments
+ * don't hand-wire lucide imports. Use directly (`icons={defaultOperatorNavIcons}`)
+ * or spread to override a single entry
+ * (`icons={{ ...defaultOperatorNavIcons, finance: MyIcon }}`). A custom domain
+ * supplies its own icon via the override; the standard 15 come from here.
+ */
+export const defaultOperatorNavIcons: Record<OperatorAdminNavigationIconName, NavItem["icon"]> = {
+  availability: CalendarDays,
+  bookings: CalendarCheck,
+  catalog: Library,
+  channelSync: Radio,
+  dashboard: LayoutDashboard,
+  finance: DollarSign,
+  flights: Plane,
+  legal: Scale,
+  notifications: Mail,
+  organizations: Building,
+  people: Users,
+  products: Package,
+  resources: Wrench,
+  settings: Settings,
+  suppliers: Building2,
+}
 
 export interface CreateOperatorAdminNavigationOptions {
   messages: OperatorAdminMessages["nav"]

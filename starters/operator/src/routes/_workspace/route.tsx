@@ -1,50 +1,19 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router"
-import type { OperatorAdminNavigationIcons } from "@voyant-travel/admin"
+import { defaultOperatorNavIcons } from "@voyant-travel/admin"
 import {
   AdminWorkspacePendingFallback,
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
 } from "@voyant-travel/admin/app/workspace"
-import {
-  Building,
-  Building2,
-  CalendarCheck,
-  CalendarDays,
-  DollarSign,
-  LayoutDashboard,
-  Library,
-  Mail,
-  Package,
-  Plane,
-  Radio,
-  Scale,
-  Settings,
-  Users,
-  Wrench,
-} from "lucide-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
 import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"
 
-const operatorNavigationIcons = {
-  availability: CalendarDays,
-  bookings: CalendarCheck,
-  catalog: Library,
-  channelSync: Radio,
-  dashboard: LayoutDashboard,
-  finance: DollarSign,
-  flights: Plane,
-  legal: Scale,
-  notifications: Mail,
-  organizations: Building,
-  people: Users,
-  products: Package,
-  resources: Wrench,
-  settings: Settings,
-  suppliers: Building2,
-} satisfies OperatorAdminNavigationIcons
+// The standard nav icon set ships from @voyant-travel/admin. Override a single
+// entry with `{ ...defaultOperatorNavIcons, finance: MyIcon }` if needed.
+const operatorNavigationIcons = defaultOperatorNavIcons
 
 const workspaceGuard = createAdminWorkspaceBeforeLoad({ getCurrentUser })
 
