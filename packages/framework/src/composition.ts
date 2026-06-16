@@ -30,6 +30,11 @@
 
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import { type BookingsHonoModuleOptions, createBookingsHonoModule } from "@voyant-travel/bookings"
+import { bookingsExtrasRoutes } from "@voyant-travel/bookings/extras"
+import {
+  type BookingRequirementsHonoModuleOptions,
+  createBookingRequirementsHonoModule,
+} from "@voyant-travel/bookings/requirements"
 import { createCommerceHonoModules } from "@voyant-travel/commerce"
 import {
   distributionHonoModule,
@@ -38,8 +43,10 @@ import {
 } from "@voyant-travel/distribution"
 import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
+import type { HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryHonoModule } from "@voyant-travel/inventory"
+import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
 import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyant-travel/legal"
 import {
   type CreateNotificationsHonoModuleOptions,
@@ -58,6 +65,17 @@ import {
   type StorefrontVerificationRoutesOptions,
 } from "@voyant-travel/storefront/verification"
 import { createTripsHonoModule, type TripsRoutesOptions } from "@voyant-travel/trips"
+import { Hono } from "hono"
+
+/**
+ * Combined "extras" surface — inventory + bookings package extras routes mounted
+ * on one module. Pure composition of package route sets (no providers); the
+ * deployment used to build this inline.
+ */
+const extrasHonoModule = {
+  module: { name: "extras" },
+  routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
+} satisfies HonoModule
 
 /**
  * The injected, deployment-specific provider surface the framework's standard
@@ -103,6 +121,10 @@ export interface FrameworkProviders {
   >
   /** Reads a stored document's content as base64 (notification attachments). */
   readDocumentContentBase64: (bindings: unknown, storageKey: string) => Promise<string | null>
+  /** Resolves a product snapshot for the public booking-requirements routes. */
+  resolveBookingRequirementsProductSnapshot: NonNullable<
+    NonNullable<BookingRequirementsHonoModuleOptions["publicRoutes"]>["resolveProductSnapshot"]
+  >
 }
 
 /**
@@ -129,6 +151,13 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     ],
     "@voyant-travel/commerce": () => createCommerceHonoModules(),
     "@voyant-travel/inventory": () => inventoryHonoModule,
+    "@voyant-travel/inventory/extras": () => extrasHonoModule,
+    "@voyant-travel/bookings/requirements": ({ capabilities }) =>
+      createBookingRequirementsHonoModule({
+        publicRoutes: {
+          resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
+        },
+      }),
     // Tier 2 — capability-shaped modules (providers injected via ctx).
     "@voyant-travel/bookings": ({ capabilities }) =>
       createBookingsHonoModule({
