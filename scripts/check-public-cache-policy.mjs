@@ -251,13 +251,13 @@ function checkSourceMarkers() {
       reason: "public default contract template read",
     },
     {
-      file: "starters/operator/src/api/settings.ts",
+      file: "starters/operator/src/api/routes/settings.ts",
       call: "cachePublicOperatorSettings(c)",
       minimum: 2,
       reason: "public operator settings/profile reads",
     },
     {
-      file: "starters/operator/src/api/payment-link-routes.ts",
+      file: "packages/storefront/src/payment-link/routes.ts",
       call: "cachePublicPaymentLinkConfig(c)",
       minimum: 1,
       reason: "public payment-link config read",
@@ -299,12 +299,12 @@ function checkSourceMarkers() {
   }
 
   requireNotContains(
-    "starters/operator/src/api/catalog-content.ts",
+    "starters/operator/src/api/routes/catalog-content.ts",
     "PUBLIC_CATALOG_CONTENT_CACHE_CONTROL",
     "catalog content can vary by Accept-Language when locale is absent from the URL",
   )
   requireNotContains(
-    "starters/operator/src/api/catalog-content.ts",
+    "starters/operator/src/api/routes/catalog-content.ts",
     "cacheControl:",
     "catalog content mounts must not opt into URL-only shared response cache",
   )

@@ -144,6 +144,12 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
 
 export const legalHonoModule: HonoModule = createLegalHonoModule()
 
+export {
+  CONTRACT_DOCUMENT_ROUTE_PATHS,
+  type ContractDocumentRoutesOptions,
+  type ContractDocumentStorageLike,
+  createContractDocumentRoutes,
+} from "./contract-document-routes.js"
 export * from "./contracts/index.js"
 export {
   buildContractsRouteRuntime,

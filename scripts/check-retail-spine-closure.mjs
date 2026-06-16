@@ -141,6 +141,13 @@ const optionalEdgeAllowlist = [
     reason:
       "the packaged admin shell can mount operated Inventory owner-path extensions when a host installs them",
   },
+  {
+    from: "@voyant-travel/commerce",
+    type: "peerDependencies",
+    to: "@voyant-travel/quotes",
+    reason:
+      "commerce checkout dynamically imports quotesService only on the quote-version checkout path; deployments without Quotes don't load it",
+  },
 ]
 
 const dependencyGroups = [

@@ -16,6 +16,14 @@ export type {
   GuestBookingLookupInput,
 } from "./guest-booking-guard.js"
 export { createGuestBookingGuard } from "./guest-booking-guard.js"
+export type {
+  PaymentLinkBankTransferDetails,
+  PaymentLinkRoutesOptions,
+  PaymentLinkSessionInput,
+  PaymentLinkTripComponent,
+  PaymentLinkTripData,
+} from "./payment-link/routes.js"
+export { createPaymentLinkRoutes } from "./payment-link/routes.js"
 export type { StorefrontAdminRoutes } from "./routes-admin.js"
 export { createStorefrontAdminRoutes } from "./routes-admin.js"
 export type { StorefrontPublicRoutes } from "./routes-public.js"

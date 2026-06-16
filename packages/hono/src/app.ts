@@ -14,6 +14,7 @@ import {
   makeFrameworkLogger,
   wireWorkflowRuntime,
 } from "./app-workflows.js"
+import { mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
@@ -481,14 +482,22 @@ export function createApp<TBindings extends VoyantBindings>(
 
   // Mount module routes
   for (const mod of allModules) {
+    const adminPrefix = `/v1/admin/${mod.module.name}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name)
     if (mod.adminRoutes) {
-      app.route(`/v1/admin/${mod.module.name}`, mod.adminRoutes)
+      app.route(adminPrefix, mod.adminRoutes)
     }
     if (mod.publicRoutes) {
-      app.route(
-        resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name),
-        mod.publicRoutes,
-      )
+      app.route(publicPrefix, mod.publicRoutes)
+    }
+    if (mod.lazyAdminRoutes) {
+      mountLazyRoutesAt(app, adminPrefix, mod.lazyAdminRoutes)
+    }
+    if (mod.lazyPublicRoutes) {
+      mountLazyRoutesAt(app, publicPrefix, mod.lazyPublicRoutes)
+    }
+    if (mod.lazyRoutes) {
+      mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
     }
     if (mod.routes) {
       app.route(`/v1/${mod.module.name}`, mod.routes)
@@ -497,14 +506,22 @@ export function createApp<TBindings extends VoyantBindings>(
 
   // Mount extension routes
   for (const ext of allExtensions) {
+    const adminPrefix = `/v1/admin/${ext.extension.module}`
+    const publicPrefix = resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module)
     if (ext.adminRoutes) {
-      app.route(`/v1/admin/${ext.extension.module}`, ext.adminRoutes)
+      app.route(adminPrefix, ext.adminRoutes)
     }
     if (ext.publicRoutes) {
-      app.route(
-        resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module),
-        ext.publicRoutes,
-      )
+      app.route(publicPrefix, ext.publicRoutes)
+    }
+    if (ext.lazyAdminRoutes) {
+      mountLazyRoutesAt(app, adminPrefix, ext.lazyAdminRoutes)
+    }
+    if (ext.lazyPublicRoutes) {
+      mountLazyRoutesAt(app, publicPrefix, ext.lazyPublicRoutes)
+    }
+    if (ext.lazyRoutes) {
+      mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
     }
     if (ext.routes) {
       app.route(`/v1/${ext.extension.module}`, ext.routes)

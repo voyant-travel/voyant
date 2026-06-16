@@ -9,6 +9,8 @@
     "./validation": "./src/validation.ts",
     "./service": "./src/service.ts",
     "./mcp-tools": "./src/mcp-tools.ts",
+    "./mcp": "./src/mcp-routes.ts",
+    "./checkout": "./src/checkout/index.ts",
     "./cruise-extension": "./src/cruise-extension.ts",
     "./routes": "./src/routes.ts"
   },
@@ -30,6 +32,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
@@ -70,6 +73,16 @@
         "types": "./dist/mcp-tools.d.ts",
         "import": "./dist/mcp-tools.js",
         "default": "./dist/mcp-tools.js"
+      },
+      "./mcp": {
+        "types": "./dist/mcp-routes.d.ts",
+        "import": "./dist/mcp-routes.js",
+        "default": "./dist/mcp-routes.js"
+      },
+      "./checkout": {
+        "types": "./dist/checkout/index.d.ts",
+        "import": "./dist/checkout/index.js",
+        "default": "./dist/checkout/index.js"
       },
       "./cruise-extension": {
         "types": "./dist/cruise-extension.d.ts",

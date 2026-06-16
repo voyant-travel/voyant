@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./checkout": "./src/checkout/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -16,19 +17,36 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
+    "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "rrule": "^2.8.1",
     "zod": "^4.3.6"
   },
+  "peerDependencies": {
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@voyant-travel/legal": {
+      "optional": true
+    },
+    "@voyant-travel/quotes": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
@@ -48,6 +66,11 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
         "default": "./dist/schema.js"
+      },
+      "./checkout": {
+        "types": "./dist/checkout/index.d.ts",
+        "import": "./dist/checkout/index.js",
+        "default": "./dist/checkout/index.js"
       }
     },
     "main": "./dist/index.js",

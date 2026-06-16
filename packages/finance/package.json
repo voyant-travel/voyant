@@ -43,8 +43,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyant-travel/operations": "workspace:^",
-    "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },

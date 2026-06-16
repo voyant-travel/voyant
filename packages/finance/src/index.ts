@@ -266,6 +266,13 @@ export {
   resolveEffectivePaymentPolicy,
 } from "./payment-policy.js"
 export {
+  type BookingScheduleRoutesOptions,
+  createBookingScheduleAdminRoutes,
+  createPaymentPolicyPublicRoutes,
+  generatePaymentScheduleForBooking,
+  type PaymentPolicyEntityContext,
+} from "./payment-schedule/routes.js"
+export {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
   type FinanceRouteRuntime,

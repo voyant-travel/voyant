@@ -29,6 +29,7 @@
     "verify:publish-tarballs": "node scripts/verify-package-tarballs.mjs",
     "verify:tenant-scoping": "node scripts/check-tenant-scoping.mjs",
     "verify:route-authoring": "node scripts/check-route-authoring.mjs",
+    "verify:route-ownership": "node scripts/check-route-ownership.mjs",
     "verify:public-cache-policy": "node scripts/check-public-cache-policy.mjs",
     "verify:cloudflare-entrypoints": "node scripts/check-cloudflare-entrypoints.mjs",
     "verify:workflows-package-surface": "node scripts/check-workflows-package-surface.mjs",

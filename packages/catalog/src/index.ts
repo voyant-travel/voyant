@@ -58,6 +58,11 @@ export * from "./adapter/schemas.js"
 // BookingJourney HTTP contract — root export matches the Hono module pattern
 // used by the vertical packages while keeping the ./booking-engine subpath.
 export {
+  type CatalogBookingRouteModuleOptions,
+  createCatalogBookingOrdersRoutes,
+  mountCatalogBookingRoutes,
+} from "./booking-engine/operator-routes.js"
+export {
   type CatalogBookingAdapterContextInput,
   type CatalogBookingBookBody,
   type CatalogBookingBookTransformInput,
@@ -173,6 +178,16 @@ export {
   type TypesenseSearchQuery,
   type TypesenseSearchResponse,
 } from "./indexer/typesense.js"
+// Live offer/search routes (sourced packages + cruises). Connect-sdk /
+// typesense / geo access is injected by the deployment via options.
+export {
+  type CatalogOffersAirportLabel,
+  type CatalogOffersConnectClient,
+  type CatalogOffersIndexFields,
+  type CatalogOffersRouteModuleOptions,
+  type CatalogOffersSearchDestination,
+  createCatalogOffersAdminRoutes,
+} from "./offers/operator-routes.js"
 export {
   applyMerge,
   isVisibleTo,

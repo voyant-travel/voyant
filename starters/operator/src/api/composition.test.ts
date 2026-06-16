@@ -38,9 +38,9 @@ describe("operator runtime composition", () => {
 
     // 20 manifest entries expand to 25 mounted modules because Commerce and
     // Distribution each mount multiple internal Hono modules.
-    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(20)
-    expect(composed.modules).toHaveLength(25)
-    expect(composed.extensions).toHaveLength(6)
+    expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(29)
+    expect(composed.modules).toHaveLength(34)
+    expect(composed.extensions).toHaveLength(15)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")
@@ -49,6 +49,68 @@ describe("operator runtime composition", () => {
     // Module names are unique (no double-mount).
     const names = composed.modules.map((m) => m.module.name)
     expect(new Set(names).size).toBe(names.length)
+  })
+
+  it("composes the route families moved off additionalRoutes as extensions", () => {
+    // These route families moved off the additionalRoutes hop into the
+    // composition registry; createApp mounts each extension's routes under
+    // `/v1/admin/{module}` (+ publicPath for public routes), preserving URLs.
+    const composed = composeFromManifest(
+      OPERATOR_RUNTIME_MANIFEST,
+      operatorComposition,
+      buildOperatorCapabilities(),
+    )
+    const byName = (name: string) => composed.extensions.find((e) => e.extension.name === name)
+
+    const channelPush = byName("channel-push")
+    expect(channelPush?.extension.module).toBe("distribution")
+    expect(channelPush?.adminRoutes).toBeDefined()
+
+    const bookingTax = byName("booking-tax")
+    expect(bookingTax?.extension.module).toBe("bookings")
+    expect(bookingTax?.adminRoutes).toBeDefined()
+
+    // Booking-schedule owns an admin route on bookings + a public route
+    // mounted at /v1/public/payment-policy via the publicPath override.
+    const bookingSchedule = byName("booking-schedule")
+    expect(bookingSchedule?.extension.module).toBe("bookings")
+    expect(bookingSchedule?.adminRoutes).toBeDefined()
+    expect(bookingSchedule?.publicRoutes).toBeDefined()
+    expect(bookingSchedule?.publicPath).toBe("payment-policy")
+
+    const snapshot = byName("quote-version-snapshot")
+    expect(snapshot?.extension.module).toBe("trips")
+    expect(snapshot?.adminRoutes).toBeDefined()
+
+    // Lazy extensions (loaded on demand, context bridged by createApp).
+    const actionLedgerHealth = byName("action-ledger-health")
+    expect(actionLedgerHealth?.extension.module).toBe("action-ledger")
+    expect(actionLedgerHealth?.lazyAdminRoutes).toBeTypeOf("function")
+
+    const proposal = byName("proposal")
+    expect(proposal?.extension.module).toBe("quote-versions")
+    expect(proposal?.publicPath).toBe("proposals")
+    expect(proposal?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(proposal?.lazyPublicRoutes).toBeTypeOf("function")
+
+    expect(byName("catalog-offers")?.extension.module).toBe("catalog")
+    expect(byName("catalog-checkout")?.extension.module).toBe("catalog")
+  })
+
+  it("composes deployment-local route modules as lazy modules", () => {
+    const composed = composeFromManifest(
+      OPERATOR_RUNTIME_MANIFEST,
+      operatorComposition,
+      buildOperatorCapabilities(),
+    )
+    const mod = (name: string) => composed.modules.find((m) => m.module.name === name)
+
+    // flights/mcp/invitations route bundles live in the operator and load
+    // lazily; createApp mounts + caches them with the request context bridged.
+    expect(mod("flights")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(mod("mcp")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(mod("invitations")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(mod("invitations")?.lazyPublicRoutes).toBeTypeOf("function")
   })
 
   it("every schema-migrated module (voyant.config) is actually mounted at runtime", () => {

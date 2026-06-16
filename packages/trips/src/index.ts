@@ -71,6 +71,7 @@ export {
   type McpToolRegistry,
   requireService,
 } from "./mcp-registry.js"
+export { createTripMcpRoutes, type TripMcpRoutesOptions } from "./mcp-routes.js"
 export {
   type CreateTripArgs,
   createTripTool,

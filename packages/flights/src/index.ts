@@ -20,6 +20,16 @@ export {
 } from "./contract/adapter.js"
 export * from "./contract/schemas.js"
 export * from "./contract/types.js"
+// Flight admin HTTP routes (module-owned; the deployment supplies connector +
+// payment options).
+export {
+  createFlightAdminRoutes,
+  createFlightsHonoModule,
+  type FlightOrderPaymentSummary,
+  type FlightPaymentIntegration,
+  type FlightsHonoModuleOptions,
+  type FlightsRouteOptions,
+} from "./hono.js"
 export {
   type ConnectionResult,
   type ConnectionSearchStatus,

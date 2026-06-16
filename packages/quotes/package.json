@@ -8,7 +8,8 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes/index.ts",
-    "./booking-extension": "./src/booking-extension.ts"
+    "./booking-extension": "./src/booking-extension.ts",
+    "./proposal-routes": "./src/proposal-routes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -23,6 +24,7 @@
     "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/trips": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
@@ -61,6 +63,11 @@
         "types": "./dist/booking-extension.d.ts",
         "import": "./dist/booking-extension.js",
         "default": "./dist/booking-extension.js"
+      },
+      "./proposal-routes": {
+        "types": "./dist/proposal-routes.d.ts",
+        "import": "./dist/proposal-routes.js",
+        "default": "./dist/proposal-routes.js"
       }
     },
     "main": "./dist/index.js",
