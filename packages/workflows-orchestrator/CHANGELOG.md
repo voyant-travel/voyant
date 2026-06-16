@@ -1,5 +1,14 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.109.3
+
+### Patch Changes
+
+- e46200d: Call workflow bundle `bootstrapWorkflowBundle` exports after loading entries so
+  detached workflow runners can initialize process-local dependencies before
+  executing workflow steps.
+  - @voyant-travel/workflows@0.109.3
+
 ## 0.109.2
 
 ### Patch Changes
