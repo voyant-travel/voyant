@@ -6,6 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./contract-document-routes": "./src/contract-document-routes.ts",
+    "./contract-document": "./src/contracts/contract-document-service.ts",
+    "./contract-variables": "./src/contracts/contract-variables.ts",
     "./schema": "./src/schema.ts",
     "./contracts": "./src/contracts/index.ts",
     "./contracts/validation": "./src/contracts/validation.ts",
@@ -65,6 +67,16 @@
         "types": "./dist/contract-document-routes.d.ts",
         "import": "./dist/contract-document-routes.js",
         "default": "./dist/contract-document-routes.js"
+      },
+      "./contract-document": {
+        "types": "./dist/contracts/contract-document-service.d.ts",
+        "import": "./dist/contracts/contract-document-service.js",
+        "default": "./dist/contracts/contract-document-service.js"
+      },
+      "./contract-variables": {
+        "types": "./dist/contracts/contract-variables.d.ts",
+        "import": "./dist/contracts/contract-variables.js",
+        "default": "./dist/contracts/contract-variables.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

@@ -15,11 +15,6 @@
  */
 import type { CheckoutModuleOptions, CheckoutStartOptions } from "@voyant-travel/commerce/checkout"
 import { productsService } from "@voyant-travel/inventory"
-import {
-  NETOPIA_RUNTIME_CONTAINER_KEY,
-  netopiaService,
-  type ResolvedNetopiaRuntimeOptions,
-} from "@voyant-travel/plugin-netopia"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import {
@@ -27,6 +22,7 @@ import {
   getOperatorProfile,
   resolveBookingTaxSettings,
 } from "../routes/settings"
+import { cardPaymentStarter } from "./card-payment"
 
 /** Resolve an owned product's display name (cycle-avoiding inventory read). */
 async function getOwnedProductName(
@@ -75,43 +71,32 @@ export function createOperatorCheckoutModuleOptions(): CheckoutModuleOptions {
 }
 
 /**
- * Start the Netopia card-payment session for a checkout-start. Resolves the
- * Netopia runtime from the per-request container; returns `null` when no
- * runtime is configured so commerce falls back to the `card_pending`
- * confirmation-page poll. The provider-specific placeholder billing (city,
- * country code, postal code, etc) lives here — the package only passes the
- * real billing (email/firstName/lastName).
+ * Start the card-payment session for a checkout-start via this deployment's
+ * {@link cardPaymentStarter}. Returns `null` when the processor isn't
+ * configured so commerce falls back to the `card_pending` confirmation-page
+ * poll. The provider-specific placeholder billing (city, country code, postal
+ * code, etc) lives here — the package only passes the real billing
+ * (email/firstName/lastName).
  */
 function createStartCardPayment(c: Context): CheckoutStartOptions["startCardPayment"] {
-  return async ({ db, sessionId, billing, description, returnUrl }) => {
-    const runtime = (c.var as { container?: { resolve(key: string): unknown } }).container?.resolve(
-      NETOPIA_RUNTIME_CONTAINER_KEY,
-    ) as ResolvedNetopiaRuntimeOptions | undefined
-    if (!runtime) return null
-
-    const started = await netopiaService.startPaymentSession(
-      db as Parameters<typeof netopiaService.startPaymentSession>[0],
+  return async ({ db, sessionId, billing, description, returnUrl }) =>
+    cardPaymentStarter(c, {
+      db: db as PostgresJsDatabase,
       sessionId,
-      {
-        billing: {
-          email: billing.email,
-          phone: "0000000000",
-          firstName: billing.firstName,
-          lastName: billing.lastName,
-          city: "TBD",
-          country: 642,
-          state: "TBD",
-          postalCode: "00000",
-          details: "Pending — customer to confirm at payment.",
-        },
-        description,
-        returnUrl,
+      billing: {
+        email: billing.email,
+        phone: "0000000000",
+        firstName: billing.firstName,
+        lastName: billing.lastName,
+        city: "TBD",
+        country: 642,
+        state: "TBD",
+        postalCode: "00000",
+        details: "Pending — customer to confirm at payment.",
       },
-      runtime,
-      undefined,
-    )
-    return { redirectUrl: started.providerResponse.payment?.paymentURL ?? null }
-  }
+      description,
+      returnUrl,
+    })
 }
 
 /**

@@ -1,9 +1,37 @@
+/**
+ * Deployment wiring for the multi-vertical payment-policy cascade.
+ *
+ * The cascade ORCHESTRATION (per-layer composition, the storefront-preview
+ * fan-out, and the `__payment_policy_source__:` source-marker protocol) now
+ * lives in `@voyant-travel/finance` (`createPaymentPolicyCascade`). What stays
+ * here are the vertical schema WALKS the cascade reads — supplier policy off the
+ * booking's supplier link, category policy off `product_categories`, and the
+ * per-listing policy off accommodation rate plans / cruise cabin→sailing→cruise
+ * layers / product rows. Those reads import `@voyant-travel/inventory`,
+ * `@voyant-travel/accommodations`, `@voyant-travel/cruises`, and
+ * `@voyant-travel/distribution` schemas, which finance MUST NOT import (it's a
+ * retail-spine root and the spine closure gate forbids those edges). So the
+ * readers are defined here and injected into the finance cascade factory.
+ *
+ * Public exports are kept stable: importers (`booking-schedule.ts`,
+ * `contract-document-variables.ts`) still import `resolveSupplierPolicy`,
+ * `stampPolicySourceOnBooking`, `readPolicySourceFromInternalNotes`, etc. The
+ * source-marker functions delegate to finance; the schema-walk readers are the
+ * same byte-for-byte queries as before.
+ */
+
 import { ratePlans, stayBookingItems } from "@voyant-travel/accommodations/schema"
-import { bookingItems, bookingSupplierStatuses, bookings } from "@voyant-travel/bookings/schema"
+import { bookingItems, bookingSupplierStatuses } from "@voyant-travel/bookings/schema"
 import { bookingCruiseDetails } from "@voyant-travel/cruises/booking-extension"
 import { cruiseCabinCategories, cruiseSailings, cruises } from "@voyant-travel/cruises/schema"
 import { supplierServices, suppliers } from "@voyant-travel/distribution"
-import type { PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance"
+import {
+  createPaymentPolicyCascade,
+  type PaymentPolicy,
+  type PaymentPolicyEntityContext,
+  readPolicySourceFromInternalNotes,
+  stampPolicySourceOnBooking,
+} from "@voyant-travel/finance"
 import {
   productCategories,
   productCategoryProducts,
@@ -12,13 +40,12 @@ import {
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-export interface PaymentPolicyEntityContext {
-  entityModule: string
-  entityId: string
-  sailingId?: string
-  cabinCategoryId?: string
-  ratePlanId?: string
-}
+export type { PaymentPolicyEntityContext }
+
+// ─────────────────────────────────────────────────────────────────
+// Vertical schema-walk readers (deployment-owned — import vertical
+// schemas finance must not depend on)
+// ─────────────────────────────────────────────────────────────────
 
 /**
  * Resolve the supplier (if any) of a booking. Picks the first
@@ -250,64 +277,6 @@ async function resolveProductListingPolicy(
   return (row?.policy as PaymentPolicy | null | undefined) ?? null
 }
 
-const POLICY_SOURCE_MARKER_PREFIX = "__payment_policy_source__:"
-
-export async function stampPolicySourceOnBooking(
-  db: PostgresJsDatabase,
-  bookingId: string,
-  source: PaymentPolicySource,
-): Promise<void> {
-  const [row] = await db
-    .select({ internalNotes: bookings.internalNotes })
-    .from(bookings)
-    .where(eq(bookings.id, bookingId))
-    .limit(1)
-  if (!row) return
-
-  const filtered = (row.internalNotes ?? "")
-    .split(/\r?\n/)
-    .filter((line) => !line.trim().startsWith(POLICY_SOURCE_MARKER_PREFIX))
-    .join("\n")
-
-  const marker = `${POLICY_SOURCE_MARKER_PREFIX}${source}`
-  const next = filtered.length > 0 ? `${filtered}\n${marker}` : marker
-
-  await db
-    .update(bookings)
-    .set({ internalNotes: next, updatedAt: new Date() })
-    .where(eq(bookings.id, bookingId))
-}
-
-/**
- * Read the policy-source marker stamped onto a booking by the
- * schedule subscriber. Used by the contract resolver so
- * `booking.paymentPolicy.source` reflects the actual cascade layer
- * (`supplier`, `operator_default`, etc.) rather than always echoing
- * `"operator_default"`.
- */
-export function readPolicySourceFromInternalNotes(
-  internalNotes: string | null | undefined,
-): PaymentPolicySource | null {
-  if (!internalNotes) return null
-  for (const line of internalNotes.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (trimmed.startsWith(POLICY_SOURCE_MARKER_PREFIX)) {
-      const value = trimmed.slice(POLICY_SOURCE_MARKER_PREFIX.length).trim()
-      switch (value) {
-        case "booking":
-        case "listing":
-        case "category":
-        case "supplier":
-        case "operator_default":
-          return value
-        default:
-          return null
-      }
-    }
-  }
-  return null
-}
-
 /**
  * Per-entity listing resolver — used at storefront-preview time
  * before a booking exists. Mirrors `resolveListingPolicy` but keyed
@@ -432,3 +401,27 @@ export async function resolveSupplierPolicyForEntity(
 
   return (supplier?.policy as PaymentPolicy | null | undefined) ?? null
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Cascade wiring: inject the deployment's vertical readers into the
+// finance-owned cascade. The source-marker functions are re-exported
+// straight from finance so importers keep stable names.
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * The deployment's payment-policy cascade, built from the finance factory with
+ * this deployment's vertical schema-walk readers injected. Use this when you
+ * need the whole resolver surface in one object.
+ */
+export const bookingPaymentPolicyCascade = createPaymentPolicyCascade({
+  readers: {
+    resolveSupplierPolicy,
+    resolveCategoryPolicy,
+    resolveListingPolicy,
+    resolveSupplierPolicyForEntity,
+    resolveCategoryPolicyForEntity,
+    resolveListingPolicyForEntity,
+  },
+})
+
+export { readPolicySourceFromInternalNotes, stampPolicySourceOnBooking }

@@ -14,7 +14,8 @@
     "./reference/contract": "./src/reference/contract.ts",
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
-    "./hono": "./src/hono.ts"
+    "./hono": "./src/hono.ts",
+    "./payment-integration": "./src/payment-integration.ts"
   },
   "voyant": {
     "schema": "./reference/local-postgres",
@@ -90,6 +91,11 @@
         "types": "./dist/hono.d.ts",
         "import": "./dist/hono.js",
         "default": "./dist/hono.js"
+      },
+      "./payment-integration": {
+        "types": "./dist/payment-integration.d.ts",
+        "import": "./dist/payment-integration.js",
+        "default": "./dist/payment-integration.js"
       }
     },
     "main": "./dist/index.js",

@@ -13,20 +13,17 @@
  */
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
-  NETOPIA_RUNTIME_CONTAINER_KEY,
-  netopiaService,
-  type ResolvedNetopiaRuntimeOptions,
-} from "@voyant-travel/plugin-netopia"
-import {
   type FxQuote,
   startTripCheckout as packageStartTripCheckout,
   type TripCheckoutDeps,
   type TripCheckoutInput,
   type TripCheckoutResult,
 } from "@voyant-travel/trips/checkout"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
+import { cardPaymentStarter } from "./card-payment"
 
 // Re-export the billing helpers so existing operator callers keep their import
 // surface (now sourced from the trips package).
@@ -43,18 +40,12 @@ export function createTripCheckoutDeps(c: Context): TripCheckoutDeps {
     quoteFx: (sourceCurrency, targetCurrency) => quoteFx(c, sourceCurrency, targetCurrency),
     resolveCheckoutBaseUrl: () => resolvePublicCheckoutBaseUrl(c.env as CloudflareBindings),
     startProviderPayment: async ({ paymentSessionId, billing, description }) => {
-      const db = getDb(c) as Parameters<typeof netopiaService.startPaymentSession>[0]
-      const runtime = getContainer(c)?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
-        | ResolvedNetopiaRuntimeOptions
-        | undefined
-      if (!runtime) return
-      await netopiaService.startPaymentSession(
-        db,
-        paymentSessionId,
-        { billing, description },
-        runtime,
-        undefined,
-      )
+      await cardPaymentStarter(c, {
+        db: getDb(c) as PostgresJsDatabase,
+        sessionId: paymentSessionId,
+        billing,
+        description,
+      })
     },
   }
 }
@@ -158,8 +149,4 @@ function numberValue(value: unknown): number | null {
 
 function getDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
-}
-
-function getContainer(c: Context): { resolve(key: string): unknown } | undefined {
-  return (c.var as { container?: { resolve(key: string): unknown } }).container
 }

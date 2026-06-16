@@ -11,6 +11,8 @@
     "./mcp-tools": "./src/mcp-tools.ts",
     "./mcp": "./src/mcp-routes.ts",
     "./checkout": "./src/checkout/index.ts",
+    "./catalog-component": "./src/catalog-component.ts",
+    "./flight-component": "./src/flight-component.ts",
     "./cruise-extension": "./src/cruise-extension.ts",
     "./routes": "./src/routes.ts"
   },
@@ -30,9 +32,11 @@
   },
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/flights": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
@@ -83,6 +87,16 @@
         "types": "./dist/checkout/index.d.ts",
         "import": "./dist/checkout/index.js",
         "default": "./dist/checkout/index.js"
+      },
+      "./catalog-component": {
+        "types": "./dist/catalog-component.d.ts",
+        "import": "./dist/catalog-component.js",
+        "default": "./dist/catalog-component.js"
+      },
+      "./flight-component": {
+        "types": "./dist/flight-component.d.ts",
+        "import": "./dist/flight-component.js",
+        "default": "./dist/flight-component.js"
       },
       "./cruise-extension": {
         "types": "./dist/cruise-extension.d.ts",

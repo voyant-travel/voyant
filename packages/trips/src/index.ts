@@ -4,6 +4,14 @@ import type { HonoModule } from "@voyant-travel/hono/module"
 import { createTripsRoutes, type TripsRoutesOptions, tripsRoutes } from "./routes.js"
 
 export {
+  type CatalogAdapterContext,
+  type CatalogComponentAdapter,
+  type CatalogComponentAdapterOptions,
+  createCatalogComponentAdapter,
+  previewCancellation,
+  type StartComponentCheckout,
+} from "./catalog-component.js"
+export {
   type CatalogComponentBookingDraftOverrides,
   isCatalogBackedTripComponent,
   toBookingDraftV1,
@@ -25,6 +33,13 @@ export {
   groupCruiseExtensionLinksByProduct,
   representCruiseExtensionSelection,
 } from "./cruise-extension.js"
+export {
+  createFlightComponentAdapter,
+  type FlightAdapterContext,
+  type FlightComponentAdapter,
+  type FlightComponentAdapterApi,
+  type FlightComponentAdapterOptions,
+} from "./flight-component.js"
 export type { TripsRoutes, TripsRoutesOptions } from "./routes.js"
 export { createTripsRoutes } from "./routes.js"
 

@@ -17,11 +17,6 @@
  */
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
-  NETOPIA_RUNTIME_CONTAINER_KEY,
-  netopiaService,
-  type ResolvedNetopiaRuntimeOptions,
-} from "@voyant-travel/plugin-netopia"
-import {
   createPaymentLinkRoutes,
   type PaymentLinkRoutesOptions,
   type PaymentLinkTripData,
@@ -32,6 +27,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { getOperatorPaymentInstructions, getOperatorProfile } from "../routes/settings"
+import { cardPaymentStarter } from "./card-payment"
 import {
   bankTransferDetailsFromOperatorSettings,
   resolvePublicCheckoutBaseUrlFromBindings,
@@ -61,41 +57,32 @@ async function resolveBankTransferDetails(c: Context) {
   }
 }
 
-/** Start a fresh card payment via Netopia, or report it isn't configured. */
+/** Start a fresh card payment via this deployment's processor, or report it isn't configured. */
 const startCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async (c, session) => {
-  const db = getDb(c) as Parameters<typeof netopiaService.startPaymentSession>[0]
-  const runtime = c.var.container?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
-    | ResolvedNetopiaRuntimeOptions
-    | undefined
-  if (!runtime) {
-    return { configured: false }
-  }
   const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
   const last = rest.length > 0 ? rest.join(" ") : "Customer"
-  const started = await netopiaService.startPaymentSession(
-    db,
-    session.id,
-    {
-      billing: {
-        email: session.payerEmail ?? "tbd@example.com",
-        phone: "0000000000",
-        firstName: first || "Customer",
-        lastName: last,
-        city: "TBD",
-        country: 642,
-        state: "TBD",
-        postalCode: "00000",
-        details: "Pending - customer to confirm at payment.",
-      },
-      description: session.notes ?? `Payment ${session.id}`,
+  const result = await cardPaymentStarter(c, {
+    db: getDb(c),
+    sessionId: session.id,
+    billing: {
+      email: session.payerEmail ?? "tbd@example.com",
+      phone: "0000000000",
+      firstName: first || "Customer",
+      lastName: last,
+      city: "TBD",
+      country: 642,
+      state: "TBD",
+      postalCode: "00000",
+      details: "Pending - customer to confirm at payment.",
     },
-    runtime,
-    undefined,
-  )
+    description: session.notes ?? `Payment ${session.id}`,
+  })
+  if (!result) {
+    return { configured: false }
+  }
   return {
     configured: true,
-    redirectUrl:
-      started.session.redirectUrl ?? started.providerResponse.payment?.paymentURL ?? null,
+    redirectUrl: result.redirectUrl,
   }
 }
 
