@@ -73,7 +73,7 @@ Five workstreams, ordered later by risk and dependency.
 
 **Target:** one framework-wide group so the runtime framework packages move as a single version. A bare `@voyant-travel/*` glob is **wrong** — that namespace also contains React packages, `*-contracts`, plugins, infra (`db`, `hono`, `core`, `utils`), apps, and tooling, which should not be force-bumped or pinned by deployments at the framework version.
 
-**Mechanically-defined set, not a glob.** Define the lockstep membership by a *rule the checker can evaluate*, e.g. "every workspace package that exports a `HonoModule`/`HonoExtension` and is listed (transitively) by `voyant.config` `modules`/`additionalSchemas`," and emit it to a committed `release.runtime-packages.generated.json`. Then:
+**Mechanically-defined set, not a glob.** Define the lockstep membership by a *rule the checker can evaluate*, e.g. "every workspace package that exports a `HonoModule`/`HonoExtension` and is **mounted** via `voyant.config` `modules`," and emit it to a committed `release.runtime-packages.generated.json`. **`additionalSchemas` is deliberately excluded:** packages listed only there (e.g. `@voyant-travel/charters`, `@voyant-travel/cruises`) are *migrated-but-not-mounted* optional verticals that still export `HonoModule`s — pulling them into the runtime lockstep would force optional, unmounted verticals to the framework version. They stay on their own per-domain `fixed` cadence and join the lockstep set only if/when a deployment actually mounts them. Then:
 
 ```json
 "fixed": [[ /* expanded from release.runtime-packages.generated.json */ ]]
@@ -126,7 +126,7 @@ This is the section that decides whether "seamless upgrade" is real, and the one
 
 The spike (ADR) must define, concretely:
 
-1. **Ledger keys.** The applied-migration ledger keys each migration by `(source, tag, contentHash)` — `source` = `package@version` or `deployment`; `contentHash` detects a package shipping a *changed* migration under a reused tag. Extends today's single-folder `_journal.json` to a multi-source ledger table.
+1. **Ledger keys — version-independent.** The applied-migration ledger keys each migration by `(sourceName, tag, contentHash)` — `sourceName` = the package name (e.g. `@voyant-travel/bookings`) or `deployment`, **never including the package version**. A version bump that re-ships historical migration files (`bookings@1.0/0001` → `bookings@1.1/0001`) must resolve to the *same* ledger key, or every old migration would look new after each upgrade and re-run. The version is recorded as metadata, not identity; `contentHash` is what flags a package shipping a *changed* migration under a reused tag (a hard error, not a silent re-run). Extends today's single-folder `_journal.json` to a multi-source ledger table.
 2. **Ordering model.** Drizzle's per-folder journal has no cross-package order. Choose among: (a) framework-assigned monotonic release tag ordered by `(release-version, in-package-sequence)`; (b) dependency-closure order derived from module dependency edges (a module's migrations apply after its dependencies'); (c) hybrid — dependency order between modules, sequence within. Lockstep (Workstream A) makes (a) viable because all framework packages share one release version.
 3. **Deployment-owned schema stays deployment-owned.** Starter-local `schemas` (`src/db/schema.ts`) and the **generated cross-module link tables** (`drizzle.links.generated.ts`) are *not* package-ownable — links span modules and are deployment-composed. They remain a **deployment migration source**, anchored *after* the framework set (links reference module tables, so they must apply last).
 4. **Custom-migration anchoring.** Deployment-authored migrations (`src/migrations`) declare an anchor relative to the framework set (default: after all framework migrations; optionally pinned after a specific package version's migrations for data backfills tied to a schema change).
@@ -168,7 +168,7 @@ A single preflight that closes the two cheapest risks and makes upgrades safe to
 
 ## Upgrade path (the actual ask)
 
-- **Standard (80%):** `pnpm up @voyant-travel/* && voyant db migrate && voyant doctor`. No code merge — config + provider wiring are stable contracts; framework changes arrive as package updates (workstream A makes the version bump atomic; D makes migrations arrive with the packages).
+- **Standard (80%):** `voyant upgrade && voyant db migrate && voyant doctor`. `voyant upgrade` bumps **exactly the runtime-package set** (from `release.runtime-packages.generated.json`) to one framework version — *not* a `@voyant-travel/*` glob, which would also drag in plugins, SDKs, React/UI, and CLI tooling that deployments pin on their own cadence (the same glob the lockstep rule rejects). No code merge — config + provider wiring are stable contracts; framework changes arrive as package updates (workstream A makes the version bump atomic; D makes migrations arrive with the packages).
 - **Custom (20%):** identical, then reconcile only *their own* `src/` extensions if a seam contract changed — and semver (A) signals when. They never merge framework internals because they hold none.
 
 ## Phased plan
