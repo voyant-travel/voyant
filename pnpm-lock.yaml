@@ -1846,6 +1846,64 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/framework:
+    dependencies:
+      '@voyant-travel/action-ledger':
+        specifier: workspace:*
+        version: link:../action-ledger
+      '@voyant-travel/bookings':
+        specifier: workspace:*
+        version: link:../bookings
+      '@voyant-travel/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@voyant-travel/commerce':
+        specifier: workspace:*
+        version: link:../commerce
+      '@voyant-travel/distribution':
+        specifier: workspace:*
+        version: link:../distribution
+      '@voyant-travel/finance':
+        specifier: workspace:*
+        version: link:../finance
+      '@voyant-travel/flights':
+        specifier: workspace:*
+        version: link:../flights
+      '@voyant-travel/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@voyant-travel/inventory':
+        specifier: workspace:*
+        version: link:../inventory
+      '@voyant-travel/legal':
+        specifier: workspace:*
+        version: link:../legal
+      '@voyant-travel/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@voyant-travel/operations':
+        specifier: workspace:*
+        version: link:../operations
+      '@voyant-travel/quotes':
+        specifier: workspace:*
+        version: link:../quotes
+      '@voyant-travel/relationships':
+        specifier: workspace:*
+        version: link:../relationships
+      '@voyant-travel/storefront':
+        specifier: workspace:*
+        version: link:../storefront
+      '@voyant-travel/trips':
+        specifier: workspace:*
+        version: link:../trips
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/hono:
     dependencies:
       '@voyant-travel/core':
