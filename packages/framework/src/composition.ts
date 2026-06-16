@@ -56,7 +56,9 @@ import {
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
 import {
+  type BookingTaxRouteOptions,
   bookingsCreateExtension,
+  createBookingTaxHonoExtension,
   createFinanceHonoModule,
   type FinanceHonoModuleOptions,
 } from "@voyant-travel/finance"
@@ -67,7 +69,7 @@ import type {
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
@@ -238,6 +240,12 @@ export interface FrameworkProviders {
   resolveBankTransferDetails: NonNullable<FinanceHonoModuleOptions["resolveBankTransferDetails"]>
   /** The configured pay-by-link starter (Netopia; env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
+  /** Reads the booking tax settings (finance booking-tax extension). */
+  resolveBookingTaxSettings: NonNullable<BookingTaxRouteOptions["resolveBookingTaxSettings"]>
+  /** Updates the booking tax settings (finance booking-tax extension). */
+  updateBookingTaxSettings: NonNullable<BookingTaxRouteOptions["updateBookingTaxSettings"]>
+  /** Builds the distribution channel-push extension (deployment booking-engine wiring). */
+  createChannelPushExtension: () => HonoExtension
 }
 
 /**
@@ -454,5 +462,13 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     "@voyant-travel/inventory/authoring/extension": () => inventoryAuthoringExtension,
     "@voyant-travel/quotes/booking-extension": () => quotesBookingExtension,
     "@voyant-travel/distribution": () => distributionBookingExtension,
+    // Injection-shaped extensions — deployment-specific builders/readers via ctx.
+    "@voyant-travel/distribution/channel-push-extension": ({ capabilities }) =>
+      capabilities.createChannelPushExtension(),
+    "@voyant-travel/finance/booking-tax-extension": ({ capabilities }) =>
+      createBookingTaxHonoExtension({
+        resolveBookingTaxSettings: capabilities.resolveBookingTaxSettings,
+        updateBookingTaxSettings: capabilities.updateBookingTaxSettings,
+      }),
   },
 }

@@ -21,7 +21,6 @@
  * `voyant.config.ts` (the schema manifest).
  */
 
-import { createBookingTaxHonoExtension } from "@voyant-travel/finance"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkProviders,
@@ -138,6 +137,9 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: createRelationshipsStorefrontIntakePersistence(),
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
+    resolveBookingTaxSettings,
+    updateBookingTaxSettings,
+    createChannelPushExtension,
   }
 }
 
@@ -303,9 +305,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // Standard package extensions owned by @voyant-travel/framework (Workstream
     // B, Tier 3). The deployment appends only its injection-shaped + local ones.
     ...frameworkComposition.extensions,
-    "@voyant-travel/distribution/channel-push-extension": () => createChannelPushExtension(),
-    "@voyant-travel/finance/booking-tax-extension": () =>
-      createBookingTaxHonoExtension({ resolveBookingTaxSettings, updateBookingTaxSettings }),
     "operator/booking-schedule-extension": () => createBookingScheduleExtension(),
     "operator/quote-version-snapshot-extension": () =>
       createOperatorQuoteVersionSnapshotExtension(),
