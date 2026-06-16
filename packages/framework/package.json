@@ -34,7 +34,11 @@
     "@voyant-travel/storefront": "workspace:*",
     "@voyant-travel/trips": "workspace:*"
   },
+  "peerDependencies": {
+    "@voyant-travel/hono": "workspace:^"
+  },
   "devDependencies": {
+    "@voyant-travel/hono": "workspace:*",
     "@voyant-travel/voyant-typescript-config": "workspace:*",
     "typescript": "^6.0.2"
   },

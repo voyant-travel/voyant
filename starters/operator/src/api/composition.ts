@@ -21,8 +21,6 @@
  * `voyant.config.ts` (the schema manifest).
  */
 
-// Singleton modules (no template-specific options).
-import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyant-travel/bookings"
 import { bookingsExtrasRoutes } from "@voyant-travel/bookings/extras"
 import { createBookingRequirementsHonoModule } from "@voyant-travel/bookings/requirements"
@@ -31,16 +29,8 @@ import {
   type EmbeddingProvider,
   executeSemanticSearch,
 } from "@voyant-travel/catalog"
-import {
-  createCommerceHonoModules,
-  createCommerceStorefrontOfferResolvers,
-} from "@voyant-travel/commerce"
-import {
-  distributionBookingExtension,
-  distributionHonoModule,
-  externalRefsHonoModule,
-  suppliersHonoModule,
-} from "@voyant-travel/distribution"
+import { createCommerceStorefrontOfferResolvers } from "@voyant-travel/commerce"
+import { distributionBookingExtension } from "@voyant-travel/distribution"
 import {
   bookingsCreateExtension,
   createBookingTaxHonoExtension,
@@ -51,12 +41,11 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import { FRAMEWORK_RUNTIME_MANIFEST } from "@voyant-travel/framework"
+import { FRAMEWORK_RUNTIME_MANIFEST, frameworkComposition } from "@voyant-travel/framework"
 import { createPublicDocumentDeliveryHonoModule, type VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
-import { identityHonoModule } from "@voyant-travel/identity"
-import { inventoryBookingExtension, inventoryHonoModule } from "@voyant-travel/inventory"
+import { inventoryBookingExtension } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
 import { CONTRACT_DOCUMENT_ROUTE_PATHS, createLegalHonoModule } from "@voyant-travel/legal"
@@ -66,10 +55,9 @@ import {
   createNotificationsHonoModule,
   notificationsService,
 } from "@voyant-travel/notifications"
-import { operationsHonoModule } from "@voyant-travel/operations"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
-import { createQuotesHonoModule, quotesBookingExtension } from "@voyant-travel/quotes"
-import { createRelationshipsHonoModule, relationshipsService } from "@voyant-travel/relationships"
+import { quotesBookingExtension } from "@voyant-travel/quotes"
+import { relationshipsService } from "@voyant-travel/relationships"
 import { createStorefrontHonoModule } from "@voyant-travel/storefront"
 import { createCustomerPortalHonoModule } from "@voyant-travel/storefront/customer-portal"
 import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront/verification"
@@ -280,16 +268,10 @@ export const OPERATOR_RUNTIME_MANIFEST = {
 /** Factory registry keyed by the manifest specifiers above. */
 export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
   modules: {
-    "@voyant-travel/action-ledger": () => actionLedgerHonoModule,
-    "@voyant-travel/relationships": () => createRelationshipsHonoModule(),
-    "@voyant-travel/quotes": () => createQuotesHonoModule(),
-    "@voyant-travel/operations": () => operationsHonoModule,
-    "@voyant-travel/identity": () => identityHonoModule,
-    "@voyant-travel/distribution": () => [
-      externalRefsHonoModule,
-      distributionHonoModule,
-      suppliersHonoModule,
-    ],
+    // Standard package modules owned by @voyant-travel/framework (Workstream B).
+    // The framework's pure singleton factories spread in here; the deployment
+    // appends only its capability-shaped + deployment-local factories below.
+    ...frameworkComposition.modules,
     "@voyant-travel/inventory/extras": () => operatorExtrasHonoModule,
     "@voyant-travel/bookings/requirements": () =>
       createBookingRequirementsHonoModule({
@@ -297,8 +279,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
           resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
         },
       }),
-    "@voyant-travel/commerce": () => createCommerceHonoModules(),
-    "@voyant-travel/inventory": () => inventoryHonoModule,
     "@voyant-travel/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
         resolveRuntime: (c) => {
