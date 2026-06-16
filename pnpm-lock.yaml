@@ -1897,6 +1897,9 @@ importers:
         specifier: workspace:*
         version: link:../trips
     devDependencies:
+      '@voyant-travel/hono':
+        specifier: workspace:*
+        version: link:../hono
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
