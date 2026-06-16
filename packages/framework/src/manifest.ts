@@ -39,6 +39,18 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/storefront/verification",
     "@voyant-travel/trips",
     "@voyant-travel/flights",
+    // `operator/*` STANDARD families — routes are package-owned; they keep the
+    // `operator/*` specifier only because the deployment injects their provider
+    // wiring (see operator-registry-classification.md). The framework owns the
+    // factory (frameworkComposition) + manifest entry; the deployment injects
+    // the loaders. (operator/invitations + operator/operator-settings are
+    // genuinely deployment-local and stay appended in the deployment's manifest.)
+    "operator/mcp",
+    "operator/catalog-booking",
+    "operator/catalog-content",
+    "operator/media",
+    "operator/payment-link",
+    "operator/contract-document",
   ],
   extensions: [
     "@voyant-travel/bookings/booking-supplier-extension",
@@ -49,5 +61,13 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/distribution",
     "@voyant-travel/distribution/channel-push-extension",
     "@voyant-travel/finance/booking-tax-extension",
+    // `operator/*` STANDARD extensions (builders/loaders injected).
+    "operator/booking-schedule-extension",
+    "operator/quote-version-snapshot-extension",
+    "operator/booking-maintenance-extension",
+    "operator/action-ledger-health-extension",
+    "operator/proposal-extension",
+    "operator/catalog-offers-extension",
+    "operator/catalog-checkout-extension",
   ],
 } as const satisfies FrameworkManifest

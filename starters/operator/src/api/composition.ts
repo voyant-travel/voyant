@@ -202,26 +202,15 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
 // framework auto-joins it here; no re-listing.
 export const OPERATOR_RUNTIME_MANIFEST = {
   modules: [
+    // All STANDARD modules (incl. the package-owned `operator/*` families) are
+    // owned by @voyant-travel/framework. The deployment appends only its two
+    // genuinely deployment-local module families.
     ...FRAMEWORK_RUNTIME_MANIFEST.modules,
-    "operator/mcp",
     "operator/invitations",
-    "operator/catalog-booking",
-    "operator/catalog-content",
-    "operator/media",
-    "operator/payment-link",
     "operator/operator-settings",
-    "operator/contract-document",
   ],
-  extensions: [
-    ...FRAMEWORK_RUNTIME_MANIFEST.extensions,
-    "operator/booking-schedule-extension",
-    "operator/quote-version-snapshot-extension",
-    "operator/booking-maintenance-extension",
-    "operator/action-ledger-health-extension",
-    "operator/proposal-extension",
-    "operator/catalog-offers-extension",
-    "operator/catalog-checkout-extension",
-  ],
+  // All standard extensions are framework-owned; no deployment-local extensions.
+  extensions: [...FRAMEWORK_RUNTIME_MANIFEST.extensions],
 } satisfies CompositionManifest
 
 /** Factory registry keyed by the manifest specifiers above. */
