@@ -1,0 +1,18 @@
+/**
+ * `@voyant-travel/framework` — the Voyant framework BOM (bill of materials).
+ *
+ * This package's `dependencies` pin the exact tested runtime-module set. A
+ * deployment depends on **one** framework version instead of a matrix of
+ * per-package versions; `voyant upgrade` bumps it, and pnpm/npm resolve the
+ * pinned set transitively. The compatibility matrix is resolved *inside* the
+ * BOM — the deployment never sees it.
+ *
+ * This is deliberately NOT global lockstep: the runtime packages keep
+ * independent versions (only changed packages republish — no per-package npm
+ * email spam), and the BOM is the single thing that always tracks "the
+ * framework version".
+ */
+export {
+  FRAMEWORK_RUNTIME_PACKAGES,
+  type FrameworkRuntimePackage,
+} from "./runtime-packages.generated.js"
