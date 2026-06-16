@@ -1,5 +1,29 @@
 # @voyant-travel/commerce
 
+## 0.3.0
+
+### Minor Changes
+
+- 13fe70b: The commerce module now owns the catalog-checkout materialization/finalize logic: new `@voyant-travel/commerce/checkout` surface (`createCatalogCheckoutRoutes`, `startCatalogCheckout`, `materializeBookingFromSnapshot`, `dispatchCheckoutFinalize`, `rebuildBookingItemTaxLines`, etc.). Deployment specifics — tax settings, owned-product lookup, bank-transfer instructions, contract-pdf generator, and the card-payment provider start (`startCardPayment`) — are injected as options. `quotes` and `legal` are now optional peer dependencies (used only on the quote-version / contract checkout paths).
+
+### Patch Changes
+
+- Updated dependencies [11095db]
+- Updated dependencies [13fe70b]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [503a634]
+- Updated dependencies [a860e15]
+  - @voyant-travel/catalog@0.119.0
+  - @voyant-travel/finance@0.121.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/legal@0.121.0
+  - @voyant-travel/quotes@0.120.0
+  - @voyant-travel/bookings@0.121.0
+  - @voyant-travel/distribution@0.111.0
+  - @voyant-travel/workflow-runs@0.109.2
+  - @voyant-travel/workflows@0.109.2
+
 ## 0.2.3
 
 ### Patch Changes

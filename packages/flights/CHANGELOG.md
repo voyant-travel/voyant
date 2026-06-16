@@ -1,5 +1,26 @@
 # @voyant-travel/flights
 
+## 0.121.0
+
+### Minor Changes
+
+- d44c0ae: The flights module now owns its admin HTTP routes. New exports from
+  `@voyant-travel/flights` (and `@voyant-travel/flights/hono`):
+  `createFlightsHonoModule(options)` / `createFlightAdminRoutes(options)`, plus
+  `FlightsHonoModuleOptions`, `FlightPaymentIntegration`, and
+  `FlightOrderPaymentSummary`. The deployment supplies the connector adapter
+  (`resolveAdapter`) and an optional payment integration; the route
+  implementations (search, ancillaries, seatmap, price, book, orders, reference)
+  no longer live in the deployment.
+
+### Patch Changes
+
+- Updated dependencies [11095db]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+  - @voyant-travel/catalog@0.119.0
+  - @voyant-travel/hono@0.111.0
+
 ## 0.120.1
 
 ### Patch Changes

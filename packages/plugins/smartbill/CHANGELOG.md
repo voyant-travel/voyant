@@ -1,5 +1,17 @@
 # @voyant-travel/plugin-smartbill
 
+## 0.121.0
+
+### Patch Changes
+
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [13fe70b]
+  - @voyant-travel/finance@0.121.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/storage@0.105.0
+  - @voyant-travel/finance-react@0.121.0
+
 ## 0.120.1
 
 ### Patch Changes

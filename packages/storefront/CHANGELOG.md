@@ -1,5 +1,25 @@
 # @voyant-travel/storefront
 
+## 0.122.0
+
+### Minor Changes
+
+- 13fe70b: The storefront module now owns the public payment-link / checkout-status routes: new `@voyant-travel/storefront/payment-link` export (`createPaymentLinkRoutes(options)`). The trips / inventory / payment-provider / operator-settings reads are injected as options (bookings + finance are read directly).
+
+### Patch Changes
+
+- Updated dependencies [13fe70b]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [503a634]
+  - @voyant-travel/commerce@0.3.0
+  - @voyant-travel/finance@0.121.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/legal@0.121.0
+  - @voyant-travel/bookings@0.121.0
+  - @voyant-travel/relationships@0.119.4
+  - @voyant-travel/identity@0.121.0
+
 ## 0.121.2
 
 ### Patch Changes

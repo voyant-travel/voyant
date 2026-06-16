@@ -1,5 +1,21 @@
 # @voyant-travel/finance
 
+## 0.121.0
+
+### Minor Changes
+
+- 13fe70b: The finance module now owns the booking payment-schedule routes: new exports `createBookingScheduleAdminRoutes(options)`, `createPaymentPolicyPublicRoutes(options)`, and `generatePaymentScheduleForBooking`, with the policy cascade resolvers + operator default injected as options. Also drops two unused dev-only workspace deps (inventory, operations) that finance never imported.
+
+### Patch Changes
+
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [13fe70b]
+  - @voyant-travel/action-ledger@0.105.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/storage@0.105.0
+  - @voyant-travel/bookings@0.121.0
+
 ## 0.120.2
 
 ### Patch Changes
