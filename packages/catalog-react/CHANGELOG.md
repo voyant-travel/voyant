@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-react
 
+## 0.120.1
+
+### Patch Changes
+
+- a9dcf89: Fix catalog browse defaults so product projections expose supply models for scheduled/dynamic locks and embedded catalog admins resolve locale from the loaded operator market.
+
 ## 0.120.0
 
 ### Patch Changes
