@@ -35,7 +35,16 @@ import {
   type BookingRequirementsHonoModuleOptions,
   createBookingRequirementsHonoModule,
 } from "@voyant-travel/bookings/requirements"
-import { createCommerceHonoModules } from "@voyant-travel/commerce"
+import {
+  type CatalogSearchRoutesOptions,
+  createCatalogSearchHonoModule,
+  type EmbeddingProvider,
+  executeSemanticSearch,
+} from "@voyant-travel/catalog"
+import {
+  createCommerceHonoModules,
+  createCommerceStorefrontOfferResolvers,
+} from "@voyant-travel/commerce"
 import {
   distributionHonoModule,
   externalRefsHonoModule,
@@ -59,6 +68,10 @@ import {
   createRelationshipsHonoModule,
   type relationshipsService,
 } from "@voyant-travel/relationships"
+import {
+  createStorefrontHonoModule,
+  type StorefrontIntakePersistence,
+} from "@voyant-travel/storefront"
 import { createCustomerPortalHonoModule } from "@voyant-travel/storefront/customer-portal"
 import {
   createStorefrontVerificationHonoModule,
@@ -125,6 +138,10 @@ export interface FrameworkProviders {
   resolveBookingRequirementsProductSnapshot: NonNullable<
     NonNullable<BookingRequirementsHonoModuleOptions["publicRoutes"]>["resolveProductSnapshot"]
   >
+  /** Resolves the per-request catalog search runtime (indexer/embeddings/scope). */
+  resolveCatalogRuntime: CatalogSearchRoutesOptions["resolveRuntime"]
+  /** Storefront intake persistence (relationships-backed). */
+  storefrontIntakePersistence: StorefrontIntakePersistence
 }
 
 /**
@@ -159,6 +176,26 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         },
       }),
     // Tier 2 — capability-shaped modules (providers injected via ctx).
+    "@voyant-travel/catalog": ({ capabilities }) =>
+      createCatalogSearchHonoModule({
+        resolveRuntime: capabilities.resolveCatalogRuntime,
+        executeSearch: ({ adapter, embeddings, slice, request }) =>
+          executeSemanticSearch({
+            adapter,
+            embeddings: embeddings as EmbeddingProvider | undefined,
+            slice,
+            request,
+          }),
+      }),
+    "@voyant-travel/storefront": ({ capabilities }) =>
+      createStorefrontHonoModule({
+        offers: createCommerceStorefrontOfferResolvers(),
+        // Async booking-bootstrap intents (queued write pipeline, RFC
+        // voyant#1687 §3.2) — the handler runs on the app bus with
+        // outbox-grade retries; the */2min cron sweeps stale intents.
+        bookingIntents: { resolveDb: capabilities.resolveDb },
+        intake: { persistence: capabilities.storefrontIntakePersistence },
+      }),
     "@voyant-travel/bookings": ({ capabilities }) =>
       createBookingsHonoModule({
         resolveTravelSnapshot: (db, personId, { kms }) =>
