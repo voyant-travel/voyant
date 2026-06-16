@@ -150,6 +150,12 @@ export {
   type ContractDocumentStorageLike,
   createContractDocumentRoutes,
 } from "./contract-document-routes.js"
+export {
+  buildContractVariableBindings,
+  type ContractOperatorPaymentInstructions,
+  type ContractOperatorProfile,
+  type ContractVariableBindingsOptions,
+} from "./contracts/contract-variables.js"
 export * from "./contracts/index.js"
 export {
   buildContractsRouteRuntime,
