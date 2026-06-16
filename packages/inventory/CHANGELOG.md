@@ -1,5 +1,26 @@
 # @voyant-travel/inventory
 
+## 0.3.0
+
+### Minor Changes
+
+- 13fe70b: The inventory module now owns the product brochure route: new `@voyant-travel/inventory/routes-brochure` export (`createProductBrochureRoutes(options)`) with the object storage provider injected as an option.
+
+### Patch Changes
+
+- Updated dependencies [13fe70b]
+- Updated dependencies [11095db]
+- Updated dependencies [13fe70b]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [13fe70b]
+  - @voyant-travel/action-ledger@0.105.0
+  - @voyant-travel/catalog@0.119.0
+  - @voyant-travel/commerce@0.3.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/storage@0.105.0
+  - @voyant-travel/operations@0.1.1
+
 ## 0.2.0
 
 ### Minor Changes

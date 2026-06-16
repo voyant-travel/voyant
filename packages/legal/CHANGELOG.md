@@ -1,5 +1,31 @@
 # @voyant-travel/legal
 
+## 0.121.0
+
+### Minor Changes
+
+- 503a634: The legal module now owns the contract-document routes. New exports:
+  `createContractDocumentRoutes(options)`, `CONTRACT_DOCUMENT_ROUTE_PATHS`, and
+  `ContractDocumentRoutesOptions` (from `@voyant-travel/legal` and
+  `@voyant-travel/legal/contract-document-routes`). The deployment injects the
+  contract generator and document storage; the route implementations
+  (generate-contract, private document file serving + scriptable-mime safety) no
+  longer live in the deployment.
+
+### Patch Changes
+
+- Updated dependencies [13fe70b]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+- Updated dependencies [13fe70b]
+  - @voyant-travel/action-ledger@0.105.0
+  - @voyant-travel/finance@0.121.0
+  - @voyant-travel/hono@0.111.0
+  - @voyant-travel/storage@0.105.0
+  - @voyant-travel/bookings@0.121.0
+  - @voyant-travel/relationships@0.119.4
+  - @voyant-travel/distribution@0.111.0
+
 ## 0.120.2
 
 ### Patch Changes

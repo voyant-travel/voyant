@@ -1,5 +1,16 @@
 # @voyant-travel/action-ledger
 
+## 0.105.0
+
+### Minor Changes
+
+- 13fe70b: The action-ledger module now owns the health/drift routes: new exports `createActionLedgerHealthRoutes(options)` + `runActionLedgerHealthCheck` (from `@voyant-travel/action-ledger` and `./health`). The per-module drift checks (bookings/finance/inventory) are injected as options so action-ledger stays foundational (no static import of those packages).
+
+### Patch Changes
+
+- Updated dependencies [9ea7220]
+  - @voyant-travel/hono@0.111.0
+
 ## 0.104.11
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @voyant-travel/catalog
 
+## 0.119.0
+
+### Minor Changes
+
+- 11095db: The catalog module now owns the catalog-booking route logic. New exports (from
+  `@voyant-travel/catalog` + `@voyant-travel/catalog/booking-engine`):
+  `mountCatalogBookingRoutes(hono, options)`, `createCatalogBookingOrdersRoutes`,
+  and `CatalogBookingRouteModuleOptions`. The deployment injects the booking-engine
+  options + a registry resolver; the booking-engine lifecycle (quote/book/holds)
+  and order management (list/get/cancel) routes no longer live in the deployment.
+  The slots + catalog-snapshot handlers stay a thin deployment extension because
+  inventory/operations already depend on catalog (moving them would cycle).
+- 13fe70b: The catalog module now owns the offers/search routes: new `@voyant-travel/catalog/offers` export (`createCatalogOffersAdminRoutes(options)`) for package-offers/detail/search/airports/cruise-pricing, with the Connect client, Typesense index lookup, and geo resolver injected as options (catalog keeps no static connect-sdk/typesense import).
+
+### Patch Changes
+
+- Updated dependencies [9ea7220]
+  - @voyant-travel/hono@0.111.0
+
 ## 0.118.1
 
 ## 0.118.0

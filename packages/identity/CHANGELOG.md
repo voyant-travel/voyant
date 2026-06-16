@@ -1,5 +1,12 @@
 # @voyant-travel/identity
 
+## 0.121.0
+
+### Patch Changes
+
+- Updated dependencies [9ea7220]
+  - @voyant-travel/hono@0.111.0
+
 ## 0.120.1
 
 ## 0.120.0

@@ -1,5 +1,21 @@
 # @voyant-travel/trips
 
+## 0.112.0
+
+### Minor Changes
+
+- 13fe70b: The trips module now owns the MCP tool routes and the trip-checkout service: new `@voyant-travel/trips/mcp` (`createTripMcpRoutes(options)`) and `@voyant-travel/trips/checkout` (`startTripCheckout` + billing helpers) surfaces. The payment-provider start, FX quoting, and checkout base URL are injected as options; adds `@voyant-travel/finance` as a dependency.
+
+### Patch Changes
+
+- Updated dependencies [11095db]
+- Updated dependencies [13fe70b]
+- Updated dependencies [13fe70b]
+- Updated dependencies [9ea7220]
+  - @voyant-travel/catalog@0.119.0
+  - @voyant-travel/finance@0.121.0
+  - @voyant-travel/hono@0.111.0
+
 ## 0.111.1
 
 ### Patch Changes
