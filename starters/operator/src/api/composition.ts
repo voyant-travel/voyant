@@ -46,19 +46,14 @@ import {
   type FrameworkProviders,
   frameworkComposition,
 } from "@voyant-travel/framework"
-import { createPublicDocumentDeliveryHonoModule, type VoyantDb } from "@voyant-travel/hono"
+import type { VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { inventoryBookingExtension } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
 import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
-import {
-  createDefaultBookingDocumentAttachment,
-  createNotificationService,
-  createNotificationsHonoModule,
-  notificationsService,
-} from "@voyant-travel/notifications"
+import { createNotificationService, notificationsService } from "@voyant-travel/notifications"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { quotesBookingExtension } from "@voyant-travel/quotes"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -68,7 +63,6 @@ import { Hono } from "hono"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
-import { createDocumentStorage } from "./lib/storage"
 import { createBookingScheduleExtension } from "./routes/booking-schedule"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { createOperatorQuoteVersionSnapshotExtension } from "./routes/quote-version-snapshot-routes"
@@ -197,7 +191,6 @@ export interface OperatorCapabilities extends FrameworkProviders {
   resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
   readDocumentContentBase64: typeof readOperatorDocumentContentBase64
   resolveDb: typeof resolveOperatorDb
-  createDocumentStorage: typeof createDocumentStorage
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
   createInvoiceExchangeRateResolver: typeof createOperatorInvoiceExchangeRateResolver
   createInvoiceSettlementPollers: typeof createOperatorInvoiceSettlementPollers
@@ -221,7 +214,6 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
     readDocumentContentBase64: readOperatorDocumentContentBase64,
     resolveDb: resolveOperatorDb,
-    createDocumentStorage,
     createOperatorDocumentStorage,
     createInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
     createInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
@@ -356,44 +348,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
             offset: result.offset,
           }
         },
-      }),
-    "@voyant-travel/public-document-delivery": ({ capabilities }) =>
-      createPublicDocumentDeliveryHonoModule({
-        resolveStorage: capabilities.createDocumentStorage,
-      }),
-    "@voyant-travel/notifications": ({ capabilities }) =>
-      createNotificationsHonoModule({
-        resolveProviders: capabilities.resolveNotificationProviders,
-        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-        resolveDocumentAttachmentResolver: (bindings) => async (document) => {
-          if (document.storageKey) {
-            const contentBase64 = await capabilities.readDocumentContentBase64(
-              bindings,
-              document.storageKey,
-            )
-            if (contentBase64) {
-              return {
-                filename: document.name,
-                contentBase64,
-                contentType: document.mimeType ?? undefined,
-              }
-            }
-            const path = await capabilities.resolveDocumentDownloadUrl(
-              bindings,
-              document.storageKey,
-            )
-            if (path) {
-              return {
-                filename: document.name,
-                path,
-                contentType: document.mimeType ?? undefined,
-              }
-            }
-          }
-          return createDefaultBookingDocumentAttachment(document)
-        },
-        resolveDb: capabilities.resolveDb,
-        autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
       }),
     "@voyant-travel/storefront": ({ capabilities }) =>
       createStorefrontHonoModule({

@@ -36,10 +36,16 @@ import {
   externalRefsHonoModule,
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
+import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryHonoModule } from "@voyant-travel/inventory"
 import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyant-travel/legal"
+import {
+  type CreateNotificationsHonoModuleOptions,
+  createDefaultBookingDocumentAttachment,
+  createNotificationsHonoModule,
+} from "@voyant-travel/notifications"
 import { operationsHonoModule } from "@voyant-travel/operations"
 import { createQuotesHonoModule } from "@voyant-travel/quotes"
 import {
@@ -91,6 +97,12 @@ export interface FrameworkProviders {
   autoGenerateContractOnConfirmed: NonNullable<
     CreateLegalHonoModuleOptions["autoGenerateContractOnConfirmed"]
   >
+  /** Resolves the public checkout base URL (notification deep links). */
+  resolvePublicCheckoutBaseUrl: NonNullable<
+    CreateNotificationsHonoModuleOptions["resolvePublicCheckoutBaseUrl"]
+  >
+  /** Reads a stored document's content as base64 (notification attachments). */
+  readDocumentContentBase64: (bindings: unknown, storageKey: string) => Promise<string | null>
 }
 
 /**
@@ -150,6 +162,47 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         resolveBillingOrganizationById: async (db, organizationId) =>
           (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
         closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+      }),
+    "@voyant-travel/public-document-delivery": ({ capabilities }) =>
+      createPublicDocumentDeliveryHonoModule({
+        // Same storage backend as legal documents; the unknown-bindings
+        // adapter keeps the provider contract uniform (the narrow-bindings
+        // `createDocumentStorage` is retired in the deployment).
+        resolveStorage: capabilities.createOperatorDocumentStorage,
+      }),
+    "@voyant-travel/notifications": ({ capabilities }) =>
+      createNotificationsHonoModule({
+        resolveProviders: capabilities.resolveNotificationProviders,
+        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+        resolveDocumentAttachmentResolver: (bindings) => async (document) => {
+          if (document.storageKey) {
+            const contentBase64 = await capabilities.readDocumentContentBase64(
+              bindings,
+              document.storageKey,
+            )
+            if (contentBase64) {
+              return {
+                filename: document.name,
+                contentBase64,
+                contentType: document.mimeType ?? undefined,
+              }
+            }
+            const path = await capabilities.resolveDocumentDownloadUrl(
+              bindings,
+              document.storageKey,
+            )
+            if (path) {
+              return {
+                filename: document.name,
+                path,
+                contentType: document.mimeType ?? undefined,
+              }
+            }
+          }
+          return createDefaultBookingDocumentAttachment(document)
+        },
+        resolveDb: capabilities.resolveDb,
+        autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
       }),
     "@voyant-travel/legal": ({ capabilities }) =>
       createLegalHonoModule({
