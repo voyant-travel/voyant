@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-react
 
+## 0.120.2
+
+### Patch Changes
+
+- 4353c6f: Use the operator default market scope for embedded catalog browse requests so hidden market selectors do not fall back to the hardcoded default locale or omit the market.
+
 ## 0.120.1
 
 ### Patch Changes
