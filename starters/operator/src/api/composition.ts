@@ -22,8 +22,6 @@
  */
 
 import { bookingsSupplierExtension } from "@voyant-travel/bookings"
-import { bookingsExtrasRoutes } from "@voyant-travel/bookings/extras"
-import { createBookingRequirementsHonoModule } from "@voyant-travel/bookings/requirements"
 import {
   createCatalogSearchHonoModule,
   type EmbeddingProvider,
@@ -48,10 +46,8 @@ import {
 } from "@voyant-travel/framework"
 import type { VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
-import type { HonoModule } from "@voyant-travel/hono/module"
 import { inventoryBookingExtension } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
-import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
 import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
 import { createNotificationService, notificationsService } from "@voyant-travel/notifications"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
@@ -85,11 +81,6 @@ import {
 import { createRelationshipsStorefrontIntakePersistence } from "./runtime/storefront-intake-runtime"
 import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
-
-const operatorExtrasHonoModule: HonoModule = {
-  module: { name: "extras" },
-  routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
-}
 
 /** Explicit matchers for the catalog booking-engine + order/snapshot routes. */
 const OPERATOR_CATALOG_BOOKING_ROUTE_PATHS = [
@@ -202,6 +193,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   buildCatalogContext: typeof buildCatalogContext
   createTripsRoutesOptions: typeof createOperatorTripsRoutesOptions
+  resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
   /** Netopia is the only configured pay-by-link starter (env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
 }
@@ -225,6 +217,7 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     buildCatalogContext,
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
+    resolveBookingRequirementsProductSnapshot,
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
   }
 }
@@ -270,13 +263,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // The framework's pure singleton factories spread in here; the deployment
     // appends only its capability-shaped + deployment-local factories below.
     ...frameworkComposition.modules,
-    "@voyant-travel/inventory/extras": () => operatorExtrasHonoModule,
-    "@voyant-travel/bookings/requirements": () =>
-      createBookingRequirementsHonoModule({
-        publicRoutes: {
-          resolveProductSnapshot: resolveBookingRequirementsProductSnapshot,
-        },
-      }),
     "@voyant-travel/catalog": ({ capabilities }) =>
       createCatalogSearchHonoModule({
         resolveRuntime: (c) => {
