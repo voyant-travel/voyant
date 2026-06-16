@@ -142,6 +142,51 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
       import("./runtime/payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
     loadContractDocumentRoutes: () =>
       import("./runtime/contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
+    // Lazy `operator/*` standard extension builders/loaders.
+    createBookingScheduleExtension,
+    createQuoteVersionSnapshotExtension: createOperatorQuoteVersionSnapshotExtension,
+    loadBookingMaintenanceRoutes: async () => {
+      const app = new Hono<{ Variables: { db: VoyantDb } }>()
+      app.post("/:bookingId/rebuild-tax-lines", async (c) => {
+        const bookingId = c.req.param("bookingId")
+        try {
+          const [
+            { rebuildBookingItemTaxLines },
+            { operatorPostgresDb },
+            { resolveBookingTaxSettings: resolveTax },
+          ] = await Promise.all([
+            import("@voyant-travel/commerce/checkout"),
+            import("./runtime/operator-runtime-adapter"),
+            import("./routes/settings"),
+          ])
+          const result = await rebuildBookingItemTaxLines(
+            operatorPostgresDb(c.get("db")),
+            bookingId,
+            {
+              resolveBookingTaxSettings: resolveTax,
+            },
+          )
+          return c.json({ data: result })
+        } catch (err) {
+          return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+        }
+      })
+      return app
+    },
+    loadActionLedgerHealthRoutes: () =>
+      import("./runtime/action-ledger-health-runtime").then((m) =>
+        m.createActionLedgerHealthAdminRoutes(),
+      ),
+    loadProposalAdminRoutes: () =>
+      import("./routes/proposal-routes").then((m) => m.createProposalAdminRoutes()),
+    loadProposalPublicRoutes: () =>
+      import("./routes/proposal-routes").then((m) => m.createProposalPublicRoutes()),
+    loadCatalogOffersRoutes: () =>
+      import("./runtime/catalog-offers-runtime").then((m) =>
+        m.createCatalogOffersAdminRoutesForOperator(),
+      ),
+    loadCatalogCheckoutRoutes: () =>
+      import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
   }
 }
 
@@ -214,72 +259,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     }),
   },
   extensions: {
-    // Standard package extensions owned by @voyant-travel/framework (Workstream
-    // B, Tier 3). The deployment appends only its injection-shaped + local ones.
+    // All standard extensions — including the lazy `operator/*` families whose
+    // builders/loaders this deployment injects — are owned by
+    // @voyant-travel/framework (Workstream B, Tiers 3-4).
     ...frameworkComposition.extensions,
-    "operator/booking-schedule-extension": () => createBookingScheduleExtension(),
-    "operator/quote-version-snapshot-extension": () =>
-      createOperatorQuoteVersionSnapshotExtension(),
-    // Booking tax-line repair (single maintenance route on the bookings surface).
-    "operator/booking-maintenance-extension": () => ({
-      extension: { name: "booking-maintenance", module: "bookings" },
-      lazyAdminRoutes: async () => {
-        const app = new Hono<{ Variables: { db: VoyantDb } }>()
-        app.post("/:bookingId/rebuild-tax-lines", async (c) => {
-          const bookingId = c.req.param("bookingId")
-          try {
-            const [
-              { rebuildBookingItemTaxLines },
-              { operatorPostgresDb },
-              { resolveBookingTaxSettings },
-            ] = await Promise.all([
-              import("@voyant-travel/commerce/checkout"),
-              import("./runtime/operator-runtime-adapter"),
-              import("./routes/settings"),
-            ])
-            const result = await rebuildBookingItemTaxLines(
-              operatorPostgresDb(c.get("db")),
-              bookingId,
-              { resolveBookingTaxSettings },
-            )
-            return c.json({ data: result })
-          } catch (err) {
-            return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
-          }
-        })
-        return app
-      },
-    }),
-    "operator/action-ledger-health-extension": () => ({
-      extension: { name: "action-ledger-health", module: "action-ledger" },
-      lazyAdminRoutes: () =>
-        import("./runtime/action-ledger-health-runtime").then((m) =>
-          m.createActionLedgerHealthAdminRoutes(),
-        ),
-    }),
-    // Quote-version proposal lifecycle: admin send under /v1/admin/quote-versions,
-    // public accept/decline under /v1/public/proposals.
-    "operator/proposal-extension": () => ({
-      extension: { name: "proposal", module: "quote-versions" },
-      publicPath: "proposals",
-      lazyAdminRoutes: () =>
-        import("./routes/proposal-routes").then((m) => m.createProposalAdminRoutes()),
-      lazyPublicRoutes: () =>
-        import("./routes/proposal-routes").then((m) => m.createProposalPublicRoutes()),
-    }),
-    // Catalog admin offer/search + public checkout, mounted under the catalog
-    // module's /v1/admin/catalog and /v1/public/catalog surfaces.
-    "operator/catalog-offers-extension": () => ({
-      extension: { name: "catalog-offers", module: "catalog" },
-      lazyAdminRoutes: () =>
-        import("./runtime/catalog-offers-runtime").then((m) =>
-          m.createCatalogOffersAdminRoutesForOperator(),
-        ),
-    }),
-    "operator/catalog-checkout-extension": () => ({
-      extension: { name: "catalog-checkout", module: "catalog" },
-      lazyPublicRoutes: () =>
-        import("./routes/catalog-checkout").then((m) => m.createCatalogCheckoutPublicRoutes()),
-    }),
   },
 }
