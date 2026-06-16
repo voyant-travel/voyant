@@ -2,6 +2,13 @@
  * The standard Voyant runtime composition registry — the package-owned half of
  * `OPERATOR_RUNTIME_MANIFEST`'s factories.
  *
+ * agent-quality: file-size exception -- this is the framework's single
+ * composition source of truth (the FrameworkProviders contract + one factory
+ * entry per standard module/extension). Keeping the provider interface + the
+ * registry in one file is intentional; the length scales with the standard
+ * module count, not with logic complexity — mirroring the deployment's
+ * `composition.ts` rationale.
+ *
  * Workstream B of the consolidated-deployments RFC relocates the deployment's
  * `operatorComposition` registry here, one classified-as-standard family group
  * at a time (see `operator-registry-classification.md`). A deployment spreads
@@ -67,14 +74,18 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
+import { createPublicDocumentDeliveryHonoModule, type LazyRoutesLoader } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryBookingExtension, inventoryHonoModule } from "@voyant-travel/inventory"
 import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
-import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyant-travel/legal"
+import {
+  CONTRACT_DOCUMENT_ROUTE_PATHS,
+  type CreateLegalHonoModuleOptions,
+  createLegalHonoModule,
+} from "@voyant-travel/legal"
 import {
   type CreateNotificationsHonoModuleOptions,
   createDefaultBookingDocumentAttachment,
@@ -109,6 +120,57 @@ const extrasHonoModule = {
   module: { name: "extras" },
   routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
 } satisfies HonoModule
+
+// Stable absolute route matchers for the lazy `operator/*` standard families
+// (Tier 4). The framework owns the URL contract; the deployment injects only
+// the `load` closure that wires its providers into the route bundle.
+const CATALOG_BOOKING_ROUTE_PATHS = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/drafts/:id",
+  "/v1/admin/catalog/holds/place",
+  "/v1/admin/catalog/holds/release",
+  "/v1/admin/catalog/slots",
+  "/v1/admin/catalog/orders",
+  "/v1/admin/catalog/orders/:id",
+  "/v1/admin/catalog/orders/:id/cancel",
+  "/v1/admin/bookings/:id/catalog-snapshot",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/drafts/:id",
+  "/v1/public/catalog/holds/place",
+  "/v1/public/catalog/holds/release",
+  "/v1/public/catalog/slots",
+] as const
+
+const CATALOG_CONTENT_ROUTE_PATHS = [
+  "/v1/admin/products/:id/content",
+  "/v1/public/products/:id/content",
+  "/v1/admin/cruises/:id/content",
+  "/v1/public/cruises/:id/content",
+  "/v1/admin/accommodations/:id/content",
+  "/v1/public/accommodations/:id/content",
+] as const
+
+const MEDIA_ROUTE_PATHS = [
+  "/v1/admin/products/:id/brochure/generate",
+  "/v1/uploads",
+  "/v1/admin/uploads",
+  "/v1/uploads/video",
+  "/v1/admin/uploads/video",
+  "/v1/media/*",
+  "/v1/admin/media/*",
+] as const
+
+const PAYMENT_LINK_ROUTE_PATHS = [
+  "/v1/public/payment-link-config",
+  "/v1/public/payment-link/:sessionId/retry",
+  "/v1/public/payment-link/resolve",
+  "/v1/public/payment-link/:sessionId/start-card",
+  "/v1/public/payment-link/:sessionId/trip-summary",
+  "/v1/public/payment-link/:sessionId/booking-summary",
+  "/v1/public/bookings/:bookingId/checkout-status",
+] as const
 
 // Finance checkout adapters — map notifications-service shapes into the
 // finance checkout DTOs the module expects.
@@ -246,6 +308,23 @@ export interface FrameworkProviders {
   updateBookingTaxSettings: NonNullable<BookingTaxRouteOptions["updateBookingTaxSettings"]>
   /** Builds the distribution channel-push extension (deployment booking-engine wiring). */
   createChannelPushExtension: () => HonoExtension
+  // Lazy route-bundle loaders for the `operator/*` standard families (Tier 4).
+  // Each wires the deployment's providers into a package-owned route bundle and
+  // returns the sub-app; the framework owns the manifest entry + path matchers.
+  /** Loads the flights admin routes (connector + payment wiring). */
+  loadFlightAdminRoutes: LazyRoutesLoader
+  /** Loads the trips/MCP admin routes (tool context + trips service). */
+  loadMcpAdminRoutes: LazyRoutesLoader
+  /** Loads the catalog booking-engine routes (connect client, source registry). */
+  loadCatalogBookingRoutes: LazyRoutesLoader
+  /** Loads the catalog content routes (connect client, Typesense). */
+  loadCatalogContentRoutes: LazyRoutesLoader
+  /** Loads the media routes (R2 storage, video signer, brochure printer). */
+  loadMediaRoutes: LazyRoutesLoader
+  /** Loads the storefront payment-link routes (card seam, bank transfer). */
+  loadPaymentLinkRoutes: LazyRoutesLoader
+  /** Loads the legal contract-document routes (PDF engine, doc storage, PII). */
+  loadContractDocumentRoutes: LazyRoutesLoader
 }
 
 /**
@@ -453,6 +532,46 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         ...capabilities.createTripsRoutesOptions(),
         publicRoutes: true,
       }),
+    // Tier 4 — lazy `operator/*` standard families. The framework owns the
+    // manifest entry + path matchers; the deployment injects the `load` closure
+    // that wires its providers into the package-owned route bundle.
+    "@voyant-travel/flights": ({ capabilities }) => ({
+      module: { name: "flights" },
+      lazyAdminRoutes: capabilities.loadFlightAdminRoutes,
+    }),
+    "operator/mcp": ({ capabilities }) => ({
+      module: { name: "mcp" },
+      lazyAdminRoutes: capabilities.loadMcpAdminRoutes,
+    }),
+    "operator/catalog-booking": ({ capabilities }) => ({
+      module: { name: "catalog-booking" },
+      lazyRoutes: {
+        paths: CATALOG_BOOKING_ROUTE_PATHS,
+        load: capabilities.loadCatalogBookingRoutes,
+      },
+    }),
+    "operator/catalog-content": ({ capabilities }) => ({
+      module: { name: "catalog-content" },
+      lazyRoutes: {
+        paths: CATALOG_CONTENT_ROUTE_PATHS,
+        load: capabilities.loadCatalogContentRoutes,
+      },
+    }),
+    "operator/media": ({ capabilities }) => ({
+      module: { name: "media" },
+      lazyRoutes: { paths: MEDIA_ROUTE_PATHS, load: capabilities.loadMediaRoutes },
+    }),
+    "operator/payment-link": ({ capabilities }) => ({
+      module: { name: "payment-link" },
+      lazyRoutes: { paths: PAYMENT_LINK_ROUTE_PATHS, load: capabilities.loadPaymentLinkRoutes },
+    }),
+    "operator/contract-document": ({ capabilities }) => ({
+      module: { name: "contract-document" },
+      lazyRoutes: {
+        paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
+        load: capabilities.loadContractDocumentRoutes,
+      },
+    }),
   },
   extensions: {
     // Tier 3 — pure singleton extensions (no providers).
