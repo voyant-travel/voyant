@@ -50,45 +50,9 @@ function WorkspaceContent() {
       user={user}
       isUserLoading={isLoading}
       icons={operatorNavigationIcons}
-      extensions={(messages) =>
-        createOperatorAdminExtensions({
-          actionLedger: messages.nav.actionLedger,
-          allTrips: messages.nav.allTrips,
-          availability: messages.nav.availability,
-          bookings: messages.nav.bookings,
-          catalogAccommodations: messages.nav.catalogAccommodations,
-          categories: messages.nav.categories,
-          catalogCruises: messages.nav.catalogCruises,
-          catalogExcursions: messages.nav.catalogExcursions,
-          catalogProducts: messages.nav.catalogProducts,
-          catalogTours: messages.nav.catalogTours,
-          channelSync: messages.nav.channelSync,
-          contractNumberSeries: messages.nav.contractNumberSeries,
-          contractTemplates: messages.nav.contractTemplates,
-          contracts: messages.nav.contracts,
-          flights: messages.nav.flights,
-          invoiceNumberSeries: messages.nav.invoiceNumberSeries,
-          invoices: messages.nav.invoices,
-          newTrip: messages.nav.newTrip,
-          notificationDeliveries: messages.nav.notificationDeliveries,
-          notificationPreview: messages.nav.notificationPreview,
-          notificationReminderRules: messages.nav.notificationReminderRules,
-          notificationReminderRuns: messages.nav.notificationReminderRuns,
-          notificationSettings: messages.nav.notificationSettings,
-          notificationTemplates: messages.nav.notificationTemplates,
-          organizations: messages.nav.organizations,
-          payments: messages.nav.payments,
-          people: messages.nav.people,
-          policies: messages.nav.policies,
-          profitability: messages.nav.profitability,
-          products: messages.nav.products,
-          promotions: messages.nav.promotions,
-          resources: messages.nav.resources,
-          supplierInvoices: messages.nav.supplierInvoices,
-          suppliers: messages.nav.suppliers,
-          trips: messages.nav.trips,
-        })
-      }
+      // The extension builder picks the nav label keys it needs from the full
+      // nav messages — no hand-listing each key here.
+      extensions={(messages) => createOperatorAdminExtensions(messages.nav)}
       destinations={operatorAdminDestinations}
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >
