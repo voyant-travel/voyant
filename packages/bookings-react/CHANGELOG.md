@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.122.1
+
+### Patch Changes
+
+- Updated dependencies [832ac35]
+  - @voyant-travel/bookings@0.122.1
+
 ## 0.122.0
 
 ### Patch Changes
