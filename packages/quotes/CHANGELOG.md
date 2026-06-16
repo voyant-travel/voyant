@@ -1,5 +1,12 @@
 # @voyant-travel/crm
 
+## 0.120.1
+
+### Patch Changes
+
+- Updated dependencies [bf2e822]
+  - @voyant-travel/trips@0.113.0
+
 ## 0.120.0
 
 ### Minor Changes

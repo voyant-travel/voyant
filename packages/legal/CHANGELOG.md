@@ -1,5 +1,28 @@
 # @voyant-travel/legal
 
+## 0.122.0
+
+### Minor Changes
+
+- 85caeef: The legal module now owns the contract-PDF generation orchestration: new exports `createContractDocumentService(options)` (+ `ensureDefaultContractSeries`, `resetContractDocumentForBooking`) from `@voyant-travel/legal` and `./contract-document`. Template resolution → variable binding → PDF render → contract-record persistence now live in the package; the deployment injects only its PDF engine, document storage, and PII providers.
+- 85a13d3: The legal module now owns contract-template variable building: new export
+  `buildContractVariableBindings(options)` (from `@voyant-travel/legal` and
+  `./contract-variables`). The deployment injects only its operator-settings reads
+  (operator profile / payment instructions / policy source); the cross-module
+  variable assembly (payment schedule, rooms summary, customer hydration) no longer
+  lives in the deployment.
+
+### Patch Changes
+
+- Updated dependencies [c9de9c4]
+- Updated dependencies [14f4234]
+- Updated dependencies [89d4ca9]
+- Updated dependencies [51dd276]
+  - @voyant-travel/finance@0.122.0
+  - @voyant-travel/bookings@0.122.0
+  - @voyant-travel/distribution@0.112.0
+  - @voyant-travel/relationships@0.119.5
+
 ## 0.121.0
 
 ### Minor Changes

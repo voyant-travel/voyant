@@ -1,5 +1,18 @@
 # @voyant-travel/finance
 
+## 0.122.0
+
+### Minor Changes
+
+- c9de9c4: Provider-agnostic card-payment seam: `@voyant-travel/finance` defines the `CardPaymentStarter` contract (`./card-payment`), `@voyant-travel/plugin-netopia` provides `netopiaCardPaymentStarter()`, and the deployment selects its processor in one place. Swapping card processors is a one-line change; checkout surfaces (flights, trips, payment links, catalog) route through the interface.
+- 14f4234: New generic order-payment-session service: `createOrderPaymentSessions({ targetType })` → `{ ensureSession, fetchSessions }` (from `@voyant-travel/finance` and `./order-payment-sessions`). Owns the "find live/settled session or create one, then optionally start the provider" logic generically over a target type, so deployments don't reimplement it per order kind.
+- 89d4ca9: `@voyant-travel/finance` now owns the payment-policy cascade orchestration: new `createPaymentPolicyCascade(options)` (from `@voyant-travel/finance` and `./payment-policy-cascade`) composes the supplier → category → listing → operator-default precedence, with the vertical schema-walk readers injected (finance must not import the verticals per the retail-spine gate). The bookings-only `__payment_policy_source__` marker protocol (`stampPolicySourceOnBooking` / `readPolicySourceFromInternalNotes`) and the canonical `PaymentPolicyEntityContext` type also move to finance, de-duplicating the prior definition in `payment-schedule/routes.ts`.
+
+### Patch Changes
+
+- 51dd276: `createOrderPaymentSessions` no longer hard-codes `provider: "netopia"` / `paymentMethod: "credit_card"` when creating a session. Sessions are now provider-agnostic by default (both `null`) so the injected starter claims the provider when it runs — correct for Stripe/Adyen/bank-transfer deployments. A deployment may opt into stamping a default via the new `provider` / `paymentMethod` options on `createOrderPaymentSessions`.
+  - @voyant-travel/bookings@0.122.0
+
 ## 0.121.0
 
 ### Minor Changes
