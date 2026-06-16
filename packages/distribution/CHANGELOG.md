@@ -1,5 +1,13 @@
 # @voyant-travel/distribution
 
+## 0.112.1
+
+### Patch Changes
+
+- 62b712a: Add a workflow-entry-safe channel-push export for detached bundles so operator
+  workflow entries do not evaluate the broad distribution package surface at
+  import time.
+
 ## 0.112.0
 
 ### Patch Changes
