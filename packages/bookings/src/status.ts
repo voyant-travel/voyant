@@ -1,0 +1,15 @@
+import type { BookingStatus } from "./state-machine.js"
+
+export const BOOKING_RESOURCE_AVAILABILITY_STATUSES = [
+  "draft",
+  "on_hold",
+  "awaiting_payment",
+  "confirmed",
+  "in_progress",
+] as const satisfies readonly BookingStatus[]
+
+const bookingResourceAvailabilityStatuses = new Set<string>(BOOKING_RESOURCE_AVAILABILITY_STATUSES)
+
+export function isBookingResourceAvailabilityStatus(status: string): boolean {
+  return bookingResourceAvailabilityStatuses.has(status)
+}
