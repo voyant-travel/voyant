@@ -4,6 +4,7 @@ import {
   CatalogVerticalHost,
   resolveCatalogDefaultMarket,
   resolveCatalogLocaleOptions,
+  resolveCatalogScope,
   resolveCatalogSelectedLocale,
 } from "./catalog-vertical-host.js"
 import { CruiseDetailHost } from "./cruise-detail-host.js"
@@ -142,5 +143,28 @@ describe("catalog admin locale defaults", () => {
     expect(market?.id).toBe("mkt_gb")
     expect(resolveCatalogSelectedLocale("en", localeOptions, market)).toBe("en")
     expect(resolveCatalogSelectedLocale("ro-RO", localeOptions, market)).toBe("en-GB")
+  })
+
+  it("uses the default market scope when embedded browse has no selected market", () => {
+    const market = resolveCatalogDefaultMarket(markets)
+    const localeOptions = resolveCatalogLocaleOptions(market, [{ languageTag: "ro-RO" }])
+
+    expect(resolveCatalogScope({}, localeOptions, market)).toEqual({
+      market: "mkt_ro",
+      locale: "ro-RO",
+    })
+  })
+
+  it("keeps explicit market and locale scope when provided", () => {
+    const market = resolveCatalogDefaultMarket(markets, "mkt_gb")
+    const localeOptions = resolveCatalogLocaleOptions(market, [
+      { languageTag: "en" },
+      { languageTag: "en-GB" },
+    ])
+
+    expect(resolveCatalogScope({ market: "mkt_gb", locale: "en" }, localeOptions, market)).toEqual({
+      market: "mkt_gb",
+      locale: "en",
+    })
   })
 })

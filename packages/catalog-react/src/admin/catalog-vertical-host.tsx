@@ -75,6 +75,17 @@ export function resolveCatalogSelectedLocale(
     : fallbackLocale
 }
 
+export function resolveCatalogScope(
+  search: Pick<CatalogSearchParams, "locale" | "market">,
+  localeOptions: ReadonlyArray<string>,
+  market: CatalogMarket | undefined,
+) {
+  return {
+    locale: resolveCatalogSelectedLocale(search.locale, localeOptions, market),
+    market: search.market ?? market?.id,
+  }
+}
+
 export interface CatalogVerticalHostProps {
   vertical: CatalogVerticalPageId
   search: CatalogSearchParams
@@ -148,7 +159,9 @@ export function CatalogVerticalHost({
     () => resolveCatalogLocaleOptions(localeMarket, localesQuery.data?.data ?? []),
     [localesQuery.data, localeMarket],
   )
-  const selectedLocale = resolveCatalogSelectedLocale(search.locale, localeOptions, localeMarket)
+  const catalogScope = resolveCatalogScope(search, localeOptions, localeMarket)
+  const selectedLocale = catalogScope.locale
+  const selectedMarketScope = catalogScope.market
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
@@ -172,11 +185,11 @@ export function CatalogVerticalHost({
         },
         formatSupplier: (id) => supplierMap.get(String(id)) ?? String(id),
         locale: selectedLocale,
-        market: selectedMarketId,
+        market: selectedMarketScope,
         loadSlotAvailability: (productId) =>
           loadProductSlotAvailability(baseUrl, fetcher, productId),
       }),
-    [baseUrl, fetcher, supplierMap, selectedLocale, selectedMarketId],
+    [baseUrl, fetcher, supplierMap, selectedLocale, selectedMarketScope],
   )
 
   // Merge the always-on locked facets/ranges with the user's URL-driven filters.
@@ -193,14 +206,15 @@ export function CatalogVerticalHost({
         ? {
             ...search,
             locale: selectedLocale,
+            market: selectedMarketScope,
             filters: {
               ...search.filters,
               facets: { ...(search.filters?.facets ?? {}), ...(lockedFacets ?? {}) },
               ranges: { ...(search.filters?.ranges ?? {}), ...(lockedRanges ?? {}) },
             },
           }
-        : { ...search, locale: selectedLocale },
-    [search, selectedLocale, lockedFacetsKey, lockedRangesKey],
+        : { ...search, locale: selectedLocale, market: selectedMarketScope },
+    [search, selectedLocale, selectedMarketScope, lockedFacetsKey, lockedRangesKey],
   )
 
   return (
