@@ -1,5 +1,13 @@
 # @voyant-travel/storefront
 
+## 0.123.1
+
+### Patch Changes
+
+- 832ac35: Fix storefront resource-availability SQL to use current booking status values and share the active status list from bookings.
+- Updated dependencies [832ac35]
+  - @voyant-travel/bookings@0.122.1
+
 ## 0.123.0
 
 ### Patch Changes
