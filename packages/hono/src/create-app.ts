@@ -22,16 +22,20 @@ export interface CreateAppConfig<TBindings extends VoyantBindings, TCapabilities
 }
 
 /**
- * The config-driven front door. Derives the module/extension set from the
- * manifest + registry + capabilities, then mounts the app. A deployment calls
- * this instead of `composeFromManifest(...)` followed by `mountApp(...)`:
+ * The low-level config-driven front door. Derives the module/extension set from
+ * an explicit manifest + registry + capabilities, then mounts the app — instead
+ * of `composeFromManifest(...)` followed by `mountApp(...)`:
  *
- *     export const app = createApp<CloudflareBindings, OperatorCapabilities>({
- *       manifest: OPERATOR_RUNTIME_MANIFEST,
- *       registry: operatorComposition,
- *       capabilities: buildOperatorCapabilities(),
+ *     export const app = createApp<CloudflareBindings, Providers>({
+ *       manifest: runtimeManifest,
+ *       registry: composition,
+ *       capabilities: buildProviders(),
  *       db, auth, plugins, ...
  *     })
+ *
+ * Standard deployments usually call `@voyant-travel/framework`'s higher-level
+ * `createVoyantApp({ providers, modules })` (which assembles the framework-owned
+ * manifest + registry for you and delegates here) rather than this directly.
  */
 export function createApp<TBindings extends VoyantBindings, TCapabilities>(
   config: CreateAppConfig<TBindings, TCapabilities>,

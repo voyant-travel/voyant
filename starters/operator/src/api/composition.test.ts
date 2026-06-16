@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import voyantConfig from "../../voyant.config"
 import {
-  buildOperatorCapabilities,
+  buildOperatorProviders,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
@@ -33,7 +33,7 @@ describe("operator runtime composition", () => {
     const composed = composeFromManifest(
       OPERATOR_RUNTIME_MANIFEST,
       operatorComposition,
-      buildOperatorCapabilities(),
+      buildOperatorProviders(),
     )
 
     // 20 manifest entries expand to 25 mounted modules because Commerce and
@@ -58,7 +58,7 @@ describe("operator runtime composition", () => {
     const composed = composeFromManifest(
       OPERATOR_RUNTIME_MANIFEST,
       operatorComposition,
-      buildOperatorCapabilities(),
+      buildOperatorProviders(),
     )
     const byName = (name: string) => composed.extensions.find((e) => e.extension.name === name)
 
@@ -101,7 +101,7 @@ describe("operator runtime composition", () => {
     const composed = composeFromManifest(
       OPERATOR_RUNTIME_MANIFEST,
       operatorComposition,
-      buildOperatorCapabilities(),
+      buildOperatorProviders(),
     )
     const mod = (name: string) => composed.modules.find((m) => m.module.name === name)
 
@@ -141,7 +141,7 @@ describe("operator runtime composition", () => {
       composeFromManifest(
         { modules: ["@voyant-travel/does-not-exist"] },
         operatorComposition,
-        buildOperatorCapabilities(),
+        buildOperatorProviders(),
       ),
     ).toThrow(/no module factory registered for "@voyant-travel\/does-not-exist"/)
   })
