@@ -5,7 +5,7 @@ import {
   channelBookingPushWorkflow,
   channelContentPushWorkflow,
   setChannelPushDeps,
-} from "@voyant-travel/distribution"
+} from "@voyant-travel/distribution/channel-push-workflows"
 import { financeService } from "@voyant-travel/finance"
 import { paymentSessions } from "@voyant-travel/finance/schema"
 import {
@@ -21,10 +21,6 @@ import { workflow } from "@voyant-travel/workflows"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import {
-  type BookingEngineEnv,
-  getBookingEngineRegistry,
-} from "./api/lib/booking-engine-runtime.js"
 import { closeTerminalBookingPaymentSchedules } from "./api/subscribers/booking-payment-cleanup.js"
 import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
@@ -33,13 +29,42 @@ function getDb() {
   return createDbClient(process.env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
 }
 
+export function createLazyWorkflowDb(
+  factory: () => PostgresJsDatabase = getDb,
+): PostgresJsDatabase {
+  let db: PostgresJsDatabase | undefined
+
+  const resolveDb = () => {
+    db ??= factory()
+    return db
+  }
+
+  return new Proxy({} as PostgresJsDatabase, {
+    get(_target, prop) {
+      const resolved = resolveDb()
+      const value = Reflect.get(resolved as object, prop, resolved)
+      return typeof value === "function" ? value.bind(resolved) : value
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      return Reflect.getOwnPropertyDescriptor(resolveDb() as object, prop)
+    },
+    has(_target, prop) {
+      return prop in (resolveDb() as object)
+    },
+    ownKeys() {
+      return Reflect.ownKeys(resolveDb() as object)
+    },
+  })
+}
+
 let channelPushDepsBootstrapped = false
 
-export function bootstrapWorkflowBundle(): void {
+export async function bootstrapWorkflowBundle(): Promise<void> {
   if (channelPushDepsBootstrapped) return
+  const { getBookingEngineRegistry } = await import("./api/lib/booking-engine-runtime.js")
   setChannelPushDeps({
-    db: getDb(),
-    registry: getBookingEngineRegistry(process.env as BookingEngineEnv),
+    db: createLazyWorkflowDb(),
+    registry: getBookingEngineRegistry(process.env),
   })
   channelPushDepsBootstrapped = true
 }
