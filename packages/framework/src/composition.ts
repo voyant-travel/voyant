@@ -325,6 +325,24 @@ export interface FrameworkProviders {
   loadPaymentLinkRoutes: LazyRoutesLoader
   /** Loads the legal contract-document routes (PDF engine, doc storage, PII). */
   loadContractDocumentRoutes: LazyRoutesLoader
+  // Lazy `operator/*` standard extensions (Tier 4). Builders/loaders injected;
+  // the framework owns the `extension` metadata + publicPath.
+  /** Builds the bookings deposit/balance schedule extension. */
+  createBookingScheduleExtension: () => HonoExtension
+  /** Builds the trips/quotes version-snapshot extension. */
+  createQuoteVersionSnapshotExtension: () => HonoExtension
+  /** Loads the bookings tax-line rebuild maintenance route. */
+  loadBookingMaintenanceRoutes: LazyRoutesLoader
+  /** Loads the action-ledger drift health route. */
+  loadActionLedgerHealthRoutes: LazyRoutesLoader
+  /** Loads the quote-version proposal admin routes (send). */
+  loadProposalAdminRoutes: LazyRoutesLoader
+  /** Loads the quote-version proposal public routes (accept/decline). */
+  loadProposalPublicRoutes: LazyRoutesLoader
+  /** Loads the catalog admin offer/search routes. */
+  loadCatalogOffersRoutes: LazyRoutesLoader
+  /** Loads the catalog public checkout routes. */
+  loadCatalogCheckoutRoutes: LazyRoutesLoader
 }
 
 /**
@@ -589,5 +607,33 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         resolveBookingTaxSettings: capabilities.resolveBookingTaxSettings,
         updateBookingTaxSettings: capabilities.updateBookingTaxSettings,
       }),
+    // Tier 4 — lazy `operator/*` standard extensions. The framework owns the
+    // `extension` metadata + publicPath; the deployment injects builders/loaders.
+    "operator/booking-schedule-extension": ({ capabilities }) =>
+      capabilities.createBookingScheduleExtension(),
+    "operator/quote-version-snapshot-extension": ({ capabilities }) =>
+      capabilities.createQuoteVersionSnapshotExtension(),
+    "operator/booking-maintenance-extension": ({ capabilities }) => ({
+      extension: { name: "booking-maintenance", module: "bookings" },
+      lazyAdminRoutes: capabilities.loadBookingMaintenanceRoutes,
+    }),
+    "operator/action-ledger-health-extension": ({ capabilities }) => ({
+      extension: { name: "action-ledger-health", module: "action-ledger" },
+      lazyAdminRoutes: capabilities.loadActionLedgerHealthRoutes,
+    }),
+    "operator/proposal-extension": ({ capabilities }) => ({
+      extension: { name: "proposal", module: "quote-versions" },
+      publicPath: "proposals",
+      lazyAdminRoutes: capabilities.loadProposalAdminRoutes,
+      lazyPublicRoutes: capabilities.loadProposalPublicRoutes,
+    }),
+    "operator/catalog-offers-extension": ({ capabilities }) => ({
+      extension: { name: "catalog-offers", module: "catalog" },
+      lazyAdminRoutes: capabilities.loadCatalogOffersRoutes,
+    }),
+    "operator/catalog-checkout-extension": ({ capabilities }) => ({
+      extension: { name: "catalog-checkout", module: "catalog" },
+      lazyPublicRoutes: capabilities.loadCatalogCheckoutRoutes,
+    }),
   },
 }
