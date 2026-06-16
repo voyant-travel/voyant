@@ -1,5 +1,4 @@
 import { createApp } from "@voyant-travel/hono"
-import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import authHandler, {
@@ -37,18 +36,16 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill"
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 // Runtime modules + extensions are DERIVED from the manifest via the
-// composition registry (see ./composition.ts) rather than hand-listed here.
-// Mount/hook order follows OPERATOR_RUNTIME_MANIFEST; capabilities (storage,
-// FX, providers, document-download, CRM, …) are gathered in one typed
+// composition registry (see ./composition.ts) rather than hand-listed here:
+// `createApp` runs `composeFromManifest(manifest, registry, capabilities)`
+// internally. Mount/hook order follows OPERATOR_RUNTIME_MANIFEST; capabilities
+// (storage, FX, providers, document-download, CRM, …) are gathered in one typed
 // container. `voyant db doctor` cross-checks the manifest against the registry
 // and against voyant.config.ts. See voyant#1608 / #1620.
-const { modules, extensions } = composeFromManifest(
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
-  buildOperatorCapabilities(),
-)
-
-export const app = createApp<CloudflareBindings>({
+export const app = createApp<CloudflareBindings, ReturnType<typeof buildOperatorCapabilities>>({
+  manifest: OPERATOR_RUNTIME_MANIFEST,
+  registry: operatorComposition,
+  capabilities: buildOperatorCapabilities(),
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
   //   handshake. Serves all reads and single-statement writes.
@@ -151,8 +148,6 @@ export const app = createApp<CloudflareBindings>({
     // `NETOPIA_NOTIFY_URL`.
     "/v1/finance/providers/netopia/callback",
   ],
-  modules,
-  extensions,
   plugins: [
     // bookingScheduleBundle subscribes to booking.confirmed BEFORE
     // legal's auto-generate-contract subscriber so the rendered

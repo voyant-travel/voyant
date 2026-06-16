@@ -116,7 +116,14 @@ export interface VoyantAppExtensions<TBindings = unknown> {
   eventBus: import("@voyant-travel/core").EventBus
 }
 
-export function createApp<TBindings extends VoyantBindings>(
+/**
+ * Low-level app factory: given an already-resolved `modules`/`extensions` set
+ * (plus middleware config), build the Hono app. Most deployments use the
+ * config-driven `createApp` (see `create-app.ts`), which derives the modules
+ * from a manifest + registry + capabilities and delegates here. Use `mountApp`
+ * directly only when you have the resolved set in hand (tests, advanced hosts).
+ */
+export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
 ): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()

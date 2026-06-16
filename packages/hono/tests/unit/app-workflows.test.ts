@@ -1,7 +1,7 @@
-// Integration test for createApp's workflow runtime wiring.
+// Integration test for mountApp's workflow runtime wiring.
 //
 // Stub a module that ships one workflow + one event filter, pass it
-// through createApp with the InMemory driver, await app.ready(), emit
+// through mountApp with the InMemory driver, await app.ready(), emit
 // an event on the framework eventBus, and assert the run was created.
 // Exercises the full collection → factory invocation → manifest
 // registration → EventBus forwarder → driver.ingestEvent → trigger pipe.
@@ -17,7 +17,7 @@ import { __resetEventFilterRegistry } from "@voyant-travel/workflows/events"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator"
 import { afterEach, describe, expect, test } from "vitest"
 
-import { createApp } from "../../src/app.js"
+import { mountApp } from "../../src/app.js"
 import type { HonoModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
@@ -54,23 +54,23 @@ function buildPromotionsLikeModule(): HonoModule {
   return { module: moduleSpec }
 }
 
-describe("createApp workflows wiring", () => {
+describe("mountApp workflows wiring", () => {
   test("collects workflows + filters and routes EventBus events through to driver.ingestEvent", async () => {
     const module = buildPromotionsLikeModule()
     const eventBus = createEventBus()
     const factory = createInMemoryDriver()
     let driverHandle: ReturnType<typeof factory> | undefined
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [module],
       eventBus,
       workflows: {
         // Wrap the factory so we can capture the constructed driver for
-        // post-emit inspection. createApp normally uses the result
+        // post-emit inspection. mountApp normally uses the result
         // internally only.
         // function-of-bindings (Node/InMemory wrap with `() =>`); inner
-        // factory is called by createApp() with framework deps.
+        // factory is called by mountApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
@@ -128,7 +128,7 @@ describe("createApp workflows wiring", () => {
     const factory = createInMemoryDriver()
     let driverHandle: ReturnType<typeof factory> | undefined
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [{ module: moduleSpec }],
       workflows: {
@@ -179,7 +179,7 @@ describe("createApp workflows wiring", () => {
     const factory = createInMemoryDriver()
     let driverHandle: ReturnType<typeof factory> | undefined
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [{ module: moduleSpec }],
       workflows: {
@@ -212,13 +212,13 @@ describe("createApp workflows wiring", () => {
     const factory = createInMemoryDriver()
     let driverHandle: ReturnType<typeof factory> | undefined
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [module],
       eventBus,
       workflows: {
         // function-of-bindings (Node/InMemory wrap with `() =>`); inner
-        // factory is called by createApp() with framework deps.
+        // factory is called by mountApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
@@ -243,13 +243,13 @@ describe("createApp workflows wiring", () => {
     const factory = createInMemoryDriver()
     let driverHandle: ReturnType<typeof factory> | undefined
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [module],
       eventBus,
       workflows: {
         // function-of-bindings (Node/InMemory wrap with `() =>`); inner
-        // factory is called by createApp() with framework deps.
+        // factory is called by mountApp() with framework deps.
         driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
@@ -276,7 +276,7 @@ describe("createApp workflows wiring", () => {
     void wfB
 
     expect(() => {
-      createApp({
+      mountApp({
         db: () => null as never,
         modules: [
           { module: { name: "module-a", workflows: [{ id: "shared-id" } as WorkflowDescriptor] } },
@@ -292,7 +292,7 @@ describe("createApp workflows wiring", () => {
 
   test("app.ready() is idempotent (returns the same promise across calls)", async () => {
     const eventBus = createEventBus()
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       eventBus,
       workflows: {
@@ -316,7 +316,7 @@ describe("createApp workflows wiring", () => {
       receivedEvent = true
     })
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       eventBus,
     })
@@ -331,7 +331,7 @@ describe("createApp workflows wiring", () => {
 
   test("function-of-bindings shape sees env at boot (defers construction)", async () => {
     // Mirrors Worker-hosted app shells: driver options come from env
-    // bindings that don't exist at createApp() call time. The
+    // bindings that don't exist at mountApp() call time. The
     // bindings-aware factory shape lets apps build the workflow driver
     // after bindings are available.
     interface MockEnv extends VoyantBindings {
@@ -339,7 +339,7 @@ describe("createApp workflows wiring", () => {
     }
     let observedBindings: MockEnv | undefined
     const eventBus = createEventBus()
-    const app = createApp<MockEnv>({
+    const app = mountApp<MockEnv>({
       db: () => null as never,
       eventBus,
       workflows: {
@@ -395,7 +395,7 @@ describe("createApp workflows wiring", () => {
       },
     }
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [{ module: moduleSpec }],
       eventBus,
@@ -429,7 +429,7 @@ describe("createApp workflows wiring", () => {
       eventFilters: [{ id: "filt_bad", eventType: "x.y" } as EventFilterDescriptor],
     }
 
-    const app = createApp({
+    const app = mountApp({
       db: () => null as never,
       modules: [{ module: moduleSpec }],
       workflows: {
@@ -453,7 +453,7 @@ describe("createApp workflows wiring", () => {
       WORKFLOW_MANIFESTS?: string
     }
     let observedBindings: MockEnv | undefined
-    const app = createApp<MockEnv>({
+    const app = mountApp<MockEnv>({
       db: () => null as never,
       workflows: {
         driver: (env) => {
