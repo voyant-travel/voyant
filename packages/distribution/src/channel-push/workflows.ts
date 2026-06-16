@@ -9,9 +9,9 @@
  * them up automatically.
  *
  * The workflow bodies look up `ChannelPushDeps` from the process-local
- * holder set via `setChannelPushDeps`. Hosts wire deps at bootstrap;
- * the orchestrator's Node container reads from the same global since
- * it runs in the same isolate that loaded the user bundle.
+ * holder set via `setChannelPushDeps`. Detached bundles wire deps from
+ * their `bootstrapWorkflowBundle` export before the runner executes a
+ * workflow step.
  *
  * Dev / single-process deployments (e.g. the operator starter's
  * inline drain) don't need to register these — the subscriber calls the

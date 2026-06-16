@@ -682,7 +682,13 @@ The whole thing is one round-trip — small overhead next to the HTTP call we're
 
 **Booking push (workflow):** the per-channel step calls `acquireToken("channel:" + channelId + ":" + connectionId, config, "booking")` before each adapter call. On denial, the workflow's sleep primitive waits `retryAfterMs` and retries. If wait exceeds a max threshold, the step fails with `error_class = "rate_limited"`; the saga moves on, the reconciler picks it up next pass.
 
-**Availability + content push (subscriber):** the subscriber calls `acquireToken(..., "availability")` or `..., "content"` before each adapter call. On denial, **don't sleep** — return immediately. The next event for the same key supersedes anyway (per §12), and waiting in the subscriber blocks downstream events. Log the denial to `webhook_deliveries` with `error_class = "rate_limited"` for observability.
+**Availability + content push (workflow):** the subscriber only writes or
+upserts intent rows. The scheduled workflow calls
+`acquireToken(..., "availability")` or `..., "content"` before each adapter
+call. On denial, **don't sleep** — leave the intent pending for the next
+scheduled pass. The next event for the same key supersedes anyway (per §12).
+Log the denial to `webhook_deliveries` with `error_class = "rate_limited"` for
+observability.
 
 ### 14.4. 429 handling
 

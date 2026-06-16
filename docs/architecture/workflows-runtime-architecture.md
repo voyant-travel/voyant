@@ -96,6 +96,32 @@ createApp({
 The `workflows` option remains explicit. Avoid environment probing that silently
 switches drivers.
 
+## Bundle Bootstrap Contract
+
+Detached workflow bundles may need process-local runtime dependencies that are
+normally assembled by the application host, such as a database client or an
+adapter registry. Those dependencies must be wired by the workflow bundle, not
+by HTTP middleware, because hosted runners import the workflow bundle without
+booting the app server.
+
+A workflow entry may export a well-known bootstrap function:
+
+```ts
+export function bootstrapWorkflowBundle(ctx: { env: NodeJS.ProcessEnv }) {
+  // Construct process-local workflow dependencies from ctx.env / process.env.
+}
+```
+
+Node runners call `bootstrapWorkflowBundle({ env: process.env })` after
+importing the bundle and before executing any workflow step. The bootstrap must
+be idempotent and process-local: it may cache clients/registries for the worker
+process, but it must not depend on request context or app middleware.
+
+The operator starter uses this contract to wire channel-push workflow deps from
+`DATABASE_URL` and the booking-engine adapter registry. This keeps
+`channel.booking.push`, `channel.availability.push`, and
+`channel.content.push` runnable in both self-host and hosted detached runners.
+
 ## Event Flow
 
 Modules and plugins declare workflows and event filters. `createApp()` collects
