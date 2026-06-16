@@ -1,5 +1,11 @@
 # @voyant-travel/admin
 
+## 0.111.4
+
+### Patch Changes
+
+- 8fd3d68: Expose AdminWorkspaceShell header slots and add the workspace.header.actions widget slot.
+
 ## 0.111.3
 
 ### Patch Changes
