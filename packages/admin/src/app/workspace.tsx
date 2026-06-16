@@ -3,9 +3,11 @@ import { Loader2 } from "lucide-react"
 import { forwardRef, type ReactNode, useCallback, useMemo } from "react"
 
 import type { AdminNavLinkComponent, AdminNavLinkProps } from "../components/admin-nav-link.js"
+import { AdminWidgetSlotRenderer } from "../components/admin-widget-slot.js"
 import { OperatorAdminBootstrapGate } from "../components/operator-admin-bootstrap-gate.js"
 import { OperatorAdminWorkspaceLayout } from "../components/operator-admin-sidebar.js"
 import type { AdminExtension } from "../extensions.js"
+import { adminWorkspaceHeaderActionsSlot, resolveAdminWidgets } from "../extensions.js"
 import {
   type AdminDestinationResolvers,
   AdminNavigationProvider,
@@ -144,6 +146,13 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
    * navigate to routes they don't own via `useAdminHref`/`useAdminNavigate`.
    */
   destinations?: AdminDestinationResolvers
+  /**
+   * Left slot of the workspace header after the sidebar trigger. When omitted,
+   * the layout renders its default breadcrumbs.
+   */
+  headerSlot?: ReactNode
+  /** Host-owned right slot for persistent workspace header actions. */
+  headerSlotRight?: ReactNode
   onSignOut?: () => void | Promise<void>
   /** Maps the loaded user for the layout; default covers the common fields. */
   mapUser?: (user: TUser) => AdminUser
@@ -163,6 +172,8 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   icons,
   linkComponent = AdminRouterLink,
   destinations,
+  headerSlot,
+  headerSlotRight,
   onSignOut,
   mapUser = defaultAdminWorkspaceUser,
   children,
@@ -186,6 +197,8 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
             icons={icons}
             linkComponent={linkComponent}
             destinations={destinations}
+            headerSlot={headerSlot}
+            headerSlotRight={headerSlotRight}
             onSignOut={onSignOut}
             mapUser={mapUser}
           >
@@ -203,6 +216,8 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   icons,
   linkComponent,
   destinations,
+  headerSlot,
+  headerSlotRight,
   onSignOut,
   mapUser,
   children,
@@ -212,6 +227,8 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   icons?: OperatorAdminNavigationIcons
   linkComponent: AdminNavLinkComponent
   destinations?: AdminDestinationResolvers
+  headerSlot?: ReactNode
+  headerSlotRight?: ReactNode
   onSignOut?: () => void | Promise<void>
   mapUser: (user: TUser) => AdminUser
   children: ReactNode
@@ -223,6 +240,15 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
     () => (typeof extensions === "function" ? extensions(messages) : extensions),
     [extensions, messages],
   )
+  const hasHeaderActionWidgets = useMemo(
+    () =>
+      resolveAdminWidgets({
+        slot: adminWorkspaceHeaderActionsSlot,
+        extensions: resolvedExtensions,
+      }).length > 0,
+    [resolvedExtensions],
+  )
+  const hasHeaderSlotRight = headerSlotRight != null
   // Resolver-built hrefs may carry a query string, so navigate by `href`
   // (which parses it back into search params) rather than `to` (which would
   // treat the whole string as a literal pathname). `replace` forwards so
@@ -239,6 +265,20 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
     <OperatorAdminWorkspaceLayout
       currentPath={currentPath}
       extensions={resolvedExtensions}
+      headerSlot={headerSlot}
+      headerSlotRight={
+        hasHeaderSlotRight || hasHeaderActionWidgets ? (
+          <>
+            {headerSlotRight}
+            {hasHeaderActionWidgets ? (
+              <AdminWidgetSlotRenderer
+                extensions={resolvedExtensions}
+                slot={adminWorkspaceHeaderActionsSlot}
+              />
+            ) : null}
+          </>
+        ) : undefined
+      }
       icons={icons}
       linkComponent={linkComponent}
       onSignOut={onSignOut}

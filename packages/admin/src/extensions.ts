@@ -202,6 +202,9 @@ export interface AdminWidgetContribution<Props = Record<string, unknown>> {
   component: React.ComponentType<Props>
 }
 
+/** Shell chrome slot rendered in the workspace header's right action area. */
+export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisfies AdminWidgetSlot
+
 /**
  * Shared admin extension bundle.
  *
