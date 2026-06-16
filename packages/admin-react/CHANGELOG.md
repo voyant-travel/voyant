@@ -1,5 +1,11 @@
 # @voyant-travel/admin-react
 
+## 0.111.4
+
+### Patch Changes
+
+- @voyant-travel/admin-client@0.111.4
+
 ## 0.111.3
 
 ### Patch Changes
