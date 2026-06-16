@@ -96,14 +96,36 @@ describe("createOrderPaymentSessions", () => {
           currency: "EUR",
           amountCents: 25000,
           status: "pending",
-          provider: "netopia",
-          paymentMethod: "credit_card",
+          // Provider-agnostic by default: the injected starter claims the
+          // session on start (Netopia sets provider on its redirect step).
+          provider: null,
+          paymentMethod: null,
           payerEmail: "a@b.com",
           payerName: "Ada Lovelace",
           notes: "LON -> CDG",
         }),
       )
       expect(startProvider).toHaveBeenCalledWith(db, "ps_new")
+      create.mockRestore()
+    })
+
+    it("stamps provider/paymentMethod when the instance opts in", async () => {
+      const stamped = createOrderPaymentSessions({
+        targetType: "flight_order",
+        provider: "stripe",
+        paymentMethod: "credit_card",
+      })
+      const db = stubDb([])
+      const create = vi
+        .spyOn(financeService, "createPaymentSession")
+        .mockResolvedValue({ id: "ps_s", status: "pending" } as never)
+
+      await stamped.ensureSession(db, { targetId: "ord_9", currency: "EUR", amountCents: 1000 })
+
+      expect(create).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({ provider: "stripe", paymentMethod: "credit_card" }),
+      )
       create.mockRestore()
     })
 

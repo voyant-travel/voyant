@@ -83,6 +83,19 @@ export interface OrderPaymentSessions {
 export interface CreateOrderPaymentSessionsOptions {
   /** The `payment_sessions.target_type` this instance scopes all reads/writes to. */
   targetType: OrderPaymentSessionTargetType
+  /**
+   * Provider to stamp on newly-created sessions. Defaults to `null` (no provider)
+   * so the session stays provider-agnostic — the injected `startProvider` claims
+   * it when it runs (e.g. Netopia sets `provider: "netopia"` on start). Set this
+   * only when the deployment wants the provider recorded up front. Never hard-code
+   * a provider here: that would mislabel Stripe/Adyen/bank-transfer deployments.
+   */
+  provider?: string | null
+  /**
+   * Payment method to stamp on newly-created sessions. Defaults to `null` (unset)
+   * until a payment path is chosen.
+   */
+  paymentMethod?: CreatePaymentSessionInput["paymentMethod"] | null
 }
 
 /**
@@ -92,7 +105,7 @@ export interface CreateOrderPaymentSessionsOptions {
 export function createOrderPaymentSessions(
   options: CreateOrderPaymentSessionsOptions,
 ): OrderPaymentSessions {
-  const { targetType } = options
+  const { targetType, provider = null, paymentMethod = null } = options
 
   return {
     async ensureSession(db, params, startProvider) {
@@ -123,8 +136,8 @@ export function createOrderPaymentSessions(
         currency: params.currency,
         amountCents: params.amountCents,
         status: "pending",
-        provider: "netopia",
-        paymentMethod: "credit_card",
+        provider,
+        paymentMethod,
         payerEmail: params.payerEmail ?? null,
         payerName: params.payerName ?? null,
         notes: params.notes ?? null,
