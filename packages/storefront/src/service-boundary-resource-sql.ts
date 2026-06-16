@@ -1,3 +1,4 @@
+import { BOOKING_RESOURCE_AVAILABILITY_STATUSES } from "@voyant-travel/bookings/status"
 import { type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -92,7 +93,7 @@ export async function getStorefrontSlotsResourceAvailability(
         JOIN bookings b ON b.id = bt.booking_id
         WHERE btd.allocations ->> ar.kind = ar.id
           AND ba.availability_slot_id = ar.slot_id
-          AND b.status IN ('draft', 'pending', 'confirmed', 'checked_in')
+          AND b.status IN (${sqlList(BOOKING_RESOURCE_AVAILABILITY_STATUSES)})
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
       ) usage ON true
       WHERE ar.slot_id IN (${sqlList(uniqueIds)})

@@ -87,6 +87,10 @@ export {
   transitionBooking,
 } from "./state-machine.js"
 export {
+  BOOKING_RESOURCE_AVAILABILITY_STATUSES,
+  isBookingResourceAvailabilityStatus,
+} from "./status.js"
+export {
   type BookingStatusDispatchTarget,
   dispatchBookingStatusChange,
 } from "./status-dispatch.js"

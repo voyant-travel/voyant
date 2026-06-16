@@ -25,6 +25,7 @@
     "./pricing-assignment": "./src/pricing-assignment.ts",
     "./extras": "./src/extras.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
+    "./status": "./src/status.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
   "scripts": {
@@ -160,6 +161,11 @@
         "types": "./dist/extensions/suppliers.d.ts",
         "import": "./dist/extensions/suppliers.js",
         "default": "./dist/extensions/suppliers.js"
+      },
+      "./status": {
+        "types": "./dist/status.d.ts",
+        "import": "./dist/status.js",
+        "default": "./dist/status.js"
       },
       "./status-dispatch": {
         "types": "./dist/status-dispatch.d.ts",
