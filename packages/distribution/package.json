@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./channel-push-workflows": "./src/channel-push/workflow-entry.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts"
@@ -44,6 +45,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./channel-push-workflows": {
+        "types": "./dist/channel-push/workflow-entry.d.ts",
+        "import": "./dist/channel-push/workflow-entry.js",
+        "default": "./dist/channel-push/workflow-entry.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
