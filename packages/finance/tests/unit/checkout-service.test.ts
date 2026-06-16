@@ -1,9 +1,22 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   bootstrapCheckoutCollection,
+  initiateCheckoutCollection,
+  resolveDocumentType,
   resolvePaymentSessionTarget,
 } from "../../src/checkout-service.js"
+import {
+  bookingPaymentSchedules,
+  invoiceLineItems,
+  invoiceNumberSeries,
+  invoices,
+} from "../../src/schema.js"
+import { financeService } from "../../src/service.js"
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe("finance checkout service", () => {
   it("uses invoice collection for bank transfer", () => {
@@ -25,6 +38,48 @@ describe("finance checkout service", () => {
     expect(resolvePaymentSessionTarget("card", "reminder", "schedule", {})).toBe("schedule")
   })
 
+  it("defaults card invoice collection to invoice documents", () => {
+    expect(resolveDocumentType("card", "invoice", {})).toBe("invoice")
+    expect(resolveDocumentType("card", "schedule", {})).toBeNull()
+  })
+
+  it("allows card invoice collection to create a proforma anchor", async () => {
+    const insertedInvoices: Array<Record<string, unknown>> = []
+    const db = createCheckoutDb({ insertedInvoices })
+    const paymentSession = {
+      id: "ps_123",
+      invoiceId: "inv_collection",
+      targetType: "invoice",
+    }
+
+    vi.spyOn(financeService, "createPaymentSessionFromInvoice").mockResolvedValue(
+      paymentSession as never,
+    )
+
+    const result = await initiateCheckoutCollection(
+      db as never,
+      "booking_123",
+      {
+        method: "card",
+        stage: "manual",
+        amountCents: 12_000,
+        paymentSessionTarget: "invoice",
+      },
+      { defaultCardCollectionDocumentType: "proforma" },
+    )
+
+    expect(result?.plan.documentType).toBe("proforma")
+    expect(result?.invoice?.invoiceType).toBe("proforma")
+    expect(result?.paymentSession).toBe(paymentSession)
+    expect(insertedInvoices).toHaveLength(1)
+    expect(insertedInvoices[0]?.invoiceType).toBe("proforma")
+    expect(financeService.createPaymentSessionFromInvoice).toHaveBeenCalledWith(
+      db,
+      "inv_collection",
+      { notes: null },
+    )
+  })
+
   it("rejects mismatched booking and session ids during bootstrap", async () => {
     await expect(
       bootstrapCheckoutCollection(
@@ -40,3 +95,82 @@ describe("finance checkout service", () => {
     ).rejects.toThrow("bookingId and sessionId must refer to the same booking session")
   })
 })
+
+function createCheckoutDb({
+  insertedInvoices,
+}: {
+  insertedInvoices: Array<Record<string, unknown>>
+}) {
+  const booking = {
+    id: "booking_123",
+    bookingNumber: "BK-123",
+    personId: "person_123",
+    organizationId: null,
+    sellAmountCents: 20_000,
+    baseSellAmountCents: 20_000,
+    sellCurrency: "EUR",
+    baseCurrency: "EUR",
+  }
+
+  const rowsFor = (table: unknown) => {
+    if (table === invoiceNumberSeries) return []
+    if (table === bookingPaymentSchedules) {
+      return [
+        {
+          id: "schedule_123",
+          bookingId: "booking_123",
+          bookingItemId: null,
+          scheduleType: "deposit",
+          status: "pending",
+          amountCents: 5_000,
+          dueDate: "2026-06-30",
+          notes: null,
+          createdAt: new Date("2026-06-01T00:00:00.000Z"),
+        },
+      ]
+    }
+    if (table === invoices) return []
+    return []
+  }
+
+  return {
+    select() {
+      let selectedTable: unknown = null
+      const query = {
+        from(table: unknown) {
+          selectedTable = table
+          return query
+        },
+        where() {
+          return query
+        },
+        orderBy() {
+          if (selectedTable === invoiceNumberSeries) return query
+          return Promise.resolve(rowsFor(selectedTable))
+        },
+        limit() {
+          return Promise.resolve(selectedTable === invoiceNumberSeries ? [] : [booking])
+        },
+      }
+      return query
+    },
+    insert(table: unknown) {
+      return {
+        values(values: Record<string, unknown>) {
+          if (table === invoices) {
+            insertedInvoices.push(values)
+            return {
+              returning() {
+                return Promise.resolve([{ id: "inv_collection", ...values }])
+              },
+            }
+          }
+          if (table === invoiceLineItems) {
+            return Promise.resolve(undefined)
+          }
+          return Promise.resolve(undefined)
+        },
+      }
+    },
+  }
+}

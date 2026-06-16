@@ -49,6 +49,7 @@ export {
   type CheckoutProviderStartResult,
   type CheckoutRuntimeOptions,
   type InitiatedCheckoutCollection,
+  resolveDocumentType,
   resolvePaymentSessionTarget,
 } from "./checkout-service-plan.js"
 export type {
@@ -358,12 +359,7 @@ export async function initiateCheckoutCollection(
     }
   } else if (plan.paymentSessionTarget === "invoice") {
     if (!invoice) {
-      invoice = await createCollectionInvoice(
-        db,
-        context,
-        { ...plan, documentType: "invoice" },
-        input.notes ?? null,
-      )
+      invoice = await createCollectionInvoice(db, context, plan, input.notes ?? null)
     }
 
     paymentSession = await financeService.createPaymentSessionFromInvoice(db, invoice.id, {

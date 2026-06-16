@@ -51,6 +51,7 @@ export {
   bootstrapCheckoutCollection,
   initiateCheckoutCollection,
   previewCheckoutCollection,
+  resolveDocumentType,
   resolvePaymentSessionTarget,
 } from "./checkout-service.js"
 export type {
