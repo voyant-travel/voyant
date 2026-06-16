@@ -1,3 +1,4 @@
+export { netopiaCardPaymentStarter } from "./card-payment-starter.js"
 export { createNetopiaCheckoutStarter } from "./checkout.js"
 export {
   createNetopiaClient,

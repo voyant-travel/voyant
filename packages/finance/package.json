@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
+    "./card-payment": "./src/card-payment.ts",
     "./checkout": "./src/checkout-service.ts",
     "./checkout-routes": "./src/checkout-routes.ts",
     "./checkout-validation": "./src/checkout-validation.ts",
@@ -63,6 +64,11 @@
         "types": "./dist/action-ledger-drift.d.ts",
         "import": "./dist/action-ledger-drift.js",
         "default": "./dist/action-ledger-drift.js"
+      },
+      "./card-payment": {
+        "types": "./dist/card-payment.d.ts",
+        "import": "./dist/card-payment.js",
+        "default": "./dist/card-payment.js"
       },
       "./checkout": {
         "types": "./dist/checkout-service.d.ts",

@@ -221,6 +221,12 @@ export {
   type TaxPolicyCondition,
   type UpdateBookingTaxSettings,
 } from "./booking-tax.js"
+export type {
+  CardPaymentBilling,
+  CardPaymentStartArgs,
+  CardPaymentStarter,
+  CardPaymentStartResult,
+} from "./card-payment.js"
 export {
   type DocumentDownloadEnvelope,
   type DocumentDownloadResolution,

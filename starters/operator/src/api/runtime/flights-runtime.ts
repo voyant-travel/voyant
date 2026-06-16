@@ -18,12 +18,9 @@ import {
   type FlightCardBilling,
 } from "@voyant-travel/flights"
 import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
-import {
-  NETOPIA_RUNTIME_CONTAINER_KEY,
-  netopiaService,
-  type ResolvedNetopiaRuntimeOptions,
-} from "@voyant-travel/plugin-netopia"
 import type { Context } from "hono"
+
+import { cardPaymentStarter } from "./card-payment"
 
 /**
  * Resolve the flight connector adapter. The demo adapter is a thin HTTP client
@@ -41,23 +38,17 @@ function resolveAdapter(c: Context) {
 }
 
 /**
- * Best-effort Netopia card start for a flight hold session. Resolves the
- * request-scoped Netopia runtime from the container; a no-op when Netopia isn't
+ * Best-effort card start for a flight hold session, routed through this
+ * deployment's {@link cardPaymentStarter}. A no-op when the processor isn't
  * configured (the bank-transfer tab still works).
  */
 async function startCardPayment(c: Context, sessionId: string, billing: FlightCardBilling) {
-  const db = (c.var as { db: Parameters<typeof netopiaService.startPaymentSession>[0] }).db
-  const runtime = c.var.container?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
-    | ResolvedNetopiaRuntimeOptions
-    | undefined
-  if (!runtime) return
-  await netopiaService.startPaymentSession(
-    db,
+  await cardPaymentStarter(c, {
+    db: c.var.db,
     sessionId,
-    { billing, description: `Flight ${sessionId}` },
-    runtime,
-    undefined,
-  )
+    billing,
+    description: `Flight ${sessionId}`,
+  })
 }
 
 /** Build the flights admin routes wired with this deployment's options. */
