@@ -29,13 +29,41 @@ function getDb() {
   return createDbClient(process.env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
 }
 
+export function createLazyWorkflowDb(
+  factory: () => PostgresJsDatabase = getDb,
+): PostgresJsDatabase {
+  let db: PostgresJsDatabase | undefined
+
+  const resolveDb = () => {
+    db ??= factory()
+    return db
+  }
+
+  return new Proxy({} as PostgresJsDatabase, {
+    get(_target, prop) {
+      const resolved = resolveDb()
+      const value = Reflect.get(resolved as object, prop, resolved)
+      return typeof value === "function" ? value.bind(resolved) : value
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      return Reflect.getOwnPropertyDescriptor(resolveDb() as object, prop)
+    },
+    has(_target, prop) {
+      return prop in (resolveDb() as object)
+    },
+    ownKeys() {
+      return Reflect.ownKeys(resolveDb() as object)
+    },
+  })
+}
+
 let channelPushDepsBootstrapped = false
 
 export async function bootstrapWorkflowBundle(): Promise<void> {
   if (channelPushDepsBootstrapped) return
   const { getBookingEngineRegistry } = await import("./api/lib/booking-engine-runtime.js")
   setChannelPushDeps({
-    db: getDb(),
+    db: createLazyWorkflowDb(),
     registry: getBookingEngineRegistry(process.env),
   })
   channelPushDepsBootstrapped = true
