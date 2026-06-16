@@ -29,7 +29,11 @@
  */
 
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
-import { type BookingsHonoModuleOptions, createBookingsHonoModule } from "@voyant-travel/bookings"
+import {
+  type BookingsHonoModuleOptions,
+  bookingsSupplierExtension,
+  createBookingsHonoModule,
+} from "@voyant-travel/bookings"
 import { bookingsExtrasRoutes } from "@voyant-travel/bookings/extras"
 import {
   type BookingRequirementsHonoModuleOptions,
@@ -46,11 +50,16 @@ import {
   createCommerceStorefrontOfferResolvers,
 } from "@voyant-travel/commerce"
 import {
+  distributionBookingExtension,
   distributionHonoModule,
   externalRefsHonoModule,
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
-import { createFinanceHonoModule, type FinanceHonoModuleOptions } from "@voyant-travel/finance"
+import {
+  bookingsCreateExtension,
+  createFinanceHonoModule,
+  type FinanceHonoModuleOptions,
+} from "@voyant-travel/finance"
 import type {
   CheckoutNotificationDelivery,
   CheckoutPaymentStarter,
@@ -60,7 +69,8 @@ import { createPublicDocumentDeliveryHonoModule } from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
-import { inventoryHonoModule } from "@voyant-travel/inventory"
+import { inventoryBookingExtension, inventoryHonoModule } from "@voyant-travel/inventory"
+import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { inventoryExtrasRoutes } from "@voyant-travel/inventory/extras"
 import { type CreateLegalHonoModuleOptions, createLegalHonoModule } from "@voyant-travel/legal"
 import {
@@ -71,7 +81,7 @@ import {
   notificationsService,
 } from "@voyant-travel/notifications"
 import { operationsHonoModule } from "@voyant-travel/operations"
-import { createQuotesHonoModule } from "@voyant-travel/quotes"
+import { createQuotesHonoModule, quotesBookingExtension } from "@voyant-travel/quotes"
 import {
   createRelationshipsHonoModule,
   type relationshipsService,
@@ -436,5 +446,13 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         publicRoutes: true,
       }),
   },
-  extensions: {},
+  extensions: {
+    // Tier 3 — pure singleton extensions (no providers).
+    "@voyant-travel/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
+    "@voyant-travel/finance/bookings-create-extension": () => bookingsCreateExtension,
+    "@voyant-travel/inventory/booking-extension": () => inventoryBookingExtension,
+    "@voyant-travel/inventory/authoring/extension": () => inventoryAuthoringExtension,
+    "@voyant-travel/quotes/booking-extension": () => quotesBookingExtension,
+    "@voyant-travel/distribution": () => distributionBookingExtension,
+  },
 }

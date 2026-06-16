@@ -21,9 +21,7 @@
  * `voyant.config.ts` (the schema manifest).
  */
 
-import { bookingsSupplierExtension } from "@voyant-travel/bookings"
-import { distributionBookingExtension } from "@voyant-travel/distribution"
-import { bookingsCreateExtension, createBookingTaxHonoExtension } from "@voyant-travel/finance"
+import { createBookingTaxHonoExtension } from "@voyant-travel/finance"
 import {
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkProviders,
@@ -31,11 +29,8 @@ import {
 } from "@voyant-travel/framework"
 import type { VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
-import { inventoryBookingExtension } from "@voyant-travel/inventory"
-import { inventoryAuthoringExtension } from "@voyant-travel/inventory/authoring/extension"
 import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
-import { quotesBookingExtension } from "@voyant-travel/quotes"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
 
@@ -305,12 +300,9 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     }),
   },
   extensions: {
-    "@voyant-travel/bookings/booking-supplier-extension": () => bookingsSupplierExtension,
-    "@voyant-travel/finance/bookings-create-extension": () => bookingsCreateExtension,
-    "@voyant-travel/inventory/booking-extension": () => inventoryBookingExtension,
-    "@voyant-travel/inventory/authoring/extension": () => inventoryAuthoringExtension,
-    "@voyant-travel/quotes/booking-extension": () => quotesBookingExtension,
-    "@voyant-travel/distribution": () => distributionBookingExtension,
+    // Standard package extensions owned by @voyant-travel/framework (Workstream
+    // B, Tier 3). The deployment appends only its injection-shaped + local ones.
+    ...frameworkComposition.extensions,
     "@voyant-travel/distribution/channel-push-extension": () => createChannelPushExtension(),
     "@voyant-travel/finance/booking-tax-extension": () =>
       createBookingTaxHonoExtension({ resolveBookingTaxSettings, updateBookingTaxSettings }),
