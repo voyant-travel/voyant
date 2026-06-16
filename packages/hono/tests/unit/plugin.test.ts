@@ -2,7 +2,7 @@ import { type Actor, createEventBus } from "@voyant-travel/core"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { createApp } from "../../src/app.js"
+import { mountApp } from "../../src/app.js"
 import type { HonoExtension, HonoModule } from "../../src/module.js"
 import {
   defineHonoBundle,
@@ -64,9 +64,9 @@ describe("expandHonoPlugins", () => {
   })
 })
 
-describe("createApp with plugins", () => {
+describe("mountApp with plugins", () => {
   function build(plugins: ReturnType<typeof defineHonoPlugin>[], actor: Actor = "staff") {
-    return createApp({
+    return mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins,
@@ -101,7 +101,7 @@ describe("createApp with plugins", () => {
     const top = makeModule("top", "admin")
     const viaPlugin = makeModule("viaPlugin", "admin")
     const plugin = defineHonoPlugin({ name: "p", modules: [viaPlugin] })
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [top],
@@ -134,11 +134,11 @@ describe("createApp with plugins", () => {
     expect(spy.called).toBe(true)
   })
 
-  it("throws on duplicate plugin names when passed to createApp", () => {
+  it("throws on duplicate plugin names when passed to mountApp", () => {
     const p1 = defineHonoPlugin({ name: "dup" })
     const p2 = defineHonoPlugin({ name: "dup" })
     expect(() =>
-      createApp({
+      mountApp({
         // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
         db: () => ({}) as any,
         plugins: [p1, p2],
@@ -203,7 +203,7 @@ describe("createApp with plugins", () => {
       extensions: [ext],
     })
 
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins: [plugin],
@@ -238,7 +238,7 @@ describe("createApp with plugins", () => {
       },
     })
 
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins: [throwingPlugin],
@@ -260,7 +260,7 @@ describe("createApp with plugins", () => {
   })
 
   it("exposes bootstrap-registered runtime services through the shared container", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [
@@ -290,7 +290,7 @@ describe("createApp with plugins", () => {
     const handler = vi.fn()
     bus.subscribe("booking.updated", handler)
 
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       eventBus: bus,

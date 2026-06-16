@@ -1,5 +1,5 @@
 export type { VoyantPermission } from "@voyant-travel/core"
-export { createApp } from "./app.js"
+export { mountApp } from "./app.js"
 export type { SessionAuthContext } from "./auth/index.js"
 export {
   constantTimeEqual,
@@ -12,6 +12,7 @@ export {
   unsignCookie,
   verifySession,
 } from "./auth/index.js"
+export { type CreateAppConfig, createApp } from "./create-app.js"
 export type {
   DocumentDownloadEnvelope,
   DocumentDownloadResolution,

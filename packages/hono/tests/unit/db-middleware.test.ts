@@ -20,7 +20,7 @@ function dbFactoryForTest(factory: () => VoyantDb): DbFactory<VoyantBindings> {
 function buildApp(opts: Parameters<typeof db>[1] | undefined, factory: () => VoyantDb) {
   const app = new Hono()
   // Surface the thrown middleware error in the response body so tests can
-  // assert on it (matches the createApp + handleApiError shape in prod).
+  // assert on it (matches the mountApp + handleApiError shape in prod).
   app.onError((err, c) => c.json({ error: err.message }, 500))
   app.use("*", db(dbFactoryForTest(factory), opts))
   app.get("/", (c) => c.json({ db: typeof c.get("db") }))

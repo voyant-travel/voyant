@@ -10,7 +10,7 @@
  */
 
 import type { Actor } from "@voyant-travel/core"
-import { createApp } from "@voyant-travel/hono"
+import { mountApp } from "@voyant-travel/hono"
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
@@ -29,7 +29,7 @@ function build() {
     operatorComposition,
     buildOperatorCapabilities(),
   )
-  return createApp({
+  return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which
     // still proves the route is mounted and the context reached the sub-app.
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test.
