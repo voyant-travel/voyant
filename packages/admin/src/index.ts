@@ -136,6 +136,7 @@ export {
   type AdminWidgetContribution,
   type AdminWidgetSlot,
   adminRoutePageModule,
+  adminWorkspaceHeaderActionsSlot,
   type BindableAdminRoute,
   createAdminExtensionRegistry,
   defineAdminExtension,
