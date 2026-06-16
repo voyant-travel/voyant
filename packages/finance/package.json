@@ -11,6 +11,7 @@
     "./checkout-validation": "./src/checkout-validation.ts",
     "./invoice-fx": "./src/invoice-fx.ts",
     "./order-payment-sessions": "./src/order-payment-sessions.ts",
+    "./payment-policy-cascade": "./src/payment-policy-cascade.ts",
     "./payment-link": "./src/payment-link.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
@@ -87,6 +88,11 @@
         "types": "./dist/order-payment-sessions.d.ts",
         "import": "./dist/order-payment-sessions.js",
         "default": "./dist/order-payment-sessions.js"
+      },
+      "./payment-policy-cascade": {
+        "types": "./dist/payment-policy-cascade.d.ts",
+        "import": "./dist/payment-policy-cascade.js",
+        "default": "./dist/payment-policy-cascade.js"
       },
       "./payment-link": {
         "types": "./dist/payment-link.d.ts",

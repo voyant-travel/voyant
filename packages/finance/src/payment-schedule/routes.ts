@@ -31,7 +31,6 @@ import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
-
 import {
   computePaymentSchedule,
   noDepositPolicy,
@@ -39,24 +38,11 @@ import {
   type PaymentPolicySource,
   resolveEffectivePaymentPolicy,
 } from "../payment-policy.js"
+import type { PaymentPolicyEntityContext } from "../payment-policy-cascade.js"
 import { bookingPaymentSchedules } from "../schema/booking-billing.js"
 import { financeService } from "../service.js"
 
-/**
- * Storefront-preview entity context passed to the per-entity cascade
- * resolvers. Structural mirror of the operator's `PaymentPolicyEntityContext`
- * — the resolvers walk these journey selections to find the listing/category/
- * supplier policy without a persisted booking row.
- */
-export interface PaymentPolicyEntityContext {
-  entityModule: string
-  entityId: string
-  /** Cruise journey selection — resolves cabin → sailing → cruise. */
-  sailingId?: string
-  cabinCategoryId?: string
-  /** Accommodation journey selection — resolves the rate plan's policy. */
-  ratePlanId?: string
-}
+export type { PaymentPolicyEntityContext }
 
 /**
  * Deployment-supplied options for the booking payment-schedule route module.
