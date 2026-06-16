@@ -1,5 +1,20 @@
 # @voyant-travel/plugin-netopia
 
+## 0.105.0
+
+### Minor Changes
+
+- c9de9c4: Provider-agnostic card-payment seam: `@voyant-travel/finance` defines the `CardPaymentStarter` contract (`./card-payment`), `@voyant-travel/plugin-netopia` provides `netopiaCardPaymentStarter()`, and the deployment selects its processor in one place. Swapping card processors is a one-line change; checkout surfaces (flights, trips, payment links, catalog) route through the interface.
+
+### Patch Changes
+
+- Updated dependencies [c9de9c4]
+- Updated dependencies [14f4234]
+- Updated dependencies [89d4ca9]
+- Updated dependencies [51dd276]
+  - @voyant-travel/finance@0.122.0
+  - @voyant-travel/notifications@0.111.11
+
 ## 0.104.22
 
 ### Patch Changes
