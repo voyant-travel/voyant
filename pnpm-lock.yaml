@@ -3863,6 +3863,9 @@ importers:
       '@voyant-travel/flights-react':
         specifier: workspace:^
         version: link:../../packages/flights-react
+      '@voyant-travel/framework':
+        specifier: workspace:^
+        version: link:../../packages/framework
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../../packages/hono

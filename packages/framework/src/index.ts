@@ -12,6 +12,8 @@
  * email spam), and the BOM is the single thing that always tracks "the
  * framework version".
  */
+
+export { FRAMEWORK_RUNTIME_MANIFEST, type FrameworkManifest } from "./manifest.js"
 export {
   FRAMEWORK_RUNTIME_PACKAGES,
   type FrameworkRuntimePackage,

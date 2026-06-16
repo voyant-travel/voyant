@@ -51,6 +51,7 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
+import { FRAMEWORK_RUNTIME_MANIFEST } from "@voyant-travel/framework"
 import { createPublicDocumentDeliveryHonoModule, type VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoModule } from "@voyant-travel/hono/module"
@@ -247,29 +248,14 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
  * Keep in sync with `voyant.config.ts`; `voyant db doctor` enforces parity for
  * the schema-bearing subset.
  */
+// The STANDARD package modules/extensions + their order are owned by
+// @voyant-travel/framework (FRAMEWORK_RUNTIME_MANIFEST). This deployment spreads
+// that and appends only its deployment-local families (the `operator/*` entries
+// — see operator-registry-classification.md). Adding a standard module to the
+// framework auto-joins it here; no re-listing.
 export const OPERATOR_RUNTIME_MANIFEST = {
   modules: [
-    "@voyant-travel/action-ledger",
-    "@voyant-travel/relationships",
-    "@voyant-travel/quotes",
-    "@voyant-travel/operations",
-    "@voyant-travel/identity",
-    "@voyant-travel/distribution",
-    "@voyant-travel/inventory/extras",
-    "@voyant-travel/bookings/requirements",
-    "@voyant-travel/commerce",
-    "@voyant-travel/inventory",
-    "@voyant-travel/catalog",
-    "@voyant-travel/bookings",
-    "@voyant-travel/finance",
-    "@voyant-travel/legal",
-    "@voyant-travel/public-document-delivery",
-    "@voyant-travel/notifications",
-    "@voyant-travel/storefront",
-    "@voyant-travel/storefront/customer-portal",
-    "@voyant-travel/storefront/verification",
-    "@voyant-travel/trips",
-    "@voyant-travel/flights",
+    ...FRAMEWORK_RUNTIME_MANIFEST.modules,
     "operator/mcp",
     "operator/invitations",
     "operator/catalog-booking",
@@ -280,14 +266,7 @@ export const OPERATOR_RUNTIME_MANIFEST = {
     "operator/contract-document",
   ],
   extensions: [
-    "@voyant-travel/bookings/booking-supplier-extension",
-    "@voyant-travel/finance/bookings-create-extension",
-    "@voyant-travel/inventory/booking-extension",
-    "@voyant-travel/inventory/authoring/extension",
-    "@voyant-travel/quotes/booking-extension",
-    "@voyant-travel/distribution",
-    "@voyant-travel/distribution/channel-push-extension",
-    "@voyant-travel/finance/booking-tax-extension",
+    ...FRAMEWORK_RUNTIME_MANIFEST.extensions,
     "operator/booking-schedule-extension",
     "operator/quote-version-snapshot-extension",
     "operator/booking-maintenance-extension",
