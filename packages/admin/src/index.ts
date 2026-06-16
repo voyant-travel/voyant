@@ -175,6 +175,7 @@ export {
 export {
   type CreateOperatorAdminNavigationOptions,
   createOperatorAdminNavigation,
+  defaultOperatorNavIcons,
   type OperatorAdminNavigationIconName,
   type OperatorAdminNavigationIcons,
 } from "./navigation/operator-navigation.js"
