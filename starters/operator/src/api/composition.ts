@@ -28,7 +28,6 @@ import {
 } from "@voyant-travel/framework"
 import type { VoyantDb } from "@voyant-travel/hono"
 import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
-import { CONTRACT_DOCUMENT_ROUTE_PATHS } from "@voyant-travel/legal"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
@@ -58,26 +57,6 @@ import {
 import { createRelationshipsStorefrontIntakePersistence } from "./runtime/storefront-intake-runtime"
 import { createOperatorTripsRoutesOptions } from "./runtime/trips-runtime"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
-
-/** Explicit matchers for the catalog booking-engine + order/snapshot routes. */
-const OPERATOR_CATALOG_BOOKING_ROUTE_PATHS = [
-  "/v1/admin/catalog/quote",
-  "/v1/admin/catalog/book",
-  "/v1/admin/catalog/drafts/:id",
-  "/v1/admin/catalog/holds/place",
-  "/v1/admin/catalog/holds/release",
-  "/v1/admin/catalog/slots",
-  "/v1/admin/catalog/orders",
-  "/v1/admin/catalog/orders/:id",
-  "/v1/admin/catalog/orders/:id/cancel",
-  "/v1/admin/bookings/:id/catalog-snapshot",
-  "/v1/public/catalog/quote",
-  "/v1/public/catalog/book",
-  "/v1/public/catalog/drafts/:id",
-  "/v1/public/catalog/holds/place",
-  "/v1/public/catalog/holds/release",
-  "/v1/public/catalog/slots",
-] as const
 
 /**
  * The operator deployment's capability container. Every template-specific
@@ -140,6 +119,29 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
     resolveBookingTaxSettings,
     updateBookingTaxSettings,
     createChannelPushExtension,
+    // Lazy route-bundle loaders for the `operator/*` standard families — each
+    // wires this deployment's providers into the package-owned route bundle.
+    loadFlightAdminRoutes: () =>
+      import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes()),
+    loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
+    loadCatalogBookingRoutes: () =>
+      import("./runtime/catalog-booking-runtime").then((m) => {
+        const app = new Hono()
+        m.mountCatalogBookingRoutes(app)
+        return app
+      }),
+    loadCatalogContentRoutes: () =>
+      import("./routes/catalog-content").then((m) => {
+        const app = new Hono()
+        m.mountCatalogContentRoutes(app)
+        return app
+      }),
+    loadMediaRoutes: () =>
+      import("./runtime/media-runtime").then((m) => m.buildOperatorMediaRoutes()),
+    loadPaymentLinkRoutes: () =>
+      import("./runtime/payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
+    loadContractDocumentRoutes: () =>
+      import("./runtime/contract-document-runtime").then((m) => m.buildContractDocumentRoutes()),
   }
 }
 
@@ -187,90 +189,12 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
     // Deployment-local route modules. The route bundles live in the operator
     // (vendor/demo wiring, agent tooling, Better Auth invitations) and load
     // lazily; the framework mounts + caches them and bridges request context.
-    "@voyant-travel/flights": () => ({
-      module: { name: "flights" },
-      // Routes live in @voyant-travel/flights; this deployment supplies the
-      // connector + payment options via ./flights-runtime.
-      lazyAdminRoutes: () =>
-        import("./runtime/flights-runtime").then((m) => m.buildFlightAdminRoutes()),
-    }),
-    "operator/mcp": () => ({
-      module: { name: "mcp" },
-      // Route + trips tools live in @voyant-travel/trips/mcp; this deployment
-      // supplies the tool context + trips service wiring via ./mcp-runtime.
-      lazyAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
-    }),
     "operator/invitations": () => ({
       module: { name: "invitations" },
       lazyAdminRoutes: () =>
         import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
       lazyPublicRoutes: () =>
         import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
-    }),
-    // Multi-prefix deployment-local families: the route bundles span several
-    // absolute prefixes, so they compose via `lazyRoutes` (explicit paths +
-    // context bridging) over their existing absolute-route mount functions.
-    "operator/catalog-booking": () => ({
-      module: { name: "catalog-booking" },
-      lazyRoutes: {
-        paths: OPERATOR_CATALOG_BOOKING_ROUTE_PATHS,
-        load: () =>
-          import("./runtime/catalog-booking-runtime").then((m) => {
-            const app = new Hono()
-            m.mountCatalogBookingRoutes(app)
-            return app
-          }),
-      },
-    }),
-    "operator/catalog-content": () => ({
-      module: { name: "catalog-content" },
-      lazyRoutes: {
-        paths: [
-          "/v1/admin/products/:id/content",
-          "/v1/public/products/:id/content",
-          "/v1/admin/cruises/:id/content",
-          "/v1/public/cruises/:id/content",
-          "/v1/admin/accommodations/:id/content",
-          "/v1/public/accommodations/:id/content",
-        ],
-        load: () =>
-          import("./routes/catalog-content").then((m) => {
-            const app = new Hono()
-            m.mountCatalogContentRoutes(app)
-            return app
-          }),
-      },
-    }),
-    "operator/media": () => ({
-      module: { name: "media" },
-      lazyRoutes: {
-        paths: [
-          "/v1/admin/products/:id/brochure/generate",
-          "/v1/uploads",
-          "/v1/admin/uploads",
-          "/v1/uploads/video",
-          "/v1/admin/uploads/video",
-          "/v1/media/*",
-          "/v1/admin/media/*",
-        ],
-        load: () => import("./runtime/media-runtime").then((m) => m.buildOperatorMediaRoutes()),
-      },
-    }),
-    "operator/payment-link": () => ({
-      module: { name: "payment-link" },
-      lazyRoutes: {
-        paths: [
-          "/v1/public/payment-link-config",
-          "/v1/public/payment-link/:sessionId/retry",
-          "/v1/public/payment-link/resolve",
-          "/v1/public/payment-link/:sessionId/start-card",
-          "/v1/public/payment-link/:sessionId/trip-summary",
-          "/v1/public/payment-link/:sessionId/booking-summary",
-          "/v1/public/bookings/:bookingId/checkout-status",
-        ],
-        load: () =>
-          import("./runtime/payment-link-runtime").then((m) => m.buildOperatorPaymentLinkRoutes()),
-      },
     }),
     "operator/operator-settings": () => ({
       module: { name: "operator-settings" },
@@ -286,18 +210,6 @@ export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
             m.mountOperatorSettingsRoutes(app)
             return app
           }),
-      },
-    }),
-    "operator/contract-document": () => ({
-      module: { name: "contract-document" },
-      // Routes live in @voyant-travel/legal; this deployment supplies the
-      // generator/preview + document storage via ./contract-document-runtime.
-      lazyRoutes: {
-        paths: CONTRACT_DOCUMENT_ROUTE_PATHS,
-        load: () =>
-          import("./runtime/contract-document-runtime").then((m) =>
-            m.buildContractDocumentRoutes(),
-          ),
       },
     }),
   },
