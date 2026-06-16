@@ -21,9 +21,15 @@
  * FrameworkProviders` and factory params are contravariant, a
  * `ModuleFactory<FrameworkProviders>` slots cleanly into the deployment's wider
  * `CompositionRegistry<OperatorCapabilities>`.
+ *
+ * Provider field types are anchored to the package option types they feed
+ * (`NonNullable<XOptions["field"]>`) or to a package service (`typeof
+ * relationshipsService`), so they can't drift from the contracts the factories
+ * pass them into.
  */
 
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
+import { type BookingsHonoModuleOptions, createBookingsHonoModule } from "@voyant-travel/bookings"
 import { createCommerceHonoModules } from "@voyant-travel/commerce"
 import {
   distributionHonoModule,
@@ -35,7 +41,16 @@ import { identityHonoModule } from "@voyant-travel/identity"
 import { inventoryHonoModule } from "@voyant-travel/inventory"
 import { operationsHonoModule } from "@voyant-travel/operations"
 import { createQuotesHonoModule } from "@voyant-travel/quotes"
-import { createRelationshipsHonoModule } from "@voyant-travel/relationships"
+import {
+  createRelationshipsHonoModule,
+  type relationshipsService,
+} from "@voyant-travel/relationships"
+import { createCustomerPortalHonoModule } from "@voyant-travel/storefront/customer-portal"
+import {
+  createStorefrontVerificationHonoModule,
+  type StorefrontVerificationRoutesOptions,
+} from "@voyant-travel/storefront/verification"
+import { createTripsHonoModule, type TripsRoutesOptions } from "@voyant-travel/trips"
 
 /**
  * The injected, deployment-specific provider surface the framework's standard
@@ -45,23 +60,36 @@ import { createRelationshipsHonoModule } from "@voyant-travel/relationships"
  * deployment supplies these (plus its own extras) and the framework factories
  * see only what they're entitled to.
  *
- * Empty today: Tier 1 relocates only the pure singleton module factories, which
- * take no providers. It grows as the capability-shaped factories
- * (catalog/bookings/finance/notifications/…) and the lazy `operator/*` route
- * loaders relocate in later tiers.
+ * Each field is typed by the package option type it feeds (drift-proof) or by a
+ * package service. It grows as more capability-shaped factories relocate.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: intentional open supertype — empty until provider-needing factories relocate (Workstream B, see docs/architecture/consolidated-deployments-rfc.md). OperatorCapabilities must stay assignable to it, so it cannot narrow to Record<string, never>.
-export interface FrameworkProviders {}
+export interface FrameworkProviders {
+  /** Relationships service — bookings reads person/snapshot helpers off it. */
+  relationshipsService: typeof relationshipsService
+  /** Closes a booking's terminal payment schedules (bookings module option). */
+  closePaymentSchedulesForBooking: NonNullable<
+    BookingsHonoModuleOptions["closePaymentSchedulesForBooking"]
+  >
+  /** Resolves a stored document's download URL (bindings + storage key). */
+  resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
+  /** Resolves the notification providers for the verification challenge. */
+  resolveNotificationProviders: NonNullable<StorefrontVerificationRoutesOptions["resolveProviders"]>
+  /** Deployment-built trips route options (connector, payment wiring, …). */
+  createTripsRoutesOptions: () => TripsRoutesOptions
+}
 
 /**
  * Standard module/extension factories owned by the framework. Keyed by the same
  * manifest specifiers as `FRAMEWORK_RUNTIME_MANIFEST`; a deployment spreads this
  * into its registry (see file header).
  *
- * Tier 1: the pure singleton modules — no providers, no deployment imports.
+ * - Tier 1: the pure singleton modules — no providers, no deployment imports.
+ * - Tier 2: capability-shaped `@voyant-travel/*` modules — read injected
+ *   providers off `ctx.capabilities`.
  */
 export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
   modules: {
+    // Tier 1 — pure singletons.
     "@voyant-travel/action-ledger": () => actionLedgerHonoModule,
     "@voyant-travel/relationships": () => createRelationshipsHonoModule(),
     "@voyant-travel/quotes": () => createQuotesHonoModule(),
@@ -74,6 +102,55 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     ],
     "@voyant-travel/commerce": () => createCommerceHonoModules(),
     "@voyant-travel/inventory": () => inventoryHonoModule,
+    // Tier 2 — capability-shaped modules (providers injected via ctx).
+    "@voyant-travel/bookings": ({ capabilities }) =>
+      createBookingsHonoModule({
+        resolveTravelSnapshot: (db, personId, { kms }) =>
+          capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
+        resolveBillingPerson: async (db, contact, ctx) => {
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+            },
+          )
+          return person?.id ?? null
+        },
+        resolveTravelerPerson: async (db, contact, ctx) => {
+          const person = await capabilities.relationshipsService.upsertPersonFromContact(
+            db,
+            contact,
+            {
+              source: ctx.source,
+              sourceRef: ctx.sourceRef,
+              requireContactPoint: true,
+            },
+          )
+          return person?.id ?? null
+        },
+        resolveBillingPersonById: async (db, personId) =>
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+        resolveBillingOrganizationById: async (db, organizationId) =>
+          (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
+        closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+      }),
+    "@voyant-travel/storefront/customer-portal": ({ capabilities }) =>
+      createCustomerPortalHonoModule({
+        resolveDocumentDownloadUrl: (bindings, storageKey) =>
+          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+      }),
+    "@voyant-travel/storefront/verification": ({ capabilities }) =>
+      createStorefrontVerificationHonoModule({
+        resolveProviders: capabilities.resolveNotificationProviders,
+        email: { subject: "Your verification code" },
+      }),
+    "@voyant-travel/trips": ({ capabilities }) =>
+      createTripsHonoModule({
+        ...capabilities.createTripsRoutesOptions(),
+        publicRoutes: true,
+      }),
   },
   extensions: {},
 }
