@@ -7,18 +7,15 @@
  * Keeping the manifest + registry + capabilities in one file is intentional; the
  * length scales with the module count, not with logic complexity.
  *
- * Instead of hand-listing `createApp({ modules, extensions })`, `app.ts`
- * derives those arrays from this registry via
- * `composeFromManifest(manifest, registry, capabilities)`
- * (`@voyant-travel/hono/composition`). This is the runtime half of the
- * migration-resilience work (voyant#1608 / #1620): the manifest is the source
- * of truth, capabilities are gathered in one typed container, and each entry
- * maps to a factory.
- *
- * `OPERATOR_RUNTIME_MANIFEST` is the ordered runtime module/extension list —
- * mount + hook-registration order is significant, so it mirrors the previous
- * hand-written array order exactly. `voyant db doctor` cross-checks it against
- * `voyant.config.ts` (the schema manifest).
+ * The standard module/extension set + their order are owned by
+ * @voyant-travel/framework. `app.ts` calls `createVoyantApp({ providers,
+ * modules })` which assembles `FRAMEWORK_RUNTIME_MANIFEST` + `frameworkComposition`
+ * with this deployment's injected providers + `deploymentLocalModules`, then
+ * composes + mounts. This file owns only the deployment-specific bits: the
+ * provider container (`buildOperatorProviders`) and the two deployment-local
+ * module factories. `OPERATOR_RUNTIME_MANIFEST` + `operatorComposition` remain as
+ * DERIVED exports for `voyant db doctor` parity + the composition tests. This is
+ * the runtime half of the migration-resilience work (voyant#1608 / #1620).
  */
 
 import {
@@ -27,7 +24,11 @@ import {
   frameworkComposition,
 } from "@voyant-travel/framework"
 import type { VoyantDb } from "@voyant-travel/hono"
-import type { CompositionManifest, CompositionRegistry } from "@voyant-travel/hono/composition"
+import type {
+  CompositionManifest,
+  CompositionRegistry,
+  ModuleFactory,
+} from "@voyant-travel/hono/composition"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
@@ -67,7 +68,7 @@ import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-paym
 // satisfies the framework's injected provider contract (so the relocated
 // `frameworkComposition` factories can read it). A future framework provider
 // addition becomes required here, failing the operator typecheck until
-// `buildOperatorCapabilities` wires it — that's the intended forcing function.
+// `buildOperatorProviders` wires it — that's the intended forcing function.
 export interface OperatorCapabilities extends FrameworkProviders {
   resolveNotificationProviders: typeof resolveNotificationProviders
   resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
@@ -85,8 +86,11 @@ export interface OperatorCapabilities extends FrameworkProviders {
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
 }
 
-/** Build the operator capability container (gathers deployment resolvers). */
-export function buildOperatorCapabilities(): OperatorCapabilities {
+/**
+ * Build the operator provider container (gathers deployment resolvers/loaders).
+ * Providers are bindings-deferred closures, so no `env` is needed here.
+ */
+export function buildOperatorProviders(): OperatorCapabilities {
   return {
     resolveNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
@@ -191,66 +195,49 @@ export function buildOperatorCapabilities(): OperatorCapabilities {
 }
 
 /**
- * Ordered runtime composition — module/extension specifiers in mount order.
- * Keep in sync with `voyant.config.ts`; `voyant db doctor` enforces parity for
- * the schema-bearing subset.
+ * The deployment-local module factories — the only two families that aren't
+ * package-owned standard (Better-Auth team invitations + the operator's own
+ * settings schema/routes). `createVoyantApp` merges these onto the standard
+ * `frameworkComposition` set; `app.ts` passes them as `modules`.
  */
-// The STANDARD package modules/extensions + their order are owned by
-// @voyant-travel/framework (FRAMEWORK_RUNTIME_MANIFEST). This deployment spreads
-// that and appends only its deployment-local families (the `operator/*` entries
-// — see operator-registry-classification.md). Adding a standard module to the
-// framework auto-joins it here; no re-listing.
+export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
+  "operator/invitations": () => ({
+    module: { name: "invitations" },
+    lazyAdminRoutes: () =>
+      import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
+    lazyPublicRoutes: () =>
+      import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
+  }),
+  "operator/operator-settings": () => ({
+    module: { name: "operator-settings" },
+    lazyRoutes: {
+      paths: [
+        "/v1/admin/settings/*",
+        "/v1/public/operator-profile",
+        "/v1/public/settings/operator",
+      ],
+      load: () =>
+        import("./routes/settings").then((m) => {
+          const app = new Hono()
+          m.mountOperatorSettingsRoutes(app)
+          return app
+        }),
+    },
+  }),
+}
+
+/**
+ * The full composed manifest + registry — DERIVED from the framework-owned
+ * standard set plus the deployment-local additions. `app.ts` builds the app via
+ * `createVoyantApp` (which assembles the same internally); these exports remain
+ * for `voyant db doctor` parity inspection and the composition tests.
+ */
 export const OPERATOR_RUNTIME_MANIFEST = {
-  modules: [
-    // All STANDARD modules (incl. the package-owned `operator/*` families) are
-    // owned by @voyant-travel/framework. The deployment appends only its two
-    // genuinely deployment-local module families.
-    ...FRAMEWORK_RUNTIME_MANIFEST.modules,
-    "operator/invitations",
-    "operator/operator-settings",
-  ],
-  // All standard extensions are framework-owned; no deployment-local extensions.
+  modules: [...FRAMEWORK_RUNTIME_MANIFEST.modules, ...Object.keys(deploymentLocalModules)],
   extensions: [...FRAMEWORK_RUNTIME_MANIFEST.extensions],
 } satisfies CompositionManifest
 
-/** Factory registry keyed by the manifest specifiers above. */
 export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
-  modules: {
-    // Standard package modules owned by @voyant-travel/framework (Workstream B).
-    // The framework's pure singleton factories spread in here; the deployment
-    // appends only its capability-shaped + deployment-local factories below.
-    ...frameworkComposition.modules,
-    // Deployment-local route modules. The route bundles live in the operator
-    // (vendor/demo wiring, agent tooling, Better Auth invitations) and load
-    // lazily; the framework mounts + caches them and bridges request context.
-    "operator/invitations": () => ({
-      module: { name: "invitations" },
-      lazyAdminRoutes: () =>
-        import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
-      lazyPublicRoutes: () =>
-        import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
-    }),
-    "operator/operator-settings": () => ({
-      module: { name: "operator-settings" },
-      lazyRoutes: {
-        paths: [
-          "/v1/admin/settings/*",
-          "/v1/public/operator-profile",
-          "/v1/public/settings/operator",
-        ],
-        load: () =>
-          import("./routes/settings").then((m) => {
-            const app = new Hono()
-            m.mountOperatorSettingsRoutes(app)
-            return app
-          }),
-      },
-    }),
-  },
-  extensions: {
-    // All standard extensions — including the lazy `operator/*` families whose
-    // builders/loaders this deployment injects — are owned by
-    // @voyant-travel/framework (Workstream B, Tiers 3-4).
-    ...frameworkComposition.extensions,
-  },
+  modules: { ...frameworkComposition.modules, ...deploymentLocalModules },
+  extensions: { ...frameworkComposition.extensions },
 }

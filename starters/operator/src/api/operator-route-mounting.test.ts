@@ -15,7 +15,7 @@ import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
 import {
-  buildOperatorCapabilities,
+  buildOperatorProviders,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
@@ -27,7 +27,7 @@ function build() {
   const { modules, extensions } = composeFromManifest(
     OPERATOR_RUNTIME_MANIFEST,
     operatorComposition,
-    buildOperatorCapabilities(),
+    buildOperatorProviders(),
   )
   return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which

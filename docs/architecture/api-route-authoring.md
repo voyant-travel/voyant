@@ -14,6 +14,13 @@ The goal is simple:
 This is not a new routing framework. It is a consistency guide for the Hono
 surface Voyant already has.
 
+Hono is Voyant's first-class HTTP route interface. Packages should expose Hono
+route factories, `HonoModule`s, or `HonoExtension`s rather than framework-specific
+route handlers.
+
+For route ownership and deployment composition rules, see
+[`api-route-ownership-and-composition.md`](./api-route-ownership-and-composition.md).
+
 ## Core Rules
 
 ### 1. Keep the surface split explicit

@@ -1,4 +1,4 @@
-import { createApp } from "@voyant-travel/hono"
+import { createVoyantApp } from "@voyant-travel/framework"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import authHandler, {
@@ -6,11 +6,7 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import {
-  buildOperatorCapabilities,
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
-} from "./composition"
+import { buildOperatorProviders, deploymentLocalModules } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
@@ -35,17 +31,15 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill"
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-// Runtime modules + extensions are DERIVED from the manifest via the
-// composition registry (see ./composition.ts) rather than hand-listed here:
-// `createApp` runs `composeFromManifest(manifest, registry, capabilities)`
-// internally. Mount/hook order follows OPERATOR_RUNTIME_MANIFEST; capabilities
-// (storage, FX, providers, document-download, CRM, …) are gathered in one typed
-// container. `voyant db doctor` cross-checks the manifest against the registry
-// and against voyant.config.ts. See voyant#1608 / #1620.
-export const app = createApp<CloudflareBindings, ReturnType<typeof buildOperatorCapabilities>>({
-  manifest: OPERATOR_RUNTIME_MANIFEST,
-  registry: operatorComposition,
-  capabilities: buildOperatorCapabilities(),
+// The standard module/extension set is owned by @voyant-travel/framework;
+// `createVoyantApp` assembles it (FRAMEWORK_RUNTIME_MANIFEST + frameworkComposition)
+// with this deployment's injected `providers` and its two deployment-local module
+// families (`deploymentLocalModules`), then composes + mounts. The deployment no
+// longer hand-maintains a manifest or registry. See the consolidated-deployments
+// RFC (Workstream B) + voyant#1608 / #1620.
+export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOperatorProviders>>({
+  providers: buildOperatorProviders(),
+  modules: deploymentLocalModules,
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
   //   handshake. Serves all reads and single-statement writes.
