@@ -22,6 +22,9 @@ export {
   type EntryFile,
   type LoadEntryOptions,
   loadEntryFile,
+  runWorkflowBundleBootstrap,
+  type WorkflowBundleBootstrap,
+  type WorkflowBundleBootstrapContext,
 } from "./entry-loader.js"
 export {
   createFsRunRecordStore,

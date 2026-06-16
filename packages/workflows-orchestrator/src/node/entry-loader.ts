@@ -6,8 +6,15 @@ export interface EntryFile {
   exports: Record<string, unknown>
 }
 
+export interface WorkflowBundleBootstrapContext {
+  env: NodeJS.ProcessEnv
+}
+
+export type WorkflowBundleBootstrap = (ctx: WorkflowBundleBootstrapContext) => void | Promise<void>
+
 export interface LoadEntryOptions {
   cacheBust?: boolean
+  runBootstrap?: boolean
 }
 
 export async function loadEntryFile(
@@ -20,6 +27,9 @@ export async function loadEntryFile(
   const url = options.cacheBust ? `${baseUrl}?t=${Date.now()}` : baseUrl
   try {
     const mod = (await import(url)) as Record<string, unknown>
+    if (options.runBootstrap !== false) {
+      await runWorkflowBundleBootstrap(mod)
+    }
     return { exports: mod }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
@@ -29,4 +39,16 @@ export async function loadEntryFile(
         "`voyant dev` on a .ts source to bundle with esbuild first.",
     )
   }
+}
+
+export async function runWorkflowBundleBootstrap(
+  mod: Record<string, unknown>,
+  ctx: WorkflowBundleBootstrapContext = { env: process.env },
+): Promise<void> {
+  const bootstrap = mod.bootstrapWorkflowBundle
+  if (bootstrap === undefined) return
+  if (typeof bootstrap !== "function") {
+    throw new Error("voyant: workflow entry export `bootstrapWorkflowBundle` must be a function")
+  }
+  await (bootstrap as WorkflowBundleBootstrap)(ctx)
 }

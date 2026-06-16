@@ -1,5 +1,11 @@
 import { expireStaleBookingHolds } from "@voyant-travel/bookings/tasks"
 import { createDbClient } from "@voyant-travel/db"
+import {
+  channelAvailabilityPushWorkflow,
+  channelBookingPushWorkflow,
+  channelContentPushWorkflow,
+  setChannelPushDeps,
+} from "@voyant-travel/distribution"
 import { financeService } from "@voyant-travel/finance"
 import { paymentSessions } from "@voyant-travel/finance/schema"
 import {
@@ -15,6 +21,10 @@ import { workflow } from "@voyant-travel/workflows"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  type BookingEngineEnv,
+  getBookingEngineRegistry,
+} from "./api/lib/booking-engine-runtime.js"
 import { closeTerminalBookingPaymentSchedules } from "./api/subscribers/booking-payment-cleanup.js"
 import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
@@ -22,6 +32,21 @@ import { getNotificationTaskRuntime } from "./lib/notifications.js"
 function getDb() {
   return createDbClient(process.env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
 }
+
+let channelPushDepsBootstrapped = false
+
+export function bootstrapWorkflowBundle(): void {
+  if (channelPushDepsBootstrapped) return
+  setChannelPushDeps({
+    db: getDb(),
+    registry: getBookingEngineRegistry(process.env as BookingEngineEnv),
+  })
+  channelPushDepsBootstrapped = true
+}
+
+void channelAvailabilityPushWorkflow
+void channelBookingPushWorkflow
+void channelContentPushWorkflow
 
 workflow<{ productId: string }, { base64: string; filename: string; sizeBytes: number }>({
   id: "products.generate-pdf",
