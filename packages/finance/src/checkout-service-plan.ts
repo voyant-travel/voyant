@@ -14,6 +14,7 @@ export interface CheckoutPolicyOptions {
   defaultCardCollectionTarget?: "schedule" | "invoice"
   defaultReminderCardCollectionTarget?: "schedule" | "invoice"
   defaultBankTransferDocumentType?: "proforma" | "invoice"
+  defaultCardCollectionDocumentType?: "proforma" | "invoice"
   defaultPaymentPlan?: {
     depositMode: "none" | "percentage" | "fixed_amount"
     depositValue: number
@@ -192,7 +193,7 @@ export function resolveDocumentType(
     return options.defaultBankTransferDocumentType ?? "proforma"
   }
   if (target === "invoice") {
-    return "invoice" as const
+    return options.defaultCardCollectionDocumentType ?? "invoice"
   }
   return null
 }
