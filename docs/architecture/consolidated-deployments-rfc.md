@@ -67,23 +67,27 @@ export default createOperatorApp({
 
 Five workstreams, ordered later by risk and dependency.
 
-### A. Framework-wide lockstep versioning — *cheap, decision-led*
+### A. A framework BOM/meta-package (NOT global lockstep) — *cheap, decision-led*
 
-**Current:** per-domain `fixed` groups → a per-domain compatibility matrix (bookings\@X, finance\@Y, legal\@Z).
+**Goal:** a deployment tracks one **framework version** and upgrades atomically, with no per-package compatibility matrix.
 
-**Target:** one framework-wide group so the runtime framework packages move as a single version. A bare `@voyant-travel/*` glob is **wrong** — that namespace also contains React packages, `*-contracts`, plugins, infra (`db`, `hono`, `core`, `utils`), apps, and tooling, which should not be force-bumped or pinned by deployments at the framework version.
+**Do NOT use global lockstep.** Forcing every runtime package to the same version requires **republishing unchanged packages** on every release (to bump their number). npm then fires a publish-notification email per package, so a one-line fix produces 100+ emails to every dev. This was tried in Voyant and abandoned — the per-domain `fixed` groups (`[module, module-react]`) exist precisely to avoid it. Collapsing them into one global group walks straight back into the spam; it is **rejected**.
 
-**Mechanically-defined set, not a glob.** Define the lockstep membership by a *rule the checker can evaluate*, e.g. "every workspace package that exports a `HonoModule`/`HonoExtension` and is **mounted** via `voyant.config` `modules`," and emit it to a committed `release.runtime-packages.generated.json`. **`additionalSchemas` is deliberately excluded:** packages listed only there (e.g. `@voyant-travel/charters`, `@voyant-travel/cruises`) are *migrated-but-not-mounted* optional verticals that still export `HonoModule`s — pulling them into the runtime lockstep would force optional, unmounted verticals to the framework version. They stay on their own per-domain `fixed` cadence and join the lockstep set only if/when a deployment actually mounts them. Then:
+**Use a BOM / meta-package instead** (the Spring/Angular pattern):
 
-```json
-"fixed": [[ /* expanded from release.runtime-packages.generated.json */ ]]
-```
+- Keep runtime packages **independently versioned** — only *changed* packages republish, so a finance fix is ~2–3 publishes, not 100+. No spam.
+- Publish **one thin meta-package** — e.g. `@voyant-travel/framework@X` — whose only content is pinned `dependencies` on the exact tested runtime set:
+  ```json
+  { "name": "@voyant-travel/framework", "version": "2.4.0",
+    "dependencies": { "@voyant-travel/bookings": "0.119.4", "@voyant-travel/finance": "0.104.22", "...": "..." } }
+  ```
+- A deployment depends on the **meta version only**; `voyant upgrade` bumps it, transitively pinning the whole known-good set. The compatibility matrix is resolved *inside* the BOM — the deployment never sees it.
 
-Add a **`check-lockstep-membership` gate**: expand the glob/rule, diff against the committed set, and **fail if a non-runtime package (React/contracts/plugins/infra/apps/tooling) enters the fixed group** or a runtime module is missing. The React/contracts/plugin packages keep their existing per-domain `fixed` pairs or release independently so external consumers pin them on their own cadence.
+**The membership set is mechanically defined** (now feeding the BOM's `dependencies` instead of a `fixed` group): "every workspace package that exports a `HonoModule`/`HonoExtension` and is **mounted** via `voyant.config` `modules`," emitted to a committed `release.runtime-packages.generated.json`. **`additionalSchemas` is excluded** (migrated-but-not-mounted optional verticals like `charters`/`cruises` stay on their own cadence). The `check-lockstep-membership` gate keeps non-runtime packages (`*-react`, `*-contracts`, plugins, infra, apps, tooling) out of the set, so they publish on their own cadence and external consumers pin them independently.
 
-**Tradeoff to decide:** per-domain independence allows shipping one domain without bumping everything; framework-wide lockstep makes deployment upgrades atomic at the cost of more churn per release. Recommendation: **framework-wide lockstep for the runtime-module set only**, defined mechanically as above.
+**Release tooling:** at release time the BOM's `dependencies` are regenerated from `release.runtime-packages.generated.json` at each package's just-published version, and the BOM version bumps. Only the BOM + actually-changed packages publish — no per-package republish, no spam.
 
-**Effort:** low (config + the membership checker + release-process agreement).
+**Effort:** low–medium (the membership checker exists; add BOM generation to the release pipeline + a `voyant upgrade` that bumps the meta).
 
 ### B. `createOperatorApp(config, { providers, extensions })` — *medium*
 
@@ -135,7 +139,7 @@ Do **not** start with per-module migrations. The lower-risk move that removes th
 If deployments need arbitrary module add/remove (not just the standard profile), move to package-owned migrations. This is the heavier model that requires the standalone ADR to fix, concretely:
 
 1. **Stable, version-independent ledger keys.** Key each migration by `(sourceName, tag, contentHash)` — `sourceName` = the package name (e.g. `@voyant-travel/bookings`) or `deployment`, **never the version**. A bump that re-ships historical files (`bookings@1.0/0001` → `bookings@1.1/0001`) must resolve to the *same* key (else every old migration re-runs); `introducedInVersion` is metadata only. `contentHash` (**immutable** once shipped) flags a *changed* migration under a reused tag as a hard error.
-2. **Ordering model.** Drizzle's per-folder journal has no cross-package order. Choose: **release epoch + dependency-topological order + in-package sequence** — order by `(release-epoch, topo-rank of the owning module, in-package sequence)`. Lockstep (Workstream A) supplies the shared release epoch.
+2. **Ordering model.** Drizzle's per-folder journal has no cross-package order. Choose: **release epoch + dependency-topological order + in-package sequence** — order by `(release-epoch, topo-rank of the owning module, in-package sequence)`. The BOM/framework version (Workstream A) supplies the shared release epoch.
 3. **Deployment-owned schema stays deployment-owned, anchored last.** Starter-local `schemas` (`src/db/schema.ts`) and the **generated link tables** (`drizzle.links.generated.ts`) span modules and can't be package-owned; they remain a deployment source applied *after* the framework set (links reference module tables).
 4. **Custom-migration anchoring.** `src/migrations` anchor after the framework set by default, optionally pinned after a specific package's migrations for backfills.
 5. **Aggregate replay as the oracle.** Keep the aggregate `drizzle.schemas.generated.ts`: an **aggregate replay test** applies *all* collected migrations onto a fresh DB and asserts equality with the aggregate-schema snapshot — catching cross-package drift per-module generation can't.
@@ -182,12 +186,12 @@ A single preflight that closes the two cheapest risks and makes upgrades safe to
 
 ## Upgrade path (the actual ask)
 
-- **Standard (80%):** `voyant upgrade && voyant db migrate && voyant doctor`. `voyant upgrade` bumps **exactly the runtime-package set** (from `release.runtime-packages.generated.json`) to one framework version — *not* a `@voyant-travel/*` glob, which would also drag in plugins, SDKs, React/UI, and CLI tooling that deployments pin on their own cadence (the same glob the lockstep rule rejects). No code merge — config + provider wiring are stable contracts; framework changes arrive as package updates (workstream A makes the version bump atomic; D makes migrations arrive with the packages).
+- **Standard (80%):** `voyant upgrade && voyant db migrate && voyant doctor`. `voyant upgrade` bumps **the framework BOM** (`@voyant-travel/framework`) to one version, which transitively pins the runtime-package set (`release.runtime-packages.generated.json`) — *not* a `@voyant-travel/*` glob, which would also drag in plugins, SDKs, React/UI, and CLI tooling that deployments pin on their own cadence. No code merge — config + provider wiring are stable contracts; framework changes arrive as package updates (workstream A makes the version bump atomic; D makes migrations arrive with the packages).
 - **Custom (20%):** identical, then reconcile only *their own* `src/` extensions if a seam contract changed — and semver (A) signals when. They never merge framework internals because they hold none.
 
 ## Phased plan
 
-1. **Phase 0 — `voyant doctor` + framework-wide lockstep (A + the doctor).** Cheap, independent, immediately de-risks Acme-class engagements. Decide the lockstep tradeoff and collapse the `fixed` groups.
+1. **Phase 0 — `voyant doctor` + framework BOM (A + the doctor).** Cheap, independent, immediately de-risks Acme-class engagements. Introduce the `@voyant-travel/framework` meta-package + BOM-generation in the release pipeline (NOT collapsed `fixed` groups — those re-introduce npm-publish spam).
 2. **Phase 1 — chrome derivation + `src/admin` discovery (C).** Removes the biggest silent-drift source; modules ship nav metadata; the hand-wired maps leave the deployment.
 3. **Phase 2 — `createOperatorApp` (B).** Relocate the config-driven composition into the framework; deployment collapses to config + providers + extensions.
 4. **Phase 3 — app-owned aggregate migration bundle (D.1).** The recommended migration step: move the existing single aggregate history into the framework package for the standard profile; deployments apply framework-bundle-first, then `src/migrations`. Preserves the single-history discipline, removes the fork upgrade tax, and needs only a *light* amendment to #1608 — no heavy ADR. This is what makes "bump + migrate" true for the 80% standard profile.
@@ -199,7 +203,7 @@ The heavy migration step (D.2) is deliberately last and optional; D.1 delivers t
 ## Risks & open questions
 
 - **Migrations** — D.1 (app-owned aggregate bundle) is low-risk and unblocks the standard-profile upgrade without a heavy decision. The blocker is **D.2** (package-owned), needed only for arbitrary module subsets: it changes the source of truth set by #1608 and needs a **standalone ADR** (supersede or reject) before any ticket — ordering (release-epoch + topo + sequence), version-independent ledger keys + hash immutability, deployment-owned-schema anchoring, and the aggregate replay oracle all decided there.
-- **Lockstep tradeoff** (A) — does the team accept losing per-domain independent releases? (Recommendation: yes for runtime modules.)
+- **BOM approach** (A) — the meta-package preserves per-domain independent releases (no spam) while giving atomic upgrades. Open: the meta-package name (`@voyant-travel/framework`?) and wiring BOM-`dependencies` regeneration into the release pipeline. (Global lockstep is rejected — it was tried and spammed every dev with 100+ npm emails per release.)
 - **Custom-fields design** — recommendation set (registered extension-field API + typed JSONB; side tables only for relational/high-cardinality). Open: exact registry shape and the export/invoice/search inclusion hooks.
 - **Transition** — keep the combined-folder path working, and add a **baseline/import** step: an existing deployment marks the framework migrations "through version X" as already represented (so D.1/D.2 don't try to re-apply history it already has), and **`voyant doctor` proves schema parity *before* switching runners**. Both the legacy and new paths coexist during the cutover so forks aren't stranded.
 - **Backwards compatibility for existing forks** — provide a `voyant migrate-deployment` codemod that converts a fork into the thin `createOperatorApp` shape.
