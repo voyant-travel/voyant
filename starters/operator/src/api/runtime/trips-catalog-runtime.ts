@@ -1,37 +1,40 @@
-import {
-  toCatalogReservationBookingOriginInput,
-  upsertBookingOrigin,
-} from "@voyant-travel/bookings"
-import {
-  type BookEntityResult,
-  type BookingDraftV1,
-  bookEntity,
-  bookingDraftV1,
-  cancelEntity,
-  type PricingBreakdownV1,
-  type QuoteEntityResult,
-  type QuoteResponseV1,
-  quoteEntity,
-  quoteResponseV1,
-} from "@voyant-travel/catalog/booking-engine"
-import type { PricingBasis } from "@voyant-travel/catalog/snapshot/schema"
+/**
+ * Operator (deployment) wiring for catalog-backed trip components.
+ *
+ * The reusable catalog-component orchestration (quote / reserve-with-origin /
+ * release / cancel) now lives in `@voyant-travel/trips/catalog-component`. This
+ * file supplies the deployment-specific dependencies the package can't import
+ * statically:
+ *   - the process-local source-adapter + owned-handler registries,
+ *   - the commerce promotion evaluator (commerce → quotes → trips would cycle),
+ *   - the operator's customer-facing tax recompute (`applyOperatorTaxToQuoteResult`),
+ *   - the catalog checkout hand-off (`startCatalogCheckout`, Netopia wiring).
+ *
+ * Each exported `*Component` function keeps the `(c, input)` signature the trips
+ * route wiring (`trips-runtime.ts`) already imports.
+ */
+
+import type { QuoteResponseV1 } from "@voyant-travel/catalog/booking-engine"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import {
-  type CancelComponentInput,
-  type CancelComponentResult,
-  type CatalogComponentQuoteInput,
-  type ComponentCancellationPreview,
-  type ComponentCancellationPreviewInput,
-  type ComponentCheckoutInput,
-  type ComponentCheckoutResult,
-  type ReleaseReservedComponentInput,
-  type ReleaseReservedComponentResult,
-  type ReserveComponentInput,
-  type ReserveComponentResult,
-  toBookingDraftV1,
+import type {
+  CancelComponentInput,
+  CancelComponentResult,
+  CatalogComponentQuoteInput,
+  ComponentCancellationPreview,
+  ComponentCancellationPreviewInput,
+  ComponentCheckoutInput,
+  ComponentCheckoutResult,
+  ReleaseReservedComponentInput,
+  ReleaseReservedComponentResult,
+  ReserveComponentInput,
+  ReserveComponentResult,
 } from "@voyant-travel/trips"
+import {
+  createCatalogComponentAdapter,
+  previewCancellation,
+} from "@voyant-travel/trips/catalog-component"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import {
@@ -46,229 +49,58 @@ import {
 } from "../routes/catalog-checkout"
 import { applyOperatorTaxToQuoteResult } from "./catalog-booking-runtime"
 
-export async function quoteCatalogComponent(
+/**
+ * Build the trips catalog-component adapter for a request, injecting the
+ * deployment-specific registries / readers / checkout wiring.
+ */
+function catalogComponentAdapter(c: Context) {
+  const db = getDb(c)
+  return createCatalogComponentAdapter({
+    db,
+    registry: getBookingEngineRegistryFromContext(c),
+    ownedHandlers: getOwnedBookingHandlerRegistryFromContext(c),
+    evaluatePromotions: createCatalogPromotionEvaluator(db),
+    transformQuoteResult: (result, entityModule, entityId, sourceKind) =>
+      applyOperatorTaxToQuoteResult(db, result, entityModule, entityId, sourceKind),
+    adapterContext: (connectionId) => adapterContext(c, connectionId),
+    startCheckout: (input) => startComponentCheckout(c, input),
+  })
+}
+
+export function quoteCatalogComponent(
   c: Context,
   input: CatalogComponentQuoteInput,
 ): Promise<QuoteResponseV1> {
-  const db = getDb(c)
-  const component = input.component
-  const entityModule = required(component.entityModule, "component.entityModule")
-  const entityId = required(component.entityId, "component.entityId")
-  const sourceKind = required(component.sourceKind, "component.sourceKind")
-  const result = await quoteEntity(
-    db,
-    {
-      registry: getBookingEngineRegistryFromContext(c),
-      ownedHandlers: getOwnedBookingHandlerRegistryFromContext(c),
-      evaluatePromotions: createCatalogPromotionEvaluator(db),
-    },
-    {
-      entityModule,
-      entityId,
-      sourceKind,
-      sourceConnectionId: component.sourceConnectionId ?? undefined,
-      sourceRef: component.sourceRef ?? undefined,
-      scope: {
-        locale: input.scope.locale ?? "en-GB",
-        audience: input.scope.audience ?? "staff",
-        market: input.scope.market ?? "default",
-        currency: input.scope.currency,
-      },
-      parameters: engineParametersFromBookingDraft(undefined, input.bookingDraft),
-      ttlMs: input.ttlMs,
-      adapterContext: adapterContext(c, component.sourceConnectionId ?? sourceKind),
-    },
-  )
-  const transformed = await applyOperatorTaxToQuoteResult(
-    db,
-    result,
-    entityModule,
-    entityId,
-    sourceKind,
-  )
-  return serializeQuoteResult(transformed)
+  return catalogComponentAdapter(c).quote(input)
 }
 
-export async function reserveCatalogComponent(
+export function reserveCatalogComponent(
   c: Context,
   input: ReserveComponentInput,
 ): Promise<ReserveComponentResult> {
-  const db = getDb(c)
-  const component = input.component
-  const quoteId = required(component.catalogQuoteId, "component.catalogQuoteId")
-  const bookingDraft = bookingDraftFromComponent(component)
-  // The trips can start underlying bookings in draft status. When the
-  // operator leaves that option unchecked, the resulting booking lands in
-  // `awaiting_payment`. The owned products handler reads this off
-  // `request.parameters.initialStatus` and forwards it to the bridge.
-  const createAsDraft = readBoolean(input.envelope.constraints?.createAsDraft)
-  const initialStatus = createAsDraft ? "draft" : "awaiting_payment"
-  const result = await bookEntity(
-    db,
-    {
-      registry: getBookingEngineRegistryFromContext(c),
-      ownedHandlers: getOwnedBookingHandlerRegistryFromContext(c),
-    },
-    {
-      quoteId,
-      party: {
-        draft: bookingDraft,
-        travelerParty: input.envelope.travelerParty,
-      },
-      paymentIntent: { type: "hold" },
-      parameters: { ...engineParametersFromBookingDraft(undefined, bookingDraft), initialStatus },
-      idempotencyKey: componentReserveIdempotencyKey(component.id, quoteId),
-      adapterContext: adapterContext(c, component.sourceConnectionId ?? component.sourceKind),
-    },
-  )
-
-  if (result.status === "failed") {
-    throw new Error("component_reservation_failed")
-  }
-
-  const orderRef = result.orderRef || result.snapshotId
-  if (result.bookingId) {
-    await upsertBookingOrigin(
-      db,
-      toCatalogReservationBookingOriginInput({
-        bookingId: result.bookingId,
-        tripEnvelopeId: input.envelope.id,
-        tripComponentId: component.id,
-        reservationPlanId: input.reservationPlanId,
-        catalogPriceResponseId: quoteId,
-        catalogSnapshotId: result.snapshotId,
-        providerSourceKind: component.sourceKind,
-        providerSourceConnectionId: component.sourceConnectionId,
-        providerSourceRef: component.sourceRef,
-        providerOrderRef: orderRef,
-        metadata: {
-          entityModule: component.entityModule,
-          entityId: component.entityId,
-          createAsDraft,
-        },
-      }),
-    )
-  }
-
-  return {
-    status: bookStatusToComponentStatus(result.status),
-    bookingId: result.bookingId,
-    orderId: orderRef,
-    providerRef: orderRef,
-    supplierRef: orderRef,
-    warnings: result.status === "held" ? undefined : [`booking_engine_status:${result.status}`],
-  }
+  return catalogComponentAdapter(c).reserve(input)
 }
 
-export async function releaseReservedComponent(
+export function releaseReservedComponent(
   c: Context,
   input: ReleaseReservedComponentInput,
 ): Promise<ReleaseReservedComponentResult> {
-  const component = input.component
-  if (!component.bookingId || !component.entityModule || !component.entityId) {
-    return { released: false, reason: "missing_component_booking_ref" }
-  }
-
-  try {
-    const result = await cancelEntity(
-      getDb(c),
-      { registry: getBookingEngineRegistryFromContext(c) },
-      {
-        bookingId: component.bookingId,
-        entityModule: component.entityModule,
-        entityId: component.entityId,
-        reason: "Trips compensation",
-        adapterContext: adapterContext(c, component.sourceConnectionId ?? component.sourceKind),
-      },
-    )
-    return {
-      released: result.status === "cancelled",
-      reason: result.status === "refused" ? "cancel_refused" : undefined,
-    }
-  } catch (error) {
-    return {
-      released: false,
-      reason: error instanceof Error ? error.message : "release_failed",
-    }
-  }
+  return catalogComponentAdapter(c).release(input)
 }
 
-export async function previewComponentCancellation(
+export function previewComponentCancellation(
   input: ComponentCancellationPreviewInput,
 ): Promise<ComponentCancellationPreview> {
-  const component = input.component
-  if (!component.bookingId || !component.entityModule || !component.entityId) {
-    return {
-      componentId: component.id,
-      action: "staff_remediation",
-      currentStatus: component.status,
-      staffActionRequired: true,
-      reason: "missing_component_booking_ref",
-    }
-  }
-
-  return {
-    componentId: component.id,
-    action: "cancel",
-    currentStatus: component.status,
-    staffActionRequired: false,
-    refundAmountCents: 0,
-    refundCurrency: component.componentCurrency ?? undefined,
-    penaltyAmountCents: 0,
-    policySummary:
-      "Supplier cancellation preview is not available; cancellation result is authoritative.",
-    snapshot: {
-      bookingId: component.bookingId,
-      entityModule: component.entityModule,
-      entityId: component.entityId,
-      sourceKind: component.sourceKind,
-    },
-  }
+  // Pure preview — no db / registry reads (supplier cancellation previews
+  // aren't available; the cancellation result is authoritative).
+  return previewCancellation(input)
 }
 
-export async function cancelComponent(
+export function cancelComponent(
   c: Context,
   input: CancelComponentInput,
 ): Promise<CancelComponentResult> {
-  const component = input.component
-  if (!component.bookingId || !component.entityModule || !component.entityId) {
-    return { status: "refused", reason: "missing_component_booking_ref" }
-  }
-
-  const result = await cancelEntity(
-    getDb(c),
-    { registry: getBookingEngineRegistryFromContext(c) },
-    {
-      bookingId: component.bookingId,
-      entityModule: component.entityModule,
-      entityId: component.entityId,
-      reason: input.reason,
-      adapterContext: adapterContext(c, component.sourceConnectionId ?? component.sourceKind),
-    },
-  )
-
-  // Catalog adapters can return "pending" when an async cancel was submitted
-  // (email/partner-portal/batch) and the inventory hasn't been released yet.
-  // The trips's `CancelComponentResult` doesn't model that state;
-  // surface it as `refused` with a reason so the trip lands in remediation
-  // and the operator follows up out-of-band. `pending_channel` flows through
-  // the reason so the UI can show where the request went.
-  const status: CancelComponentResult["status"] =
-    result.status === "pending" ? "refused" : result.status
-  const reason =
-    result.status === "cancelled"
-      ? undefined
-      : result.status === "pending"
-        ? `cancel_pending${result.pendingChannel ? `:${result.pendingChannel}` : ""}`
-        : `cancel_${result.status}`
-
-  return {
-    status,
-    refundAmountCents: result.refundAmount,
-    refundCurrency: result.refundCurrency,
-    reason,
-    snapshot: { snapshotId: result.snapshotId },
-  }
+  return catalogComponentAdapter(c).cancel(input)
 }
 
 export async function startComponentCheckout(
@@ -336,147 +168,11 @@ function checkoutResultToComponentResult(
   }
 }
 
-function bookingDraftFromComponent(
-  component: Parameters<typeof toBookingDraftV1>[0] & { metadata: Record<string, unknown> },
-): BookingDraftV1 {
-  const metadata = component.metadata
-  const candidate = metadata.bookingDraftV1 ?? metadata.bookingDraft
-  if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
-    return bookingDraftV1.parse(candidate)
-  }
-  return toBookingDraftV1(component)
-}
-
-function serializeQuoteResult(result: QuoteEntityResult): QuoteResponseV1 {
-  return quoteResponseV1.parse({
-    ...result,
-    quotedAt: result.quotedAt.toISOString(),
-    expiresAt: result.expiresAt.toISOString(),
-    pricing: toPricingBreakdownV1(result.pricing),
-  })
-}
-
-function toPricingBreakdownV1(basis: PricingBasis | undefined): PricingBreakdownV1 | undefined {
-  if (!basis) return undefined
-  if (basis.breakdown) {
-    const breakdown = basis.breakdown as PricingBreakdownV1
-    if (breakdown.currency && Array.isArray(breakdown.lines) && Array.isArray(breakdown.taxes)) {
-      return breakdown
-    }
-  }
-
-  const lines: PricingBreakdownV1["lines"] = [
-    {
-      kind: "base",
-      label: "Base",
-      quantity: 1,
-      unitAmount: basis.base_amount,
-      totalAmount: basis.base_amount,
-    },
-  ]
-  if (basis.fees > 0) {
-    lines.push({ kind: "fee", label: "Fees", unitAmount: basis.fees, totalAmount: basis.fees })
-  }
-  if (basis.surcharges > 0) {
-    lines.push({
-      kind: "supplement",
-      label: "Surcharges",
-      unitAmount: basis.surcharges,
-      totalAmount: basis.surcharges,
-    })
-  }
-
-  const subtotal = basis.base_amount + basis.fees + basis.surcharges
-  return {
-    currency: basis.currency,
-    lines,
-    taxes:
-      basis.taxes > 0
-        ? [
-            {
-              code: "tax",
-              label: "Tax",
-              rate: 0,
-              amount: basis.taxes,
-              base: basis.base_amount,
-            },
-          ]
-        : [],
-    subtotal,
-    taxTotal: basis.taxes,
-    total: subtotal + basis.taxes,
-  }
-}
-
-function bookStatusToComponentStatus(status: BookEntityResult["status"]): "held" | "booked" {
-  return status === "held" ? "held" : "booked"
-}
-
-function componentReserveIdempotencyKey(componentId: string, quoteId: string): string {
-  return `trips:${componentId}:${quoteId}`.slice(0, 128)
-}
-
 function adapterContext(c: Context, connectionId: string | null | undefined) {
   return {
     connection_id: connectionId ?? "engine",
     correlation_id: c.req.header("x-request-id") ?? cryptoRandom(),
   }
-}
-
-function engineParametersFromBookingDraft(
-  parameters: Record<string, unknown> | undefined,
-  bookingDraftPayload: unknown,
-): Record<string, unknown> {
-  const bookingDraft = asRecord(bookingDraftPayload)
-  const configure = asRecord(bookingDraft?.configure)
-  const departureSlotId = stringValue(configure?.departureSlotId)
-  const paxCount = sumBookingDraftPax(configure?.pax)
-  const next: Record<string, unknown> = {
-    ...(parameters ?? {}),
-    ...(bookingDraft ? { draft: bookingDraft } : {}),
-  }
-
-  if (departureSlotId) {
-    if (next.departureSlotId == null) next.departureSlotId = departureSlotId
-    if (next.departure_id == null) next.departure_id = departureSlotId
-    if (next.slotId == null) next.slotId = departureSlotId
-  }
-  if (paxCount > 0 && next.paxCount == null) {
-    next.paxCount = paxCount
-  }
-
-  const promotionCode = stringValue(bookingDraft?.promotionCode)
-  if (promotionCode && next.promotionCode == null) {
-    next.promotionCode = promotionCode
-  }
-
-  return next
-}
-
-function readBoolean(value: unknown): boolean {
-  return value === true
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined
-}
-
-function stringValue(value: unknown): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null
-}
-
-function sumBookingDraftPax(value: unknown): number {
-  const pax = asRecord(value)
-  if (!pax) return 0
-  let total = 0
-  for (const count of Object.values(pax)) {
-    if (typeof count === "number" && Number.isFinite(count) && count > 0) {
-      total += count
-    }
-  }
-  return total
 }
 
 function getDb(c: Context): AnyDrizzleDb {

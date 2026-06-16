@@ -3221,6 +3221,9 @@ importers:
 
   packages/trips:
     dependencies:
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3233,6 +3236,9 @@ importers:
       '@voyant-travel/finance':
         specifier: workspace:^
         version: link:../finance
+      '@voyant-travel/flights':
+        specifier: workspace:^
+        version: link:../flights
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
