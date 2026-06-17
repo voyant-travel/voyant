@@ -84,7 +84,18 @@ try {
       console.log(`  ${entityType}: backfilled ${n} ${table} row(s)`)
     }
     console.log(`\nBackfill complete (${total} entity row(s) updated).`)
-    console.log("Verify, then drop custom_field_values in the retirement migration.")
+
+    if (process.argv.includes("--clear")) {
+      // Values are now on the entity rows — empty the side table so the guarded
+      // retirement migration (DROP custom_field_values) can proceed.
+      const cleared = await client.query("DELETE FROM custom_field_values")
+      console.log(`Cleared ${cleared.rowCount ?? 0} custom_field_values row(s).`)
+    } else {
+      console.log(
+        "Verify the entity custom_fields columns, then re-run with --clear to empty\n" +
+          "custom_field_values so the retirement migration can drop it.",
+      )
+    }
   }
 } finally {
   await client.end()

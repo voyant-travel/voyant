@@ -108,6 +108,12 @@ column on the entity. `custom_field_values` is retired.**
      current`), run once during the upgrade.
 4. **Retire `custom_field_values`** + export/invoice/search consume
    `customFieldsVisibleIn`.
+   - 4a — table removed from the schema; **guarded** DROP migration (bundle
+     `0004`) that RAISES if the table still has rows, so a deployment that hasn't
+     run the backfill fails the migration instead of losing data. The merge flow
+     now merges `custom_fields` instead of value rows; backfill gains `--clear`.
+     ✅ landed.
+   - 4b — export / invoice / search consume `customFieldsVisibleIn` (pending).
 
 ## Consequences
 
