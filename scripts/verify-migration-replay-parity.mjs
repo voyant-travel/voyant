@@ -55,19 +55,32 @@ function loadFolder(folder) {
 }
 
 async function applyFolders(client, label, folders, { tolerateDropDeps = false } = {}) {
+  const skipped = []
   for (const folder of folders) {
     for (const stmt of loadFolder(folder)) {
       try {
         await client.query(stmt)
       } catch (err) {
-        // The legacy history has retired-table DROPs without CASCADE that only
-        // replay cleanly because of out-of-journal-order application on the real
-        // DB (e.g. 0068's `DROP TABLE orders`). For the *canonical legacy replay*
-        // we retry such DROPs with CASCADE — the end-state is identical (the
-        // dependent FKs are gone in the current schema anyway).
-        if (tolerateDropDeps && /^DROP TABLE/i.test(stmt.trim()) && /depend/i.test(err.message)) {
-          await client.query(stmt.replace(/;?\s*$/, " CASCADE;"))
-          continue
+        // The legacy history isn't cleanly fresh-replayable — it has idempotent
+        // cleanup statements that only worked because of out-of-journal-order
+        // application on the real DB. For the *canonical legacy replay* (the
+        // comparison target — the legacy folder is retired by the cutover) we
+        // tolerate these, since none change the final schema:
+        //   • a retired-table `DROP TABLE` with dependents → retry with CASCADE
+        //     (e.g. 0068 `DROP TABLE orders`; the dependent FKs are gone in the
+        //     current schema anyway);
+        //   • an `IF EXISTS`-style `DROP`/`ALTER … DROP` against a missing
+        //     relation → skip (the "drop if present" intent is already satisfied).
+        const trimmed = stmt.trim()
+        if (tolerateDropDeps) {
+          if (/^DROP TABLE/i.test(trimmed) && /depend/i.test(err.message)) {
+            await client.query(trimmed.replace(/;?\s*$/, " CASCADE;"))
+            continue
+          }
+          if (/^(DROP|ALTER)\b/i.test(trimmed) && /does not exist/i.test(err.message)) {
+            skipped.push(trimmed.split("\n")[0])
+            continue
+          }
         }
         const first = stmt.split("\n")[0]
         throw new Error(
@@ -76,6 +89,9 @@ async function applyFolders(client, label, folders, { tolerateDropDeps = false }
         )
       }
     }
+  }
+  if (skipped.length) {
+    console.log(`  (${label}: tolerated ${skipped.length} idempotent-cleanup statement(s) on replay)`)
   }
 }
 
