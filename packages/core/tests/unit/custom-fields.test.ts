@@ -6,6 +6,7 @@ import {
   customFieldsFromGlob,
   customFieldsVisibleIn,
   defineCustomField,
+  mergeCustomFieldDefinitions,
   validateCustomFields,
 } from "../../src/custom-fields.js"
 
@@ -157,5 +158,59 @@ describe("customFieldsFromGlob", () => {
     expect(() => customFieldsFromGlob({ "../custom-fields/x.ts": { named: 1 } })).toThrow(
       /no default export/,
     )
+  })
+})
+
+describe("validateCustomFields — superset types", () => {
+  const reg = createCustomFieldRegistry([
+    { entity: "e", key: "tags", type: "multiselect", label: "Tags", options: ["a", "b", "c"] },
+    { entity: "e", key: "price", type: "monetary", label: "Price" },
+    { entity: "e", key: "meta", type: "json", label: "Meta" },
+  ])
+
+  it("multiselect accepts a subset of options, rejects an unknown member", () => {
+    expect(validateCustomFields(reg, "e", { tags: ["a", "c"] }).ok).toBe(true)
+    expect(validateCustomFields(reg, "e", { tags: ["a", "z"] }).ok).toBe(false)
+    expect(validateCustomFields(reg, "e", { tags: "a" }).ok).toBe(false)
+  })
+
+  it("monetary requires { amountCents:int, currency:3-letter }", () => {
+    expect(
+      validateCustomFields(reg, "e", { price: { amountCents: 1500, currency: "EUR" } }).ok,
+    ).toBe(true)
+    expect(
+      validateCustomFields(reg, "e", { price: { amountCents: 1.5, currency: "EUR" } }).ok,
+    ).toBe(false)
+    expect(
+      validateCustomFields(reg, "e", { price: { amountCents: 10, currency: "EURO" } }).ok,
+    ).toBe(false)
+  })
+
+  it("json accepts arbitrary objects/arrays", () => {
+    expect(validateCustomFields(reg, "e", { meta: { a: 1, b: [2] } }).ok).toBe(true)
+    expect(validateCustomFields(reg, "e", { meta: [1, 2, 3] }).ok).toBe(true)
+  })
+})
+
+describe("mergeCustomFieldDefinitions", () => {
+  const code: CustomFieldDefinition[] = [
+    { entity: "person", key: "tier", type: "select", label: "Tier (code)", options: ["gold"] },
+  ]
+  const db: CustomFieldDefinition[] = [
+    { entity: "person", key: "tier", type: "text", label: "Tier (db)" },
+    { entity: "person", key: "nickname", type: "text", label: "Nickname" },
+  ]
+
+  it("dedupes by (entity,key) with the earlier source winning", () => {
+    const shadows: string[] = []
+    const merged = mergeCustomFieldDefinitions([code, db], (s) => shadows.push(s.label))
+    const tier = merged.find((d) => d.key === "tier")
+    expect(tier?.label).toBe("Tier (code)") // code wins
+    expect(merged.map((d) => d.key).sort()).toEqual(["nickname", "tier"])
+    expect(shadows).toEqual(["Tier (db)"]) // db tier shadowed
+  })
+
+  it("produces a list a registry accepts (no duplicate throw)", () => {
+    expect(() => createCustomFieldRegistry(mergeCustomFieldDefinitions([code, db]))).not.toThrow()
   })
 })

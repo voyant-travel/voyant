@@ -20,8 +20,31 @@
  * in `@voyant-travel/core` and be imported anywhere.
  */
 
-/** The supported scalar types a custom field can hold. */
-export type CustomFieldType = "text" | "number" | "boolean" | "date" | "select"
+/**
+ * The supported types a custom field can hold — the canonical superset across
+ * code-declared and runtime (DB-defined) fields (see the custom-fields
+ * unification ADR). Runtime equivalents map in: `varchar`→`text`, `double`→
+ * `number`, `enum`→`select`, `set`→`multiselect`, `address`/`phone`→`json`.
+ */
+export type CustomFieldType =
+  | "text"
+  | "number"
+  | "boolean"
+  | "date"
+  /** One of `options`. */
+  | "select"
+  /** A subset of `options`, stored as `string[]`. */
+  | "multiselect"
+  /** Money as `{ amountCents: number, currency: string }` (ISO-4217). */
+  | "monetary"
+  /** Arbitrary JSON (object/array) — also the home for `address`/`phone`. */
+  | "json"
+
+/** A monetary custom-field value: integer minor units + an ISO-4217 currency. */
+export interface CustomFieldMonetaryValue {
+  amountCents: number
+  currency: string
+}
 
 /**
  * Per-channel visibility. Defaults (when a channel is unset) are deliberately
@@ -110,6 +133,35 @@ export function createCustomFieldRegistry(
   }
 }
 
+/**
+ * Merge custom-field declarations from several sources into one duplicate-free
+ * list (feed it to {@link createCustomFieldRegistry}). On a `(entity, key)`
+ * collision the **earlier** source wins — pass code-declared fields before
+ * runtime/DB-defined ones so the framework contract is authoritative. The
+ * `onShadow` callback (if given) is notified of each dropped collision.
+ *
+ * The unification's single registry is built as
+ * `createCustomFieldRegistry(mergeCustomFieldDefinitions(codeFields, dbFields))`.
+ */
+export function mergeCustomFieldDefinitions(
+  sources: ReadonlyArray<ReadonlyArray<CustomFieldDefinition>>,
+  onShadow?: (shadowed: CustomFieldDefinition, winner: CustomFieldDefinition) => void,
+): CustomFieldDefinition[] {
+  const winners = new Map<string, CustomFieldDefinition>()
+  for (const source of sources) {
+    for (const def of source) {
+      const id = `${def.entity}.${def.key}`
+      const existing = winners.get(id)
+      if (existing) {
+        onShadow?.(def, existing)
+        continue
+      }
+      winners.set(id, def)
+    }
+  }
+  return [...winners.values()]
+}
+
 /** Fields of `entity` visible in `channel` (export / invoice / search). */
 export function customFieldsVisibleIn(
   registry: CustomFieldRegistry,
@@ -154,6 +206,31 @@ function checkType(def: CustomFieldDefinition, value: unknown): string | null {
       return typeof value === "string" && (def.options ?? []).includes(value)
         ? null
         : `must be one of: ${(def.options ?? []).join(", ")}`
+    case "multiselect": {
+      const allowed = def.options ?? []
+      if (
+        !Array.isArray(value) ||
+        value.some((v) => typeof v !== "string" || !allowed.includes(v))
+      ) {
+        return `must be a subset of: ${allowed.join(", ")}`
+      }
+      return null
+    }
+    case "monetary": {
+      const v = value as Partial<CustomFieldMonetaryValue>
+      const ok =
+        typeof value === "object" &&
+        value !== null &&
+        typeof v.amountCents === "number" &&
+        Number.isInteger(v.amountCents) &&
+        typeof v.currency === "string" &&
+        v.currency.length === 3
+      return ok ? null : "must be { amountCents: integer, currency: 3-letter code }"
+    }
+    case "json":
+      // Arbitrary JSON (incl. address/phone). Reject only `undefined`; `null`
+      // is already handled as "omitted" by the caller.
+      return value === undefined ? "must be a JSON value" : null
   }
 }
 

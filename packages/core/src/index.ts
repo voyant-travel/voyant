@@ -15,6 +15,7 @@ export { createContainer } from "./container.js"
 export type {
   CustomFieldDefinition,
   CustomFieldError,
+  CustomFieldMonetaryValue,
   CustomFieldRegistry,
   CustomFieldType,
   CustomFieldValidationResult,
@@ -25,6 +26,7 @@ export {
   customFieldsFromGlob,
   customFieldsVisibleIn,
   defineCustomField,
+  mergeCustomFieldDefinitions,
   validateCustomFields,
 } from "./custom-fields.js"
 export type {
