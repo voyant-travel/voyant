@@ -29,10 +29,6 @@ import type {
   CompositionRegistry,
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
-import {
-  resolveBookingTaxSettings,
-  updateBookingTaxSettings,
-} from "@voyant-travel/operator-settings"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
@@ -122,8 +118,6 @@ export function buildOperatorProviders(): OperatorCapabilities {
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: createRelationshipsStorefrontIntakePersistence(),
     netopiaCheckoutStarter: createNetopiaCheckoutStarter(),
-    resolveBookingTaxSettings,
-    updateBookingTaxSettings,
     createChannelPushExtension,
     // Lazy route-bundle loaders for the `operator/*` standard families — each
     // wires this deployment's providers into the package-owned route bundle.

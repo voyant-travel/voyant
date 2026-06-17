@@ -1900,6 +1900,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyant-travel/operator-settings':
+        specifier: workspace:*
+        version: link:../operator-settings
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
