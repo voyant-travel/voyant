@@ -28,6 +28,7 @@ import {
 } from "@voyant-travel/finance"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
+import { resolveOperatorDefaultPaymentPolicy } from "@voyant-travel/operator-settings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { withDbFromEnv } from "../lib/db"
@@ -41,7 +42,6 @@ import {
   resolveSupplierPolicyForEntity,
   stampPolicySourceOnBooking,
 } from "../runtime/booking-payment-policy-runtime"
-import { resolveOperatorDefaultPaymentPolicy } from "./settings"
 
 interface BookingConfirmedPayload {
   bookingId: string

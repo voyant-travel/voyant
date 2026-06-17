@@ -29,17 +29,19 @@ import type {
   CompositionRegistry,
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
+import {
+  resolveBookingTaxSettings,
+  updateBookingTaxSettings,
+} from "@voyant-travel/operator-settings"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
-
 import { resolveNotificationProviders } from "../lib/notifications"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createBookingScheduleExtension } from "./routes/booking-schedule"
 import { createChannelPushExtension } from "./routes/channel-push"
 import { createOperatorQuoteVersionSnapshotExtension } from "./routes/quote-version-snapshot-routes"
-import { resolveBookingTaxSettings, updateBookingTaxSettings } from "./routes/settings"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-runtime"
 import {
   createOperatorBookingPiiService,
@@ -161,7 +163,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
           ] = await Promise.all([
             import("@voyant-travel/commerce/checkout"),
             import("./runtime/operator-runtime-adapter"),
-            import("./routes/settings"),
+            import("@voyant-travel/operator-settings"),
           ])
           const result = await rebuildBookingItemTaxLines(
             operatorPostgresDb(c.get("db")),

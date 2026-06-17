@@ -11,7 +11,10 @@
  */
 import type { AutoGenerateContractOptions } from "@voyant-travel/legal"
 import { buildContractVariableBindings } from "@voyant-travel/legal/contract-variables"
-import { getOperatorPaymentInstructions, getOperatorProfile } from "../routes/settings"
+import {
+  getOperatorPaymentInstructions,
+  getOperatorProfile,
+} from "@voyant-travel/operator-settings"
 import { readPolicySourceFromInternalNotes } from "./booking-payment-policy-runtime"
 
 export const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"

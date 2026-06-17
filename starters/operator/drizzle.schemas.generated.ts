@@ -24,6 +24,6 @@ export const schema = [
   "../../packages/accommodations/src/schema.ts",
   "../../packages/charters/src/schema.ts",
   "../../packages/cruises/src/schema.ts",
-  "./src/db/schema.ts",
+  "../../packages/operator-settings/src/schema.ts",
   "./drizzle.links.generated.ts",
 ] as const
