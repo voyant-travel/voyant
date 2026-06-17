@@ -15,6 +15,13 @@
       "when": 1781697751693,
       "tag": "0001_framework_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781711913836,
+      "tag": "0002_framework_baseline",
+      "breakpoints": true
     }
   ]
 }
