@@ -24,7 +24,8 @@
     "vitest": "^4.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations"
   ],
   "publishConfig": {
     "access": "public",

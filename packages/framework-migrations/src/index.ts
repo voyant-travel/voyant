@@ -5,6 +5,7 @@
  * See `docs/architecture/migration-collector-d1.md`.
  */
 
+export { frameworkBundleDir, loadFrameworkBundleSource } from "./bundle.js"
 export {
   type ApplyMigrationsOptions,
   applyMigrations,
