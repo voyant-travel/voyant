@@ -93,9 +93,11 @@ column on the entity. `custom_field_values` is retired.**
      `customFields` injection becomes a per-request `CustomFieldRegistryResolver`
      (`(db) ⇒ code ∪ DB`, cached per isolate); `booking` moved onto it. Pure
      addition; nothing migrated yet.
-2. **Columns + write/read on person/organization.** `custom_fields` column on
-   `people`/`organizations`; validate person/org writes against the resolved
-   registry; reads return the column.
+2. **Columns + write/read on person/organization. ✅ landed.** `custom_fields`
+   jsonb column on `people`/`organizations` (framework bundle `0002`); the
+   accounts route validates person/org writes against the resolved registry
+   (`validateRelationshipsCustomFields`); reads return the column. The
+   relationships factory moved Tier 1 → 2 to receive `capabilities.customFields`.
 3. **Repoint the value API + backfill** `custom_field_values` → jsonb; admin UI
    unchanged.
 4. **Retire `custom_field_values`**; quote/activity columns; export/invoice/search

@@ -29,6 +29,9 @@ export const organizationCoreSchema = z.object({
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
+  // Unified custom fields — shape validated against the resolved registry at
+  // the write boundary; zod only accepts the object envelope.
+  customFields: z.record(z.string(), z.unknown()).optional(),
   notes: z.string().nullable().optional(),
 })
 
@@ -80,6 +83,9 @@ export const personCoreSchema = z.object({
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
+  // Unified custom fields — shape validated against the resolved registry at
+  // the write boundary; zod only accepts the object envelope.
+  customFields: z.record(z.string(), z.unknown()).optional(),
   dateOfBirth: z.string().date().nullable().optional(),
   notes: z.string().nullable().optional(),
   // Encrypted PII slots (canonical store; documents live in person_documents).

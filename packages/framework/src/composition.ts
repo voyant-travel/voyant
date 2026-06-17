@@ -364,7 +364,8 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
   modules: {
     // Tier 1 — pure singletons.
     "@voyant-travel/action-ledger": () => actionLedgerHonoModule,
-    "@voyant-travel/relationships": () => createRelationshipsHonoModule(),
+    "@voyant-travel/relationships": ({ capabilities }) =>
+      createRelationshipsHonoModule({ customFields: capabilities.customFields }),
     "@voyant-travel/quotes": () => createQuotesHonoModule(),
     "@voyant-travel/operations": () => operationsHonoModule,
     "@voyant-travel/identity": () => identityHonoModule,

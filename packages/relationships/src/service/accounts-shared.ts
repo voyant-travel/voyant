@@ -80,6 +80,7 @@ export function personBaseFields(data: CreatePersonInput | UpdatePersonInput) {
     source: data.source,
     sourceRef: data.sourceRef,
     tags: data.tags,
+    customFields: data.customFields,
     dateOfBirth: data.dateOfBirth,
     notes: data.notes,
     accessibilityEncrypted: data.accessibilityEncrypted,
