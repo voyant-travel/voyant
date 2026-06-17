@@ -44,3 +44,16 @@ D.1 is clean for the **standard profile** (a deployment mounting exactly the sta
 4. **Cutover.** Switch `migrate.ts` to the collector (framework bundle → deployment migrations) with baseline/import + doctor parity; legacy path preserved.
 
 The risky core (multi-source apply, idempotency, ordering, immutability) is **validated**; slices 2–4 are well-understood plumbing, with slice 4 (the live-history cutover) the one to stage most carefully.
+
+## Cutover blocker (found by the replay-parity oracle — must be remediated first)
+
+The slice-3 oracle proved the new path (bundle + links) **applies cleanly to a blank DB**, but also surfaced that there is **no clean canonical schema to baseline an existing deployment against**, because of pre-existing debt in the operator's migration foundation:
+
+1. **The legacy 75-migration history is not cleanly fresh-replayable.** It contains multiple state-dependent statements that only succeeded on the real DB because migrations were applied out of journal order over time, e.g.:
+   - `0068_retire_transactions_runtime`: `DROP TABLE "orders"` (no `CASCADE`) while `payment_sessions`/`payment_authorizations` still FK into it;
+   - an `ALTER TABLE "ground_transfer_preferences" DROP CONSTRAINT …` against a table that doesn't exist at that point.
+   A fresh replay (the canonical-target build) fails on each; the oracle's `tolerateDropDeps` only handles the DROP class.
+2. **Schema-vs-migration drift.** The schema (and thus the generated bundle) includes tables no migration creates — e.g. `accommodations_sourced_content` is in the accommodations package schema + the bundle but in **no** legacy migration. `voyant db doctor`'s schema-parity check should already flag this.
+3. **The test DB is not a migration-history DB.** It has no `drizzle.__drizzle_migrations` ledger (built via `drizzle-kit push`), and omits IAM/better-auth tables — so it is not a valid parity target.
+
+**The cutover (slice 4) must not proceed until (1)–(3) are remediated** — make the 75-migration history fresh-replayable (CASCADE / `IF EXISTS` the state-dependent statements, or establish a clean squashed baseline), reconcile the schema-migration drift, and stand up a migration-history comparison DB. Then the oracle goes green and `migrate.ts` can be cut over with baseline/import. Forcing the cutover onto the current foundation would baseline deployments against a bundle that does not match their actual schema — the exact corruption the oracle exists to prevent. This is its own foundation-remediation effort, separately scoped.
