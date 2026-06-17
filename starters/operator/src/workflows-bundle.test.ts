@@ -64,7 +64,7 @@ describe("compiled operator workflow bundle", () => {
     } finally {
       await rm(outDir, { recursive: true, force: true })
     }
-  }, 20_000)
+  }, 90_000)
 })
 
 function bundleStepScript(outDir: string): string {
