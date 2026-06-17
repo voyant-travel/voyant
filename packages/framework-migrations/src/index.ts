@@ -9,6 +9,7 @@ export { frameworkBundleDir, loadFrameworkBundleSource } from "./bundle.js"
 export {
   type ApplyMigrationsOptions,
   applyMigrations,
+  importBaseline,
   type MigrationClient,
   MigrationImmutabilityError,
   type MigrationSource,

@@ -71,6 +71,7 @@
     "@voyant-travel/flights": "workspace:^",
     "@voyant-travel/flights-react": "workspace:^",
     "@voyant-travel/framework": "workspace:^",
+    "@voyant-travel/framework-migrations": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/identity": "workspace:^",

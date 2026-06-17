@@ -1,7 +1,38 @@
-import crypto from "node:crypto"
-import fs from "node:fs/promises"
+/**
+ * Deployment migration runner — cut over to the D.1 multi-source collector
+ * (`@voyant-travel/framework-migrations`). Applies, in order:
+ *
+ *   1. the framework bundle  (@voyant-travel/framework-migrations `migrations/`)
+ *   2. this deployment's links (./migrations-d1 — cross-module pivot tables)
+ *
+ * recording each in the `drizzle._voyant_migrations` ledger keyed by
+ * `(source, tag, content_hash)`. Three modes, auto-detected:
+ *
+ *   • FRESH      — empty DB → execute bundle + links.
+ *   • BASELINE   — existing legacy deployment (has `drizzle.__drizzle_migrations`
+ *                  but no collector ledger): its schema is already materialised
+ *                  by the old runner + `drizzle-kit push`, so we IMPORT the
+ *                  bundle + links into the ledger WITHOUT re-executing — gated by
+ *                  a schema-parity check (every bundle/link table must already
+ *                  exist; otherwise the DB isn't at the current schema and we
+ *                  refuse rather than record a false baseline).
+ *   • INCREMENTAL — already on the collector → apply only new migrations.
+ *
+ * The legacy single-folder history (`./migrations`) is RETIRED by this cutover:
+ * it is incomplete (16 live tables — operations/ground + quote versioning — have
+ * no CREATE migration) and stale (~40 retired-table CREATEs), so it is not a
+ * valid replay source. See docs/architecture/migration-collector-d1.md.
+ */
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import {
+  applyMigrations,
+  importBaseline,
+  loadFrameworkBundleSource,
+  loadMigrationFolder,
+  type MigrationSource,
+  planMigrations,
+} from "@voyant-travel/framework-migrations"
 import { config } from "dotenv"
 import { Client } from "pg"
 
@@ -11,106 +42,87 @@ config({ path: "../../.env.local" })
 config({ path: ".dev.vars", override: true })
 
 const databaseUrl = process.env.DATABASE_URL
-
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is not set")
 }
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
-const migrationsFolder = path.resolve(scriptsDir, "../migrations")
-const journalPath = path.join(migrationsFolder, "meta", "_journal.json")
+const linksFolder = path.resolve(scriptsDir, "../migrations-d1")
 
-type JournalEntry = {
-  tag: string
-  when: number
-}
+const client = new Client({ connectionString: databaseUrl })
 
-type Journal = {
-  entries: JournalEntry[]
-}
-
-const client = new Client({
-  connectionString: databaseUrl,
-})
-
-async function readJournal(): Promise<Journal> {
-  const raw = await fs.readFile(journalPath, "utf8")
-  return JSON.parse(raw) as Journal
-}
-
-async function ensureMigrationsTable() {
-  await client.query('CREATE SCHEMA IF NOT EXISTS "drizzle"')
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
-      "id" serial PRIMARY KEY,
-      "hash" text NOT NULL,
-      "created_at" bigint
-    )
-  `)
-}
-
-async function getLastMigrationMillis(): Promise<number> {
-  const result = await client.query<{
-    created_at: string | number
-  }>(`
-    SELECT "created_at"
-    FROM "drizzle"."__drizzle_migrations"
-    ORDER BY "created_at" DESC
-    LIMIT 1
-  `)
-
-  if (result.rowCount === 0) {
+/** Row count of a ledger table, or 0 if the table doesn't exist. */
+async function ledgerRowCount(qualified: string): Promise<number> {
+  const exists = await client.query<{ reg: string | null }>(`SELECT to_regclass($1) AS reg`, [
+    qualified,
+  ])
+  if (!exists.rows[0]?.reg) {
     return 0
   }
-
-  return Number(result.rows[0]?.created_at ?? 0)
+  const count = await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM ${qualified}`)
+  return Number(count.rows[0]?.n ?? 0)
 }
 
-async function applyMigration(entry: JournalEntry) {
-  const migrationPath = path.join(migrationsFolder, `${entry.tag}.sql`)
-  const rawSql = await fs.readFile(migrationPath, "utf8")
-  const statements = rawSql
-    .split("--> statement-breakpoint")
-    .map((statement) => statement.trim())
-    .filter(Boolean)
-  const hash = crypto.createHash("sha256").update(rawSql).digest("hex")
-
-  await client.query("BEGIN")
-
-  try {
-    for (const statement of statements) {
-      await client.query(statement)
+/** Table names a set of sources expects to exist (parsed from their CREATE TABLEs). */
+function expectedTables(sources: MigrationSource[]): Set<string> {
+  const tables = new Set<string>()
+  const re = /CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"/gi
+  for (const m of planMigrations(sources)) {
+    for (const match of m.sql.matchAll(re)) {
+      tables.add(match[1] as string)
     }
+  }
+  return tables
+}
 
-    await client.query(
-      `
-        INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-        VALUES ($1, $2)
-      `,
-      [hash, entry.when],
+/** Guard a baseline-import: every expected table must already exist in `public`. */
+async function assertSchemaAtBaseline(sources: MigrationSource[]): Promise<void> {
+  const expected = expectedTables(sources)
+  const live = await client.query<{ table_name: string }>(
+    `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
+  )
+  const liveSet = new Set(live.rows.map((r) => r.table_name))
+  const missing = [...expected].filter((t) => !liveSet.has(t)).sort()
+  if (missing.length > 0) {
+    throw new Error(
+      `cannot baseline onto the collector — this database is NOT at the current schema.\n` +
+        `  ${missing.length} expected table(s) are missing, e.g.: ${missing.slice(0, 8).join(", ")}${
+          missing.length > 8 ? ", …" : ""
+        }\n` +
+        `  Converge first (the live aggregate schema is materialised via 'pnpm db:push'/drizzle-kit\n` +
+        `  push for tables with no legacy CREATE migration), then re-run this migration to baseline.`,
     )
-
-    await client.query("COMMIT")
-  } catch (error) {
-    await client.query("ROLLBACK")
-    throw error
   }
 }
 
 try {
   await client.connect()
-  await ensureMigrationsTable()
 
-  const journal = await readJournal()
-  const lastMigrationMillis = await getLastMigrationMillis()
-  const applied: string[] = []
+  const bundle = await loadFrameworkBundleSource()
+  const links: MigrationSource = {
+    name: "deployment",
+    priority: 1,
+    migrations: await loadMigrationFolder(linksFolder),
+  }
+  const sources = [bundle, links]
 
-  for (const entry of journal.entries) {
-    if (entry.when > lastMigrationMillis) {
-      await applyMigration(entry)
-      applied.push(entry.tag)
-      console.log(`✓ applied ${entry.tag}`)
-    }
+  const onCollector = await ledgerRowCount(`"drizzle"."_voyant_migrations"`)
+  const onLegacy = await ledgerRowCount(`"drizzle"."__drizzle_migrations"`)
+
+  let applied: string[]
+  if (onCollector === 0 && onLegacy > 0) {
+    // Existing legacy deployment — its schema is already materialised; record
+    // the bundle + links as applied without re-executing (gated by parity).
+    console.log("Existing legacy deployment detected — baselining onto the collector ledger.")
+    await assertSchemaAtBaseline(sources)
+    applied = await importBaseline(client, sources, {
+      onApplied: (id) => console.log(`▷ baselined ${id}`),
+    })
+  } else {
+    // Fresh DB (execute) or already on the collector (apply only new).
+    applied = await applyMigrations(client, sources, {
+      onApplied: (id) => console.log(`✓ applied ${id}`),
+    })
   }
 
   if (applied.length === 0) {
@@ -122,7 +134,7 @@ try {
     // the first query that touches a changed column. Tell the caller so
     // their deploy pipeline (or the dev) can restart the right thing.
     console.log("")
-    console.log(`Applied ${applied.length} migration(s).`)
+    console.log(`Recorded ${applied.length} migration(s).`)
     console.log("⚠️  Restart any long-lived workers / dev servers now —")
     console.log("    drizzle's prepared-statement cache is keyed to the old schema.")
   }

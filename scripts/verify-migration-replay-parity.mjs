@@ -1,26 +1,39 @@
 /**
  * D.1 replay-parity oracle (Workstream D.1, slice 3 — the safety gate for the
  * runner cutover). Proves that the NEW migration sources reconstitute EXACTLY
- * the schema the LEGACY combined history produces:
+ * the canonical CURRENT schema:
  *
- *   framework bundle  (packages/framework-migrations/migrations)
+ *   framework bundle   (packages/framework-migrations/migrations)
  *   + deployment links (starters/operator/migrations-d1)
- *   ===  legacy combined history (starters/operator/migrations)
+ *   ===  drizzle-kit push of the live aggregate schema (drizzle.config.ts)
  *
- * It applies the new path onto a throwaway database, computes a canonical
- * schema fingerprint (tables/columns/enums/indexes/constraints) of the `public`
- * schema, and asserts it equals the fingerprint of the CURRENT database (the
- * real legacy end-state — the migration ledgers live in the `drizzle` schema so
- * they're naturally excluded). If they match, baselining an existing legacy DB
- * onto the new ledger (slice 4) is safe. See docs/architecture/migration-collector-d1.md.
+ * WHY push, not a legacy replay. The committed legacy history
+ * (`starters/operator/migrations/`) is BOTH incomplete and stale, so it is not
+ * a valid canonical-schema source (measured 2026-06-17 — see
+ * docs/architecture/migration-collector-d1.md):
+ *   • INCOMPLETE — 16 tables in the live schema have no CREATE migration at all
+ *     (the whole operations/ground module: ground_dispatches/_drivers/_vehicles/
+ *     transfer_preferences/…; plus quote versioning: quote_versions/_lines/
+ *     _participants/_products). On real deployments they exist only via
+ *     `drizzle-kit push`. A dangling `ALTER TABLE "ground_transfer_preferences"`
+ *     in 20260613120000 then fails on any migration-only replay.
+ *   • STALE — ~40 CREATEs for retired tables (orders/offers/opportunities/
+ *     transaction_* per 0068; crm_*_products links replaced by relationships_*).
+ *   • NON-FRESH-REPLAYABLE — 0068 `DROP TABLE "orders"` lacks CASCADE while
+ *     payment_sessions/payment_authorizations still FK in; it only ever applied
+ *     out of journal order, which is why every dev DB is stuck at migration 60.
  *
- * (Comparing against the live current DB rather than a fresh legacy replay is
- * deliberate: the legacy history has a state-dependent `DROP TABLE` — #0068 —
- * that isn't cleanly fresh-replayable; the live DB is the canonical truth.)
+ * `drizzle-kit push` of the SAME aggregate schema the bundle is generated from
+ * IS the canonical current schema (it is exactly how production materialised the
+ * un-migrated drift tables). If `bundle + links` fingerprint-matches it, then
+ * baselining an existing current deployment onto the new ledger (slice 4) is
+ * safe. Measured equality on 2026-06-17: 339 tables / 4371 columns / 1295 enum
+ * labels / 1816 indexes / 3089 constraints, zero diffs.
  *
  * Run: TEST_DATABASE_URL=<postgres url, user with CREATEDB> node scripts/verify-migration-replay-parity.mjs
  *   (skips cleanly when no DB is configured).
  */
+import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"
@@ -32,13 +45,24 @@ const { Client } = require("pg")
 const ROOT = new URL("..", import.meta.url).pathname
 const DB_URL = process.env.TEST_DATABASE_URL
 if (!DB_URL) {
-  console.log("verify-migration-replay-parity: SKIP (set TEST_DATABASE_URL to a CREATEDB-capable Postgres)")
+  console.log(
+    "verify-migration-replay-parity: SKIP (set TEST_DATABASE_URL to a CREATEDB-capable Postgres)",
+  )
   process.exit(0)
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
 const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations-d1")
-const LEGACY = join(ROOT, "starters/operator/migrations")
+const OPERATOR_DIR = join(ROOT, "starters/operator")
+
+// Extensions the live schema's trigram indexes need. The bundle ships these as a
+// preamble; `drizzle-kit push` does NOT emit CREATE EXTENSION, so the push DB
+// gets them seeded first (postgis is intentionally omitted — the schema creates
+// cleanly without it, and plain Postgres images don't ship it).
+const SEED_EXTENSIONS = [
+  'CREATE EXTENSION IF NOT EXISTS "pg_trgm"',
+  'CREATE EXTENSION IF NOT EXISTS "unaccent"',
+]
 
 const splitStatements = (sql) =>
   sql
@@ -54,27 +78,10 @@ function loadFolder(folder) {
     .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
 }
 
-async function applyFolders(client, label, folders, { tolerateDropDeps = false } = {}) {
+async function applyFolders(client, folders) {
   for (const folder of folders) {
     for (const stmt of loadFolder(folder)) {
-      try {
-        await client.query(stmt)
-      } catch (err) {
-        // The legacy history has retired-table DROPs without CASCADE that only
-        // replay cleanly because of out-of-journal-order application on the real
-        // DB (e.g. 0068's `DROP TABLE orders`). For the *canonical legacy replay*
-        // we retry such DROPs with CASCADE — the end-state is identical (the
-        // dependent FKs are gone in the current schema anyway).
-        if (tolerateDropDeps && /^DROP TABLE/i.test(stmt.trim()) && /depend/i.test(err.message)) {
-          await client.query(stmt.replace(/;?\s*$/, " CASCADE;"))
-          continue
-        }
-        const first = stmt.split("\n")[0]
-        throw new Error(
-          `${label}: a migration statement failed to apply — ${err.message}\n` +
-            `  statement: ${first}…`,
-        )
-      }
+      await client.query(stmt)
     }
   }
 }
@@ -97,7 +104,7 @@ async function fingerprint(client) {
   const constraints = await q(`
     SELECT tc.table_name, tc.constraint_type, cc.column_name
     FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage cc
+    LEFT JOIN information_schema.key_column_usage cc
       ON cc.constraint_name=tc.constraint_name AND cc.table_schema=tc.table_schema
     WHERE tc.table_schema='public'
     ORDER BY tc.table_name, tc.constraint_type, cc.column_name`)
@@ -106,54 +113,72 @@ async function fingerprint(client) {
 
 const hashOf = (obj) => createHash("sha256").update(JSON.stringify(obj)).digest("hex")
 
+function urlFor(name) {
+  const url = new URL(DB_URL)
+  url.pathname = `/${name}`
+  return url.toString()
+}
+
 async function withFreshDb(admin, name, fn) {
   await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`)
   await admin.query(`CREATE DATABASE "${name}"`)
-  const url = new URL(DB_URL)
-  url.pathname = `/${name}`
-  const client = new Client({ connectionString: url.toString() })
+  try {
+    return await fn()
+  } finally {
+    await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`)
+  }
+}
+
+async function onDb(name, fn) {
+  const client = new Client({ connectionString: urlFor(name) })
   await client.connect()
   try {
     return await fn(client)
   } finally {
     await client.end()
-    await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`)
   }
 }
 
 async function main() {
-  const adminUrl = new URL(DB_URL)
-  adminUrl.pathname = "/postgres"
-  const admin = new Client({ connectionString: adminUrl.toString() })
+  const admin = new Client({ connectionString: urlFor("postgres") })
   await admin.connect()
   try {
-    const newFp = await withFreshDb(admin, "voyant_replay_new", async (c) => {
-      await applyFolders(c, "new (bundle + links)", [FRAMEWORK_BUNDLE, DEPLOYMENT_LINKS])
-      return fingerprint(c)
+    // Canonical current schema: drizzle-kit push of the live aggregate schema.
+    const pushFp = await withFreshDb(admin, "voyant_replay_push", async () => {
+      await onDb("voyant_replay_push", async (c) => {
+        for (const ext of SEED_EXTENSIONS) await c.query(ext)
+      })
+      execFileSync("pnpm", ["exec", "drizzle-kit", "push", "--force"], {
+        cwd: OPERATOR_DIR,
+        stdio: "pipe",
+        encoding: "utf8",
+        env: { ...process.env, DATABASE_URL: urlFor("voyant_replay_push") },
+      })
+      return onDb("voyant_replay_push", fingerprint)
     })
-    // Canonical target: the legacy combined history applied to a fresh DB
-    // (CASCADE-tolerant for the retired-table DROPs that aren't cleanly
-    // fresh-replayable).
-    const legacyFp = await withFreshDb(admin, "voyant_replay_legacy", async (c) => {
-      await applyFolders(c, "legacy", [LEGACY], { tolerateDropDeps: true })
-      return fingerprint(c)
-    })
+
+    // New path: framework bundle + deployment links applied fresh.
+    const newFp = await withFreshDb(admin, "voyant_replay_new", async () =>
+      onDb("voyant_replay_new", async (c) => {
+        await applyFolders(c, [FRAMEWORK_BUNDLE, DEPLOYMENT_LINKS])
+        return fingerprint(c)
+      }),
+    )
 
     const sections = ["columns", "enums", "indexes", "constraints"]
     let ok = true
     for (const s of sections) {
       const a = hashOf(newFp[s])
-      const b = hashOf(legacyFp[s])
+      const b = hashOf(pushFp[s])
       if (a !== b) {
         ok = false
-        console.error(`  MISMATCH  ${s}: new=${a.slice(0, 12)} legacy=${b.slice(0, 12)}`)
-        // Surface a few diffs to make the failure actionable.
+        console.error(`  MISMATCH  ${s}: new=${a.slice(0, 12)} push=${b.slice(0, 12)}`)
         const aSet = new Set(newFp[s].map((r) => JSON.stringify(r)))
-        const bSet = new Set(legacyFp[s].map((r) => JSON.stringify(r)))
+        const bSet = new Set(pushFp[s].map((r) => JSON.stringify(r)))
         const onlyNew = [...aSet].filter((r) => !bSet.has(r)).slice(0, 5)
-        const onlyLegacy = [...bSet].filter((r) => !aSet.has(r)).slice(0, 5)
-        for (const r of onlyNew) console.error(`    only in new:    ${r}`)
-        for (const r of onlyLegacy) console.error(`    only in legacy: ${r}`)
+        const onlyPush = [...bSet].filter((r) => !aSet.has(r)).slice(0, 5)
+        for (const r of onlyNew) console.error(`    only in bundle+links: ${r}`)
+        for (const r of onlyPush) console.error(`    only in push (live):  ${r}`)
       } else {
         console.log(`  OK  ${s} (${newFp[s].length} rows)`)
       }
@@ -161,11 +186,13 @@ async function main() {
 
     if (!ok) {
       console.error(
-        "\nreplay-parity FAIL — the framework bundle + deployment links do NOT reconstitute the legacy schema.",
+        "\nreplay-parity FAIL — the framework bundle + deployment links do NOT reconstitute the live schema.",
       )
       process.exit(1)
     }
-    console.log("\nverify-migration-replay-parity: OK — bundle + links == legacy aggregate (cutover-safe)")
+    console.log(
+      "\nverify-migration-replay-parity: OK — bundle + links == live aggregate schema (cutover-safe)",
+    )
   } finally {
     await admin.end()
   }
