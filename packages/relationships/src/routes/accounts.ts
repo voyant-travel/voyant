@@ -239,7 +239,10 @@ export const accountRoutes = new Hono<Env>()
   // People
   .get("/people", async (c) => {
     const query = parseQuery(c, personListQuerySchema)
-    return c.json(await relationshipsService.listPeople(c.get("db"), query))
+    const searchableFields = query.search
+      ? await resolveVisibleCustomFields(c, personEntity, "search")
+      : []
+    return c.json(await relationshipsService.listPeople(c.get("db"), query, searchableFields))
   })
   .post("/people", idempotencyKey({ scope: "POST /v1/admin/relationships/people" }), async (c) => {
     const data = await parseJsonBody(c, insertPersonSchema)

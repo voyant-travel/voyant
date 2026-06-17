@@ -47,7 +47,11 @@ function unaccentedIlike(column: AnyColumn, term: string): SQL {
   return sql`unaccent(coalesce(${column}, '')) ILIKE unaccent(${term})`
 }
 
-function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL | undefined {
+function buildPersonSearchCondition(
+  db: PostgresJsDatabase,
+  search: string,
+  searchableCustomFields: ReadonlyArray<CustomFieldDefinition> = [],
+): SQL | undefined {
   const trimmedSearch = search.trim()
   if (!trimmedSearch) return undefined
 
@@ -83,6 +87,13 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
       )
     : undefined
 
+  // Search-visible custom fields (unified custom-fields system): match the term
+  // against each field's value in the entity's custom_fields jsonb.
+  const customFieldConditions = searchableCustomFields.map(
+    // agent-quality: raw-sql reviewed -- owner: crm; the key is a vetted registry field key, the term is parameter-bound.
+    (field) => sql`${people.customFields} ->> ${field.key} ILIKE ${term}`,
+  )
+
   return or(
     tokenizedPersonCondition,
     exists(
@@ -98,6 +109,7 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
           ),
         ),
     ),
+    ...customFieldConditions,
   )
 }
 
@@ -108,7 +120,11 @@ function formatCustomFieldCell(value: unknown): string {
 }
 
 export const peopleAccountsService = {
-  async listPeople(db: PostgresJsDatabase, query: PersonListQuery) {
+  async listPeople(
+    db: PostgresJsDatabase,
+    query: PersonListQuery,
+    searchableCustomFields: ReadonlyArray<CustomFieldDefinition> = [],
+  ) {
     const conditions: SQL[] = []
 
     if (query.organizationId) conditions.push(eq(people.organizationId, query.organizationId))
@@ -116,7 +132,7 @@ export const peopleAccountsService = {
     if (query.relation) conditions.push(eq(people.relation, query.relation))
     if (query.status) conditions.push(eq(people.status, query.status))
     if (query.search) {
-      const searchCondition = buildPersonSearchCondition(db, query.search)
+      const searchCondition = buildPersonSearchCondition(db, query.search, searchableCustomFields)
       if (searchCondition) conditions.push(searchCondition)
     }
 
