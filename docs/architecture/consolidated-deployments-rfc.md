@@ -157,7 +157,7 @@ A custom client must be able to do all of the following **without editing a fram
 
 | Need | Seam | Status |
 | --- | --- | --- |
-| Custom domain/entity | custom module in `src/modules`, added to `config.modules` | exists (`voyant generate module`); needs `src/` discovery |
+| Custom domain/entity | custom module in `src/modules`, auto-discovered + auto-migrated | **done** — `src/modules/<name>` discovery (`modulesFromGlob`) + deployment-source migrations (`db:generate:deployment`); see `custom-modules.md` |
 | Custom route on an existing module | `HonoExtension` / `src/api` discovery | `HonoExtension` exists; add `src/api` auto-mount |
 | Custom association | `defineLink` in `src/links` | exists |
 | Extra admin page / widget | `src/admin` UI route / widget discovery | **gap — workstream C** |
@@ -165,7 +165,7 @@ A custom client must be able to do all of the following **without editing a fram
 | Custom fields on core entities | **registered extension-field API + typed JSONB** (design below) | **gap — design proposed** |
 | Provider choice (payment, storage, connector) | injected `providers` | **done** (card-payment seam, connectors) |
 
-Two real gaps: **`src/admin` discovery** (C) and a **custom-fields pattern**.
+Remaining gaps: **`src/admin` discovery** (C), **`src/api` auto-mount** for custom routes on existing modules (the `HonoExtension` value exists; auto-discovery from `src/api` does not), and a **custom-fields pattern**.
 
 **Custom-fields design (recommended).** Custom fields are the single most common client ask and today force a side-table that export/invoicing/search don't see. Commit to a **registered extension-field API backed by typed JSONB** on selected core entities (bookings, people/organizations, products):
 
