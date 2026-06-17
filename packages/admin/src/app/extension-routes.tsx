@@ -271,6 +271,40 @@ function requireChildImplementation(
 }
 
 /**
+ * Build code-based TOP-LEVEL routes for a set of admin extensions' route
+ * contributions, at runtime — for DISCOVERED (`src/admin/*`) deployment-local
+ * extensions the host's `voyant admin generate` never scanned. Mirrors the
+ * generated `admin.routes.generated.tsx` `createRoute` loop, then hand the
+ * result to {@link attachAdminExtensionRoutes} alongside the generated routes.
+ *
+ * Runtime-built routes carry NO typed-link contract (they are invisible to the
+ * host's generated typed-link maps), so they are reachable via plain string
+ * navigation only — the same trade-off as {@link adminExtensionChildRoutes}.
+ * Nested `children` are not built here (top-level pages only); a contribution
+ * needs a `page`, `component`, or `redirectTo` to count as implemented.
+ */
+export function buildAdminExtensionRoutes(
+  extensions: ReadonlyArray<AdminExtension>,
+  getParentRoute: () => AnyRoute,
+  runtime: AdminExtensionRouteRuntime,
+): Array<AnyRoute> {
+  const routes: Array<AnyRoute> = []
+  for (const extension of extensions) {
+    for (const contribution of extension.routes ?? []) {
+      routes.push(
+        createRoute({
+          getParentRoute,
+          path: contribution.path,
+          validateSearch: contribution.validateSearch,
+          ...adminExtensionRouteOptions(extension, contribution.id, runtime),
+        }),
+      )
+    }
+  }
+  return routes
+}
+
+/**
  * Graft code-built extension routes under a file-based parent route
  * (typically the workspace layout) and return the tree for `_addFileTypes`
  * re-typing. Idempotent: an extension route replaces any previously grafted

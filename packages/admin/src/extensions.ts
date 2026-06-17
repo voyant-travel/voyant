@@ -223,6 +223,40 @@ export function defineAdminExtension<T extends AdminExtension>(extension: T): T 
 }
 
 /**
+ * Discover deployment-local admin extensions from a Vite `import.meta.glob`
+ * (eager) of `src/admin/<name>/index.tsx` files — the admin-UI half of the
+ * "extend without forking" seam (mirrors `modulesFromGlob`/`extensionsFromGlob`
+ * on the API side). Each file's `default` export is an {@link AdminExtension}
+ * (wrap it with {@link defineAdminExtension}); append the result to the shell's
+ * extension registry so its nav, widgets, and routes auto-compose. Returns the
+ * extensions in stable (path-sorted) order; empty until a deployment adds one.
+ *
+ * Vite compiles `import.meta.glob` to static imports at build time, so this is
+ * Cloudflare-Workers-safe (no runtime module resolution).
+ *
+ *     // src/lib/admin-extensions.tsx
+ *     export const discoveredAdminExtensions = adminExtensionsFromGlob(
+ *       import.meta.glob("../admin/*\/index.tsx", { eager: true }),
+ *     )
+ *
+ * @throws if a matched file has no default export.
+ */
+export function adminExtensionsFromGlob(glob: Record<string, unknown>): AdminExtension[] {
+  return Object.entries(glob)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([path, namespace]) => {
+      const declaration = (namespace as { default?: unknown }).default
+      if (declaration == null) {
+        throw new Error(
+          `[voyant-admin] deployment admin extension "${path}" has no default export — ` +
+            "add `export default defineAdminExtension(...)` to its index.tsx",
+        )
+      }
+      return declaration as AdminExtension
+    })
+}
+
+/**
  * A route contribution whose `component` is guaranteed present, typed as a
  * function component so it attaches directly to router `component:` options
  * (router component types reject the class side of `React.ComponentType`).

@@ -136,6 +136,39 @@ configs glob `src/extensions/*/schema.ts` too, so they migrate exactly like
 custom-module schema. Discovery wires them via `extensionsFromGlob` in
 `src/api/composition.ts` and passes them as `createVoyantApp({ extensions })`.
 
+## Custom admin UI (pages, widgets, nav)
+
+The same drop-a-folder discovery extends the **dashboard UI**. A directory under
+`src/admin/<name>/` default-exporting an `AdminExtension` is auto-composed into
+the admin shell — any of a custom **page**, a **widget** injected into a named
+slot, or a **nav** entry:
+
+```tsx
+// src/admin/concierge/index.tsx
+import { defineAdminExtension } from "@voyant-travel/admin"
+import { ConciergePage } from "./page.js"
+import { ConciergeWidget } from "./widget.js"
+
+export default defineAdminExtension({
+  id: "concierge",
+  navigation: [{ items: [{ id: "concierge", title: "Concierge", url: "/concierge" }] }],
+  widgets: [{ id: "concierge-kpi", slot: "dashboard.after-kpis", component: ConciergeWidget }],
+  routes: [{ id: "concierge", path: "/concierge", title: "Concierge", component: ConciergePage }],
+})
+```
+
+- **nav + widgets** merge via `adminExtensionsFromGlob` in
+  `src/lib/admin-extensions.tsx` and resolve through the shared
+  `resolveAdminNavigation` / `resolveAdminWidgets`.
+- **page routes** graft into the TanStack route tree at runtime in
+  `src/router.tsx` (`buildAdminExtensionRoutes`). Discovered pages are reachable
+  by string navigation (`<Link to="/concierge">`) — they're not in the generated
+  typed-link map.
+
+Widget slots are starter-defined strings (`dashboard.after-kpis`,
+`booking.details.header`, `invoice.details.after-summary`, …). See
+`starters/operator/src/admin/README.md`.
+
 ## Why it's upgrade-safe
 
 Everything you write lives under the deployment's `src/` — the framework owns
