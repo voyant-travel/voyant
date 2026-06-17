@@ -63,6 +63,8 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   updatedAt: new Date(0),
 }
 
+const DEFAULT_MAX_SENDS_IN_STAGE = 1
+
 export async function getNotificationSettings(
   db: PostgresJsDatabase,
   scope = "default",
@@ -107,7 +109,7 @@ export function pickActiveStage(
   if (stages.length === 0) return null
   let cumulative = 0
   for (const stage of stages) {
-    const cap = stage.maxSendsInStage ?? Number.POSITIVE_INFINITY
+    const cap = stage.maxSendsInStage ?? DEFAULT_MAX_SENDS_IN_STAGE
     if (attemptsSoFar < cumulative + cap) {
       return stage
     }
