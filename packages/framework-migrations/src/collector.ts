@@ -108,6 +108,60 @@ function qualifiedLedger(options?: ApplyMigrationsOptions): string {
   return `"${schema}"."${table}"`
 }
 
+/** Create the ledger schema + table if absent. Shared by apply + baseline. */
+async function ensureLedger(
+  client: MigrationClient,
+  options?: ApplyMigrationsOptions,
+): Promise<string> {
+  const ledger = qualifiedLedger(options)
+  const schema = options?.ledgerSchema ?? "drizzle"
+  await client.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`)
+  await client.query(
+    `CREATE TABLE IF NOT EXISTS ${ledger} (
+       "source" text NOT NULL,
+       "tag" text NOT NULL,
+       "content_hash" text NOT NULL,
+       "applied_at" timestamptz NOT NULL DEFAULT now(),
+       PRIMARY KEY ("source", "tag")
+     )`,
+  )
+  return ledger
+}
+
+/**
+ * Baseline an EXISTING deployment onto the collector ledger: record every
+ * planned migration as already-applied **without executing its SQL** — for a DB
+ * whose schema already matches `sources` (materialised by the legacy runner +
+ * `drizzle-kit push`). Idempotent (`ON CONFLICT DO NOTHING`); the caller MUST
+ * have verified schema parity first, since this asserts "the schema is already
+ * here" without checking. Returns the `"{source}/{tag}"` ids newly recorded.
+ *
+ * See the cutover section of docs/architecture/migration-collector-d1.md.
+ */
+export async function importBaseline(
+  client: MigrationClient,
+  sources: MigrationSource[],
+  options?: ApplyMigrationsOptions,
+): Promise<string[]> {
+  const ledger = await ensureLedger(client, options)
+  const imported: string[] = []
+  for (const m of planMigrations(sources)) {
+    const res = await client.query(
+      `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)
+       ON CONFLICT ("source", "tag") DO NOTHING`,
+      [m.source, m.tag, m.contentHash],
+    )
+    // node-postgres exposes rowCount; treat absent (0/undefined) as "already there".
+    const inserted = (res as { rowCount?: number }).rowCount ?? 0
+    if (inserted > 0) {
+      const id = `${m.source}/${m.tag}`
+      imported.push(id)
+      options?.onApplied?.(id)
+    }
+  }
+  return imported
+}
+
 /**
  * Apply every pending migration across `sources` in plan order, recording each
  * in the ledger. Idempotent (already-applied identical migrations are skipped);
@@ -120,19 +174,7 @@ export async function applyMigrations(
   sources: MigrationSource[],
   options?: ApplyMigrationsOptions,
 ): Promise<string[]> {
-  const ledger = qualifiedLedger(options)
-  const schema = options?.ledgerSchema ?? "drizzle"
-
-  await client.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`)
-  await client.query(
-    `CREATE TABLE IF NOT EXISTS ${ledger} (
-       "source" text NOT NULL,
-       "tag" text NOT NULL,
-       "content_hash" text NOT NULL,
-       "applied_at" timestamptz NOT NULL DEFAULT now(),
-       PRIMARY KEY ("source", "tag")
-     )`,
-  )
+  const ledger = await ensureLedger(client, options)
 
   const applied: string[] = []
   for (const m of planMigrations(sources)) {

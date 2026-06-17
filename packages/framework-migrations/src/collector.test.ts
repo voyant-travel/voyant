@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   applyMigrations,
+  importBaseline,
   MigrationImmutabilityError,
   type MigrationSource,
   planMigrations,
@@ -161,5 +162,49 @@ describe.skipIf(!DB_URL)("applyMigrations (integration)", () => {
     await applyMigrations(client, [multi], ledgerOpts)
     expect(await tableExists("a")).toBe(true)
     expect(await tableExists("b")).toBe(true)
+  })
+
+  // ---- importBaseline: record an existing schema without re-executing --------
+
+  it("baseline records the ledger WITHOUT executing any SQL", async () => {
+    const s = sources()
+    const imported = await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
+    // Every planned migration is recorded …
+    expect(imported).toEqual([
+      "framework/0001_init",
+      "framework/0002_add_status",
+      "deployment/0001_acme_notes",
+    ])
+    // … but none of their SQL ran (the schema is assumed already present).
+    expect(await tableExists("bookings")).toBe(false)
+    expect(await tableExists("acme_notes")).toBe(false)
+  })
+
+  it("a baselined deployment then applies nothing (ledger interop with applyMigrations)", async () => {
+    const s = sources()
+    await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
+    // applyMigrations sees the baselined (source, tag) rows and skips them —
+    // so it does NOT try to re-create the already-existing schema.
+    const applied = await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
+    expect(applied).toEqual([])
+    // A genuinely new migration still applies after a baseline.
+    const upgraded = sources()
+    upgraded.framework.migrations.push({
+      tag: "0003_add_index",
+      sql: `CREATE TABLE ${SCHEMA}.bookings (id text PRIMARY KEY); CREATE INDEX bookings_status_idx ON ${SCHEMA}.bookings (id);`,
+    })
+    const next = await applyMigrations(
+      client,
+      [upgraded.framework, upgraded.deployment],
+      ledgerOpts,
+    )
+    expect(next).toEqual(["framework/0003_add_index"])
+  })
+
+  it("baseline is idempotent (re-run records nothing new)", async () => {
+    const s = sources()
+    await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
+    const second = await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
+    expect(second).toEqual([])
   })
 })

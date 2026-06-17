@@ -3924,6 +3924,9 @@ importers:
       '@voyant-travel/framework':
         specifier: workspace:^
         version: link:../../packages/framework
+      '@voyant-travel/framework-migrations':
+        specifier: workspace:^
+        version: link:../../packages/framework-migrations
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../../packages/hono

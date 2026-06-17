@@ -1,6 +1,6 @@
 # ADR: D.1 — framework-owned aggregate migration bundle + multi-source collector
 
-- **Status:** Accepted (implementation in slices; foundation landed)
+- **Status:** Accepted — all four slices landed (collector, bundle, push-grounded oracle, runner cutover)
 - **Date:** 2026-06-17
 - **Amends:** `migration-resilience-rfc.md` (voyant#1608) "Migration generation & ordering" — *light amendment*, the single combined history is preserved; only **ownership** moves deployment → framework.
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.1**.
@@ -38,32 +38,45 @@ D.1 is clean for the **standard profile** (a deployment mounting exactly the sta
 
 ## Implementation slices
 
-1. **Foundation (this ADR + the collector).** `@voyant-travel/framework-migrations` exports the productionized multi-source collector — `planMigrations`, `applyMigrations` (the `(source, tag, content_hash)` ledger, per-migration transactions, statement-breakpoint splitting, content-hash immutability) + `loadMigrationFolder`. Integration tests reproduce the spike's 5 scenarios against Postgres. **No live-runner change.**
-2. **Bundle generation.** Generate the standard-profile aggregate bundle into the package from `drizzle.schemas.generated.ts`; a `verify:` gate keeps it in sync.
-3. **Aggregate replay oracle.** Replay-all-onto-fresh-DB == aggregate snapshot, wired into `voyant doctor`.
-4. **Cutover.** Switch `migrate.ts` to the collector (framework bundle → deployment migrations) with baseline/import + doctor parity; legacy path preserved.
+1. **Foundation (this ADR + the collector). ✓ landed.** `@voyant-travel/framework-migrations` exports the productionized multi-source collector — `planMigrations`, `applyMigrations` (the `(source, tag, content_hash)` ledger, per-migration transactions, statement-breakpoint splitting, content-hash immutability), `importBaseline`, + `loadMigrationFolder`. Integration tests reproduce the spike's scenarios + baseline against Postgres.
+2. **Bundle generation. ✓ landed.** Generate the standard-profile aggregate bundle into the package from `drizzle.schemas.generated.ts`; a `verify:` gate keeps it in sync.
+3. **Replay-parity oracle. ✓ landed.** `bundle + links` fresh-applied == `drizzle-kit push` of the live aggregate schema (the canonical current schema — see the Cutover section for why this replaced the legacy-replay target).
+4. **Cutover. ✓ landed.** `migrate.ts` drives the collector (framework bundle → deployment links) with auto-detected FRESH / BASELINE / INCREMENTAL modes; baseline is gated by a schema-parity guard. Legacy folder retired as a runtime source.
 
-The risky core (multi-source apply, idempotency, ordering, immutability) is **validated**; slices 2–4 are well-understood plumbing, with slice 4 (the live-history cutover) the one to stage most carefully.
+The risky core (multi-source apply, idempotency, ordering, immutability, baseline) is **validated** against the operator docker Postgres.
 
-## Cutover blocker (found by the replay-parity oracle — must be remediated first)
+## Cutover (slice 4) — RESOLVED
 
-The slice-3 oracle proved the new path (bundle + links) **applies cleanly to a blank DB**, but also surfaced that there is **no clean canonical schema to baseline an existing deployment against**, because of pre-existing debt in the operator's migration foundation:
+**Status: done.** `migrate.ts` is cut over to the collector; the oracle is green against a real canonical schema. The path below records *why* the obvious comparison (replay the legacy folder) is invalid, and what replaced it.
 
-1. **The legacy 75-migration history is not cleanly fresh-replayable.** It contains multiple state-dependent statements that only succeeded on the real DB because migrations were applied out of journal order over time, e.g.:
-   - `0068_retire_transactions_runtime`: `DROP TABLE "orders"` (no `CASCADE`) while `payment_sessions`/`payment_authorizations` still FK into it;
-   - an `ALTER TABLE "ground_transfer_preferences" DROP CONSTRAINT …` against a table that doesn't exist at that point.
-   A fresh replay (the canonical-target build) fails on each; the oracle's `tolerateDropDeps` only handles the DROP class.
-2. **Schema-vs-migration drift.** The schema (and thus the generated bundle) includes tables no migration creates — e.g. `accommodations_sourced_content` is in the accommodations package schema + the bundle but in **no** legacy migration. `voyant db doctor`'s schema-parity check should already flag this.
-3. **The test DB is not a migration-history DB.** It has no `drizzle.__drizzle_migrations` ledger (built via `drizzle-kit push`), and omits IAM/better-auth tables — so it is not a valid parity target.
+### Why the legacy folder is not a valid canonical source (measured 2026-06-17)
 
-**The cutover (slice 4) must not proceed until (1)–(3) are remediated** — make the 75-migration history fresh-replayable (CASCADE / `IF EXISTS` the state-dependent statements, or establish a clean squashed baseline), reconcile the schema-migration drift, and stand up a migration-history comparison DB. Then the oracle goes green and `migrate.ts` can be cut over with baseline/import. Forcing the cutover onto the current foundation would baseline deployments against a bundle that does not match their actual schema — the exact corruption the oracle exists to prevent. This is its own foundation-remediation effort, separately scoped.
+The slice-3 oracle proved `bundle + links` **applies cleanly to a blank DB**, but the original plan — compare it against a fresh *replay of the legacy folder* — is unsound. Measured against the operator's docker Postgres (a real 60-migration deployment) and a table-level diff of the bundle vs. the legacy folder:
 
-### Update (deeper investigation) — corrected + sharpened
+1. **The legacy folder is INCOMPLETE.** 16 tables in the live schema have **no CREATE migration at all** — the entire `operations/ground` module (`ground_dispatches`, `ground_drivers`, `ground_vehicles`, `ground_transfer_preferences`, …) and quote versioning (`quote_versions`, `quote_version_lines`, `quote_participants`, `quote_products`). On real deployments these exist only because of `drizzle-kit push`. A dangling `ALTER TABLE "ground_transfer_preferences" …` in `20260613120000_places_loose_ids` then fails on any migration-only run — which is exactly **why every dev DB is stuck at migration 60**.
+2. **The legacy folder is STALE.** ~40 CREATEs are for retired tables: `orders`/`offers`/`opportunities`/`order_*`/`offer_*`/`transaction_*` (dropped by `0068`), and `crm_*_products` link tables (superseded by `relationships_*`). The bundle correctly omits them.
+3. **It is also NON-FRESH-REPLAYABLE.** `0068_retire_transactions_runtime` does `DROP TABLE "orders"` without `CASCADE` while `payment_sessions`/`payment_authorizations` still FK in — it only ever succeeded because real DBs applied it out of journal order. The earlier "`accommodations_sourced_content` drift" finding was a **false positive** (it *is* migrated by `0023` via `CREATE TABLE IF NOT EXISTS`); the real, much larger drift is (1).
 
-A follow-up deep dive **corrected** one finding and **sharpened** the rest:
+A folder that is simultaneously missing 16 live tables and carrying ~40 dead ones cannot be the schema the bundle is checked against.
 
-- **(2) is NOT real drift.** `accommodations_sourced_content` *is* migrated — by `0023`, via `CREATE TABLE IF NOT EXISTS` (an earlier `CREATE TABLE "name"` grep missed the `IF NOT EXISTS`). There is no schema-vs-migration drift; the earlier "drift" reading came from comparing against the invalid push-built test DB.
-- **(1) is worse than one or two lines — the legacy history is non-replayable beyond what tolerant replay can safely fix.** Even with the oracle's `tolerateDropDeps` (CASCADE for DROP-with-deps; skip `IF EXISTS` DROP/ALTER on a missing relation), replay then hits **`CREATE INDEX … ON "ground_transfer_preferences"` on a table that is never present in replay order**. A CREATE INDEX failure **cannot** be tolerated — skipping it would silently drop an index from the canonical target and produce a false "match". The journal `when` order does not reflect the real application order, so multiple statements reference objects that don't exist mid-replay.
-- The `.sql` count (75) and the latest snapshot (`0067`) **diverge**, and late migrations (e.g. `0068`) are hand-written without snapshots — so neither a fresh replay nor the drizzle snapshots is a trustworthy current-schema source.
+### The canonical schema, and the green oracle
 
-**Conclusion — the safe cutover path is a squash grounded in a real current schema, not the un-replayable legacy.** Concretely: introspect an actual up-to-date deployment DB (the production-equivalent ground truth) → diff it against `bundle + links` (both apply cleanly) → reconcile any genuine differences → adopt `bundle + links` as the squashed baseline → cut `migrate.ts` over with baseline/import, verified by the (now-greenable) oracle against the introspected ground truth. This needs production-DB access + careful operational staging; it cannot be derived from the committed migration history alone. The collector, bundle, and oracle are all built and ready for that step.
+`drizzle-kit push` of the **same aggregate schema the bundle is generated from** IS the canonical current schema — it is *exactly* how production materialised the un-migrated drift tables (1). So the oracle (`scripts/verify-migration-replay-parity.mjs`) now:
+
+1. provisions a throwaway DB, seeds `pg_trgm`/`unaccent`, and `drizzle-kit push`es the live aggregate schema → **ground truth**;
+2. applies `bundle + links` to a second throwaway DB;
+3. asserts the two `public`-schema fingerprints are identical.
+
+Measured equal on 2026-06-17: **339 tables / 4371 columns / 1295 enum labels / 1816 indexes / 3089 constraints, zero diffs.** `bundle + links` reconstitutes the live schema exactly, so it is a faithful squashed baseline.
+
+### The runner: three auto-detected modes + a baseline guard
+
+`starters/operator/scripts/migrate.ts` now drives the collector (`@voyant-travel/framework-migrations`), sources `[framework bundle (priority 0), deployment links (priority 1)]`, ledger `drizzle._voyant_migrations`:
+
+- **FRESH** (no ledgers) → execute bundle + links.
+- **BASELINE** (legacy `drizzle.__drizzle_migrations` present, no collector ledger) → `importBaseline()` records the bundle + links in the ledger **without re-executing** — because the schema is already materialised. **Gated by a schema-parity check**: every table the bundle/links expect must already exist; otherwise the runner *refuses* (a stuck-at-60 DB reports the missing tables and aborts rather than recording a false baseline).
+- **INCREMENTAL** (collector ledger present) → apply only new migrations.
+
+The legacy `starters/operator/migrations/` folder is **retired** as a runtime source (kept only as history); it is neither applied nor used as an oracle target. An existing *current* deployment baselines cleanly; a *stuck* deployment must converge its schema (via `db push` for the never-migrated drift tables) before it can baseline — the guard enforces this.
+
+All validated against the operator docker Postgres: FRESH (executes → 339 tables, 2 ledger rows), INCREMENTAL (no-op), BASELINE success (imports without re-creating), BASELINE guard (refuses a 60-migration DB, lists missing tables, leaves no ledger).
