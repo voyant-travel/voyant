@@ -27,7 +27,9 @@ const { Client } = require("pg")
 
 const DATABASE_URL = process.env.DATABASE_URL ?? process.env.TEST_DATABASE_URL
 if (!DATABASE_URL) {
-  console.error("Set DATABASE_URL or TEST_DATABASE_URL to a throwaway Postgres (e.g. the docker test DB).")
+  console.error(
+    "Set DATABASE_URL or TEST_DATABASE_URL to a throwaway Postgres (e.g. the docker test DB).",
+  )
   process.exit(2)
 }
 const SCHEMA = "voyant_d1_spike"
@@ -67,9 +69,16 @@ function buildSources() {
 function plan(sources) {
   const out = []
   for (const [name, s] of Object.entries(sources)) {
-    s.migrations.forEach((m, i) =>
-      out.push({ source: name, priority: s.priority, seq: i, tag: m.tag, sql: m.sql, hash: hash(m.sql) }),
-    )
+    s.migrations.forEach((m, i) => {
+      out.push({
+        source: name,
+        priority: s.priority,
+        seq: i,
+        tag: m.tag,
+        sql: m.sql,
+        hash: hash(m.sql),
+      })
+    })
   }
   return out.sort((a, b) => a.priority - b.priority || a.seq - b.seq)
 }
@@ -104,10 +113,11 @@ async function migrate(client, sources) {
       continue // already applied, identical → no-op
     }
     await client.query(m.sql)
-    await client.query(
-      `INSERT INTO ${LEDGER} (source, tag, content_hash) VALUES ($1, $2, $3)`,
-      [m.source, m.tag, m.hash],
-    )
+    await client.query(`INSERT INTO ${LEDGER} (source, tag, content_hash) VALUES ($1, $2, $3)`, [
+      m.source,
+      m.tag,
+      m.hash,
+    ])
     applied.push(`${m.source}/${m.tag}`)
   }
   return applied
@@ -147,7 +157,11 @@ async function main() {
     check(
       "applies framework-first, then deployment, in order",
       JSON.stringify(s1) ===
-        JSON.stringify(["framework/0001_init", "framework/0002_add_status", "deployment/0001_acme_notes"]),
+        JSON.stringify([
+          "framework/0001_init",
+          "framework/0002_add_status",
+          "deployment/0001_acme_notes",
+        ]),
       `got ${JSON.stringify(s1)}`,
     )
     check("framework table exists", await tableExists(client, "bookings"))
@@ -164,7 +178,11 @@ async function main() {
       sql: `CREATE INDEX bookings_status_idx ON ${SCHEMA}.bookings (status);`,
     })
     const s3 = await migrate(client, upgraded)
-    check("upgrade applies ONLY the new framework migration", JSON.stringify(s3) === JSON.stringify(["framework/0003_add_index"]), `got ${JSON.stringify(s3)}`)
+    check(
+      "upgrade applies ONLY the new framework migration",
+      JSON.stringify(s3) === JSON.stringify(["framework/0003_add_index"]),
+      `got ${JSON.stringify(s3)}`,
+    )
 
     console.log("Scenario 4 — tamper: an already-applied framework migration is edited:")
     const tampered = buildSources()
@@ -187,7 +205,9 @@ async function main() {
     await client.end()
   }
 
-  console.log(`\n${failed === 0 ? "SPIKE PASS" : "SPIKE FAIL"} — ${passed} passed, ${failed} failed`)
+  console.log(
+    `\n${failed === 0 ? "SPIKE PASS" : "SPIKE FAIL"} — ${passed} passed, ${failed} failed`,
+  )
   process.exit(failed === 0 ? 0 : 1)
 }
 

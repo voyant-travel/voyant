@@ -104,13 +104,15 @@ for (const name of mounted) {
 const NON_RUNTIME = [
   { test: (n) => n.endsWith("-react"), why: "React/UI package" },
   { test: (n) => n.endsWith("-contracts"), why: "contracts package" },
-  { test: (n, dir) => dir?.includes(`${"packages"}/plugins/`), why: "plugin package" },
+  { test: (_n, dir) => dir?.includes(`${"packages"}/plugins/`), why: "plugin package" },
 ]
 for (const name of mounted) {
   const dir = pkgs.get(name)
   for (const rule of NON_RUNTIME) {
     if (rule.test(name, dir)) {
-      violations.push(`runtime set must not contain ${name} (${rule.why}) — these version on their own cadence`)
+      violations.push(
+        `runtime set must not contain ${name} (${rule.why}) — these version on their own cadence`,
+      )
     }
   }
 }
@@ -130,9 +132,13 @@ const manifestBody = `${JSON.stringify(
 
 if (EMIT) {
   writeFileSync(MANIFEST, manifestBody)
-  console.log(`check-lockstep-membership: emitted ${runtimeSet.length} runtime packages → release.runtime-packages.generated.json`)
+  console.log(
+    `check-lockstep-membership: emitted ${runtimeSet.length} runtime packages → release.runtime-packages.generated.json`,
+  )
 } else if (!existsSync(MANIFEST)) {
-  violations.push("release.runtime-packages.generated.json is missing — run `node scripts/check-lockstep-membership.mjs --emit`")
+  violations.push(
+    "release.runtime-packages.generated.json is missing — run `node scripts/check-lockstep-membership.mjs --emit`",
+  )
 } else {
   const current = readFileSync(MANIFEST, "utf-8")
   if (current !== manifestBody) {
@@ -159,7 +165,9 @@ if (existsSync(CHANGESET_CONFIG)) {
         )
       }
       if (missing.length) {
-        violations.push(`changeset lockstep group is missing runtime modules: ${missing.join(", ")}`)
+        violations.push(
+          `changeset lockstep group is missing runtime modules: ${missing.join(", ")}`,
+        )
       }
     }
   }

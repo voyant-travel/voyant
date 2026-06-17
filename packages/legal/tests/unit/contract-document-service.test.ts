@@ -38,7 +38,6 @@ function stubDb(bookingNumber: string | null): PostgresJsDatabase {
   const chain = {
     from: () => chain,
     where: () => chain,
-    // biome-ignore lint/suspicious/noThenProperty: test stub mimics a thenable drizzle query builder -- owner: legal.
     limit: () => Promise.resolve(rows),
   }
   return { select: () => chain } as unknown as PostgresJsDatabase

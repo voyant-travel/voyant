@@ -52,7 +52,12 @@ function readMountedModules() {
 
 /** Does `<module>-react` expose a `./admin` export? */
 function hasAdminSurface(moduleName) {
-  const reactPkg = join(ROOT, "packages", `${moduleName.replace("@voyant-travel/", "")}-react`, "package.json")
+  const reactPkg = join(
+    ROOT,
+    "packages",
+    `${moduleName.replace("@voyant-travel/", "")}-react`,
+    "package.json",
+  )
   if (!existsSync(reactPkg)) return false
   try {
     const { exports = {} } = JSON.parse(readFileSync(reactPkg, "utf-8"))
@@ -68,15 +73,20 @@ function adminImportsIn(file) {
   const src = readFileSync(file, "utf-8")
   const set = new Set()
   const re = /@voyant-travel\/([a-z0-9-]+)-react\/admin/g
-  let m
-  while ((m = re.exec(src))) set.add(`@voyant-travel/${m[1]}`)
+  let m = re.exec(src)
+  while (m) {
+    set.add(`@voyant-travel/${m[1]}`)
+    m = re.exec(src)
+  }
   return set
 }
 
 const violations = []
 
 if (!existsSync(EXTENSIONS)) {
-  violations.push("starters/operator/src/admin.extensions.generated.ts is missing — run `voyant admin generate`")
+  violations.push(
+    "starters/operator/src/admin.extensions.generated.ts is missing — run `voyant admin generate`",
+  )
 }
 
 const mounted = readMountedModules()
@@ -122,4 +132,6 @@ if (violations.length) {
   process.exit(1)
 }
 
-console.log(`check-admin-composition-drift: OK (${expected.length} admin domains in sync with mounted modules)`)
+console.log(
+  `check-admin-composition-drift: OK (${expected.length} admin domains in sync with mounted modules)`,
+)

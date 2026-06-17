@@ -104,4 +104,6 @@ if (after) {
   process.exit(1)
 }
 
-console.log("check-framework-migration-bundle: OK (bundle in sync with the standard-profile schema)")
+console.log(
+  "check-framework-migration-bundle: OK (bundle in sync with the standard-profile schema)",
+)
