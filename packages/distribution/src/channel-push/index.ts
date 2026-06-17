@@ -63,12 +63,3 @@ export {
   getChannelPushDepsOrThrow,
   setChannelPushDeps,
 } from "./types.js"
-// Importing this module registers all three durable workflows in the
-// process-local @voyant-travel/workflows registry. Hosts that don't run an
-// orchestrator (e.g. the operator starter's inline drain) can still
-// import safely — registration is a no-op without a runtime to dispatch.
-export {
-  channelAvailabilityPushWorkflow,
-  channelBookingPushWorkflow,
-  channelContentPushWorkflow,
-} from "./workflows.js"
