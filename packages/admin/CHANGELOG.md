@@ -1,5 +1,11 @@
 # @voyant-travel/admin
 
+## 0.111.5
+
+### Patch Changes
+
+- c38f00a: Add a default admin router pending fallback so package-owned admin apps show a loading state while route guards and loaders resolve.
+
 ## 0.111.4
 
 ### Patch Changes
