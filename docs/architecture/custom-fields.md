@@ -96,7 +96,24 @@ entity.
   visibility + `customFieldsFromGlob` discovery.
 - ✅ Deployment discovery wired in the operator (`src/custom-fields/` →
   `operatorCustomFields`).
-- ⏳ Per-entity column + write-validation + export/invoice/search consumption.
+- ✅ **`booking` adopted** — `custom_fields` column + write-validation at the
+  create/update routes (registry injected via `FrameworkProviders.customFields`),
+  oracle-verified.
+- ⏳ `person` / `product` adoption + export/invoice/search consumption of
+  `customFieldsVisibleIn`.
+
+### Worked example — how `booking` adopted it
+
+1. **Column** — `custom_fields jsonb default '{}'` on `bookings`
+   (`packages/bookings/src/schema-core.ts`); the framework bundle picked it up as
+   migration `0001` on regeneration.
+2. **Injection** — `BookingRouteRuntimeOptions.customFields?: CustomFieldRegistry`
+   → `createBookingsHonoModule` → an optional `FrameworkProviders.customFields`
+   the deployment supplies (operator: `customFields: operatorCustomFields`).
+3. **Write validation** — `validateBookingCustomFields(c, data)` runs in the
+   POST/PATCH handlers: `validateCustomFields(registry, "booking", data.customFields)`,
+   replacing the payload with the cleaned value or throwing a 400.
+4. **Read** — `custom_fields` rides along on the booking row.
 
 See also `custom-modules.md` (the sibling discovery seams) and the
 consolidated-deployments RFC seam catalog.

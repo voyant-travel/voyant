@@ -260,6 +260,12 @@ export interface FrameworkProviders {
   closePaymentSchedulesForBooking: NonNullable<
     BookingsHonoModuleOptions["closePaymentSchedulesForBooking"]
   >
+  /**
+   * Deployment custom-field registry (see `@voyant-travel/core/custom-fields`),
+   * injected into entities that validate `customFields` on write. Optional — a
+   * deployment that declares no custom fields omits it.
+   */
+  customFields?: BookingsHonoModuleOptions["customFields"]
   /** Resolves a stored document's download URL (bindings + storage key). */
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
   /** Resolves the notification providers for the verification challenge. */
@@ -483,6 +489,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         resolveBillingOrganizationById: async (db, organizationId) =>
           (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
         closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+        customFields: capabilities.customFields,
       }),
     "@voyant-travel/public-document-delivery": ({ capabilities }) =>
       createPublicDocumentDeliveryHonoModule({

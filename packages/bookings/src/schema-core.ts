@@ -81,6 +81,12 @@ export const bookings = pgTable(
      */
     customerPaymentPolicy: jsonb("customer_payment_policy"),
     priceOverride: jsonb("price_override").$type<BookingPriceOverride | null>(),
+    /**
+     * Deployment-declared custom fields (see `@voyant-travel/core/custom-fields`).
+     * Validated at the write boundary against the deployment's custom-field
+     * registry; `{}` when none are declared. Keys are the registered field keys.
+     */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     holdExpiresAt: timestamp("hold_expires_at", { withTimezone: true }),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     expiredAt: timestamp("expired_at", { withTimezone: true }),

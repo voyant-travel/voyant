@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: bookings; existing route module stays co-located until a dedicated split preserves behavior and tests.
+
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   ActionApprovalDecisionConflictError,
@@ -21,6 +22,7 @@ import {
   mapActionLedgerRequestContext,
   requestActionLedgerApproval,
 } from "@voyant-travel/action-ledger"
+import { validateCustomFields } from "@voyant-travel/core/custom-fields"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   aggregateSnapshotKey,
@@ -351,6 +353,38 @@ async function validateBookingBillingPartyReferences<T extends Env>(
       )
     }
   }
+}
+
+/**
+ * Validate a booking write's `customFields` against the deployment's injected
+ * custom-field registry (see `@voyant-travel/core/custom-fields`) and replace
+ * the payload value with the cleaned, registry-approved object. No-op when the
+ * write carries no `customFields`. Rejects (400) unknown keys / missing required
+ * / bad types, or any `customFields` at all when the deployment declares none.
+ */
+function validateBookingCustomFields<T extends Env>(
+  c: Context<T>,
+  data: { customFields?: Record<string, unknown> },
+): void {
+  if (data.customFields === undefined) {
+    return
+  }
+  const registry = getRouteRuntime(c).customFields
+  if (!registry) {
+    throw new RequestValidationError("Custom fields are not configured for this deployment", {
+      fields: { fieldErrors: { customFields: ["not configured"] }, formErrors: [] },
+    })
+  }
+  const result = validateCustomFields(registry, "booking", data.customFields)
+  if (!result.ok) {
+    throw new RequestValidationError("Invalid booking custom fields", {
+      fields: {
+        fieldErrors: Object.fromEntries(result.errors.map((e) => [e.key, [e.message]])),
+        formErrors: [],
+      },
+    })
+  }
+  data.customFields = result.value
 }
 
 type BookingTravelerLedgerAction = "create" | "update" | "delete"
@@ -1542,6 +1576,7 @@ export const bookingRoutes = new Hono<Env>()
       const data = await parseJsonBody(c, createBookingSchema, {
         invalidBodyMessage: "Invalid booking create payload",
       })
+      validateBookingCustomFields(c, data)
       await validateBookingBillingPartyReferences(c, data)
 
       return c.json(
@@ -1570,6 +1605,7 @@ export const bookingRoutes = new Hono<Env>()
   // 5. PATCH /:id — Update booking
   .patch("/:id", async (c) => {
     const data = await parseJsonBody(c, updateBookingSchema)
+    validateBookingCustomFields(c, data)
     await validateBookingBillingPartyReferences(c, data)
 
     const row = await bookingsService.updateBooking(c.get("db"), c.req.param("id"), data)
