@@ -12,9 +12,10 @@
  * Swapping the db backend, base-URL resolution, trips deps, or operator-profile
  * source is a change here — never in the route implementations.
  */
+
+import { getOperatorSettings, toPublicOperatorSettings } from "@voyant-travel/operator-settings"
 import type { QuoteProposalRoutesOptions } from "@voyant-travel/quotes"
 import type { Context } from "hono"
-import { getOperatorSettings, toPublicOperatorSettings } from "../routes/settings"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
 import { createReserveTripDeps, createStartCheckoutDeps } from "./trips-runtime"

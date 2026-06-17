@@ -49,12 +49,16 @@ export default defineVoyantConfig({
     "@voyant-travel/accommodations",
     "@voyant-travel/charters",
     "@voyant-travel/cruises",
+    // Operator-tenant settings (profile + payment + booking-tax) — schema is
+    // package-owned now; folded into the combined migration history here. Same
+    // tables/prefixes as the prior starter-local schema (migration parity).
+    "@voyant-travel/operator-settings",
   ],
-  // Template-local Drizzle schema(s) owned by no package: deployment glue plus
-  // the generated cross-module link tables (folded into the migration history
-  // instead of applied out-of-band via sync-links — regenerate with
+  // Template-local Drizzle schema(s) owned by no package: the generated
+  // cross-module link tables (folded into the migration history instead of
+  // applied out-of-band via sync-links — regenerate with
   // `voyant db sync-links --emit-drizzle`).
-  schemas: ["./src/db/schema.ts", "./drizzle.links.generated.ts"],
+  schemas: ["./drizzle.links.generated.ts"],
   featureFlags: {
     links_enabled: true,
     query_graph: true,

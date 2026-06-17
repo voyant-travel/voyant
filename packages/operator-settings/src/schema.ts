@@ -1,9 +1,12 @@
 /**
- * Operator-starter-local drizzle schema.
+ * `@voyant-travel/operator-settings` drizzle schema — the operator-tenant
+ * identity + payment + booking-tax configuration tables.
  *
- * Most domain tables live in shared `@voyant-travel/*` packages. This file
- * is only for tables that are operator-template concerns and do not
- * make sense as generic package-owned domain rows.
+ * Generic to any deployment (every operator has a profile, payment
+ * instructions/defaults, and tax settings); the rows are per-deployment data.
+ * A deployment lists this package in `voyant.config` `additionalSchemas` so its
+ * tables fold into the combined migration history. Table names + TypeID
+ * prefixes are unchanged from the prior starter-local schema (migration parity).
  */
 
 import { typeId } from "@voyant-travel/db/lib/typeid-column"
