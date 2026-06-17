@@ -110,11 +110,9 @@ export function StageList({ reminderRuleId }: StageListProps) {
                   {messages.stage.fields.cadenceEveryDays}: {stage.cadenceEveryDays}
                 </span>
               )}
-              {stage.maxSendsInStage != null && (
-                <span>
-                  {messages.stage.fields.maxSendsInStage}: {stage.maxSendsInStage}
-                </span>
-              )}
+              <span>
+                {messages.stage.fields.maxSendsInStage}: {stage.maxSendsInStage ?? 1}
+              </span>
             </div>
             <StageChannelList reminderRuleId={reminderRuleId} stageId={stage.id} />
           </CardContent>

@@ -35,7 +35,8 @@ export const notificationsUiRo: NotificationsUiMessages = {
       emptyIntervals:
         "Adaugă praguri bazate pe zile-până-la-scadență pentru a ajusta cadența pe măsură ce se apropie termenul.",
       stopConditions: "Condiții de oprire",
-      maxSendsInStage: "Lasă gol pentru fără limită. Când se atinge limita, preia etapa următoare.",
+      maxSendsInStage:
+        "Lasă gol pentru valoarea implicită de 1 trimitere. Introdu un plafon finit pentru repetare.",
       respectQuietHours:
         "Amână declanșările care ar cădea în intervalul de ore de liniște al tenantului.",
     },

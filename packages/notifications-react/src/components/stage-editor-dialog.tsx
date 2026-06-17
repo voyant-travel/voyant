@@ -64,6 +64,7 @@ const ANCHORS: Anchor[] = [
 ]
 
 const CADENCES: CadenceKind[] = ["once", "every_n_days", "escalating"]
+const DEFAULT_MAX_SENDS_IN_STAGE = 1
 
 function fromRecord(stage: ReminderRuleStageRecord | null, orderIndex: number): FormState {
   if (!stage) {
@@ -76,7 +77,7 @@ function fromRecord(stage: ReminderRuleStageRecord | null, orderIndex: number): 
       cadenceKind: "once",
       cadenceEveryDays: null,
       cadenceIntervals: [],
-      maxSendsInStage: null,
+      maxSendsInStage: DEFAULT_MAX_SENDS_IN_STAGE,
       respectQuietHours: true,
     }
   }
@@ -94,7 +95,7 @@ function fromRecord(stage: ReminderRuleStageRecord | null, orderIndex: number): 
         whenDaysUntilDueGT: i.whenDaysUntilDueGT ?? null,
         repeatEveryDays: i.repeatEveryDays,
       })) ?? [],
-    maxSendsInStage: stage.maxSendsInStage,
+    maxSendsInStage: stage.maxSendsInStage ?? DEFAULT_MAX_SENDS_IN_STAGE,
     respectQuietHours: stage.respectQuietHours,
   }
 }

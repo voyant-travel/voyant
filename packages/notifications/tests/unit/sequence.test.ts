@@ -67,7 +67,7 @@ describe("pickActiveStage", () => {
     expect(pickActiveStage([], 0)).toBeNull()
   })
 
-  it("returns first stage when caps are unbounded and zero sends", () => {
+  it("returns first stage when caps are omitted and zero sends", () => {
     const s1 = { ...baseStage, id: "s1" }
     const s2 = { ...baseStage, id: "s2", orderIndex: 1 }
     expect(pickActiveStage([s1, s2], 0)?.id).toBe("s1")
@@ -81,7 +81,13 @@ describe("pickActiveStage", () => {
     expect(pickActiveStage([s1, s2, s3], 1)?.id).toBe("s2")
     expect(pickActiveStage([s1, s2, s3], 2)?.id).toBe("s2")
     expect(pickActiveStage([s1, s2, s3], 3)?.id).toBe("s3")
-    expect(pickActiveStage([s1, s2, s3], 99)?.id).toBe("s3")
+    expect(pickActiveStage([s1, s2, s3], 4)).toBeNull()
+  })
+
+  it("defaults an omitted stage cap to one send", () => {
+    const s1 = { ...baseStage, id: "s1", maxSendsInStage: null }
+    expect(pickActiveStage([s1], 0)?.id).toBe("s1")
+    expect(pickActiveStage([s1], 1)).toBeNull()
   })
 
   it("returns null after all bounded stages exhausted", () => {
@@ -215,6 +221,7 @@ describe("evaluateStage", () => {
       windowStartDays: -10,
       windowEndDays: 0,
       cadenceKind: "once" as const,
+      maxSendsInStage: 2,
     }
     const sentAt = new Date("2026-05-09T00:00:00Z")
     const decision = evaluateStage(
@@ -234,6 +241,7 @@ describe("evaluateStage", () => {
       windowStartDays: -10,
       windowEndDays: 0,
       cadenceKind: "once" as const,
+      maxSendsInStage: 2,
     }
     const attemptedAt = new Date("2026-05-09T00:00:00Z")
     const decision = evaluateStage(
@@ -260,6 +268,27 @@ describe("evaluateStage", () => {
       [stage],
       baseTarget,
       [{ scheduledFor: attemptedAt, sentAt: null, status: "queued" }],
+      today,
+    )
+    expect(decision.fire).toBe(false)
+    expect(decision.fire ? "" : decision.reason).toBe("no_active_stage")
+  })
+
+  it("stops after one attempt when the final stage omits maxSendsInStage", () => {
+    const stage = {
+      ...baseStage,
+      windowStartDays: -10,
+      windowEndDays: 0,
+      cadenceKind: "every_n_days" as const,
+      cadenceEveryDays: 1,
+      maxSendsInStage: null,
+    }
+    const sentAt = new Date("2026-05-08T00:00:00Z")
+    const decision = evaluateStage(
+      baseRule,
+      [stage],
+      baseTarget,
+      [{ scheduledFor: sentAt, sentAt, status: "sent" }],
       today,
     )
     expect(decision.fire).toBe(false)
