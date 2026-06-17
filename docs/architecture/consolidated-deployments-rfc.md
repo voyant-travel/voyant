@@ -162,10 +162,10 @@ A custom client must be able to do all of the following **without editing a fram
 | Custom association | `defineLink` in `src/links` | exists |
 | Extra admin page / widget | `src/admin/<name>` discovery → `AdminExtension` (page + widget + nav) | **done** — `adminExtensionsFromGlob` + `buildAdminExtensionRoutes`; see `custom-modules.md` |
 | Override a packaged admin page | declarative page-override seam (`detailPageComponent`, `extraPages`) | exists but undiscoverable; document + standardize |
-| Custom fields on core entities | **registered extension-field API + typed JSONB** (design below) | **gap — design proposed** |
+| Custom fields on core entities | registered extension-field registry (`@voyant-travel/core/custom-fields`) + typed JSON | **primitive shipped** — registry/validation/visibility + `src/custom-fields` discovery; per-entity column adoption follows. See `custom-fields.md` |
 | Provider choice (payment, storage, connector) | injected `providers` | **done** (card-payment seam, connectors) |
 
-Remaining gap: a **custom-fields pattern** (registered extension-field API + typed JSONB). The discovery seams — custom module, custom API extension, and custom admin page/widget/nav — are all shipped.
+The discovery seams — custom module, custom API extension, custom admin page/widget/nav, and the custom-fields registry — are all shipped. The custom-fields **primitive** (registry + validation + visibility + `src/custom-fields` discovery) has landed; remaining is per-entity adoption (the `custom_fields` column + write-validation + export/invoice/search consumption on `booking`/`person`/`product`).
 
 **Custom-fields design (recommended).** Custom fields are the single most common client ask and today force a side-table that export/invoicing/search don't see. Commit to a **registered extension-field API backed by typed JSONB** on selected core entities (bookings, people/organizations, products):
 
