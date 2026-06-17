@@ -35,7 +35,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       emptyIntervals:
         "Add buckets keyed on days-until-due to scale cadence as the deadline approaches.",
       stopConditions: "Stop conditions",
-      maxSendsInStage: "Leave blank for no limit. When reached, the next stage takes over.",
+      maxSendsInStage: "Leave blank to use the default of 1 send. Enter a finite cap to repeat.",
       respectQuietHours: "Defer fires that would land inside the tenant's quiet-hours window.",
     },
     placeholders: {
