@@ -1,5 +1,13 @@
 # @voyant-travel/distribution
 
+## 0.112.2
+
+### Patch Changes
+
+- 027347f: Make channel-push workflow registration and schedules opt-in so package root
+  imports for suppliers, external refs, or route wiring do not publish scheduled
+  channel-push work.
+
 ## 0.112.1
 
 ### Patch Changes
