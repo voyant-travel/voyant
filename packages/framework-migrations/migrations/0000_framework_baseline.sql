@@ -1,3 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+--> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS "unaccent";
+--> statement-breakpoint
 CREATE TYPE "public"."roles" AS ENUM('super-admin', 'admin', 'editor', 'viewer', 'member', 'guest');--> statement-breakpoint
 CREATE TYPE "public"."seating_preference" AS ENUM('aisle', 'window', 'middle', 'no_preference');--> statement-breakpoint
 CREATE TYPE "public"."domain_provider" AS ENUM('cloudflare');--> statement-breakpoint
@@ -241,6 +245,7 @@ CREATE TYPE "public"."charter_suite_availability" AS ENUM('available', 'limited'
 CREATE TYPE "public"."charter_suite_category" AS ENUM('standard', 'deluxe', 'suite', 'penthouse', 'owners', 'signature');--> statement-breakpoint
 CREATE TYPE "public"."charter_voyage_sales_status" AS ENUM('open', 'on_request', 'wait_list', 'sold_out', 'closed');--> statement-breakpoint
 CREATE TYPE "public"."charter_yacht_class" AS ENUM('luxury_motor', 'luxury_sailing', 'expedition', 'small_cruise');--> statement-breakpoint
+CREATE TYPE "public"."cruise_air_arrangement" AS ENUM('cruise_line', 'independent', 'none');--> statement-breakpoint
 CREATE TYPE "public"."cruise_booking_mode" AS ENUM('inquiry', 'reserve');--> statement-breakpoint
 CREATE TYPE "public"."cruise_cabin_room_type" AS ENUM('inside', 'oceanview', 'balcony', 'suite', 'penthouse', 'single');--> statement-breakpoint
 CREATE TYPE "public"."cruise_inclusion_kind" AS ENUM('meals', 'drinks', 'gratuities', 'transfers', 'excursions', 'wifi', 'other');--> statement-breakpoint

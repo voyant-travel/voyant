@@ -17,12 +17,31 @@
  *                   leaving the result to commit.
  */
 import { execFileSync } from "node:child_process"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const BUNDLE_DIR = "packages/framework-migrations/migrations"
+const BASELINE = join(ROOT, BUNDLE_DIR, "0000_framework_baseline.sql")
 const EMIT = process.argv.includes("--emit")
+
+// Postgres extensions the standard schema's indexes need (e.g. trigram /
+// unaccent search). drizzle-kit only auto-generates `postgis`, so the baseline
+// gets this preamble injected. Idempotent — added only if not already present.
+const EXTENSIONS_PREAMBLE = [
+  'CREATE EXTENSION IF NOT EXISTS "pg_trgm";',
+  'CREATE EXTENSION IF NOT EXISTS "unaccent";',
+]
+const PREAMBLE_MARK = EXTENSIONS_PREAMBLE[0]
+
+function ensureExtensionsPreamble() {
+  if (!existsSync(BASELINE)) return
+  const sql = readFileSync(BASELINE, "utf8")
+  if (sql.includes(PREAMBLE_MARK)) return
+  const preamble = `${EXTENSIONS_PREAMBLE.join("\n--> statement-breakpoint\n")}\n--> statement-breakpoint\n`
+  writeFileSync(BASELINE, preamble + sql)
+}
 
 const run = (cmd, args, opts = {}) =>
   execFileSync(cmd, args, { cwd: ROOT, encoding: "utf8", stdio: "pipe", ...opts })
@@ -57,6 +76,9 @@ run(
   ],
   { stdio: "inherit" },
 )
+
+// drizzle-kit can't emit `CREATE EXTENSION` for pg_trgm/unaccent — inject them.
+ensureExtensionsPreamble()
 
 const after = bundleStatus()
 

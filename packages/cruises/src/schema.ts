@@ -1,6 +1,10 @@
 export {
   bookingCruiseDetails,
   bookingGroupCruiseDetails,
+  // Re-export BOTH enums the cruise booking-detail tables use — schema
+  // discovery (drizzle) only sees enums exported from the schema barrel, so an
+  // omitted enum yields a table referencing an uncreated type.
+  cruiseAirArrangementEnum,
   cruiseBookingModeEnum,
 } from "./booking-extension.js"
 export * from "./schema-cabins.js"

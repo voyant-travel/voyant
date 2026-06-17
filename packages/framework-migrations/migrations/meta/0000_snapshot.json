@@ -1,5 +1,5 @@
 {
-  "id": "6320cc40-d562-46c9-b103-3c0df9db5f79",
+  "id": "6837816f-07e7-4cb7-8074-f2f11e21fe6a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -67877,6 +67877,15 @@
         "luxury_sailing",
         "expedition",
         "small_cruise"
+      ]
+    },
+    "public.cruise_air_arrangement": {
+      "name": "cruise_air_arrangement",
+      "schema": "public",
+      "values": [
+        "cruise_line",
+        "independent",
+        "none"
       ]
     },
     "public.cruise_booking_mode": {
