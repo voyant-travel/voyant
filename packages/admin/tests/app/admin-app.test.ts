@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 import { adminRootHead } from "../../src/app/root.js"
-import { createAdminQueryClient } from "../../src/app/router.js"
+import {
+  AdminPendingFallback,
+  createAdminQueryClient,
+  createAdminRouter,
+} from "../../src/app/router.js"
 import {
   createAdminWorkspaceBeforeLoad,
   defaultAdminWorkspaceUser,
@@ -14,6 +18,25 @@ describe("createAdminQueryClient", () => {
     expect(defaults.queries?.refetchOnWindowFocus).toBe(false)
     expect(defaults.queries?.retry).toBe(1)
     expect(defaults.queries?.staleTime).toBe(30_000)
+  })
+})
+
+describe("createAdminRouter", () => {
+  it("uses the package pending fallback by default", async () => {
+    const { createRootRoute } = await import("@tanstack/react-router")
+    const routeTree = createRootRoute()
+    const router = createAdminRouter({ routeTree })
+
+    expect(router.options.defaultPendingComponent).toBe(AdminPendingFallback)
+  })
+
+  it("allows hosts to override the pending fallback", async () => {
+    const { createRootRoute } = await import("@tanstack/react-router")
+    const routeTree = createRootRoute()
+    const Pending = () => null
+    const router = createAdminRouter({ routeTree, pendingComponent: Pending })
+
+    expect(router.options.defaultPendingComponent).toBe(Pending)
   })
 })
 
