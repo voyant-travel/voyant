@@ -19,6 +19,7 @@
  */
 
 import {
+  extensionsFromGlob,
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkProviders,
   frameworkComposition,
@@ -28,6 +29,7 @@ import type { VoyantDb } from "@voyant-travel/hono"
 import type {
   CompositionManifest,
   CompositionRegistry,
+  ExtensionFactory,
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
@@ -225,6 +227,24 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
 }
 
 /**
+ * Custom extensions dropped into `src/extensions/<name>/index.ts` are
+ * auto-discovered and mounted onto an EXISTING module's surface (the "custom
+ * route on an existing module without forking" seam). Same build-time
+ * `import.meta.glob` mechanism as modules; each default export is a
+ * `HonoExtension`/`ExtensionFactory` (see `defineDeploymentExtension`) targeting
+ * `extension.module`. Empty until a deployment adds one. The standard extensions
+ * stay framework-owned (with injected provider closures); these are purely
+ * deployment-local. See docs/architecture/custom-modules.md.
+ */
+const discoveredExtensions = extensionsFromGlob<OperatorCapabilities>(
+  import.meta.glob("../extensions/*/index.ts", { eager: true }),
+)
+
+export const deploymentLocalExtensions: Record<string, ExtensionFactory<OperatorCapabilities>> = {
+  ...discoveredExtensions,
+}
+
+/**
  * The full composed manifest + registry — DERIVED from the framework-owned
  * standard set plus the deployment-local additions. `app.ts` builds the app via
  * `createVoyantApp` (which assembles the same internally); these exports remain
@@ -232,10 +252,10 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
  */
 export const OPERATOR_RUNTIME_MANIFEST = {
   modules: [...FRAMEWORK_RUNTIME_MANIFEST.modules, ...Object.keys(deploymentLocalModules)],
-  extensions: [...FRAMEWORK_RUNTIME_MANIFEST.extensions],
+  extensions: [...FRAMEWORK_RUNTIME_MANIFEST.extensions, ...Object.keys(deploymentLocalExtensions)],
 } satisfies CompositionManifest
 
 export const operatorComposition: CompositionRegistry<OperatorCapabilities> = {
   modules: { ...frameworkComposition.modules, ...deploymentLocalModules },
-  extensions: { ...frameworkComposition.extensions },
+  extensions: { ...frameworkComposition.extensions, ...deploymentLocalExtensions },
 }
