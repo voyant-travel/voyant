@@ -22,6 +22,7 @@ import {
   FRAMEWORK_RUNTIME_MANIFEST,
   type FrameworkProviders,
   frameworkComposition,
+  modulesFromGlob,
 } from "@voyant-travel/framework"
 import type { VoyantDb } from "@voyant-travel/hono"
 import type {
@@ -198,7 +199,22 @@ export function buildOperatorProviders(): OperatorCapabilities {
  * `app.ts` passes them as `modules`. (operator-settings is now a standard
  * package module owned by the framework.)
  */
+/**
+ * Custom modules dropped into `src/modules/<name>/index.ts` are auto-discovered
+ * and mounted — the "build your own module without forking" seam. Vite compiles
+ * this `import.meta.glob` to static imports at build time (Workers-safe); each
+ * module's default export is a `HonoModule`/`ModuleFactory` (see
+ * `defineDeploymentModule`), keyed by its `<name>` directory. Empty until a
+ * deployment adds one. Schema for a custom module (`src/modules/<name>/schema.ts`)
+ * is picked up by the deployment drizzle configs and migrated as a deployment
+ * source after the framework bundle. See docs/architecture/custom-modules.md.
+ */
+const discoveredModules = modulesFromGlob<OperatorCapabilities>(
+  import.meta.glob("../modules/*/index.ts", { eager: true }),
+)
+
 export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
+  ...discoveredModules,
   "operator/invitations": () => ({
     module: { name: "invitations" },
     lazyAdminRoutes: () =>

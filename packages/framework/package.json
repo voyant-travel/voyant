@@ -13,6 +13,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "biome check src",
     "clean": "rm -rf dist"
   },
@@ -43,7 +44,8 @@
     "@voyant-travel/hono": "workspace:*",
     "@voyant-travel/voyant-typescript-config": "workspace:*",
     "hono": "^4.12.10",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.0"
   },
   "publishConfig": {
     "access": "public",
