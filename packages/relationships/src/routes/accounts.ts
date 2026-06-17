@@ -1,5 +1,9 @@
 import type { ModuleContainer } from "@voyant-travel/core"
-import { validateCustomFields } from "@voyant-travel/core/custom-fields"
+import {
+  type CustomFieldDefinition,
+  customFieldsVisibleIn,
+  validateCustomFields,
+} from "@voyant-travel/core/custom-fields"
 import {
   idempotencyKey,
   parseJsonBody,
@@ -95,6 +99,20 @@ async function validateRelationshipsCustomFields<T extends Env>(
     })
   }
   data.customFields = result.value
+}
+
+/** Custom fields for `entity` visible in `channel` (export / invoice / search). */
+async function resolveVisibleCustomFields<T extends Env>(
+  c: Context<T>,
+  entity: "person" | "organization",
+  channel: "export" | "invoice" | "search",
+): Promise<CustomFieldDefinition[]> {
+  const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+    | RelationshipsRouteRuntime
+    | undefined
+  const resolveRegistry = runtime?.customFields
+  if (!resolveRegistry) return []
+  return customFieldsVisibleIn(await resolveRegistry(c.get("db")), entity, channel)
 }
 
 export const accountRoutes = new Hono<Env>()
@@ -397,7 +415,8 @@ export const accountRoutes = new Hono<Env>()
 
   // CSV export/import
   .post("/people/export", async (c) => {
-    const csv = await relationshipsService.exportPeopleCsv(c.get("db"))
+    const visibleFields = await resolveVisibleCustomFields(c, personEntity, "export")
+    const csv = await relationshipsService.exportPeopleCsv(c.get("db"), visibleFields)
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv",
