@@ -76,20 +76,31 @@ async function validateRelationshipsCustomFields<T extends Env>(
   c: Context<T>,
   entity: "person" | "organization",
   data: { customFields?: Record<string, unknown> },
+  mode: "create" | "update",
 ): Promise<void> {
-  if (data.customFields === undefined) {
-    return
-  }
   const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
     | RelationshipsRouteRuntime
     | undefined
   const resolveRegistry = runtime?.customFields
-  if (!resolveRegistry) {
+  if (data.customFields === undefined) {
+    // Partial update without custom fields, or no registry → no-op. A create with
+    // an absent envelope still validates `{}` so `required` fields are enforced.
+    if (mode === "update" || !resolveRegistry) {
+      return
+    }
+  } else if (!resolveRegistry) {
     throw new RequestValidationError("Custom fields are not configured for this deployment", {
       fields: { fieldErrors: { customFields: ["not configured"] }, formErrors: [] },
     })
   }
-  const result = validateCustomFields(await resolveRegistry(c.get("db")), entity, data.customFields)
+  if (!resolveRegistry) {
+    return
+  }
+  const result = validateCustomFields(
+    await resolveRegistry(c.get("db")),
+    entity,
+    data.customFields ?? {},
+  )
   if (!result.ok) {
     throw new RequestValidationError(`Invalid ${entity} custom fields`, {
       fields: {
@@ -126,7 +137,7 @@ export const accountRoutes = new Hono<Env>()
     idempotencyKey({ scope: "POST /v1/admin/relationships/organizations" }),
     async (c) => {
       const data = await parseJsonBody(c, insertOrganizationSchema)
-      await validateRelationshipsCustomFields(c, organizationEntity, data)
+      await validateRelationshipsCustomFields(c, organizationEntity, data, "create")
       return c.json({ data: await relationshipsService.createOrganization(c.get("db"), data) }, 201)
     },
   )
@@ -137,7 +148,7 @@ export const accountRoutes = new Hono<Env>()
   })
   .patch("/organizations/:id", async (c) => {
     const data = await parseJsonBody(c, updateOrganizationSchema)
-    await validateRelationshipsCustomFields(c, organizationEntity, data)
+    await validateRelationshipsCustomFields(c, organizationEntity, data, "update")
     const row = await relationshipsService.updateOrganization(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Organization not found" }, 404)
     return c.json({ data: row })
@@ -246,7 +257,7 @@ export const accountRoutes = new Hono<Env>()
   })
   .post("/people", idempotencyKey({ scope: "POST /v1/admin/relationships/people" }), async (c) => {
     const data = await parseJsonBody(c, insertPersonSchema)
-    await validateRelationshipsCustomFields(c, personEntity, data)
+    await validateRelationshipsCustomFields(c, personEntity, data, "create")
     return c.json({ data: await relationshipsService.createPerson(c.get("db"), data) }, 201)
   })
   .get("/people/:id", async (c) => {
@@ -256,7 +267,7 @@ export const accountRoutes = new Hono<Env>()
   })
   .patch("/people/:id", async (c) => {
     const data = await parseJsonBody(c, updatePersonSchema)
-    await validateRelationshipsCustomFields(c, personEntity, data)
+    await validateRelationshipsCustomFields(c, personEntity, data, "update")
     const row = await relationshipsService.updatePerson(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Person not found" }, 404)
     return c.json({ data: row })

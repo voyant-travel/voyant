@@ -365,18 +365,26 @@ async function validateBookingBillingPartyReferences<T extends Env>(
 async function validateBookingCustomFields<T extends Env>(
   c: Context<T>,
   data: { customFields?: Record<string, unknown> },
+  mode: "create" | "update",
 ): Promise<void> {
-  if (data.customFields === undefined) {
-    return
-  }
   const resolveRegistry = getRouteRuntime(c).customFields
-  if (!resolveRegistry) {
+  if (data.customFields === undefined) {
+    // A partial update without custom fields, or no registry at all, is a no-op.
+    // A create with an absent envelope still validates `{}` so `required` fields
+    // are enforced.
+    if (mode === "update" || !resolveRegistry) {
+      return
+    }
+  } else if (!resolveRegistry) {
     throw new RequestValidationError("Custom fields are not configured for this deployment", {
       fields: { fieldErrors: { customFields: ["not configured"] }, formErrors: [] },
     })
   }
+  if (!resolveRegistry) {
+    return
+  }
   const registry = await resolveRegistry(c.get("db"))
-  const result = validateCustomFields(registry, "booking", data.customFields)
+  const result = validateCustomFields(registry, "booking", data.customFields ?? {})
   if (!result.ok) {
     throw new RequestValidationError("Invalid booking custom fields", {
       fields: {
@@ -1577,7 +1585,7 @@ export const bookingRoutes = new Hono<Env>()
       const data = await parseJsonBody(c, createBookingSchema, {
         invalidBodyMessage: "Invalid booking create payload",
       })
-      await validateBookingCustomFields(c, data)
+      await validateBookingCustomFields(c, data, "create")
       await validateBookingBillingPartyReferences(c, data)
 
       return c.json(
@@ -1606,7 +1614,7 @@ export const bookingRoutes = new Hono<Env>()
   // 5. PATCH /:id — Update booking
   .patch("/:id", async (c) => {
     const data = await parseJsonBody(c, updateBookingSchema)
-    await validateBookingCustomFields(c, data)
+    await validateBookingCustomFields(c, data, "update")
     await validateBookingBillingPartyReferences(c, data)
 
     const row = await bookingsService.updateBooking(c.get("db"), c.req.param("id"), data)
