@@ -39,6 +39,7 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/storefront/verification",
     "@voyant-travel/trips",
     "@voyant-travel/flights",
+    "@voyant-travel/operator-settings",
     // `operator/*` STANDARD families — routes are package-owned; they keep the
     // `operator/*` specifier only because the deployment injects their provider
     // wiring (see operator-registry-classification.md). The framework owns the

@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./service": "./src/service.ts"
+    "./service": "./src/service.ts",
+    "./hono-module": "./src/hono-module.ts",
+    "./routes": "./src/routes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -19,7 +21,9 @@
   "dependencies": {
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -47,6 +51,16 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./hono-module": {
+        "types": "./dist/hono-module.d.ts",
+        "import": "./dist/hono-module.js",
+        "default": "./dist/hono-module.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
       }
     },
     "main": "./dist/index.js",

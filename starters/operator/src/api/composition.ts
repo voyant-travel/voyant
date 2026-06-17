@@ -193,8 +193,10 @@ export function buildOperatorProviders(): OperatorCapabilities {
 /**
  * The deployment-local module factories — the only two families that aren't
  * package-owned standard (Better-Auth team invitations + the operator's own
- * settings schema/routes). `createVoyantApp` merges these onto the standard
- * `frameworkComposition` set; `app.ts` passes them as `modules`.
+ * Better-Auth team invitations — coupled to the deployment's auth client).
+ * `createVoyantApp` merges these onto the standard `frameworkComposition` set;
+ * `app.ts` passes them as `modules`. (operator-settings is now a standard
+ * package module owned by the framework.)
  */
 export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabilities>> = {
   "operator/invitations": () => ({
@@ -203,22 +205,6 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
       import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
     lazyPublicRoutes: () =>
       import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
-  }),
-  "operator/operator-settings": () => ({
-    module: { name: "operator-settings" },
-    lazyRoutes: {
-      paths: [
-        "/v1/admin/settings/*",
-        "/v1/public/operator-profile",
-        "/v1/public/settings/operator",
-      ],
-      load: () =>
-        import("./routes/settings").then((m) => {
-          const app = new Hono()
-          m.mountOperatorSettingsRoutes(app)
-          return app
-        }),
-    },
   }),
 }
 
