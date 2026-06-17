@@ -98,10 +98,16 @@ column on the entity. `custom_field_values` is retired.**
    accounts route validates person/org writes against the resolved registry
    (`validateRelationshipsCustomFields`); reads return the column. The
    relationships factory moved Tier 1 → 2 to receive `capabilities.customFields`.
-3. **Repoint the value API + backfill** `custom_field_values` → jsonb; admin UI
-   unchanged.
-4. **Retire `custom_field_values`**; quote/activity columns; export/invoice/search
-   consume `customFieldsVisibleIn`.
+3. **Repoint the value API + backfill. ✅ landed.**
+   - 3a — `custom_fields` column on `quotes` + `activities` (bundle `0003`).
+   - 3b — `upsert/list/deleteCustomFieldValue` read/write the entity column
+     (synthetic value-ids `entityType::entityId::definitionId`; bidirectional
+     typed↔jsonb mapping; cross-table writes via `sql.identifier`). Round-trip
+     integration-tested.
+   - 3c — idempotent `backfill-custom-fields.ts` (merge-safe `backfilled ||
+     current`), run once during the upgrade.
+4. **Retire `custom_field_values`** + export/invoice/search consume
+   `customFieldsVisibleIn`.
 
 ## Consequences
 
