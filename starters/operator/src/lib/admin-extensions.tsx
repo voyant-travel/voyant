@@ -4,6 +4,7 @@ import {
   type AdminRouteLoaderContext,
   type AdminRouteMessagesProvider,
   type AdminUiRouteContribution,
+  adminExtensionsFromGlob,
   adminRoutePageModule,
   createAdminExtensionRegistry,
 } from "@voyant-travel/admin/extensions"
@@ -605,6 +606,19 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   trips: "Trips",
 }
 
+/**
+ * Deployment-local admin extensions dropped into `src/admin/<name>/index.tsx`
+ * (custom dashboard/detail widgets, nav entries, and pages) — auto-discovered
+ * and composed alongside the standard set, no framework edit, upgrade-safe. Vite
+ * compiles this `import.meta.glob` to static imports at build time (Workers-safe).
+ * Their nav/widgets compose here; their page routes are grafted into the route
+ * tree by `router.tsx` (via `buildAdminExtensionRoutes`). Empty until a
+ * deployment adds one. See docs/architecture/custom-modules.md.
+ */
+export const discoveredAdminExtensions = adminExtensionsFromGlob(
+  import.meta.glob("../admin/*/index.tsx", { eager: true }),
+)
+
 export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
@@ -624,6 +638,7 @@ export function createOperatorAdminExtensions(
       createPromotionsExtension(messages),
       createTripsExtension(messages),
       createActionLedgerExtension(messages),
+      ...discoveredAdminExtensions,
     ),
   )
 }

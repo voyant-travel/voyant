@@ -1,6 +1,7 @@
 import {
   type AdminRouterContext,
   attachAdminExtensionRoutes,
+  buildAdminExtensionRoutes,
   createAdminRouter,
 } from "@voyant-travel/admin/app"
 
@@ -10,6 +11,9 @@ import {
   type AdminExtensionRoutesByTo,
   adminExtensionRoutes,
 } from "./admin.routes.generated"
+import { discoveredAdminExtensions } from "./lib/admin-extensions"
+import { getApiUrl } from "./lib/env"
+import { operatorFetcher } from "./lib/voyant-fetcher"
 import { Route as workspaceRoute } from "./routes/_workspace/route"
 import { type FileRouteTypes, routeTree } from "./routeTree.gen"
 
@@ -43,11 +47,20 @@ export interface OperatorFileRouteTypes {
   id: FileRouteTypes["id"] | keyof AdminExtensionRoutesById
 }
 
-const operatorRouteTree = attachAdminExtensionRoutes(
-  routeTree,
-  workspaceRoute,
-  adminExtensionRoutes,
-)._addFileTypes<OperatorFileRouteTypes>()
+// Page routes contributed by deployment-local `src/admin/*` extensions — built
+// at runtime (the generator never scanned them) and grafted alongside the
+// generated routes. Reachable via plain string navigation only (no typed-link
+// map entries). Empty until a deployment adds a custom admin page.
+const discoveredAdminRoutes = buildAdminExtensionRoutes(
+  discoveredAdminExtensions,
+  () => workspaceRoute,
+  () => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
+)
+
+const operatorRouteTree = attachAdminExtensionRoutes(routeTree, workspaceRoute, [
+  ...adminExtensionRoutes,
+  ...discoveredAdminRoutes,
+])._addFileTypes<OperatorFileRouteTypes>()
 
 export function getRouter() {
   return createAdminRouter({ routeTree: operatorRouteTree })
