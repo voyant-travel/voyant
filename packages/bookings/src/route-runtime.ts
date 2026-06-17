@@ -1,4 +1,4 @@
-import type { CustomFieldRegistry } from "@voyant-travel/core/custom-fields"
+import type { CustomFieldRegistryResolver } from "@voyant-travel/core/custom-fields"
 import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -89,7 +89,7 @@ export interface BookingRouteRuntime {
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
   /** Deployment custom-field registry — validates `customFields` on write. */
-  customFields?: CustomFieldRegistry
+  customFields?: CustomFieldRegistryResolver
 }
 
 /**
@@ -111,7 +111,7 @@ export interface BookingRouteRuntimeOptions {
   resolveBillingPersonById?: ResolveBookingBillingPersonById
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
-  customFields?: CustomFieldRegistry
+  customFields?: CustomFieldRegistryResolver
 }
 
 function buildRuntimeEnv(bindings: KmsBindings): Record<string, string | undefined> {

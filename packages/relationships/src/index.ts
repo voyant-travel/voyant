@@ -129,6 +129,7 @@ export {
   segmentMembers,
   segments,
 } from "./schema.js"
+export { loadCustomFieldDefinitions } from "./service/custom-fields-registry.js"
 export type {
   CreateCustomerSignalInput,
   CustomerSignalListQuery,

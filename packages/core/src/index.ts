@@ -17,6 +17,7 @@ export type {
   CustomFieldError,
   CustomFieldMonetaryValue,
   CustomFieldRegistry,
+  CustomFieldRegistryResolver,
   CustomFieldType,
   CustomFieldValidationResult,
   CustomFieldVisibility,

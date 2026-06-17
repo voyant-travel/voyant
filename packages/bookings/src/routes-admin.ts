@@ -362,19 +362,20 @@ async function validateBookingBillingPartyReferences<T extends Env>(
  * write carries no `customFields`. Rejects (400) unknown keys / missing required
  * / bad types, or any `customFields` at all when the deployment declares none.
  */
-function validateBookingCustomFields<T extends Env>(
+async function validateBookingCustomFields<T extends Env>(
   c: Context<T>,
   data: { customFields?: Record<string, unknown> },
-): void {
+): Promise<void> {
   if (data.customFields === undefined) {
     return
   }
-  const registry = getRouteRuntime(c).customFields
-  if (!registry) {
+  const resolveRegistry = getRouteRuntime(c).customFields
+  if (!resolveRegistry) {
     throw new RequestValidationError("Custom fields are not configured for this deployment", {
       fields: { fieldErrors: { customFields: ["not configured"] }, formErrors: [] },
     })
   }
+  const registry = await resolveRegistry(c.get("db"))
   const result = validateCustomFields(registry, "booking", data.customFields)
   if (!result.ok) {
     throw new RequestValidationError("Invalid booking custom fields", {
@@ -1576,7 +1577,7 @@ export const bookingRoutes = new Hono<Env>()
       const data = await parseJsonBody(c, createBookingSchema, {
         invalidBodyMessage: "Invalid booking create payload",
       })
-      validateBookingCustomFields(c, data)
+      await validateBookingCustomFields(c, data)
       await validateBookingBillingPartyReferences(c, data)
 
       return c.json(
@@ -1605,7 +1606,7 @@ export const bookingRoutes = new Hono<Env>()
   // 5. PATCH /:id — Update booking
   .patch("/:id", async (c) => {
     const data = await parseJsonBody(c, updateBookingSchema)
-    validateBookingCustomFields(c, data)
+    await validateBookingCustomFields(c, data)
     await validateBookingBillingPartyReferences(c, data)
 
     const row = await bookingsService.updateBooking(c.get("db"), c.req.param("id"), data)

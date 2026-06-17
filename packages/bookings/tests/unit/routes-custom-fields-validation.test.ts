@@ -31,7 +31,7 @@ function appWithCustomFields(opts: { withRegistry: boolean }) {
       c.set("container" as never, {
         resolve: (key: string) =>
           key === BOOKING_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: opts.withRegistry ? registry : undefined }
+            ? { customFields: opts.withRegistry ? () => registry : undefined }
             : undefined,
       })
       await next()
