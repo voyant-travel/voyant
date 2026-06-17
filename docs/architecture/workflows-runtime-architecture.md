@@ -118,9 +118,14 @@ be idempotent and process-local: it may cache clients/registries for the worker
 process, but it must not depend on request context or app middleware.
 
 The operator starter uses this contract to wire channel-push workflow deps from
-`DATABASE_URL` and the booking-engine adapter registry. This keeps
-`channel.booking.push`, `channel.availability.push`, and
-`channel.content.push` runnable in both self-host and hosted detached runners.
+`DATABASE_URL` and the booking-engine adapter registry. Channel-push workflow
+registration is opt-in through
+`@voyant-travel/distribution/channel-push-workflows`; importing
+`@voyant-travel/distribution` for suppliers, external refs, or route wiring
+must not register scheduled channel-push work. The availability/content
+schedules are attached only when
+`VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED=true`, which keeps non-channel
+deployments from publishing 30s/5m hosted schedules.
 
 ## Event Flow
 

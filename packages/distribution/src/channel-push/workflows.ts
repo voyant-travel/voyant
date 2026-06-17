@@ -21,7 +21,7 @@
  * Per docs/architecture/channel-push-architecture.md §4.2 + §12.
  */
 
-import { workflow } from "@voyant-travel/workflows"
+import { type ScheduleDeclaration, workflow } from "@voyant-travel/workflows"
 
 import {
   CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,
@@ -41,6 +41,20 @@ import {
   type ProcessContentPushResult,
   processContentPushIntents,
 } from "./content-push.js"
+
+const CHANNEL_PUSH_SCHEDULES_ENABLED_ENV = "VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED" as const
+
+function channelPushSchedulesEnabled(): boolean {
+  return (
+    (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[
+      CHANNEL_PUSH_SCHEDULES_ENABLED_ENV
+    ] === "true"
+  )
+}
+
+function channelPushSchedule(schedule: ScheduleDeclaration): ScheduleDeclaration | undefined {
+  return channelPushSchedulesEnabled() ? schedule : undefined
+}
 
 /**
  * Per-booking saga workflow with compensation support.
@@ -87,7 +101,7 @@ export const channelAvailabilityPushWorkflow = workflow<
 >({
   id: CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,
   description: "Drain channel_availability_push_intents per channel",
-  schedule: { every: "30s" },
+  schedule: channelPushSchedule({ every: "30s" }),
   retry: { backoff: "exponential", max: 3, initial: "10s" },
   timeout: "5m",
   concurrency: {
@@ -114,7 +128,7 @@ export const channelContentPushWorkflow = workflow<
 >({
   id: CHANNEL_CONTENT_PUSH_WORKFLOW_ID,
   description: "Drain channel_content_push_intents per channel",
-  schedule: { every: "5m" },
+  schedule: channelPushSchedule({ every: "5m" }),
   retry: { backoff: "exponential", max: 3, initial: "30s" },
   timeout: "5m",
   concurrency: {

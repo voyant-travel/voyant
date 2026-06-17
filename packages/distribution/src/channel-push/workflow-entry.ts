@@ -1,10 +1,10 @@
 /**
  * Workflow-entry-safe channel-push surface.
  *
- * This subpath is intentionally narrower than `@voyant-travel/distribution`
- * and `@voyant-travel/distribution/channel-push`: workflow bundles import it
- * at module evaluation time, so it must not pull in routes, Hono extensions, or
- * app-server wiring.
+ * This subpath is intentionally narrower than `@voyant-travel/distribution`:
+ * workflow bundles import it at module evaluation time, so it must not pull in
+ * routes, Hono extensions, or app-server wiring. Import this subpath only when
+ * a bundle opts into channel-push workflow registration.
  */
 
 export {

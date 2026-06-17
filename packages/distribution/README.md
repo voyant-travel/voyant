@@ -31,11 +31,16 @@ const app = createApp({
 | Entry | Description |
 | --- | --- |
 | `.` | Module export |
+| `./channel-push-workflows` | Opt-in workflow registration for channel-push bundles |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
 | `./suppliers` | Supplier identity, services, rates, notes, routes, validation, and schema owner path |
 | `./external-refs` | External reference routes, service, validation, and schema owner path |
+
+Set `VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED=true` in workflow build/runtime
+environments that should publish the scheduled availability and content
+channel-push workflows.
 
 ## License
 
