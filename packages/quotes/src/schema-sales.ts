@@ -85,6 +85,8 @@ export const quotes = pgTable(
     sourceRef: text("source_ref"),
     lostReason: text("lost_reason"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    /** Unified custom fields — see the custom-fields unification ADR. */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }).notNull().defaultNow(),

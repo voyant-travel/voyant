@@ -32,6 +32,8 @@ export const activities = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     location: text("location"),
     description: text("description"),
+    /** Unified custom fields — see the custom-fields unification ADR. */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
