@@ -6,7 +6,11 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { buildOperatorProviders, deploymentLocalModules } from "./composition"
+import {
+  buildOperatorProviders,
+  deploymentLocalExtensions,
+  deploymentLocalModules,
+} from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
@@ -40,6 +44,7 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOperatorProviders>>({
   providers: buildOperatorProviders(),
   modules: deploymentLocalModules,
+  extensions: deploymentLocalExtensions,
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
   //   handshake. Serves all reads and single-statement writes.

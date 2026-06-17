@@ -21,9 +21,12 @@
 export { type FrameworkProviders, frameworkComposition } from "./composition.js"
 export { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 export {
+  type DeploymentExtensionDeclaration,
   type DeploymentModuleDeclaration,
+  defineDeploymentExtension,
   defineDeploymentModule,
   type EagerModuleGlob,
+  extensionsFromGlob,
   modulesFromGlob,
 } from "./discover-modules.js"
 export { FRAMEWORK_RUNTIME_MANIFEST, type FrameworkManifest } from "./manifest.js"

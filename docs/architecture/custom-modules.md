@@ -112,6 +112,30 @@ schema glob (`./src/modules/*/schema.ts`) picks up every custom module. The full
 `drizzle.config.ts` globs them too, so `db:push`, `db:studio`, and the
 migration-replay oracle all see custom tables.
 
+## Custom routes on an *existing* module (extensions)
+
+A `HonoExtension` adds routes to an **existing** module's surface (e.g. a
+`/v1/admin/bookings/notes` endpoint on the standard `bookings` module) — as
+opposed to a module, which is a whole new domain. Drop it in `src/extensions/`
+and it's discovered + mounted the same way:
+
+```ts
+// src/extensions/booking-notes/index.ts
+import { defineDeploymentExtension } from "@voyant-travel/framework"
+import { bookingNotesRoutes } from "./routes.js"
+
+export default defineDeploymentExtension({
+  extension: { name: "booking-notes", module: "bookings" }, // target module
+  adminRoutes: bookingNotesRoutes,                          // → /v1/admin/bookings/*
+})
+```
+
+`extension.module` is the module the routes attach to. If the extension owns
+tables, put them in `src/extensions/<name>/schema.ts` — the deployment drizzle
+configs glob `src/extensions/*/schema.ts` too, so they migrate exactly like
+custom-module schema. Discovery wires them via `extensionsFromGlob` in
+`src/api/composition.ts` and passes them as `createVoyantApp({ extensions })`.
+
 ## Why it's upgrade-safe
 
 Everything you write lives under the deployment's `src/` — the framework owns
@@ -128,6 +152,10 @@ never re-runs or collides with your deployment migrations.
   D.2 (package-owned migrations) story — out of scope here.
 - **Discovery is build-time.** A new module requires a rebuild/redeploy (it's
   compiled in), which is exactly what you want on Workers.
+- **Table names are global.** A custom table can't reuse a framework table name
+  (e.g. `booking_notes` already exists) — `pnpm db:migrate` fails fast with
+  `relation "…" already exists`. Prefix deployment-owned tables (`acme_*`) to stay
+  clear of the standard schema.
 
 See also: `consolidated-deployments-rfc.md` (the seam catalog) and
 `migration-collector-d1.md` (the deployment migration source + collector).

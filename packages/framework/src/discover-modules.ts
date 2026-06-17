@@ -1,34 +1,44 @@
 /**
- * Deployment-local module discovery (consolidated-deployments RFC — the "20%"
- * extension seam: *custom module without forking*).
+ * Deployment-local module + extension discovery (consolidated-deployments RFC —
+ * the "20%" extension seams: *custom module* and *custom route on an existing
+ * module*, neither requiring a fork).
  *
- * A deployment drops a custom module at `src/modules/<name>/index.ts` that
- * default-exports a {@link HonoModule} (or a {@link ModuleFactory}) and it is
- * auto-mounted — no edit to a framework-owned file, no hand-wiring in the
- * deployment's composition. Discovery is **build-time**: the deployment feeds a
- * Vite `import.meta.glob("./modules/*\/index.ts", { eager: true })` (statically
- * compiled to static imports — Workers-safe) into {@link modulesFromGlob}, which
- * keys each module by its `<name>` directory segment.
+ * A deployment drops a unit into a conventional directory and it is auto-mounted
+ * — no edit to a framework-owned file, no hand-wiring in the deployment's
+ * composition:
+ *
+ *   - `src/modules/<name>/index.ts`    → a new module (own routes + schema)
+ *   - `src/extensions/<name>/index.ts` → a {@link HonoExtension} adding routes to
+ *                                        an EXISTING module's surface
+ *
+ * Discovery is **build-time**: the deployment feeds a Vite
+ * `import.meta.glob("./modules/*\/index.ts", { eager: true })` (statically
+ * compiled to static imports — Workers-safe) into {@link modulesFromGlob} /
+ * {@link extensionsFromGlob}, which key each unit by its `<name>` directory
+ * segment.
  *
  *     // src/api/composition.ts (deployment-owned)
- *     const discoveredModules = modulesFromGlob<OperatorCapabilities>(
+ *     const modules = modulesFromGlob<OperatorCapabilities>(
  *       import.meta.glob("../modules/*\/index.ts", { eager: true }),
  *     )
- *     export const deploymentLocalModules = { ...discoveredModules, ...handWired }
+ *     const extensions = extensionsFromGlob<OperatorCapabilities>(
+ *       import.meta.glob("../extensions/*\/index.ts", { eager: true }),
+ *     )
  *
- *     // src/modules/loyalty/index.ts (the dev's custom module)
- *     export default defineDeploymentModule({
- *       module: { name: "loyalty" },
- *       adminRoutes: loyaltyRoutes,
+ *     // src/modules/loyalty/index.ts
+ *     export default defineDeploymentModule({ module: { name: "loyalty" }, adminRoutes })
+ *     // src/extensions/booking-notes/index.ts
+ *     export default defineDeploymentExtension({
+ *       extension: { module: "bookings" }, adminRoutes,  // → /v1/admin/bookings/*
  *     })
  *
- * Schema for a custom module lives in `src/modules/<name>/schema.ts` and is
- * picked up by the deployment's drizzle config glob (a *deployment* migration
- * source, applied after the framework bundle by the D.1 collector).
+ * Schema owned by a custom module/extension (`<dir>/<name>/schema.ts`) is picked
+ * up by the deployment's drizzle config glob (a *deployment* migration source,
+ * applied after the framework bundle by the D.1 collector).
  */
 
-import type { ModuleFactory } from "@voyant-travel/hono/composition"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
+import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import type { FrameworkProviders } from "./composition.js"
 
 /** A deployment module declaration: a ready unit, or a factory that builds one. */
@@ -37,11 +47,15 @@ export type DeploymentModuleDeclaration<TProviders> =
   | HonoModule[]
   | ModuleFactory<TProviders>
 
+/** A deployment extension declaration: a ready unit, or a factory that builds one. */
+export type DeploymentExtensionDeclaration<TProviders> =
+  | HonoExtension
+  | ExtensionFactory<TProviders>
+
 /**
  * Normalize a deployment-local module declaration into a {@link ModuleFactory}.
  * Accepts a ready {@link HonoModule} (or array) or a factory; returns a factory
- * either way. Identity for factories, a thunk for ready units. Use it as the
- * `export default` of a `src/modules/<name>/index.ts`.
+ * either way. Use it as the `export default` of a `src/modules/<name>/index.ts`.
  */
 export function defineDeploymentModule<TProviders = FrameworkProviders>(
   declaration: DeploymentModuleDeclaration<TProviders>,
@@ -49,42 +63,87 @@ export function defineDeploymentModule<TProviders = FrameworkProviders>(
   return typeof declaration === "function" ? declaration : () => declaration
 }
 
+/**
+ * Normalize a deployment-local extension declaration into an
+ * {@link ExtensionFactory}. Accepts a ready {@link HonoExtension} or a factory.
+ * Use it as the `export default` of a `src/extensions/<name>/index.ts`.
+ */
+export function defineDeploymentExtension<TProviders = FrameworkProviders>(
+  declaration: DeploymentExtensionDeclaration<TProviders>,
+): ExtensionFactory<TProviders> {
+  return typeof declaration === "function" ? declaration : () => declaration
+}
+
 /** A Vite `import.meta.glob(..., { eager: true })` result: path → module namespace. */
 export type EagerModuleGlob = Record<string, unknown>
 
 /**
- * Build a deployment-local module registry from a Vite `import.meta.glob`
+ * Build a deployment-local **module** registry from a Vite `import.meta.glob`
  * (eager) of `src/modules/<name>/index.ts` files. Each entry's `default` export
  * is a {@link HonoModule} or {@link ModuleFactory} (wrap with
  * {@link defineDeploymentModule}); the registry key is the `<name>` directory
  * segment, which becomes the module's composition specifier.
  *
- * @throws if a matched file has no default export (a wiring mistake worth
- *   surfacing loudly rather than silently dropping the module).
+ * @throws if a matched file has no default export.
  */
 export function modulesFromGlob<TProviders = FrameworkProviders>(
   glob: EagerModuleGlob,
 ): Record<string, ModuleFactory<TProviders>> {
-  const registry: Record<string, ModuleFactory<TProviders>> = {}
+  return discoverFromGlob(glob, "modules", (declaration: DeploymentModuleDeclaration<TProviders>) =>
+    defineDeploymentModule(declaration),
+  )
+}
+
+/**
+ * Build a deployment-local **extension** registry from a Vite `import.meta.glob`
+ * (eager) of `src/extensions/<name>/index.ts` files. Each entry's `default`
+ * export is a {@link HonoExtension} or {@link ExtensionFactory} (wrap with
+ * {@link defineDeploymentExtension}); the registry key is the `<name>` directory
+ * segment.
+ *
+ * @throws if a matched file has no default export.
+ */
+export function extensionsFromGlob<TProviders = FrameworkProviders>(
+  glob: EagerModuleGlob,
+): Record<string, ExtensionFactory<TProviders>> {
+  return discoverFromGlob(
+    glob,
+    "extensions",
+    (declaration: DeploymentExtensionDeclaration<TProviders>) =>
+      defineDeploymentExtension(declaration),
+  )
+}
+
+/**
+ * Shared scanner: map an eager glob of `<dir>/<name>/index.ts` files to a
+ * `{ <name>: normalize(default) }` registry, ignoring non-matching paths.
+ */
+function discoverFromGlob<TDeclaration, TFactory>(
+  glob: EagerModuleGlob,
+  dir: string,
+  normalize: (declaration: TDeclaration) => TFactory,
+): Record<string, TFactory> {
+  const registry: Record<string, TFactory> = {}
   for (const [path, namespace] of Object.entries(glob)) {
-    const name = moduleNameFromPath(path)
+    const name = nameFromPath(path, dir)
     if (!name) {
       continue
     }
     const declaration = (namespace as { default?: unknown }).default
     if (declaration == null) {
       throw new Error(
-        `deployment module "${path}" has no default export — ` +
-          `add \`export default defineDeploymentModule(...)\` to src/modules/${name}/index.ts`,
+        `deployment ${dir.replace(/s$/, "")} "${path}" has no default export — ` +
+          `add \`export default ${dir === "modules" ? "defineDeploymentModule" : "defineDeploymentExtension"}(...)\` ` +
+          `to src/${dir}/${name}/index.ts`,
       )
     }
-    registry[name] = defineDeploymentModule(declaration as DeploymentModuleDeclaration<TProviders>)
+    registry[name] = normalize(declaration as TDeclaration)
   }
   return registry
 }
 
-/** Extract the `<name>` segment from a `.../modules/<name>/index.{ts,tsx,…}` path. */
-function moduleNameFromPath(path: string): string | null {
-  const match = path.match(/\/modules\/([^/]+)\/index\.[cm]?tsx?$/)
+/** Extract the `<name>` segment from a `.../<dir>/<name>/index.{ts,tsx,…}` path. */
+function nameFromPath(path: string, dir: string): string | null {
+  const match = path.match(new RegExp(`/${dir}/([^/]+)/index\\.[cm]?tsx?$`))
   return match ? (match[1] as string) : null
 }
