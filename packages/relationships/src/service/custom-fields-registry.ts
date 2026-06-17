@@ -19,7 +19,7 @@ const TYPE_MAP: Record<string, CustomFieldType> = {
   set: "multiselect",
   json: "json",
   address: "json",
-  phone: "json",
+  phone: "text",
 }
 
 /**

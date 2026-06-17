@@ -1,8 +1,8 @@
-import { and, desc, eq, sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { customFieldDefinitions, customFieldValues } from "../schema.js"
+import { customFieldDefinitions } from "../schema.js"
 import type {
   customFieldDefinitionListQuerySchema,
   customFieldValueListQuerySchema,
@@ -10,6 +10,14 @@ import type {
   updateCustomFieldDefinitionSchema,
   upsertCustomFieldValueSchema,
 } from "../validation.js"
+import {
+  entityTableName,
+  jsonbValueFromTyped,
+  parseSyntheticValueId,
+  syntheticValueId,
+  type TypedValueColumns,
+  typedFromJsonbValue,
+} from "./custom-fields-value-mapping.js"
 import { paginate } from "./helpers.js"
 
 type CustomFieldDefinitionListQuery = z.infer<typeof customFieldDefinitionListQuerySchema>
@@ -75,65 +83,135 @@ export const customFieldsService = {
     return row ?? null
   },
 
-  async listCustomFieldValues(db: PostgresJsDatabase, query: CustomFieldValueListQuery) {
-    const conditions = []
-    if (query.entityType) conditions.push(eq(customFieldValues.entityType, query.entityType))
-    if (query.entityId) conditions.push(eq(customFieldValues.entityId, query.entityId))
-    if (query.definitionId) conditions.push(eq(customFieldValues.definitionId, query.definitionId))
-    const where = conditions.length ? and(...conditions) : undefined
+  // ---- Values: unified storage on the entity's `custom_fields` jsonb column ----
+  // (custom_field_values is retired — see the custom-fields unification ADR.)
 
-    return paginate(
-      db
-        .select()
-        .from(customFieldValues)
-        .where(where)
-        .limit(query.limit)
-        .offset(query.offset)
-        .orderBy(desc(customFieldValues.updatedAt)),
-      db.select({ count: sql<number>`count(*)::int` }).from(customFieldValues).where(where),
-      query.limit,
-      query.offset,
+  async listCustomFieldValues(db: PostgresJsDatabase, query: CustomFieldValueListQuery) {
+    // Locating the value requires the entity type (→ table). The admin UI always
+    // scopes by entityType; without one there is nothing to list.
+    const table = query.entityType ? entityTableName(query.entityType) : null
+    if (!query.entityType || !table) {
+      return {
+        data: [] as CustomFieldValueRow[],
+        total: 0,
+        limit: query.limit,
+        offset: query.offset,
+      }
+    }
+
+    const defs = await db
+      .select()
+      .from(customFieldDefinitions)
+      .where(eq(customFieldDefinitions.entityType, query.entityType))
+    const defByKey = new Map(defs.map((d) => [d.key, d]))
+
+    const entities = toEntityCustomFieldsRows(
+      query.entityId
+        ? await db.execute(
+            sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE id = ${query.entityId}`,
+          )
+        : await db.execute(
+            sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE custom_fields <> '{}'::jsonb ORDER BY updated_at DESC`,
+          ),
     )
+
+    const all: CustomFieldValueRow[] = []
+    for (const ent of entities) {
+      for (const [key, value] of Object.entries(ent.custom_fields ?? {})) {
+        const def = defByKey.get(key)
+        if (!def) continue // orphaned key (definition deleted) — skip
+        if (query.definitionId && def.id !== query.definitionId) continue
+        all.push({
+          id: syntheticValueId(query.entityType, ent.id, def.id),
+          definitionId: def.id,
+          entityType: query.entityType,
+          entityId: ent.id,
+          ...typedFromJsonbValue(def.fieldType, value),
+        })
+      }
+    }
+
+    return {
+      data: all.slice(query.offset, query.offset + query.limit),
+      total: all.length,
+      limit: query.limit,
+      offset: query.offset,
+    }
   },
 
   async upsertCustomFieldValue(
     db: PostgresJsDatabase,
     definitionId: string,
     data: UpsertCustomFieldValueInput,
-  ) {
-    const [existing] = await db
+  ): Promise<CustomFieldValueRow> {
+    const [def] = await db
       .select()
-      .from(customFieldValues)
-      .where(
-        and(
-          eq(customFieldValues.definitionId, definitionId),
-          eq(customFieldValues.entityType, data.entityType),
-          eq(customFieldValues.entityId, data.entityId),
-        ),
-      )
+      .from(customFieldDefinitions)
+      .where(eq(customFieldDefinitions.id, definitionId))
       .limit(1)
-
-    if (existing) {
-      const [row] = await db
-        .update(customFieldValues)
-        .set({ ...data, definitionId, updatedAt: new Date() })
-        .where(eq(customFieldValues.id, existing.id))
-        .returning()
-      return row
+    if (!def) {
+      throw new Error(`[custom-fields] no definition "${definitionId}"`)
+    }
+    const table = entityTableName(data.entityType)
+    if (!table) {
+      throw new Error(
+        `[custom-fields] entity type "${data.entityType}" has no custom_fields column`,
+      )
     }
 
-    const [row] = await db
-      .insert(customFieldValues)
-      .values({ ...data, definitionId })
-      .returning()
-    return row
+    const value = jsonbValueFromTyped(def.fieldType, data)
+    const patch = JSON.stringify({ [def.key]: value })
+    await db.execute(
+      sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields || ${patch}::jsonb, updated_at = now() WHERE id = ${data.entityId}`,
+    )
+
+    return {
+      id: syntheticValueId(data.entityType, data.entityId, definitionId),
+      definitionId,
+      entityType: data.entityType,
+      entityId: data.entityId,
+      ...typedFromJsonbValue(def.fieldType, value),
+    }
   },
 
   async deleteCustomFieldValue(db: PostgresJsDatabase, id: string) {
-    const [row] = await db
-      .delete(customFieldValues)
-      .where(eq(customFieldValues.id, id))
-      .returning({ id: customFieldValues.id })
-    return row ?? null
+    const parsed = parseSyntheticValueId(id)
+    if (!parsed) return null
+    const table = entityTableName(parsed.entityType)
+    if (!table) return null
+    const [def] = await db
+      .select()
+      .from(customFieldDefinitions)
+      .where(eq(customFieldDefinitions.id, parsed.definitionId))
+      .limit(1)
+    if (!def) return null
+    await db.execute(
+      sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields - ${def.key}, updated_at = now() WHERE id = ${parsed.entityId}`,
+    )
+    return { id }
   },
 }
+
+/** A row in the entity table with just its id + custom_fields (raw query shape). */
+interface EntityCustomFieldsRow {
+  id: string
+  custom_fields: Record<string, unknown> | null
+}
+
+/** Narrow a raw `db.execute` result into typed `(id, custom_fields)` rows. */
+function toEntityCustomFieldsRows(
+  result: Iterable<Record<string, unknown>>,
+): EntityCustomFieldsRow[] {
+  return Array.from(result, (row) => ({
+    id: String(row.id),
+    custom_fields: (row.custom_fields as Record<string, unknown> | null) ?? null,
+  }))
+}
+
+/** The value-API row shape, reconstructed from the entity's `custom_fields`. */
+type CustomFieldValueRow = {
+  id: string
+  definitionId: string
+  entityType: string
+  entityId: string
+} & TypedValueColumns
