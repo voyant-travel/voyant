@@ -63,7 +63,6 @@ import {
   suppliersHonoModule,
 } from "@voyant-travel/distribution"
 import {
-  type BookingTaxRouteOptions,
   bookingsCreateExtension,
   createBookingTaxHonoExtension,
   createFinanceHonoModule,
@@ -94,6 +93,10 @@ import {
   notificationsService,
 } from "@voyant-travel/notifications"
 import { operationsHonoModule } from "@voyant-travel/operations"
+import {
+  resolveBookingTaxSettings,
+  updateBookingTaxSettings,
+} from "@voyant-travel/operator-settings"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyant-travel/quotes"
 import {
   createRelationshipsHonoModule,
@@ -302,10 +305,6 @@ export interface FrameworkProviders {
   resolveBankTransferDetails: NonNullable<FinanceHonoModuleOptions["resolveBankTransferDetails"]>
   /** The configured pay-by-link starter (Netopia; env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
-  /** Reads the booking tax settings (finance booking-tax extension). */
-  resolveBookingTaxSettings: NonNullable<BookingTaxRouteOptions["resolveBookingTaxSettings"]>
-  /** Updates the booking tax settings (finance booking-tax extension). */
-  updateBookingTaxSettings: NonNullable<BookingTaxRouteOptions["updateBookingTaxSettings"]>
   /** Builds the distribution channel-push extension (deployment booking-engine wiring). */
   createChannelPushExtension: () => HonoExtension
   // Lazy route-bundle loaders for the `operator/*` standard families (Tier 4).
@@ -602,11 +601,10 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     // Injection-shaped extensions — deployment-specific builders/readers via ctx.
     "@voyant-travel/distribution/channel-push-extension": ({ capabilities }) =>
       capabilities.createChannelPushExtension(),
-    "@voyant-travel/finance/booking-tax-extension": ({ capabilities }) =>
-      createBookingTaxHonoExtension({
-        resolveBookingTaxSettings: capabilities.resolveBookingTaxSettings,
-        updateBookingTaxSettings: capabilities.updateBookingTaxSettings,
-      }),
+    // Booking-tax settings are read straight from the standard
+    // @voyant-travel/operator-settings package — no per-deployment injection.
+    "@voyant-travel/finance/booking-tax-extension": () =>
+      createBookingTaxHonoExtension({ resolveBookingTaxSettings, updateBookingTaxSettings }),
     // Tier 4 — lazy `operator/*` standard extensions. The framework owns the
     // `extension` metadata + publicPath; the deployment injects builders/loaders.
     "operator/booking-schedule-extension": ({ capabilities }) =>
