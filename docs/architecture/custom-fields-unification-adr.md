@@ -86,10 +86,13 @@ column on the entity. `custom_field_values` is retired.**
 
 ## Phases (each its own PR)
 
-1. **Type model + registry merge (no storage change).** Extend `core`'s
-   `CustomFieldType` + `validateCustomFields`; add `loadCustomFieldRegistry(db)`
-   (DB→registry mapping) in relationships; add the per-request resolver and move
-   `booking` onto it. Pure addition; nothing migrated yet.
+1. **Type model + registry merge (no storage change). ✅ landed.**
+   - 1a — `core`'s `CustomFieldType` superset (`multiselect`/`monetary`/`json`) +
+     `validateCustomFields` + `mergeCustomFieldDefinitions`.
+   - 1b — `loadCustomFieldDefinitions(db)` in relationships (DB→registry mapping);
+     `customFields` injection becomes a per-request `CustomFieldRegistryResolver`
+     (`(db) ⇒ code ∪ DB`, cached per isolate); `booking` moved onto it. Pure
+     addition; nothing migrated yet.
 2. **Columns + write/read on person/organization.** `custom_fields` column on
    `people`/`organizations`; validate person/org writes against the resolved
    registry; reads return the column.

@@ -35,7 +35,7 @@ import type {
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
-import { operatorCustomFields } from "../lib/custom-fields"
+import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
@@ -94,7 +94,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
  */
 export function buildOperatorProviders(): OperatorCapabilities {
   return {
-    customFields: operatorCustomFields,
+    customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
     resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,

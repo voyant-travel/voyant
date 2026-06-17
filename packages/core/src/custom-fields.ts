@@ -99,6 +99,18 @@ export interface CustomFieldRegistry {
   all(): CustomFieldDefinition[]
 }
 
+/**
+ * Resolve the registry for a request. The unified system's definitions come
+ * from two sources (code-declared + the runtime `custom_field_definitions`
+ * table), and the runtime set is read from the DB — so the registry is resolved
+ * per request from a `db` handle rather than being a boot-time constant. `db` is
+ * `unknown` to keep `core` free of a Drizzle dependency; the deployment's
+ * resolver casts it. See the custom-fields unification ADR.
+ */
+export type CustomFieldRegistryResolver = (
+  db: unknown,
+) => CustomFieldRegistry | Promise<CustomFieldRegistry>
+
 const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
   export: true,
   invoice: false,
