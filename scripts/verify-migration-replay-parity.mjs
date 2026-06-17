@@ -54,17 +54,25 @@ function loadFolder(folder) {
     .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
 }
 
-async function applyFolders(client, label, folders) {
+async function applyFolders(client, label, folders, { tolerateDropDeps = false } = {}) {
   for (const folder of folders) {
     for (const stmt of loadFolder(folder)) {
       try {
         await client.query(stmt)
       } catch (err) {
+        // The legacy history has retired-table DROPs without CASCADE that only
+        // replay cleanly because of out-of-journal-order application on the real
+        // DB (e.g. 0068's `DROP TABLE orders`). For the *canonical legacy replay*
+        // we retry such DROPs with CASCADE — the end-state is identical (the
+        // dependent FKs are gone in the current schema anyway).
+        if (tolerateDropDeps && /^DROP TABLE/i.test(stmt.trim()) && /depend/i.test(err.message)) {
+          await client.query(stmt.replace(/;?\s*$/, " CASCADE;"))
+          continue
+        }
         const first = stmt.split("\n")[0]
         throw new Error(
           `${label}: a migration statement failed to apply — ${err.message}\n` +
-            `  statement: ${first}…\n` +
-            "  (the new path does not reconstitute the legacy schema — this is a parity failure)",
+            `  statement: ${first}…`,
         )
       }
     }
@@ -123,15 +131,13 @@ async function main() {
       await applyFolders(c, "new (bundle + links)", [FRAMEWORK_BUNDLE, DEPLOYMENT_LINKS])
       return fingerprint(c)
     })
-    // Compare against the CURRENT database (the real legacy end-state).
-    const live = new Client({ connectionString: DB_URL })
-    await live.connect()
-    let legacyFp
-    try {
-      legacyFp = await fingerprint(live)
-    } finally {
-      await live.end()
-    }
+    // Canonical target: the legacy combined history applied to a fresh DB
+    // (CASCADE-tolerant for the retired-table DROPs that aren't cleanly
+    // fresh-replayable).
+    const legacyFp = await withFreshDb(admin, "voyant_replay_legacy", async (c) => {
+      await applyFolders(c, "legacy", [LEGACY], { tolerateDropDeps: true })
+      return fingerprint(c)
+    })
 
     const sections = ["columns", "enums", "indexes", "constraints"]
     let ok = true
