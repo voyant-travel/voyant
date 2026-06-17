@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@voyant-travel/ui/components/empty"
-import { SearchX } from "lucide-react"
+import { Loader2, SearchX } from "lucide-react"
 import type { ReactNode } from "react"
 
 export interface AdminRouterContext {
@@ -36,6 +36,7 @@ export function createAdminQueryClient(): QueryClient {
 export interface CreateAdminRouterOptions<TRouteTree extends AnyRoute> {
   routeTree: TRouteTree
   queryClient?: QueryClient
+  pendingComponent?: () => ReactNode
   notFoundComponent?: () => ReactNode
 }
 
@@ -50,6 +51,7 @@ export interface CreateAdminRouterOptions<TRouteTree extends AnyRoute> {
 export function createAdminRouter<TRouteTree extends AnyRoute>({
   routeTree,
   queryClient = createAdminQueryClient(),
+  pendingComponent = AdminPendingFallback,
   notFoundComponent = AdminNotFound,
 }: CreateAdminRouterOptions<TRouteTree>) {
   return createTanStackRouter({
@@ -58,6 +60,7 @@ export function createAdminRouter<TRouteTree extends AnyRoute>({
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
+    defaultPendingComponent: pendingComponent,
     defaultNotFoundComponent: notFoundComponent,
     // Cast around Router's ValidateSerializableInput, which is stricter than
     // DehydratedState's recursive `unknown` slots. Runtime payload is
@@ -68,6 +71,22 @@ export function createAdminRouter<TRouteTree extends AnyRoute>({
       hydrate(queryClient, state.queryClient as DehydratedState)
     },
   })
+}
+
+export function AdminPendingFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div
+        className="flex flex-col items-center gap-4 text-muted-foreground"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading admin workspace"
+      >
+        <Loader2 className="size-8 animate-spin" aria-hidden="true" />
+        <span className="text-sm">Loading workspace</span>
+      </div>
+    </div>
+  )
 }
 
 export function AdminNotFound() {
