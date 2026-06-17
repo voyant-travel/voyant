@@ -9,13 +9,7 @@ import {
   segmentMembers,
   segments,
 } from "./schema-accounts.js"
-import {
-  activities,
-  activityLinks,
-  activityParticipants,
-  customFieldDefinitions,
-  customFieldValues,
-} from "./schema-activities.js"
+import { activities, activityLinks, activityParticipants } from "./schema-activities.js"
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   people: many(people),
@@ -54,17 +48,6 @@ export const activityParticipantsRelations = relations(activityParticipants, ({ 
   person: one(people, {
     fields: [activityParticipants.personId],
     references: [people.id],
-  }),
-}))
-
-export const customFieldDefinitionsRelations = relations(customFieldDefinitions, ({ many }) => ({
-  values: many(customFieldValues),
-}))
-
-export const customFieldValuesRelations = relations(customFieldValues, ({ one }) => ({
-  definition: one(customFieldDefinitions, {
-    fields: [customFieldValues.definitionId],
-    references: [customFieldDefinitions.id],
   }),
 }))
 
