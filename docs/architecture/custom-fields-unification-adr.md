@@ -113,7 +113,10 @@ column on the entity. `custom_field_values` is retired.**
      run the backfill fails the migration instead of losing data. The merge flow
      now merges `custom_fields` instead of value rows; backfill gains `--clear`.
      ✅ landed.
-   - 4b — export / invoice / search consume `customFieldsVisibleIn` (pending).
+   - 4b — readers consume `customFieldsVisibleIn`. **Export ✅** — the people CSV
+     export appends a column per export-visible custom field (`exportPeopleCsv` +
+     a `resolveVisibleCustomFields` route helper). Invoice (finance) + search
+     follow the same pattern in their packages (pending).
 
 ## Consequences
 

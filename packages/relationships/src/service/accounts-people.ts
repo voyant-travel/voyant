@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
+import type { CustomFieldDefinition } from "@voyant-travel/core/custom-fields"
 import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { identityService } from "@voyant-travel/identity/service"
 import { toCsvRow } from "@voyant-travel/utils"
@@ -98,6 +99,12 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
         ),
     ),
   )
+}
+
+/** Render a custom-field value for a CSV cell (objects/arrays as JSON). */
+function formatCustomFieldCell(value: unknown): string {
+  if (value == null) return ""
+  return typeof value === "object" ? JSON.stringify(value) : String(value)
 }
 
 export const peopleAccountsService = {
@@ -479,10 +486,13 @@ export const peopleAccountsService = {
     return row ?? null
   },
 
-  async exportPeopleCsv(db: PostgresJsDatabase) {
+  async exportPeopleCsv(
+    db: PostgresJsDatabase,
+    customFields: ReadonlyArray<CustomFieldDefinition> = [],
+  ) {
     const rows = await hydratePeople(db, await db.select().from(people).orderBy(people.createdAt))
 
-    const headers = [
+    const baseHeaders = [
       "id",
       "firstName",
       "lastName",
@@ -496,11 +506,19 @@ export const peopleAccountsService = {
       "organizationId",
     ]
 
-    const csvLines = [toCsvRow(headers)]
+    // Append a column per export-visible custom field (unified custom-fields
+    // system); the header is the field's label, the cell its stored value.
+    const csvLines = [toCsvRow([...baseHeaders, ...customFields.map((field) => field.label)])]
     for (const row of rows) {
       // toCsvRow quotes delimiters/quotes/newlines AND neutralizes
       // spreadsheet formula-injection prefixes (= + - @ tab CR); see L4.
-      csvLines.push(toCsvRow(headers.map((header) => row[header as keyof typeof row])))
+      const base = baseHeaders.map((header) => row[header as keyof typeof row])
+      const custom = customFields.map((field) =>
+        formatCustomFieldCell(
+          (row.customFields as Record<string, unknown> | undefined)?.[field.key],
+        ),
+      )
+      csvLines.push(toCsvRow([...base, ...custom]))
     }
 
     return csvLines.join("\n")
