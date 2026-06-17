@@ -291,7 +291,7 @@ async function createCollectionInvoice(
       totalCents: amountCents,
       baseTotalCents: context.booking.baseSellAmountCents,
       paidCents: 0,
-      basePaidCents: 0,
+      basePaidCents: context.booking.baseCurrency == null ? null : 0,
       balanceDueCents: amountCents,
       baseBalanceDueCents: context.booking.baseSellAmountCents,
       commissionAmountCents: null,
