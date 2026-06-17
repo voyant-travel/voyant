@@ -80,6 +80,32 @@ describe("finance checkout service", () => {
     )
   })
 
+  it("keeps base paid cents null when creating a collection invoice without base currency", async () => {
+    const insertedInvoices: Array<Record<string, unknown>> = []
+    const db = createCheckoutDb({
+      insertedInvoices,
+      booking: {
+        baseCurrency: null,
+        baseSellAmountCents: null,
+      },
+    })
+
+    await initiateCheckoutCollection(db as never, "booking_123", {
+      method: "bank_transfer",
+      stage: "manual",
+      amountCents: 12_000,
+    })
+
+    expect(insertedInvoices).toHaveLength(1)
+    expect(insertedInvoices[0]).toMatchObject({
+      baseCurrency: null,
+      baseSubtotalCents: null,
+      baseTotalCents: null,
+      basePaidCents: null,
+      baseBalanceDueCents: null,
+    })
+  })
+
   it("rejects mismatched booking and session ids during bootstrap", async () => {
     await expect(
       bootstrapCheckoutCollection(
@@ -98,8 +124,10 @@ describe("finance checkout service", () => {
 
 function createCheckoutDb({
   insertedInvoices,
+  booking: bookingOverrides = {},
 }: {
   insertedInvoices: Array<Record<string, unknown>>
+  booking?: Partial<Record<string, unknown>>
 }) {
   const booking = {
     id: "booking_123",
@@ -110,6 +138,7 @@ function createCheckoutDb({
     baseSellAmountCents: 20_000,
     sellCurrency: "EUR",
     baseCurrency: "EUR",
+    ...bookingOverrides,
   }
 
   const rowsFor = (table: unknown) => {
