@@ -113,10 +113,17 @@ column on the entity. `custom_field_values` is retired.**
      run the backfill fails the migration instead of losing data. The merge flow
      now merges `custom_fields` instead of value rows; backfill gains `--clear`.
      ✅ landed.
-   - 4b — readers consume `customFieldsVisibleIn`. **Export ✅** — the people CSV
-     export appends a column per export-visible custom field (`exportPeopleCsv` +
-     a `resolveVisibleCustomFields` route helper). Invoice (finance) + search
-     follow the same pattern in their packages (pending).
+   - 4b — readers consume `customFieldsVisibleIn`.
+     - **Export ✅** — the people CSV export appends a column per export-visible
+       custom field (`exportPeopleCsv` + `resolveVisibleCustomFields`).
+     - **Search ✅** — the people search ORs a `custom_fields ->> key ILIKE term`
+       per search-visible field.
+     - **Invoice ✅ (seam)** — `InvoiceDocumentRuntimeOptions.resolveCustomFields`
+       populates a `customFields` template variable. Finance just exposes the
+       hook (decoupled from `relationships`); the deployment wires the resolver
+       where it builds the invoice-generation runtime (it holds the registry +
+       reads the entity's `custom_fields`) and the template references
+       `{{customFields.<key>}}`.
 
 ## Consequences
 
