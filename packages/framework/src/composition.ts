@@ -97,6 +97,7 @@ import {
   resolveBookingTaxSettings,
   updateBookingTaxSettings,
 } from "@voyant-travel/operator-settings"
+import { createOperatorSettingsHonoModule } from "@voyant-travel/operator-settings/hono-module"
 import { createQuotesHonoModule, quotesBookingExtension } from "@voyant-travel/quotes"
 import {
   createRelationshipsHonoModule,
@@ -549,6 +550,10 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         ...capabilities.createTripsRoutesOptions(),
         publicRoutes: true,
       }),
+    // Standard settings module — schema-owning + lazy absolute-path routes, no
+    // providers (reads its own tables). Stage 2 of the operator-settings
+    // extraction; previously a deployment-local module.
+    "@voyant-travel/operator-settings": () => createOperatorSettingsHonoModule(),
     // Tier 4 — lazy `operator/*` standard families. The framework owns the
     // manifest entry + path matchers; the deployment injects the `load` closure
     // that wires its providers into the package-owned route bundle.

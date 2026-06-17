@@ -15,6 +15,7 @@ export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/legal",
   "@voyant-travel/notifications",
   "@voyant-travel/operations",
+  "@voyant-travel/operator-settings",
   "@voyant-travel/quotes",
   "@voyant-travel/relationships",
   "@voyant-travel/storefront",

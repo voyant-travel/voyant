@@ -36,6 +36,9 @@ export default defineVoyantConfig({
     "@voyant-travel/legal",
     "@voyant-travel/storefront",
     "@voyant-travel/trips",
+    // Operator-tenant settings (profile + payment + booking-tax) — a standard
+    // module: schema-owning + routes mounted via the framework composition.
+    "@voyant-travel/operator-settings",
   ],
   plugins: ["@voyant-travel/plugin-smartbill"],
   // Mounted Hono extensions that own migrated schema.
@@ -49,10 +52,6 @@ export default defineVoyantConfig({
     "@voyant-travel/accommodations",
     "@voyant-travel/charters",
     "@voyant-travel/cruises",
-    // Operator-tenant settings (profile + payment + booking-tax) — schema is
-    // package-owned now; folded into the combined migration history here. Same
-    // tables/prefixes as the prior starter-local schema (migration parity).
-    "@voyant-travel/operator-settings",
   ],
   // Template-local Drizzle schema(s) owned by no package: the generated
   // cross-module link tables (folded into the migration history instead of
