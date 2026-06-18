@@ -120,7 +120,11 @@ export function canAdvanceFromStep(
         return Boolean(draft.billing.organizationId)
       }
       const c = draft.billing.contact
-      return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0
+      return (
+        c.firstName.length > 0 &&
+        c.lastName.length > 0 &&
+        (c.email.length > 0 || Boolean(c.phone?.trim()))
+      )
     }
     case "travelers": {
       // Pax counts are set on this step now: require the allowed total and
