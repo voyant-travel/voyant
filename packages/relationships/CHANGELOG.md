@@ -1,5 +1,57 @@
 # @voyant-travel/crm
 
+## 0.120.0
+
+### Minor Changes
+
+- 170388e: Custom-fields unification (phase 4b — export consumption). The people CSV export now surfaces custom fields: `exportPeopleCsv` appends a column per **export-visible** custom field (`customFieldsVisibleIn(registry, "person", "export")`, resolved per-request from the route runtime), with the field label as the header and the stored value as the cell (objects/arrays as JSON). This is the visibility payoff of the unified registry — a field declared `visibility.export` shows up in the export by construction, unlike the old side-table values that readers couldn't see. Invoice + search follow the same `customFieldsVisibleIn` pattern in their packages.
+- 9c3fe53: Custom-fields unification (phase 2 — person/organization adopt the `custom_fields` column). Both `people` and `organizations` gain a `custom_fields jsonb default '{}'` column (framework bundle migration `0002`), and their create/update routes validate `customFields` at the write boundary against the resolved registry (code ∪ runtime `custom_field_definitions`):
+
+  - `relationships`: `RelationshipsRouteRuntime(+Options).customFields` resolver; a `validateRelationshipsCustomFields(c, entity, data)` helper on the accounts route (its `Env` now exposes `container`); person/org writes persist the cleaned value.
+  - `relationships-contracts`: `customFields` added to the person/organization core schemas.
+  - `framework`: the relationships factory moves Tier 1 → 2 to receive `capabilities.customFields`.
+
+  Values now live on the entity row for `booking`, `person`, and `organization`. Still ahead: repoint the EAV value API to the column + backfill `custom_field_values` → jsonb, then retire the side table. Oracle-verified (bundle + links == live schema).
+
+- d29dd47: Custom-fields unification (phase 3a — `custom_fields` column on quote + activity). `activities` (relationships) and `quotes` gain a `custom_fields jsonb default '{}'` column (framework bundle migration `0003`), completing entity coverage for all four EAV entity types (person, organization, quote, activity) ahead of repointing the value API to the column. Additive — no behavior change yet. Oracle-verified.
+- ce2a568: Custom-fields unification (phase 4a — retire `custom_field_values`). The EAV value side table is removed; values live solely on each entity's `custom_fields` jsonb column.
+
+  - The table + its types/relations are dropped from the schema; the person/org merge flow now merges `custom_fields` (keeper wins) instead of value rows.
+  - A **guarded** retirement migration (framework bundle `0004`) drops the table but **RAISES if it still has rows**, so a deployment that hasn't run the backfill fails the migration loudly instead of losing data. The backfill script gains `--clear` to copy values into the columns and then empty the table.
+
+  **Upgrade order:** `tsx scripts/backfill-custom-fields.ts --clear` (copies + empties), then `voyant db migrate` (the guarded drop). Verified: guard refuses with rows, drops when empty; oracle balances.
+
+- 3aa90b4: Custom-fields unification (search consumption). The people search now matches **search-visible** custom fields: `listPeople`/`buildPersonSearchCondition` accept the search-visible field set (`customFieldsVisibleIn(registry, "person", "search")`, resolved per-request from the route runtime) and OR a `custom_fields ->> key ILIKE term` condition per field into the query. So a custom field declared `visibility.search` becomes findable in the people search — the search payoff of the unified registry. Mirrors the export consumption; invoice follows the same pattern in finance.
+- 39d48fe: Custom-fields unification (phase 1b — DB-backed definitions + per-request resolver). The custom-field registry is now resolved per request from two sources, so runtime-defined fields participate alongside code-declared ones (ADR: `docs/architecture/custom-fields-unification-adr.md`):
+
+  - `core`: new `CustomFieldRegistryResolver = (db) => CustomFieldRegistry | Promise<…>` type.
+  - `relationships`: `loadCustomFieldDefinitions(db)` reads the runtime `custom_field_definitions` table and maps it to registry definitions (`varchar`→`text`, `double`→`number`, `enum`→`select`, `set`→`multiselect`, `address`/`phone`→`json`; `isSearchable`→`visibility.search`).
+  - `bookings`: the `customFields` route-runtime option is now a resolver; the write-validation helper resolves the registry from the request `db` (so it sees both code- and DB-defined fields). The operator wires a resolver that merges its code-declared fields with `loadCustomFieldDefinitions(db)` (code wins), cached per isolate.
+
+  No storage change yet — values still go to the entity `custom_fields` jsonb (booking) / the EAV table (person/org). Subsequent phases add the person/org column, repoint the value API, and backfill `custom_field_values` → jsonb.
+
+- 9616f1f: Custom-fields unification (phase 3b/3c — repoint the value API to the entity column + backfill). The runtime custom-field value API now reads/writes the entity's `custom_fields` jsonb column instead of the `custom_field_values` side table, so admin-set custom fields are visible to export/invoice/search like every other field:
+
+  - `upsertCustomFieldValue` / `listCustomFieldValues` / `deleteCustomFieldValue` operate on the column. The admin API contract is preserved via **synthetic value-ids** (`entityType::entityId::definitionId`) and a faithful, round-trip-tested mapping between the EAV typed columns and the single jsonb value (`enum`→string, `monetary`→`{amountCents,currency}`, `set`→array, …). `phone` now maps to `text` (a string) for consistency with the entity-update path.
+  - A one-time idempotent backfill (`starters/operator/scripts/backfill-custom-fields.ts`, merge-safe `backfilled || current`) moves existing `custom_field_values` rows into the columns. **Run it once during the upgrade** (after `db migrate` + deploying this), else historical custom fields stay invisible until then.
+
+  Validated with unit round-trips + a live integration round-trip (upsert→list→delete) and a live backfill. `custom_field_values` is retired next (phase 4) once baked.
+
+### Patch Changes
+
+- Updated dependencies [98f4a40]
+- Updated dependencies [a3bd51c]
+- Updated dependencies [9c3fe53]
+- Updated dependencies [3b27dcc]
+- Updated dependencies [39d48fe]
+- Updated dependencies [d222e9f]
+  - @voyant-travel/core@0.110.0
+  - @voyant-travel/hono@0.112.0
+  - @voyant-travel/relationships-contracts@0.108.0
+  - @voyant-travel/action-ledger@0.105.1
+  - @voyant-travel/db@0.108.2
+  - @voyant-travel/identity@0.123.0
+
 ## 0.119.5
 
 ### Patch Changes

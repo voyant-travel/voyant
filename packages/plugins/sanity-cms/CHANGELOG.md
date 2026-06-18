@@ -1,5 +1,14 @@
 # @voyant-travel/plugin-sanity-cms
 
+## 0.104.9
+
+### Patch Changes
+
+- Updated dependencies [98f4a40]
+- Updated dependencies [3b27dcc]
+- Updated dependencies [39d48fe]
+  - @voyant-travel/core@0.110.0
+
 ## 0.104.8
 
 ### Patch Changes

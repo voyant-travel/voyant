@@ -1,5 +1,18 @@
 # @voyant-travel/admin
 
+## 0.112.0
+
+### Minor Changes
+
+- 94890c3: Add `adminExtensionsFromGlob` + `buildAdminExtensionRoutes` — the admin-UI half of the "extend without forking" seam (Workstream C). A deployment drops an `AdminExtension` (page + widget + nav, via the existing `defineAdminExtension`) into `src/admin/<name>/index.tsx` and it's auto-discovered from a Vite `import.meta.glob` and composed into the shell:
+
+  - `adminExtensionsFromGlob(glob)` collects the default-exported `AdminExtension`s in stable order; append them to the shell's extension registry so their `navigation` and `widgets` resolve through `resolveAdminNavigation`/`resolveAdminWidgets`.
+  - `buildAdminExtensionRoutes(extensions, getParentRoute, runtime)` builds top-level TanStack routes from the extensions' `routes` contributions at runtime (mirrors the generated `admin.routes.generated.tsx` loop) for grafting via `attachAdminExtensionRoutes`. Discovered pages are reachable by string navigation (no typed-link map entry).
+
+  See `docs/architecture/custom-modules.md`.
+
+- cb9b04b: New `defaultOperatorNavIcons` export — the standard operator nav icon set (the 15 standard lucide icons), shipped by the framework so deployments stop hand-wiring lucide imports + an icon map. Use `icons={defaultOperatorNavIcons}` directly, or spread to override a single entry (`{ ...defaultOperatorNavIcons, finance: MyIcon }`). First slice of consolidated-deployments Workstream C (admin chrome derivation).
+
 ## 0.111.5
 
 ### Patch Changes

@@ -1,5 +1,33 @@
 # @voyant-travel/core
 
+## 0.110.0
+
+### Minor Changes
+
+- 98f4a40: Add `@voyant-travel/core/custom-fields` — a typed, validated, visibility-aware extension-field registry for core entities (the "custom fields without forking" seam). Dependency-free (no zod/drizzle):
+
+  - `defineCustomField` / `createCustomFieldRegistry` — declare fields (`entity`, `key`, `type` of text/number/boolean/date/select, `required`, `options`, `validate`, `visibility`, `pii`).
+  - `validateCustomFields(registry, entity, input)` — validate a write payload (rejects unknown keys, missing required, wrong type/option, custom rule); returns the cleaned value to persist.
+  - `customFieldsVisibleIn(registry, entity, channel)` — fields to surface in `export` (default on) / `invoice` / `search` (default off), so those readers consult the registry instead of dumping or hiding everything.
+  - `customFieldsFromGlob(glob)` — discover deployment-local field declarations from a Vite `import.meta.glob` of `src/custom-fields/*`.
+
+  This is the registry primitive; per-entity column adoption (write-validation + export/invoice/search consumption on bookings/people/products) follows. See `docs/architecture/custom-fields.md`.
+
+- 3b27dcc: Custom-fields unification (phase 1a — type model + merge). Grow `@voyant-travel/core/custom-fields` toward one system that absorbs the relationships EAV custom-fields feature (see `docs/architecture/custom-fields-unification-adr.md`):
+
+  - `CustomFieldType` becomes the canonical superset — adds `multiselect` (a subset of `options`, stored `string[]`), `monetary` (`{ amountCents, currency }`, new `CustomFieldMonetaryValue` type), and `json` (arbitrary, also the home for `address`/`phone`). `validateCustomFields` validates each. Purely additive — existing `text`/`number`/`boolean`/`date`/`select` fields are unchanged.
+  - `mergeCustomFieldDefinitions(sources, onShadow?)` — dedupes `(entity, key)` across sources, earlier source winning (code-declared before runtime/DB-defined), with a shadow callback. Feed its result to `createCustomFieldRegistry` to build one registry from both a code source and the runtime `custom_field_definitions` table.
+
+  Storage migration (values → entity `custom_fields` jsonb, retiring `custom_field_values`) and the DB-backed registry loader land in the following phases.
+
+- 39d48fe: Custom-fields unification (phase 1b — DB-backed definitions + per-request resolver). The custom-field registry is now resolved per request from two sources, so runtime-defined fields participate alongside code-declared ones (ADR: `docs/architecture/custom-fields-unification-adr.md`):
+
+  - `core`: new `CustomFieldRegistryResolver = (db) => CustomFieldRegistry | Promise<…>` type.
+  - `relationships`: `loadCustomFieldDefinitions(db)` reads the runtime `custom_field_definitions` table and maps it to registry definitions (`varchar`→`text`, `double`→`number`, `enum`→`select`, `set`→`multiselect`, `address`/`phone`→`json`; `isSearchable`→`visibility.search`).
+  - `bookings`: the `customFields` route-runtime option is now a resolver; the write-validation helper resolves the registry from the request `db` (so it sees both code- and DB-defined fields). The operator wires a resolver that merges its code-declared fields with `loadCustomFieldDefinitions(db)` (code wins), cached per isolate.
+
+  No storage change yet — values still go to the entity `custom_fields` jsonb (booking) / the EAV table (person/org). Subsequent phases add the person/org column, repoint the value API, and backfill `custom_field_values` → jsonb.
+
 ## 0.109.0
 
 ### Minor Changes

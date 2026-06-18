@@ -1,5 +1,18 @@
 # @voyant-travel/inventory-react
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [94890c3]
+- Updated dependencies [e9d9dbb]
+- Updated dependencies [cb9b04b]
+  - @voyant-travel/admin@0.112.0
+  - @voyant-travel/finance@0.123.0
+  - @voyant-travel/catalog-react@0.121.0
+  - @voyant-travel/finance-react@0.123.0
+  - @voyant-travel/inventory@0.3.3
+
 ## 0.4.0
 
 ### Patch Changes

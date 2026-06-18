@@ -1,5 +1,28 @@
 # @voyant-travel/hono
 
+## 0.112.0
+
+### Minor Changes
+
+- a3bd51c: `createApp` is now the **config-driven front door**: it takes `{ manifest, registry, capabilities, ... }`, runs `composeFromManifest` internally, and mounts — so a deployment makes one call instead of `composeFromManifest(...)` + the old `createApp({ modules, extensions })`.
+
+  **Breaking:** the previous low-level `createApp({ modules, extensions, ... })` is renamed to **`mountApp`** (same signature). Callers that pass already-resolved `modules`/`extensions` (tests, advanced hosts) should import `mountApp`; callers that compose from a manifest should use the new `createApp`.
+
+### Patch Changes
+
+- d222e9f: **Convergence (Workstream B step 3):** `@voyant-travel/framework` now exports `createVoyantApp({ providers, modules?, extensions?, …config })` — the config-driven front door. It assembles the framework-owned standard set (`FRAMEWORK_RUNTIME_MANIFEST` + `frameworkComposition`) with the deployment's injected providers and any deployment-local module/extension additions, then delegates to `@voyant-travel/hono`'s lower-level `createApp`.
+
+  A standard deployment's `app.ts` collapses to a single `createVoyantApp({ providers: buildOperatorProviders(), modules: deploymentLocalModules, …db/workflows/outbox/publicPaths })` call — no hand-maintained manifest or registry. The operator starter is converged: `buildOperatorCapabilities → buildOperatorProviders`, the two deployment-local module factories are extracted to `deploymentLocalModules`, and `OPERATOR_RUNTIME_MANIFEST` / `operatorComposition` remain only as derived exports for `voyant db doctor` parity + the composition tests.
+
+  (hono: docstring on `createApp` updated to point standard deployments at `createVoyantApp`.)
+
+- Updated dependencies [98f4a40]
+- Updated dependencies [3b27dcc]
+- Updated dependencies [39d48fe]
+  - @voyant-travel/core@0.110.0
+  - @voyant-travel/db@0.108.2
+  - @voyant-travel/workflows@0.109.4
+
 ## 0.111.0
 
 ### Minor Changes
