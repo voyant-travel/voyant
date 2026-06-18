@@ -53,7 +53,7 @@ export function OperatorAdminUserMenu({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="border border-transparent data-[state=open]:border-sidebar-border data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="border border-transparent aria-expanded:border-sidebar-border aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-sm after:rounded-sm">
                 <AvatarImage
