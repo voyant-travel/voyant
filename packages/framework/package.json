@@ -41,8 +41,8 @@
     "hono": "^4.12.10"
   },
   "devDependencies": {
-    "@voyant-travel/hono": "workspace:*",
-    "@voyant-travel/voyant-typescript-config": "workspace:*",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
     "hono": "^4.12.10",
     "typescript": "^6.0.2",
     "vitest": "^4.0.0"

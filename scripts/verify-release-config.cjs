@@ -14,6 +14,15 @@ const DEPENDENCY_FIELDS = [
 ]
 const REQUIRED_WORKSPACE_RANGE = "workspace:^"
 
+// The framework BOM pins its runtime modules to the EXACT current version
+// (`workspace:*` → `X.Y.Z` on publish) so the published set is deterministic and
+// tested — see scripts/generate-framework-bom.mjs (and verify:framework-bom,
+// which enforces `workspace:*` there). That intent is the opposite of the caret
+// rule, so the BOM's runtime `dependencies` are exempt. Its dev/peer deps still
+// follow the caret convention (they aren't part of the pinned published set).
+const BOM_EXACT_PIN = "workspace:*"
+const BOM_EXACT_PIN_PACKAGES = new Set(["@voyant-travel/framework"])
+
 function collectWorkspaceRangeProblems(packages) {
   const problems = []
   const workspacePackageNames = new Set(
@@ -23,15 +32,20 @@ function collectWorkspaceRangeProblems(packages) {
   for (const pkg of packages.packages) {
     const packageJsonPath = path.join(pkg.dir, "package.json")
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+    const isBom = BOM_EXACT_PIN_PACKAGES.has(packageJson.name)
 
     for (const field of DEPENDENCY_FIELDS) {
       const dependencies = packageJson[field]
       if (!dependencies || typeof dependencies !== "object") continue
 
+      // The BOM's runtime `dependencies` must be exact-pinned; everything else
+      // (incl. the BOM's dev/peer deps) uses the caret range.
+      const expected = isBom && field === "dependencies" ? BOM_EXACT_PIN : REQUIRED_WORKSPACE_RANGE
+
       for (const [name, version] of Object.entries(dependencies)) {
-        if (workspacePackageNames.has(name) && version !== REQUIRED_WORKSPACE_RANGE) {
+        if (workspacePackageNames.has(name) && version !== expected) {
           problems.push(
-            `${packageJsonPath}: ${field}.${name} uses ${version}; expected ${REQUIRED_WORKSPACE_RANGE}`,
+            `${packageJsonPath}: ${field}.${name} uses ${version}; expected ${expected}`,
           )
         }
       }
