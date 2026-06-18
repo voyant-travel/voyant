@@ -104,7 +104,7 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Voyant 2.0 brand palette — kept in sync with
+/* Voyant 1.0 brand palette — kept in sync with
    @voyant-travel/ui/styles.css (the framework source of truth). */
 :root {
   --background: oklch(0.985 0.0015 95);

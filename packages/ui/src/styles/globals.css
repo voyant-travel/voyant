@@ -7,7 +7,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Voyant 2.0 brand theme.
+/* Voyant 1.0 brand theme.
  *
  * Ink-on-warm-paper neutrals with a single hot-orange brand accent
  * (`--brand`, ~#ff5500). Orange is reserved for accents — active nav,
