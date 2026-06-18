@@ -94,6 +94,7 @@ export function OperatorAdminSidebar({
   navItems,
   onSignOut,
   user,
+  variant = "inset",
   ...props
 }: OperatorAdminSidebarProps) {
   const messages = useOperatorAdminMessages()
@@ -105,7 +106,7 @@ export function OperatorAdminSidebar({
   const settingsActive = navUrlMatchesPath("/settings", currentPath)
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" variant={variant} {...props}>
       <SidebarHeader>{resolvedBrand}</SidebarHeader>
       <SidebarContent>
         <AdminNavGroup

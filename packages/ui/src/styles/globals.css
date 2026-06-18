@@ -91,7 +91,9 @@
   --chart-3: #86cb3c;
   --chart-4: oklch(0.8 0.15 85);
   --chart-5: #efefeb;
-  --sidebar: oklch(0.17 0.002 60);
+  /* Slightly darker than --background so the inset content panel reads as
+     elevated (the page bg becomes --sidebar under variant=inset). */
+  --sidebar: oklch(0.135 0.002 60);
   --sidebar-foreground: oklch(0.78 0.004 70);
   --sidebar-primary: oklch(0.96 0.002 80);
   --sidebar-primary-foreground: oklch(0.17 0.004 55);
