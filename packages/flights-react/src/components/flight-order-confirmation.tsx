@@ -99,7 +99,7 @@ export function FlightOrderConfirmation({
           {order.passengers.map((p) => (
             <div
               key={p.passengerId}
-              className="flex items-center justify-between rounded-md border bg-card px-3 py-2.5 text-sm"
+              className="flex items-center justify-between rounded-xl border bg-card px-3 py-2.5 text-sm"
             >
               <div className="flex flex-col leading-tight">
                 <span className="font-medium">

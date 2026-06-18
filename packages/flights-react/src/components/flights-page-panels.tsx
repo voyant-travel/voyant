@@ -109,7 +109,7 @@ export function ReadyToBookPanel({
 export function CacheColdBanner({ message, onReset }: { message: string; onReset: () => void }) {
   const messages = useFlightsUiMessagesOrDefault().flightsPage
   return (
-    <div className="rounded-md border border-dashed bg-card p-6 text-center text-muted-foreground text-sm">
+    <div className="rounded-xl border border-dashed bg-card p-6 text-center text-muted-foreground text-sm">
       <p>{message}</p>
       <Button className="mt-3" variant="outline" onClick={onReset}>
         <ChevronLeft className="mr-1 h-4 w-4" />

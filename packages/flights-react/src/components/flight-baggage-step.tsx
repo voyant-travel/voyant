@@ -251,7 +251,7 @@ function PaxBaggageRow({
           type="button"
           onClick={() => onSelect(null)}
           className={cn(
-            "relative flex flex-col items-center justify-center gap-1.5 rounded-lg border bg-card p-3 text-center transition-colors",
+            "relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-3 text-center transition-colors",
             selectedOptionId == null
               ? "border-primary ring-2 ring-primary/20"
               : "hover:border-primary/40 hover:bg-accent/30",
@@ -274,7 +274,7 @@ function PaxBaggageRow({
               type="button"
               onClick={() => onSelect(isSelected ? null : opt.id)}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1.5 rounded-lg border bg-card p-3 text-center transition-colors",
+                "relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-3 text-center transition-colors",
                 isSelected
                   ? "border-primary ring-2 ring-primary/20"
                   : "hover:border-primary/40 hover:bg-accent/30",

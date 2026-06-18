@@ -313,7 +313,7 @@ export function PrimaryAction({
   const t = useAdminMessages().trips.adminComposer.panels
   if (status === "checkout_started" || status === "booked") {
     return (
-      <div className="rounded-md border bg-card p-3 text-center text-muted-foreground text-sm">
+      <div className="rounded-xl border bg-card p-3 text-center text-muted-foreground text-sm">
         {status === "booked" ? t.primaryAction.tripBooked : t.primaryAction.tripCheckoutInProgress}
       </div>
     )
@@ -321,7 +321,7 @@ export function PrimaryAction({
 
   if (status === "reserved") {
     return (
-      <div className="rounded-md border bg-card p-3 text-center text-muted-foreground text-sm">
+      <div className="rounded-xl border bg-card p-3 text-center text-muted-foreground text-sm">
         {t.primaryAction.tripReserved}
       </div>
     )

@@ -162,7 +162,7 @@ function SegmentBlock({
           <div className="h-px flex-1 bg-border" />
         </div>
       )}
-      <div className="rounded-lg border bg-card p-3">
+      <div className="rounded-xl border bg-card p-3">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <AirlineLogo
             iataCode={segment.carrierCode}

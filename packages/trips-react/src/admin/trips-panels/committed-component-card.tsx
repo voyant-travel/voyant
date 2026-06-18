@@ -55,7 +55,7 @@ export function CommittedComponentCard({
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-md border bg-card p-4 ${
+      className={`flex flex-col gap-3 rounded-xl border bg-card p-4 ${
         selected ? "ring-2 ring-destructive/40" : ""
       }`}
     >

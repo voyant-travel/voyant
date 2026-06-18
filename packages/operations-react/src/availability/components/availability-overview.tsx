@@ -336,7 +336,7 @@ function AttentionColumn({
                 type="button"
                 onClick={item.onClick}
                 className={cn(
-                  "group flex w-full items-start justify-between gap-3 rounded-md border bg-card px-3 py-2 text-left transition-colors",
+                  "group flex w-full items-start justify-between gap-3 rounded-xl border bg-card px-3 py-2 text-left transition-colors",
                   "hover:border-foreground/30 hover:bg-muted/40",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}

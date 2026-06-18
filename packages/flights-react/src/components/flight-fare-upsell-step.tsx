@@ -301,7 +301,7 @@ function BundleCard({
       type="button"
       onClick={onPick}
       className={cn(
-        "relative flex flex-col gap-3 rounded-lg border bg-card p-4 text-left transition-colors",
+        "relative flex flex-col gap-3 rounded-xl border bg-card p-4 text-left transition-colors",
         showActiveRing
           ? "border-primary ring-2 ring-primary/20"
           : "hover:border-primary/40 hover:bg-accent/30",

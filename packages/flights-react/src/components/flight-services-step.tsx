@@ -301,7 +301,7 @@ function ExtraRow({
   onChange: (next: number) => void
 }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-xl border bg-card px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm">{option.label}</span>
