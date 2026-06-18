@@ -1,5 +1,19 @@
 # @voyant-travel/commerce
 
+## 0.6.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/workflow-runs@0.110.0
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/catalog@0.122.0
+- @voyant-travel/distribution@0.114.0
+- @voyant-travel/finance@0.124.0
+- @voyant-travel/legal@0.124.0
+- @voyant-travel/workflows@0.110.0
+- @voyant-travel/quotes@0.121.1
+
 ## 0.5.0
 
 ### Patch Changes

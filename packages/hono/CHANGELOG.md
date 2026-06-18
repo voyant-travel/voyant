@@ -1,5 +1,11 @@
 # @voyant-travel/hono
 
+## 0.112.1
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.110.0
+
 ## 0.112.0
 
 ### Minor Changes

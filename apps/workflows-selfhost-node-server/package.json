@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/workflows-selfhost-node-server",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Reference Node/Docker self-host server for Voyant Workflows.",
   "license": "Apache-2.0",
   "private": true,

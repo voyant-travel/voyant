@@ -1,5 +1,7 @@
 # @voyant-travel/admin-client
 
+## 0.113.0
+
 ## 0.112.0
 
 ### Patch Changes
