@@ -1901,10 +1901,10 @@ importers:
         version: link:../trips
     devDependencies:
       '@voyant-travel/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       hono:
         specifier: 4.12.25
