@@ -191,30 +191,30 @@ export function getStatusColor(status: string): string {
   // with theme palette tokens like --chart-1..5, which are general
   // chart palette slots and may be set to a monochromatic series.
   const map: Record<string, string> = {
-    confirmed: "hsl(142 71% 45%)",
-    completed: "hsl(221 83% 53%)",
+    confirmed: "#86cb3c",
+    completed: "#6172f3",
     in_progress: "hsl(47 96% 53%)",
-    draft: "hsl(215 14% 55%)",
-    cancelled: "hsl(0 84% 60%)",
+    draft: "#efefeb",
+    cancelled: "#ff4405",
   }
-  return map[status] ?? "hsl(215 14% 55%)"
+  return map[status] ?? "#efefeb"
 }
 
 export const revenueChartConfig = {
-  revenue: { label: "Revenue", color: "hsl(221 83% 53%)" },
-  bookings: { label: "Bookings", color: "hsl(142 71% 45%)" },
+  revenue: { label: "Revenue", color: "#ff4405" },
+  bookings: { label: "Bookings", color: "#86cb3c" },
 } satisfies ChartConfig
 
 export const bookingStatusConfig = {
-  confirmed: { label: "Confirmed", color: "hsl(142 71% 45%)" },
-  completed: { label: "Completed", color: "hsl(221 83% 53%)" },
+  confirmed: { label: "Confirmed", color: "#86cb3c" },
+  completed: { label: "Completed", color: "#6172f3" },
   in_progress: { label: "In Progress", color: "hsl(47 96% 53%)" },
-  draft: { label: "Draft", color: "hsl(215 14% 55%)" },
-  cancelled: { label: "Cancelled", color: "hsl(0 84% 60%)" },
+  draft: { label: "Draft", color: "#efefeb" },
+  cancelled: { label: "Cancelled", color: "#ff4405" },
 } satisfies ChartConfig
 
 export const monthlyBookingsConfig = {
-  count: { label: "Bookings", color: "hsl(221 83% 53%)" },
+  count: { label: "Bookings", color: "#ff4405" },
 } satisfies ChartConfig
 
 export function buildMonthSeries() {

@@ -146,14 +146,14 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
 
   const revenueChartConfig = {
     revenue: { label: messages.dashboard.chartRevenueLabel, color: "var(--chart-1)" },
-    bookings: { label: messages.dashboard.chartBookingsLabel, color: "hsl(142 71% 45%)" },
+    bookings: { label: messages.dashboard.chartBookingsLabel, color: "#86cb3c" },
   }
   const bookingStatusConfig = {
-    confirmed: { label: messages.dashboard.statusConfirmedLabel, color: "hsl(142 71% 45%)" },
-    completed: { label: messages.dashboard.statusCompletedLabel, color: "hsl(221 83% 53%)" },
+    confirmed: { label: messages.dashboard.statusConfirmedLabel, color: "#86cb3c" },
+    completed: { label: messages.dashboard.statusCompletedLabel, color: "#6172f3" },
     in_progress: { label: messages.dashboard.statusInProgressLabel, color: "hsl(47 96% 53%)" },
-    draft: { label: messages.dashboard.statusDraftLabel, color: "hsl(215 14% 55%)" },
-    cancelled: { label: messages.dashboard.statusCancelledLabel, color: "hsl(0 84% 60%)" },
+    draft: { label: messages.dashboard.statusDraftLabel, color: "#efefeb" },
+    cancelled: { label: messages.dashboard.statusCancelledLabel, color: "#ff4405" },
   }
   const monthlyBookingsConfig = {
     count: { label: messages.dashboard.chartBookingsLabel, color: "var(--chart-1)" },
