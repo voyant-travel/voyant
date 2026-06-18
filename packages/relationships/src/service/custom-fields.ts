@@ -1,3 +1,4 @@
+import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -177,25 +178,50 @@ export const customFieldsService = {
       .where(eq(customFieldDefinitions.id, definitionId))
       .limit(1)
     if (!def) {
-      throw new Error(`[custom-fields] no definition "${definitionId}"`)
+      throw new ApiHttpError(`no custom-field definition "${definitionId}"`, {
+        status: 404,
+        code: "not_found",
+      })
     }
-    const table = entityTableName(data.entityType)
+
+    // The definition's entityType is authoritative — it decides the physical
+    // table. Reject a payload pointing at a different entity type rather than
+    // writing e.g. a person field into an organization row, where listing
+    // (which loads definitions by the requested entity type) would never
+    // surface it again. See the custom-fields unification ADR.
+    if (data.entityType !== def.entityType) {
+      throw new RequestValidationError(
+        `custom field "${def.key}" belongs to ${def.entityType}, not ${data.entityType}`,
+      )
+    }
+    const table = entityTableName(def.entityType)
     if (!table) {
-      throw new Error(
-        `[custom-fields] entity type "${data.entityType}" has no custom_fields column`,
+      throw new RequestValidationError(
+        `entity type "${def.entityType}" has no custom_fields column`,
       )
     }
 
     const value = jsonbValueFromTyped(def.fieldType, data)
     const patch = JSON.stringify({ [def.key]: value })
-    await db.execute(
-      sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields || ${patch}::jsonb, updated_at = now() WHERE id = ${data.entityId}`,
+    // RETURNING id lets us distinguish "stored" from "no such entity row" — a
+    // bare UPDATE silently affects zero rows, which previously returned a
+    // synthetic success for a nonexistent entity id.
+    const updated = Array.from(
+      await db.execute(
+        sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields || ${patch}::jsonb, updated_at = now() WHERE id = ${data.entityId} RETURNING id`,
+      ),
     )
+    if (updated.length === 0) {
+      throw new ApiHttpError(`${def.entityType} "${data.entityId}" not found`, {
+        status: 404,
+        code: "not_found",
+      })
+    }
 
     return {
-      id: syntheticValueId(data.entityType, data.entityId, definitionId),
+      id: syntheticValueId(def.entityType, data.entityId, definitionId),
       definitionId,
-      entityType: data.entityType,
+      entityType: def.entityType,
       entityId: data.entityId,
       ...typedFromJsonbValue(def.fieldType, value),
     }
@@ -212,9 +238,16 @@ export const customFieldsService = {
       .where(eq(customFieldDefinitions.id, parsed.definitionId))
       .limit(1)
     if (!def) return null
-    await db.execute(
-      sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields - ${def.key}, updated_at = now() WHERE id = ${parsed.entityId}`,
+    // The synthetic id encodes the entity type; if it disagrees with the
+    // definition it is forged/stale — treat as not found.
+    if (def.entityType !== parsed.entityType) return null
+    const deleted = Array.from(
+      await db.execute(
+        sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields - ${def.key}, updated_at = now() WHERE id = ${parsed.entityId} AND custom_fields ? ${def.key} RETURNING id`,
+      ),
     )
+    // No matching entity row, or the value was never set → 404 (not a fake 200).
+    if (deleted.length === 0) return null
     return { id }
   },
 }

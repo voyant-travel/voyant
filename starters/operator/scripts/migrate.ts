@@ -13,9 +13,10 @@
  *                  but no collector ledger): its schema is already materialised
  *                  by the old runner + `drizzle-kit push`, so we IMPORT the
  *                  bundle + links into the ledger WITHOUT re-executing — gated by
- *                  a schema-parity check (every bundle/link table must already
- *                  exist; otherwise the DB isn't at the current schema and we
- *                  refuse rather than record a false baseline).
+ *                  a schema-parity check over the FINAL net schema (every net
+ *                  table present, every ALTER-added column present, every dropped
+ *                  table gone); otherwise the DB isn't at the current schema and
+ *                  we refuse rather than record a false baseline.
  *   • INCREMENTAL — already on the collector → apply only new migrations.
  *
  * The legacy single-folder history (`./migrations`) is RETIRED by this cutover:
@@ -63,33 +64,97 @@ async function ledgerRowCount(qualified: string): Promise<number> {
   return Number(count.rows[0]?.n ?? 0)
 }
 
-/** Table names a set of sources expects to exist (parsed from their CREATE TABLEs). */
-function expectedTables(sources: MigrationSource[]): Set<string> {
-  const tables = new Set<string>()
-  const re = /CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"/gi
-  for (const m of planMigrations(sources)) {
-    for (const match of m.sql.matchAll(re)) {
-      tables.add(match[1] as string)
-    }
-  }
-  return tables
+/**
+ * The schema the bundle+links would produce, reduced to what we can verify
+ * against a live DB without executing anything: the NET set of tables (created
+ * minus later-dropped), the tables the plan DROPS (which must be gone in a
+ * converged DB), and every column added via `ALTER TABLE … ADD COLUMN`.
+ *
+ * Parsing the whole plan in order is what makes this a real parity check: a
+ * CREATE-name-only scan misses `custom_fields` columns added by ALTER (0001-3)
+ * and never subtracts `custom_field_values` dropped by 0004 — so it could both
+ * falsely baseline a DB missing those columns and falsely reject a correctly
+ * converged DB that no longer has the dropped table.
+ */
+interface ExpectedSchema {
+  /** Tables that must EXIST at baseline (created and not subsequently dropped). */
+  tables: Set<string>
+  /** Tables the plan drops — must be ABSENT in a converged DB. */
+  dropped: Set<string>
+  /** Columns added via ALTER — must exist on their (net) table. `table.column`. */
+  columns: Set<string>
 }
 
-/** Guard a baseline-import: every expected table must already exist in `public`. */
+function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
+  const tables = new Set<string>()
+  const dropped = new Set<string>()
+  const addedColumns: { table: string; column: string }[] = []
+  // One ordered scan over the plan: CREATE adds a table, DROP removes it (and
+  // records it as must-be-absent), ALTER … ADD COLUMN records an expected column.
+  const stmt =
+    /CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"|DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"|ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/gi
+  for (const m of planMigrations(sources)) {
+    for (const match of m.sql.matchAll(stmt)) {
+      const [, created, droppedName, alterTable, alterColumn] = match
+      if (created) {
+        tables.add(created)
+        dropped.delete(created)
+      } else if (droppedName) {
+        tables.delete(droppedName)
+        dropped.add(droppedName)
+      } else if (alterTable && alterColumn) {
+        addedColumns.push({ table: alterTable, column: alterColumn })
+      }
+    }
+  }
+  // Only require columns on tables that still exist in the net schema.
+  const columns = new Set(
+    addedColumns.filter((c) => tables.has(c.table)).map((c) => `${c.table}.${c.column}`),
+  )
+  return { tables, dropped, columns }
+}
+
+/**
+ * Guard a baseline-import: the live DB must already match the schema the plan
+ * would produce — every net table present, every added column present, and
+ * every dropped table gone. Otherwise we refuse rather than record a false
+ * baseline (which would skip real migrations forever).
+ */
 async function assertSchemaAtBaseline(sources: MigrationSource[]): Promise<void> {
-  const expected = expectedTables(sources)
-  const live = await client.query<{ table_name: string }>(
+  const expected = expectedSchema(sources)
+
+  const liveTablesRows = await client.query<{ table_name: string }>(
     `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
   )
-  const liveSet = new Set(live.rows.map((r) => r.table_name))
-  const missing = [...expected].filter((t) => !liveSet.has(t)).sort()
-  if (missing.length > 0) {
+  const liveTables = new Set(liveTablesRows.rows.map((r) => r.table_name))
+  const liveColsRows = await client.query<{ table_name: string; column_name: string }>(
+    `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public'`,
+  )
+  const liveColumns = new Set(liveColsRows.rows.map((r) => `${r.table_name}.${r.column_name}`))
+
+  const missingTables = [...expected.tables].filter((t) => !liveTables.has(t)).sort()
+  const missingColumns = [...expected.columns].filter((c) => !liveColumns.has(c)).sort()
+  const lingeringDropped = [...expected.dropped].filter((t) => liveTables.has(t)).sort()
+
+  const problems: string[] = []
+  const sample = (xs: string[]) => `${xs.slice(0, 8).join(", ")}${xs.length > 8 ? ", …" : ""}`
+  if (missingTables.length > 0) {
+    problems.push(`${missingTables.length} expected table(s) missing: ${sample(missingTables)}`)
+  }
+  if (missingColumns.length > 0) {
+    problems.push(`${missingColumns.length} expected column(s) missing: ${sample(missingColumns)}`)
+  }
+  if (lingeringDropped.length > 0) {
+    problems.push(
+      `${lingeringDropped.length} table(s) the plan drops still present: ${sample(lingeringDropped)} ` +
+        `(run the relevant backfill/cleanup so the DB matches the final schema)`,
+    )
+  }
+  if (problems.length > 0) {
     throw new Error(
       `cannot baseline onto the collector — this database is NOT at the current schema.\n` +
-        `  ${missing.length} expected table(s) are missing, e.g.: ${missing.slice(0, 8).join(", ")}${
-          missing.length > 8 ? ", …" : ""
-        }\n` +
-        `  Converge first (the live aggregate schema is materialised via 'pnpm db:push'/drizzle-kit\n` +
+        problems.map((p) => `  • ${p}`).join("\n") +
+        `\n  Converge first (the live aggregate schema is materialised via 'pnpm db:push'/drizzle-kit\n` +
         `  push for tables with no legacy CREATE migration), then re-run this migration to baseline.`,
     )
   }

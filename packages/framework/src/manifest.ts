@@ -3,9 +3,15 @@
  * package-delivered modules + extensions every operator deployment mounts.
  *
  * A deployment composes its full manifest by spreading this and appending its
- * own deployment-local entries (and `voyant.config` may pare the module set
- * down). Owning the standard ordering here means a new standard module added to
- * the framework auto-joins the default set — the deployment doesn't re-list it.
+ * own deployment-local entries. Owning the standard ordering here means a new
+ * standard module added to the framework auto-joins the default set — the
+ * deployment doesn't re-list it.
+ *
+ * D.1 ships a FIXED standard profile: `createVoyantApp` always mounts this full
+ * set and only appends deployment-local modules/extensions — it does not yet
+ * consume `voyant.config` to pare the standard set down. Module subsetting is a
+ * later workstream; until then a deployment that must drop a standard module
+ * forks the manifest explicitly rather than configuring it away.
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
  * factories relocate into this package next; this is the manifest (the "which +

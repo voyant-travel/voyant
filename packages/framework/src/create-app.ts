@@ -15,7 +15,12 @@
  *     })
  *
  * This is NOT the rejected "assembly kit": providers stay injected (never baked),
- * and the assembly is the config-driven standard set — not a bottom-up file dump.
+ * and the assembly is the framework-owned standard set — not a bottom-up file dump.
+ *
+ * Scope (D.1): the standard profile is FIXED. This always mounts the full
+ * `FRAMEWORK_RUNTIME_MANIFEST` and only APPENDS the deployment's local
+ * `modules`/`extensions`; it does not consume `voyant.config` to remove standard
+ * modules. Subsetting the standard set is a later workstream — see `manifest.ts`.
  */
 
 import { type CreateAppConfig, createApp, type VoyantBindings } from "@voyant-travel/hono"

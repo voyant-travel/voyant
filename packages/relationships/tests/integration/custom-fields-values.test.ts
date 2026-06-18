@@ -95,4 +95,34 @@ describe.skipIf(!DB_AVAILABLE)("custom-field values on the entity column", () =>
     const budget = list.data.find((v) => v.definitionId === dMoney)
     expect(budget?.monetaryValueCents).toBe(1500)
   })
+
+  it("rejects an upsert whose entityType disagrees with the definition", async () => {
+    // `dEnum` is a person definition; writing it as an organization must fail
+    // rather than land a value where listing would never surface it.
+    await expect(
+      relationshipsService.upsertCustomFieldValue(db, dEnum, {
+        entityType: "organization",
+        entityId: pid,
+        textValue: "gold",
+      }),
+    ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it("404s an upsert against a nonexistent entity row (no synthetic success)", async () => {
+    await expect(
+      relationshipsService.upsertCustomFieldValue(db, dEnum, {
+        entityType: "person",
+        entityId: "pers_does_not_exist",
+        textValue: "gold",
+      }),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
+  it("delete returns null for a nonexistent entity / unset value (→ 404 at the route)", async () => {
+    const gone = await relationshipsService.deleteCustomFieldValue(
+      db,
+      `person::pers_does_not_exist::${dEnum}`,
+    )
+    expect(gone).toBeNull()
+  })
 })
