@@ -59,6 +59,13 @@ export type SupplierInvoiceDetailMessages = {
     supplierSearchPlaceholder: string
     /** Inline "create supplier" row label; `{name}` = typed query. */
     supplierCreate: string
+    /** Product/departure attribution (create mode, shown only when wired). */
+    product: string
+    departure: string
+    productSearchPlaceholder: string
+    departureSearchPlaceholder: string
+    /** Invoice total used to seed the departure cost allocation; `{currency}`. */
+    totalLabel: string
   }
   summary: {
     subtotal: string
