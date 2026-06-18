@@ -1,5 +1,13 @@
 # @voyant-travel/operations
 
+## 0.1.4
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/catalog@0.122.0
+- @voyant-travel/identity@0.124.0
+
 ## 0.1.3
 
 ### Patch Changes

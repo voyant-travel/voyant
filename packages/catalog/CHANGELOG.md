@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.122.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+
 ## 0.121.0
 
 ### Patch Changes
