@@ -138,7 +138,7 @@ export function DataTable<TData, TValue>({
       {enableRowSelection && selectedRows.length > 0 && renderSelectionActions
         ? renderSelectionActions({ selectedRows, clearSelection })
         : null}
-      <div className={cn("overflow-hidden rounded-md border", className)}>
+      <div className={cn("overflow-hidden rounded-lg border", className)}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
