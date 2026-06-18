@@ -68,49 +68,92 @@ async function ledgerRowCount(qualified: string): Promise<number> {
  * The schema the bundle+links would produce, reduced to what we can verify
  * against a live DB without executing anything: the NET set of tables (created
  * minus later-dropped), the tables the plan DROPS (which must be gone in a
- * converged DB), and every column added via `ALTER TABLE … ADD COLUMN`.
+ * converged DB), and every expected COLUMN — both the columns declared inside
+ * `CREATE TABLE (…)` bodies and the ones added later via `ALTER … ADD COLUMN`.
  *
- * Parsing the whole plan in order is what makes this a real parity check: a
- * CREATE-name-only scan misses `custom_fields` columns added by ALTER (0001-3)
- * and never subtracts `custom_field_values` dropped by 0004 — so it could both
- * falsely baseline a DB missing those columns and falsely reject a correctly
- * converged DB that no longer has the dropped table.
+ * Parsing the whole plan, statement by statement, is what makes this a real
+ * parity check rather than a table-name census: a CREATE-name-only scan misses
+ * the columns inside a table body AND the `custom_fields` columns added by ALTER
+ * (0001-3), and never subtracts `custom_field_values` dropped by 0004 — so it
+ * could falsely baseline a DB that is missing a baseline-declared column (then
+ * record the migrations as applied and skip that DDL forever), and falsely
+ * reject a correctly converged DB that no longer has the dropped table.
  */
 interface ExpectedSchema {
   /** Tables that must EXIST at baseline (created and not subsequently dropped). */
   tables: Set<string>
   /** Tables the plan drops — must be ABSENT in a converged DB. */
   dropped: Set<string>
-  /** Columns added via ALTER — must exist on their (net) table. `table.column`. */
+  /** Every expected column on a net table — `table.column`. */
   columns: Set<string>
+}
+
+/**
+ * Column names declared in a `CREATE TABLE` body. Column definitions start with
+ * a quoted identifier; table-level constraints (`CONSTRAINT`/`PRIMARY KEY`/
+ * `FOREIGN KEY`/`UNIQUE`/`CHECK`) start with a keyword, so a leading quote
+ * reliably distinguishes a column line.
+ */
+function columnsInCreateBody(body: string): string[] {
+  const cols: string[] = []
+  for (const line of body.split("\n")) {
+    const col = line.trim().match(/^"([a-z0-9_]+)"\s+\S/)
+    if (col) cols.push(col[1] as string)
+  }
+  return cols
 }
 
 function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
   const tables = new Set<string>()
   const dropped = new Set<string>()
-  const addedColumns: { table: string; column: string }[] = []
-  // One ordered scan over the plan: CREATE adds a table, DROP removes it (and
-  // records it as must-be-absent), ALTER … ADD COLUMN records an expected column.
-  const stmt =
-    /CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"|DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"|ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/gi
+  const columnsByTable = new Map<string, Set<string>>()
+  const addColumn = (table: string, column: string) => {
+    let set = columnsByTable.get(table)
+    if (!set) {
+      set = new Set<string>()
+      columnsByTable.set(table, set)
+    }
+    set.add(column)
+  }
+
+  // Drizzle separates statements with `--> statement-breakpoint`. Classify each
+  // in plan order: CREATE adds a table + its body columns, DROP removes both and
+  // records the table as must-be-absent, ALTER … ADD COLUMN records a column.
+  const createRe = /^CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"\s*\(([\s\S]*)\)/i
+  const dropRe = /^DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"/i
+  const alterRe = /^ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/i
   for (const m of planMigrations(sources)) {
-    for (const match of m.sql.matchAll(stmt)) {
-      const [, created, droppedName, alterTable, alterColumn] = match
-      if (created) {
-        tables.add(created)
-        dropped.delete(created)
-      } else if (droppedName) {
-        tables.delete(droppedName)
-        dropped.add(droppedName)
-      } else if (alterTable && alterColumn) {
-        addedColumns.push({ table: alterTable, column: alterColumn })
+    for (const raw of m.sql.split("--> statement-breakpoint")) {
+      const stmt = raw.trim()
+      const create = stmt.match(createRe)
+      if (create) {
+        const [, name, body] = create as unknown as [string, string, string]
+        tables.add(name)
+        dropped.delete(name)
+        for (const col of columnsInCreateBody(body)) addColumn(name, col)
+        continue
+      }
+      const drop = stmt.match(dropRe)
+      if (drop) {
+        const name = drop[1] as string
+        tables.delete(name)
+        columnsByTable.delete(name)
+        dropped.add(name)
+        continue
+      }
+      const alter = stmt.match(alterRe)
+      if (alter) {
+        addColumn(alter[1] as string, alter[2] as string)
       }
     }
   }
+
   // Only require columns on tables that still exist in the net schema.
-  const columns = new Set(
-    addedColumns.filter((c) => tables.has(c.table)).map((c) => `${c.table}.${c.column}`),
-  )
+  const columns = new Set<string>()
+  for (const [table, cols] of columnsByTable) {
+    if (!tables.has(table)) continue
+    for (const col of cols) columns.add(`${table}.${col}`)
+  }
   return { tables, dropped, columns }
 }
 

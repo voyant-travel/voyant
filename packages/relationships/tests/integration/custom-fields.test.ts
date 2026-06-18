@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -18,6 +19,9 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
     await cleanupTestDb(db)
 
     app = new Hono()
+    // Mirror production error mapping (createApp's errorBoundary) so thrown
+    // ApiHttpErrors (e.g. 404 on a missing entity row) surface as real statuses.
+    app.onError(handleApiError)
     app.use("*", async (c, next) => {
       c.set("db" as never, db)
       c.set("userId" as never, "test-user-id")
@@ -138,14 +142,26 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
       return data
     }
 
+    // The value API stores onto the entity's `custom_fields` column and now
+    // 404s when no entity row matches, so values must target a real org row.
+    async function seedOrganization() {
+      const res = await app.request("/organizations", {
+        method: "POST",
+        ...json({ name: `Org ${Date.now()}` }),
+      })
+      const { data } = await res.json()
+      return data.id as string
+    }
+
     it("upserts a value (create)", async () => {
       const def = await seedDefinition()
+      const orgId = await seedOrganization()
 
       const res = await app.request(`/custom-fields/${def.id}/value`, {
         method: "PUT",
         ...json({
           entityType: "organization",
-          entityId: "crm_org_fake123",
+          entityId: orgId,
           textValue: "hello",
         }),
       })
@@ -156,19 +172,35 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
       expect(body.data.definitionId).toBe(def.id)
     })
 
+    it("404s an upsert against a nonexistent entity row", async () => {
+      const def = await seedDefinition()
+
+      const res = await app.request(`/custom-fields/${def.id}/value`, {
+        method: "PUT",
+        ...json({
+          entityType: "organization",
+          entityId: "crm_org_does_not_exist",
+          textValue: "hello",
+        }),
+      })
+
+      expect(res.status).toBe(404)
+    })
+
     it("lists values filtered by entity", async () => {
       const def = await seedDefinition()
+      const orgId = await seedOrganization()
       await app.request(`/custom-fields/${def.id}/value`, {
         method: "PUT",
         ...json({
           entityType: "organization",
-          entityId: "crm_org_fake123",
+          entityId: orgId,
           textValue: "val1",
         }),
       })
 
       const res = await app.request(
-        `/custom-field-values?entityType=organization&entityId=crm_org_fake123`,
+        `/custom-field-values?entityType=organization&entityId=${orgId}`,
         { method: "GET" },
       )
 
@@ -179,12 +211,13 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
 
     it("upserts a value (update existing)", async () => {
       const def = await seedDefinition()
+      const orgId = await seedOrganization()
 
       await app.request(`/custom-fields/${def.id}/value`, {
         method: "PUT",
         ...json({
           entityType: "organization",
-          entityId: "crm_org_fake123",
+          entityId: orgId,
           textValue: "original",
         }),
       })
@@ -193,7 +226,7 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
         method: "PUT",
         ...json({
           entityType: "organization",
-          entityId: "crm_org_fake123",
+          entityId: orgId,
           textValue: "updated",
         }),
       })
@@ -203,7 +236,7 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
       expect(body.data.textValue).toBe("updated")
 
       const listRes = await app.request(
-        `/custom-field-values?entityType=organization&entityId=crm_org_fake123`,
+        `/custom-field-values?entityType=organization&entityId=${orgId}`,
         { method: "GET" },
       )
       const listBody = await listRes.json()
@@ -212,12 +245,13 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
 
     it("deletes a value", async () => {
       const def = await seedDefinition()
+      const orgId = await seedOrganization()
 
       const upsertRes = await app.request(`/custom-fields/${def.id}/value`, {
         method: "PUT",
         ...json({
           entityType: "organization",
-          entityId: "crm_org_fake123",
+          entityId: orgId,
           textValue: "todelete",
         }),
       })

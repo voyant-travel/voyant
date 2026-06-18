@@ -68,39 +68,43 @@ export const customFieldsService = {
     id: string,
     data: UpdateCustomFieldDefinitionInput,
   ) {
-    const [existing] = await db
-      .select()
-      .from(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.id, id))
-      .limit(1)
-    if (!existing) return null
+    // The definition update and the entity JSON-key rewrite are ONE transaction:
+    // values live under the definition's `key` in each entity row's
+    // `custom_fields` jsonb, so a rename that updates the definition but fails to
+    // rewrite the values would orphan them (invisible to listing/search/export).
+    // Wrapping both makes a key rename all-or-nothing.
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(customFieldDefinitions)
+        .where(eq(customFieldDefinitions.id, id))
+        .limit(1)
+      if (!existing) return null
 
-    const [row] = await db
-      .update(customFieldDefinitions)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(customFieldDefinitions.id, id))
-      .returning()
+      const [row] = await tx
+        .update(customFieldDefinitions)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(customFieldDefinitions.id, id))
+        .returning()
 
-    // Values live under the definition's `key` in each entity row's
-    // `custom_fields` jsonb. Renaming the key would orphan every stored value
-    // (invisible to listing/search/export), so migrate the JSON keys in lockstep.
-    if (row && data.key && data.key !== existing.key) {
-      const table = entityTableName(existing.entityType)
-      if (table) {
-        const oldKey = existing.key
-        const newKey = data.key
-        await db.execute(
-          sql`UPDATE ${sql.identifier(table)}
-              SET custom_fields =
-                    (custom_fields - ${oldKey})
-                    || jsonb_build_object(${newKey}::text, custom_fields -> ${oldKey}),
-                  updated_at = now()
-              WHERE custom_fields ? ${oldKey}`,
-        )
+      if (row && data.key && data.key !== existing.key) {
+        const table = entityTableName(existing.entityType)
+        if (table) {
+          const oldKey = existing.key
+          const newKey = data.key
+          await tx.execute(
+            sql`UPDATE ${sql.identifier(table)}
+                SET custom_fields =
+                      (custom_fields - ${oldKey})
+                      || jsonb_build_object(${newKey}::text, custom_fields -> ${oldKey}),
+                    updated_at = now()
+                WHERE custom_fields ? ${oldKey}`,
+          )
+        }
       }
-    }
 
-    return row ?? null
+      return row ?? null
+    })
   },
 
   async deleteCustomFieldDefinition(db: PostgresJsDatabase, id: string) {
