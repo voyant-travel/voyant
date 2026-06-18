@@ -25,7 +25,8 @@
   },
   "files": [
     "dist",
-    "migrations"
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",
