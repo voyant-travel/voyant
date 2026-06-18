@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-react
 
+## 0.122.2
+
+### Patch Changes
+
+- 274b92d: Allow admin booking B2C billing contacts with a phone number and no email to unlock the travelers step.
+  - @voyant-travel/bookings@0.122.2
+
 ## 0.122.1
 
 ### Patch Changes
