@@ -248,11 +248,14 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
         ]
       : undefined,
     sendResetPassword: async ({ user, url }) => {
+      // Local-dev escape hatch: log the link to the console instead of sending
+      // a real email. Takes precedence over the cloud send so local runs work
+      // without a connected sending domain.
+      if (allowAuthSecretLogging(env)) {
+        console.info(`[auth] reset-password (debug fallback) -> ${user.email}: ${url}`)
+        return
+      }
       if (!cloud) {
-        if (allowAuthSecretLogging(env)) {
-          console.info(`[auth] reset-password (debug fallback) -> ${user.email}: ${url}`)
-          return
-        }
         throw new Error("Password reset email provider is not configured")
       }
       await cloud.email.sendMessage({
@@ -264,11 +267,14 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
       })
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
+      // Local-dev escape hatch: log the OTP to the console instead of sending a
+      // real email. Takes precedence over the cloud send so local runs work
+      // without a connected sending domain.
+      if (allowAuthSecretLogging(env)) {
+        console.info(`[auth] verification-otp (debug fallback) [${type}] -> ${email}: ${otp}`)
+        return
+      }
       if (!cloud) {
-        if (allowAuthSecretLogging(env)) {
-          console.info(`[auth] verification-otp (debug fallback) [${type}] -> ${email}: ${otp}`)
-          return
-        }
         throw new Error("Verification OTP email provider is not configured")
       }
       await cloud.email.sendMessage({
