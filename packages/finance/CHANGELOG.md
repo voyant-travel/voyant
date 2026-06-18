@@ -1,5 +1,25 @@
 # @voyant-travel/finance
 
+## 0.123.0
+
+### Minor Changes
+
+- e9d9dbb: Custom-fields unification (invoice consumption seam). `InvoiceDocumentRuntimeOptions` gains an optional `resolveCustomFields(db, invoice)` hook; when wired, its result is exposed to the invoice template as the `customFields` variable (`{{customFields.<key>}}`). Finance stays decoupled from `relationships` — the deployment provides the resolver where it builds the invoice-generation runtime (it holds the custom-field registry and reads the entity's `custom_fields` column, filtering with `customFieldsVisibleIn(registry, entity, "invoice")`). Completes the reader-consumption trio (export + search are package-side; invoice is deployment-rendered, so finance exposes the hook). See `docs/architecture/custom-fields-unification-adr.md`.
+
+### Patch Changes
+
+- Updated dependencies [04681f3]
+- Updated dependencies [98f4a40]
+- Updated dependencies [a3bd51c]
+- Updated dependencies [3b27dcc]
+- Updated dependencies [39d48fe]
+- Updated dependencies [d222e9f]
+  - @voyant-travel/bookings@0.123.0
+  - @voyant-travel/core@0.110.0
+  - @voyant-travel/hono@0.112.0
+  - @voyant-travel/action-ledger@0.105.1
+  - @voyant-travel/db@0.108.2
+
 ## 0.122.1
 
 ### Patch Changes

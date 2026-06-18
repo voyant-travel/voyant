@@ -1,5 +1,22 @@
 # @voyant-travel/cruises
 
+## 0.122.0
+
+### Patch Changes
+
+- d9e5f8e: Fix `cruises/src/schema.ts` to re-export `cruiseAirArrangementEnum` from the booking-extension. The barrel re-exported `bookingCruiseDetails` (which has an `air_arrangement` column) and `cruiseBookingModeEnum`, but omitted `cruiseAirArrangementEnum` — so schema discovery (drizzle) saw a table referencing an enum it never created (surfaced by the D.1 replay-parity oracle). A schema barrel must re-export every enum its re-exported tables use.
+- Updated dependencies [04681f3]
+- Updated dependencies [98f4a40]
+- Updated dependencies [a3bd51c]
+- Updated dependencies [3b27dcc]
+- Updated dependencies [39d48fe]
+- Updated dependencies [d222e9f]
+  - @voyant-travel/bookings@0.123.0
+  - @voyant-travel/core@0.110.0
+  - @voyant-travel/hono@0.112.0
+  - @voyant-travel/catalog@0.121.0
+  - @voyant-travel/db@0.108.2
+
 ## 0.121.0
 
 ### Patch Changes
