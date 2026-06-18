@@ -76,7 +76,7 @@ describe("draft-state", () => {
         firstName: "",
         lastName: "",
         email: "",
-        phone: "+40722111222",
+        phone: "+15550100000",
       }),
     ).toBe(true)
     expect(
