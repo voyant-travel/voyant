@@ -85,6 +85,7 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
       <div className="flex flex-wrap items-center gap-3">
         <ToggleGroup
           size="lg"
+          variant="outline"
           value={[tripType]}
           onValueChange={(v: string[]) => {
             const next = v[0] as TripType | undefined
