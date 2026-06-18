@@ -46,7 +46,7 @@ export function FlightPaymentSelector({ value, onChange, available }: FlightPaym
   const visibleIntents = available ? INTENTS.filter((i) => available.includes(i.id)) : INTENTS
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-md border bg-card p-4 shadow-sm">
       <h3 className="mb-3 font-medium text-sm">{messages.title}</h3>
       <p className="mb-4 text-xs text-muted-foreground">{messages.description}</p>
       <div role="radiogroup" className="flex flex-col gap-2">

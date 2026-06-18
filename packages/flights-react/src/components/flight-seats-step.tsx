@@ -252,7 +252,7 @@ function ModeCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex flex-col items-start gap-1 rounded-xl border bg-card p-4 text-left transition-colors",
+        "relative flex flex-col items-start gap-1 rounded-md border bg-card p-4 text-left transition-colors",
         active ? "border-primary ring-2 ring-primary/20" : "hover:border-primary/40",
       )}
     >

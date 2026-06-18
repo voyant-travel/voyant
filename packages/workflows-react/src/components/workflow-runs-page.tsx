@@ -244,7 +244,7 @@ function RunListItem({
   const messages = useWorkflowRunsUiMessagesOrDefault()
   return (
     <div
-      className={`rounded-xl border bg-card p-3 text-sm transition-colors hover:bg-muted/50 ${
+      className={`rounded-md border bg-card p-3 text-sm transition-colors hover:bg-muted/50 ${
         selected ? "border-primary bg-primary/5" : "" // i18n-literal-ok: CSS classes
       }`}
     >

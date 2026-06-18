@@ -98,7 +98,7 @@ export function ChannelsPage({ className, pageSize = PAGE_SIZE }: ChannelsPagePr
       {isPending ? (
         <ChannelsListSkeleton />
       ) : (
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="rounded-md border bg-card text-card-foreground shadow-sm">
           {channels.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">{page.empty}</p>
           ) : (
@@ -386,7 +386,7 @@ function ChannelsListSkeleton() {
   const rows = ["first", "second", "third", "fourth", "fifth"]
 
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+    <div className="rounded-md border bg-card text-card-foreground shadow-sm">
       {rows.map((row) => (
         <div
           key={row}

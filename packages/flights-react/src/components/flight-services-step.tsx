@@ -170,7 +170,7 @@ function AssistanceSection({
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-5 shadow-sm">
       <header className="mb-4 flex items-center gap-2">
         <Accessibility className="h-4 w-4 text-muted-foreground" />
         <h3 className="font-medium text-sm">{messages.flightServicesStep.specialAssistance}</h3>
@@ -248,7 +248,7 @@ function ExtrasSection({
   const last = itin?.segments[itin.segments.length - 1]
 
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-5 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-2 font-medium text-sm">
           <Sparkles className="h-4 w-4 text-muted-foreground" />
@@ -301,7 +301,7 @@ function ExtraRow({
   onChange: (next: number) => void
 }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border bg-card px-3 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm">{option.label}</span>

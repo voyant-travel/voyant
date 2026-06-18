@@ -182,7 +182,7 @@ function BaggageLegSection({
   const last = itin?.segments[itin.segments.length - 1]
 
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-5 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="font-medium text-sm">
           <Luggage className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" />
@@ -251,7 +251,7 @@ function PaxBaggageRow({
           type="button"
           onClick={() => onSelect(null)}
           className={cn(
-            "relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-3 text-center transition-colors",
+            "relative flex flex-col items-center justify-center gap-1.5 rounded-md border bg-card p-3 text-center transition-colors",
             selectedOptionId == null
               ? "border-primary ring-2 ring-primary/20"
               : "hover:border-primary/40 hover:bg-accent/30",
@@ -274,7 +274,7 @@ function PaxBaggageRow({
               type="button"
               onClick={() => onSelect(isSelected ? null : opt.id)}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-3 text-center transition-colors",
+                "relative flex flex-col items-center justify-center gap-1.5 rounded-md border bg-card p-3 text-center transition-colors",
                 isSelected
                   ? "border-primary ring-2 ring-primary/20"
                   : "hover:border-primary/40 hover:bg-accent/30",

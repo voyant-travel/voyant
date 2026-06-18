@@ -206,7 +206,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
               type="button"
               onClick={() => setStatusFilter(isActive ? "all" : tile.key)}
               className={cn(
-                "group rounded-xl border bg-card p-4 text-left transition-all",
+                "group rounded-md border bg-card p-4 text-left transition-all",
                 "hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isActive && "border-primary ring-2 ring-primary/30",
               )}

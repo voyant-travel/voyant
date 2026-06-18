@@ -168,7 +168,7 @@ function PassengerCard({
   }
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-md border bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="font-medium text-sm">{label}</h3>
         {picker}

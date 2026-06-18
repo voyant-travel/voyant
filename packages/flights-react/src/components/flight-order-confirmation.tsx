@@ -50,7 +50,7 @@ export function FlightOrderConfirmation({
   return (
     <div className="flex flex-col gap-6">
       {/* Header card — PNR + status + price */}
-      <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="rounded-md border bg-card p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -99,7 +99,7 @@ export function FlightOrderConfirmation({
           {order.passengers.map((p) => (
             <div
               key={p.passengerId}
-              className="flex items-center justify-between rounded-xl border bg-card px-3 py-2.5 text-sm"
+              className="flex items-center justify-between rounded-md border bg-card px-3 py-2.5 text-sm"
             >
               <div className="flex flex-col leading-tight">
                 <span className="font-medium">

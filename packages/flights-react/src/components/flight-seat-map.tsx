@@ -71,7 +71,7 @@ export function FlightSeatMap({
             </>
           )}
         </div>
-        <div className="rounded-2xl border bg-card p-4">
+        <div className="rounded-md border bg-card p-4">
           <Cabin seatMap={seatMap} picks={picks} onSeatClick={onSeatClick} messages={messages} />
         </div>
         <Legend messages={messages} />

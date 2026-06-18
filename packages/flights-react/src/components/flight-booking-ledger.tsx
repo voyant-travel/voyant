@@ -86,7 +86,7 @@ export function FlightBookingLedger({
   return (
     <aside
       className={cn(
-        "flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-4 shadow-sm",
+        "flex w-full max-w-sm flex-col gap-4 rounded-md border bg-card p-4 shadow-sm",
         className,
       )}
     >

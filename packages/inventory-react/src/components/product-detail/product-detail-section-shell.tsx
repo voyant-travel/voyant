@@ -20,7 +20,7 @@ export function Section({
   contentClassName?: string
 }) {
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+    <div className="rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="flex items-center justify-between px-6 py-4">
         <h2 className="font-semibold leading-none tracking-tight">{title}</h2>
         {actions}

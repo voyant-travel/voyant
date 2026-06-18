@@ -24,7 +24,7 @@ export interface FlightContactFormProps {
 export function FlightContactForm({ value, onChange }: FlightContactFormProps) {
   const messages = useFlightsUiMessagesOrDefault().flightContactForm
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-md border bg-card p-4 shadow-sm">
       <h3 className="mb-3 font-medium text-sm">{messages.title}</h3>
       <p className="mb-4 text-xs text-muted-foreground">{messages.description}</p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
