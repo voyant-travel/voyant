@@ -71,11 +71,11 @@ export function DefaultOperatorAdminBrand({
         >
           <LinkComponent href={href} target="_self" aria-label="Voyant">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-foreground text-background">
-              <VoyantMark aria-hidden="true" className="size-3.5!" />
+              <VoyantMark aria-hidden="true" className="size-4!" />
             </span>
             <VoyantWordmark
               aria-hidden="true"
-              className="h-3.5! w-auto! group-data-[collapsible=icon]:hidden!"
+              className="h-[1.125rem]! w-auto! group-data-[collapsible=icon]:hidden!"
             />
           </LinkComponent>
         </SidebarMenuButton>
