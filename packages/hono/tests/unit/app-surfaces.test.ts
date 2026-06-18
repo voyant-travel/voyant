@@ -9,7 +9,7 @@ import { VOYANT_DB_DISPOSE } from "@voyant-travel/db/transaction-capability"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { createApp } from "../../src/app.js"
+import { mountApp } from "../../src/app.js"
 import type { HonoModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
@@ -47,7 +47,7 @@ function makeModule(options: {
  * intended actor.
  */
 function build(actor: Actor | undefined, mods: HonoModule[]) {
-  return createApp({
+  return mountApp({
     // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
     db: () => ({}) as any,
     modules: mods,
@@ -57,7 +57,7 @@ function build(actor: Actor | undefined, mods: HonoModule[]) {
   })
 }
 
-describe("createApp surface mounting", () => {
+describe("mountApp surface mounting", () => {
   it("disposes db clients tagged with package-level dispose metadata", async () => {
     const dispose = vi.fn(async () => {})
     const db = Object.defineProperty({}, VOYANT_DB_DISPOSE, {
@@ -73,7 +73,7 @@ describe("createApp surface mounting", () => {
         return c.json({ ok: true })
       }),
     }
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: structural db client for disposal test -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => db as any,
       modules: [mod],
@@ -100,7 +100,7 @@ describe("createApp surface mounting", () => {
   })
 
   it("serves capabilities at /v1/admin/_meta/capabilities when adminMeta is provided", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [
@@ -213,7 +213,7 @@ describe("createApp surface mounting", () => {
   })
 
   it("supports a module exposing both admin and public routes", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [makeModule({ name: "bookings", admin: true, public_: true })],
@@ -237,7 +237,7 @@ describe("createApp surface mounting", () => {
   })
 
   it("treats public-path bypasses under /v1/public/* as customer-facing requests", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [makeModule({ name: "checkout", public_: true })],
@@ -250,7 +250,7 @@ describe("createApp surface mounting", () => {
   })
 
   it("exposes /health publicly without auth", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       modules: [],
@@ -277,7 +277,7 @@ describe("createApp surface mounting", () => {
     }
     const query = createQueryContext({ person: fetcher }, [link], linkService)
 
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       link: linkService,

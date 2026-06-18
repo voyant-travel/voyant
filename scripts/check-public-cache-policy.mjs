@@ -251,7 +251,7 @@ function checkSourceMarkers() {
       reason: "public default contract template read",
     },
     {
-      file: "starters/operator/src/api/routes/settings.ts",
+      file: "packages/operator-settings/src/routes.ts",
       call: "cachePublicOperatorSettings(c)",
       minimum: 2,
       reason: "public operator settings/profile reads",

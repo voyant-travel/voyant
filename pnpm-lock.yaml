@@ -1846,6 +1846,94 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/framework:
+    dependencies:
+      '@voyant-travel/action-ledger':
+        specifier: workspace:*
+        version: link:../action-ledger
+      '@voyant-travel/bookings':
+        specifier: workspace:*
+        version: link:../bookings
+      '@voyant-travel/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@voyant-travel/commerce':
+        specifier: workspace:*
+        version: link:../commerce
+      '@voyant-travel/distribution':
+        specifier: workspace:*
+        version: link:../distribution
+      '@voyant-travel/finance':
+        specifier: workspace:*
+        version: link:../finance
+      '@voyant-travel/flights':
+        specifier: workspace:*
+        version: link:../flights
+      '@voyant-travel/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@voyant-travel/inventory':
+        specifier: workspace:*
+        version: link:../inventory
+      '@voyant-travel/legal':
+        specifier: workspace:*
+        version: link:../legal
+      '@voyant-travel/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@voyant-travel/operations':
+        specifier: workspace:*
+        version: link:../operations
+      '@voyant-travel/operator-settings':
+        specifier: workspace:*
+        version: link:../operator-settings
+      '@voyant-travel/quotes':
+        specifier: workspace:*
+        version: link:../quotes
+      '@voyant-travel/relationships':
+        specifier: workspace:*
+        version: link:../relationships
+      '@voyant-travel/storefront':
+        specifier: workspace:*
+        version: link:../storefront
+      '@voyant-travel/trips':
+        specifier: workspace:*
+        version: link:../trips
+    devDependencies:
+      '@voyant-travel/hono':
+        specifier: workspace:*
+        version: link:../hono
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/framework-migrations:
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.20.0
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      pg:
+        specifier: ^8.13.1
+        version: 8.20.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/hono:
     dependencies:
       '@voyant-travel/core':
@@ -2564,6 +2652,37 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
+
+  packages/operator-settings:
+    dependencies:
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/plugins/catalog-demo:
     dependencies:
@@ -3805,6 +3924,12 @@ importers:
       '@voyant-travel/flights-react':
         specifier: workspace:^
         version: link:../../packages/flights-react
+      '@voyant-travel/framework':
+        specifier: workspace:^
+        version: link:../../packages/framework
+      '@voyant-travel/framework-migrations':
+        specifier: workspace:^
+        version: link:../../packages/framework-migrations
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../../packages/hono
@@ -3841,6 +3966,9 @@ importers:
       '@voyant-travel/operations-react':
         specifier: workspace:^
         version: link:../../packages/operations-react
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../../packages/operator-settings
       '@voyant-travel/plugin-catalog-demo':
         specifier: workspace:^
         version: link:../../packages/plugins/catalog-demo

@@ -8,6 +8,7 @@ export {
   adminExtensionChildRoutes,
   adminExtensionRouteOptions,
   attachAdminExtensionRoutes,
+  buildAdminExtensionRoutes,
 } from "./extension-routes.js"
 export type { AdminRootErrorBoundaryProps, AdminRootHeadOptions } from "./root.js"
 export { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "./root.js"

@@ -46,6 +46,18 @@ export interface InvoiceDocumentRuntimeOptions {
   bindings?: Record<string, unknown>
   generator: InvoiceDocumentGenerator
   eventBus?: EventBus
+  /**
+   * Optional: resolve the invoice-visible custom fields for this invoice's
+   * customer, exposed to the template as the `customFields` variable. The
+   * deployment wires this — it holds the custom-field registry and reads the
+   * entity's `custom_fields` column — keeping `finance` decoupled from
+   * `relationships`. Filter with `customFieldsVisibleIn(registry, entity,
+   * "invoice")`. See docs/architecture/custom-fields-unification-adr.md.
+   */
+  resolveCustomFields?: (
+    db: PostgresJsDatabase,
+    invoice: typeof invoices.$inferSelect,
+  ) => Promise<Record<string, unknown>> | Record<string, unknown>
 }
 
 export interface StorageBackedInvoiceDocumentUpload {
@@ -237,6 +249,7 @@ async function prepareInvoiceDocument(
   db: PostgresJsDatabase,
   invoiceId: string,
   input: GenerateInvoiceDocumentInput,
+  resolveCustomFields?: InvoiceDocumentRuntimeOptions["resolveCustomFields"],
 ): Promise<PreparedInvoiceDocument> {
   const invoice = await financeService.getInvoiceById(db, invoiceId)
   if (!invoice) {
@@ -267,6 +280,11 @@ async function prepareInvoiceDocument(
     lineItems,
     payments: paymentRows,
   }
+  if (resolveCustomFields) {
+    // Invoice-visible custom fields for the customer, available to templates as
+    // `{{customFields.<key>}}` (unified custom-fields system).
+    variables.customFields = await resolveCustomFields(db, invoice)
+  }
   const renderedBody = template
     ? renderInvoiceBody(template.body, template.bodyFormat, variables)
     : JSON.stringify(variables)
@@ -296,7 +314,7 @@ export const financeDocumentsService = {
     | { status: "not_found" | "generator_failed" }
     | ({ status: "generated" } & GeneratedInvoiceDocumentRecord)
   > {
-    const prepared = await prepareInvoiceDocument(db, invoiceId, input)
+    const prepared = await prepareInvoiceDocument(db, invoiceId, input, runtime.resolveCustomFields)
     if (prepared.status === "not_found") {
       return { status: "not_found" }
     }

@@ -15,13 +15,13 @@
  */
 import type { CheckoutModuleOptions, CheckoutStartOptions } from "@voyant-travel/commerce/checkout"
 import { productsService } from "@voyant-travel/inventory"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context } from "hono"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
-} from "../routes/settings"
+} from "@voyant-travel/operator-settings"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { cardPaymentStarter } from "./card-payment"
 
 /** Resolve an owned product's display name (cycle-avoiding inventory read). */

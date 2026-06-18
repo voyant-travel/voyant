@@ -1,4 +1,16 @@
-import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyant-travel/hono"
+import type { ModuleContainer } from "@voyant-travel/core"
+import {
+  type CustomFieldDefinition,
+  customFieldsVisibleIn,
+  validateCustomFields,
+} from "@voyant-travel/core/custom-fields"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseQuery,
+  RequestValidationError,
+  requireUserId,
+} from "@voyant-travel/hono"
 import {
   insertAddressSchema,
   insertContactPointSchema,
@@ -9,6 +21,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
+import {
+  RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY,
+  type RelationshipsRouteRuntime,
+} from "../route-runtime.js"
 import { RelationshipsMergeError } from "../service/accounts-merge.js"
 import { relationshipsService } from "../service/index.js"
 import {
@@ -35,6 +51,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    container?: ModuleContainer
   }
 }
 
@@ -48,6 +65,67 @@ function mergeErrorResponse(c: Context<Env>, error: unknown) {
   throw error
 }
 
+/**
+ * Validate a person/organization write's `customFields` against the resolved
+ * custom-field registry (code ∪ runtime `custom_field_definitions`) and replace
+ * the payload with the cleaned value. No-op when the write carries none. Rejects
+ * (400) unknown keys / missing required / bad types, or any `customFields` when
+ * the deployment declares none. See the custom-fields unification ADR.
+ */
+async function validateRelationshipsCustomFields<T extends Env>(
+  c: Context<T>,
+  entity: "person" | "organization",
+  data: { customFields?: Record<string, unknown> },
+  mode: "create" | "update",
+): Promise<void> {
+  const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+    | RelationshipsRouteRuntime
+    | undefined
+  const resolveRegistry = runtime?.customFields
+  if (data.customFields === undefined) {
+    // Partial update without custom fields, or no registry → no-op. A create with
+    // an absent envelope still validates `{}` so `required` fields are enforced.
+    if (mode === "update" || !resolveRegistry) {
+      return
+    }
+  } else if (!resolveRegistry) {
+    throw new RequestValidationError("Custom fields are not configured for this deployment", {
+      fields: { fieldErrors: { customFields: ["not configured"] }, formErrors: [] },
+    })
+  }
+  if (!resolveRegistry) {
+    return
+  }
+  const result = validateCustomFields(
+    await resolveRegistry(c.get("db")),
+    entity,
+    data.customFields ?? {},
+  )
+  if (!result.ok) {
+    throw new RequestValidationError(`Invalid ${entity} custom fields`, {
+      fields: {
+        fieldErrors: Object.fromEntries(result.errors.map((e) => [e.key, [e.message]])),
+        formErrors: [],
+      },
+    })
+  }
+  data.customFields = result.value
+}
+
+/** Custom fields for `entity` visible in `channel` (export / invoice / search). */
+async function resolveVisibleCustomFields<T extends Env>(
+  c: Context<T>,
+  entity: "person" | "organization",
+  channel: "export" | "invoice" | "search",
+): Promise<CustomFieldDefinition[]> {
+  const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+    | RelationshipsRouteRuntime
+    | undefined
+  const resolveRegistry = runtime?.customFields
+  if (!resolveRegistry) return []
+  return customFieldsVisibleIn(await resolveRegistry(c.get("db")), entity, channel)
+}
+
 export const accountRoutes = new Hono<Env>()
   // Organizations
   .get("/organizations", async (c) => {
@@ -58,15 +136,9 @@ export const accountRoutes = new Hono<Env>()
     "/organizations",
     idempotencyKey({ scope: "POST /v1/admin/relationships/organizations" }),
     async (c) => {
-      return c.json(
-        {
-          data: await relationshipsService.createOrganization(
-            c.get("db"),
-            await parseJsonBody(c, insertOrganizationSchema),
-          ),
-        },
-        201,
-      )
+      const data = await parseJsonBody(c, insertOrganizationSchema)
+      await validateRelationshipsCustomFields(c, organizationEntity, data, "create")
+      return c.json({ data: await relationshipsService.createOrganization(c.get("db"), data) }, 201)
     },
   )
   .get("/organizations/:id", async (c) => {
@@ -75,11 +147,9 @@ export const accountRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
   .patch("/organizations/:id", async (c) => {
-    const row = await relationshipsService.updateOrganization(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateOrganizationSchema),
-    )
+    const data = await parseJsonBody(c, updateOrganizationSchema)
+    await validateRelationshipsCustomFields(c, organizationEntity, data, "update")
+    const row = await relationshipsService.updateOrganization(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Organization not found" }, 404)
     return c.json({ data: row })
   })
@@ -180,18 +250,15 @@ export const accountRoutes = new Hono<Env>()
   // People
   .get("/people", async (c) => {
     const query = parseQuery(c, personListQuerySchema)
-    return c.json(await relationshipsService.listPeople(c.get("db"), query))
+    const searchableFields = query.search
+      ? await resolveVisibleCustomFields(c, personEntity, "search")
+      : []
+    return c.json(await relationshipsService.listPeople(c.get("db"), query, searchableFields))
   })
   .post("/people", idempotencyKey({ scope: "POST /v1/admin/relationships/people" }), async (c) => {
-    return c.json(
-      {
-        data: await relationshipsService.createPerson(
-          c.get("db"),
-          await parseJsonBody(c, insertPersonSchema),
-        ),
-      },
-      201,
-    )
+    const data = await parseJsonBody(c, insertPersonSchema)
+    await validateRelationshipsCustomFields(c, personEntity, data, "create")
+    return c.json({ data: await relationshipsService.createPerson(c.get("db"), data) }, 201)
   })
   .get("/people/:id", async (c) => {
     const row = await relationshipsService.getPersonById(c.get("db"), c.req.param("id"))
@@ -199,11 +266,9 @@ export const accountRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
   .patch("/people/:id", async (c) => {
-    const row = await relationshipsService.updatePerson(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updatePersonSchema),
-    )
+    const data = await parseJsonBody(c, updatePersonSchema)
+    await validateRelationshipsCustomFields(c, personEntity, data, "update")
+    const row = await relationshipsService.updatePerson(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Person not found" }, 404)
     return c.json({ data: row })
   })
@@ -364,7 +429,8 @@ export const accountRoutes = new Hono<Env>()
 
   // CSV export/import
   .post("/people/export", async (c) => {
-    const csv = await relationshipsService.exportPeopleCsv(c.get("db"))
+    const visibleFields = await resolveVisibleCustomFields(c, personEntity, "export")
+    const csv = await relationshipsService.exportPeopleCsv(c.get("db"), visibleFields)
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv",

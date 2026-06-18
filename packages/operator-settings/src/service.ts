@@ -1,22 +1,16 @@
 /**
- * Operator profile and payment settings API.
+ * Operator settings data access — readers/writers + validation for the
+ * operator profile, payment instructions/defaults, and booking-tax settings.
  *
- * The first booking-journey pass stored operator identity, payment
- * instructions, default booking payment policy, and booking tax
- * selection in one catch-all settings row. Runtime code now uses
- * narrower operator-owned concepts:
- *
- *   operator_profile                contract/customer-facing identity
- *   operator_payment_instructions   bank-transfer instructions
- *   operator_payment_defaults       fallback customer payment policy
- *   booking_tax_settings            booking tax preview/finalization knobs
+ * Transport-agnostic (no Hono): a deployment mounts the HTTP routes over these
+ * and injects the readers into the standard modules that need them (legal
+ * contract variables, quotes proposal, commerce checkout tax, finance
+ * booking-tax). The schema lives in `./schema`.
  */
 
 import type { BookingTaxSettings, PaymentPolicy } from "@voyant-travel/finance"
-import { parseJsonBody } from "@voyant-travel/hono"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
 import { z } from "zod"
 
 import {
@@ -24,13 +18,7 @@ import {
   operatorPaymentDefaults,
   operatorPaymentInstructions,
   operatorProfile,
-} from "../../db/schema.js"
-
-const PUBLIC_OPERATOR_SETTINGS_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
-
-function cachePublicOperatorSettings(c: Context) {
-  c.header("Cache-Control", PUBLIC_OPERATOR_SETTINGS_CACHE_CONTROL)
-}
+} from "./schema.js"
 
 const depositRuleSchema = z.object({
   kind: z.enum(["none", "percent", "fixed_cents"]),
@@ -45,7 +33,7 @@ const paymentPolicySchema = z.object({
   balanceDueMinDaysFromNow: z.number().int().min(0),
 })
 
-const updateOperatorProfileSchema = z.object({
+export const updateOperatorProfileSchema = z.object({
   name: z.string().nullable().optional(),
   legalName: z.string().nullable().optional(),
   vatId: z.string().nullable().optional(),
@@ -60,20 +48,20 @@ const updateOperatorProfileSchema = z.object({
   signatoryRole: z.string().nullable().optional(),
 })
 
-const updateOperatorPaymentInstructionsSchema = z.object({
+export const updateOperatorPaymentInstructionsSchema = z.object({
   bankTransferBeneficiary: z.string().nullable().optional(),
   iban: z.string().nullable().optional(),
   bank: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 })
 
-const updateOperatorPaymentDefaultsSchema = z.object({
+export const updateOperatorPaymentDefaultsSchema = z.object({
   customerPaymentPolicy: paymentPolicySchema.nullable().optional(),
   bookingCheckoutUrlTemplate: z.string().trim().nullable().optional(),
   invoicePayUrlTemplate: z.string().trim().nullable().optional(),
 })
 
-const updateOperatorSettingsSchema = updateOperatorProfileSchema
+export const updateOperatorSettingsSchema = updateOperatorProfileSchema
   .merge(updateOperatorPaymentInstructionsSchema)
   .merge(updateOperatorPaymentDefaultsSchema)
 
@@ -373,84 +361,4 @@ export function toPublicOperatorSettings(
     bookingCheckoutUrlTemplate: row?.bookingCheckoutUrlTemplate ?? null,
     invoicePayUrlTemplate: row?.invoicePayUrlTemplate ?? null,
   }
-}
-
-async function handleGetOperatorProfile(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  return c.json({ data: await getOperatorProfile(db) })
-}
-
-async function handlePatchOperatorProfile(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const patch = await parseJsonBody(c, updateOperatorProfileSchema)
-  return c.json({ data: await upsertOperatorProfile(db, patch) })
-}
-
-async function handleGetOperatorPaymentInstructions(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  return c.json({ data: await getOperatorPaymentInstructions(db) })
-}
-
-async function handlePatchOperatorPaymentInstructions(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const patch = await parseJsonBody(c, updateOperatorPaymentInstructionsSchema)
-  return c.json({ data: await upsertOperatorPaymentInstructions(db, patch) })
-}
-
-async function handleGetOperatorPaymentDefaults(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  return c.json({ data: await getOperatorPaymentDefaults(db) })
-}
-
-async function handlePatchOperatorPaymentDefaults(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const patch = await parseJsonBody(c, updateOperatorPaymentDefaultsSchema)
-  return c.json({ data: await upsertOperatorPaymentDefaults(db, patch) })
-}
-
-async function handleGetPublicOperatorProfile(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const [profile, defaults] = await Promise.all([
-    getOperatorProfile(db),
-    getOperatorPaymentDefaults(db),
-  ])
-  cachePublicOperatorSettings(c)
-  if (!profile) return c.json({ data: null })
-  return c.json({ data: toPublicOperatorProfile(profile, defaults) })
-}
-
-async function handleGetOperatorSettings(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  return c.json({ data: await getOperatorSettings(db) })
-}
-
-async function handlePatchOperatorSettings(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const patch = await parseJsonBody(c, updateOperatorSettingsSchema)
-  return c.json({ data: await upsertOperatorSettings(db, patch) })
-}
-
-async function handleGetPublicOperatorSettings(c: Context): Promise<Response> {
-  const db = c.get("db") as PostgresJsDatabase
-  const row = await getOperatorSettings(db)
-  cachePublicOperatorSettings(c)
-  if (!row) return c.json({ data: null })
-  return c.json({ data: toPublicOperatorSettings(row) })
-}
-
-export function mountOperatorSettingsRoutes(hono: Hono): void {
-  hono.get("/v1/admin/settings/operator-profile", handleGetOperatorProfile)
-  hono.patch("/v1/admin/settings/operator-profile", handlePatchOperatorProfile)
-  hono.get("/v1/admin/settings/operator-payment-instructions", handleGetOperatorPaymentInstructions)
-  hono.patch(
-    "/v1/admin/settings/operator-payment-instructions",
-    handlePatchOperatorPaymentInstructions,
-  )
-  hono.get("/v1/admin/settings/operator-payment-defaults", handleGetOperatorPaymentDefaults)
-  hono.patch("/v1/admin/settings/operator-payment-defaults", handlePatchOperatorPaymentDefaults)
-  hono.get("/v1/public/operator-profile", handleGetPublicOperatorProfile)
-
-  hono.get("/v1/admin/settings/operator", handleGetOperatorSettings)
-  hono.patch("/v1/admin/settings/operator", handlePatchOperatorSettings)
-  hono.get("/v1/public/settings/operator", handleGetPublicOperatorSettings)
 }

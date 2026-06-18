@@ -13,6 +13,24 @@ export { defineVoyantConfig, resolveEntry, validateVoyantConfig } from "./config
 export type { ModuleContainer } from "./container.js"
 export { createContainer } from "./container.js"
 export type {
+  CustomFieldDefinition,
+  CustomFieldError,
+  CustomFieldMonetaryValue,
+  CustomFieldRegistry,
+  CustomFieldRegistryResolver,
+  CustomFieldType,
+  CustomFieldValidationResult,
+  CustomFieldVisibility,
+} from "./custom-fields.js"
+export {
+  createCustomFieldRegistry,
+  customFieldsFromGlob,
+  customFieldsVisibleIn,
+  defineCustomField,
+  mergeCustomFieldDefinitions,
+  validateCustomFields,
+} from "./custom-fields.js"
+export type {
   Actor,
   VoyantAuthContext,
   VoyantCallerType,

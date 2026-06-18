@@ -1,3 +1,4 @@
+import type { CustomFieldRegistryResolver } from "@voyant-travel/core/custom-fields"
 import { createKmsProviderFromEnv, type KmsProvider } from "@voyant-travel/utils"
 
 export const RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY = "runtime.relationships.routes"
@@ -18,10 +19,13 @@ export interface RelationshipsRouteRuntime {
    * require KMS gracefully reject with a 503 in that case.
    */
   getKmsProvider(): Promise<KmsProvider | null>
+  /** Resolves the custom-field registry (code ∪ runtime DB) for a request. */
+  customFields?: CustomFieldRegistryResolver
 }
 
 export interface RelationshipsRouteRuntimeOptions {
   resolveKmsProvider?: ResolveRelationshipsKmsProvider
+  customFields?: CustomFieldRegistryResolver
 }
 
 function buildRuntimeEnv(bindings: Record<string, unknown>): Record<string, string | undefined> {
@@ -58,5 +62,6 @@ export function buildRelationshipsRouteRuntime(
         return null
       }
     },
+    customFields: options.customFields,
   }
 }

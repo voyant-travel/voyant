@@ -16,7 +16,14 @@ export const customFieldDefinitionCoreSchema = z.object({
 })
 
 export const insertCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema
-export const updateCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema.partial()
+// `entityType` and `fieldType` are immutable after creation: changing the entity
+// type would point the definition at a different physical table (orphaning every
+// stored value), and changing the field type would reinterpret already-stored
+// JSON values under the wrong type. They are omitted from the update surface
+// (renaming `key` is allowed — the service migrates the JSON keys in lockstep).
+export const updateCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema
+  .omit({ entityType: true, fieldType: true })
+  .partial()
 export const customFieldDefinitionListQuerySchema = paginationSchema.extend({
   entityType: entityTypeSchema.optional(),
 })

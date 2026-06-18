@@ -135,6 +135,7 @@ export {
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
+  adminExtensionsFromGlob,
   adminRoutePageModule,
   adminWorkspaceHeaderActionsSlot,
   type BindableAdminRoute,
@@ -175,6 +176,7 @@ export {
 export {
   type CreateOperatorAdminNavigationOptions,
   createOperatorAdminNavigation,
+  defaultOperatorNavIcons,
   type OperatorAdminNavigationIconName,
   type OperatorAdminNavigationIcons,
 } from "./navigation/operator-navigation.js"

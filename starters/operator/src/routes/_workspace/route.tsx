@@ -1,50 +1,19 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router"
-import type { OperatorAdminNavigationIcons } from "@voyant-travel/admin"
+import { defaultOperatorNavIcons } from "@voyant-travel/admin"
 import {
   AdminWorkspacePendingFallback,
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
 } from "@voyant-travel/admin/app/workspace"
-import {
-  Building,
-  Building2,
-  CalendarCheck,
-  CalendarDays,
-  DollarSign,
-  LayoutDashboard,
-  Library,
-  Mail,
-  Package,
-  Plane,
-  Radio,
-  Scale,
-  Settings,
-  Users,
-  Wrench,
-} from "lucide-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
 import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"
 
-const operatorNavigationIcons = {
-  availability: CalendarDays,
-  bookings: CalendarCheck,
-  catalog: Library,
-  channelSync: Radio,
-  dashboard: LayoutDashboard,
-  finance: DollarSign,
-  flights: Plane,
-  legal: Scale,
-  notifications: Mail,
-  organizations: Building,
-  people: Users,
-  products: Package,
-  resources: Wrench,
-  settings: Settings,
-  suppliers: Building2,
-} satisfies OperatorAdminNavigationIcons
+// The standard nav icon set ships from @voyant-travel/admin. Override a single
+// entry with `{ ...defaultOperatorNavIcons, finance: MyIcon }` if needed.
+const operatorNavigationIcons = defaultOperatorNavIcons
 
 const workspaceGuard = createAdminWorkspaceBeforeLoad({ getCurrentUser })
 
@@ -81,45 +50,9 @@ function WorkspaceContent() {
       user={user}
       isUserLoading={isLoading}
       icons={operatorNavigationIcons}
-      extensions={(messages) =>
-        createOperatorAdminExtensions({
-          actionLedger: messages.nav.actionLedger,
-          allTrips: messages.nav.allTrips,
-          availability: messages.nav.availability,
-          bookings: messages.nav.bookings,
-          catalogAccommodations: messages.nav.catalogAccommodations,
-          categories: messages.nav.categories,
-          catalogCruises: messages.nav.catalogCruises,
-          catalogExcursions: messages.nav.catalogExcursions,
-          catalogProducts: messages.nav.catalogProducts,
-          catalogTours: messages.nav.catalogTours,
-          channelSync: messages.nav.channelSync,
-          contractNumberSeries: messages.nav.contractNumberSeries,
-          contractTemplates: messages.nav.contractTemplates,
-          contracts: messages.nav.contracts,
-          flights: messages.nav.flights,
-          invoiceNumberSeries: messages.nav.invoiceNumberSeries,
-          invoices: messages.nav.invoices,
-          newTrip: messages.nav.newTrip,
-          notificationDeliveries: messages.nav.notificationDeliveries,
-          notificationPreview: messages.nav.notificationPreview,
-          notificationReminderRules: messages.nav.notificationReminderRules,
-          notificationReminderRuns: messages.nav.notificationReminderRuns,
-          notificationSettings: messages.nav.notificationSettings,
-          notificationTemplates: messages.nav.notificationTemplates,
-          organizations: messages.nav.organizations,
-          payments: messages.nav.payments,
-          people: messages.nav.people,
-          policies: messages.nav.policies,
-          profitability: messages.nav.profitability,
-          products: messages.nav.products,
-          promotions: messages.nav.promotions,
-          resources: messages.nav.resources,
-          supplierInvoices: messages.nav.supplierInvoices,
-          suppliers: messages.nav.suppliers,
-          trips: messages.nav.trips,
-        })
-      }
+      // The extension builder picks the nav label keys it needs from the full
+      // nav messages — no hand-listing each key here.
+      extensions={(messages) => createOperatorAdminExtensions(messages.nav)}
       destinations={operatorAdminDestinations}
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >

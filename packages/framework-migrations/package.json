@@ -1,0 +1,47 @@
+{
+  "name": "@voyant-travel/framework-migrations",
+  "version": "0.1.0",
+  "description": "D.1 multi-source migration collector — applies the framework-shipped bundle then the deployment's own migrations via one version-independent (source, tag, content_hash) ledger.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "pg": "^8.13.1",
+    "@types/pg": "^8.11.10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.0"
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/framework-migrations"
+  }
+}

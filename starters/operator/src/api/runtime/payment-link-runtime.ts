@@ -17,6 +17,10 @@
  */
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
+  getOperatorPaymentInstructions,
+  getOperatorProfile,
+} from "@voyant-travel/operator-settings"
+import {
   createPaymentLinkRoutes,
   type PaymentLinkRoutesOptions,
   type PaymentLinkTripData,
@@ -26,7 +30,6 @@ import { tripComponents, tripEnvelopes } from "@voyant-travel/trips/schema"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
-import { getOperatorPaymentInstructions, getOperatorProfile } from "../routes/settings"
 import { cardPaymentStarter } from "./card-payment"
 import {
   bankTransferDetailsFromOperatorSettings,

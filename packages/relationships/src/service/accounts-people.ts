@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: crm; existing service module stays co-located until a dedicated split preserves behavior and tests.
+import type { CustomFieldDefinition } from "@voyant-travel/core/custom-fields"
 import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { identityService } from "@voyant-travel/identity/service"
 import { toCsvRow } from "@voyant-travel/utils"
@@ -46,7 +47,11 @@ function unaccentedIlike(column: AnyColumn, term: string): SQL {
   return sql`unaccent(coalesce(${column}, '')) ILIKE unaccent(${term})`
 }
 
-function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL | undefined {
+function buildPersonSearchCondition(
+  db: PostgresJsDatabase,
+  search: string,
+  searchableCustomFields: ReadonlyArray<CustomFieldDefinition> = [],
+): SQL | undefined {
   const trimmedSearch = search.trim()
   if (!trimmedSearch) return undefined
 
@@ -82,6 +87,13 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
       )
     : undefined
 
+  // Search-visible custom fields (unified custom-fields system): match the term
+  // against each field's value in the entity's custom_fields jsonb.
+  const customFieldConditions = searchableCustomFields.map(
+    // agent-quality: raw-sql reviewed -- owner: crm; the key is a vetted registry field key, the term is parameter-bound.
+    (field) => sql`${people.customFields} ->> ${field.key} ILIKE ${term}`,
+  )
+
   return or(
     tokenizedPersonCondition,
     exists(
@@ -97,11 +109,22 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
           ),
         ),
     ),
+    ...customFieldConditions,
   )
 }
 
+/** Render a custom-field value for a CSV cell (objects/arrays as JSON). */
+function formatCustomFieldCell(value: unknown): string {
+  if (value == null) return ""
+  return typeof value === "object" ? JSON.stringify(value) : String(value)
+}
+
 export const peopleAccountsService = {
-  async listPeople(db: PostgresJsDatabase, query: PersonListQuery) {
+  async listPeople(
+    db: PostgresJsDatabase,
+    query: PersonListQuery,
+    searchableCustomFields: ReadonlyArray<CustomFieldDefinition> = [],
+  ) {
     const conditions: SQL[] = []
 
     if (query.organizationId) conditions.push(eq(people.organizationId, query.organizationId))
@@ -109,7 +132,7 @@ export const peopleAccountsService = {
     if (query.relation) conditions.push(eq(people.relation, query.relation))
     if (query.status) conditions.push(eq(people.status, query.status))
     if (query.search) {
-      const searchCondition = buildPersonSearchCondition(db, query.search)
+      const searchCondition = buildPersonSearchCondition(db, query.search, searchableCustomFields)
       if (searchCondition) conditions.push(searchCondition)
     }
 
@@ -479,10 +502,13 @@ export const peopleAccountsService = {
     return row ?? null
   },
 
-  async exportPeopleCsv(db: PostgresJsDatabase) {
+  async exportPeopleCsv(
+    db: PostgresJsDatabase,
+    customFields: ReadonlyArray<CustomFieldDefinition> = [],
+  ) {
     const rows = await hydratePeople(db, await db.select().from(people).orderBy(people.createdAt))
 
-    const headers = [
+    const baseHeaders = [
       "id",
       "firstName",
       "lastName",
@@ -496,11 +522,19 @@ export const peopleAccountsService = {
       "organizationId",
     ]
 
-    const csvLines = [toCsvRow(headers)]
+    // Append a column per export-visible custom field (unified custom-fields
+    // system); the header is the field's label, the cell its stored value.
+    const csvLines = [toCsvRow([...baseHeaders, ...customFields.map((field) => field.label)])]
     for (const row of rows) {
       // toCsvRow quotes delimiters/quotes/newlines AND neutralizes
       // spreadsheet formula-injection prefixes (= + - @ tab CR); see L4.
-      csvLines.push(toCsvRow(headers.map((header) => row[header as keyof typeof row])))
+      const base = baseHeaders.map((header) => row[header as keyof typeof row])
+      const custom = customFields.map((field) =>
+        formatCustomFieldCell(
+          (row.customFields as Record<string, unknown> | undefined)?.[field.key],
+        ),
+      )
+      csvLines.push(toCsvRow([...base, ...custom]))
     }
 
     return csvLines.join("\n")

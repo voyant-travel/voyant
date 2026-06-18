@@ -1,5 +1,4 @@
-import { createApp } from "@voyant-travel/hono"
-import { composeFromManifest } from "@voyant-travel/hono/composition"
+import { createVoyantApp } from "@voyant-travel/framework"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import authHandler, {
@@ -8,9 +7,9 @@ import authHandler, {
   validateApiTokenAccess,
 } from "./auth/handler"
 import {
-  buildOperatorCapabilities,
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
+  buildOperatorProviders,
+  deploymentLocalExtensions,
+  deploymentLocalModules,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
@@ -36,19 +35,16 @@ import { smartbillOperatorBundle } from "./subscribers/smartbill"
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-// Runtime modules + extensions are DERIVED from the manifest via the
-// composition registry (see ./composition.ts) rather than hand-listed here.
-// Mount/hook order follows OPERATOR_RUNTIME_MANIFEST; capabilities (storage,
-// FX, providers, document-download, CRM, …) are gathered in one typed
-// container. `voyant db doctor` cross-checks the manifest against the registry
-// and against voyant.config.ts. See voyant#1608 / #1620.
-const { modules, extensions } = composeFromManifest(
-  OPERATOR_RUNTIME_MANIFEST,
-  operatorComposition,
-  buildOperatorCapabilities(),
-)
-
-export const app = createApp<CloudflareBindings>({
+// The standard module/extension set is owned by @voyant-travel/framework;
+// `createVoyantApp` assembles it (FRAMEWORK_RUNTIME_MANIFEST + frameworkComposition)
+// with this deployment's injected `providers` and its two deployment-local module
+// families (`deploymentLocalModules`), then composes + mounts. The deployment no
+// longer hand-maintains a manifest or registry. See the consolidated-deployments
+// RFC (Workstream B) + voyant#1608 / #1620.
+export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOperatorProviders>>({
+  providers: buildOperatorProviders(),
+  modules: deploymentLocalModules,
+  extensions: deploymentLocalExtensions,
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
   //   handshake. Serves all reads and single-statement writes.
@@ -151,8 +147,6 @@ export const app = createApp<CloudflareBindings>({
     // `NETOPIA_NOTIFY_URL`.
     "/v1/finance/providers/netopia/callback",
   ],
-  modules,
-  extensions,
   plugins: [
     // bookingScheduleBundle subscribes to booking.confirmed BEFORE
     // legal's auto-generate-contract subscriber so the rendered

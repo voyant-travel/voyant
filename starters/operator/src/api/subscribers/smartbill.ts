@@ -9,6 +9,7 @@ import {
 } from "@voyant-travel/finance"
 import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import { identityAddresses, identityContactPoints } from "@voyant-travel/identity/schema"
+import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import {
   createSmartbillClient,
   createSmartbillInvoiceSettlementPoller,
@@ -19,10 +20,8 @@ import {
 import { organizations, people } from "@voyant-travel/relationships/schema"
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import { withDbFromEnv } from "../lib/db"
 import { createDocumentStorage } from "../lib/storage"
-import { resolveBookingTaxSettings } from "../routes/settings"
 
 type SmartbillEnv = CloudflareBindings & {
   SMARTBILL_USERNAME?: string

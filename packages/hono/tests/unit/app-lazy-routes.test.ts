@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { createApp } from "../../src/app.js"
+import { mountApp } from "../../src/app.js"
 import type { HonoModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
@@ -12,12 +12,12 @@ const TEST_CTX = {
   // biome-ignore lint/suspicious/noExplicitAny: mock ExecutionContext for tests -- owner: hono.
 } as any
 
-describe("createApp lazy route mounting", () => {
-  it("propagates a throwing lazy route to createApp's error boundary (parity with eager)", async () => {
+describe("mountApp lazy route mounting", () => {
+  it("propagates a throwing lazy route to mountApp's error boundary (parity with eager)", async () => {
     const boom = () => {
       throw new Error("lazy handler boom")
     }
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [
@@ -50,7 +50,7 @@ describe("createApp lazy route mounting", () => {
     )
     const mod: HonoModule = { module: { name: "flights" }, lazyAdminRoutes: load }
 
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
       db: () => marker as any,
       modules: [mod],
@@ -64,14 +64,14 @@ describe("createApp lazy route mounting", () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { surface: string; db: string }
     expect(body.surface).toBe("lazy-admin")
-    // Context bridged: the lazy route saw the db the createApp middleware leased.
+    // Context bridged: the lazy route saw the db the mountApp middleware leased.
     expect(body.db).toBe("leased-db")
     expect(load).toHaveBeenCalledTimes(1)
   })
 
   it("caches the loaded sub-app across requests (load once per isolate)", async () => {
     const load = vi.fn(async () => new Hono().get("/ping", (c) => c.json({ ok: true })))
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],
@@ -86,7 +86,7 @@ describe("createApp lazy route mounting", () => {
   })
 
   it("mounts lazyPublicRoutes under /v1/public/{name} for customer-facing actors", async () => {
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [
@@ -106,7 +106,7 @@ describe("createApp lazy route mounting", () => {
 
   it("applies actor guards to lazy routes (blocks customer on /v1/admin/*)", async () => {
     const load = vi.fn(async () => new Hono().get("/ping", (c) => c.json({ ok: true })))
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],
@@ -127,7 +127,7 @@ describe("createApp lazy route mounting", () => {
         .get("/v1/media/x", (c) => c.json({ at: "media" }))
         .get("/v1/admin/uploads", (c) => c.json({ at: "admin-uploads" })),
     )
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
       db: () => "leased-db" as any,
       modules: [
@@ -162,7 +162,7 @@ describe("createApp lazy route mounting", () => {
       if (attempt === 1) throw new Error("transient import failure")
       return new Hono().get("/ping", (c) => c.json({ ok: true }))
     })
-    const app = createApp({
+    const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],

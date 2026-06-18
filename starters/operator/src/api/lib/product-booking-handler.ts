@@ -28,8 +28,8 @@ import {
   placeAvailabilityHold,
   releaseAvailabilityHold,
 } from "@voyant-travel/operations"
+import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
-import { resolveBookingTaxSettings } from "../routes/settings"
 import { asPostgresDb } from "./booking-engine-db"
 import type { BookingEngineEnv } from "./booking-engine-runtime"
 import { withDbFromEnv } from "./db"

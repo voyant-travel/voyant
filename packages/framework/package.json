@@ -1,0 +1,64 @@
+{
+  "name": "@voyant-travel/framework",
+  "version": "0.1.0",
+  "description": "Voyant framework BOM — pins the tested runtime-module set so a deployment tracks one framework version and upgrades atomically (no per-package compatibility matrix, no per-package republish/email spam).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "biome check src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@voyant-travel/action-ledger": "workspace:*",
+    "@voyant-travel/bookings": "workspace:*",
+    "@voyant-travel/catalog": "workspace:*",
+    "@voyant-travel/commerce": "workspace:*",
+    "@voyant-travel/distribution": "workspace:*",
+    "@voyant-travel/finance": "workspace:*",
+    "@voyant-travel/flights": "workspace:*",
+    "@voyant-travel/identity": "workspace:*",
+    "@voyant-travel/inventory": "workspace:*",
+    "@voyant-travel/legal": "workspace:*",
+    "@voyant-travel/notifications": "workspace:*",
+    "@voyant-travel/operations": "workspace:*",
+    "@voyant-travel/operator-settings": "workspace:*",
+    "@voyant-travel/quotes": "workspace:*",
+    "@voyant-travel/relationships": "workspace:*",
+    "@voyant-travel/storefront": "workspace:*",
+    "@voyant-travel/trips": "workspace:*"
+  },
+  "peerDependencies": {
+    "@voyant-travel/hono": "workspace:^",
+    "hono": "^4.12.10"
+  },
+  "devDependencies": {
+    "@voyant-travel/hono": "workspace:*",
+    "@voyant-travel/voyant-typescript-config": "workspace:*",
+    "hono": "^4.12.10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voyantjs/voyant.git",
+    "directory": "packages/framework"
+  }
+}

@@ -19,11 +19,11 @@ export const schema = [
   "../../packages/legal/src/schema.ts",
   "../../packages/storefront/src/verification/schema.ts",
   "../../packages/trips/src/schema.ts",
+  "../../packages/operator-settings/src/schema.ts",
   "../../packages/catalog-authoring/src/schema.ts",
   "../../packages/workflow-runs/src/schema.ts",
   "../../packages/accommodations/src/schema.ts",
   "../../packages/charters/src/schema.ts",
   "../../packages/cruises/src/schema.ts",
-  "./src/db/schema.ts",
   "./drizzle.links.generated.ts",
 ] as const

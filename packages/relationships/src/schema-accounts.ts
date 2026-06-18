@@ -77,6 +77,12 @@ export const organizations = pgTable(
     source: text("source"),
     sourceRef: text("source_ref"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    /**
+     * Deployment-declared custom fields (unified custom-fields system — see the
+     * ADR). Validated at the write boundary against the resolved registry
+     * (code ∪ runtime `custom_field_definitions`); `{}` when none are set.
+     */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -114,6 +120,12 @@ export const people = pgTable(
     source: text("source"),
     sourceRef: text("source_ref"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    /**
+     * Deployment-declared custom fields (unified custom-fields system — see the
+     * ADR). Validated at the write boundary against the resolved registry
+     * (code ∪ runtime `custom_field_definitions`); `{}` when none are set.
+     */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     dateOfBirth: date("date_of_birth"),
     notes: text("notes"),
     /**

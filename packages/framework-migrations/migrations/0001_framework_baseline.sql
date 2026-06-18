@@ -1,0 +1,1 @@
+ALTER TABLE "bookings" ADD COLUMN "custom_fields" jsonb DEFAULT '{}'::jsonb NOT NULL;

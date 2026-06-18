@@ -12,7 +12,6 @@ import {
   activityParticipants,
   communicationLog,
   customerSignals,
-  customFieldValues,
   organizationNotes,
   organizations,
   people,
@@ -23,6 +22,7 @@ import {
   segmentMembers,
 } from "../schema.js"
 import { hydratePeople, organizationEntityType, personEntityType } from "./accounts-shared.js"
+import { entityTableName } from "./custom-fields-value-mapping.js"
 
 export class RelationshipsMergeError extends Error {
   readonly status: 400 | 404
@@ -293,26 +293,17 @@ async function mergeEntityLinks(
     .set({ entityId: keepId })
     .where(and(eq(activityLinks.entityType, entityType), eq(activityLinks.entityId, mergeId)))
 
-  await db.delete(customFieldValues).where(
-    and(
-      eq(customFieldValues.entityType, entityType),
-      eq(customFieldValues.entityId, mergeId),
-      sql`EXISTS (
-          SELECT 1
-          FROM custom_field_values keep_value
-          WHERE keep_value.definition_id = ${customFieldValues.definitionId}
-            AND keep_value.entity_type = ${entityType}
-            AND keep_value.entity_id = ${keepId}
-        )`,
-    ),
-  )
-
-  await db
-    .update(customFieldValues)
-    .set({ entityId: keepId, updatedAt: new Date() })
-    .where(
-      and(eq(customFieldValues.entityType, entityType), eq(customFieldValues.entityId, mergeId)),
+  // Unified custom fields live on the entity row: merge the loser's into the
+  // keeper's, keeper winning on key collisions (`loser || keeper`).
+  const table = entityTableName(entityType)
+  if (table) {
+    await db.execute(
+      sql`UPDATE ${sql.identifier(table)} k
+            SET custom_fields = m.custom_fields || k.custom_fields, updated_at = now()
+          FROM ${sql.identifier(table)} m
+          WHERE k.id = ${keepId} AND m.id = ${mergeId}`,
     )
+  }
 }
 
 async function dedupePersonJoinTables(db: PostgresJsDatabase, keepId: string, mergeId: string) {

@@ -10,12 +10,12 @@
  */
 
 import type { Actor } from "@voyant-travel/core"
-import { createApp } from "@voyant-travel/hono"
+import { mountApp } from "@voyant-travel/hono"
 import { composeFromManifest } from "@voyant-travel/hono/composition"
 import { describe, expect, it } from "vitest"
 
 import {
-  buildOperatorCapabilities,
+  buildOperatorProviders,
   OPERATOR_RUNTIME_MANIFEST,
   operatorComposition,
 } from "./composition"
@@ -27,9 +27,9 @@ function build() {
   const { modules, extensions } = composeFromManifest(
     OPERATOR_RUNTIME_MANIFEST,
     operatorComposition,
-    buildOperatorCapabilities(),
+    buildOperatorProviders(),
   )
-  return createApp({
+  return mountApp({
     // Stub db — enough to be leased + bridged; handlers may 5xx using it, which
     // still proves the route is mounted and the context reached the sub-app.
     // biome-ignore lint/suspicious/noExplicitAny: stub db for mount smoke test.

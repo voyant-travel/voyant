@@ -1,15 +1,5 @@
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
-import {
-  boolean,
-  date,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core"
+import { boolean, index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import { people } from "./schema-accounts.js"
 import {
@@ -32,6 +22,8 @@ export const activities = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     location: text("location"),
     description: text("description"),
+    /** Unified custom fields — see the custom-fields unification ADR. */
+    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -109,41 +101,9 @@ export const customFieldDefinitions = pgTable(
   ],
 )
 
-export const customFieldValues = pgTable(
-  "custom_field_values",
-  {
-    id: typeId("custom_field_values"),
-    definitionId: typeIdRef("definition_id")
-      .notNull()
-      .references(() => customFieldDefinitions.id, { onDelete: "cascade" }),
-    entityType: entityTypeEnum("entity_type").notNull(),
-    entityId: text("entity_id").notNull(),
-    textValue: text("text_value"),
-    numberValue: integer("number_value"),
-    dateValue: date("date_value"),
-    booleanValue: boolean("boolean_value"),
-    monetaryValueCents: integer("monetary_value_cents"),
-    currencyCode: text("currency_code"),
-    jsonValue: jsonb("json_value").$type<Record<string, unknown> | string[] | null>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("idx_custom_field_values_entity").on(table.entityType, table.entityId),
-    index("idx_custom_field_values_entity_type_updated").on(table.entityType, table.updatedAt),
-    index("idx_custom_field_values_entity_updated").on(
-      table.entityType,
-      table.entityId,
-      table.updatedAt,
-    ),
-    index("idx_custom_field_values_definition_updated").on(table.definitionId, table.updatedAt),
-    uniqueIndex("uidx_custom_field_values_unique").on(
-      table.definitionId,
-      table.entityType,
-      table.entityId,
-    ),
-  ],
-)
+// `custom_field_values` (the EAV value side table) was retired by the
+// custom-fields unification — values now live on each entity's `custom_fields`
+// jsonb column. See docs/architecture/custom-fields-unification-adr.md.
 
 export type Activity = typeof activities.$inferSelect
 export type NewActivity = typeof activities.$inferInsert
@@ -153,5 +113,3 @@ export type ActivityParticipant = typeof activityParticipants.$inferSelect
 export type NewActivityParticipant = typeof activityParticipants.$inferInsert
 export type CustomFieldDefinition = typeof customFieldDefinitions.$inferSelect
 export type NewCustomFieldDefinition = typeof customFieldDefinitions.$inferInsert
-export type CustomFieldValue = typeof customFieldValues.$inferSelect
-export type NewCustomFieldValue = typeof customFieldValues.$inferInsert

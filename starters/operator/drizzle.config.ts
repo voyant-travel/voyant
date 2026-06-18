@@ -7,6 +7,13 @@ import { defineConfig } from "drizzle-kit"
 // refresh it; `voyant db doctor` fails if it drifts.
 import { schema } from "./drizzle.schemas.generated.ts"
 
+// Custom deployment modules/extensions (`src/{modules,extensions}/<name>/schema.ts`)
+// extend the live aggregate schema beyond the generated standard set — so
+// `push`/`studio`/`check` and the migration-replay oracle see them too. Empty
+// until a deployment adds one; their migrations are emitted into the deployment
+// source (migrations-d1).
+const customDeploymentSchemas = ["./src/modules/*/schema.ts", "./src/extensions/*/schema.ts"]
+
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
@@ -17,7 +24,7 @@ function resolveDatabaseUrl(): string {
 }
 
 export default defineConfig({
-  schema: [...schema],
+  schema: [...schema, ...customDeploymentSchemas],
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {

@@ -78,14 +78,12 @@ export type {
   CommunicationLogEntry,
   CustomerSignal,
   CustomFieldDefinition,
-  CustomFieldValue,
   NewActivity,
   NewActivityLink,
   NewActivityParticipant,
   NewCommunicationLogEntry,
   NewCustomerSignal,
   NewCustomFieldDefinition,
-  NewCustomFieldValue,
   NewOrganization,
   NewOrganizationNote,
   NewPerson,
@@ -115,7 +113,6 @@ export {
   customerSignalStatusEnum,
   customerSignals,
   customFieldDefinitions,
-  customFieldValues,
   organizationNotes,
   organizations,
   people,
@@ -129,6 +126,7 @@ export {
   segmentMembers,
   segments,
 } from "./schema.js"
+export { loadCustomFieldDefinitions } from "./service/custom-fields-registry.js"
 export type {
   CreateCustomerSignalInput,
   CustomerSignalListQuery,

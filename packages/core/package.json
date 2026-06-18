@@ -13,6 +13,7 @@
     "./container": "./src/container.ts",
     "./events": "./src/events.ts",
     "./orchestration": "./src/orchestration.ts",
+    "./custom-fields": "./src/custom-fields.ts",
     "./links": "./src/links.ts",
     "./query": "./src/query.ts",
     "./workflows": "./src/workflows.ts",
@@ -82,6 +83,11 @@
         "types": "./dist/orchestration.d.ts",
         "import": "./dist/orchestration.js",
         "default": "./dist/orchestration.js"
+      },
+      "./custom-fields": {
+        "types": "./dist/custom-fields.d.ts",
+        "import": "./dist/custom-fields.js",
+        "default": "./dist/custom-fields.js"
       },
       "./links": {
         "types": "./dist/links.d.ts",
