@@ -49,7 +49,7 @@
   --chart-5: #efefeb;
   --radius: 0.625rem;
   --sidebar: oklch(0.93 0.006 85);
-  --sidebar-foreground: oklch(0.32 0.006 60);
+  --sidebar-foreground: oklch(0.18 0.004 55);
   --sidebar-primary: oklch(0.17 0.004 55);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.965 0.004 85);
