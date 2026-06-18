@@ -7,90 +7,105 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Voyant 2.0 brand theme.
+ *
+ * Ink-on-warm-paper neutrals with a single hot-orange brand accent
+ * (`--brand`, ~#ff5500). Orange is reserved for accents — active nav,
+ * focus, charts, and the optional `brand` button variant — not for
+ * every hover, so dense dashboards stay calm. Controls use a sharp
+ * radius (4px/6px); surfaces (cards, popovers, dialogs) stay rounded. */
 :root {
-  --background: oklch(0.97 0 0);
-  --foreground: oklch(0.09 0 0);
+  --background: oklch(0.985 0.0015 95);
+  --foreground: oklch(0.17 0.004 55);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.09 0 0);
+  --card-foreground: oklch(0.17 0.004 55);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.09 0 0);
-  --primary: oklch(0.15 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.945 0 0);
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.945 0 0);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.55 0.22 27);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.72 0.19 160);
+  --popover-foreground: oklch(0.17 0.004 55);
+  --primary: oklch(0.17 0.004 55);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.002 90);
+  --secondary-foreground: oklch(0.2 0.004 55);
+  --muted: oklch(0.955 0.002 90);
+  --muted-foreground: oklch(0.505 0.006 60);
+  --accent: oklch(0.95 0.0025 85);
+  --accent-foreground: oklch(0.2 0.004 55);
+  --brand: oklch(0.675 0.222 38);
+  --brand-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.7 0.17 155);
   --success-foreground: oklch(0.18 0 0);
   --warning: oklch(0.8 0.15 85);
   --warning-foreground: oklch(0.25 0 0);
   --info: oklch(0.62 0.14 240);
   --info-foreground: oklch(0.2 0 0);
-  --border: oklch(0.91 0 0);
-  --input: oklch(0.91 0 0);
-  --ring: oklch(0.15 0 0);
-  --chart-1: oklch(0.15 0 0);
-  --chart-2: oklch(0.72 0.19 160);
-  --chart-3: oklch(0.55 0 0);
+  --border: oklch(0.92 0.002 90);
+  --input: oklch(0.92 0.002 90);
+  --ring: oklch(0.17 0.004 55);
+  --chart-1: oklch(0.675 0.222 38);
+  --chart-2: oklch(0.55 0.2 264);
+  --chart-3: oklch(0.7 0.17 155);
   --chart-4: oklch(0.8 0.15 85);
-  --chart-5: oklch(0.42 0.25 270);
-  --radius: 0.75rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.09 0 0);
-  --sidebar-primary: oklch(0.15 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.945 0 0);
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.93 0 0);
-  --sidebar-ring: oklch(0.15 0 0);
+  --chart-5: oklch(0.55 0.018 60);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0.0015 95);
+  --sidebar-foreground: oklch(0.3 0.005 60);
+  --sidebar-primary: oklch(0.17 0.004 55);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.0025 85);
+  --sidebar-accent-foreground: oklch(0.2 0.004 55);
+  --sidebar-border: oklch(0.92 0.002 90);
+  --sidebar-ring: oklch(0.675 0.222 38);
 }
 
 .dark {
-  --background: oklch(0.1 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.14 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.14 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.09 0 0);
-  --secondary: oklch(0.18 0 0);
-  --secondary-foreground: oklch(0.9 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.18 0 0);
-  --accent-foreground: oklch(0.9 0 0);
-  --destructive: oklch(0.55 0.2 27);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.72 0.19 160);
-  --success-foreground: oklch(0.9 0 0);
+  --background: oklch(0.15 0.002 60);
+  --foreground: oklch(0.96 0.002 80);
+  --card: oklch(0.185 0.003 60);
+  --card-foreground: oklch(0.96 0.002 80);
+  --popover: oklch(0.185 0.003 60);
+  --popover-foreground: oklch(0.96 0.002 80);
+  --primary: oklch(0.96 0.002 80);
+  --primary-foreground: oklch(0.17 0.004 55);
+  --secondary: oklch(0.225 0.004 60);
+  --secondary-foreground: oklch(0.92 0.002 80);
+  --muted: oklch(0.225 0.004 60);
+  --muted-foreground: oklch(0.66 0.005 70);
+  --accent: oklch(0.235 0.004 60);
+  --accent-foreground: oklch(0.92 0.002 80);
+  --brand: oklch(0.7 0.21 40);
+  --brand-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.62 0.21 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.17 155);
+  --success-foreground: oklch(0.96 0 0);
   --warning: oklch(0.8 0.15 85);
-  --warning-foreground: oklch(0.9 0 0);
-  --info: oklch(0.62 0.14 240);
-  --info-foreground: oklch(0.88 0 0);
-  --border: oklch(0.22 0 0);
-  --input: oklch(0.22 0 0);
-  --ring: oklch(0.985 0 0);
-  --chart-1: oklch(0.985 0 0);
-  --chart-2: oklch(0.72 0.19 160);
-  --chart-3: oklch(0.6 0 0);
+  --warning-foreground: oklch(0.96 0 0);
+  --info: oklch(0.66 0.14 240);
+  --info-foreground: oklch(0.96 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.7 0.21 40);
+  --chart-1: oklch(0.7 0.21 40);
+  --chart-2: oklch(0.62 0.19 264);
+  --chart-3: oklch(0.72 0.17 155);
   --chart-4: oklch(0.8 0.15 85);
-  --chart-5: oklch(0.42 0.25 270);
-  --sidebar: oklch(0.12 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.09 0 0);
-  --sidebar-accent: oklch(0.18 0 0);
-  --sidebar-accent-foreground: oklch(0.9 0 0);
-  --sidebar-border: oklch(0.2 0 0);
-  --sidebar-ring: oklch(0.985 0 0);
+  --chart-5: oklch(0.65 0.015 70);
+  --sidebar: oklch(0.17 0.002 60);
+  --sidebar-foreground: oklch(0.78 0.004 70);
+  --sidebar-primary: oklch(0.96 0.002 80);
+  --sidebar-primary-foreground: oklch(0.17 0.004 55);
+  --sidebar-accent: oklch(0.235 0.004 60);
+  --sidebar-accent-foreground: oklch(0.92 0.002 80);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.7 0.21 40);
 }
 
 @theme inline {
+  --font-sans:
+    "Inter Tight Variable", "Inter Tight", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -105,6 +120,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
@@ -121,8 +138,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Sharp controls (buttons/inputs/badges use sm/md), rounded surfaces
+     (cards/popovers/dialogs use lg/xl). Brand controls sit at ~4-6px. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
@@ -144,7 +163,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background font-sans text-foreground antialiased;
   }
   h1,
   h2,
@@ -152,7 +171,7 @@
   h4,
   h5,
   h6 {
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
   }
   .font-data {
     font-variant-numeric: tabular-nums lining-nums;
