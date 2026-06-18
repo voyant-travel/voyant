@@ -11,7 +11,12 @@ import { Providers } from "../components/providers"
 import "../styles.css"
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => adminRootHead({ title: "Voyant", description: "Voyant operator workspace" }),
+  head: () =>
+    adminRootHead({
+      title: "Voyant",
+      description: "Voyant operator workspace",
+      faviconHref: "/favicon.png",
+    }),
   // shellComponent is always SSR'd — renders the <html> document shell
   shellComponent: AdminRootShell,
   component: RootComponent,

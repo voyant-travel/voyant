@@ -3,7 +3,7 @@
   "name": "Voyant",
   "icons": [
     {
-      "src": "fav128.png",
+      "src": "favicon.png",
       "type": "image/png",
       "sizes": "128x128"
     }
