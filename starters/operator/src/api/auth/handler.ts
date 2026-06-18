@@ -249,6 +249,9 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
       : undefined,
     sendResetPassword: async ({ user, url }) => {
       if (!cloud) {
+        // No email provider (e.g. local dev without a sending domain): with the
+        // debug flag on, log the link to the console instead of sending;
+        // otherwise fail loudly. Never bypasses a configured cloud sender.
         if (allowAuthSecretLogging(env)) {
           console.info(`[auth] reset-password (debug fallback) -> ${user.email}: ${url}`)
           return
@@ -265,6 +268,9 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
       if (!cloud) {
+        // No email provider (e.g. local dev without a sending domain): with the
+        // debug flag on, log the OTP to the console instead of sending;
+        // otherwise fail loudly. Never bypasses a configured cloud sender.
         if (allowAuthSecretLogging(env)) {
           console.info(`[auth] verification-otp (debug fallback) [${type}] -> ${email}: ${otp}`)
           return

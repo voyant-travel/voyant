@@ -18,6 +18,13 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./in-memory": {
+      "types": "./src/driver-inmemory.ts",
+      "development": "./src/driver-inmemory.ts",
+      "node": "./dist/driver-inmemory.js",
+      "import": "./src/driver-inmemory.ts",
+      "default": "./src/driver-inmemory.ts"
+    },
     "./selfhost": {
       "types": "./src/node/index.ts",
       "development": "./src/node/index.ts",
@@ -74,6 +81,12 @@
         "node": "./dist/index.js",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./in-memory": {
+        "types": "./dist/driver-inmemory.d.ts",
+        "node": "./dist/driver-inmemory.js",
+        "import": "./dist/driver-inmemory.js",
+        "default": "./dist/driver-inmemory.js"
       },
       "./selfhost": {
         "types": "./dist/node/index.d.ts",

@@ -322,7 +322,7 @@ export function DynamicCatalogPage({
         <p className="text-muted-foreground text-sm">{productsTagline}</p>
       </div>
       {/* Search bar — drives the page. */}
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-3">
+      <div className="flex flex-wrap items-end gap-2 rounded-md border bg-card p-3">
         <div className="flex min-w-[200px] flex-1 flex-col gap-1">
           <span className="text-muted-foreground text-xs">{s.searchLabel}</span>
           <div className="relative">

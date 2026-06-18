@@ -182,7 +182,7 @@ export function FlightBookingPage({
   if (!selection) {
     return (
       <div className={cn("mx-auto w-full max-w-2xl px-6 py-10", className)}>
-        <div className="rounded-xl border border-dashed bg-card p-8 text-center">
+        <div className="rounded-md border border-dashed bg-card p-8 text-center">
           <Plane className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
           <h2 className="font-medium text-base">{messages.offerNotInSessionTitle}</h2>
           <p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">

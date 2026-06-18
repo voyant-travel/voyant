@@ -303,7 +303,7 @@ export function FlightsPage({
       )}
 
       {hasSearchInput && stage !== "ready" && flightSearchQuery.isError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-destructive text-sm">
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive text-sm">
           {flightSearchQuery.error instanceof Error
             ? flightSearchQuery.error.message
             : messages.searchFailed}
@@ -351,7 +351,7 @@ export function FlightsPage({
             <div className="flex flex-col gap-2">
               {Array.from({ length: 4 }).map((_, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable identity. -- owner: flights-react; existing suppression is intentional pending typed cleanup.
-                <div key={index} className="h-24 animate-pulse rounded-lg border bg-muted/40" />
+                <div key={index} className="h-24 animate-pulse rounded-xl border bg-muted/40" />
               ))}
             </div>
           ) : offers.length === 0 ? (

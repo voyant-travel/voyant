@@ -145,18 +145,18 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
       : 0
 
   const revenueChartConfig = {
-    revenue: { label: messages.dashboard.chartRevenueLabel, color: "hsl(221 83% 53%)" },
-    bookings: { label: messages.dashboard.chartBookingsLabel, color: "hsl(142 71% 45%)" },
+    revenue: { label: messages.dashboard.chartRevenueLabel, color: "var(--chart-1)" },
+    bookings: { label: messages.dashboard.chartBookingsLabel, color: "#86cb3c" },
   }
   const bookingStatusConfig = {
-    confirmed: { label: messages.dashboard.statusConfirmedLabel, color: "hsl(142 71% 45%)" },
-    completed: { label: messages.dashboard.statusCompletedLabel, color: "hsl(221 83% 53%)" },
+    confirmed: { label: messages.dashboard.statusConfirmedLabel, color: "#86cb3c" },
+    completed: { label: messages.dashboard.statusCompletedLabel, color: "#6172f3" },
     in_progress: { label: messages.dashboard.statusInProgressLabel, color: "hsl(47 96% 53%)" },
-    draft: { label: messages.dashboard.statusDraftLabel, color: "hsl(215 14% 55%)" },
-    cancelled: { label: messages.dashboard.statusCancelledLabel, color: "hsl(0 84% 60%)" },
+    draft: { label: messages.dashboard.statusDraftLabel, color: "#efefeb" },
+    cancelled: { label: messages.dashboard.statusCancelledLabel, color: "#ff4405" },
   }
   const monthlyBookingsConfig = {
-    count: { label: messages.dashboard.chartBookingsLabel, color: "hsl(221 83% 53%)" },
+    count: { label: messages.dashboard.chartBookingsLabel, color: "var(--chart-1)" },
   }
 
   const localizedStatusBreakdown = (bookings?.countsByStatus ?? [])
@@ -311,8 +311,8 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                   >
                     <defs>
                       <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(221 83% 53%)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(221 83% 53%)" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid vertical={false} />
@@ -337,7 +337,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="hsl(221 83% 53%)"
+                      stroke="var(--chart-1)"
                       fill="url(#fillRevenue)"
                       strokeWidth={2}
                     />
@@ -373,7 +373,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                         allowDecimals={false}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="hsl(221 83% 53%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ChartContainer>
                 )}

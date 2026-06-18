@@ -80,6 +80,18 @@ export interface SupplierInvoiceFormDialogProps {
    * when both this and `searchSuppliers` are provided.
    */
   createSupplier?: (name: string) => Promise<AsyncComboboxOption | null>
+  /**
+   * Search the products module for the create dialog's product picker. When
+   * provided (create mode only), the operator can attribute the invoice to a
+   * product — and, with `listDeparturesForProduct`, to one of its departures.
+   * On save this emits a whole-invoice cost allocation seeded from the total.
+   */
+  searchProducts?: (query: string) => Promise<AsyncComboboxOption[]>
+  /**
+   * List a product's departures for the create dialog's two-step picker (pick
+   * product, then departure). Only used alongside `searchProducts`.
+   */
+  listDeparturesForProduct?: (productId: string, query: string) => Promise<AsyncComboboxOption[]>
 }
 
 interface FormState {
@@ -91,6 +103,10 @@ interface FormState {
   dueDate: string
   internalRef: string
   notes: string
+  // Create-mode attribution (whole-invoice cost allocation).
+  productId: string
+  departureId: string
+  total: string
 }
 
 function seed(invoice?: SupplierInvoiceRecord): FormState {
@@ -103,7 +119,16 @@ function seed(invoice?: SupplierInvoiceRecord): FormState {
     dueDate: invoice?.dueDate ?? "",
     internalRef: invoice?.internalRef ?? "",
     notes: invoice?.notes ?? "",
+    productId: "",
+    departureId: "",
+    total: "",
   }
+}
+
+/** Parse a major-unit amount string ("1250.00") to integer cents. */
+function toCents(major: string): number {
+  const n = Number.parseFloat(major)
+  return Number.isFinite(n) ? Math.round(n * 100) : 0
 }
 
 export function SupplierInvoiceFormDialog({
@@ -114,6 +139,8 @@ export function SupplierInvoiceFormDialog({
   extractFromFile,
   searchSuppliers,
   createSupplier,
+  searchProducts,
+  listDeparturesForProduct,
 }: SupplierInvoiceFormDialogProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail.form
@@ -131,6 +158,7 @@ export function SupplierInvoiceFormDialog({
     try {
       const x = await extractFromFile(file)
       setForm((prev) => ({
+        ...prev,
         supplierInvoiceNo: x.supplierInvoiceNo ?? prev.supplierInvoiceNo,
         supplierId: x.supplierId ?? prev.supplierId,
         status: x.status ?? prev.status,
@@ -177,7 +205,36 @@ export function SupplierInvoiceFormDialog({
         { onSuccess: (row) => onDone(row?.id ?? invoice.id) },
       )
     } else {
-      create.mutate(payload, { onSuccess: (row) => row && onDone(row.id) })
+      // Attribute the whole invoice to the picked departure (or, failing that,
+      // product) as a single manual cost allocation, seeded with the total.
+      const totalCents = toCents(form.total)
+      const allocations = form.departureId
+        ? [
+            {
+              targetType: "departure" as const,
+              departureId: form.departureId,
+              amountCents: totalCents,
+              splitMethod: "manual" as const,
+            },
+          ]
+        : form.productId
+          ? [
+              {
+                targetType: "product" as const,
+                productId: form.productId,
+                amountCents: totalCents,
+                splitMethod: "manual" as const,
+              },
+            ]
+          : undefined
+      create.mutate(
+        {
+          ...payload,
+          ...(form.total ? { totalCents } : {}),
+          ...(allocations ? { allocations } : {}),
+        },
+        { onSuccess: (row) => row && onDone(row.id) },
+      )
     }
   }
 
@@ -268,6 +325,46 @@ export function SupplierInvoiceFormDialog({
               className="w-full"
             />
           </Field>
+          {!isEdit && searchProducts ? (
+            <>
+              <Field label={t.product} className="col-span-2">
+                <AsyncCombobox
+                  value={form.productId || null}
+                  onChange={(v) => set({ productId: v ?? "", departureId: "" })}
+                  search={searchProducts}
+                  placeholder={t.productSearchPlaceholder}
+                />
+              </Field>
+              {listDeparturesForProduct ? (
+                <Field label={t.departure} className="col-span-2">
+                  <AsyncCombobox
+                    // Remount when the product changes so stale departures from
+                    // the previous product can't be offered/selected.
+                    key={form.productId || "no-product"}
+                    value={form.departureId || null}
+                    onChange={(v) => set({ departureId: v ?? "" })}
+                    disabled={!form.productId}
+                    search={(query) =>
+                      form.productId
+                        ? listDeparturesForProduct(form.productId, query)
+                        : Promise.resolve([])
+                    }
+                    placeholder={t.departureSearchPlaceholder}
+                  />
+                </Field>
+              ) : null}
+              <Field
+                label={formatMessage(t.totalLabel, { currency: form.currency || "" })}
+                className="col-span-2"
+              >
+                <Input
+                  inputMode="decimal"
+                  value={form.total}
+                  onChange={(e) => set({ total: e.target.value })}
+                />
+              </Field>
+            </>
+          ) : null}
           <Field label={t.internalRef} className="col-span-2">
             <Input
               value={form.internalRef}

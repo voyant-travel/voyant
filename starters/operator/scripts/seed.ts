@@ -108,7 +108,6 @@ import {
   activityParticipants,
   communicationLog,
   customFieldDefinitions,
-  customFieldValues,
   organizationNotes,
   organizations,
   people,
@@ -324,7 +323,6 @@ async function reset() {
     "quotes",
     "stages",
     "pipelines",
-    "custom_field_values",
     "custom_field_definitions",
     "people",
     "organizations",
@@ -1343,29 +1341,6 @@ async function seedCrm() {
       key: "travel_preferences",
       label: "Travel preferences",
       fieldType: "text",
-    },
-  ])
-  await db.insert(customFieldValues).values([
-    {
-      id: newId("custom_field_values"),
-      definitionId: cfVipId,
-      entityType: "person",
-      entityId: people_ids[0]!,
-      textValue: "platinum",
-    },
-    {
-      id: newId("custom_field_values"),
-      definitionId: cfVipId,
-      entityType: "person",
-      entityId: people_ids[10]!,
-      textValue: "gold",
-    },
-    {
-      id: newId("custom_field_values"),
-      definitionId: cfPrefId,
-      entityType: "person",
-      entityId: people_ids[10]!,
-      textValue: "Prefers boutique hotels; no early flights.",
     },
   ])
 
@@ -2653,7 +2628,7 @@ async function seedBookingsAndFinance() {
       const paid =
         b.status === "completed" ? b.sellCents : b.status === "cancelled" ? depositCents : 0
       const invStatus =
-        b.status === "completed" ? "paid" : b.status === "cancelled" ? "void" : "sent"
+        b.status === "completed" ? "paid" : b.status === "cancelled" ? "void" : "issued"
       await db.insert(invoices).values({
         id: invId,
         invoiceNumber: `INV-2026-${(10000 + i).toString().padStart(5, "0")}`,

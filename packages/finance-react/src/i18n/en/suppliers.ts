@@ -58,6 +58,11 @@ export const supplierInvoiceDetail = {
     extracting: "Extracting…",
     supplierSearchPlaceholder: "Search suppliers…",
     supplierCreate: 'Create supplier "{name}"',
+    product: "Product",
+    departure: "Departure",
+    productSearchPlaceholder: "Search products…",
+    departureSearchPlaceholder: "Search departures…",
+    totalLabel: "Total ({currency})",
   },
   summary: {
     subtotal: "Subtotal",

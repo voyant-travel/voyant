@@ -73,6 +73,10 @@ export interface SupplierInvoicesPageProps {
   searchSuppliers?: (query: string) => Promise<AsyncComboboxOption[]>
   /** Create a supplier inline from the create dialog's supplier picker. */
   createSupplier?: (name: string) => Promise<AsyncComboboxOption | null>
+  /** Search products for the create dialog's product/departure attribution. */
+  searchProducts?: (query: string) => Promise<AsyncComboboxOption[]>
+  /** List a product's departures for the create dialog's two-step picker. */
+  listDeparturesForProduct?: (productId: string, query: string) => Promise<AsyncComboboxOption[]>
 }
 
 type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
@@ -83,6 +87,8 @@ export function SupplierInvoicesPage({
   extractFromFile,
   searchSuppliers,
   createSupplier,
+  searchProducts,
+  listDeparturesForProduct,
 }: SupplierInvoicesPageProps = {}) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoicesPage
 
@@ -138,6 +144,8 @@ export function SupplierInvoicesPage({
         extractFromFile={extractFromFile}
         searchSuppliers={searchSuppliers}
         createSupplier={createSupplier}
+        searchProducts={searchProducts}
+        listDeparturesForProduct={listDeparturesForProduct}
       />
 
       <div className="flex flex-wrap items-center gap-2">

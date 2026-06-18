@@ -49,7 +49,7 @@ export function FlightOfferRow({
       type={interactive ? "button" : undefined}
       onClick={onClick ? () => onClick(offer) : undefined}
       className={cn(
-        "flex w-full items-stretch gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors",
+        "flex w-full items-stretch gap-4 rounded-md border bg-card p-4 text-left shadow-sm transition-colors",
         interactive && "hover:border-primary/40 hover:bg-accent/30",
         selected && "border-primary ring-1 ring-primary/40",
         className,

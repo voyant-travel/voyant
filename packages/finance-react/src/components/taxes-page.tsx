@@ -168,7 +168,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
         {isPending ? (
           <TaxesPageSkeleton rows={5} />
         ) : (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+          <div className="rounded-md border bg-card text-card-foreground shadow-sm">
             {rows.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">{taxMessages.empty}</p>
             ) : (
@@ -308,7 +308,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
         </div>
 
         {isPending ? null : (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+          <div className="rounded-md border bg-card text-card-foreground shadow-sm">
             {(policyProfilesQuery.data?.data ?? []).length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
                 {taxMessages.policyEmpty}
@@ -520,7 +520,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
 
 function TaxesPageSkeleton({ rows }: { rows: number }) {
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div className="rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="flex flex-col divide-y">
         {Array.from({ length: rows }).map((_, index) => (
           <div

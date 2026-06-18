@@ -24,7 +24,7 @@ export function PickedLegBanner({
   const itinerary = offer.itineraries[0]
   if (!itinerary) return null
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-md border bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="font-medium text-[11px] uppercase tracking-wider text-emerald-700">
           {label}
@@ -87,7 +87,7 @@ export function ReadyToBookPanel({
           onChange={onChangeReturn}
         />
       </div>
-      <div className="flex flex-col items-stretch gap-3 rounded-xl border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col items-stretch gap-3 rounded-md border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col leading-tight">
           <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">
             {messages.tripTotal}

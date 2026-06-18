@@ -58,6 +58,11 @@ export const supplierInvoiceDetail = {
     extracting: "Se extrage…",
     supplierSearchPlaceholder: "Cauta furnizori…",
     supplierCreate: 'Creeaza furnizorul "{name}"',
+    product: "Produs",
+    departure: "Plecare",
+    productSearchPlaceholder: "Cauta produse…",
+    departureSearchPlaceholder: "Cauta plecari…",
+    totalLabel: "Total ({currency})",
   },
   summary: {
     subtotal: "Subtotal",

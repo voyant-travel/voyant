@@ -465,7 +465,7 @@ export function ResourcesPage({
             value={activeTab}
             onValueChange={(value) => setActiveTab((value ?? "resources") as ResourcesPageTab)}
           >
-            <TabsList className="flex w-full justify-start overflow-x-auto">
+            <TabsList className="flex w-full justify-start overflow-x-auto overflow-y-hidden">
               <TabsTrigger value="resources">{page.tabs.resources}</TabsTrigger>
               <TabsTrigger value="pools">{page.tabs.pools}</TabsTrigger>
               <TabsTrigger value="allocations">{page.tabs.allocations}</TabsTrigger>
