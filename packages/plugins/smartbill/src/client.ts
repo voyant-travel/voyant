@@ -132,6 +132,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
+function sanitizeRequestBody(body: unknown): unknown {
+  if (!isRecord(body) || !Array.isArray(body.products)) return body
+
+  return {
+    ...body,
+    products: body.products.map((product) => {
+      if (!isRecord(product) || !("measureUnit" in product)) return product
+      const sanitizedProduct = { ...product }
+      delete sanitizedProduct.measureUnit
+      return sanitizedProduct
+    }),
+  }
+}
+
 export function createSmartbillClient(options: SmartbillClientOptions): SmartbillClientApi {
   const apiUrl = (options.apiUrl ?? "https://ws.smartbill.ro/SBORO/api").replace(/\/$/, "")
   const fetchImpl = options.fetch ?? createGlobalSmartbillFetch()
@@ -175,7 +189,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
       method,
       headers: headers(),
     }
-    if (body !== undefined) init.body = JSON.stringify(body)
+    if (body !== undefined) init.body = JSON.stringify(sanitizeRequestBody(body))
     // Default policy: GET/PUT/DELETE are idempotent against SmartBill (state
     // setters, lookups), POSTs create documents and must not retry. Call
     // sites override where the HTTP method is misleading (e.g. reverse).
