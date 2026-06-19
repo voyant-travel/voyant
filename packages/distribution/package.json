@@ -27,13 +27,13 @@
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
-    "zod": "^4.3.6",
+    "hono": "^4.12.26",
+    "zod": "^4.4.3",
     "@voyant-travel/suppliers-contracts": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "files": [
     "dist"

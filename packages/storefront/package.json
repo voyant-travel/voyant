@@ -45,8 +45,8 @@
     "@voyant-travel/relationships-contracts": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "hono": "^4.12.26",
+    "zod": "^4.4.3"
   },
   "peerDependencies": {
     "@voyant-travel/identity": "workspace:^",
@@ -71,8 +71,8 @@
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist"
