@@ -1,6 +1,7 @@
 import { parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
+import { z } from "zod"
 import { quotesService } from "../service/index.js"
 import { QuoteVersionConflictError } from "../service/quote-versions.js"
 import {
@@ -46,6 +47,24 @@ export const quoteVersionRoutes = new Hono<Env>()
       }
       throw error
     }
+  })
+  .patch("/quote-versions/:id/validity", async (c) => {
+    const body = await parseJsonBody(c, z.object({ validUntil: z.string().date().nullable() }))
+    const row = await quotesService.setQuoteVersionValidUntil(
+      c.get("db"),
+      c.req.param("id"),
+      body.validUntil,
+    )
+    if (!row) return c.json({ error: "Quote version not found" }, 404)
+    return c.json({ data: row })
+  })
+  .post("/quotes/:id/versions/snapshot", async (c) => {
+    const version = await quotesService.createVersionSnapshotFromQuote(
+      c.get("db"),
+      c.req.param("id"),
+    )
+    if (!version) return c.json({ error: "Quote not found" }, 404)
+    return c.json({ data: version }, 201)
   })
   .post("/quote-versions/expire", async (c) => {
     return c.json({

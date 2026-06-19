@@ -80,6 +80,46 @@ export function useQuoteVersionMutation() {
     },
   })
 
+  // Snapshot the quote's current line items into a new version (the "Save"
+  // action). The server copies products → version lines, computes the total,
+  // and supersedes the prior current version.
+  const snapshot = useMutation({
+    mutationFn: async ({ quoteId }: { quoteId: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/quotes/quotes/${quoteId}/versions/snapshot`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST" },
+      )
+      return data
+    },
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({
+        queryKey: quotesQueryKeys.quoteVersionsList({ quoteId: vars.quoteId }),
+      })
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quote(vars.quoteId) })
+    },
+  })
+
+  // Narrow validity-date update (the generic update schema carries insert
+  // defaults that would clobber status/totals — see the service note).
+  const setValidUntil = useMutation({
+    mutationFn: async ({ id, validUntil }: { id: string; validUntil: string | null }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/quotes/quote-versions/${id}/validity`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "PATCH", body: JSON.stringify({ validUntil }) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quote(data.quoteId) })
+    },
+  })
+
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
@@ -290,6 +330,8 @@ export function useQuoteVersionMutation() {
 
   return {
     create,
+    snapshot,
+    setValidUntil,
     update,
     remove,
     send,

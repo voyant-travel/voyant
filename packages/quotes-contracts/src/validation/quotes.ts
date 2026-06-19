@@ -18,6 +18,7 @@ export const quoteCoreSchema = z.object({
   acceptedVersionId: z.string().nullable().optional(),
   valueAmountCents: z.number().int().nullable().optional(),
   valueCurrency: z.string().nullable().optional(),
+  paxCount: z.number().int().min(0).nullable().optional(),
   expectedCloseDate: z.string().date().nullable().optional(),
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),

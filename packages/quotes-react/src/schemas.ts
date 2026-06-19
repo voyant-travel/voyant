@@ -26,11 +26,14 @@ export const quoteRecordSchema = z.object({
   acceptedVersionId: z.string().nullable(),
   valueAmountCents: z.number().int().nullable(),
   valueCurrency: z.string().nullable(),
+  paxCount: z.number().int().nullable(),
   expectedCloseDate: z.string().nullable(),
   source: z.string().nullable(),
   sourceRef: z.string().nullable(),
   lostReason: z.string().nullable(),
   tags: z.array(z.string()),
+  createdBy: z.string().nullable(),
+  updatedBy: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   stageChangedAt: z.string(),
@@ -126,3 +129,38 @@ export type QuoteVersionLineRecord = z.infer<typeof quoteVersionLineRecordSchema
 
 export const quoteVersionLineListResponse = listEnvelope(quoteVersionLineRecordSchema)
 export const quoteVersionLineSingleResponse = singleEnvelope(quoteVersionLineRecordSchema)
+
+export const quoteParticipantRecordSchema = z.object({
+  id: z.string(),
+  quoteId: z.string(),
+  personId: z.string(),
+  role: z.string(),
+  isPrimary: z.boolean(),
+  createdAt: z.string(),
+})
+
+export type QuoteParticipantRecord = z.infer<typeof quoteParticipantRecordSchema>
+
+export const quoteParticipantListResponse = listEnvelope(quoteParticipantRecordSchema)
+export const quoteParticipantSingleResponse = singleEnvelope(quoteParticipantRecordSchema)
+
+export const quoteProductRecordSchema = z.object({
+  id: z.string(),
+  quoteId: z.string(),
+  productId: z.string().nullable(),
+  supplierServiceId: z.string().nullable(),
+  nameSnapshot: z.string(),
+  description: z.string().nullable(),
+  quantity: z.number().int(),
+  unitPriceAmountCents: z.number().int().nullable(),
+  costAmountCents: z.number().int().nullable(),
+  currency: z.string().nullable(),
+  discountAmountCents: z.number().int().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type QuoteProductRecord = z.infer<typeof quoteProductRecordSchema>
+
+export const quoteProductListResponse = listEnvelope(quoteProductRecordSchema)
+export const quoteProductSingleResponse = singleEnvelope(quoteProductRecordSchema)

@@ -48,6 +48,23 @@ export {
   useQuoteMutation,
 } from "./hooks/use-quote-mutation.js"
 export {
+  type CreateQuoteParticipantInput,
+  useQuoteParticipantMutation,
+} from "./hooks/use-quote-participant-mutation.js"
+export {
+  type UseQuoteParticipantsOptions,
+  useQuoteParticipants,
+} from "./hooks/use-quote-participants.js"
+export {
+  type CreateQuoteProductInput,
+  type UpdateQuoteProductInput,
+  useQuoteProductMutation,
+} from "./hooks/use-quote-product-mutation.js"
+export {
+  type UseQuoteProductsOptions,
+  useQuoteProducts,
+} from "./hooks/use-quote-products.js"
+export {
   type UseQuoteVersionOptions,
   useQuoteVersion,
   useQuoteVersionLines,
@@ -113,9 +130,13 @@ export {
 export {
   type PipelineRecord,
   pipelineRecordSchema,
+  type QuoteParticipantRecord,
+  type QuoteProductRecord,
   type QuoteRecord,
   type QuoteVersionLineRecord,
   type QuoteVersionRecord,
+  quoteParticipantRecordSchema,
+  quoteProductRecordSchema,
   quoteRecordSchema,
   quoteVersionLineRecordSchema,
   quoteVersionRecordSchema,

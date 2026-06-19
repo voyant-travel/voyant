@@ -80,6 +80,8 @@ export const quotes = pgTable(
     acceptedVersionId: typeIdRef("accepted_version_id"),
     valueAmountCents: integer("value_amount_cents"),
     valueCurrency: text("value_currency"),
+    /** Headcount (PAX). Known even when individual travelers aren't named yet. */
+    paxCount: integer("pax_count"),
     expectedCloseDate: date("expected_close_date"),
     source: text("source"),
     sourceRef: text("source_ref"),
@@ -87,6 +89,9 @@ export const quotes = pgTable(
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     /** Unified custom fields — see the custom-fields unification ADR. */
     customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    /** Audit: the acting user (staff id) who created / last changed the quote. */
+    createdBy: text("created_by"),
+    updatedBy: text("updated_by"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }).notNull().defaultNow(),

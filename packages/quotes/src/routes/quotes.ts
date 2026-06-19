@@ -30,6 +30,7 @@ export const quoteRoutes = new Hono<Env>()
         data: await quotesService.createQuote(
           c.get("db"),
           await parseJsonBody(c, insertQuoteSchema),
+          c.get("userId") ?? null,
         ),
       },
       201,
@@ -45,6 +46,7 @@ export const quoteRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateQuoteSchema),
+      c.get("userId") ?? null,
     )
     if (!row) return c.json({ error: "Quote not found" }, 404)
     return c.json({ data: row })
@@ -88,6 +90,7 @@ export const quoteRoutes = new Hono<Env>()
           c.get("db"),
           c.req.param("id"),
           await parseJsonBody(c, insertQuoteProductSchema),
+          c.get("userId") ?? null,
         ),
       },
       201,
@@ -98,12 +101,17 @@ export const quoteRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateQuoteProductSchema),
+      c.get("userId") ?? null,
     )
     if (!row) return c.json({ error: "Quote product not found" }, 404)
     return c.json({ data: row })
   })
   .delete("/quote-products/:id", async (c) => {
-    const row = await quotesService.deleteQuoteProduct(c.get("db"), c.req.param("id"))
+    const row = await quotesService.deleteQuoteProduct(
+      c.get("db"),
+      c.req.param("id"),
+      c.get("userId") ?? null,
+    )
     if (!row) return c.json({ error: "Quote product not found" }, 404)
     return c.json({ success: true })
   })

@@ -2950,9 +2950,18 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyant-travel/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyant-travel/auth-react':
+        specifier: workspace:^
+        version: link:../auth-react
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../quotes
+      '@voyant-travel/relationships-react':
+        specifier: workspace:^
+        version: link:../relationships-react
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3984,6 +3993,9 @@ importers:
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes
+      '@voyant-travel/quotes-react':
+        specifier: workspace:^
+        version: link:../../packages/quotes-react
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../../packages/react
