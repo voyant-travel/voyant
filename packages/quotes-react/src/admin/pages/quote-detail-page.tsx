@@ -32,11 +32,14 @@ import {
   TableRow,
 } from "@voyant-travel/ui/components/table"
 import { ArrowLeft, Ban, CheckCircle2, Loader2, Save } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "../../components/crm-format.js"
 import { useCrmUiI18nOrDefault } from "../../i18n/index.js"
 import type { CrmQuoteVersionStatus } from "../../i18n/messages.js"
 import {
+  type QuoteParticipantRecord,
+  type QuoteProductRecord,
+  type QuoteRecord,
   useQuote,
   useQuoteMutation,
   useQuoteParticipantMutation,
@@ -55,15 +58,111 @@ import {
 } from "../quote-content-sections.js"
 import { QuoteActivitiesCard, QuoteDetailsCard, QuoteTagsCard } from "../quote-detail-sections.js"
 
+interface DraftLineItem {
+  id: string
+  isNew: boolean
+  nameSnapshot: string
+  description: string | null
+  quantity: number
+  unitPriceAmountCents: number | null
+  currency: string | null
+}
+
+interface DraftTraveler {
+  id: string
+  isNew: boolean
+  personId: string
+  isPrimary: boolean
+}
+
+interface QuoteDraft {
+  title: string
+  stageId: string
+  status: string
+  valueCurrency: string | null
+  expectedCloseDate: string | null
+  source: string | null
+  lostReason: string | null
+  personId: string | null
+  organizationId: string | null
+  ownerId: string | null
+  paxCount: number | null
+  tags: string[]
+  lineItems: DraftLineItem[]
+  travelers: DraftTraveler[]
+}
+
+function buildDraft(
+  quote: QuoteRecord,
+  products: QuoteProductRecord[],
+  travelers: QuoteParticipantRecord[],
+): QuoteDraft {
+  return {
+    title: quote.title,
+    stageId: quote.stageId,
+    status: quote.status,
+    valueCurrency: quote.valueCurrency,
+    expectedCloseDate: quote.expectedCloseDate,
+    source: quote.source,
+    lostReason: quote.lostReason,
+    personId: quote.personId,
+    organizationId: quote.organizationId,
+    ownerId: quote.ownerId,
+    paxCount: quote.paxCount,
+    tags: quote.tags,
+    lineItems: products.map((product) => ({
+      id: product.id,
+      isNew: false,
+      nameSnapshot: product.nameSnapshot,
+      description: product.description,
+      quantity: product.quantity,
+      unitPriceAmountCents: product.unitPriceAmountCents,
+      currency: product.currency,
+    })),
+    travelers: travelers.map((traveler) => ({
+      id: traveler.id,
+      isNew: false,
+      personId: traveler.personId,
+      isPrimary: traveler.isPrimary,
+    })),
+  }
+}
+
+/** Order-stable signature for the dirty check (ignores temp ids of new rows). */
+function serializeDraft(draft: QuoteDraft): string {
+  return JSON.stringify({
+    title: draft.title,
+    stageId: draft.stageId,
+    status: draft.status,
+    valueCurrency: draft.valueCurrency,
+    expectedCloseDate: draft.expectedCloseDate,
+    source: draft.source,
+    lostReason: draft.lostReason,
+    personId: draft.personId,
+    organizationId: draft.organizationId,
+    ownerId: draft.ownerId,
+    paxCount: draft.paxCount,
+    tags: [...draft.tags].sort(),
+    lineItems: draft.lineItems.map((line) => ({
+      id: line.isNew ? null : line.id,
+      n: line.nameSnapshot,
+      d: line.description,
+      q: line.quantity,
+      u: line.unitPriceAmountCents,
+      c: line.currency,
+    })),
+    travelers: [...draft.travelers.map((traveler) => traveler.personId)].sort(),
+  })
+}
+
 /**
  * Packaged admin page for a single Quote (packaged-admin RFC Phase 3). The
- * quote workspace: editable deal fields, the linked client (person /
- * organization, resolved through relationships-react), the activity timeline,
- * tags, and the quote's VERSIONS nested inline (created in context, currency
- * inherited). Versions are never a top-level surface — they are revisions of a
- * quote. Status transitions (won/lost/reopen) move the quote to the matching
- * closed stage when the pipeline declares one. Cross-domain client data flows
- * through relationships-react (optional peer); links resolve via the shared
+ * detail is a STAGED editor: every card edits a local draft and nothing
+ * persists until "Save", which commits the quote fields, line-item and
+ * traveler diffs, then snapshots a new proposal version that supersedes the
+ * prior one. "Discard" reverts to the loaded state. The quote value is derived
+ * from the draft's line items. Client/owner data flows through
+ * relationships-react / auth-react; links resolve via the shared
  * `person.detail` / `organization.detail` semantic destinations.
  */
 export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
@@ -73,8 +172,10 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const t = messages.quoteDetailPage
   const navigate = useAdminNavigate()
 
-  const [lostReasonDraft, setLostReasonDraft] = useState("")
   const [showLostDialog, setShowLostDialog] = useState(false)
+  const [lostReasonDraft, setLostReasonDraft] = useState("")
+  const [draft, setDraft] = useState<QuoteDraft | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const quoteQuery = useQuote(id)
   const quote = quoteQuery.data
@@ -89,12 +190,6 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
     enabled: Boolean(quote?.pipelineId),
   })
   const versionsQuery = useQuoteVersions({ quoteId: id, limit: 50, enabled: Boolean(quote) })
-  const personQuery = usePerson(quote?.personId ?? undefined, {
-    enabled: Boolean(quote?.personId),
-  })
-  const organizationQuery = useOrganization(quote?.organizationId ?? undefined, {
-    enabled: Boolean(quote?.organizationId),
-  })
   const activitiesQuery = useActivities({
     entityType: "quote",
     entityId: id,
@@ -104,14 +199,39 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const productsQuery = useQuoteProducts(id, { enabled: Boolean(quote) })
   const participantsQuery = useQuoteParticipants(id, { enabled: Boolean(quote) })
 
-  const stages = useMemo(
-    () => [...(stagesQuery.data?.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
-    [stagesQuery.data],
+  const products = useMemo(() => productsQuery.data?.data ?? [], [productsQuery.data])
+  const travelers = useMemo(() => participantsQuery.data?.data ?? [], [participantsQuery.data])
+
+  // The draft built from the server's current state. Draft edits diverge from
+  // this until Save; the server signature resyncs the draft after a save lands.
+  const serverDraft = useMemo(
+    () => (quote ? buildDraft(quote, products, travelers) : null),
+    [quote, products, travelers],
   )
+  const serverSignature = serverDraft ? serializeDraft(serverDraft) : null
+  const syncedRef = useRef<string | null>(null)
+
+  // Resync the draft to the server whenever the server state changes (initial
+  // load, and after a save commits) — but never mid-save, which would clobber
+  // pending edits as each mutation invalidates queries.
+  useEffect(() => {
+    if (isSaving || !serverDraft || serverSignature === null) return
+    if (serverSignature !== syncedRef.current) {
+      syncedRef.current = serverSignature
+      setDraft(serverDraft)
+    }
+  }, [isSaving, serverDraft, serverSignature])
+
+  // Person/org records resolve from the DRAFT ids so the client card reflects
+  // a freshly-picked (unsaved) selection immediately.
+  const personQuery = usePerson(draft?.personId ?? undefined, {
+    enabled: Boolean(draft?.personId),
+  })
+  const organizationQuery = useOrganization(draft?.organizationId ?? undefined, {
+    enabled: Boolean(draft?.organizationId),
+  })
+
   const versions = versionsQuery.data?.data ?? []
-  // Number versions by creation order (v1 = first saved) and show newest first.
-  // Ordering by createdAt is stable; updatedAt ties when a snapshot supersedes
-  // its predecessor in the same instant.
   const versionNumberById = new Map<string, number>()
   ;[...versions]
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
@@ -121,38 +241,18 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const orderedVersions = [...versions].sort(
     (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
   )
-  // The current/active version is the newest one still live (draft or sent);
-  // once a newer proposal is saved the prior one is expired.
   const currentVersionId =
     orderedVersions.find((version) => version.status === "draft" || version.status === "sent")
       ?.id ?? null
-  // Quote value is derived from its line items — the backend persists the same
-  // sum on every product change; computing it here keeps the detail correct
-  // immediately (even before a mutation lands).
-  const itemsTotalCents = (productsQuery.data?.data ?? []).reduce(
-    (sum, product) =>
-      sum +
-      product.quantity * (product.unitPriceAmountCents ?? 0) -
-      (product.discountAmountCents ?? 0),
-    0,
+
+  const stages = useMemo(
+    () => [...(stagesQuery.data?.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    [stagesQuery.data],
   )
-  // The quote is "dirty" (a new proposal can be saved) when it has line items
-  // and has changed since the last version snapshot was taken.
-  const lastSnapshotAt = versions.reduce(
-    (max, version) => Math.max(max, Date.parse(version.createdAt)),
-    0,
-  )
-  const hasUnsavedChanges =
-    (productsQuery.data?.data ?? []).length > 0 &&
-    (quote ? Date.parse(quote.updatedAt) > lastSnapshotAt : false)
 
   const goToList = () => navigate("quote.list", {})
 
-  const updateField = async (patch: Record<string, unknown>) => {
-    await update.mutateAsync({ id, input: patch })
-  }
-
-  if (quoteQuery.isPending) {
+  if (quoteQuery.isPending || !draft) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -171,14 +271,49 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
     )
   }
 
-  async function markWon() {
+  const currentDraft = draft
+  const patchDraft = (patch: Partial<QuoteDraft>) =>
+    setDraft((previous) => (previous ? { ...previous, ...patch } : previous))
+
+  const itemsTotalCents = currentDraft.lineItems.reduce(
+    (sum, line) => sum + line.quantity * (line.unitPriceAmountCents ?? 0),
+    0,
+  )
+  const isDirty = serverDraft ? serializeDraft(currentDraft) !== serializeDraft(serverDraft) : false
+
+  // Synthetic records so the (presentational) cards can render the draft.
+  const draftLineItems: QuoteProductRecord[] = currentDraft.lineItems.map((line) => ({
+    id: line.id,
+    quoteId: id,
+    productId: null,
+    supplierServiceId: null,
+    nameSnapshot: line.nameSnapshot,
+    description: line.description,
+    quantity: line.quantity,
+    unitPriceAmountCents: line.unitPriceAmountCents,
+    costAmountCents: null,
+    currency: line.currency,
+    discountAmountCents: null,
+    createdAt: "",
+    updatedAt: "",
+  }))
+  const draftTravelers: QuoteParticipantRecord[] = currentDraft.travelers.map((traveler) => ({
+    id: traveler.id,
+    quoteId: id,
+    personId: traveler.personId,
+    role: "traveler",
+    isPrimary: traveler.isPrimary,
+    createdAt: "",
+  }))
+
+  function markWon() {
     const wonStage = stages.find((stage) => stage.isWon)
-    await updateField({ status: "won", ...(wonStage ? { stageId: wonStage.id } : {}) })
+    patchDraft({ status: "won", ...(wonStage ? { stageId: wonStage.id } : {}) })
   }
 
-  async function submitLost() {
+  function submitLost() {
     const lostStage = stages.find((stage) => stage.isLost)
-    await updateField({
+    patchDraft({
       status: "lost",
       lostReason: lostReasonDraft.trim() || null,
       ...(lostStage ? { stageId: lostStage.id } : {}),
@@ -187,12 +322,102 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
     setLostReasonDraft("")
   }
 
-  async function reopen() {
-    await updateField({ status: "open", lostReason: null })
+  function reopen() {
+    patchDraft({ status: "open", lostReason: null })
+  }
+
+  function discard() {
+    if (serverDraft) setDraft(serverDraft)
   }
 
   async function save() {
-    await versionMutation.snapshot.mutateAsync({ quoteId: id })
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      // 1. Quote fields — full payload so the partial-update schema doesn't
+      // inject insert defaults (status/tags) and clobber them.
+      await update.mutateAsync({
+        id,
+        input: {
+          title: currentDraft.title,
+          pipelineId: quote?.pipelineId,
+          stageId: currentDraft.stageId,
+          status: currentDraft.status,
+          personId: currentDraft.personId,
+          organizationId: currentDraft.organizationId,
+          ownerId: currentDraft.ownerId,
+          valueCurrency: currentDraft.valueCurrency,
+          expectedCloseDate: currentDraft.expectedCloseDate,
+          source: currentDraft.source,
+          lostReason: currentDraft.lostReason,
+          tags: currentDraft.tags,
+          paxCount: currentDraft.paxCount,
+        },
+      })
+
+      // 2. Line-item diff
+      for (const serverItem of products) {
+        if (!currentDraft.lineItems.some((line) => !line.isNew && line.id === serverItem.id)) {
+          await productMutation.remove.mutateAsync({ id: serverItem.id, quoteId: id })
+        }
+      }
+      for (const line of currentDraft.lineItems) {
+        if (line.isNew) {
+          await productMutation.create.mutateAsync({
+            quoteId: id,
+            input: {
+              nameSnapshot: line.nameSnapshot,
+              description: line.description,
+              quantity: line.quantity,
+              unitPriceAmountCents: line.unitPriceAmountCents,
+              currency: line.currency,
+            },
+          })
+          continue
+        }
+        const serverItem = products.find((product) => product.id === line.id)
+        const changed =
+          serverItem &&
+          (serverItem.nameSnapshot !== line.nameSnapshot ||
+            (serverItem.description ?? null) !== (line.description ?? null) ||
+            serverItem.quantity !== line.quantity ||
+            (serverItem.unitPriceAmountCents ?? null) !== (line.unitPriceAmountCents ?? null) ||
+            (serverItem.currency ?? null) !== (line.currency ?? null))
+        if (changed) {
+          await productMutation.update.mutateAsync({
+            id: line.id,
+            quoteId: id,
+            input: {
+              nameSnapshot: line.nameSnapshot,
+              description: line.description,
+              quantity: line.quantity,
+              unitPriceAmountCents: line.unitPriceAmountCents,
+              currency: line.currency,
+            },
+          })
+        }
+      }
+
+      // 3. Traveler diff
+      for (const serverTraveler of travelers) {
+        if (!currentDraft.travelers.some((tv) => !tv.isNew && tv.id === serverTraveler.id)) {
+          await participantMutation.remove.mutateAsync({ id: serverTraveler.id, quoteId: id })
+        }
+      }
+      for (const traveler of currentDraft.travelers) {
+        if (traveler.isNew) {
+          await participantMutation.create.mutateAsync({
+            quoteId: id,
+            input: { personId: traveler.personId },
+          })
+        }
+      }
+
+      // 4. Snapshot the saved state into a new proposal version.
+      await versionMutation.snapshot.mutateAsync({ quoteId: id })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -206,29 +431,12 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
             {t.breadcrumbRoot}
           </button>
           <span>/</span>
-          <span className="truncate text-foreground">{quote.title}</span>
+          <span className="truncate text-foreground">{currentDraft.title}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => void save()}
-            disabled={!hasUnsavedChanges || versionMutation.snapshot.isPending}
-          >
-            {versionMutation.snapshot.isPending ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-1.5 h-4 w-4" />
-            )}
-            {t.save}
-          </Button>
-          {quote.status === "open" ? (
+          {currentDraft.status === "open" ? (
             <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void markWon()}
-                disabled={update.isPending}
-              >
+              <Button size="sm" variant="outline" onClick={markWon} disabled={isSaving}>
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
                 {t.markWon}
               </Button>
@@ -236,22 +444,30 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => setShowLostDialog(true)}
-                disabled={update.isPending}
+                disabled={isSaving}
               >
                 <Ban className="mr-1.5 h-4 w-4" />
                 {t.markLost}
               </Button>
             </>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void reopen()}
-              disabled={update.isPending}
-            >
+            <Button size="sm" variant="outline" onClick={reopen} disabled={isSaving}>
               {t.reopen}
             </Button>
           )}
+          {isDirty ? (
+            <Button size="sm" variant="ghost" onClick={discard} disabled={isSaving}>
+              {t.discard}
+            </Button>
+          ) : null}
+          <Button size="sm" onClick={() => void save()} disabled={!isDirty || isSaving}>
+            {isSaving ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-1.5 h-4 w-4" />
+            )}
+            {t.save}
+          </Button>
           <ConfirmActionButton
             buttonLabel={t.delete}
             confirmLabel={t.deleteConfirm.confirm}
@@ -260,7 +476,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
             description={t.deleteConfirm.description}
             variant="destructive"
             confirmVariant="destructive"
-            disabled={remove.isPending}
+            disabled={remove.isPending || isSaving}
             onConfirm={async () => {
               await remove.mutateAsync(id)
               goToList()
@@ -272,77 +488,113 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
       <div className="grid flex-1 grid-cols-12 gap-4 p-4 lg:p-6">
         <aside className="col-span-12 flex flex-col gap-4 lg:col-span-4">
           <QuoteDetailsCard
-            quote={{ ...quote, valueAmountCents: itemsTotalCents }}
+            quote={{
+              ...quote,
+              title: currentDraft.title,
+              stageId: currentDraft.stageId,
+              status: currentDraft.status,
+              valueAmountCents: itemsTotalCents,
+              valueCurrency: currentDraft.valueCurrency,
+              expectedCloseDate: currentDraft.expectedCloseDate,
+              source: currentDraft.source,
+              lostReason: currentDraft.lostReason,
+            }}
             stages={stages}
-            onUpdateField={updateField}
+            onUpdateField={async (patch) => patchDraft(patch as Partial<QuoteDraft>)}
           />
           <QuoteClientCard
             person={personQuery.data}
             organization={organizationQuery.data}
-            busy={update.isPending}
-            onSetPerson={async (personId) => {
-              await updateField({ personId })
-            }}
-            onSetOrganization={async (organizationId) => {
-              await updateField({ organizationId })
-            }}
+            busy={isSaving}
+            onSetPerson={async (personId) => patchDraft({ personId })}
+            onSetOrganization={async (organizationId) => patchDraft({ organizationId })}
             onOpenPerson={() => {
-              if (quote.personId) navigate("person.detail", { personId: quote.personId })
+              if (currentDraft.personId)
+                navigate("person.detail", { personId: currentDraft.personId })
             }}
             onOpenOrganization={() => {
-              if (quote.organizationId) {
-                navigate("organization.detail", { organizationId: quote.organizationId })
+              if (currentDraft.organizationId) {
+                navigate("organization.detail", { organizationId: currentDraft.organizationId })
               }
             }}
           />
           <QuoteTravelersCard
-            travelers={participantsQuery.data?.data ?? []}
-            paxCount={quote.paxCount}
+            travelers={draftTravelers}
+            paxCount={currentDraft.paxCount}
             isPending={participantsQuery.isPending}
-            busy={participantMutation.create.isPending || participantMutation.remove.isPending}
-            onPaxCountChange={async (paxCount) => {
-              await updateField({ paxCount })
-            }}
-            onAdd={async (personId) => {
-              await participantMutation.create.mutateAsync({ quoteId: id, input: { personId } })
-            }}
-            onRemove={async (participantId) => {
-              await participantMutation.remove.mutateAsync({ id: participantId, quoteId: id })
-            }}
+            busy={isSaving}
+            onPaxCountChange={async (paxCount) => patchDraft({ paxCount })}
+            onAdd={async (personId) =>
+              patchDraft({
+                travelers: [
+                  ...currentDraft.travelers,
+                  { id: `tmp_${crypto.randomUUID()}`, isNew: true, personId, isPrimary: false },
+                ],
+              })
+            }
+            onRemove={async (travelerId) =>
+              patchDraft({
+                travelers: currentDraft.travelers.filter((traveler) => traveler.id !== travelerId),
+              })
+            }
           />
           <QuoteOwnershipCard
-            ownerId={quote.ownerId}
+            ownerId={currentDraft.ownerId}
             createdBy={quote.createdBy}
             updatedBy={quote.updatedBy}
             createdAt={quote.createdAt}
             updatedAt={quote.updatedAt}
-            busy={update.isPending}
-            onSetOwner={async (ownerId) => {
-              await updateField({ ownerId })
-            }}
+            busy={isSaving}
+            onSetOwner={async (ownerId) => patchDraft({ ownerId })}
           />
-          <QuoteTagsCard tags={quote.tags} onChange={(tags) => updateField({ tags })} />
+          <QuoteTagsCard tags={currentDraft.tags} onChange={async (tags) => patchDraft({ tags })} />
         </aside>
 
         <main className="col-span-12 flex flex-col gap-4 lg:col-span-8">
           <QuoteLineItemsCard
-            products={productsQuery.data?.data ?? []}
+            products={draftLineItems}
             isPending={productsQuery.isPending}
-            currency={quote.valueCurrency ?? "USD"}
-            busy={
-              productMutation.create.isPending ||
-              productMutation.update.isPending ||
-              productMutation.remove.isPending
+            currency={currentDraft.valueCurrency ?? "USD"}
+            busy={isSaving}
+            onAdd={async (input) =>
+              patchDraft({
+                lineItems: [
+                  ...currentDraft.lineItems,
+                  {
+                    id: `tmp_${crypto.randomUUID()}`,
+                    isNew: true,
+                    nameSnapshot: input.nameSnapshot,
+                    description: input.description ?? null,
+                    quantity: input.quantity ?? 1,
+                    unitPriceAmountCents: input.unitPriceAmountCents ?? null,
+                    currency: input.currency ?? null,
+                  },
+                ],
+              })
             }
-            onAdd={async (input) => {
-              await productMutation.create.mutateAsync({ quoteId: id, input })
-            }}
-            onUpdate={async (productId, input) => {
-              await productMutation.update.mutateAsync({ id: productId, quoteId: id, input })
-            }}
-            onRemove={async (productId) => {
-              await productMutation.remove.mutateAsync({ id: productId, quoteId: id })
-            }}
+            onUpdate={async (lineId, input) =>
+              patchDraft({
+                lineItems: currentDraft.lineItems.map((line) =>
+                  line.id === lineId
+                    ? {
+                        ...line,
+                        ...(input.nameSnapshot !== undefined
+                          ? { nameSnapshot: input.nameSnapshot }
+                          : {}),
+                        ...(input.quantity !== undefined ? { quantity: input.quantity } : {}),
+                        ...(input.unitPriceAmountCents !== undefined
+                          ? { unitPriceAmountCents: input.unitPriceAmountCents }
+                          : {}),
+                      }
+                    : line,
+                ),
+              })
+            }
+            onRemove={async (lineId) =>
+              patchDraft({
+                lineItems: currentDraft.lineItems.filter((line) => line.id !== lineId),
+              })
+            }
           />
           <Card>
             <CardHeader>
@@ -440,7 +692,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
             <Button variant="outline" size="sm" onClick={() => setShowLostDialog(false)}>
               {messages.common.cancel}
             </Button>
-            <Button size="sm" onClick={() => void submitLost()} disabled={update.isPending}>
+            <Button size="sm" onClick={submitLost}>
               {t.lostDialog.confirm}
             </Button>
           </DialogFooter>

@@ -173,6 +173,7 @@ export const crmUiEnCommerceMessages = {
     breadcrumbRoot: "Quotes",
     back: "Back to Quotes",
     save: "Save",
+    discard: "Discard",
     newVersion: "Create proposal",
     markWon: "Mark won",
     markLost: "Mark lost",

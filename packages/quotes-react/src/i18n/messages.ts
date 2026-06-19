@@ -627,6 +627,7 @@ export type CrmUiMessages = {
     breadcrumbRoot: string
     back: string
     save: string
+    discard: string
     newVersion: string
     markWon: string
     markLost: string
