@@ -5,7 +5,10 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import type React from "react"
 
+import { type StorefrontMessages, useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import type { ContentResolution } from "./shop-product-detail-content"
+
+type DetailSharedMessages = StorefrontMessages["shopDetailShared"]
 
 export interface AvailabilitySlot {
   id: string
@@ -55,18 +58,20 @@ export function BookingSidebar({
   disabled: boolean
   onBook: () => void
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   const priceLabel =
     totalCents > 0 && currency
-      ? `from ${formatMoney(totalCents, currency)}`
+      ? t.priceFrom.replace("{amount}", formatMoney(totalCents, currency))
       : quoteData?.invalidReason
         ? "—"
-        : "Pending"
+        : t.pricePending
+  const guestsLabel = totalPax === 1 ? t.guestSingular : t.guestPlural
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Book this</CardTitle>
+          <CardTitle>{t.bookThis}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">{children}</CardContent>
       </Card>
@@ -75,25 +80,23 @@ export function BookingSidebar({
         <CardContent className="space-y-3 pt-6">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {totalPax} {totalPax === 1 ? "guest" : "guests"}
+              {totalPax} {guestsLabel}
             </span>
             {isQuoting && !quoteData ? <Skeleton className="h-4 w-20" /> : null}
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="font-medium">Subtotal</span>
+            <span className="font-medium">{t.subtotal}</span>
             <span className="font-medium text-xl">{priceLabel}</span>
           </div>
           {quoteData?.invalidReason ? (
             <p className="text-amber-600 text-xs">
-              {humanizeInvalidReason(quoteData.invalidReason)}
+              {humanizeInvalidReason(quoteData.invalidReason, t)}
             </p>
           ) : null}
           <Button type="button" className="w-full" disabled={disabled} onClick={onBook}>
-            Book
+            {t.book}
           </Button>
-          <p className="text-muted-foreground text-xs">
-            You won't be charged yet. The next step collects traveler details.
-          </p>
+          <p className="text-muted-foreground text-xs">{t.noChargeYet}</p>
         </CardContent>
       </Card>
 
@@ -102,12 +105,12 @@ export function BookingSidebar({
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="text-muted-foreground text-xs">
-              {totalPax} {totalPax === 1 ? "guest" : "guests"}
+              {totalPax} {guestsLabel}
             </div>
             <div className="font-medium">{priceLabel}</div>
           </div>
           <Button type="button" disabled={disabled} onClick={onBook}>
-            Book
+            {t.book}
           </Button>
         </div>
       </div>
@@ -128,15 +131,16 @@ export function DepartureSelect({
   value: string | undefined
   onChange: (id: string) => void
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   return (
     <div className="space-y-1">
-      <Label htmlFor="departure-select">Departure</Label>
+      <Label htmlFor="departure-select">{t.departure}</Label>
       {isLoading ? (
         <Skeleton className="h-10 w-full" />
       ) : isError ? (
-        <p className="text-destructive text-sm">Departures unavailable.</p>
+        <p className="text-destructive text-sm">{t.departuresUnavailable}</p>
       ) : slots.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No upcoming departures.</p>
+        <p className="text-muted-foreground text-sm">{t.noUpcomingDepartures}</p>
       ) : (
         <select
           id="departure-select"
@@ -146,7 +150,7 @@ export function DepartureSelect({
         >
           {slots.map((slot) => (
             <option key={slot.id} value={slot.id}>
-              {formatSlotLabel(slot)}
+              {formatSlotLabel(slot, t.slotLeft, t.nightsShort, t.daysShort)}
             </option>
           ))}
         </select>
@@ -172,13 +176,21 @@ export function PaxBlock({
   setInfant: (n: number) => void
   showInfants?: boolean
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   return (
     <div className="space-y-3">
-      <Label>Travelers</Label>
-      <PaxStepper label="Adults" hint="12 yrs+" value={adult} setValue={setAdult} min={1} max={8} />
+      <Label>{t.travelers}</Label>
       <PaxStepper
-        label="Children"
-        hint="2–11 yrs"
+        label={t.adults}
+        hint={t.adultsHint}
+        value={adult}
+        setValue={setAdult}
+        min={1}
+        max={8}
+      />
+      <PaxStepper
+        label={t.children}
+        hint={t.childrenHint}
         value={child}
         setValue={setChild}
         min={0}
@@ -186,8 +198,8 @@ export function PaxBlock({
       />
       {showInfants ? (
         <PaxStepper
-          label="Infants"
-          hint="under 2"
+          label={t.infants}
+          hint={t.infantsHint}
           value={infant}
           setValue={setInfant}
           min={0}
@@ -249,19 +261,20 @@ export function ContentResolutionHint({
 }: {
   resolution: ContentResolution | null
 }): React.ReactElement | null {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   if (!resolution) return null
   const hints: string[] = []
   if (resolution.match_kind && resolution.match_kind !== "exact" && resolution.served_locale) {
-    hints.push(`Served in ${resolution.served_locale}`)
+    hints.push(t.servedIn.replace("{locale}", resolution.served_locale))
   }
   if (resolution.machine_translated) {
-    hints.push("Machine-translated")
+    hints.push(t.machineTranslated)
   }
   if (resolution.source === "synthesized") {
-    hints.push("Limited content available")
+    hints.push(t.limitedContent)
   }
   if (resolution.served_stale) {
-    hints.push("Refreshing in the background")
+    hints.push(t.refreshing)
   }
   if (hints.length === 0) return null
   return <div className="text-muted-foreground text-xs">{hints.join(" · ")}</div>
@@ -276,10 +289,11 @@ export function HeroImage({ url, alt }: { url: string; alt: string }): React.Rea
 }
 
 export function BackLink(): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   return (
     <p>
       <Link to="/shop" className="text-sm underline">
-        ← Back to all
+        {t.backToAll}
       </Link>
     </p>
   )
@@ -305,6 +319,7 @@ export function BodyMissing({
   entityModule: string
   entityId: string
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailShared
   return (
     <Card>
       <CardHeader>
@@ -313,7 +328,7 @@ export function BodyMissing({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-muted-foreground text-sm">
-        <p>Detail content isn't available for this item yet.</p>
+        <p>{t.detailUnavailable}</p>
         <BackLink />
       </CardContent>
     </Card>
@@ -324,7 +339,12 @@ export function BodyMissing({
 // Helpers
 // ─────────────────────────────────────────────────────────────────
 
-export function formatSlotLabel(slot: AvailabilitySlot): string {
+export function formatSlotLabel(
+  slot: AvailabilitySlot,
+  leftLabel: string,
+  nightsShort: string,
+  daysShort: string,
+): string {
   const date = new Date(slot.startsAt)
   const dateStr = date.toLocaleDateString(undefined, {
     weekday: "short",
@@ -333,11 +353,15 @@ export function formatSlotLabel(slot: AvailabilitySlot): string {
     year: "numeric",
   })
   const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-  const duration = slot.nights ? ` · ${slot.nights}n` : slot.days ? ` · ${slot.days}d` : ""
+  const duration = slot.nights
+    ? ` · ${nightsShort.replace("{count}", String(slot.nights))}`
+    : slot.days
+      ? ` · ${daysShort.replace("{count}", String(slot.days))}`
+      : ""
   const capacity = slot.unlimited
     ? ""
     : slot.remainingPax != null
-      ? ` · ${slot.remainingPax} left`
+      ? ` · ${slot.remainingPax} ${leftLabel}`
       : ""
   return `${dateStr} ${time}${duration}${capacity}`
 }
@@ -359,24 +383,24 @@ function formatMoney(cents: number, currency: string): string {
   }
 }
 
-function humanizeInvalidReason(reason: string): string {
+function humanizeInvalidReason(reason: string, t: DetailSharedMessages): string {
   switch (reason) {
     case "unavailable":
-      return "This product is currently unavailable."
+      return t.invalidUnavailable
     case "departure_not_found":
-      return "This departure is no longer available. Choose another departure."
+      return t.invalidDepartureNotFound
     case "departure_unavailable":
-      return "This departure is sold out or closed. Choose another departure."
+      return t.invalidDepartureUnavailable
     case "no_sell_amount_configured":
-      return "Pricing isn't configured for this item yet."
+      return t.invalidNoSellAmount
     case "product_not_found":
-      return "Product not found."
+      return t.invalidProductNotFound
     case "cruise_not_found":
-      return "Cruise not found."
+      return t.invalidCruiseNotFound
     case "property_not_found":
-      return "Property not found."
+      return t.invalidPropertyNotFound
     case "no_price_for_occupancy":
-      return "No price for the chosen cabin and occupancy."
+      return t.invalidNoPriceForOccupancy
     default:
       return reason
   }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/comp
 import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   type AvailabilitySlot,
@@ -146,6 +147,7 @@ function ProductDetailBody({
   resolution: ContentResolution | null
   isLoading: boolean
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailProducts
   if (isLoading) return <BodySkeleton />
   if (!content) return <BodyMissing entityModule={entityModule} entityId={entityId} />
 
@@ -170,7 +172,7 @@ function ProductDetailBody({
           ) : null}
           {content.product.highlights && content.product.highlights.length > 0 ? (
             <div>
-              <div className="mb-2 font-medium text-sm">Highlights</div>
+              <div className="mb-2 font-medium text-sm">{t.highlights}</div>
               <ul className="list-disc space-y-1 pl-5 text-sm">
                 {content.product.highlights.map((h) => (
                   <li key={h}>{h}</li>
@@ -185,13 +187,13 @@ function ProductDetailBody({
       {content.days && content.days.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Itinerary</CardTitle>
+            <CardTitle>{t.itinerary}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {content.days.map((day) => (
               <div key={day.day_number} className="space-y-1 border-l-2 pl-4">
                 <div className="font-medium text-sm">
-                  Day {day.day_number}
+                  {t.day.replace("{number}", String(day.day_number))}
                   {day.title ? ` · ${day.title}` : ""}
                   {day.location ? (
                     <span className="text-muted-foreground"> — {day.location}</span>
@@ -216,7 +218,7 @@ function ProductDetailBody({
       {galleryImages.length > 1 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Gallery</CardTitle>
+            <CardTitle>{t.gallery}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -236,7 +238,7 @@ function ProductDetailBody({
       {content.policies && content.policies.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Policies</CardTitle>
+            <CardTitle>{t.policies}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {content.policies.map((p) => (

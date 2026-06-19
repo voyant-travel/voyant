@@ -9,6 +9,7 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   BackLink,
@@ -23,6 +24,7 @@ import {
 
 export function AccommodationDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
+  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
 
   const content = useQuery({
     queryKey: ["public-accommodations-content", entityId],
@@ -147,7 +149,7 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
         >
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label htmlFor="hp-checkin">Check-in</Label>
+              <Label htmlFor="hp-checkin">{t.checkIn}</Label>
               <Input
                 id="hp-checkin"
                 type="date"
@@ -157,7 +159,7 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="hp-checkout">Check-out</Label>
+              <Label htmlFor="hp-checkout">{t.checkOut}</Label>
               <Input
                 id="hp-checkout"
                 type="date"
@@ -200,6 +202,7 @@ function AccommodationDetailBody({
   onSelectRatePlan: (id: string) => void
   ratePlansForRoom: ReadonlyArray<AccommodationContent["rate_plans"][number]>
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
   return (
     <div className="space-y-4">
       {content.hotel.hero_image_url ? (
@@ -230,7 +233,7 @@ function AccommodationDetailBody({
 
       <Card>
         <CardHeader>
-          <CardTitle>Choose a room</CardTitle>
+          <CardTitle>{t.chooseRoom}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {content.room_types.map((room) => {
@@ -250,7 +253,7 @@ function AccommodationDetailBody({
                 ) : null}
                 {room.max_occupancy ? (
                   <div className="text-muted-foreground text-xs">
-                    Sleeps up to {room.max_occupancy}
+                    {t.sleepsUpTo.replace("{count}", String(room.max_occupancy))}
                   </div>
                 ) : null}
               </button>
@@ -262,7 +265,7 @@ function AccommodationDetailBody({
       {selectedRoomId && ratePlansForRoom.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Rate plan</CardTitle>
+            <CardTitle>{t.ratePlan}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {ratePlansForRoom.map((plan) => {
@@ -282,12 +285,12 @@ function AccommodationDetailBody({
                   ) : null}
                   {plan.cancellation_policy ? (
                     <div className="text-muted-foreground text-xs">
-                      Cancellation: {plan.cancellation_policy}
+                      {t.cancellation.replace("{policy}", plan.cancellation_policy)}
                     </div>
                   ) : null}
                   {plan.inclusions && plan.inclusions.length > 0 ? (
                     <div className="text-muted-foreground text-xs">
-                      Includes: {plan.inclusions.join(", ")}
+                      {t.includes.replace("{inclusions}", plan.inclusions.join(", "))}
                     </div>
                   ) : null}
                 </button>

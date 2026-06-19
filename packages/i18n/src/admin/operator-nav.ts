@@ -152,7 +152,7 @@ export const operatorAdminNavMessages = {
       settings: "Setari",
       channelSync: "Sincronizare canale",
       promotions: "Promotii",
-      quotes: "Cotatii",
+      quotes: "Oferte",
       actionLedger: "Jurnal actiuni",
     },
   },

@@ -9,6 +9,7 @@ import { z } from "zod"
 
 import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/storefront-booking-journey"
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 
 /**
  * Storefront booking-journey route. The customer arrives here from
@@ -60,6 +61,7 @@ function ShopBookRouteComponent(): React.ReactElement {
     from: "/(storefront)/shop_/book/$entityModule/$entityId",
   })
   const search = useSearch({ from: "/(storefront)/shop_/book/$entityModule/$entityId" })
+  const t = useStorefrontMessagesOrDefault().bookingJourney
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   const initialConfigure: Record<string, unknown> = {
@@ -108,7 +110,7 @@ function ShopBookRouteComponent(): React.ReactElement {
       // /v1/public/legal/contracts/templates/default. Per-product
       // overrides plug in here once products grow a
       // `contractTemplateSlug` field.
-      contractMarketingLabel="Email me occasional updates about new tours and promotions."
+      contractMarketingLabel={t.marketingLabel}
     />
   )
 }

@@ -1,22 +1,25 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminHref } from "@voyant-travel/admin"
+import {
+  type AdminRoutePageProps,
+  useAdminHref,
+  useOperatorAdminMessages,
+} from "@voyant-travel/admin"
 
 import type { CatalogSearchParams } from "../../index.js"
 import { CatalogVerticalHost } from "../catalog-vertical-host.js"
 import { openHrefInNewTab } from "../open-in-new-tab.js"
 
 /**
- * Packaged route page for the cruises browse surface. `title` is the
- * contribution's localized label (factory `labels`); `search` was validated
- * by the contribution's `validateSearch` (catalogSearchSchema).
+ * Packaged route page for the cruises browse surface. The header title is read
+ * from the localized operator nav messages (the `title` prop carries the
+ * static contribution label, which is not locale-resolved — the route tree is
+ * built once from the English defaults); `search` was validated by the
+ * contribution's `validateSearch` (catalogSearchSchema).
  */
-export default function CatalogCruisesIndexPage({
-  search,
-  updateSearch,
-  title,
-}: AdminRoutePageProps) {
+export default function CatalogCruisesIndexPage({ search, updateSearch }: AdminRoutePageProps) {
   const resolveHref = useAdminHref()
+  const title = useOperatorAdminMessages().nav.catalogCruises
 
   // Browse-first surface — a consistent header over the embedded grid, with
   // results opening the dedicated, source-driven cruise detail (the

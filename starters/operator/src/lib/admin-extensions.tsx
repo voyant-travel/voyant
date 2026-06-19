@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: operator; explicit source-controlled admin composition (one factory per domain) intentionally stays in one file.
 import { useNavigate } from "@tanstack/react-router"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -331,6 +332,7 @@ function createOperationsExtension(messages: AdminExtensionNavMessages) {
 // `indexHeaderActions` option instead of a host route file.
 function ComposeTripButton() {
   const navigate = useNavigate()
+  const composeTrip = useOperatorAdminMessages().trips.list.composeTrip
 
   return (
     <Button
@@ -338,7 +340,7 @@ function ComposeTripButton() {
       onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
     >
       <Route className="size-4" aria-hidden="true" />
-      Compose trip
+      {composeTrip}
     </Button>
   )
 }

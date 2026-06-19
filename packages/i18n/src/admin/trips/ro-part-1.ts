@@ -7,6 +7,7 @@ export const adminTripsMessagesRoPart1 = {
     searchPlaceholder: "Cauta dupa id, titlu sau descriere",
     clearFilters: "Sterge",
     newTrip: "Calatorie noua",
+    composeTrip: "Compune calatorie",
     loadFailed: "Nu s-au putut incarca calatoriile.",
     emptyFiltered: "Nicio calatorie nu corespunde filtrelor.",
     empty: "Nu exista calatorii compuse.",

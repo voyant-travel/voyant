@@ -8,6 +8,8 @@ import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { useState } from "react"
 import { z } from "zod"
 
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+
 /**
  * Storefront landing — real catalog browser backed by
  * `/v1/public/catalog/search` (Typesense slice scoped to
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/(storefront)/shop")({
 function StorefrontIndex(): React.ReactElement {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const t = useStorefrontMessagesOrDefault().shop
   const vertical = search.vertical ?? "products"
   const [query, setQuery] = useState(search.q ?? "")
 
@@ -45,11 +48,8 @@ function StorefrontIndex(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-semibold text-3xl tracking-tight">Browse and book</h1>
-        <p className="text-muted-foreground">
-          Customer-facing booking journey. Same engine the operator uses, served via{" "}
-          <code>/v1/public/catalog/*</code> with an unauthenticated <code>customer</code> actor.
-        </p>
+        <h1 className="font-semibold text-3xl tracking-tight">{t.heading}</h1>
+        <p className="text-muted-foreground">{t.intro}</p>
       </div>
 
       <div className="flex">
@@ -57,13 +57,13 @@ function StorefrontIndex(): React.ReactElement {
           to="/shop/composer"
           className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
         >
-          Build a trip
+          {t.buildTrip}
         </Link>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
-          placeholder="Search products, tours, stays…"
+          placeholder={t.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="max-w-md"
@@ -77,10 +77,10 @@ function StorefrontIndex(): React.ReactElement {
             })
           }
         >
-          <option value="products">Tours & products</option>
-          <option value="cruises">Cruises</option>
-          <option value="accommodations">Stays</option>
-          <option value="charters">Charters</option>
+          <option value="products">{t.verticalProducts}</option>
+          <option value="cruises">{t.verticalCruises}</option>
+          <option value="accommodations">{t.verticalAccommodations}</option>
+          <option value="charters">{t.verticalCharters}</option>
         </select>
       </div>
 
@@ -98,17 +98,14 @@ function StorefrontIndex(): React.ReactElement {
 }
 
 function SearchUnavailable(): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shop
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Catalog search isn't configured</CardTitle>
+        <CardTitle>{t.unavailableTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <p>
-          The search indexer is offline (typically because <code>TYPESENSE_HOST</code> isn't set).
-          You can still demo the booking journey directly — pick a product id from the operator
-          dashboard and visit:
-        </p>
+        <p>{t.unavailableBody}</p>
         <p>
           <code>/shop/book/products/&lt;productId&gt;</code>
         </p>
@@ -145,6 +142,7 @@ function SearchResults({
   vertical: string
   hits: ReadonlyArray<SearchHit>
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shop
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {hits.map((hit) => {
@@ -178,6 +176,7 @@ function SearchResults({
           offerDiscountPercent,
           offerDiscountAmountCents,
           currency,
+          { percentOff: t.percentOff, amountOff: t.amountOff },
         )
         return (
           <Card key={hit.id}>
@@ -218,7 +217,7 @@ function SearchResults({
                 params={{ entityModule: vertical, entityId: hit.id }}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90"
               >
-                View &amp; book
+                {t.viewAndBook}
               </Link>
             </CardContent>
           </Card>
@@ -229,12 +228,13 @@ function SearchResults({
 }
 
 function SearchEmpty({ vertical, query }: { vertical: string; query: string }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shop
   return (
     <Card>
       <CardContent className="pt-6">
         <p className="text-muted-foreground text-sm">
-          No {vertical} match {query ? <q>{query}</q> : "your filters"}. Try a broader query or a
-          different vertical.
+          {t.emptyPrefix} {vertical} {t.emptyMatch} {query ? <q>{query}</q> : t.emptyYourFilters}.{" "}
+          {t.emptySuffix}
         </p>
       </CardContent>
     </Card>
@@ -280,15 +280,17 @@ function describeOffer(
   percent: number | undefined,
   amountCents: number | undefined,
   currency: string,
+  labels: { percentOff: string; amountOff: string },
 ): string | undefined {
   if (kind === "percentage" && percent != null) {
-    return `${percent}% off`
+    return labels.percentOff.replace("{percent}", String(percent))
   }
   if (kind === "fixed_amount" && amountCents != null) {
-    return `${(amountCents / 100).toLocaleString(undefined, {
+    const amount = (amountCents / 100).toLocaleString(undefined, {
       style: currency ? "currency" : "decimal",
       currency: currency || undefined,
-    })} off`
+    })
+    return labels.amountOff.replace("{amount}", amount)
   }
   return undefined
 }
