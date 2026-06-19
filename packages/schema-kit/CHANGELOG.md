@@ -1,5 +1,11 @@
 # @voyant-travel/schema-kit
 
+## 0.106.0
+
+### Minor Changes
+
+- a74471e: Register the `quote_media` TypeID prefix (`qmed`) for quote images/attachments.
+
 ## 0.105.3
 
 ### Patch Changes

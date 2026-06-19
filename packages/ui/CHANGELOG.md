@@ -1,5 +1,16 @@
 # @voyant-travel/ui
 
+## 0.108.0
+
+### Minor Changes
+
+- a74471e: Re-export sonner's `toast` from the components barrel, so consumers fire toasts via `@voyant-travel/ui` (alongside the already-exported `Toaster`) instead of importing `sonner` directly.
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+
 ## 0.107.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @voyant-travel/workflow-runs-dashboard
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/workflows-react@0.111.0
+
 ## 0.0.6
 
 ### Patch Changes

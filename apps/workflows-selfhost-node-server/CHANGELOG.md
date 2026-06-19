@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-selfhost-node-server
 
+## 0.0.7
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.0
+- @voyant-travel/workflows-orchestrator@0.111.0
+
 ## 0.0.6
 
 ### Patch Changes
