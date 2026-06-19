@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/comp
 import { useEffect, useState } from "react"
 import { z } from "zod"
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 
 /**
  * Post-checkout confirmation page for the storefront flow.
@@ -77,6 +78,7 @@ function ShopConfirmationRouteComponent(): React.ReactElement {
 }
 
 function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   const [stash, setStash] = useState<BankTransferStash | null>(null)
   const status = useCheckoutStatus(bookingId)
   const liveInstructions = status?.bankTransferInstructions ?? null
@@ -98,37 +100,28 @@ function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactEle
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservation pending bank transfer</CardTitle>
+        <CardTitle>{t.bankTransferTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        <p>
-          Your reservation is held while we wait for your payment to land. Use the details below
-          when you initiate the bank transfer — please include the reference exactly so we can match
-          the payment to your booking.
-        </p>
+        <p>{t.bankTransferIntro}</p>
         {instructions ? (
           <dl className="space-y-2 rounded border bg-muted/30 p-4">
-            <Row label="Booking reference" value={bookingId} />
-            {proformaNumber ? <Row label="Proforma number" value={proformaNumber} /> : null}
-            <Row label="Beneficiary" value={instructions.beneficiary} />
-            <Row label="Bank" value={instructions.bankName} />
-            <Row label="IBAN" value={instructions.iban} />
-            <Row label="Reference" value={instructions.reference} />
+            <Row label={t.bookingReference} value={bookingId} />
+            {proformaNumber ? <Row label={t.proformaNumber} value={proformaNumber} /> : null}
+            <Row label={t.beneficiary} value={instructions.beneficiary} />
+            <Row label={t.bank} value={instructions.bankName} />
+            <Row label={t.iban} value={instructions.iban} />
+            <Row label={t.reference} value={instructions.reference} />
             <Row
-              label="Amount"
+              label={t.amount}
               value={formatMoney(instructions.amountCents, instructions.currency)}
             />
-            {instructions.dueAt ? <Row label="Due by" value={instructions.dueAt} /> : null}
+            {instructions.dueAt ? <Row label={t.dueBy} value={instructions.dueAt} /> : null}
           </dl>
         ) : (
-          <p className="text-muted-foreground">
-            Your bank-transfer instructions were also emailed to you. Check your inbox.
-          </p>
+          <p className="text-muted-foreground">{t.bankTransferEmailed}</p>
         )}
-        <p className="text-muted-foreground">
-          Once we receive the payment we'll generate your final invoice and contract automatically
-          and email them through.
-        </p>
+        <p className="text-muted-foreground">{t.bankTransferFollowUp}</p>
       </CardContent>
     </Card>
   )
@@ -156,6 +149,7 @@ function CardPendingPanel({
   bookingId: string
   paymentRef?: string
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   const status = useCheckoutStatus(bookingId, paymentRef)
 
   if (status?.paymentStatus === "paid") {
@@ -166,16 +160,13 @@ function CardPendingPanel({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Payment not completed</CardTitle>
+          <CardTitle>{t.paymentNotCompletedTitle}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p>
-            Booking reference: <code>{status.bookingNumber || bookingId}</code>
+            {t.bookingReference}: <code>{status.bookingNumber || bookingId}</code>
           </p>
-          <p className="text-muted-foreground">
-            The card processor did not confirm this payment. If money left your account, contact us
-            with the booking reference so we can reconcile it.
-          </p>
+          <p className="text-muted-foreground">{t.paymentNotCompletedBody}</p>
         </CardContent>
       </Card>
     )
@@ -184,17 +175,13 @@ function CardPendingPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Processing your payment</CardTitle>
+        <CardTitle>{t.processingTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <p>
-          Booking reference: <code>{bookingId}</code>
+          {t.bookingReference}: <code>{bookingId}</code>
         </p>
-        <p className="text-muted-foreground">
-          We're waiting for the card processor to confirm your payment. This page will update once
-          we hear back — usually within a minute. You can also close this tab; we'll email you the
-          contract and invoice once the booking is confirmed.
-        </p>
+        <p className="text-muted-foreground">{t.processingBody}</p>
       </CardContent>
     </Card>
   )
@@ -207,24 +194,23 @@ function PaymentSuccessPanel({
   bookingId: string
   status: CheckoutStatus
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Thank you — your booking is confirmed</CardTitle>
+        <CardTitle>{t.confirmedTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <p>
-          Booking reference: <code>{status.bookingNumber || bookingId}</code>
+          {t.bookingReference}: <code>{status.bookingNumber || bookingId}</code>
         </p>
         {status.session ? (
           <p>
-            Payment received:{" "}
+            {t.paymentReceived}{" "}
             <strong>{formatMoney(status.session.amountCents, status.session.currency)}</strong>
           </p>
         ) : null}
-        <p className="text-muted-foreground">
-          We'll email your contract and invoice shortly. You can safely close this tab.
-        </p>
+        <p className="text-muted-foreground">{t.confirmedFollowUp}</p>
       </CardContent>
     </Card>
   )
@@ -271,15 +257,16 @@ function useCheckoutStatus(bookingId: string, paymentRef?: string): CheckoutStat
 }
 
 function InquiryPanel({ bookingId }: { bookingId: string }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Inquiry received</CardTitle>
+        <CardTitle>{t.inquiryTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <p>Thanks — we've got your details and will reach out with availability and a quote.</p>
+        <p>{t.inquiryBody}</p>
         <p className="text-muted-foreground">
-          Reference: <code>{bookingId}</code>
+          {t.referenceLabel} <code>{bookingId}</code>
         </p>
       </CardContent>
     </Card>
@@ -287,38 +274,34 @@ function InquiryPanel({ bookingId }: { bookingId: string }): React.ReactElement 
 }
 
 function HoldPanel({ bookingId }: { bookingId: string }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Booking on hold</CardTitle>
+        <CardTitle>{t.holdTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <p>
-          Booking reference: <code>{bookingId}</code>
+          {t.bookingReference}: <code>{bookingId}</code>
         </p>
-        <p className="text-muted-foreground">
-          We've placed a hold on your reservation. Our team will reach out to confirm the next
-          steps.
-        </p>
+        <p className="text-muted-foreground">{t.holdBody}</p>
       </CardContent>
     </Card>
   )
 }
 
 function DefaultPanel({ bookingId }: { bookingId: string }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Booking confirmed</CardTitle>
+        <CardTitle>{t.defaultTitle}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p>
-          Booking reference: <code>{bookingId}</code>
+          {t.bookingReference}: <code>{bookingId}</code>
         </p>
-        <p className="text-muted-foreground text-sm">
-          We've placed a hold on your reservation. You'll receive a confirmation email shortly with
-          the next steps.
-        </p>
+        <p className="text-muted-foreground text-sm">{t.defaultBody}</p>
       </CardContent>
     </Card>
   )
@@ -334,12 +317,13 @@ function Row({ label, value }: { label: string; value: string }): React.ReactEle
 }
 
 function BackLink(): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().confirmation
   return (
     <Link
       to="/shop"
       className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
     >
-      Back to storefront
+      {t.backToStorefront}
     </Link>
   )
 }
