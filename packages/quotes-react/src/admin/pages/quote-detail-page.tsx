@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   Textarea,
+  toast,
 } from "@voyant-travel/ui/components"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import {
@@ -415,6 +416,9 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
 
       // 4. Snapshot the saved state into a new proposal version.
       await versionMutation.snapshot.mutateAsync({ quoteId: id })
+      toast.success(t.saveSuccess)
+    } catch {
+      toast.error(t.saveError)
     } finally {
       setIsSaving(false)
     }

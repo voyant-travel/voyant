@@ -173,6 +173,8 @@ export const crmUiEnCommerceMessages = {
     breadcrumbRoot: "Quotes",
     back: "Back to Quotes",
     save: "Save",
+    saveSuccess: "Proposal saved",
+    saveError: "Couldn't save the quote",
     discard: "Discard",
     newVersion: "Create proposal",
     markWon: "Mark won",

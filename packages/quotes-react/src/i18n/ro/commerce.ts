@@ -173,6 +173,8 @@ export const crmUiRoCommerceMessages = {
     breadcrumbRoot: "Oferte",
     back: "Inapoi la Oferte",
     save: "Salveaza",
+    saveSuccess: "Propunere salvata",
+    saveError: "Salvarea ofertei a esuat",
     discard: "Renunta",
     newVersion: "Creeaza propunere",
     markWon: "Marcheaza castigata",
