@@ -20,6 +20,7 @@ export {
   applyTripSnapshotToQuoteVersionSchema,
   declineQuoteVersionSchema,
   expireQuoteVersionsSchema,
+  insertQuoteMediaSchema,
   insertQuoteParticipantSchema,
   insertQuoteProductSchema,
   insertQuoteSchema,

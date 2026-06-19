@@ -2,8 +2,9 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { quoteParticipants, quoteProducts, quotes } from "../schema.js"
+import { quoteMedia, quoteParticipants, quoteProducts, quotes } from "../schema.js"
 import type {
+  insertQuoteMediaSchema,
   insertQuoteParticipantSchema,
   insertQuoteProductSchema,
   insertQuoteSchema,
@@ -19,6 +20,7 @@ type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>
 type CreateQuoteParticipantInput = z.infer<typeof insertQuoteParticipantSchema>
 type CreateQuoteProductInput = z.infer<typeof insertQuoteProductSchema>
 type UpdateQuoteProductInput = z.infer<typeof updateQuoteProductSchema>
+type CreateQuoteMediaInput = z.infer<typeof insertQuoteMediaSchema>
 
 export const quotesService = {
   async listQuotes(db: PostgresJsDatabase, query: QuoteListQuery) {
@@ -170,6 +172,30 @@ export const quotesService = {
       .where(eq(quoteProducts.id, id))
       .returning({ id: quoteProducts.id, quoteId: quoteProducts.quoteId })
     if (row) await recomputeQuoteValue(db, row.quoteId, actorId)
+    return row ?? null
+  },
+
+  listQuoteMedia(db: PostgresJsDatabase, quoteId: string) {
+    return db
+      .select()
+      .from(quoteMedia)
+      .where(eq(quoteMedia.quoteId, quoteId))
+      .orderBy(quoteMedia.sortOrder, quoteMedia.createdAt)
+  },
+
+  async createQuoteMedia(db: PostgresJsDatabase, quoteId: string, data: CreateQuoteMediaInput) {
+    const [row] = await db
+      .insert(quoteMedia)
+      .values({ ...data, quoteId })
+      .returning()
+    return row
+  },
+
+  async deleteQuoteMedia(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(quoteMedia)
+      .where(eq(quoteMedia.id, id))
+      .returning({ id: quoteMedia.id })
     return row ?? null
   },
 }

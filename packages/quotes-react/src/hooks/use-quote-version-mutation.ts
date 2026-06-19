@@ -120,6 +120,28 @@ export function useQuoteVersionMutation() {
     },
   })
 
+  // Send a version to the client for review (proposal admin route). Marks it
+  // "sent" and returns the shareable proposal URL.
+  const sendProposal = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quote-versions/${id}/send`,
+        z.object({
+          data: z.object({ quoteVersion: quoteVersionRecordSchema, proposalUrl: z.string() }),
+        }),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({
+        queryKey: quotesQueryKeys.quote(data.quoteVersion.quoteId),
+      })
+    },
+  })
+
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
@@ -331,6 +353,7 @@ export function useQuoteVersionMutation() {
   return {
     create,
     snapshot,
+    sendProposal,
     setValidUntil,
     update,
     remove,

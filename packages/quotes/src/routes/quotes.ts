@@ -4,6 +4,7 @@ import { Hono } from "hono"
 
 import { quotesService } from "../service/index.js"
 import {
+  insertQuoteMediaSchema,
   insertQuoteParticipantSchema,
   insertQuoteProductSchema,
   insertQuoteSchema,
@@ -113,5 +114,27 @@ export const quoteRoutes = new Hono<Env>()
       c.get("userId") ?? null,
     )
     if (!row) return c.json({ error: "Quote product not found" }, 404)
+    return c.json({ success: true })
+  })
+  .get("/quotes/:id/media", async (c) => {
+    return c.json({
+      data: await quotesService.listQuoteMedia(c.get("db"), c.req.param("id")),
+    })
+  })
+  .post("/quotes/:id/media", async (c) => {
+    return c.json(
+      {
+        data: await quotesService.createQuoteMedia(
+          c.get("db"),
+          c.req.param("id"),
+          await parseJsonBody(c, insertQuoteMediaSchema),
+        ),
+      },
+      201,
+    )
+  })
+  .delete("/quote-media/:id", async (c) => {
+    const row = await quotesService.deleteQuoteMedia(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Quote media not found" }, 404)
     return c.json({ success: true })
   })

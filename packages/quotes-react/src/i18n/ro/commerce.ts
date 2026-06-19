@@ -193,11 +193,18 @@ export const crmUiRoCommerceMessages = {
       confirm: "Marcheaza pierduta",
     },
     notFound: "Oferta negasita.",
+    descriptionTitle: "Descriere",
+    descriptionPlaceholder:
+      "Descrie aceasta propunere pentru client (afisata in propunerea partajata)…",
     versionsTitle: "Versiuni oferta",
     versionsEmpty: "Nicio versiune inca. Creeaza prima.",
     versionsLoadFailed: "Incarcarea versiunilor a esuat.",
     versionActive: "Activa",
     versionLabel: "v{number}",
+    sendToClient: "Trimite clientului",
+    copyReviewLink: "Copiaza link-ul de review",
+    proposalLinkCopied: "Link-ul de review a fost copiat",
+    proposalSendFailed: "Partajarea propunerii a esuat",
     detailsTitle: "Detalii oferta",
     fields: {
       title: "Titlu",
@@ -261,5 +268,11 @@ export const crmUiRoCommerceMessages = {
     unassigned: "Neatribuit",
     createdBy: "Creat de {name}",
     updatedBy: "Actualizat de {name}",
+  },
+  quoteMediaCard: {
+    title: "Imagini",
+    description: "Fotografii afisate in propunerea pentru client.",
+    empty: "Nicio imagine inca.",
+    add: "Adauga imagini",
   },
 } as const

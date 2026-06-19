@@ -22,13 +22,26 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components/table"
-import { Building2, Check, Loader2, Pencil, Plus, Trash2, User, Users, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import {
+  Building2,
+  Check,
+  ImagePlus,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  User,
+  Users,
+  X,
+} from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "../components/crm-format.js"
 import { InlineSelectField } from "../components/inline-select-field.js"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 import type {
   CreateQuoteProductInput,
+  QuoteMediaRecord,
   QuoteParticipantRecord,
   QuoteProductRecord,
 } from "../index.js"
@@ -793,6 +806,104 @@ export function QuoteOwnershipCard({
             {formatCrmRelative(i18n, updatedAt)}
           </span>
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Media — images shown on the client proposal (uploads persist immediately)
+// ---------------------------------------------------------------------------
+
+export interface QuoteMediaCardProps {
+  media: QuoteMediaRecord[]
+  isPending: boolean
+  busy?: boolean
+  onUploadFiles: (files: FileList) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+}
+
+export function QuoteMediaCard({
+  media,
+  isPending,
+  busy,
+  onUploadFiles,
+  onRemove,
+}: QuoteMediaCardProps) {
+  const i18n = useCrmUiI18nOrDefault()
+  const t = i18n.messages.quoteMediaCard
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+        <div>
+          <CardTitle>{t.title}</CardTitle>
+          <p className="text-muted-foreground text-sm">{t.description}</p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="mr-1.5 h-4 w-4" />
+          )}
+          {t.add}
+        </Button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            const files = event.target.files
+            if (files && files.length > 0) void onUploadFiles(files)
+            event.target.value = ""
+          }}
+        />
+      </CardHeader>
+      <CardContent>
+        {isPending ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : media.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
+            <ImagePlus className="h-6 w-6" />
+            <p className="text-sm">{t.empty}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {media.map((item) => (
+              <div key={item.id} className="group relative overflow-hidden rounded border">
+                {item.mediaType === "image" ? (
+                  <img
+                    src={item.url}
+                    alt={item.altText ?? item.name}
+                    className="aspect-video w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center bg-muted text-muted-foreground text-xs">
+                    {item.name}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void onRemove(item.id)}
+                  className="absolute top-1 right-1 rounded-full bg-background/80 p-1 opacity-0 transition group-hover:opacity-100"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

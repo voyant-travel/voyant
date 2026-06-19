@@ -202,6 +202,7 @@ export const quoteVersionsService = {
           subtotalAmountCents: subtotal,
           taxAmountCents: 0,
           totalAmountCents: subtotal,
+          notes: quote.description,
         })
         .returning()
       if (!version) throw new Error("Failed to create quote version snapshot")
@@ -332,11 +333,9 @@ export const quoteVersionsService = {
       if (existing.status !== "draft") {
         throw new QuoteVersionConflictError("Quote Versions can only be sent from draft")
       }
-      if (!existing.tripSnapshotId) {
-        throw new QuoteVersionConflictError(
-          "Quote Versions must have a Trip snapshot before they can be sent",
-        )
-      }
+      // A version may be sent for client review whether its lines come from a
+      // frozen Trip snapshot or from the quote's products (line-item proposal).
+      // (Accept → reserve still requires a Trip snapshot; see the public accept.)
 
       const now = new Date()
       const validUntil = data.validUntil === undefined ? existing.validUntil : data.validUntil

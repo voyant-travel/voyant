@@ -57,4 +57,5 @@ export const quotesQueryKeys = {
   quoteParticipants: (quoteId: string) =>
     [...quotesQueryKeys.quote(quoteId), "participants"] as const,
   quoteProducts: (quoteId: string) => [...quotesQueryKeys.quote(quoteId), "products"] as const,
+  quoteMedia: (quoteId: string) => [...quotesQueryKeys.quote(quoteId), "media"] as const,
 } as const

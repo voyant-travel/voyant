@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components/table"
-import { ArrowLeft, Ban, CheckCircle2, Loader2, Save } from "lucide-react"
+import { ArrowLeft, Ban, CheckCircle2, Loader2, Save, Share2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "../../components/crm-format.js"
 import { useCrmUiI18nOrDefault } from "../../i18n/index.js"
@@ -42,6 +42,8 @@ import {
   type QuoteProductRecord,
   type QuoteRecord,
   useQuote,
+  useQuoteMedia,
+  useQuoteMediaMutation,
   useQuoteMutation,
   useQuoteParticipantMutation,
   useQuoteParticipants,
@@ -54,6 +56,7 @@ import {
 import {
   QuoteClientCard,
   QuoteLineItemsCard,
+  QuoteMediaCard,
   QuoteOwnershipCard,
   QuoteTravelersCard,
 } from "../quote-content-sections.js"
@@ -83,6 +86,7 @@ interface QuoteDraft {
   valueCurrency: string | null
   expectedCloseDate: string | null
   source: string | null
+  description: string | null
   lostReason: string | null
   personId: string | null
   organizationId: string | null
@@ -105,6 +109,7 @@ function buildDraft(
     valueCurrency: quote.valueCurrency,
     expectedCloseDate: quote.expectedCloseDate,
     source: quote.source,
+    description: quote.description,
     lostReason: quote.lostReason,
     personId: quote.personId,
     organizationId: quote.organizationId,
@@ -138,6 +143,7 @@ function serializeDraft(draft: QuoteDraft): string {
     valueCurrency: draft.valueCurrency,
     expectedCloseDate: draft.expectedCloseDate,
     source: draft.source,
+    description: draft.description,
     lostReason: draft.lostReason,
     personId: draft.personId,
     organizationId: draft.organizationId,
@@ -184,6 +190,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const versionMutation = useQuoteVersionMutation()
   const productMutation = useQuoteProductMutation()
   const participantMutation = useQuoteParticipantMutation()
+  const mediaMutation = useQuoteMediaMutation()
 
   const stagesQuery = useStages({
     pipelineId: quote?.pipelineId,
@@ -199,6 +206,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   })
   const productsQuery = useQuoteProducts(id, { enabled: Boolean(quote) })
   const participantsQuery = useQuoteParticipants(id, { enabled: Boolean(quote) })
+  const mediaQuery = useQuoteMedia(id, { enabled: Boolean(quote) })
 
   const products = useMemo(() => productsQuery.data?.data ?? [], [productsQuery.data])
   const travelers = useMemo(() => participantsQuery.data?.data ?? [], [participantsQuery.data])
@@ -242,9 +250,10 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   const orderedVersions = [...versions].sort(
     (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
   )
-  const currentVersionId =
-    orderedVersions.find((version) => version.status === "draft" || version.status === "sent")
-      ?.id ?? null
+  const currentVersion =
+    orderedVersions.find((version) => version.status === "draft" || version.status === "sent") ??
+    null
+  const currentVersionId = currentVersion?.id ?? null
 
   const stages = useMemo(
     () => [...(stagesQuery.data?.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -331,6 +340,21 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
     if (serverDraft) setDraft(serverDraft)
   }
 
+  async function shareProposal() {
+    if (!currentVersion) return
+    try {
+      let url = `${window.location.origin}/proposal/${currentVersion.id}`
+      if (currentVersion.status === "draft") {
+        const result = await versionMutation.sendProposal.mutateAsync({ id: currentVersion.id })
+        if (result.proposalUrl?.startsWith("http")) url = result.proposalUrl
+      }
+      await navigator.clipboard?.writeText(url).catch(() => {})
+      toast.success(t.proposalLinkCopied)
+    } catch {
+      toast.error(t.proposalSendFailed)
+    }
+  }
+
   async function save() {
     if (isSaving) return
     setIsSaving(true)
@@ -350,6 +374,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
           valueCurrency: currentDraft.valueCurrency,
           expectedCloseDate: currentDraft.expectedCloseDate,
           source: currentDraft.source,
+          description: currentDraft.description,
           lostReason: currentDraft.lostReason,
           tags: currentDraft.tags,
           paxCount: currentDraft.paxCount,
@@ -555,6 +580,35 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
         </aside>
 
         <main className="col-span-12 flex flex-col gap-4 lg:col-span-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>{t.descriptionTitle}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={currentDraft.description ?? ""}
+                onChange={(event) =>
+                  patchDraft({ description: event.target.value === "" ? null : event.target.value })
+                }
+                placeholder={t.descriptionPlaceholder}
+                rows={4}
+                disabled={isSaving}
+              />
+            </CardContent>
+          </Card>
+          <QuoteMediaCard
+            media={mediaQuery.data?.data ?? []}
+            isPending={mediaQuery.isPending}
+            busy={mediaMutation.upload.isPending || mediaMutation.remove.isPending}
+            onUploadFiles={async (files) => {
+              for (const file of Array.from(files)) {
+                await mediaMutation.upload.mutateAsync({ quoteId: id, file })
+              }
+            }}
+            onRemove={async (mediaId) => {
+              await mediaMutation.remove.mutateAsync({ id: mediaId, quoteId: id })
+            }}
+          />
           <QuoteLineItemsCard
             products={draftLineItems}
             isPending={productsQuery.isPending}
@@ -601,8 +655,19 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
             }
           />
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle>{t.versionsTitle}</CardTitle>
+              {currentVersion ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void shareProposal()}
+                  disabled={versionMutation.sendProposal.isPending}
+                >
+                  <Share2 className="mr-1.5 h-4 w-4" />
+                  {currentVersion.status === "draft" ? t.sendToClient : t.copyReviewLink}
+                </Button>
+              ) : null}
             </CardHeader>
             <CardContent>
               {versionsQuery.isError ? (

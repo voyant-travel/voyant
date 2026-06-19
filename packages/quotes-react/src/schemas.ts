@@ -27,6 +27,7 @@ export const quoteRecordSchema = z.object({
   valueAmountCents: z.number().int().nullable(),
   valueCurrency: z.string().nullable(),
   paxCount: z.number().int().nullable(),
+  description: z.string().nullable(),
   expectedCloseDate: z.string().nullable(),
   source: z.string().nullable(),
   sourceRef: z.string().nullable(),
@@ -164,3 +165,23 @@ export type QuoteProductRecord = z.infer<typeof quoteProductRecordSchema>
 
 export const quoteProductListResponse = listEnvelope(quoteProductRecordSchema)
 export const quoteProductSingleResponse = singleEnvelope(quoteProductRecordSchema)
+
+export const quoteMediaRecordSchema = z.object({
+  id: z.string(),
+  quoteId: z.string(),
+  mediaType: z.string(),
+  name: z.string(),
+  url: z.string(),
+  storageKey: z.string().nullable(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  altText: z.string().nullable(),
+  sortOrder: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type QuoteMediaRecord = z.infer<typeof quoteMediaRecordSchema>
+
+export const quoteMediaListResponse = listEnvelope(quoteMediaRecordSchema)
+export const quoteMediaSingleResponse = singleEnvelope(quoteMediaRecordSchema)

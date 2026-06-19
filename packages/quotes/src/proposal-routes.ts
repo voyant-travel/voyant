@@ -95,9 +95,18 @@ export interface PublicQuoteVersionProposal {
   taxAmountCents: number
   totalAmountCents: number
   validUntil: string | null
+  notes: string | null
   lines: PublicQuoteVersionProposalLine[]
+  media: PublicQuoteVersionProposalMedia[]
   operator: unknown | null
   proposalUrl: string
+}
+
+export interface PublicQuoteVersionProposalMedia {
+  url: string
+  name: string
+  altText: string | null
+  mediaType: string
 }
 
 export interface PublicQuoteVersionProposalLine {
@@ -174,6 +183,12 @@ function toPublicQuoteVersionProposal(
     quoteVersion?: QuoteVersion | null
     operator: unknown | null
     proposalUrl: string
+    media?: ReadonlyArray<{
+      url: string
+      name: string
+      altText: string | null
+      mediaType: string
+    }>
   },
 ): PublicQuoteVersionProposal {
   const quoteVersion = options.quoteVersion ?? proposal.quoteVersion
@@ -186,12 +201,19 @@ function toPublicQuoteVersionProposal(
     taxAmountCents: quoteVersion.taxAmountCents,
     totalAmountCents: quoteVersion.totalAmountCents,
     validUntil: quoteVersion.validUntil,
+    notes: quoteVersion.notes,
     lines: proposal.lines.map((line) => ({
       description: line.description,
       quantity: line.quantity,
       unitPriceAmountCents: line.unitPriceAmountCents,
       totalAmountCents: line.totalAmountCents,
       currency: line.currency,
+    })),
+    media: (options.media ?? []).map((item) => ({
+      url: item.url,
+      name: item.name,
+      altText: item.altText,
+      mediaType: item.mediaType,
     })),
     operator: options.operator,
     proposalUrl: options.proposalUrl,
@@ -282,11 +304,13 @@ async function handleGetPublicProposal(
       ? await quotesService.markQuoteVersionViewed(db, quoteVersionId)
       : proposal.quoteVersion
   const operator = await options.resolveOperatorProfile(db)
+  const media = await quotesService.listQuoteMedia(db, proposal.quote.id)
 
   return c.json({
     data: toPublicQuoteVersionProposal(proposal, {
       quoteVersion: viewedQuoteVersion,
       operator: operator ?? null,
+      media,
       proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
         baseUrl: options.resolvePublicProposalBaseUrl(c),
       }),

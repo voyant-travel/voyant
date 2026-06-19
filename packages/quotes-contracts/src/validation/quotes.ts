@@ -19,6 +19,7 @@ export const quoteCoreSchema = z.object({
   valueAmountCents: z.number().int().nullable().optional(),
   valueCurrency: z.string().nullable().optional(),
   paxCount: z.number().int().min(0).nullable().optional(),
+  description: z.string().nullable().optional(),
   expectedCloseDate: z.string().date().nullable().optional(),
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),
@@ -42,6 +43,17 @@ export const insertQuoteParticipantSchema = z.object({
   personId: z.string(),
   role: participantRoleSchema.default("other"),
   isPrimary: z.boolean().default(false),
+})
+
+export const insertQuoteMediaSchema = z.object({
+  mediaType: z.enum(["image", "video", "document"]).default("image"),
+  name: z.string().min(1),
+  url: z.string().min(1),
+  storageKey: z.string().nullable().optional(),
+  mimeType: z.string().nullable().optional(),
+  fileSize: z.number().int().nullable().optional(),
+  altText: z.string().nullable().optional(),
+  sortOrder: z.number().int().optional(),
 })
 
 export const insertQuoteProductSchema = z.object({

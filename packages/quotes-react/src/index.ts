@@ -42,6 +42,11 @@ export {
   usePipelines,
 } from "./hooks/use-pipelines.js"
 export { type UseQuoteOptions, useQuote } from "./hooks/use-quote.js"
+export { type UseQuoteMediaOptions, useQuoteMedia } from "./hooks/use-quote-media.js"
+export {
+  type CreateQuoteMediaInput,
+  useQuoteMediaMutation,
+} from "./hooks/use-quote-media-mutation.js"
 export {
   type CreateQuoteInput,
   type UpdateQuoteInput,
@@ -130,11 +135,13 @@ export {
 export {
   type PipelineRecord,
   pipelineRecordSchema,
+  type QuoteMediaRecord,
   type QuoteParticipantRecord,
   type QuoteProductRecord,
   type QuoteRecord,
   type QuoteVersionLineRecord,
   type QuoteVersionRecord,
+  quoteMediaRecordSchema,
   quoteParticipantRecordSchema,
   quoteProductRecordSchema,
   quoteRecordSchema,

@@ -647,11 +647,17 @@ export type CrmUiMessages = {
       confirm: string
     }
     notFound: string
+    descriptionTitle: string
+    descriptionPlaceholder: string
     versionsTitle: string
     versionsEmpty: string
     versionsLoadFailed: string
     versionActive: string
     versionLabel: string
+    sendToClient: string
+    copyReviewLink: string
+    proposalLinkCopied: string
+    proposalSendFailed: string
     detailsTitle: string
     fields: {
       title: string
@@ -715,5 +721,11 @@ export type CrmUiMessages = {
     unassigned: string
     createdBy: string
     updatedBy: string
+  }
+  quoteMediaCard: {
+    title: string
+    description: string
+    empty: string
+    add: string
   }
 }
