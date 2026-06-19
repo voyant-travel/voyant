@@ -1,5 +1,12 @@
 # @voyant-travel/db
 
+## 0.108.3
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/schema-kit@0.106.0
+
 ## 0.108.2
 
 ### Patch Changes

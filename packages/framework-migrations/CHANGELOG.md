@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.3.0
+
+### Minor Changes
+
+- a74471e: Add the new `quotes` columns + `quote_media` table to the standard migration bundle: `quotes.pax_count`, `quotes.created_by` / `quotes.updated_by`, `quotes.description`, and the `quote_media` table (quote images/attachments shown on the proposal).
+
 ## 0.2.0
 
 ### Minor Changes

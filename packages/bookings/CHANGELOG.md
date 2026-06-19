@@ -1,5 +1,13 @@
 # @voyant-travel/bookings
 
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-contracts@0.106.1
+- @voyant-travel/db@0.108.3
+- @voyant-travel/hono@0.112.2
+
 ## 0.124.0
 
 ### Patch Changes
