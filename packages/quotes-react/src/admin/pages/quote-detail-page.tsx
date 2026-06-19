@@ -262,7 +262,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
 
   const goToList = () => navigate("quote.list", {})
 
-  if (quoteQuery.isPending || !draft) {
+  if (quoteQuery.isPending) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -277,6 +277,15 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
         <Button variant="outline" onClick={goToList}>
           {t.back}
         </Button>
+      </div>
+    )
+  }
+
+  // Quote loaded but the draft is still being initialized from it (one tick).
+  if (!draft) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -343,11 +352,16 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
   async function shareProposal() {
     if (!currentVersion) return
     try {
-      let url = `${window.location.origin}/proposal/${currentVersion.id}`
-      if (currentVersion.status === "draft") {
-        const result = await versionMutation.sendProposal.mutateAsync({ id: currentVersion.id })
-        if (result.proposalUrl?.startsWith("http")) url = result.proposalUrl
-      }
+      // Always copy the deployment-resolved public proposal URL (the public
+      // origin can differ from the admin origin). Draft → send returns it;
+      // an already-sent version resolves it via the side-effect-free link route.
+      const result =
+        currentVersion.status === "draft"
+          ? await versionMutation.sendProposal.mutateAsync({ id: currentVersion.id })
+          : await versionMutation.fetchProposalLink.mutateAsync({ id: currentVersion.id })
+      const url = result.proposalUrl?.startsWith("http")
+        ? result.proposalUrl
+        : `${window.location.origin}/proposal/${currentVersion.id}`
       await navigator.clipboard?.writeText(url).catch(() => {})
       toast.success(t.proposalLinkCopied)
     } catch {
@@ -434,7 +448,7 @@ export default function QuoteDetailPage({ params }: AdminRoutePageProps) {
         if (traveler.isNew) {
           await participantMutation.create.mutateAsync({
             quoteId: id,
-            input: { personId: traveler.personId },
+            input: { personId: traveler.personId, role: "traveler" },
           })
         }
       }

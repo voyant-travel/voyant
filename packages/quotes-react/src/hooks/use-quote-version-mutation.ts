@@ -142,6 +142,22 @@ export function useQuoteVersionMutation() {
     },
   })
 
+  // Resolve the deployment's shareable proposal URL for an already-sent
+  // version without side effects (no re-send, no view tracking) — used when
+  // re-copying the review link. Returns the same deployment-resolved URL the
+  // initial send produced.
+  const fetchProposalLink = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quote-versions/${id}/proposal-link`,
+        z.object({ data: z.object({ proposalUrl: z.string() }) }),
+        { baseUrl, fetcher },
+        { method: "GET" },
+      )
+      return data
+    },
+  })
+
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
@@ -354,6 +370,7 @@ export function useQuoteVersionMutation() {
     create,
     snapshot,
     sendProposal,
+    fetchProposalLink,
     setValidUntil,
     update,
     remove,

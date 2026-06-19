@@ -45,6 +45,7 @@ interface PublicProposal {
     licenseAuthority: string
   } | null
   proposalUrl: string
+  acceptable: boolean
 }
 
 interface DeclineProposalResponse {
@@ -259,14 +260,16 @@ function ProposalRoute() {
             ) : null}
             {canAct ? (
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isMutating}
-                  onClick={() => void accept.mutateAsync()}
-                >
-                  {accept.isPending ? "Accepting..." : "Accept"}
-                </button>
+                {proposal.acceptable ? (
+                  <button
+                    type="button"
+                    className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isMutating}
+                    onClick={() => void accept.mutateAsync()}
+                  >
+                    {accept.isPending ? "Accepting..." : "Accept"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
