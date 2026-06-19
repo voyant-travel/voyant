@@ -80,6 +80,8 @@ export const quotes = pgTable(
     acceptedVersionId: typeIdRef("accepted_version_id"),
     valueAmountCents: integer("value_amount_cents"),
     valueCurrency: text("value_currency"),
+    /** Headcount (PAX). Known even when individual travelers aren't named yet. */
+    paxCount: integer("pax_count"),
     expectedCloseDate: date("expected_close_date"),
     source: text("source"),
     sourceRef: text("source_ref"),
@@ -87,6 +89,11 @@ export const quotes = pgTable(
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     /** Unified custom fields — see the custom-fields unification ADR. */
     customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    /** Free-text proposal description shown to the client; snapshotted into version notes. */
+    description: text("description"),
+    /** Audit: the acting user (staff id) who created / last changed the quote. */
+    createdBy: text("created_by"),
+    updatedBy: text("updated_by"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }).notNull().defaultNow(),
@@ -220,6 +227,37 @@ export const quoteVersionLines = pgTable(
     index("idx_quote_version_lines_supplier_service").on(table.supplierServiceId),
   ],
 )
+
+/**
+ * Quote-level media (images / videos / documents) shown on the client
+ * proposal. Attached to the quote so it carries across proposal versions.
+ */
+export const quoteMedia = pgTable(
+  "quote_media",
+  {
+    id: typeId("quote_media"),
+    quoteId: typeIdRef("quote_id")
+      .notNull()
+      .references(() => quotes.id, { onDelete: "cascade" }),
+    mediaType: text("media_type").notNull(),
+    name: text("name").notNull(),
+    url: text("url").notNull(),
+    storageKey: text("storage_key"),
+    mimeType: text("mime_type"),
+    fileSize: integer("file_size"),
+    altText: text("alt_text"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_quote_media_quote").on(table.quoteId),
+    index("idx_quote_media_quote_sort").on(table.quoteId, table.sortOrder),
+  ],
+)
+
+export type QuoteMedia = typeof quoteMedia.$inferSelect
+export type NewQuoteMedia = typeof quoteMedia.$inferInsert
 
 export type Pipeline = typeof pipelines.$inferSelect
 export type NewPipeline = typeof pipelines.$inferInsert

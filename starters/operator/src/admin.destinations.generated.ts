@@ -24,6 +24,7 @@ import type {} from "@voyant-travel/inventory-react/admin"
 import type {} from "@voyant-travel/legal-react/admin"
 import type {} from "@voyant-travel/notifications-react/admin"
 import type {} from "@voyant-travel/operations-react/admin"
+import type {} from "@voyant-travel/quotes-react/admin"
 import type {} from "@voyant-travel/relationships-react/admin"
 import type {} from "@voyant-travel/trips-react/admin"
 
@@ -62,6 +63,8 @@ export const generatedAdminDestinations = {
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "product.list": () => "/products",
   "productCategory.list": () => "/products/categories",
+  "quote.detail": ({ quoteId }) => `/quotes/${encodeURIComponent(quoteId)}`,
+  "quote.list": () => "/quotes",
   "resource.detail": ({ resourceId }) => `/operations/resources/${encodeURIComponent(resourceId)}`,
   "resource.list": () => "/operations/resources",
   "resourceAllocation.detail": ({ allocationId }) =>

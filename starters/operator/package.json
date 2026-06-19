@@ -91,6 +91,7 @@
     "@voyant-travel/plugin-netopia": "workspace:^",
     "@voyant-travel/plugin-smartbill": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",
+    "@voyant-travel/quotes-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",

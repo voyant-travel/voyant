@@ -114,6 +114,7 @@ export const PREFIXES = {
   quote_products: "qprd",
   quote_versions: "qver",
   quote_version_lines: "qtln",
+  quote_media: "qmed",
   activities: "act",
   activity_links: "actl",
   activity_participants: "actp",

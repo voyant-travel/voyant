@@ -583,4 +583,149 @@ export type CrmUiMessages = {
     loadFailed: string
     empty: string
   }
+  quotesBoardPage: {
+    title: string
+    description: string
+    selectPipelinePlaceholder: string
+    defaultSuffix: string
+    newPipeline: string
+    manageStages: string
+    newQuote: string
+    loading: string
+    emptyNoPipelines: {
+      title: string
+      description: string
+    }
+    emptyNoStages: {
+      title: string
+      description: string
+    }
+  }
+  createPipelineDialog: {
+    title: string
+    nameLabel: string
+    namePlaceholder: string
+    setDefault: string
+    validation: {
+      nameRequired: string
+      createFailed: string
+    }
+  }
+  manageStagesDialog: {
+    title: string
+    empty: string
+    addStageTitle: string
+    stageNamePlaceholder: string
+    probabilityPlaceholder: string
+    validation: {
+      nameRequired: string
+      addFailed: string
+      removeFailed: string
+    }
+  }
+  quoteDetailPage: {
+    breadcrumbRoot: string
+    back: string
+    save: string
+    saveSuccess: string
+    saveError: string
+    discard: string
+    newVersion: string
+    markWon: string
+    markLost: string
+    reopen: string
+    delete: string
+    deleteConfirm: {
+      title: string
+      description: string
+      confirm: string
+    }
+    lostDialog: {
+      title: string
+      description: string
+      placeholder: string
+      confirm: string
+    }
+    notFound: string
+    descriptionTitle: string
+    descriptionPlaceholder: string
+    versionsTitle: string
+    versionsEmpty: string
+    versionsLoadFailed: string
+    versionActive: string
+    versionLabel: string
+    sendToClient: string
+    copyReviewLink: string
+    proposalLinkCopied: string
+    proposalSendFailed: string
+    detailsTitle: string
+    fields: {
+      title: string
+      stage: string
+      status: string
+      value: string
+      valueHint: string
+      currency: string
+      expectedClose: string
+      source: string
+      sourceRef: string
+      lostReason: string
+    }
+    participantsTitle: string
+    noPerson: string
+    noOrganization: string
+    tagsTitle: string
+    addTagPlaceholder: string
+    activitiesTitle: string
+    activitiesEmpty: string
+  }
+  quoteLineItemsCard: {
+    title: string
+    description: string
+    empty: string
+    columns: {
+      item: string
+      qty: string
+      unitPrice: string
+      total: string
+    }
+    addItem: string
+    editItem: string
+    namePlaceholder: string
+    qtyPlaceholder: string
+    pricePlaceholder: string
+    addFailed: string
+    removeFailed: string
+  }
+  quoteTravelersCard: {
+    title: string
+    pax: string
+    paxLabel: string
+    empty: string
+    addPlaceholder: string
+    noResults: string
+    addFailed: string
+    removeFailed: string
+  }
+  quoteClientCard: {
+    title: string
+    contactLabel: string
+    companyLabel: string
+    searchContact: string
+    searchCompany: string
+    noResults: string
+  }
+  quoteOwnershipCard: {
+    title: string
+    ownerLabel: string
+    unassigned: string
+    createdBy: string
+    updatedBy: string
+  }
+  quoteMediaCard: {
+    title: string
+    description: string
+    empty: string
+    add: string
+  }
 }

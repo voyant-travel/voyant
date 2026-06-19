@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
     freezeTripSnapshot: vi.fn(),
     getQuoteVersionById: vi.fn(),
     getQuoteVersionProposal: vi.fn(),
+    listQuoteMedia: vi.fn(),
     markQuoteVersionViewed: vi.fn(),
     sendQuoteVersion: vi.fn(),
     // trips service
@@ -44,6 +45,7 @@ vi.mock("../../src/service/index.js", () => ({
     expireQuoteVersionIfPastValidUntil: mocks.expireQuoteVersionIfPastValidUntil,
     getQuoteVersionById: mocks.getQuoteVersionById,
     getQuoteVersionProposal: mocks.getQuoteVersionProposal,
+    listQuoteMedia: mocks.listQuoteMedia,
     markQuoteVersionViewed: mocks.markQuoteVersionViewed,
     sendQuoteVersion: mocks.sendQuoteVersion,
   },

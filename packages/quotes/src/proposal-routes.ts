@@ -95,9 +95,25 @@ export interface PublicQuoteVersionProposal {
   taxAmountCents: number
   totalAmountCents: number
   validUntil: string | null
+  notes: string | null
   lines: PublicQuoteVersionProposalLine[]
+  media: PublicQuoteVersionProposalMedia[]
   operator: unknown | null
   proposalUrl: string
+  /**
+   * Whether the client can accept this proposal. Acceptance reserves a frozen
+   * Trip snapshot, so product-only proposals (no `tripSnapshotId`) are
+   * review-only — the client can decline but the Accept action is hidden to
+   * avoid a guaranteed 409 ("Proposal has no frozen Trip snapshot").
+   */
+  acceptable: boolean
+}
+
+export interface PublicQuoteVersionProposalMedia {
+  url: string
+  name: string
+  altText: string | null
+  mediaType: string
 }
 
 export interface PublicQuoteVersionProposalLine {
@@ -174,6 +190,12 @@ function toPublicQuoteVersionProposal(
     quoteVersion?: QuoteVersion | null
     operator: unknown | null
     proposalUrl: string
+    media?: ReadonlyArray<{
+      url: string
+      name: string
+      altText: string | null
+      mediaType: string
+    }>
   },
 ): PublicQuoteVersionProposal {
   const quoteVersion = options.quoteVersion ?? proposal.quoteVersion
@@ -186,6 +208,7 @@ function toPublicQuoteVersionProposal(
     taxAmountCents: quoteVersion.taxAmountCents,
     totalAmountCents: quoteVersion.totalAmountCents,
     validUntil: quoteVersion.validUntil,
+    notes: quoteVersion.notes,
     lines: proposal.lines.map((line) => ({
       description: line.description,
       quantity: line.quantity,
@@ -193,8 +216,16 @@ function toPublicQuoteVersionProposal(
       totalAmountCents: line.totalAmountCents,
       currency: line.currency,
     })),
+    media: (options.media ?? []).map((item) => ({
+      url: item.url,
+      name: item.name,
+      altText: item.altText,
+      mediaType: item.mediaType,
+    })),
     operator: options.operator,
     proposalUrl: options.proposalUrl,
+    // Only Trip-snapshot-backed versions can be reserved on accept.
+    acceptable: quoteVersion.tripSnapshotId !== null,
   }
 }
 
@@ -204,6 +235,7 @@ export function createQuoteProposalAdminRoutes(
 ): Hono<OperatorProposalRouteEnv> {
   const app = new Hono<OperatorProposalRouteEnv>()
   app.post("/:quoteVersionId/send", (c) => handleSendQuoteVersion(c, options))
+  app.get("/:quoteVersionId/proposal-link", (c) => handleGetQuoteVersionProposalLink(c, options))
   return app
 }
 
@@ -260,6 +292,24 @@ async function handleSendQuoteVersion(
   }
 }
 
+async function handleGetQuoteVersionProposalLink(
+  c: Context<OperatorProposalRouteEnv>,
+  options: QuoteProposalRoutesOptions,
+) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  // Resolve the deployment's public proposal URL without any side effects
+  // (no view tracking, no status change) so operators can re-copy the link.
+  return c.json({
+    data: {
+      proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
+        baseUrl: options.resolvePublicProposalBaseUrl(c),
+      }),
+    },
+  })
+}
+
 async function handleGetPublicProposal(
   c: Context<OperatorProposalRouteEnv>,
   options: QuoteProposalRoutesOptions,
@@ -282,11 +332,13 @@ async function handleGetPublicProposal(
       ? await quotesService.markQuoteVersionViewed(db, quoteVersionId)
       : proposal.quoteVersion
   const operator = await options.resolveOperatorProfile(db)
+  const media = await quotesService.listQuoteMedia(db, proposal.quote.id)
 
   return c.json({
     data: toPublicQuoteVersionProposal(proposal, {
       quoteVersion: viewedQuoteVersion,
       operator: operator ?? null,
+      media,
       proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
         baseUrl: options.resolvePublicProposalBaseUrl(c),
       }),

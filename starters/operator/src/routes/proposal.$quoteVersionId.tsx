@@ -16,10 +16,17 @@ interface PublicProposal {
   title: string
   status: string
   validUntil: string | null
+  notes: string | null
   currency: string
   subtotalAmountCents: number
   taxAmountCents: number
   totalAmountCents: number
+  media: Array<{
+    url: string
+    name: string
+    altText: string | null
+    mediaType: string
+  }>
   lines: Array<{
     description: string
     quantity: number
@@ -38,6 +45,7 @@ interface PublicProposal {
     licenseAuthority: string
   } | null
   proposalUrl: string
+  acceptable: boolean
 }
 
 interface DeclineProposalResponse {
@@ -168,6 +176,29 @@ function ProposalRoute() {
           <Metric label="Status" value={formatStatus(proposal.status)} />
         </section>
 
+        {proposal.notes ? (
+          <section className="border-[#d8d2c3] border-b pb-6">
+            <p className="whitespace-pre-wrap text-[#3a443f] text-sm leading-relaxed">
+              {proposal.notes}
+            </p>
+          </section>
+        ) : null}
+
+        {proposal.media.some((item) => item.mediaType === "image") ? (
+          <section className="grid grid-cols-2 gap-3 border-[#d8d2c3] border-b pb-6 sm:grid-cols-3">
+            {proposal.media
+              .filter((item) => item.mediaType === "image")
+              .map((item) => (
+                <img
+                  key={item.url}
+                  src={item.url}
+                  alt={item.altText ?? item.name}
+                  className="aspect-video w-full rounded object-cover"
+                />
+              ))}
+          </section>
+        ) : null}
+
         <section className="overflow-hidden border border-[#d8d2c3] bg-white">
           <div className="grid grid-cols-12 border-[#d8d2c3] border-b bg-[#f0ece1] px-4 py-3 font-medium text-[#52645d] text-xs uppercase">
             <div className="col-span-6">Item</div>
@@ -229,14 +260,16 @@ function ProposalRoute() {
             ) : null}
             {canAct ? (
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isMutating}
-                  onClick={() => void accept.mutateAsync()}
-                >
-                  {accept.isPending ? "Accepting..." : "Accept"}
-                </button>
+                {proposal.acceptable ? (
+                  <button
+                    type="button"
+                    className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isMutating}
+                    onClick={() => void accept.mutateAsync()}
+                  >
+                    {accept.isPending ? "Accepting..." : "Accept"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
