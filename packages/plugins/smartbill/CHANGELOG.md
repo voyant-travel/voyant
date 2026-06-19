@@ -1,5 +1,11 @@
 # @voyant-travel/plugin-smartbill
 
+## 0.125.1
+
+### Patch Changes
+
+- ea96ad9: Strip deprecated `measureUnit` product fields from SmartBill outbound payloads so proforma creation is accepted by the strict estimate endpoint.
+
 ## 0.125.0
 
 ### Patch Changes
