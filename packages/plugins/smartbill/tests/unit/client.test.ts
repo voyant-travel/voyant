@@ -151,6 +151,38 @@ describe("createSmartbillClient.createProforma", () => {
     const [url] = fetchMock.mock.calls[0]!
     expect(url).toBe("https://ws.smartbill.ro/SBORO/api/estimate")
   })
+
+  it("strips deprecated product measureUnit before sending to /estimate", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "P1", series: "P" }),
+    )
+    const client = createSmartbillClient({ ...baseOptions, fetch: fetchMock })
+    const body = {
+      companyVatCode: "RO123",
+      client: { name: "X" },
+      seriesName: "P",
+      currency: "RON",
+      products: [
+        {
+          name: "Tour",
+          measuringUnitName: "buc",
+          measureUnit: "buc",
+          quantity: 1,
+          price: 100,
+          currency: "RON",
+          isTaxIncluded: true,
+        },
+      ],
+    }
+
+    await client.createProforma(body)
+
+    const [, init] = fetchMock.mock.calls[0]!
+    const requestBody = JSON.parse(init.body ?? "{}")
+    expect(requestBody.products[0].measuringUnitName).toBe("buc")
+    expect(requestBody.products[0].measureUnit).toBeUndefined()
+    expect(body.products[0]!.measureUnit).toBe("buc")
+  })
 })
 
 describe("createSmartbillClient.convertEstimateToInvoice", () => {
