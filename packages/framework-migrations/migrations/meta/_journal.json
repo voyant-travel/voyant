@@ -40,36 +40,8 @@
     {
       "idx": 5,
       "version": "7",
-      "when": 1781823278682,
-      "tag": "0005_person_directory_view",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1781826105822,
-      "tag": "0006_framework_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1781827263947,
-      "tag": "0007_framework_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1781830944766,
-      "tag": "0008_framework_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1781831361441,
-      "tag": "0009_framework_baseline",
+      "when": 1781833028544,
+      "tag": "0005_framework_baseline",
       "breakpoints": true
     }
   ]

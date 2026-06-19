@@ -13,6 +13,10 @@ CREATE TABLE "quote_media" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "quotes" ADD COLUMN "pax_count" integer;--> statement-breakpoint
+ALTER TABLE "quotes" ADD COLUMN "description" text;--> statement-breakpoint
+ALTER TABLE "quotes" ADD COLUMN "created_by" text;--> statement-breakpoint
+ALTER TABLE "quotes" ADD COLUMN "updated_by" text;--> statement-breakpoint
 ALTER TABLE "quote_media" ADD CONSTRAINT "quote_media_quote_id_quotes_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quotes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_quote_media_quote" ON "quote_media" USING btree ("quote_id");--> statement-breakpoint
 CREATE INDEX "idx_quote_media_quote_sort" ON "quote_media" USING btree ("quote_id","sort_order");

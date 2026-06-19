@@ -1,1 +1,0 @@
-ALTER TABLE "quotes" ADD COLUMN "pax_count" integer;
