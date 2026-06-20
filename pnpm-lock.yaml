@@ -813,9 +813,6 @@ importers:
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
-      '@voyant-travel/availability':
-        specifier: workspace:^
-        version: link:../availability
       '@voyant-travel/bookings-contracts':
         specifier: workspace:^
         version: link:../bookings-contracts

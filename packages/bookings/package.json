@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",
-    "@voyant-travel/availability": "workspace:^",
     "@voyant-travel/bookings-contracts": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
