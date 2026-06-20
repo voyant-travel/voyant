@@ -1,5 +1,13 @@
 # @voyant-travel/auth
 
+## 0.116.1
+
+### Patch Changes
+
+- b6fa89d: Add `customerSignupSurfaces` to `createBetterAuth` so supported OTP customer
+  self-signups can be stamped with a non-admin surface before the single-tenant
+  signup guard evaluates the new user.
+
 ## 0.116.0
 
 ### Patch Changes
