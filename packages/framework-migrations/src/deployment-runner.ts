@@ -102,6 +102,9 @@ export function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
   const createRe = /^CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"\s*\(([\s\S]*)\)/i
   const dropRe = /^DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"/i
   const alterRe = /^ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/i
+  const dropColumnRe = /^ALTER TABLE "([a-z0-9_]+)" DROP COLUMN (?:IF EXISTS )?"([a-z0-9_]+)"/i
+  const renameColumnRe =
+    /^ALTER TABLE "([a-z0-9_]+)" RENAME COLUMN "([a-z0-9_]+)" TO "([a-z0-9_]+)"/i
   const dropConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" DROP CONSTRAINT (?:IF EXISTS )?"([^"]+)"/i
   const addConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" ADD CONSTRAINT "([^"]+)"/i
   for (const m of planMigrations(sources)) {
@@ -130,6 +133,24 @@ export function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
       const alter = stmt.match(alterRe)
       if (alter) {
         addColumn(alter[1] as string, alter[2] as string)
+        continue
+      }
+      // A column added by an earlier migration and DROPPED by a later one is NOT
+      // expected at baseline — without this a deployment whose own migrations
+      // add-then-drop a column (e.g. an experiment later reverted) would have the
+      // parity check demand a column that is correctly absent. Net add/drop wins.
+      const dropColumn = stmt.match(dropColumnRe)
+      if (dropColumn) {
+        columnsByTable.get(dropColumn[1] as string)?.delete(dropColumn[2] as string)
+        continue
+      }
+      // A column renamed by a later migration is expected under its NEW name, not
+      // the original the baseline declared (e.g. a deployment that renames a
+      // package column). Without this the parity check demands the old name.
+      const renameColumn = stmt.match(renameColumnRe)
+      if (renameColumn) {
+        const cols = columnsByTable.get(renameColumn[1] as string)
+        if (cols?.delete(renameColumn[2] as string)) cols.add(renameColumn[3] as string)
         continue
       }
       const dropCon = stmt.match(dropConstraintRe)
