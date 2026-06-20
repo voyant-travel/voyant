@@ -3,7 +3,8 @@
  * (`@voyant-travel/framework-migrations`). Applies, in order:
  *
  *   1. the framework bundle  (@voyant-travel/framework-migrations `migrations/`)
- *   2. this deployment's links (./migrations-d1 — cross-module pivot tables)
+ *   2. this deployment's own migrations (./migrations — cross-module pivot
+ *      tables + any custom src/modules + src/extensions schema)
  *
  * recording each in the `drizzle._voyant_migrations` ledger keyed by
  * `(source, tag, content_hash)`. Three modes, auto-detected:
@@ -19,10 +20,14 @@
  *                  we refuse rather than record a false baseline.
  *   • INCREMENTAL — already on the collector → apply only new migrations.
  *
- * The legacy single-folder history (`./migrations`) is RETIRED by this cutover:
- * it is incomplete (16 live tables — operations/ground + quote versioning — have
- * no CREATE migration) and stale (~40 retired-table CREATEs), so it is not a
- * valid replay source. See docs/architecture/migration-collector-d1.md.
+ * NOTE: `./migrations` now holds the *deployment* source (was `./migrations-d1`).
+ * The pre-collector legacy single-folder aggregate history that used to live here
+ * was REMOVED in the folder collapse — it was incomplete (16 live tables, e.g.
+ * operations/ground + quote versioning, had no CREATE migration) and stale (~40
+ * retired-table CREATEs), so it was never a valid replay source. The canonical
+ * schema is materialised by `drizzle-kit push` of the aggregate (see the replay
+ * oracle in scripts/verify-migration-replay-parity.mjs).
+ * See docs/architecture/migration-collector-d1.md.
  */
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -48,7 +53,7 @@ if (!databaseUrl) {
 }
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
-const linksFolder = path.resolve(scriptsDir, "../migrations-d1")
+const deploymentFolder = path.resolve(scriptsDir, "../migrations")
 
 const client = new Client({ connectionString: databaseUrl })
 
@@ -207,12 +212,12 @@ try {
   await client.connect()
 
   const bundle = await loadFrameworkBundleSource()
-  const links: MigrationSource = {
+  const deployment: MigrationSource = {
     name: "deployment",
     priority: 1,
-    migrations: await loadMigrationFolder(linksFolder),
+    migrations: await loadMigrationFolder(deploymentFolder),
   }
-  const sources = [bundle, links]
+  const sources = [bundle, deployment]
 
   const onCollector = await ledgerRowCount(`"drizzle"."_voyant_migrations"`)
   const onLegacy = await ledgerRowCount(`"drizzle"."__drizzle_migrations"`)

@@ -44,7 +44,7 @@ Define Drizzle tables as usual. They are a **deployment** migration source
 table can carry plain text id columns that reference framework tables — pair them
 with `defineLink` in `src/links` rather than hard cross-module FKs.
 
-Generate the migration into the deployment source (`migrations-d1/`):
+Generate the migration into the deployment source (`migrations/`):
 
 ```sh
 pnpm db:generate:deployment   # drizzle-kit generate for the deployment config
