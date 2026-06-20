@@ -1,0 +1,26 @@
+{
+  "cutline": {
+    "accommodations": ["0000_accommodations_baseline"],
+    "action-ledger": ["0000_action_ledger_baseline"],
+    "availability": ["0000_availability_baseline"],
+    "bookings": ["0000_bookings_baseline"],
+    "catalog": ["0000_catalog_initial", "0001_sourced_entries", "0002_catalog_baseline"],
+    "charters": ["0000_charters_baseline"],
+    "commerce": ["0000_commerce_baseline"],
+    "cruises": ["0000_cruises_baseline"],
+    "db": ["0000_db_baseline"],
+    "distribution": ["0000_distribution_baseline"],
+    "finance": ["0000_finance_baseline"],
+    "identity": ["0000_identity_baseline"],
+    "inventory": ["0000_inventory_baseline"],
+    "legal": ["0000_legal_baseline"],
+    "notifications": ["0000_notifications_baseline"],
+    "operations": ["0000_operations_baseline"],
+    "operator-settings": ["0000_operator_settings_baseline"],
+    "quotes": ["0000_quotes_baseline"],
+    "relationships": ["0000_relationships_baseline"],
+    "storefront": ["0000_storefront_baseline"],
+    "trips": ["0000_trips_baseline"],
+    "workflow-runs": ["0000_workflow_runs_baseline"]
+  }
+}
