@@ -102,6 +102,9 @@ export function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
   const createRe = /^CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"\s*\(([\s\S]*)\)/i
   const dropRe = /^DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"/i
   const alterRe = /^ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/i
+  const dropColumnRe = /^ALTER TABLE "([a-z0-9_]+)" DROP COLUMN (?:IF EXISTS )?"([a-z0-9_]+)"/i
+  const renameColumnRe =
+    /^ALTER TABLE "([a-z0-9_]+)" RENAME COLUMN "([a-z0-9_]+)" TO "([a-z0-9_]+)"/i
   const dropConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" DROP CONSTRAINT (?:IF EXISTS )?"([^"]+)"/i
   const addConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" ADD CONSTRAINT "([^"]+)"/i
   for (const m of planMigrations(sources)) {
@@ -130,6 +133,24 @@ export function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
       const alter = stmt.match(alterRe)
       if (alter) {
         addColumn(alter[1] as string, alter[2] as string)
+        continue
+      }
+      // A column added by an earlier migration and DROPPED by a later one is NOT
+      // expected at baseline — without this a deployment whose own migrations
+      // add-then-drop a column (e.g. an experiment later reverted) would have the
+      // parity check demand a column that is correctly absent. Net add/drop wins.
+      const dropColumn = stmt.match(dropColumnRe)
+      if (dropColumn) {
+        columnsByTable.get(dropColumn[1] as string)?.delete(dropColumn[2] as string)
+        continue
+      }
+      // A column renamed by a later migration is expected under its NEW name, not
+      // the original the baseline declared (e.g. a deployment that renames a
+      // package column). Without this the parity check demands the old name.
+      const renameColumn = stmt.match(renameColumnRe)
+      if (renameColumn) {
+        const cols = columnsByTable.get(renameColumn[1] as string)
+        if (cols?.delete(renameColumn[2] as string)) cols.add(renameColumn[3] as string)
         continue
       }
       const dropCon = stmt.match(dropConstraintRe)
@@ -209,8 +230,12 @@ export async function assertSchemaAtBaseline(
     throw new Error(
       `cannot baseline onto the D.2 collector — this database is NOT at the cutline schema.\n` +
         problems.map((p) => `  • ${p}`).join("\n") +
-        `\n  Converge first (the live aggregate schema is materialised via 'pnpm db:push'/drizzle-kit\n` +
-        `  push for tables with no baseline migration), then re-run this migration to baseline.`,
+        `\n  The import-baseline path only records the cutline as applied; it does NOT alter the\n` +
+        `  schema. It is for a database ALREADY AT the cutline (a D.1 / prior deployment of the\n` +
+        `  SAME package versions). A database that is behind must first reach the cutline schema\n` +
+        `  through its normal migration path — NOT 'drizzle-kit push' (unsafe in production). If\n` +
+        `  this is a disposable/fresh environment, drop it and let the FRESH path execute every\n` +
+        `  migration from scratch instead.`,
     )
   }
 }
