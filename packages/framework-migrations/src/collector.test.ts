@@ -2,6 +2,7 @@ import { Client } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  applyD2Migrations,
   applyMigrations,
   importBaseline,
   MigrationImmutabilityError,
@@ -206,5 +207,144 @@ describe.skipIf(!DB_URL)("applyMigrations (integration)", () => {
     await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
     const second = await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
     expect(second).toEqual([])
+  })
+})
+
+// ---- applyD2Migrations: the dual-path collector (slice 3b) -------------------
+
+const D2_SCHEMA = "voyant_fwmig_d2_test"
+const d2Ledger = { ledgerSchema: D2_SCHEMA, ledgerTable: "_voyant_migrations" }
+
+/** Two package sources (db → catalog) with a post-cutline catalog increment. */
+function d2Sources(): { db: MigrationSource; catalog: MigrationSource } {
+  return {
+    db: {
+      name: "db",
+      priority: 0,
+      migrations: [
+        { tag: "0000_db_baseline", sql: `CREATE TABLE ${D2_SCHEMA}.org (id text PRIMARY KEY);` },
+      ],
+    },
+    catalog: {
+      name: "catalog",
+      priority: 1,
+      migrations: [
+        {
+          tag: "0000_catalog_baseline",
+          sql: `CREATE TABLE ${D2_SCHEMA}.product (id text PRIMARY KEY, org_id text REFERENCES ${D2_SCHEMA}.org(id));`,
+        },
+        // post-cutline increment (NOT in the cutline) — executes even on existing DBs
+        { tag: "0001_add_sku", sql: `ALTER TABLE ${D2_SCHEMA}.product ADD COLUMN sku text;` },
+      ],
+    },
+  }
+}
+
+// bundle materialised the baselines, not the post-cutline increment
+const d2Cutline = { db: ["0000_db_baseline"], catalog: ["0000_catalog_baseline"] }
+
+describe.skipIf(!DB_URL)("applyD2Migrations (dual-path)", () => {
+  let client: Client
+
+  beforeAll(async () => {
+    client = new Client({ connectionString: DB_URL })
+    await client.connect()
+  })
+  afterAll(async () => {
+    if (client) {
+      await client.query(`DROP SCHEMA IF EXISTS ${D2_SCHEMA} CASCADE`)
+      await client.end()
+    }
+  })
+  beforeEach(async () => {
+    await client.query(`DROP SCHEMA IF EXISTS ${D2_SCHEMA} CASCADE`)
+    await client.query(`CREATE SCHEMA ${D2_SCHEMA}`)
+  })
+
+  const has = async (table: string, column?: string): Promise<boolean> => {
+    const r = column
+      ? await client.query(
+          "SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 AND column_name=$3",
+          [D2_SCHEMA, table, column],
+        )
+      : await client.query(
+          "SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name=$2",
+          [D2_SCHEMA, table],
+        )
+    return r.rows.length > 0
+  }
+  const ledgerIds = async (): Promise<string[]> => {
+    const r = await client.query(
+      `SELECT source, tag FROM ${D2_SCHEMA}._voyant_migrations ORDER BY source, tag`,
+    )
+    return r.rows.map((row) => `${row.source}/${row.tag}`)
+  }
+
+  it("fresh — executes every package source, baselines nothing", async () => {
+    const s = d2Sources()
+    const r = await applyD2Migrations(client, [s.db, s.catalog], {
+      ...d2Ledger,
+      cutline: d2Cutline,
+      existing: false,
+    })
+    expect(r.executed).toEqual([
+      "db/0000_db_baseline",
+      "catalog/0000_catalog_baseline",
+      "catalog/0001_add_sku",
+    ])
+    expect(r.baselined).toEqual([])
+    expect(await has("org")).toBe(true)
+    expect(await has("product", "sku")).toBe(true)
+  })
+
+  it("existing — import-baselines the cutline, executes the post-cutline increment, keeps framework/* rows", async () => {
+    const s = d2Sources()
+    // Simulate a materialised D.1 database: the bundle already created the
+    // baseline tables (no sku) and recorded an inert framework/* ledger row.
+    await client.query(`CREATE TABLE ${D2_SCHEMA}.org (id text PRIMARY KEY)`)
+    await client.query(
+      `CREATE TABLE ${D2_SCHEMA}.product (id text PRIMARY KEY, org_id text REFERENCES ${D2_SCHEMA}.org(id))`,
+    )
+    await client.query(`CREATE SCHEMA IF NOT EXISTS ${D2_SCHEMA}`)
+    await client.query(
+      `CREATE TABLE IF NOT EXISTS ${D2_SCHEMA}._voyant_migrations
+         (source text NOT NULL, tag text NOT NULL, content_hash text NOT NULL,
+          applied_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (source, tag))`,
+    )
+    await client.query(
+      `INSERT INTO ${D2_SCHEMA}._voyant_migrations (source, tag, content_hash) VALUES ('framework','0000_baseline','deadbeef')`,
+    )
+
+    const r = await applyD2Migrations(client, [s.db, s.catalog], {
+      ...d2Ledger,
+      cutline: d2Cutline,
+      existing: true,
+    })
+    // baselines recorded without executing (tables already existed — no double-create)
+    expect(r.baselined.sort()).toEqual(["catalog/0000_catalog_baseline", "db/0000_db_baseline"])
+    // the post-cutline increment executes
+    expect(r.executed).toEqual(["catalog/0001_add_sku"])
+    expect(await has("product", "sku")).toBe(true)
+    // framework/* history preserved + package rows recorded
+    const ids = await ledgerIds()
+    expect(ids).toContain("framework/0000_baseline")
+    expect(ids).toContain("db/0000_db_baseline")
+    expect(ids).toContain("catalog/0001_add_sku")
+  })
+
+  it("existing re-run is idempotent (nothing executed or baselined)", async () => {
+    const s = d2Sources()
+    await applyD2Migrations(client, [s.db, s.catalog], {
+      ...d2Ledger,
+      cutline: d2Cutline,
+      existing: false,
+    })
+    const again = await applyD2Migrations(client, [s.db, s.catalog], {
+      ...d2Ledger,
+      cutline: d2Cutline,
+      existing: true,
+    })
+    expect(again.executed).toEqual([])
+    expect(again.baselined).toEqual([])
   })
 })
