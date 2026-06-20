@@ -20,4 +20,19 @@ export {
   planMigrations,
 } from "./collector.js"
 export { type Cutline, loadCutline } from "./cutline.js"
+export {
+  assertSchemaAtBaseline,
+  detectExisting,
+  expectedSchema,
+  type RunResult,
+  runDeploymentMigrations,
+} from "./deployment-runner.js"
+export {
+  DEPLOYMENT_SOURCE,
+  type DiscoveredSource,
+  type DiscoverOptions,
+  discoverMigrationSources,
+  type Fs,
+  packageRootOfSchemaPath,
+} from "./discover.js"
 export { loadMigrationFolder } from "./load-folder.js"

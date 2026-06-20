@@ -1,9 +1,8 @@
 /**
- * D.2 deployment-migration engine (testable core of `scripts/migrate.ts`).
- *
- * Given a ledger client, the discovered+loaded migration `sources` (package
- * sources deps-first, the deployment's `./migrations` last) and the per-source
- * `cutline`, this:
+ * D.2 deployment-migration engine — the portable core a deployment's
+ * `scripts/migrate.ts` wraps. Given a ledger client, the discovered+loaded
+ * migration `sources` (package sources deps-first, the deployment's own
+ * migrations last) and the per-source `cutline`, this:
  *   1. detects whether the database is FRESH or an EXISTING pre-D.2 deployment
  *      (a `framework/*` ledger row from the retired D.1 bundle, or the legacy
  *      `drizzle.__drizzle_migrations`);
@@ -12,16 +11,13 @@
  *      DB doesn't actually have);
  *   3. runs {@link applyD2Migrations}.
  *
- * Kept free of dotenv/config/process concerns so it can be driven against an
+ * Free of dotenv/config/process concerns so it can be driven against an
  * arbitrary database in tests. See docs/architecture/migration-collector-d2.md.
  */
-import {
-  applyD2Migrations,
-  type Cutline,
-  type MigrationClient,
-  type MigrationSource,
-  planMigrations,
-} from "@voyant-travel/framework-migrations"
+
+import type { MigrationClient, MigrationSource } from "./collector.js"
+import { applyD2Migrations, planMigrations } from "./collector.js"
+import type { Cutline } from "./cutline.js"
 
 export interface RunResult {
   /** True if the EXISTING (import-baseline) path was taken. */
@@ -32,14 +28,9 @@ export interface RunResult {
   baselined: string[]
 }
 
-/** Minimal client that also reports `rowCount` (node-postgres does). */
-type CountingClient = MigrationClient & {
-  query(sql: string, params?: unknown[]): Promise<{ rows: Array<Record<string, unknown>> }>
-}
-
 /** Row count of a ledger table (0 if it doesn't exist), optional WHERE. */
 async function ledgerRowCount(
-  client: CountingClient,
+  client: MigrationClient,
   qualified: string,
   where = "",
 ): Promise<number> {
@@ -56,7 +47,7 @@ async function ledgerRowCount(
  * this schema: a `framework/*` collector-ledger row, or the pre-collector
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
-export async function detectExisting(client: CountingClient): Promise<boolean> {
+export async function detectExisting(client: MigrationClient): Promise<boolean> {
   const frameworkRows = await ledgerRowCount(
     client,
     `"drizzle"."_voyant_migrations"`,
@@ -169,7 +160,7 @@ export function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
  * rather than record a false baseline (which would skip real migrations forever).
  */
 export async function assertSchemaAtBaseline(
-  client: CountingClient,
+  client: MigrationClient,
   sources: MigrationSource[],
 ): Promise<void> {
   const expected = expectedSchema(sources)
@@ -239,7 +230,7 @@ function cutlineCovered(sources: MigrationSource[], cutline: Cutline): Migration
  * EXISTING, gates the EXISTING baseline with a parity check, and applies.
  */
 export async function runDeploymentMigrations(
-  client: CountingClient,
+  client: MigrationClient,
   sources: MigrationSource[],
   cutline: Cutline,
   hooks?: { onApplied?: (id: string) => void; onBaselined?: (id: string) => void },

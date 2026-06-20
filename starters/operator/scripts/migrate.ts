@@ -25,15 +25,15 @@
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import {
+  discoverMigrationSources,
   loadCutline,
   loadMigrationFolder,
   type MigrationSource,
+  runDeploymentMigrations,
 } from "@voyant-travel/framework-migrations"
 import { config } from "dotenv"
 import { Client } from "pg"
 import { schema } from "../drizzle.schemas.generated.ts"
-import { discoverMigrationSources } from "./lib/discover-migration-sources.ts"
-import { runDeploymentMigrations } from "./lib/run-deployment-migrations.ts"
 
 const explicitDatabaseUrl = process.env.DATABASE_URL
 config({ path: ".env" })
@@ -51,13 +51,19 @@ if (!databaseUrl) {
 }
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
+// The generated schema paths (`../../packages/…`) resolve from the deployment
+// root, where `drizzle.config` lives; the deployment's own migrations are `./migrations`.
+const baseDir = path.resolve(scriptsDir, "..")
 const client = new Client({ connectionString: databaseUrl })
 
 try {
   await client.connect()
 
   // Discover package sources (deps-first) + the deployment's ./migrations (last).
-  const discovered = discoverMigrationSources(schema, scriptsDir)
+  const discovered = discoverMigrationSources(schema, {
+    baseDir,
+    deploymentMigrationsDir: path.join(baseDir, "migrations"),
+  })
   const sources: MigrationSource[] = []
   for (let i = 0; i < discovered.length; i++) {
     const d = discovered[i] as (typeof discovered)[number]
