@@ -55,6 +55,10 @@ signups: once any user exists, another user without explicit surfaces, or with
 the `admin` surface, cannot self-register. Customer-facing auth plugins can
 still create users by setting a non-admin surface such as `storefront`.
 
+The guarded surfaces are privileged signup surfaces. The default privileged
+surface is `admin`; pass `disableSignupWhenUsersExist.surfaces` if a deployment
+uses a different staff/admin surface name.
+
 ```typescript
 const auth = createBetterAuth({
   db,
@@ -72,6 +76,37 @@ const auth = createBetterAuth({
   },
 })
 ```
+
+Better Auth OTP signup flows can apply `user.additionalFields` defaults before
+the package signup guard runs. If `surfaces` defaults to `["admin"]`, customer
+OTP signups would otherwise be classified as privileged users and rejected once
+an admin user exists. Configure `customerSignupSurfaces` to make
+`createBetterAuth` stamp the supported customer self-signup endpoints before the
+guard evaluates the new user:
+
+```typescript
+const auth = createBetterAuth({
+  db,
+  user: {
+    additionalFields: {
+      surfaces: {
+        type: "string",
+        required: false,
+        input: false,
+        defaultValue: ["admin"],
+      },
+    },
+  },
+  customerSignupSurfaces: ["storefront"],
+  disableSignupWhenUsersExist: {
+    surfaces: ["admin"],
+  },
+})
+```
+
+`customerSignupSurfaces` applies to Better Auth customer self-signup routes that
+create a user during OTP verification, including phone-number verification and
+email OTP sign-in. It does not change regular admin sign-up or invitation flows.
 
 Better Auth server plugins that define their own tables must pass those Drizzle
 tables through `extraSchema` so the shared Drizzle adapter can resolve them:
