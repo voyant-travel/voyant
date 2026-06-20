@@ -36,10 +36,10 @@ if (pkgs.length === 0) {
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
-const SEED = [
-  'CREATE EXTENSION IF NOT EXISTS "pg_trgm"',
-  'CREATE EXTENSION IF NOT EXISTS "unaccent"',
-]
+// NB: extensions are NOT seeded out-of-band — the sources must create them
+// themselves (the framework bundle ships a pg_trgm/unaccent preamble; the db
+// package owns them for the per-package sources). Seeding here would mask a
+// source that fails to create an extension it needs.
 
 const splitStatements = (sql) =>
   sql
@@ -154,7 +154,6 @@ async function main() {
   try {
     const bundleCols = await withFreshDb(admin, "d2_verify_bundle", async () => {
       await onDb("d2_verify_bundle", async (c) => {
-        for (const s of SEED) await c.query(s)
         for (const stmt of loadFolder(FRAMEWORK_BUNDLE)) await c.query(stmt)
       })
       return onDb("d2_verify_bundle", columnsByTable)
@@ -169,7 +168,6 @@ async function main() {
       try {
         cols = await withFreshDb(admin, "d2_verify_union", async () => {
           await onDb("d2_verify_union", async (c) => {
-            for (const s of SEED) await c.query(s)
             for (const m of order)
               for (const stmt of loadFolder(m.migrationsDir)) await c.query(stmt)
           })
@@ -215,7 +213,6 @@ async function main() {
       const dbName = `d2_verify_${dir.replace(/[^a-z0-9]/g, "_")}`
       const cols = await withFreshDb(admin, dbName, async () => {
         await onDb(dbName, async (c) => {
-          for (const s of SEED) await c.query(s)
           for (const m of order) for (const stmt of loadFolder(m.migrationsDir)) await c.query(stmt)
         })
         return onDb(dbName, columnsByTable)

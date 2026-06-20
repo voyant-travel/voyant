@@ -69,9 +69,15 @@ for (const name of pkgs) {
   // `--name` only names the first (baseline) migration; later runs auto-name the
   // diff (same behaviour as the framework bundle generator).
   const baselineName = `${name.replace(/-/g, "_")}_baseline`
-  pj.scripts["db:generate"] =
+  let dbGenerate =
     `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName} && ` +
     `node ../../scripts/d2/guard-create-type.mjs ./migrations`
+  // db is the infra base — it owns the shared Postgres extensions (pg_trgm /
+  // unaccent) that downstream packages' trigram indexes need on a fresh D.2 DB.
+  if (name === "@voyant-travel/db") {
+    dbGenerate += " && node ../../scripts/d2/ensure-extensions.mjs ./migrations"
+  }
+  pj.scripts["db:generate"] = dbGenerate
 
   pj.devDependencies ??= {}
   if (!pj.devDependencies["drizzle-kit"]) pj.devDependencies["drizzle-kit"] = DRIZZLE_KIT

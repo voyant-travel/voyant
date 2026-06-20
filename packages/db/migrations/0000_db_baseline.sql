@@ -1,3 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+--> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS "unaccent";
+--> statement-breakpoint
 DO $$ BEGIN
  CREATE TYPE "public"."roles" AS ENUM('super-admin', 'admin', 'editor', 'viewer', 'member', 'guest');
 EXCEPTION WHEN duplicate_object THEN null;
