@@ -1,5 +1,14 @@
 # @voyant-travel/inventory
 
+## 0.3.9
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/operations@0.2.0
+  - @voyant-travel/commerce@0.9.0
+  - @voyant-travel/catalog@0.125.0
+
 ## 0.3.8
 
 ### Patch Changes
