@@ -12,8 +12,8 @@ import type { KVStore } from "@voyant-travel/utils/cache"
  * `productsReadModelInvalidation` in routes.ts), and a generous TTL
  * bounds staleness for anything invalidation misses.
  *
- * Slug lookups resolve through a short-lived slug→id mapping so the
- * id-keyed document is shared between `/:id` and `/slug/:slug`. The
+ * Slug lookups resolve through a short-lived slug→product+locale mapping
+ * so the id-keyed document is shared between `/:id` and `/slug/:slug`. The
  * mapping is deliberately NOT invalidated on mutation: it's cheap to
  * refill, and its short TTL bounds the only affected case (a renamed
  * slug serving the old document) to a few minutes.
@@ -29,13 +29,18 @@ export function productDocKey(productId: string, variant: string): string {
   return `${RM_PREFIX}:${productId}:${variant}`
 }
 
-export function productSlugMapKey(slug: string): string {
-  return `rm:v1:product-slug:${slug}`
+export function productSlugMapKey(slug: string, variant: string): string {
+  return `rm:v1:product-slug:${variant}:${slug}`
 }
 
 /** Stable variant id from the detail query (currently just the locale). */
 export function productDocVariant(query: { languageTag?: string | null }): string {
   return query.languageTag ? `lang=${query.languageTag}` : "default"
+}
+
+export interface ProductSlugResolution {
+  productId: string
+  languageTag: string | null
 }
 
 /**
@@ -71,25 +76,27 @@ export async function readThroughProductDoc<T>(
 export async function readThroughSlugMapping(
   kv: KVStore | undefined,
   slug: string,
-  resolve: () => Promise<string | null>,
-): Promise<string | null> {
+  variant: string,
+  resolve: () => Promise<ProductSlugResolution | null>,
+): Promise<ProductSlugResolution | null> {
+  const key = productSlugMapKey(slug, variant)
   if (kv) {
     try {
-      const hit = await kv.get<string>(productSlugMapKey(slug), { type: "text" })
+      const hit = await kv.get<ProductSlugResolution>(key, { type: "json" })
       if (hit) return hit
     } catch {
       // fall through
     }
   }
-  const id = await resolve()
-  if (id && kv) {
+  const resolution = await resolve()
+  if (resolution && kv) {
     try {
-      await kv.put(productSlugMapKey(slug), id, { expirationTtl: SLUG_MAP_TTL_SECONDS })
+      await kv.put(key, JSON.stringify(resolution), { expirationTtl: SLUG_MAP_TTL_SECONDS })
     } catch {
       // best-effort
     }
   }
-  return id
+  return resolution
 }
 
 /**

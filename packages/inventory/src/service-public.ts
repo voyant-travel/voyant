@@ -369,7 +369,7 @@ export const publicProductsService = {
     }
 
     return this.getCatalogProductById(db, row.productId, {
-      languageTag: normalizedLanguageTag ?? row.languageTag,
+      languageTag: row.languageTag,
     })
   },
 
