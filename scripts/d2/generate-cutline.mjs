@@ -57,12 +57,14 @@ if (!existsSync(MANIFEST)) {
   )
   process.exit(1)
 }
-if (readFileSync(MANIFEST, "utf8") !== serialized) {
+// Compare PARSED content (formatting-agnostic — the committed file may be
+// reformatted by biome, which must not trip the drift gate).
+const committed = JSON.parse(readFileSync(MANIFEST, "utf8")).cutline ?? {}
+if (JSON.stringify(committed) !== JSON.stringify(cutline)) {
   console.error(
     "cutline drift — package migration tags changed without regenerating the cutline. " +
       "Run `node scripts/d2/generate-cutline.mjs --emit` and commit:",
   )
-  const committed = JSON.parse(readFileSync(MANIFEST, "utf8")).cutline ?? {}
   for (const pkg of new Set([...Object.keys(cutline), ...Object.keys(committed)])) {
     const now = (cutline[pkg] ?? []).join(",")
     const was = (committed[pkg] ?? []).join(",")
