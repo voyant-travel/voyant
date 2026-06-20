@@ -91,6 +91,15 @@ interface ExpectedSchema {
   dropped: Set<string>
   /** Every expected column on a net table — `table.column`. */
   columns: Set<string>
+  /**
+   * Constraints the plan DROPs (net, on tables that still exist) — must be
+   * ABSENT in a converged DB. A constraint-only migration (e.g. a framework
+   * bundle that drops a now-decoupled cross-package FK) changes no table or
+   * column, so without this an existing legacy deployment would import-baseline
+   * it as applied while the constraint physically lingers — leaving the schema
+   * permanently diverged.
+   */
+  droppedConstraints: Set<string>
 }
 
 /**
@@ -121,12 +130,19 @@ function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
     set.add(column)
   }
 
+  // `constraintName -> owning table` for constraints the plan drops (net). A
+  // later ADD CONSTRAINT or a DROP of the owning table clears it.
+  const droppedConstraintTable = new Map<string, string>()
+
   // Drizzle separates statements with `--> statement-breakpoint`. Classify each
   // in plan order: CREATE adds a table + its body columns, DROP removes both and
-  // records the table as must-be-absent, ALTER … ADD COLUMN records a column.
+  // records the table as must-be-absent, ALTER … ADD COLUMN records a column,
+  // ALTER … {ADD,DROP} CONSTRAINT tracks the net set of dropped constraints.
   const createRe = /^CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"\s*\(([\s\S]*)\)/i
   const dropRe = /^DROP TABLE (?:IF EXISTS )?"([a-z0-9_]+)"/i
   const alterRe = /^ALTER TABLE "([a-z0-9_]+)" ADD COLUMN (?:IF NOT EXISTS )?"([a-z0-9_]+)"/i
+  const dropConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" DROP CONSTRAINT (?:IF EXISTS )?"([^"]+)"/i
+  const addConstraintRe = /^ALTER TABLE "([a-z0-9_]+)" ADD CONSTRAINT "([^"]+)"/i
   for (const m of planMigrations(sources)) {
     for (const raw of m.sql.split("--> statement-breakpoint")) {
       const stmt = raw.trim()
@@ -144,11 +160,26 @@ function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
         tables.delete(name)
         columnsByTable.delete(name)
         dropped.add(name)
+        // The dropped table takes its constraints with it; the table-absence
+        // check covers them, so stop tracking them as standalone drops.
+        for (const [con, tbl] of droppedConstraintTable) {
+          if (tbl === name) droppedConstraintTable.delete(con)
+        }
         continue
       }
       const alter = stmt.match(alterRe)
       if (alter) {
         addColumn(alter[1] as string, alter[2] as string)
+        continue
+      }
+      const dropCon = stmt.match(dropConstraintRe)
+      if (dropCon) {
+        droppedConstraintTable.set(dropCon[2] as string, dropCon[1] as string)
+        continue
+      }
+      const addCon = stmt.match(addConstraintRe)
+      if (addCon) {
+        droppedConstraintTable.delete(addCon[2] as string) // re-added → not dropped
       }
     }
   }
@@ -159,14 +190,19 @@ function expectedSchema(sources: MigrationSource[]): ExpectedSchema {
     if (!tables.has(table)) continue
     for (const col of cols) columns.add(`${table}.${col}`)
   }
-  return { tables, dropped, columns }
+  // Only require absence of constraints whose owning table still exists.
+  const droppedConstraints = new Set<string>()
+  for (const [con, tbl] of droppedConstraintTable) {
+    if (tables.has(tbl)) droppedConstraints.add(con)
+  }
+  return { tables, dropped, columns, droppedConstraints }
 }
 
 /**
  * Guard a baseline-import: the live DB must already match the schema the plan
- * would produce — every net table present, every added column present, and
- * every dropped table gone. Otherwise we refuse rather than record a false
- * baseline (which would skip real migrations forever).
+ * would produce — every net table present, every added column present, every
+ * dropped table gone, and every dropped constraint gone. Otherwise we refuse
+ * rather than record a false baseline (which would skip real migrations forever).
  */
 async function assertSchemaAtBaseline(sources: MigrationSource[]): Promise<void> {
   const expected = expectedSchema(sources)
@@ -179,10 +215,19 @@ async function assertSchemaAtBaseline(sources: MigrationSource[]): Promise<void>
     `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public'`,
   )
   const liveColumns = new Set(liveColsRows.rows.map((r) => `${r.table_name}.${r.column_name}`))
+  const liveConstraintRows = await client.query<{ conname: string }>(
+    `SELECT c.conname FROM pg_constraint c
+       JOIN pg_namespace n ON n.oid = c.connamespace
+      WHERE n.nspname = 'public'`,
+  )
+  const liveConstraints = new Set(liveConstraintRows.rows.map((r) => r.conname))
 
   const missingTables = [...expected.tables].filter((t) => !liveTables.has(t)).sort()
   const missingColumns = [...expected.columns].filter((c) => !liveColumns.has(c)).sort()
   const lingeringDropped = [...expected.dropped].filter((t) => liveTables.has(t)).sort()
+  const lingeringConstraints = [...expected.droppedConstraints]
+    .filter((c) => liveConstraints.has(c))
+    .sort()
 
   const problems: string[] = []
   const sample = (xs: string[]) => `${xs.slice(0, 8).join(", ")}${xs.length > 8 ? ", …" : ""}`
@@ -191,6 +236,12 @@ async function assertSchemaAtBaseline(sources: MigrationSource[]): Promise<void>
   }
   if (missingColumns.length > 0) {
     problems.push(`${missingColumns.length} expected column(s) missing: ${sample(missingColumns)}`)
+  }
+  if (lingeringConstraints.length > 0) {
+    problems.push(
+      `${lingeringConstraints.length} constraint(s) the plan drops still present: ` +
+        `${sample(lingeringConstraints)} (run the relevant DROP CONSTRAINT so the DB matches the final schema)`,
+    )
   }
   if (lingeringDropped.length > 0) {
     problems.push(
