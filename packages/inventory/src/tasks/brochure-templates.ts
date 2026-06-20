@@ -5,10 +5,19 @@ import {
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { productDayServices, productDays, productItineraries, products } from "../schema.js"
+import {
+  productDayServices,
+  productDays,
+  productItineraries,
+  productMedia,
+  productPaxPricingTiers,
+  products,
+} from "../schema.js"
 
 type ProductDayRecord = typeof productDays.$inferSelect
 type ProductDayServiceRecord = typeof productDayServices.$inferSelect
+type ProductMediaRecord = typeof productMedia.$inferSelect
+type ProductPaxPricingTierRecord = typeof productPaxPricingTiers.$inferSelect
 type ProductRecord = typeof products.$inferSelect
 
 export interface ProductBrochureDayContext extends ProductDayRecord {
@@ -18,6 +27,8 @@ export interface ProductBrochureDayContext extends ProductDayRecord {
 export interface ProductBrochureTemplateContext {
   product: ProductRecord
   days: ProductBrochureDayContext[]
+  media: ProductMediaRecord[]
+  pricingTiers: ProductPaxPricingTierRecord[]
   generatedAt: Date
 }
 
@@ -72,6 +83,19 @@ export async function loadProductBrochureTemplateContext(
     throw new Error(`Product not found: ${productId}`)
   }
 
+  const [media, pricingTiers] = await Promise.all([
+    db
+      .select()
+      .from(productMedia)
+      .where(eq(productMedia.productId, productId))
+      .orderBy(asc(productMedia.sortOrder), asc(productMedia.createdAt)),
+    db
+      .select()
+      .from(productPaxPricingTiers)
+      .where(eq(productPaxPricingTiers.productId, productId))
+      .orderBy(asc(productPaxPricingTiers.tierPax), asc(productPaxPricingTiers.createdAt)),
+  ])
+
   const [defaultItinerary] = await db
     .select({ id: productItineraries.id })
     .from(productItineraries)
@@ -82,6 +106,8 @@ export async function loadProductBrochureTemplateContext(
     return {
       product,
       days: [],
+      media,
+      pricingTiers,
       generatedAt: new Date(),
     }
   }
@@ -110,6 +136,8 @@ export async function loadProductBrochureTemplateContext(
   return {
     product,
     days: daysWithServices,
+    media,
+    pricingTiers,
     generatedAt: new Date(),
   }
 }
@@ -161,6 +189,8 @@ export async function renderProductBrochureTemplate(
   const variables = (await resolveTemplateValue(template.variables, context)) ?? {
     product: context.product,
     days: context.days,
+    media: context.media,
+    pricingTiers: context.pricingTiers,
     generatedAt: context.generatedAt.toISOString(),
   }
   const title =

@@ -1,5 +1,6 @@
 export {
   brochureBodyToHtml,
+  brochureBodyToHtmlFragment,
   type CloudflareBrowserBrochurePrinterOptions,
   createBasicPdfProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinter,
@@ -17,6 +18,17 @@ export {
   type RenderedProductBrochureTemplate,
   renderProductBrochureTemplate,
 } from "./brochure-templates.js"
+export {
+  type CreateThemedBrochurePrinterOptions,
+  createThemedBrochurePrinter,
+  createThemedProductBrochurePrinter,
+  defaultThemedBrochureSections,
+  type RenderThemedBrochureHtmlOptions,
+  renderThemedBrochureHtml,
+  type ThemedBrochureRenderInput,
+  type ThemedBrochureSection,
+  type ThemedBrochureTheme,
+} from "./brochure-themed.js"
 export {
   type GenerateAndStoreProductBrochureOptions,
   generateAndStoreProductBrochure,

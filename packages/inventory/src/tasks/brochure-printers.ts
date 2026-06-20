@@ -91,19 +91,24 @@ function renderMarkdownBrochureBody(body: string) {
   })
 }
 
+export function brochureBodyToHtmlFragment(body: string, bodyFormat: StructuredTemplateBodyFormat) {
+  if (bodyFormat === "html") {
+    return body
+  }
+
+  if (bodyFormat === "markdown") {
+    return renderMarkdownBrochureBody(body)
+  }
+
+  return `<pre style="white-space: pre-wrap; font-family: system-ui, sans-serif;">${escapeHtml(body)}</pre>`
+}
+
 export function brochureBodyToHtml(
   body: string,
   bodyFormat: StructuredTemplateBodyFormat,
   title: string,
 ) {
-  let content: string
-  if (bodyFormat === "html") {
-    content = body
-  } else if (bodyFormat === "markdown") {
-    content = renderMarkdownBrochureBody(body)
-  } else {
-    content = `<pre style="white-space: pre-wrap; font-family: system-ui, sans-serif;">${escapeHtml(body)}</pre>`
-  }
+  const content = brochureBodyToHtmlFragment(body, bodyFormat)
 
   return [
     "<!doctype html>",

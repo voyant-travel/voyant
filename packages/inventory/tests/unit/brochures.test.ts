@@ -20,6 +20,8 @@ vi.mock("../../src/tasks/brochure-templates.js", () => ({
       name: "Voyant Brochure Product",
     },
     days: [],
+    media: [],
+    pricingTiers: [],
     generatedAt: new Date("2026-04-14T09:00:00.000Z"),
   })),
   renderProductBrochureTemplate: vi.fn(async () => ({
