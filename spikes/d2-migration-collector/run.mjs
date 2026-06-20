@@ -64,7 +64,13 @@ function buildPackages() {
       name: "db",
       requiresSchemas: [],
       baselineTags: ["0001_init"],
-      migrations: [{ tag: "0001_init", creates: "org", sql: `CREATE TABLE ${t("org")} (id text PRIMARY KEY);` }],
+      migrations: [
+        {
+          tag: "0001_init",
+          creates: "org",
+          sql: `CREATE TABLE ${t("org")} (id text PRIMARY KEY);`,
+        },
+      ],
     },
     catalog: {
       name: "catalog",
@@ -156,7 +162,9 @@ function buildFrameworkBundle() {
 function topoOrder(packages, configOrder) {
   const names = Object.keys(packages)
   const indeg = new Map(names.map((n) => [n, 0]))
-  const deps = new Map(names.map((n) => [n, packages[n].requiresSchemas.filter((d) => packages[d])]))
+  const deps = new Map(
+    names.map((n) => [n, packages[n].requiresSchemas.filter((d) => packages[d])]),
+  )
   for (const n of names) for (const _d of deps.get(n)) indeg.set(n, indeg.get(n) + 1)
 
   const tieRank = (n) => {
@@ -230,8 +238,8 @@ async function record(client, source, tag, h) {
  */
 async function migrateD2(client, packages, deployment, configOrder) {
   await ensureLedger(client)
-  const existing = (await client.query(`SELECT 1 FROM ${LEDGER} WHERE source='framework' LIMIT 1`))
-    .rows.length > 0
+  const existing =
+    (await client.query(`SELECT 1 FROM ${LEDGER} WHERE source='framework' LIMIT 1`)).rows.length > 0
   const order = topoOrder(packages, configOrder)
   const sources = [...order.map((n) => packages[n]), deployment]
 
@@ -324,9 +332,19 @@ async function main() {
         ]),
       `got ${JSON.stringify(fresh.executed)}`,
     )
-    check("no framework/* rows on a fresh D.2 DB", !(await ledgerRows(client)).some((r) => r.startsWith("framework/")))
-    check("all package tables exist (FK chain held)", (await tableExists(client, "product_tag_link")) && (await tableExists(client, "operator_settings")))
-    check("post-bundle increment applied (product.sku)", await columnExists(client, "product", "sku"))
+    check(
+      "no framework/* rows on a fresh D.2 DB",
+      !(await ledgerRows(client)).some((r) => r.startsWith("framework/")),
+    )
+    check(
+      "all package tables exist (FK chain held)",
+      (await tableExists(client, "product_tag_link")) &&
+        (await tableExists(client, "operator_settings")),
+    )
+    check(
+      "post-bundle increment applied (product.sku)",
+      await columnExists(client, "product", "sku"),
+    )
 
     // ---------------------------------------------------------------------
     console.log("\nScenario 2 — EXISTING D.1 → D.2 transition (import-baseline, no re-create):")
@@ -346,14 +364,32 @@ async function main() {
       JSON.stringify(trans.executed) === JSON.stringify(["catalog/0002_add_sku"]),
       `got ${JSON.stringify(trans.executed)}`,
     )
-    check("deployment/0001_links already applied in D.1 → skipped", trans.skipped.includes("deployment/0001_links"))
+    check(
+      "deployment/0001_links already applied in D.1 → skipped",
+      trans.skipped.includes("deployment/0001_links"),
+    )
     check(
       "no table was dropped/re-created (same oids for pre-existing tables)",
-      await sameOids(client, tablesBefore, ["org", "product", "operator_settings", "product_tag_link"]),
+      await sameOids(client, tablesBefore, [
+        "org",
+        "product",
+        "operator_settings",
+        "product_tag_link",
+      ]),
     )
-    check("frozen framework/0000_baseline row preserved", (await ledgerRows(client)).includes("framework/0000_baseline"))
-    check("ledger now carries BOTH framework history AND package rows", (await ledgerRows(client)).includes("framework/0000_baseline") && (await ledgerRows(client)).includes("catalog/0001_init"))
-    check("post-transition increment really applied (product.sku)", await columnExists(client, "product", "sku"))
+    check(
+      "frozen framework/0000_baseline row preserved",
+      (await ledgerRows(client)).includes("framework/0000_baseline"),
+    )
+    check(
+      "ledger now carries BOTH framework history AND package rows",
+      (await ledgerRows(client)).includes("framework/0000_baseline") &&
+        (await ledgerRows(client)).includes("catalog/0001_init"),
+    )
+    check(
+      "post-transition increment really applied (product.sku)",
+      await columnExists(client, "product", "sku"),
+    )
 
     // ---------------------------------------------------------------------
     console.log("\nScenario 3 — NEGATIVE control: naive execute on an existing DB collides:")
@@ -374,7 +410,11 @@ async function main() {
     await applyFrozenD1(client)
     await migrateD2(client, buildPackages(), buildDeployment(), CONFIG_ORDER)
     const rerun = await migrateD2(client, buildPackages(), buildDeployment(), CONFIG_ORDER)
-    check("re-run applies/baselines nothing new", rerun.executed.length === 0 && rerun.baselined.length === 0, `got executed=${JSON.stringify(rerun.executed)} baselined=${JSON.stringify(rerun.baselined)}`)
+    check(
+      "re-run applies/baselines nothing new",
+      rerun.executed.length === 0 && rerun.baselined.length === 0,
+      `got executed=${JSON.stringify(rerun.executed)} baselined=${JSON.stringify(rerun.baselined)}`,
+    )
 
     // ---------------------------------------------------------------------
     console.log("\nScenario 5 — cycle in requiresSchemas is rejected:")
@@ -389,24 +429,38 @@ async function main() {
     check("topo-sort throws on a dependency cycle", threw)
 
     // ---------------------------------------------------------------------
-    console.log("\nScenario 6 — fresh D.2 schema == frozen D.1 bundle schema (equivalence):")
+    console.log("\nScenario 6 — fresh D.2 and transitioned D.1 converge to an IDENTICAL schema:")
+    // Both paths apply the same package sources (incl. the post-bundle increment
+    // catalog/0002_add_sku) — a fresh DB by executing them, an existing D.1 DB by
+    // import-baselining the bundle-covered tags and executing the rest. They must
+    // end up with the same schema. Compare a COLUMN-level fingerprint, not just
+    // table names: that is what catches column/index/constraint drift between a
+    // package baseline and the bundle it replaces (e.g. a missing product.sku).
     await reset(client)
-    await migrateD2(client, buildPackages(), buildDeployment(), CONFIG_ORDER)
-    const d2Tables = await tableSet(client)
+    await migrateD2(client, buildPackages(), buildDeployment(), CONFIG_ORDER) // fresh D.2
+    const freshFp = await columnFingerprint(client)
     await reset(client)
-    await applyFrozenD1(client)
-    const d1Tables = await tableSet(client)
+    await applyFrozenD1(client) // materialise the D.1 state…
+    await migrateD2(client, buildPackages(), buildDeployment(), CONFIG_ORDER) // …then transition
+    const transitionedFp = await columnFingerprint(client)
     check(
-      "package sources reconstitute the same table set the bundle produced",
-      JSON.stringify(d2Tables) === JSON.stringify(d1Tables),
-      `d2=${JSON.stringify(d2Tables)} d1=${JSON.stringify(d1Tables)}`,
+      "fresh D.2 == transitioned D.1, column-for-column (catches drift table-name checks miss)",
+      JSON.stringify(freshFp) === JSON.stringify(transitionedFp),
+      `fresh=${freshFp.length} cols, transitioned=${transitionedFp.length} cols`,
+    )
+    check(
+      "the post-bundle increment is present on BOTH paths (product.sku)",
+      freshFp.some((c) => c.t === "product" && c.c === "sku") &&
+        transitionedFp.some((c) => c.t === "product" && c.c === "sku"),
     )
   } finally {
     await client.query(`DROP SCHEMA IF EXISTS ${SCHEMA} CASCADE`)
     await client.end()
   }
 
-  console.log(`\n${failed === 0 ? "SPIKE PASS" : "SPIKE FAIL"} — ${passed} passed, ${failed} failed`)
+  console.log(
+    `\n${failed === 0 ? "SPIKE PASS" : "SPIKE FAIL"} — ${passed} passed, ${failed} failed`,
+  )
   process.exit(failed === 0 ? 0 : 1)
 }
 
@@ -428,14 +482,21 @@ async function tableOids(client) {
 }
 async function sameOids(client, before, tables) {
   const after = await tableOids(client)
-  return tables.every((name) => before.get(name) && after.get(name) && String(before.get(name)) === String(after.get(name)))
+  return tables.every(
+    (name) =>
+      before.get(name) && after.get(name) && String(before.get(name)) === String(after.get(name)),
+  )
 }
-async function tableSet(client) {
+/** Column-level schema fingerprint (table, column, type, nullability, default). */
+async function columnFingerprint(client) {
   const r = await client.query(
-    `SELECT table_name FROM information_schema.tables WHERE table_schema=$1 ORDER BY table_name`,
+    `SELECT table_name AS t, column_name AS c, data_type AS d, is_nullable AS n, column_default AS def
+     FROM information_schema.columns
+     WHERE table_schema=$1 AND table_name <> '_voyant_migrations'
+     ORDER BY table_name, column_name`,
     [SCHEMA],
   )
-  return r.rows.map((x) => x.table_name).filter((n) => n !== "_voyant_migrations")
+  return r.rows
 }
 
 main().catch((err) => {

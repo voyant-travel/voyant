@@ -42,7 +42,7 @@ retired bundle already materialised (see "finding" below).
 3. **Negative control** — naively executing a bundle-owned baseline raises `duplicate_table` (proves import-baseline is required, not optional).
 4. **Idempotent re-run** — nothing applied or baselined.
 5. **Cycle rejection** — a `requiresSchemas` cycle throws.
-6. **Equivalence** — fresh D.2 reconstitutes the exact table set the bundle produced.
+6. **Convergence** — a fresh D.2 DB and a transitioned D.1 DB end up with an identical schema, compared **column-for-column** (a table-name check would miss column/index drift between a package baseline and the bundle it replaces — e.g. a missing `product.sku`).
 
 ## Finding to fold back into the ADR
 

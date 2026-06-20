@@ -2,7 +2,7 @@
 
 - **Status:** Proposed — transition mechanics validated by spike; production execution not started.
 - **Date:** 2026-06-20
-- **Validated by:** `spikes/d2-migration-collector/run.mjs` (17/17 on the docker test DB) — proves the fresh-vs-existing dual path, import-baseline (no re-create, verified by stable table OIDs), topo-ordering + cycle rejection, the negative control (naive execute → `duplicate_table`), and fresh-D.2 ≡ D.1-bundle schema equivalence. The spike also surfaced the **baseline cutline** requirement (Decision 5).
+- **Validated by:** `spikes/d2-migration-collector/run.mjs` (18/18 on the docker test DB) — proves the fresh-vs-existing dual path, import-baseline (no re-create, verified by stable table OIDs), topo-ordering + cycle rejection, the negative control (naive execute → `duplicate_table`), and **column-level convergence** of a fresh D.2 DB and a transitioned D.1 DB. The spike also surfaced the **baseline cutline** requirement (Decision 5).
 - **Supersedes (on acceptance):** the single combined history of `migration-resilience-rfc.md` (voyant#1608) and the standard-profile-only scope of `migration-collector-d1.md`. D.1 explicitly deferred this: *"D.2 (package-owned migrations) would supersede #1608; it is out of scope here and gated behind its own ADR."*
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.2**.
 - **Builds on:** `migration-collector-d1.md` (the multi-source collector primitive). D.2 reuses the collector and ledger **unchanged** — `planMigrations` / `applyMigrations` / `importBaseline` in `packages/framework-migrations/src/collector.ts` are untouched. Only *how sources are produced, ordered, and reconciled with existing ledgers* changes.
