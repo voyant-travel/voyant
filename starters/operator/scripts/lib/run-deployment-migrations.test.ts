@@ -19,18 +19,20 @@ import { fileURLToPath } from "node:url"
 import {
   applyMigrations,
   type Cutline,
+  discoverMigrationSources,
   loadFrameworkBundleSource,
   loadMigrationFolder,
   type MigrationSource,
+  runDeploymentMigrations,
 } from "@voyant-travel/framework-migrations"
 import { Client } from "pg"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { schema } from "../../drizzle.schemas.generated.ts"
-import { discoverMigrationSources } from "./discover-migration-sources.ts"
-import { runDeploymentMigrations } from "./run-deployment-migrations.ts"
 
 const DB_URL = process.env.TEST_DATABASE_URL
 const scriptsDir = join(dirname(fileURLToPath(import.meta.url)), "..")
+// The generated `../../packages/…` schema paths resolve from the deployment root.
+const baseDir = join(scriptsDir, "..")
 
 /** Read the committed cutline JSON directly — `loadCutline()` resolves it via
  *  `import.meta.url`, which Vitest's transform doesn't keep as a file URL. */
@@ -64,7 +66,10 @@ async function onDb<T>(name: string, fn: (c: Client) => Promise<T>): Promise<T> 
 }
 
 async function loadRealSources(): Promise<MigrationSource[]> {
-  const discovered = discoverMigrationSources(schema, scriptsDir)
+  const discovered = discoverMigrationSources(schema, {
+    baseDir,
+    deploymentMigrationsDir: join(baseDir, "migrations"),
+  })
   const sources: MigrationSource[] = []
   for (let i = 0; i < discovered.length; i++) {
     const d = discovered[i]
