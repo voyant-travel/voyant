@@ -209,8 +209,12 @@ export async function assertSchemaAtBaseline(
     throw new Error(
       `cannot baseline onto the D.2 collector — this database is NOT at the cutline schema.\n` +
         problems.map((p) => `  • ${p}`).join("\n") +
-        `\n  Converge first (the live aggregate schema is materialised via 'pnpm db:push'/drizzle-kit\n` +
-        `  push for tables with no baseline migration), then re-run this migration to baseline.`,
+        `\n  The import-baseline path only records the cutline as applied; it does NOT alter the\n` +
+        `  schema. It is for a database ALREADY AT the cutline (a D.1 / prior deployment of the\n` +
+        `  SAME package versions). A database that is behind must first reach the cutline schema\n` +
+        `  through its normal migration path — NOT 'drizzle-kit push' (unsafe in production). If\n` +
+        `  this is a disposable/fresh environment, drop it and let the FRESH path execute every\n` +
+        `  migration from scratch instead.`,
     )
   }
 }
