@@ -1,10 +1,31 @@
-CREATE TYPE "public"."roles" AS ENUM('super-admin', 'admin', 'editor', 'viewer', 'member', 'guest');--> statement-breakpoint
-CREATE TYPE "public"."seating_preference" AS ENUM('aisle', 'window', 'middle', 'no_preference');--> statement-breakpoint
-CREATE TYPE "public"."domain_provider" AS ENUM('cloudflare');--> statement-breakpoint
-CREATE TYPE "public"."domain_status" AS ENUM('pending', 'verified', 'active', 'disabled');--> statement-breakpoint
-CREATE TYPE "public"."email_provider" AS ENUM('resend', 'ses');--> statement-breakpoint
-CREATE TYPE "public"."resend_region" AS ENUM('us-east-1', 'eu-west-1', 'sa-east-1', 'ap-northeast-1');--> statement-breakpoint
-CREATE TYPE "public"."tls_mode" AS ENUM('opportunistic', 'enforced');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."roles" AS ENUM('super-admin', 'admin', 'editor', 'viewer', 'member', 'guest');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."seating_preference" AS ENUM('aisle', 'window', 'middle', 'no_preference');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."domain_provider" AS ENUM('cloudflare');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."domain_status" AS ENUM('pending', 'verified', 'active', 'disabled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."email_provider" AS ENUM('resend', 'ses');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."resend_region" AS ENUM('us-east-1', 'eu-west-1', 'sa-east-1', 'ap-northeast-1');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tls_mode" AS ENUM('opportunistic', 'enforced');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "aggregate_snapshots" (
 	"key" text PRIMARY KEY NOT NULL,
 	"payload" jsonb NOT NULL,

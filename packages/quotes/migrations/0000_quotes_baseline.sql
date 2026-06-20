@@ -1,7 +1,19 @@
-CREATE TYPE "public"."entity_type" AS ENUM('organization', 'person', 'quote', 'activity');--> statement-breakpoint
-CREATE TYPE "public"."participant_role" AS ENUM('traveler', 'booker', 'decision_maker', 'finance', 'other');--> statement-breakpoint
-CREATE TYPE "public"."quote_status" AS ENUM('open', 'won', 'lost', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."quote_version_status" AS ENUM('draft', 'sent', 'accepted', 'declined', 'superseded', 'expired');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."entity_type" AS ENUM('organization', 'person', 'quote', 'activity');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."participant_role" AS ENUM('traveler', 'booker', 'decision_maker', 'finance', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."quote_status" AS ENUM('open', 'won', 'lost', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."quote_version_status" AS ENUM('draft', 'sent', 'accepted', 'declined', 'superseded', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "booking_crm_details" (
 	"booking_id" text PRIMARY KEY NOT NULL,
 	"quote_id" text,

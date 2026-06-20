@@ -1,33 +1,123 @@
-CREATE TYPE "public"."booking_dist_payment_owner" AS ENUM('operator', 'channel', 'split');--> statement-breakpoint
-CREATE TYPE "public"."external_ref_status" AS ENUM('active', 'inactive', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."channel_allotment_release_mode" AS ENUM('automatic', 'manual');--> statement-breakpoint
-CREATE TYPE "public"."channel_allotment_unsold_action" AS ENUM('release_to_general_pool', 'expire', 'retain');--> statement-breakpoint
-CREATE TYPE "public"."channel_commission_scope" AS ENUM('booking', 'product', 'rate', 'category');--> statement-breakpoint
-CREATE TYPE "public"."channel_commission_type" AS ENUM('fixed', 'percentage');--> statement-breakpoint
-CREATE TYPE "public"."channel_contract_status" AS ENUM('draft', 'active', 'expired', 'terminated');--> statement-breakpoint
-CREATE TYPE "public"."channel_kind" AS ENUM('direct', 'affiliate', 'ota', 'reseller', 'marketplace', 'api_partner', 'connect');--> statement-breakpoint
-CREATE TYPE "public"."channel_reconciliation_issue_type" AS ENUM('missing_booking', 'status_mismatch', 'amount_mismatch', 'cancel_mismatch', 'missing_payout', 'other');--> statement-breakpoint
-CREATE TYPE "public"."channel_reconciliation_policy_frequency" AS ENUM('manual', 'daily', 'weekly', 'monthly');--> statement-breakpoint
-CREATE TYPE "public"."channel_reconciliation_resolution_status" AS ENUM('open', 'ignored', 'resolved');--> statement-breakpoint
-CREATE TYPE "public"."channel_reconciliation_run_status" AS ENUM('draft', 'running', 'completed', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."channel_reconciliation_severity" AS ENUM('info', 'warning', 'error');--> statement-breakpoint
-CREATE TYPE "public"."channel_release_execution_action" AS ENUM('released', 'expired', 'retained', 'manual_override');--> statement-breakpoint
-CREATE TYPE "public"."channel_release_execution_status" AS ENUM('pending', 'completed', 'skipped', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."channel_release_schedule_kind" AS ENUM('manual', 'hourly', 'daily');--> statement-breakpoint
-CREATE TYPE "public"."channel_remittance_exception_status" AS ENUM('open', 'investigating', 'resolved', 'ignored');--> statement-breakpoint
-CREATE TYPE "public"."channel_settlement_approval_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
-CREATE TYPE "public"."channel_settlement_item_status" AS ENUM('pending', 'approved', 'disputed', 'paid', 'void');--> statement-breakpoint
-CREATE TYPE "public"."channel_settlement_policy_frequency" AS ENUM('manual', 'daily', 'weekly', 'monthly');--> statement-breakpoint
-CREATE TYPE "public"."channel_settlement_run_status" AS ENUM('draft', 'open', 'posted', 'paid', 'void');--> statement-breakpoint
-CREATE TYPE "public"."channel_status" AS ENUM('active', 'inactive', 'pending', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."channel_webhook_status" AS ENUM('pending', 'processed', 'failed', 'ignored');--> statement-breakpoint
-CREATE TYPE "public"."distribution_cancellation_owner" AS ENUM('operator', 'channel', 'mixed');--> statement-breakpoint
-CREATE TYPE "public"."distribution_payment_owner" AS ENUM('operator', 'channel', 'split');--> statement-breakpoint
-CREATE TYPE "public"."rate_unit" AS ENUM('per_person', 'per_group', 'per_night', 'per_vehicle', 'flat');--> statement-breakpoint
-CREATE TYPE "public"."service_type" AS ENUM('accommodation', 'transfer', 'experience', 'guide', 'meal', 'other');--> statement-breakpoint
-CREATE TYPE "public"."supplier_contract_status" AS ENUM('active', 'expired', 'pending', 'terminated');--> statement-breakpoint
-CREATE TYPE "public"."supplier_status" AS ENUM('active', 'inactive', 'pending');--> statement-breakpoint
-CREATE TYPE "public"."supplier_type" AS ENUM('hotel', 'transfer', 'guide', 'experience', 'airline', 'restaurant', 'other');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."booking_dist_payment_owner" AS ENUM('operator', 'channel', 'split');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."external_ref_status" AS ENUM('active', 'inactive', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_allotment_release_mode" AS ENUM('automatic', 'manual');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_allotment_unsold_action" AS ENUM('release_to_general_pool', 'expire', 'retain');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_commission_scope" AS ENUM('booking', 'product', 'rate', 'category');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_commission_type" AS ENUM('fixed', 'percentage');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_contract_status" AS ENUM('draft', 'active', 'expired', 'terminated');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_kind" AS ENUM('direct', 'affiliate', 'ota', 'reseller', 'marketplace', 'api_partner', 'connect');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_reconciliation_issue_type" AS ENUM('missing_booking', 'status_mismatch', 'amount_mismatch', 'cancel_mismatch', 'missing_payout', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_reconciliation_policy_frequency" AS ENUM('manual', 'daily', 'weekly', 'monthly');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_reconciliation_resolution_status" AS ENUM('open', 'ignored', 'resolved');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_reconciliation_run_status" AS ENUM('draft', 'running', 'completed', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_reconciliation_severity" AS ENUM('info', 'warning', 'error');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_release_execution_action" AS ENUM('released', 'expired', 'retained', 'manual_override');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_release_execution_status" AS ENUM('pending', 'completed', 'skipped', 'failed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_release_schedule_kind" AS ENUM('manual', 'hourly', 'daily');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_remittance_exception_status" AS ENUM('open', 'investigating', 'resolved', 'ignored');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_settlement_approval_status" AS ENUM('pending', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_settlement_item_status" AS ENUM('pending', 'approved', 'disputed', 'paid', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_settlement_policy_frequency" AS ENUM('manual', 'daily', 'weekly', 'monthly');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_settlement_run_status" AS ENUM('draft', 'open', 'posted', 'paid', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_status" AS ENUM('active', 'inactive', 'pending', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."channel_webhook_status" AS ENUM('pending', 'processed', 'failed', 'ignored');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."distribution_cancellation_owner" AS ENUM('operator', 'channel', 'mixed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."distribution_payment_owner" AS ENUM('operator', 'channel', 'split');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."rate_unit" AS ENUM('per_person', 'per_group', 'per_night', 'per_vehicle', 'flat');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."service_type" AS ENUM('accommodation', 'transfer', 'experience', 'guide', 'meal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."supplier_contract_status" AS ENUM('active', 'expired', 'pending', 'terminated');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."supplier_status" AS ENUM('active', 'inactive', 'pending');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."supplier_type" AS ENUM('hotel', 'transfer', 'guide', 'experience', 'airline', 'restaurant', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "booking_distribution_details" (
 	"booking_id" text PRIMARY KEY NOT NULL,
 	"market_id" text,

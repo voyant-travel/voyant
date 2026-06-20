@@ -1,13 +1,43 @@
-CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms');--> statement-breakpoint
-CREATE TYPE "public"."notification_delivery_status" AS ENUM('pending', 'sent', 'failed', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_run_status" AS ENUM('queued', 'processing', 'sent', 'skipped', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_stage_anchor" AS ENUM('due_date', 'booking_created_at', 'departure_date', 'invoice_issued_at', 'last_send_at');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_stage_cadence_kind" AS ENUM('once', 'every_n_days', 'escalating');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_target_type" AS ENUM('booking_confirmed', 'booking_payment_schedule', 'payment_complete', 'booking_cancelled_non_payment', 'invoice');--> statement-breakpoint
-CREATE TYPE "public"."notification_stage_recipient_kind" AS ENUM('primary', 'cc', 'bcc');--> statement-breakpoint
-CREATE TYPE "public"."notification_target_type" AS ENUM('booking', 'booking_payment_schedule', 'booking_guarantee', 'invoice', 'payment_session', 'person', 'organization', 'other');--> statement-breakpoint
-CREATE TYPE "public"."notification_template_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_delivery_status" AS ENUM('pending', 'sent', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_reminder_run_status" AS ENUM('queued', 'processing', 'sent', 'skipped', 'failed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_reminder_stage_anchor" AS ENUM('due_date', 'booking_created_at', 'departure_date', 'invoice_issued_at', 'last_send_at');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_reminder_stage_cadence_kind" AS ENUM('once', 'every_n_days', 'escalating');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_reminder_status" AS ENUM('draft', 'active', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_reminder_target_type" AS ENUM('booking_confirmed', 'booking_payment_schedule', 'payment_complete', 'booking_cancelled_non_payment', 'invoice');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_stage_recipient_kind" AS ENUM('primary', 'cc', 'bcc');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_target_type" AS ENUM('booking', 'booking_payment_schedule', 'booking_guarantee', 'invoice', 'payment_session', 'person', 'organization', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."notification_template_status" AS ENUM('draft', 'active', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "notification_deliveries" (
 	"id" text PRIMARY KEY NOT NULL,
 	"template_id" text,

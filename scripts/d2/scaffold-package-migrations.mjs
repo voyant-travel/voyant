@@ -70,7 +70,8 @@ for (const name of pkgs) {
   // diff (same behaviour as the framework bundle generator).
   const baselineName = `${name.replace(/-/g, "_")}_baseline`
   pj.scripts["db:generate"] =
-    `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName}`
+    `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName} && ` +
+    `node ../../scripts/d2/guard-create-type.mjs ./migrations`
 
   pj.devDependencies ??= {}
   if (!pj.devDependencies["drizzle-kit"]) pj.devDependencies["drizzle-kit"] = DRIZZLE_KIT

@@ -1,13 +1,43 @@
-CREATE TYPE "public"."action_ledger_action_kind" AS ENUM('read', 'create', 'update', 'delete', 'execute', 'approve', 'reject', 'reverse', 'compensate', 'duplicate');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_approval_status" AS ENUM('pending', 'approved', 'denied', 'expired', 'cancelled', 'superseded');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_principal_type" AS ENUM('user', 'api_key', 'agent', 'workflow', 'system');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_redaction_status" AS ENUM('none', 'redacted', 'tombstoned', 'crypto_shredded');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_relay_status" AS ENUM('pending', 'processing', 'succeeded', 'failed', 'dead_letter');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_reversal_kind" AS ENUM('none', 'revert', 'compensate', 'domain_command');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_reversal_outcome" AS ENUM('full', 'partial', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_reversal_state" AS ENUM('not_reversible', 'available', 'requested', 'running', 'completed', 'failed', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_risk" AS ENUM('low', 'medium', 'high', 'critical');--> statement-breakpoint
-CREATE TYPE "public"."action_ledger_status" AS ENUM('requested', 'awaiting_approval', 'approved', 'denied', 'succeeded', 'failed', 'reversed', 'compensated', 'expired', 'cancelled', 'superseded');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_action_kind" AS ENUM('read', 'create', 'update', 'delete', 'execute', 'approve', 'reject', 'reverse', 'compensate', 'duplicate');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_approval_status" AS ENUM('pending', 'approved', 'denied', 'expired', 'cancelled', 'superseded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_principal_type" AS ENUM('user', 'api_key', 'agent', 'workflow', 'system');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_redaction_status" AS ENUM('none', 'redacted', 'tombstoned', 'crypto_shredded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_relay_status" AS ENUM('pending', 'processing', 'succeeded', 'failed', 'dead_letter');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_reversal_kind" AS ENUM('none', 'revert', 'compensate', 'domain_command');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_reversal_outcome" AS ENUM('full', 'partial', 'failed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_reversal_state" AS ENUM('not_reversible', 'available', 'requested', 'running', 'completed', 'failed', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_risk" AS ENUM('low', 'medium', 'high', 'critical');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."action_ledger_status" AS ENUM('requested', 'awaiting_approval', 'approved', 'denied', 'succeeded', 'failed', 'reversed', 'compensated', 'expired', 'cancelled', 'superseded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "action_approvals" (
 	"id" text PRIMARY KEY NOT NULL,
 	"requested_action_id" text NOT NULL,

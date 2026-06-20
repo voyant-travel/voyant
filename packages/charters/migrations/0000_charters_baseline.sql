@@ -1,10 +1,31 @@
-CREATE TYPE "public"."charter_booking_mode" AS ENUM('per_suite', 'whole_yacht');--> statement-breakpoint
-CREATE TYPE "public"."charter_source" AS ENUM('local', 'external');--> statement-breakpoint
-CREATE TYPE "public"."charter_status" AS ENUM('draft', 'awaiting_review', 'live', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."charter_suite_availability" AS ENUM('available', 'limited', 'on_request', 'wait_list', 'sold_out');--> statement-breakpoint
-CREATE TYPE "public"."charter_suite_category" AS ENUM('standard', 'deluxe', 'suite', 'penthouse', 'owners', 'signature');--> statement-breakpoint
-CREATE TYPE "public"."charter_voyage_sales_status" AS ENUM('open', 'on_request', 'wait_list', 'sold_out', 'closed');--> statement-breakpoint
-CREATE TYPE "public"."charter_yacht_class" AS ENUM('luxury_motor', 'luxury_sailing', 'expedition', 'small_cruise');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_booking_mode" AS ENUM('per_suite', 'whole_yacht');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_source" AS ENUM('local', 'external');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_status" AS ENUM('draft', 'awaiting_review', 'live', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_suite_availability" AS ENUM('available', 'limited', 'on_request', 'wait_list', 'sold_out');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_suite_category" AS ENUM('standard', 'deluxe', 'suite', 'penthouse', 'owners', 'signature');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_voyage_sales_status" AS ENUM('open', 'on_request', 'wait_list', 'sold_out', 'closed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."charter_yacht_class" AS ENUM('luxury_motor', 'luxury_sailing', 'expedition', 'small_cruise');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "booking_charter_details" (
 	"booking_id" text PRIMARY KEY NOT NULL,
 	"booking_mode" charter_booking_mode NOT NULL,

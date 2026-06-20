@@ -13,6 +13,12 @@
 "@voyant-travel/storefront": patch
 "@voyant-travel/charters": patch
 "@voyant-travel/cruises": patch
+"@voyant-travel/operator-settings": patch
+"@voyant-travel/action-ledger": patch
+"@voyant-travel/workflow-runs": patch
+"@voyant-travel/trips": patch
 ---
 
-D.2 slice 1 (batch 2) — these packages now own and ship their migration history. Each gains a `drizzle.migrations.config.ts`, a `db:generate` script, and a generated `migrations/` baseline included in the published tarball (`files`). A D.2 deployment collects each package's folder as its migration source (deps-first, by `voyant.requiresSchemas`); existing D.1 databases import-baseline the bundle-covered baseline. No runtime behavior change. Each baseline was verified to reproduce the framework bundle's tables column-for-column. See `docs/architecture/migration-collector-d2.md`.
+D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.

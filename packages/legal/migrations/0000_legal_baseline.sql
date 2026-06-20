@@ -1,17 +1,59 @@
-CREATE TYPE "public"."contract_body_format" AS ENUM('markdown', 'html', 'lexical_json');--> statement-breakpoint
-CREATE TYPE "public"."contract_number_reset_strategy" AS ENUM('never', 'annual', 'monthly');--> statement-breakpoint
-CREATE TYPE "public"."contract_scope" AS ENUM('customer', 'supplier', 'partner', 'channel', 'other');--> statement-breakpoint
-CREATE TYPE "public"."contract_signature_method" AS ENUM('manual', 'electronic', 'docusign', 'other');--> statement-breakpoint
-CREATE TYPE "public"."contract_status" AS ENUM('draft', 'issued', 'sent', 'signed', 'executed', 'expired', 'void');--> statement-breakpoint
-CREATE TYPE "public"."policy_acceptance_method" AS ENUM('implicit', 'explicit_checkbox', 'signature');--> statement-breakpoint
-CREATE TYPE "public"."policy_assignment_scope" AS ENUM('product', 'channel', 'supplier', 'market', 'organization', 'global');--> statement-breakpoint
-CREATE TYPE "public"."policy_kind" AS ENUM('cancellation', 'payment', 'terms_and_conditions', 'privacy', 'refund', 'commission', 'guarantee', 'other');--> statement-breakpoint
-CREATE TYPE "public"."policy_refund_type" AS ENUM('cash', 'credit', 'cash_or_credit', 'none');--> statement-breakpoint
-CREATE TYPE "public"."policy_rule_type" AS ENUM('window', 'percentage', 'flat_amount', 'date_range', 'custom');--> statement-breakpoint
-CREATE TYPE "public"."policy_version_status" AS ENUM('draft', 'published', 'retired');--> statement-breakpoint
-CREATE TYPE "public"."legal_target_kind" AS ENUM('booking', 'quote_version', 'program', 'product', 'inventory_item', 'supplier_channel_relationship', 'provider_source_ref');--> statement-breakpoint
-CREATE TYPE "public"."legal_term_acceptance_status" AS ENUM('not_required', 'pending', 'accepted', 'declined');--> statement-breakpoint
-CREATE TYPE "public"."legal_term_type" AS ENUM('terms_and_conditions', 'cancellation', 'guarantee', 'payment', 'pricing', 'commission', 'other');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contract_body_format" AS ENUM('markdown', 'html', 'lexical_json');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contract_number_reset_strategy" AS ENUM('never', 'annual', 'monthly');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contract_scope" AS ENUM('customer', 'supplier', 'partner', 'channel', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contract_signature_method" AS ENUM('manual', 'electronic', 'docusign', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contract_status" AS ENUM('draft', 'issued', 'sent', 'signed', 'executed', 'expired', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_acceptance_method" AS ENUM('implicit', 'explicit_checkbox', 'signature');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_assignment_scope" AS ENUM('product', 'channel', 'supplier', 'market', 'organization', 'global');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_kind" AS ENUM('cancellation', 'payment', 'terms_and_conditions', 'privacy', 'refund', 'commission', 'guarantee', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_refund_type" AS ENUM('cash', 'credit', 'cash_or_credit', 'none');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_rule_type" AS ENUM('window', 'percentage', 'flat_amount', 'date_range', 'custom');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."policy_version_status" AS ENUM('draft', 'published', 'retired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."legal_target_kind" AS ENUM('booking', 'quote_version', 'program', 'product', 'inventory_item', 'supplier_channel_relationship', 'provider_source_ref');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."legal_term_acceptance_status" AS ENUM('not_required', 'pending', 'accepted', 'declined');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."legal_term_type" AS ENUM('terms_and_conditions', 'cancellation', 'guarantee', 'payment', 'pricing', 'commission', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "contract_attachments" (
 	"id" text PRIMARY KEY NOT NULL,
 	"contract_id" text NOT NULL,

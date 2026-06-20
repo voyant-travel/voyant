@@ -42,7 +42,7 @@
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
-    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=inventory_baseline"
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=inventory_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations"
   },
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",

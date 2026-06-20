@@ -51,7 +51,7 @@
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
-    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=catalog_baseline"
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=catalog_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations"
   },
   "files": [
     "dist",

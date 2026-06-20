@@ -1,5 +1,11 @@
-CREATE TYPE "public"."storefront_verification_channel" AS ENUM('email', 'sms');--> statement-breakpoint
-CREATE TYPE "public"."storefront_verification_status" AS ENUM('pending', 'verified', 'expired', 'failed', 'cancelled');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."storefront_verification_channel" AS ENUM('email', 'sms');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."storefront_verification_status" AS ENUM('pending', 'verified', 'expired', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "storefront_verification_challenges" (
 	"id" text PRIMARY KEY NOT NULL,
 	"channel" "storefront_verification_channel" NOT NULL,

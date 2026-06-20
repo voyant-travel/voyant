@@ -60,6 +60,9 @@ function buildManifests() {
   for (const dir of readdirSync(join(ROOT, "packages"))) {
     const pjPath = join(ROOT, "packages", dir, "package.json")
     if (!existsSync(pjPath)) continue
+    // The framework bundle is NOT a D.2 package source — it is decommissioned
+    // from the fresh-D.2 apply path (it would re-create everything). Exclude it.
+    if (dir === "framework-migrations") continue
     const pj = JSON.parse(readFileSync(pjPath, "utf8"))
     const migrationsDir = join(ROOT, "packages", dir, "migrations")
     byName.set(pj.name, {
@@ -81,6 +84,14 @@ function closure(name, manifests, out = [], seen = new Set()) {
   if (!m) return out
   for (const dep of m.requires) closure(dep, manifests, out, seen)
   if (m.hasMigrations) out.push(m)
+  return out
+}
+
+/** Deps-first topo order over ALL packages that ship migrations (the fresh-D.2 set). */
+function globalOrder(manifests) {
+  const out = []
+  const seen = new Set()
+  for (const m of manifests.values()) if (m.hasMigrations) closure(m.name, manifests, out, seen)
   return out
 }
 
@@ -148,6 +159,50 @@ async function main() {
       })
       return onDb("d2_verify_bundle", columnsByTable)
     })
+
+    // --union: the fresh-D.2 check — apply ALL generated package sources together
+    // (deps-first) onto one DB, proving they don't collide (e.g. duplicate shared
+    // enums) and that the union reconstitutes the bundle for every owned table.
+    if (pkgs[0] === "--union") {
+      const order = globalOrder(manifests)
+      let cols = null
+      try {
+        cols = await withFreshDb(admin, "d2_verify_union", async () => {
+          await onDb("d2_verify_union", async (c) => {
+            for (const s of SEED) await c.query(s)
+            for (const m of order)
+              for (const stmt of loadFolder(m.migrationsDir)) await c.query(stmt)
+          })
+          return onDb("d2_verify_union", columnsByTable)
+        })
+      } catch (e) {
+        failed++
+        console.log(`  FAIL  union apply errored — ${e.message}`)
+      }
+      if (cols) {
+        const own = new Set()
+        for (const m of order) for (const t of ownTables(m.migrationsDir)) own.add(t)
+        const problems = []
+        for (const table of own) {
+          const got = cols.get(table)
+          const want = bundleCols.get(table)
+          if (!want) problems.push(`table ${table} not in framework bundle`)
+          else if (JSON.stringify(got) !== JSON.stringify(want))
+            problems.push(`table ${table} columns differ from the bundle`)
+        }
+        if (problems.length === 0) {
+          console.log(
+            `  PASS  union — ${order.length} package source(s) apply together; ${own.size} owned table(s) reconstitute the bundle column-for-column`,
+          )
+        } else {
+          failed++
+          console.log(`  FAIL  union — ${problems.length} table problem(s)`)
+          for (const p of problems.slice(0, 8)) console.log(`          • ${p}`)
+        }
+      }
+      console.log(`\n${failed === 0 ? "UNION PASS" : "UNION FAIL"}`)
+      process.exit(failed === 0 ? 0 : 1)
+    }
 
     for (const dir of pkgs) {
       const target = byDir.get(dir)

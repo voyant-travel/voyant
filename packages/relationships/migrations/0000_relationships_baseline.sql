@@ -1,17 +1,59 @@
-CREATE TYPE "public"."person_document_type" AS ENUM('passport', 'id_card', 'driver_license', 'visa', 'other');--> statement-breakpoint
-CREATE TYPE "public"."person_relationship_kind" AS ENUM('spouse', 'partner', 'parent', 'child', 'sibling', 'guardian', 'ward', 'emergency_contact', 'friend', 'travel_companion', 'other');--> statement-breakpoint
-CREATE TYPE "public"."activity_link_role" AS ENUM('primary', 'related');--> statement-breakpoint
-CREATE TYPE "public"."activity_status" AS ENUM('planned', 'done', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."activity_type" AS ENUM('call', 'email', 'meeting', 'task', 'follow_up', 'note');--> statement-breakpoint
-CREATE TYPE "public"."communication_channel" AS ENUM('email', 'phone', 'whatsapp', 'sms', 'meeting', 'other');--> statement-breakpoint
-CREATE TYPE "public"."communication_direction" AS ENUM('inbound', 'outbound');--> statement-breakpoint
-CREATE TYPE "public"."custom_field_type" AS ENUM('varchar', 'text', 'double', 'monetary', 'date', 'boolean', 'enum', 'set', 'json', 'address', 'phone');--> statement-breakpoint
-CREATE TYPE "public"."entity_type" AS ENUM('organization', 'person', 'quote', 'activity');--> statement-breakpoint
-CREATE TYPE "public"."record_status" AS ENUM('active', 'inactive', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."relation_type" AS ENUM('client', 'partner', 'supplier', 'other');--> statement-breakpoint
-CREATE TYPE "public"."customer_signal_kind" AS ENUM('wishlist', 'notify', 'inquiry', 'request_offer', 'referral');--> statement-breakpoint
-CREATE TYPE "public"."customer_signal_source" AS ENUM('form', 'phone', 'admin', 'abandoned_cart', 'website', 'booking');--> statement-breakpoint
-CREATE TYPE "public"."customer_signal_status" AS ENUM('new', 'contacted', 'qualified', 'converted', 'lost', 'expired');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."person_document_type" AS ENUM('passport', 'id_card', 'driver_license', 'visa', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."person_relationship_kind" AS ENUM('spouse', 'partner', 'parent', 'child', 'sibling', 'guardian', 'ward', 'emergency_contact', 'friend', 'travel_companion', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."activity_link_role" AS ENUM('primary', 'related');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."activity_status" AS ENUM('planned', 'done', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."activity_type" AS ENUM('call', 'email', 'meeting', 'task', 'follow_up', 'note');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."communication_channel" AS ENUM('email', 'phone', 'whatsapp', 'sms', 'meeting', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."communication_direction" AS ENUM('inbound', 'outbound');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."custom_field_type" AS ENUM('varchar', 'text', 'double', 'monetary', 'date', 'boolean', 'enum', 'set', 'json', 'address', 'phone');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."entity_type" AS ENUM('organization', 'person', 'quote', 'activity');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."record_status" AS ENUM('active', 'inactive', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."relation_type" AS ENUM('client', 'partner', 'supplier', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."customer_signal_kind" AS ENUM('wishlist', 'notify', 'inquiry', 'request_offer', 'referral');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."customer_signal_source" AS ENUM('form', 'phone', 'admin', 'abandoned_cart', 'website', 'booking');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."customer_signal_status" AS ENUM('new', 'contacted', 'qualified', 'converted', 'lost', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "communication_log" (
 	"id" text PRIMARY KEY NOT NULL,
 	"person_id" text NOT NULL,

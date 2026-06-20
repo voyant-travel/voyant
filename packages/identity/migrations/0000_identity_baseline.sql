@@ -1,6 +1,15 @@
-CREATE TYPE "public"."address_label" AS ENUM('primary', 'billing', 'shipping', 'mailing', 'meeting', 'service', 'legal', 'other');--> statement-breakpoint
-CREATE TYPE "public"."contact_point_kind" AS ENUM('email', 'phone', 'mobile', 'whatsapp', 'website', 'sms', 'fax', 'social', 'other');--> statement-breakpoint
-CREATE TYPE "public"."named_contact_role" AS ENUM('general', 'primary', 'reservations', 'operations', 'front_desk', 'sales', 'emergency', 'accounting', 'legal', 'other');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."address_label" AS ENUM('primary', 'billing', 'shipping', 'mailing', 'meeting', 'service', 'legal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."contact_point_kind" AS ENUM('email', 'phone', 'mobile', 'whatsapp', 'website', 'sms', 'fax', 'social', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."named_contact_role" AS ENUM('general', 'primary', 'reservations', 'operations', 'front_desk', 'sales', 'emergency', 'accounting', 'legal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "identity_addresses" (
 	"id" text PRIMARY KEY NOT NULL,
 	"entity_type" text NOT NULL,

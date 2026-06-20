@@ -1,38 +1,143 @@
-CREATE TYPE "public"."ap_service_type" AS ENUM('transport', 'flight', 'accommodation', 'guide', 'meal', 'experience', 'insurance', 'other');--> statement-breakpoint
-CREATE TYPE "public"."capture_mode" AS ENUM('automatic', 'manual');--> statement-breakpoint
-CREATE TYPE "public"."commission_model" AS ENUM('percentage', 'fixed', 'markup', 'net');--> statement-breakpoint
-CREATE TYPE "public"."commission_recipient_type" AS ENUM('channel', 'affiliate', 'agency', 'agent', 'internal', 'supplier', 'other');--> statement-breakpoint
-CREATE TYPE "public"."commission_status" AS ENUM('pending', 'accrued', 'payable', 'paid', 'void');--> statement-breakpoint
-CREATE TYPE "public"."cost_allocation_split_method" AS ENUM('manual', 'per_pax', 'equal', 'weighted');--> statement-breakpoint
-CREATE TYPE "public"."cost_allocation_target_type" AS ENUM('departure', 'product', 'booking', 'traveler', 'unattributed');--> statement-breakpoint
-CREATE TYPE "public"."credit_note_status" AS ENUM('draft', 'issued', 'applied');--> statement-breakpoint
-CREATE TYPE "public"."guarantee_status" AS ENUM('pending', 'active', 'released', 'failed', 'cancelled', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."guarantee_type" AS ENUM('deposit', 'credit_card', 'preauth', 'card_on_file', 'bank_transfer', 'voucher', 'agency_letter', 'other');--> statement-breakpoint
-CREATE TYPE "public"."invoice_number_reset_strategy" AS ENUM('never', 'annual', 'monthly');--> statement-breakpoint
-CREATE TYPE "public"."invoice_number_series_scope" AS ENUM('invoice', 'proforma', 'credit_note');--> statement-breakpoint
-CREATE TYPE "public"."invoice_rendition_format" AS ENUM('html', 'pdf', 'xml', 'json');--> statement-breakpoint
-CREATE TYPE "public"."invoice_rendition_status" AS ENUM('pending', 'ready', 'failed', 'stale');--> statement-breakpoint
-CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'pending_external_allocation', 'issued', 'partially_paid', 'paid', 'overdue', 'void');--> statement-breakpoint
-CREATE TYPE "public"."invoice_template_body_format" AS ENUM('html', 'markdown', 'lexical_json');--> statement-breakpoint
-CREATE TYPE "public"."invoice_type" AS ENUM('invoice', 'proforma', 'credit_note');--> statement-breakpoint
-CREATE TYPE "public"."payment_authorization_status" AS ENUM('pending', 'authorized', 'partially_captured', 'captured', 'voided', 'failed', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."payment_capture_status" AS ENUM('pending', 'completed', 'failed', 'refunded', 'voided');--> statement-breakpoint
-CREATE TYPE "public"."payment_instrument_owner_type" AS ENUM('client', 'supplier', 'channel', 'agency', 'internal', 'other');--> statement-breakpoint
-CREATE TYPE "public"."payment_instrument_status" AS ENUM('active', 'inactive', 'expired', 'revoked', 'failed_verification');--> statement-breakpoint
-CREATE TYPE "public"."payment_instrument_type" AS ENUM('credit_card', 'debit_card', 'bank_account', 'wallet', 'voucher', 'direct_bill', 'cash', 'other');--> statement-breakpoint
-CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'credit_card', 'debit_card', 'cash', 'cheque', 'wallet', 'direct_bill', 'voucher', 'other');--> statement-breakpoint
-CREATE TYPE "public"."payment_schedule_status" AS ENUM('pending', 'due', 'paid', 'waived', 'cancelled', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."payment_schedule_type" AS ENUM('deposit', 'installment', 'balance', 'hold', 'other');--> statement-breakpoint
-CREATE TYPE "public"."payment_session_status" AS ENUM('pending', 'requires_redirect', 'processing', 'authorized', 'paid', 'failed', 'cancelled', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."payment_session_target_type" AS ENUM('booking', 'order', 'invoice', 'booking_payment_schedule', 'booking_guarantee', 'flight_order', 'other');--> statement-breakpoint
-CREATE TYPE "public"."payment_status" AS ENUM('pending', 'completed', 'failed', 'refunded');--> statement-breakpoint
-CREATE TYPE "public"."supplier_invoice_status" AS ENUM('draft', 'received', 'approved', 'partially_paid', 'paid', 'disputed', 'void');--> statement-breakpoint
-CREATE TYPE "public"."tax_regime_code" AS ENUM('standard', 'reduced', 'exempt', 'reverse_charge', 'margin_scheme_art311', 'zero_rated', 'out_of_scope', 'other');--> statement-breakpoint
-CREATE TYPE "public"."tax_scope" AS ENUM('included', 'excluded', 'withheld');--> statement-breakpoint
-CREATE TYPE "public"."voucher_source_type" AS ENUM('refund', 'cancellation_credit', 'gift', 'manual', 'promo');--> statement-breakpoint
-CREATE TYPE "public"."voucher_status" AS ENUM('active', 'redeemed', 'expired', 'void');--> statement-breakpoint
-CREATE TYPE "public"."tax_class_applies_to" AS ENUM('base', 'addon', 'accommodation', 'all');--> statement-breakpoint
-CREATE TYPE "public"."tax_policy_side" AS ENUM('sell', 'buy');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."ap_service_type" AS ENUM('transport', 'flight', 'accommodation', 'guide', 'meal', 'experience', 'insurance', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."capture_mode" AS ENUM('automatic', 'manual');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."commission_model" AS ENUM('percentage', 'fixed', 'markup', 'net');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."commission_recipient_type" AS ENUM('channel', 'affiliate', 'agency', 'agent', 'internal', 'supplier', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."commission_status" AS ENUM('pending', 'accrued', 'payable', 'paid', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."cost_allocation_split_method" AS ENUM('manual', 'per_pax', 'equal', 'weighted');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."cost_allocation_target_type" AS ENUM('departure', 'product', 'booking', 'traveler', 'unattributed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."credit_note_status" AS ENUM('draft', 'issued', 'applied');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."guarantee_status" AS ENUM('pending', 'active', 'released', 'failed', 'cancelled', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."guarantee_type" AS ENUM('deposit', 'credit_card', 'preauth', 'card_on_file', 'bank_transfer', 'voucher', 'agency_letter', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_number_reset_strategy" AS ENUM('never', 'annual', 'monthly');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_number_series_scope" AS ENUM('invoice', 'proforma', 'credit_note');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_rendition_format" AS ENUM('html', 'pdf', 'xml', 'json');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_rendition_status" AS ENUM('pending', 'ready', 'failed', 'stale');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'pending_external_allocation', 'issued', 'partially_paid', 'paid', 'overdue', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_template_body_format" AS ENUM('html', 'markdown', 'lexical_json');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."invoice_type" AS ENUM('invoice', 'proforma', 'credit_note');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_authorization_status" AS ENUM('pending', 'authorized', 'partially_captured', 'captured', 'voided', 'failed', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_capture_status" AS ENUM('pending', 'completed', 'failed', 'refunded', 'voided');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_instrument_owner_type" AS ENUM('client', 'supplier', 'channel', 'agency', 'internal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_instrument_status" AS ENUM('active', 'inactive', 'expired', 'revoked', 'failed_verification');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_instrument_type" AS ENUM('credit_card', 'debit_card', 'bank_account', 'wallet', 'voucher', 'direct_bill', 'cash', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'credit_card', 'debit_card', 'cash', 'cheque', 'wallet', 'direct_bill', 'voucher', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_schedule_status" AS ENUM('pending', 'due', 'paid', 'waived', 'cancelled', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_schedule_type" AS ENUM('deposit', 'installment', 'balance', 'hold', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_session_status" AS ENUM('pending', 'requires_redirect', 'processing', 'authorized', 'paid', 'failed', 'cancelled', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_session_target_type" AS ENUM('booking', 'order', 'invoice', 'booking_payment_schedule', 'booking_guarantee', 'flight_order', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."payment_status" AS ENUM('pending', 'completed', 'failed', 'refunded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."supplier_invoice_status" AS ENUM('draft', 'received', 'approved', 'partially_paid', 'paid', 'disputed', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tax_regime_code" AS ENUM('standard', 'reduced', 'exempt', 'reverse_charge', 'margin_scheme_art311', 'zero_rated', 'out_of_scope', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tax_scope" AS ENUM('included', 'excluded', 'withheld');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."voucher_source_type" AS ENUM('refund', 'cancellation_credit', 'gift', 'manual', 'promo');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."voucher_status" AS ENUM('active', 'redeemed', 'expired', 'void');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tax_class_applies_to" AS ENUM('base', 'addon', 'accommodation', 'all');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."tax_policy_side" AS ENUM('sell', 'buy');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "booking_guarantees" (
 	"id" text PRIMARY KEY NOT NULL,
 	"booking_id" text NOT NULL,

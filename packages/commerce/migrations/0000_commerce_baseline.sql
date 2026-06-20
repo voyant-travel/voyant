@@ -1,27 +1,99 @@
-CREATE TYPE "public"."fx_rate_source" AS ENUM('manual', 'ecb', 'custom', 'channel', 'supplier', 'other');--> statement-breakpoint
-CREATE TYPE "public"."market_channel_scope" AS ENUM('all', 'b2c', 'b2b', 'internal');--> statement-breakpoint
-CREATE TYPE "public"."market_sellability" AS ENUM('sellable', 'on_request', 'unavailable');--> statement-breakpoint
-CREATE TYPE "public"."market_status" AS ENUM('active', 'inactive', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."market_visibility" AS ENUM('public', 'private', 'hidden');--> statement-breakpoint
-CREATE TYPE "public"."addon_pricing_mode" AS ENUM('included', 'per_person', 'per_booking', 'on_request', 'unavailable');--> statement-breakpoint
-CREATE TYPE "public"."cancellation_charge_type" AS ENUM('none', 'amount', 'percentage');--> statement-breakpoint
-CREATE TYPE "public"."cancellation_policy_type" AS ENUM('simple', 'advanced', 'non_refundable', 'custom');--> statement-breakpoint
-CREATE TYPE "public"."option_pricing_mode" AS ENUM('per_person', 'per_booking', 'starting_from', 'free', 'on_request');--> statement-breakpoint
-CREATE TYPE "public"."option_start_time_rule_mode" AS ENUM('included', 'excluded', 'override', 'adjustment');--> statement-breakpoint
-CREATE TYPE "public"."option_unit_pricing_mode" AS ENUM('per_unit', 'per_person', 'per_booking', 'included', 'free', 'on_request');--> statement-breakpoint
-CREATE TYPE "public"."price_adjustment_type" AS ENUM('fixed', 'percentage');--> statement-breakpoint
-CREATE TYPE "public"."price_catalog_type" AS ENUM('public', 'contract', 'net', 'gross', 'promo', 'internal', 'other');--> statement-breakpoint
-CREATE TYPE "public"."pricing_category_type" AS ENUM('adult', 'child', 'infant', 'senior', 'group', 'room', 'vehicle', 'service', 'other');--> statement-breakpoint
-CREATE TYPE "public"."pricing_dependency_type" AS ENUM('requires', 'limits_per_master', 'limits_sum', 'excludes');--> statement-breakpoint
-CREATE TYPE "public"."promotional_offer_discount_type" AS ENUM('percentage', 'fixed_amount');--> statement-breakpoint
-CREATE TYPE "public"."offer_expiration_event_status" AS ENUM('scheduled', 'expired', 'cancelled', 'superseded');--> statement-breakpoint
-CREATE TYPE "public"."offer_refresh_run_status" AS ENUM('pending', 'running', 'completed', 'failed', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."sellability_explanation_type" AS ENUM('sellable', 'blocked', 'warning', 'pricing', 'allotment', 'pickup', 'policy');--> statement-breakpoint
-CREATE TYPE "public"."sellability_policy_result_status" AS ENUM('passed', 'blocked', 'warning', 'adjusted');--> statement-breakpoint
-CREATE TYPE "public"."sellability_policy_scope" AS ENUM('global', 'product', 'option', 'market', 'channel');--> statement-breakpoint
-CREATE TYPE "public"."sellability_policy_type" AS ENUM('capability', 'occupancy', 'pickup', 'question', 'allotment', 'availability_window', 'currency', 'custom');--> statement-breakpoint
-CREATE TYPE "public"."sellability_snapshot_component_kind" AS ENUM('base', 'unit', 'pickup', 'start_time_adjustment');--> statement-breakpoint
-CREATE TYPE "public"."sellability_snapshot_status" AS ENUM('resolved', 'offer_constructed', 'expired');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."fx_rate_source" AS ENUM('manual', 'ecb', 'custom', 'channel', 'supplier', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."market_channel_scope" AS ENUM('all', 'b2c', 'b2b', 'internal');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."market_sellability" AS ENUM('sellable', 'on_request', 'unavailable');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."market_status" AS ENUM('active', 'inactive', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."market_visibility" AS ENUM('public', 'private', 'hidden');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."addon_pricing_mode" AS ENUM('included', 'per_person', 'per_booking', 'on_request', 'unavailable');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."cancellation_charge_type" AS ENUM('none', 'amount', 'percentage');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."cancellation_policy_type" AS ENUM('simple', 'advanced', 'non_refundable', 'custom');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."option_pricing_mode" AS ENUM('per_person', 'per_booking', 'starting_from', 'free', 'on_request');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."option_start_time_rule_mode" AS ENUM('included', 'excluded', 'override', 'adjustment');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."option_unit_pricing_mode" AS ENUM('per_unit', 'per_person', 'per_booking', 'included', 'free', 'on_request');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."price_adjustment_type" AS ENUM('fixed', 'percentage');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."price_catalog_type" AS ENUM('public', 'contract', 'net', 'gross', 'promo', 'internal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."pricing_category_type" AS ENUM('adult', 'child', 'infant', 'senior', 'group', 'room', 'vehicle', 'service', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."pricing_dependency_type" AS ENUM('requires', 'limits_per_master', 'limits_sum', 'excludes');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."promotional_offer_discount_type" AS ENUM('percentage', 'fixed_amount');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."offer_expiration_event_status" AS ENUM('scheduled', 'expired', 'cancelled', 'superseded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."offer_refresh_run_status" AS ENUM('pending', 'running', 'completed', 'failed', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_explanation_type" AS ENUM('sellable', 'blocked', 'warning', 'pricing', 'allotment', 'pickup', 'policy');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_policy_result_status" AS ENUM('passed', 'blocked', 'warning', 'adjusted');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_policy_scope" AS ENUM('global', 'product', 'option', 'market', 'channel');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_policy_type" AS ENUM('capability', 'occupancy', 'pickup', 'question', 'allotment', 'availability_window', 'currency', 'custom');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_snapshot_component_kind" AS ENUM('base', 'unit', 'pickup', 'start_time_adjustment');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."sellability_snapshot_status" AS ENUM('resolved', 'offer_constructed', 'expired');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "exchange_rates" (
 	"id" text PRIMARY KEY NOT NULL,
 	"fx_rate_set_id" text NOT NULL,

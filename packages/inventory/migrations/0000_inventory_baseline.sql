@@ -1,20 +1,71 @@
-CREATE TYPE "public"."extra_collection_mode" AS ENUM('booking_total', 'cash_on_trip', 'external', 'included', 'none');--> statement-breakpoint
-CREATE TYPE "public"."extra_pricing_mode" AS ENUM('included', 'per_person', 'per_booking', 'quantity_based', 'on_request', 'free');--> statement-breakpoint
-CREATE TYPE "public"."extra_selection_type" AS ENUM('optional', 'required', 'default_selected', 'unavailable');--> statement-breakpoint
-CREATE TYPE "public"."option_unit_type" AS ENUM('person', 'group', 'room', 'vehicle', 'service', 'other');--> statement-breakpoint
-CREATE TYPE "public"."product_activation_mode" AS ENUM('manual', 'scheduled', 'channel_controlled');--> statement-breakpoint
-CREATE TYPE "public"."product_booking_mode" AS ENUM('date', 'date_time', 'open', 'stay', 'transfer', 'itinerary', 'other');--> statement-breakpoint
-CREATE TYPE "public"."product_capability" AS ENUM('instant_confirmation', 'on_request', 'pickup_available', 'dropoff_available', 'guided', 'private', 'shared', 'digital_ticket', 'voucher_required', 'external_inventory', 'multi_day', 'accommodation', 'transport');--> statement-breakpoint
-CREATE TYPE "public"."product_capacity_mode" AS ENUM('free_sale', 'limited', 'on_request');--> statement-breakpoint
-CREATE TYPE "public"."product_delivery_format" AS ENUM('voucher', 'ticket', 'pdf', 'qr_code', 'barcode', 'email', 'mobile', 'none');--> statement-breakpoint
-CREATE TYPE "public"."product_feature_type" AS ENUM('inclusion', 'exclusion', 'highlight', 'important_information', 'other');--> statement-breakpoint
-CREATE TYPE "public"."product_location_type" AS ENUM('start', 'end', 'meeting_point', 'pickup', 'dropoff', 'point_of_interest', 'other');--> statement-breakpoint
-CREATE TYPE "public"."product_media_type" AS ENUM('image', 'video', 'document');--> statement-breakpoint
-CREATE TYPE "public"."product_option_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."product_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."product_ticket_fulfillment" AS ENUM('none', 'per_booking', 'per_participant', 'per_item');--> statement-breakpoint
-CREATE TYPE "public"."product_visibility" AS ENUM('public', 'private', 'hidden');--> statement-breakpoint
-CREATE TYPE "public"."service_type" AS ENUM('accommodation', 'transfer', 'experience', 'guide', 'meal', 'other');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."extra_collection_mode" AS ENUM('booking_total', 'cash_on_trip', 'external', 'included', 'none');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."extra_pricing_mode" AS ENUM('included', 'per_person', 'per_booking', 'quantity_based', 'on_request', 'free');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."extra_selection_type" AS ENUM('optional', 'required', 'default_selected', 'unavailable');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."option_unit_type" AS ENUM('person', 'group', 'room', 'vehicle', 'service', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_activation_mode" AS ENUM('manual', 'scheduled', 'channel_controlled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_booking_mode" AS ENUM('date', 'date_time', 'open', 'stay', 'transfer', 'itinerary', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_capability" AS ENUM('instant_confirmation', 'on_request', 'pickup_available', 'dropoff_available', 'guided', 'private', 'shared', 'digital_ticket', 'voucher_required', 'external_inventory', 'multi_day', 'accommodation', 'transport');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_capacity_mode" AS ENUM('free_sale', 'limited', 'on_request');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_delivery_format" AS ENUM('voucher', 'ticket', 'pdf', 'qr_code', 'barcode', 'email', 'mobile', 'none');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_feature_type" AS ENUM('inclusion', 'exclusion', 'highlight', 'important_information', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_location_type" AS ENUM('start', 'end', 'meeting_point', 'pickup', 'dropoff', 'point_of_interest', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_media_type" AS ENUM('image', 'video', 'document');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_option_status" AS ENUM('draft', 'active', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_status" AS ENUM('draft', 'active', 'archived');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_ticket_fulfillment" AS ENUM('none', 'per_booking', 'per_participant', 'per_item');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."product_visibility" AS ENUM('public', 'private', 'hidden');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."service_type" AS ENUM('accommodation', 'transfer', 'experience', 'guide', 'meal', 'other');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "booking_item_product_details" (
 	"booking_item_id" text PRIMARY KEY NOT NULL,
 	"product_id" text,
