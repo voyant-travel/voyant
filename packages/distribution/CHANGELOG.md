@@ -1,5 +1,13 @@
 # @voyant-travel/distribution
 
+## 0.116.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.126.0
+- @voyant-travel/catalog@0.124.0
+- @voyant-travel/identity@0.126.0
+
 ## 0.115.0
 
 ### Patch Changes
