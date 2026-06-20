@@ -19,9 +19,13 @@ describe("operator action ledger schema mounting", () => {
     expect(generated).toContain("../../packages/action-ledger/src/schema.ts")
   })
 
-  it("keeps the action ledger migration in the operator starter", () => {
+  it("keeps the action ledger migration in the framework bundle", () => {
+    // The action ledger is package-owned: its CREATE TABLEs ship in the
+    // framework migration bundle (collector source `framework`), not in the
+    // deployment's own ./migrations folder (which holds only link tables +
+    // custom modules since the single-folder collapse).
     const migration = readFileSync(
-      resolve(repoRoot, "starters/operator/migrations/0017_action_ledger.sql"),
+      resolve(repoRoot, "packages/framework-migrations/migrations/0000_framework_baseline.sql"),
       "utf8",
     )
 

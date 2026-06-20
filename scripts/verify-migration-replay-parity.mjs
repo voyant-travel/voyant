@@ -3,13 +3,17 @@
  * runner cutover). Proves that the NEW migration sources reconstitute EXACTLY
  * the canonical CURRENT schema:
  *
- *   framework bundle   (packages/framework-migrations/migrations)
- *   + deployment links (starters/operator/migrations-d1)
+ *   framework bundle      (packages/framework-migrations/migrations)
+ *   + deployment source   (starters/operator/migrations — link tables + custom)
  *   ===  drizzle-kit push of the live aggregate schema (drizzle.config.ts)
  *
- * WHY push, not a legacy replay. The committed legacy history
- * (`starters/operator/migrations/`) is BOTH incomplete and stale, so it is not
- * a valid canonical-schema source (measured 2026-06-17 — see
+ * (`starters/operator/migrations` is the deployment source — formerly
+ * `migrations-d1`; renamed in the single-folder collapse. The framework bundle
+ * comes from the package, so the deployment now owns exactly this one folder.)
+ *
+ * WHY push, not a legacy replay. The pre-collector legacy single-folder aggregate
+ * history (since REMOVED in the folder collapse) was BOTH incomplete and stale,
+ * so it was never a valid canonical-schema source (measured 2026-06-17 — see
  * docs/architecture/migration-collector-d1.md):
  *   • INCOMPLETE — 16 tables in the live schema have no CREATE migration at all
  *     (the whole operations/ground module: ground_dispatches/_drivers/_vehicles/
@@ -52,7 +56,7 @@ if (!DB_URL) {
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
-const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations-d1")
+const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations")
 const OPERATOR_DIR = join(ROOT, "starters/operator")
 
 // Extensions the live schema's trigram indexes need. The bundle ships these as a

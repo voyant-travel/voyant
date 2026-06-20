@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "uidx_contract_number_series_prefix_scope_active" ON "contract_number_series" USING btree ("prefix","scope") WHERE "contract_number_series"."active" = true;

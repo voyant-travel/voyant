@@ -36,7 +36,7 @@ they are picked up by the deployment drizzle config and migrated as a deployment
 source (after the framework bundle), exactly like custom-module schema:
 
 ```sh
-pnpm db:generate:deployment   # emit into migrations-d1/
+pnpm db:generate:deployment   # emit into migrations/
 pnpm db:migrate               # collector applies it
 ```
 
