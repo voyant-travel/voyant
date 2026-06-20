@@ -26,7 +26,8 @@
   "files": [
     "dist",
     "migrations/*.sql",
-    "migrations/meta/_journal.json"
+    "migrations/meta/_journal.json",
+    "cutline.generated.json"
   ],
   "publishConfig": {
     "access": "public",

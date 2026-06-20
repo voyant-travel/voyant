@@ -212,3 +212,96 @@ export async function applyMigrations(
 
   return applied
 }
+
+export interface ApplyD2MigrationsOptions extends ApplyMigrationsOptions {
+  /**
+   * Per-source set of migration tags the retired framework bundle already
+   * materialised (the cutline). On an `existing` database these are recorded as
+   * applied WITHOUT executing their SQL (the tables already exist).
+   */
+  cutline: Record<string, readonly string[]>
+  /**
+   * True for an existing pre-D.2 database whose cutline schema is already
+   * materialised (the caller MUST verify parity first). False for a fresh
+   * database, where every migration executes.
+   */
+  existing: boolean
+  /** Called with `"{source}/{tag}"` after a cutline migration is import-baselined. */
+  onBaselined?: (id: string) => void
+}
+
+/**
+ * The D.2 dual-path collector. Applies per-package + deployment `sources` in plan
+ * order against the ledger:
+ *   • a migration already in the ledger (identical hash) is skipped; a changed
+ *     hash is a {@link MigrationImmutabilityError};
+ *   • on an `existing` database, a not-yet-recorded migration whose (source, tag)
+ *     is in the `cutline` is IMPORT-BASELINED (recorded, SQL NOT run — the bundle
+ *     already materialised it). The caller must have verified schema parity first;
+ *   • everything else EXECUTES (a fresh database, or a post-cutline increment).
+ * The retired framework bundle is NOT a source here — any `framework/*` ledger
+ * rows are left untouched as inert history. Returns the ids executed and
+ * import-baselined this run.
+ */
+export async function applyD2Migrations(
+  client: MigrationClient,
+  sources: MigrationSource[],
+  options: ApplyD2MigrationsOptions,
+): Promise<{ executed: string[]; baselined: string[] }> {
+  const ledger = await ensureLedger(client, options)
+  const covered = new Map<string, Set<string>>()
+  for (const [source, tags] of Object.entries(options.cutline)) {
+    covered.set(source, new Set(tags))
+  }
+
+  const executed: string[] = []
+  const baselined: string[] = []
+  for (const m of planMigrations(sources)) {
+    const seen = await client.query(
+      `SELECT "content_hash" FROM ${ledger} WHERE "source" = $1 AND "tag" = $2`,
+      [m.source, m.tag],
+    )
+    if (seen.rows.length > 0) {
+      const ledgerHash = String(seen.rows[0]?.content_hash ?? "")
+      if (ledgerHash !== m.contentHash) {
+        throw new MigrationImmutabilityError(m.source, m.tag, ledgerHash, m.contentHash)
+      }
+      continue // already applied, identical → no-op
+    }
+
+    const id = `${m.source}/${m.tag}`
+
+    if (options.existing && covered.get(m.source)?.has(m.tag)) {
+      // Bundle-covered on an existing DB → record without executing.
+      await client.query(
+        `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)
+         ON CONFLICT ("source", "tag") DO NOTHING`,
+        [m.source, m.tag, m.contentHash],
+      )
+      baselined.push(id)
+      options.onBaselined?.(id)
+      continue
+    }
+
+    // Fresh DB, or a post-cutline increment → execute (migration + ledger row
+    // commit atomically).
+    await client.query("BEGIN")
+    try {
+      for (const statement of splitStatements(m.sql)) {
+        await client.query(statement)
+      }
+      await client.query(
+        `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)`,
+        [m.source, m.tag, m.contentHash],
+      )
+      await client.query("COMMIT")
+    } catch (error) {
+      await client.query("ROLLBACK")
+      throw error
+    }
+    executed.push(id)
+    options.onApplied?.(id)
+  }
+
+  return { executed, baselined }
+}

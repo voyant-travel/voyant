@@ -7,7 +7,9 @@
 
 export { frameworkBundleDir, loadFrameworkBundleSource } from "./bundle.js"
 export {
+  type ApplyD2MigrationsOptions,
   type ApplyMigrationsOptions,
+  applyD2Migrations,
   applyMigrations,
   importBaseline,
   type MigrationClient,
@@ -17,4 +19,5 @@ export {
   type PlannedMigration,
   planMigrations,
 } from "./collector.js"
+export { type Cutline, loadCutline } from "./cutline.js"
 export { loadMigrationFolder } from "./load-folder.js"
