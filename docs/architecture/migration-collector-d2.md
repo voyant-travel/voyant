@@ -1,7 +1,11 @@
 # ADR: D.2 — package-owned migrations + topological collector
 
-- **Status:** Proposed — transition mechanics validated by spike; production execution not started.
+- **Status:** Implemented (apply path) — the dual-path collector (`applyD2Migrations`), per-package migration folders, the cutline manifest, and the live operator runner all shipped (see *Shipped* below). Remaining: delete the transition artifacts (bundle + cutline) once the two existing D.1 deployments have cut over.
 - **Date:** 2026-06-20
+- **Shipped:**
+  - `applyD2Migrations` dual-path collector + cutline (`@voyant-travel/framework-migrations`) — PR #2014 (3b-1).
+  - Per-package migration folders for all 24 schema-owning sources, the `cutline.generated.json` manifest, and the `verify-package-baseline.mjs --union` gate with **reverse-coverage** (every bundle table must be owned by some source — caught `flights` + `catalog-authoring` as un-onboarded owners) — PR #2016.
+  - The live operator runner (`starters/operator/scripts/migrate.ts`) rewritten to discover package sources from `drizzle.schemas.generated.ts`, topo-order by `requiresSchemas`, and apply via `applyD2Migrations`; the framework bundle is no longer loaded on the apply path — PR #2018 (3b-2).
 - **Validated by:** `spikes/d2-migration-collector/run.mjs` (18/18 on the docker test DB) — proves the fresh-vs-existing dual path, import-baseline (no re-create, verified by stable table OIDs), topo-ordering + cycle rejection, the negative control (naive execute → `duplicate_table`), and **column-level convergence** of a fresh D.2 DB and a transitioned D.1 DB. The spike also surfaced the **baseline cutline** requirement (Decision 5).
 - **Supersedes (on acceptance):** the single combined history of `migration-resilience-rfc.md` (voyant#1608) and the standard-profile-only scope of `migration-collector-d1.md`. D.1 explicitly deferred this: *"D.2 (package-owned migrations) would supersede #1608; it is out of scope here and gated behind its own ADR."*
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.2**.
@@ -74,13 +78,22 @@ It is tempting to say "the content-hash immutability guard prevents re-keying." 
 
 The "fail closed" requirement is a direct lesson from the 2026-06-20 postmortem below: a silently-skipped or empty-DB oracle reads identical to "everything passed."
 
-## Required implementation slices (not follow-up polish)
+## Required implementation slices — SHIPPED
 
-These keep package-owned history *trustworthy* and are part of acceptance, not later cleanup:
+These kept package-owned history *trustworthy* and were part of acceptance:
 
-1. **Per-package generation + staleness gate + baseline cutline.** Each schema-owning package gets a `drizzle.<pkg>.config.ts` and a `db:generate` that emits into its `migrations/`, plus a per-package analogue of `generate-framework-migration-bundle.mjs` that fails CI when a package's schema changed without regenerating its folder. This slice **also emits the baseline cutline manifest** (Decision 5) — the package/tag pairs the final monolithic bundle materialised — generated once from the retired bundle, then frozen. Existing-DB transitions depend on it.
-2. **Per-package replay/parity.** A package-level check that the package's own `migrations/` reconstitutes its own schema, so drift is caught at the package boundary, not only in the deployment aggregate.
-3. **Publishing contract.** Most packages publish only `dist` (`packages/catalog/package.json` → `files: ["dist"]`), so `migrations/*.sql` and `migrations/meta/_journal.json` **would not ship today**. Acceptance requires: `files`/`exports` include the migrations folder, a packed-tarball check (`npm pack` contains the SQL + journal), and a published loader export contract each consumer relies on.
+1. **Per-package generation + staleness gate + baseline cutline.** ✅ Each schema-owning package has a `drizzle.migrations.config.ts` + a `db:generate` (chaining `guard-create-type` + `ensure-extensions`) emitting into its `migrations/`. The cutline manifest lives in `@voyant-travel/framework-migrations/cutline.generated.json`, generated from the package folders by `scripts/d2/generate-cutline.mjs` with a semantic drift gate (`verify:d2-cutline`).
+2. **Per-package replay/parity.** ✅ `scripts/d2/verify-package-baseline.mjs` proves each package's `migrations/` reconstitutes its own tables column-for-column vs the bundle (closure-aware), and `--union` proves all sources apply together *and* every bundle table is owned by some source (**reverse-coverage**).
+3. **Publishing contract.** ✅ Each onboarded package's `files` includes `migrations/*.sql` + `migrations/meta/_journal.json`; the loader contract is `loadMigrationFolder` from `@voyant-travel/framework-migrations`.
+
+## Decommission (slice 3c) — only two D.1 deployments
+
+There is **no long tail of D.1 databases in the wild**: exactly two deployments ran the D.1 collector, and both are source-controlled by us. So the bundle + cutline + dual-path are a **short-lived transition artifact**, not permanent infrastructure — we deliberately do **not** build a freeze-forever oracle or reframe the equivalence gates around an evolving cutline.
+
+Plan:
+1. Run the D.2 runner once against each of the two D.1 deployments (the EXISTING path import-baselines the cutline, recording the per-package rows without re-executing). After that their ledgers carry `<package>/<tag>` rows and the `framework/*` rows are inert history.
+2. **Until both have cut over, do not add a post-cutline package migration** — the cutline drift gate would absorb its tag into the cutline, and the runner would then import-baseline (skip the DDL for) that migration on a not-yet-transitioned D.1 DB. With only two controlled deployments this is an operational ordering note, not a machinery requirement.
+3. Once both are on D.2: delete the framework bundle (`packages/framework-migrations/migrations/` + `bundle.ts` + `generate-framework-migration-bundle.mjs` + the `verify:framework-migration-bundle` gate), retire the cutline + `loadCutline` + the EXISTING/import-baseline branch of `applyD2Migrations`, and simplify the operator runner to plain `applyMigrations` over the discovered package sources. The per-package equivalence oracle (`verify-package-baseline.mjs`) loses its bundle reference at that point and is replaced by the per-package replay check alone.
 
 ## Open questions (genuine unknowns to resolve before/with implementation)
 
