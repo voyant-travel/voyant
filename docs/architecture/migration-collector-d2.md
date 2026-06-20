@@ -1,7 +1,8 @@
 # ADR: D.2 — package-owned migrations + topological collector
 
-- **Status:** Proposed — not started; gated behind acceptance of this ADR.
+- **Status:** Proposed — transition mechanics validated by spike; production execution not started.
 - **Date:** 2026-06-20
+- **Validated by:** `spikes/d2-migration-collector/run.mjs` (17/17 on the docker test DB) — proves the fresh-vs-existing dual path, import-baseline (no re-create, verified by stable table OIDs), topo-ordering + cycle rejection, the negative control (naive execute → `duplicate_table`), and fresh-D.2 ≡ D.1-bundle schema equivalence. The spike also surfaced the **baseline cutline** requirement (Decision 5).
 - **Supersedes (on acceptance):** the single combined history of `migration-resilience-rfc.md` (voyant#1608) and the standard-profile-only scope of `migration-collector-d1.md`. D.1 explicitly deferred this: *"D.2 (package-owned migrations) would supersede #1608; it is out of scope here and gated behind its own ADR."*
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.2**.
 - **Builds on:** `migration-collector-d1.md` (the multi-source collector primitive). D.2 reuses the collector and ledger **unchanged** — `planMigrations` / `applyMigrations` / `importBaseline` in `packages/framework-migrations/src/collector.ts` are untouched. Only *how sources are produced, ordered, and reconciled with existing ledgers* changes.
@@ -36,16 +37,21 @@ A source's `name` (the ledger key half) must be **stable across refactors and ve
 
 ### 5. The D.1 → D.2 transition is **append-only** — execute on fresh, import-baseline on existing
 
-This is the load-bearing decision; the rest is mechanics. The same migrate run must do the right thing for two starting states, distinguished by what is already in the ledger:
+This is the load-bearing decision; the rest is mechanics. **The monolithic `framework` bundle is decommissioned from the apply path** — it is *not* a D.2 source. The same migrate run must do the right thing for two starting states, distinguished by the **presence of `framework/*` rows in the ledger** (validated as the detection key in the spike):
 
-- **Fresh D.2 database (no `framework/*` rows):** execute each package's baseline + increments normally (`applyMigrations`), recording `<source>/<tag>` per package.
-- **Existing D.1 database (has `framework/*` rows):** the historical schema is already materialised under the monolithic `framework` source. Run the **parity guard first** (the D.1 `assertSchemaAtBaseline` pattern — every expected table/column present, every dropped table gone), then **`importBaseline()` the equivalent per-package baseline ledger rows *without executing their SQL*** (`importBaseline` already records rows `ON CONFLICT DO NOTHING`). The old `framework/*` rows are **kept as audit history and never rewritten**; new per-package increments apply normally on top.
+- **Fresh D.2 database (no `framework/*` rows):** execute each package's baseline + increments normally (`applyMigrations`), recording `<source>/<tag>` per package. The old bundle never runs — fresh databases get their schema entirely from package sources (proven schema-equivalent to the bundle in the spike).
+- **Existing D.1 database (has `framework/*` rows):** the historical schema is already materialised under the monolithic `framework` source. Run the **parity guard first** (the D.1 `assertSchemaAtBaseline` pattern — every expected table/column present, every dropped table gone), then **`importBaseline()` the bundle-covered per-package baseline rows *without executing their SQL*** (`importBaseline` already records rows `ON CONFLICT DO NOTHING`). The old `framework/*` rows are **kept as audit history and never rewritten**; package increments that postdate the bundle apply normally on top.
 
-Why this resolves the conflict the naïve umbrella model could not:
+**The baseline cutline (surfaced by the spike).** "Bundle-covered" is not inferable — each package must **declare which of its migrations the retired bundle already materialised** (the spike models this as a per-package `baselineTags` set; production likely ships it as a manifest the bundle generator emits, naming the package/tag pairs the last monolithic bundle contained). On an existing D.1 database the collector import-baselines exactly those tags and **executes everything after the cutline**; on a fresh database the cutline is irrelevant. Without this declaration the collector cannot distinguish "already created by the bundle" from "genuinely new" and would either re-create (collision) or skip new DDL. This is a hard input to Required Slice 1.
 
-- Packages **do** ship historical baselines (Decision 1) → fresh subset databases can build historical tables. ✔
-- Existing D.1 databases **import-baseline** those same package rows instead of executing them → **no duplicate DDL**. ✔
+Why this resolves the conflict the naïve umbrella model could not (each point validated by a spike scenario):
+
+- Packages **do** ship historical baselines (Decision 1) → fresh subset databases can build historical tables. ✔ (spike S1/S6)
+- Existing D.1 databases **import-baseline** those baselines instead of executing them → **no duplicate DDL**; verified by stable table OIDs (nothing re-created). ✔ (spike S2)
+- Naively executing a bundle-covered baseline on an existing DB raises `duplicate_table` → import-baseline is *required*, not optional. ✔ (spike S3, negative control)
 - No applied ledger row is ever re-keyed → the immutability law is never tripped. ✔
+
+**Corollary — no incremental single-package pilot.** Because the frozen bundle creates every standard table with bare `CREATE TABLE` and `0000` is immutable, a package cannot be moved to its own source *while the bundle still owns it* (a fresh DB would double-create; carving it out of `0000` would emit a `DROP`). D.2 is therefore an **all-standard-packages-at-once** flip that decommissions the bundle in the same change. The spike — not a production single-package rollout — is the de-risking vehicle.
 
 ### Why a blind re-key is wrong (correcting the immutability claim)
 
@@ -72,16 +78,18 @@ The "fail closed" requirement is a direct lesson from the 2026-06-20 postmortem 
 
 These keep package-owned history *trustworthy* and are part of acceptance, not later cleanup:
 
-1. **Per-package generation + staleness gate.** Each schema-owning package gets a `drizzle.<pkg>.config.ts` and a `db:generate` that emits into its `migrations/`, plus a per-package analogue of `generate-framework-migration-bundle.mjs` that fails CI when a package's schema changed without regenerating its folder.
+1. **Per-package generation + staleness gate + baseline cutline.** Each schema-owning package gets a `drizzle.<pkg>.config.ts` and a `db:generate` that emits into its `migrations/`, plus a per-package analogue of `generate-framework-migration-bundle.mjs` that fails CI when a package's schema changed without regenerating its folder. This slice **also emits the baseline cutline manifest** (Decision 5) — the package/tag pairs the final monolithic bundle materialised — generated once from the retired bundle, then frozen. Existing-DB transitions depend on it.
 2. **Per-package replay/parity.** A package-level check that the package's own `migrations/` reconstitutes its own schema, so drift is caught at the package boundary, not only in the deployment aggregate.
 3. **Publishing contract.** Most packages publish only `dist` (`packages/catalog/package.json` → `files: ["dist"]`), so `migrations/*.sql` and `migrations/meta/_journal.json` **would not ship today**. Acceptance requires: `files`/`exports` include the migrations folder, a packed-tarball check (`npm pack` contains the SQL + journal), and a published loader export contract each consumer relies on.
 
 ## Open questions (genuine unknowns to resolve before/with implementation)
 
 1. **Tie-breaker stability.** Config-array order is the tie-breaker among independent packages (Decision 3). Confirm it is stable enough, or whether a lexical sort on source name is preferable for reproducibility.
-2. **Pilot scope.** Validate the full transition (Decision 5) on a single leaf package first (e.g. `operator-settings`, which depends only on `db`) before splitting the whole standard set — proves the import-baseline path end-to-end on a real D.1 database.
+2. **Cutline manifest source of truth.** The baseline cutline (Decision 5) must be generated from the *actual* final monolithic bundle and frozen — settle where it lives (a file in `@voyant-travel/framework-migrations`? per-package metadata?) and how CI proves it matches what the bundle shipped, so it can never silently drift.
 3. **Parity-guard granularity for partial baselines.** D.1's guard checks the whole net schema; per-package import-baseline may want a per-package parity assertion so a partially-converged DB is rejected per-source rather than wholesale.
 4. **Live uninstall demand (Decision 6).** Is additive + fresh-subset sufficient for foreseeable deployments, or is live module removal a near-term requirement that should be scoped now rather than deferred?
+
+*(Resolved by the spike: the dual-path detection key, import-baseline-without-execute, topo-ordering, and the need for a baseline cutline. ADR-original Open Question 2 — a single-package production pilot — is retired by the no-incremental-pilot corollary in Decision 5.)*
 
 ## Postmortem note (why this ADR is being written now)
 
@@ -95,3 +103,4 @@ Validating the D.1 single-folder collapse (2026-06-20) surfaced that the replay-
 - `docs/architecture/custom-modules.md` — the `src/modules` seam D.2 generalizes.
 - `packages/framework-migrations/src/collector.ts` — `planMigrations` / `applyMigrations` / `importBaseline`; ledger PK `(source, tag)`; `MigrationImmutabilityError` (unchanged by D.2).
 - `scripts/check-retail-spine-closure.mjs` — existing consumer of the `voyant.requiresSchemas` DAG.
+- `spikes/d2-migration-collector/` — the throwaway harness validating the transition (fresh vs existing, import-baseline, topo order, cutline). See its README for the scenario list.
