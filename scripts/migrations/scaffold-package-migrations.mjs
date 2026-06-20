@@ -13,7 +13,7 @@
  *     only the tables exported from the listed files; cross-package FKs are
  *     emitted as references-by-name and resolved by earlier-ordered sources).
  *
- * Usage: node scripts/d2/scaffold-package-migrations.mjs <pkg-dir-name>...
+ * Usage: node scripts/migrations/scaffold-package-migrations.mjs <pkg-dir-name>...
  *        (e.g. operator-settings action-ledger workflow-runs)
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
@@ -22,7 +22,7 @@ import { join } from "node:path"
 const DRIZZLE_KIT = "^0.31.10"
 const pkgs = process.argv.slice(2)
 if (pkgs.length === 0) {
-  console.error("usage: node scripts/d2/scaffold-package-migrations.mjs <pkg>...")
+  console.error("usage: node scripts/migrations/scaffold-package-migrations.mjs <pkg>...")
   process.exit(2)
 }
 
@@ -75,11 +75,11 @@ for (const name of pkgs) {
   // infra base (covers runtime unaccent, which has no DDL marker).
   const ensureExtensions =
     pj.name === "@voyant-travel/db"
-      ? "node ../../scripts/d2/ensure-extensions.mjs ./migrations pg_trgm unaccent"
-      : "node ../../scripts/d2/ensure-extensions.mjs ./migrations"
+      ? "node ../../scripts/migrations/ensure-extensions.mjs ./migrations pg_trgm unaccent"
+      : "node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   pj.scripts["db:generate"] =
     `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName} && ` +
-    `node ../../scripts/d2/guard-create-type.mjs ./migrations && ${ensureExtensions}`
+    `node ../../scripts/migrations/guard-create-type.mjs ./migrations && ${ensureExtensions}`
 
   pj.devDependencies ??= {}
   if (!pj.devDependencies["drizzle-kit"]) pj.devDependencies["drizzle-kit"] = DRIZZLE_KIT

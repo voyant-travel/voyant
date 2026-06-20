@@ -1,22 +1,22 @@
 /**
- * D.2 deployment-migration engine — the portable core a deployment's
+ * Deployment-migration engine — the portable core a deployment's
  * `scripts/migrate.ts` wraps. Given a ledger client, the discovered+loaded
  * migration `sources` (package sources deps-first, the deployment's own
  * migrations last) and the per-source `cutline`, this:
- *   1. detects whether the database is FRESH or an EXISTING pre-D.2 deployment
- *      (a `framework/*` ledger row from the retired D.1 bundle, or the legacy
+ *   1. detects whether the database is FRESH or an EXISTING pre-collector deployment
+ *      (a `framework/*` ledger row from the retired monolithic bundle, or the legacy
  *      `drizzle.__drizzle_migrations`);
  *   2. on EXISTING, gates the import-baseline with a schema-parity check over
  *      exactly the cutline-covered migrations (so we never record a baseline the
  *      DB doesn't actually have);
- *   3. runs {@link applyD2Migrations}.
+ *   3. runs {@link applyMigrations}.
  *
  * Free of dotenv/config/process concerns so it can be driven against an
  * arbitrary database in tests. See docs/architecture/migration-collector-d2.md.
  */
 
 import type { MigrationClient, MigrationSource } from "./collector.js"
-import { applyD2Migrations, planMigrations } from "./collector.js"
+import { applyMigrations, planMigrations } from "./collector.js"
 import type { Cutline } from "./cutline.js"
 
 export interface RunResult {
@@ -43,7 +43,7 @@ async function ledgerRowCount(
 }
 
 /**
- * EXISTING when the retired D.1 bundle or the legacy runner already materialised
+ * EXISTING when the retired monolithic bundle or the legacy runner already materialised
  * this schema: a `framework/*` collector-ledger row, or the pre-collector
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
@@ -228,10 +228,10 @@ export async function assertSchemaAtBaseline(
     )
   if (problems.length > 0) {
     throw new Error(
-      `cannot baseline onto the D.2 collector — this database is NOT at the cutline schema.\n` +
+      `cannot baseline onto the collector — this database is NOT at the cutline schema.\n` +
         problems.map((p) => `  • ${p}`).join("\n") +
         `\n  The import-baseline path only records the cutline as applied; it does NOT alter the\n` +
-        `  schema. It is for a database ALREADY AT the cutline (a D.1 / prior deployment of the\n` +
+        `  schema. It is for a database ALREADY AT the cutline (a prior deployment of the\n` +
         `  SAME package versions). A database that is behind must first reach the cutline schema\n` +
         `  through its normal migration path — NOT 'drizzle-kit push' (unsafe in production). If\n` +
         `  this is a disposable/fresh environment, drop it and let the FRESH path execute every\n` +
@@ -264,7 +264,7 @@ export async function runDeploymentMigrations(
   if (existing) {
     await assertSchemaAtBaseline(client, cutlineCovered(sources, cutline))
   }
-  const { executed, baselined } = await applyD2Migrations(client, sources, {
+  const { executed, baselined } = await applyMigrations(client, sources, {
     cutline,
     existing,
     onApplied: hooks?.onApplied,

@@ -1,13 +1,14 @@
 /**
- * Multi-source migration collector (consolidated-deployments RFC, Workstream
- * D.1). Applies migrations from ordered sources — the framework-shipped bundle
- * first, then the deployment's own migrations — recording each in a single
+ * Multi-source migration collector (consolidated-deployments RFC). Applies
+ * migrations from topologically-ordered sources — package sources deps-first,
+ * the deployment's own migrations last — recording each in a single
  * version-independent ledger keyed by `(source, tag, content_hash)`.
  *
- * Properties (validated in `spikes/d1-migration-collector` + the integration
- * tests): framework-first ordering, idempotent re-runs, an upgrade applies only
- * the new migrations, and a shipped migration is immutable once applied (a
- * content-hash change is a hard error). See `docs/architecture/migration-collector-d1.md`.
+ * Properties (validated in the integration tests): deps-first ordering,
+ * idempotent re-runs, an upgrade applies only the new migrations, a shipped
+ * migration is immutable once applied (a content-hash change is a hard error),
+ * and an import-baseline path adopts an already-materialised database.
+ * See `docs/architecture/migration-collector-d2.md`.
  */
 
 import { createHash } from "node:crypto"
@@ -51,8 +52,23 @@ export interface ApplyMigrationsOptions {
   ledgerSchema?: string
   /** Ledger table (default `_voyant_migrations`). */
   ledgerTable?: string
-  /** Called with `"{source}/{tag}"` after each migration is applied. */
+  /** Called with `"{source}/{tag}"` after a migration's SQL is executed. */
   onApplied?: (id: string) => void
+  /**
+   * Per-source set of migration tags already materialised before this collector
+   * managed the database (the baseline CUTLINE — e.g. by a prior runner). On an
+   * `existing` database these are recorded as applied WITHOUT executing their SQL
+   * (the tables already exist). Defaults to none (every migration executes).
+   */
+  cutline?: Record<string, readonly string[]>
+  /**
+   * True for an EXISTING database whose cutline schema is already materialised
+   * (the caller MUST verify parity first). False/omitted for a fresh database,
+   * where every migration executes.
+   */
+  existing?: boolean
+  /** Called with `"{source}/{tag}"` after a cutline migration is import-baselined. */
+  onBaselined?: (id: string) => void
 }
 
 /** Thrown when an already-applied `(source, tag)` arrives with changed SQL. */
@@ -129,128 +145,30 @@ async function ensureLedger(
 }
 
 /**
- * Baseline an EXISTING deployment onto the collector ledger: record every
- * planned migration as already-applied **without executing its SQL** — for a DB
- * whose schema already matches `sources` (materialised by the legacy runner +
- * `drizzle-kit push`). Idempotent (`ON CONFLICT DO NOTHING`); the caller MUST
- * have verified schema parity first, since this asserts "the schema is already
- * here" without checking. Returns the `"{source}/{tag}"` ids newly recorded.
+ * Apply every pending migration across `sources` in plan order against the
+ * ledger. The one collector apply path:
+ *   • a migration already in the ledger (identical hash) is skipped; a changed
+ *     hash is a {@link MigrationImmutabilityError};
+ *   • on an `existing` database, a not-yet-recorded migration whose `(source,
+ *     tag)` is in the `cutline` is IMPORT-BASELINED — recorded WITHOUT running
+ *     its SQL (the schema was already materialised before this collector managed
+ *     the database). The caller MUST have verified schema parity first;
+ *   • everything else EXECUTES (a fresh database, or a post-cutline increment) —
+ *     the migration + its ledger row commit atomically.
  *
- * See the cutover section of docs/architecture/migration-collector-d1.md.
- */
-export async function importBaseline(
-  client: MigrationClient,
-  sources: MigrationSource[],
-  options?: ApplyMigrationsOptions,
-): Promise<string[]> {
-  const ledger = await ensureLedger(client, options)
-  const imported: string[] = []
-  for (const m of planMigrations(sources)) {
-    const res = await client.query(
-      `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)
-       ON CONFLICT ("source", "tag") DO NOTHING`,
-      [m.source, m.tag, m.contentHash],
-    )
-    // node-postgres exposes rowCount; treat absent (0/undefined) as "already there".
-    const inserted = (res as { rowCount?: number }).rowCount ?? 0
-    if (inserted > 0) {
-      const id = `${m.source}/${m.tag}`
-      imported.push(id)
-      options?.onApplied?.(id)
-    }
-  }
-  return imported
-}
-
-/**
- * Apply every pending migration across `sources` in plan order, recording each
- * in the ledger. Idempotent (already-applied identical migrations are skipped);
- * throws {@link MigrationImmutabilityError} if an applied migration's SQL
- * changed. Each migration + its ledger row commit atomically. Returns the list
- * of `"{source}/{tag}"` applied this run, in apply order.
+ * With no `cutline`/`existing` (the default) it simply executes every pending
+ * migration. Returns the `"{source}/{tag}"` ids executed and import-baselined
+ * this run, in apply order.
  */
 export async function applyMigrations(
   client: MigrationClient,
   sources: MigrationSource[],
   options?: ApplyMigrationsOptions,
-): Promise<string[]> {
-  const ledger = await ensureLedger(client, options)
-
-  const applied: string[] = []
-  for (const m of planMigrations(sources)) {
-    const seen = await client.query(
-      `SELECT "content_hash" FROM ${ledger} WHERE "source" = $1 AND "tag" = $2`,
-      [m.source, m.tag],
-    )
-    if (seen.rows.length > 0) {
-      const ledgerHash = String(seen.rows[0]?.content_hash ?? "")
-      if (ledgerHash !== m.contentHash) {
-        throw new MigrationImmutabilityError(m.source, m.tag, ledgerHash, m.contentHash)
-      }
-      continue // already applied, identical → no-op
-    }
-
-    await client.query("BEGIN")
-    try {
-      for (const statement of splitStatements(m.sql)) {
-        await client.query(statement)
-      }
-      await client.query(
-        `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)`,
-        [m.source, m.tag, m.contentHash],
-      )
-      await client.query("COMMIT")
-    } catch (error) {
-      await client.query("ROLLBACK")
-      throw error
-    }
-
-    const id = `${m.source}/${m.tag}`
-    applied.push(id)
-    options?.onApplied?.(id)
-  }
-
-  return applied
-}
-
-export interface ApplyD2MigrationsOptions extends ApplyMigrationsOptions {
-  /**
-   * Per-source set of migration tags the retired framework bundle already
-   * materialised (the cutline). On an `existing` database these are recorded as
-   * applied WITHOUT executing their SQL (the tables already exist).
-   */
-  cutline: Record<string, readonly string[]>
-  /**
-   * True for an existing pre-D.2 database whose cutline schema is already
-   * materialised (the caller MUST verify parity first). False for a fresh
-   * database, where every migration executes.
-   */
-  existing: boolean
-  /** Called with `"{source}/{tag}"` after a cutline migration is import-baselined. */
-  onBaselined?: (id: string) => void
-}
-
-/**
- * The D.2 dual-path collector. Applies per-package + deployment `sources` in plan
- * order against the ledger:
- *   • a migration already in the ledger (identical hash) is skipped; a changed
- *     hash is a {@link MigrationImmutabilityError};
- *   • on an `existing` database, a not-yet-recorded migration whose (source, tag)
- *     is in the `cutline` is IMPORT-BASELINED (recorded, SQL NOT run — the bundle
- *     already materialised it). The caller must have verified schema parity first;
- *   • everything else EXECUTES (a fresh database, or a post-cutline increment).
- * The retired framework bundle is NOT a source here — any `framework/*` ledger
- * rows are left untouched as inert history. Returns the ids executed and
- * import-baselined this run.
- */
-export async function applyD2Migrations(
-  client: MigrationClient,
-  sources: MigrationSource[],
-  options: ApplyD2MigrationsOptions,
 ): Promise<{ executed: string[]; baselined: string[] }> {
   const ledger = await ensureLedger(client, options)
+  const existing = options?.existing ?? false
   const covered = new Map<string, Set<string>>()
-  for (const [source, tags] of Object.entries(options.cutline)) {
+  for (const [source, tags] of Object.entries(options?.cutline ?? {})) {
     covered.set(source, new Set(tags))
   }
 
@@ -271,15 +189,15 @@ export async function applyD2Migrations(
 
     const id = `${m.source}/${m.tag}`
 
-    if (options.existing && covered.get(m.source)?.has(m.tag)) {
-      // Bundle-covered on an existing DB → record without executing.
+    if (existing && covered.get(m.source)?.has(m.tag)) {
+      // Cutline-covered on an existing DB → record without executing.
       await client.query(
         `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)
          ON CONFLICT ("source", "tag") DO NOTHING`,
         [m.source, m.tag, m.contentHash],
       )
       baselined.push(id)
-      options.onBaselined?.(id)
+      options?.onBaselined?.(id)
       continue
     }
 
@@ -300,7 +218,7 @@ export async function applyD2Migrations(
       throw error
     }
     executed.push(id)
-    options.onApplied?.(id)
+    options?.onApplied?.(id)
   }
 
   return { executed, baselined }

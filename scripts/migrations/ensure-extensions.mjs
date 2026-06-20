@@ -12,7 +12,7 @@
  * idempotent `CREATE EXTENSION IF NOT EXISTS` to db's baseline (no-op if already
  * present, so re-running is safe).
  *
- * Usage: node scripts/d2/ensure-extensions.mjs <migrations-dir> [ext...]
+ * Usage: node scripts/migrations/ensure-extensions.mjs <migrations-dir> [ext...]
  *        (default exts: pg_trgm unaccent)
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -20,7 +20,7 @@ import { join } from "node:path"
 
 const dir = process.argv[2]
 if (!dir) {
-  console.error("usage: node scripts/d2/ensure-extensions.mjs <migrations-dir> [ext...]")
+  console.error("usage: node scripts/migrations/ensure-extensions.mjs <migrations-dir> [ext...]")
   process.exit(2)
 }
 const files = readdirSync(dir)

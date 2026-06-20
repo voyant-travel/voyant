@@ -13,7 +13,7 @@
  * creates against the bundle.
  *
  * Run: TEST_DATABASE_URL=<CREATEDB-capable Postgres> \
- *        node scripts/d2/verify-package-baseline.mjs <pkg-dir>...
+ *        node scripts/migrations/verify-package-baseline.mjs <pkg-dir>...
  *   (skips cleanly when no DB is configured)
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs"
@@ -31,7 +31,7 @@ if (!DB_URL) {
   process.exit(0)
 }
 if (pkgs.length === 0) {
-  console.error("usage: node scripts/d2/verify-package-baseline.mjs <pkg-dir>...")
+  console.error("usage: node scripts/migrations/verify-package-baseline.mjs <pkg-dir>...")
   process.exit(2)
 }
 

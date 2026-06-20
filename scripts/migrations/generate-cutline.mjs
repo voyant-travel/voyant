@@ -21,7 +21,7 @@
  *                 one-time initial cutover — re-running it AFTER cutover absorbs
  *                 post-cutline migrations and breaks transitioned deployments.
  *
- * Run: node scripts/d2/generate-cutline.mjs [--emit-init]
+ * Run: node scripts/migrations/generate-cutline.mjs [--emit-init]
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"

@@ -1,9 +1,9 @@
 /**
- * Portable D.2 migration-source discovery for deployment runners.
+ * Portable migration-source discovery for deployment runners.
  *
  * A deployment migrates the schema owned by a set of packages (its mounted
  * modules + extensions + additionalSchemas, plus the base `db` package) and its
- * own template-local migrations. Under D.2 each schema-owning package SHIPS its
+ * own template-local migrations. Each schema-owning package SHIPS its
  * own drizzle `migrations/` folder; this resolves them — in topological order so
  * a package's dependencies apply first — from the SAME generated schema list the
  * deployment's `drizzle.config` consumes (`drizzle.schemas.generated.ts`).

@@ -1,5 +1,5 @@
 /**
- * The framework-shipped standard-profile migration bundle (D.1). Loads this
+ * The framework-shipped standard-profile migration bundle (a frozen transition artifact). Loads this
  * package's `migrations/` folder as the `framework` collector source (priority
  * 0 — applied before the deployment's own migrations).
  *
