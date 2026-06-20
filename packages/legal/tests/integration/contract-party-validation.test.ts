@@ -2,6 +2,7 @@ import { people } from "@voyant-travel/relationships/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
+import { contracts } from "../../src/contracts/schema.js"
 import { contractRecordsService } from "../../src/contracts/service-contracts.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -73,6 +74,21 @@ describe.skipIf(!DB_AVAILABLE)("contractRecordsService party validation", () => 
       contractRecordsService.updateContract(db, created!.id, {
         organizationId: "relationships_organization_doesnotexist",
         // biome-ignore lint/suspicious/noExplicitAny: minimal update fixture
+      } as any),
+    ).rejects.toThrow(/Unknown contract party/)
+  })
+
+  it("rejects a signature referencing an unknown personId", async () => {
+    const [contract] = await db
+      .insert(contracts)
+      .values({ scope: "customer", title: "Sendable", status: "sent" })
+      .returning()
+
+    await expect(
+      contractRecordsService.signContract(db, contract!.id, {
+        signerName: "Stranger",
+        personId: "relationships_person_doesnotexist",
+        // biome-ignore lint/suspicious/noExplicitAny: minimal signature fixture
       } as any),
     ).rejects.toThrow(/Unknown contract party/)
   })

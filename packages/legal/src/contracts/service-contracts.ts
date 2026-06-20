@@ -386,6 +386,9 @@ export const contractRecordsService = {
       if (!contract) return { status: "not_found" as const }
       const transition = checkContractLifecycleTransition(contract.status, "signed")
       if (!transition.ok) return { status: "not_signable" as const }
+      // Same cross-module existence guard as create/update: reject a signature
+      // pointing at an unknown person (the dropped FK used to enforce this).
+      await assertContractPartiesExist(tx, { personId: data.personId })
       const [signature] = await tx
         .insert(contractSignatures)
         .values({
