@@ -47,11 +47,33 @@ const splitStatements = (sql) =>
     .map((s) => s.trim())
     .filter(Boolean)
 
-function loadFolder(folder) {
+function journalTags(folder) {
   const journal = JSON.parse(readFileSync(join(folder, "meta", "_journal.json"), "utf8"))
-  return [...journal.entries]
-    .sort((a, b) => a.when - b.when)
-    .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
+  return [...journal.entries].sort((a, b) => a.when - b.when).map((e) => e.tag)
+}
+
+function loadFolder(folder) {
+  return journalTags(folder).flatMap((tag) =>
+    splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8")),
+  )
+}
+
+// The frozen cutline (bundle == the cutline union by construction). The bundle
+// comparison is only valid over CUTLINE-COVERED migrations: a POST-cutline
+// increment correctly diverges from the (frozen) bundle, so comparing it would
+// be wrong. Apply-all still happens for the collision check; only the column
+// comparison + ownership are scoped to the cutline.
+const CUTLINE = (() => {
+  const p = join(ROOT, "packages/framework-migrations/cutline.generated.json")
+  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")).cutline ?? {}) : {}
+})()
+
+/** Statements for a folder restricted to its cutline tags (dir = source name). */
+function loadFolderCutline(folder, dir) {
+  const covered = new Set(CUTLINE[dir] ?? [])
+  return journalTags(folder)
+    .filter((tag) => covered.has(tag))
+    .flatMap((tag) => splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8")))
 }
 
 /** name -> { dir, name, requires, migrationsDir, hasMigrations }. */
@@ -95,14 +117,20 @@ function globalOrder(manifests) {
   return out
 }
 
-/** Tables a package's own migration folder CREATEs. */
-function ownTables(migrationsDir) {
+/** Tables a package CREATEs across the given statements. */
+function tablesIn(statements) {
   const set = new Set()
-  for (const stmt of loadFolder(migrationsDir)) {
+  for (const stmt of statements) {
     const m = stmt.match(/^CREATE TABLE (?:IF NOT EXISTS )?"([a-z0-9_]+)"/i)
     if (m) set.add(m[1])
   }
   return set
+}
+
+/** Tables a package's CUTLINE-COVERED migrations CREATE (the bundle-comparable
+ *  set; post-cutline tables are excluded — they aren't in the frozen bundle). */
+function ownTables(migrationsDir, dir) {
+  return tablesIn(loadFolderCutline(migrationsDir, dir))
 }
 
 const urlFor = (name) => {
@@ -159,27 +187,41 @@ async function main() {
       return onDb("d2_verify_bundle", columnsByTable)
     })
 
-    // --union: the fresh-D.2 check — apply ALL generated package sources together
-    // (deps-first) onto one DB, proving they don't collide (e.g. duplicate shared
-    // enums) and that the union reconstitutes the bundle for every owned table.
+    // --union: the fresh-D.2 check. (1) apply ALL generated package sources
+    // together (deps-first) onto one DB, proving they don't collide (e.g.
+    // duplicate shared enums). (2) apply only the CUTLINE-COVERED migrations onto
+    // a second DB and prove they reconstitute the (frozen) bundle for every owned
+    // table — post-cutline increments correctly diverge from the bundle, so they
+    // are excluded from the comparison but still exercised by the collision apply.
     if (pkgs[0] === "--union") {
       const order = globalOrder(manifests)
-      let cols = null
       try {
-        cols = await withFreshDb(admin, "d2_verify_union", async () => {
-          await onDb("d2_verify_union", async (c) => {
+        await withFreshDb(admin, "d2_verify_union_all", async () => {
+          await onDb("d2_verify_union_all", async (c) => {
             for (const m of order)
               for (const stmt of loadFolder(m.migrationsDir)) await c.query(stmt)
           })
-          return onDb("d2_verify_union", columnsByTable)
         })
       } catch (e) {
         failed++
-        console.log(`  FAIL  union apply errored — ${e.message}`)
+        console.log(`  FAIL  union apply (all sources) errored — ${e.message}`)
+      }
+      let cols = null
+      try {
+        cols = await withFreshDb(admin, "d2_verify_union_cutline", async () => {
+          await onDb("d2_verify_union_cutline", async (c) => {
+            for (const m of order)
+              for (const stmt of loadFolderCutline(m.migrationsDir, m.dir)) await c.query(stmt)
+          })
+          return onDb("d2_verify_union_cutline", columnsByTable)
+        })
+      } catch (e) {
+        failed++
+        console.log(`  FAIL  union cutline apply errored — ${e.message}`)
       }
       if (cols) {
         const own = new Set()
-        for (const m of order) for (const t of ownTables(m.migrationsDir)) own.add(t)
+        for (const m of order) for (const t of ownTables(m.migrationsDir, m.dir)) own.add(t)
         const problems = []
         // Forward: every owned table matches the bundle column-for-column.
         for (const table of own) {
@@ -222,14 +264,16 @@ async function main() {
       }
       const order = closure(target.name, manifests) // deps first, target last
       const dbName = `d2_verify_${dir.replace(/[^a-z0-9]/g, "_")}`
+      // Cutline-covered apply: compares the bundle-comparable baseline, deps-first.
       const cols = await withFreshDb(admin, dbName, async () => {
         await onDb(dbName, async (c) => {
-          for (const m of order) for (const stmt of loadFolder(m.migrationsDir)) await c.query(stmt)
+          for (const m of order)
+            for (const stmt of loadFolderCutline(m.migrationsDir, m.dir)) await c.query(stmt)
         })
         return onDb(dbName, columnsByTable)
       })
 
-      const own = ownTables(target.migrationsDir)
+      const own = ownTables(target.migrationsDir, target.dir)
       const problems = []
       for (const table of own) {
         const got = cols.get(table)
