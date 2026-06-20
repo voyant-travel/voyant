@@ -1,4 +1,6 @@
-import { people, personDirectoryView } from "@voyant-travel/relationships/schema"
+import { suppliers } from "@voyant-travel/distribution"
+import { RequestValidationError } from "@voyant-travel/hono"
+import { organizations, people, personDirectoryView } from "@voyant-travel/relationships/schema"
 import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { normalizeLegalTargetFields, normalizeLegalTargetUpdateFields } from "../targets/service.js"
@@ -29,6 +31,48 @@ import {
   type UpdateContractAttachmentInput,
   type UpdateContractInput,
 } from "./service-shared.js"
+
+/**
+ * Existence check for the cross-module party references on a contract. With the
+ * hard cross-package FKs removed (module decoupling), this service-layer guard
+ * is what keeps `person_id`/`organization_id`/`supplier_id` referentially sound
+ * — a stale or mistyped id is rejected with a 400 instead of silently persisted.
+ */
+async function assertContractPartiesExist(
+  db: PostgresJsDatabase,
+  data: { personId?: string | null; organizationId?: string | null; supplierId?: string | null },
+): Promise<void> {
+  const missing: string[] = []
+  if (data.personId) {
+    const [r] = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(eq(people.id, data.personId))
+      .limit(1)
+    if (!r) missing.push(`person ${data.personId}`)
+  }
+  if (data.organizationId) {
+    const [r] = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.id, data.organizationId))
+      .limit(1)
+    if (!r) missing.push(`organization ${data.organizationId}`)
+  }
+  if (data.supplierId) {
+    const [r] = await db
+      .select({ id: suppliers.id })
+      .from(suppliers)
+      .where(eq(suppliers.id, data.supplierId))
+      .limit(1)
+    if (!r) missing.push(`supplier ${data.supplierId}`)
+  }
+  if (missing.length > 0) {
+    throw new RequestValidationError(
+      `Unknown contract ${missing.length > 1 ? "parties" : "party"}: ${missing.join(", ")}`,
+    )
+  }
+}
 
 export const contractRecordsService = {
   async listContracts(db: PostgresJsDatabase, query: ContractListQuery) {
@@ -95,6 +139,7 @@ export const contractRecordsService = {
     return row ?? null
   },
   async createContract(db: PostgresJsDatabase, data: CreateContractInput) {
+    await assertContractPartiesExist(db, data)
     const now = new Date()
     const stage = data.status ?? "draft"
     const [row] = await db
@@ -112,6 +157,7 @@ export const contractRecordsService = {
     const { status: _status, ...update } = data as UpdateContractInput & {
       status?: never
     }
+    await assertContractPartiesExist(db, update)
     const [row] = await db
       .update(contracts)
       .set({

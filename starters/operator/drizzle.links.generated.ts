@@ -73,6 +73,57 @@ export const legal_contract_finance_invoice = pgTable(
   ],
 )
 
+export const legal_contract_relationships_person = pgTable(
+  "legal_contract_relationships_person",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "relationships_person_id": text("relationships_person_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_relationships_person_pair_idx").on(t["legal_contract_id"], t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_relationships_person_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_relationships_person_r_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_relationships_organization = pgTable(
+  "legal_contract_relationships_organization",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "relationships_organization_id": text("relationships_organization_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_relationships_organization_pair_idx").on(t["legal_contract_id"], t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_relationships_organization_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_relationships_organization_r_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_suppliers_supplier = pgTable(
+  "legal_contract_suppliers_supplier",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_suppliers_supplier_pair_idx").on(t["legal_contract_id"], t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_suppliers_supplier_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_suppliers_supplier_r_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
 export const legal_policy_products_product = pgTable(
   "legal_policy_products_product",
   {

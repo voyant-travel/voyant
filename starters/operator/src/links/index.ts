@@ -2,6 +2,9 @@ import type { LinkDefinition } from "@voyant-travel/core"
 
 import { contractBookingLink } from "./contract-booking.js"
 import { contractInvoiceLink } from "./contract-invoice.js"
+import { contractOrganizationLink } from "./contract-organization.js"
+import { contractPersonLink } from "./contract-person.js"
+import { contractSupplierLink } from "./contract-supplier.js"
 import { organizationProductLink } from "./organization-product.js"
 import { personProductLink } from "./person-product.js"
 import { policyAcceptanceBookingLink } from "./policy-acceptance-booking.js"
@@ -10,6 +13,9 @@ import { policyProductLink } from "./policy-product.js"
 export {
   contractBookingLink,
   contractInvoiceLink,
+  contractOrganizationLink,
+  contractPersonLink,
+  contractSupplierLink,
   organizationProductLink,
   personProductLink,
   policyAcceptanceBookingLink,
@@ -25,6 +31,9 @@ export const links: LinkDefinition[] = [
   organizationProductLink,
   contractBookingLink,
   contractInvoiceLink,
+  contractPersonLink,
+  contractOrganizationLink,
+  contractSupplierLink,
   policyProductLink,
   policyAcceptanceBookingLink,
 ]
