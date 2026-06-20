@@ -19,6 +19,7 @@ import {
   productDocKey,
   productDocVariant,
   readThroughProductDoc,
+  readThroughSlugMapping,
 } from "../../src/read-model.js"
 import { productRoutes, readModelInvalidation } from "../../src/routes.js"
 import { publicProductRoutes } from "../../src/routes-public.js"
@@ -99,6 +100,18 @@ describe("read-model primitives", () => {
     expect(productDocVariant({})).toBe("default")
     expect(productDocVariant({ languageTag: "de-DE" })).toBe("lang=de-DE")
   })
+
+  it("readThroughSlugMapping caches the matched product and locale", async () => {
+    const kv = fakeKv()
+    const resolve = vi.fn(async () => ({ productId: "prod_1", languageTag: "ro" }))
+
+    const first = await readThroughSlugMapping(kv, "croaziera-dunare", "lang=fr", resolve)
+    const second = await readThroughSlugMapping(kv, "croaziera-dunare", "lang=fr", resolve)
+
+    expect(first).toEqual({ productId: "prod_1", languageTag: "ro" })
+    expect(second).toEqual({ productId: "prod_1", languageTag: "ro" })
+    expect(resolve).toHaveBeenCalledOnce()
+  })
 })
 
 describe("public detail routes — KV document plane", () => {
@@ -127,6 +140,27 @@ describe("public detail routes — KV document plane", () => {
     // Slug resolution hit the service once (mapping miss), but the
     // document itself came from the shared id-keyed entry.
     expect(mockedService.getCatalogProductById).toHaveBeenCalledOnce()
+  })
+
+  it("GET /slug/:slug hydrates the detail with the matched fallback locale", async () => {
+    mockedService.getCatalogProductBySlug.mockResolvedValueOnce({
+      id: PRODUCT.id,
+      contentLanguageTag: "ro",
+    } as never)
+    mockedService.getCatalogProductById.mockImplementationOnce(async (_db, _id, query) => ({
+      ...PRODUCT,
+      contentLanguageTag: query.languageTag,
+    }))
+
+    const viaSlug = await publicProductRoutes.request(`/slug/${PRODUCT.slug}?languageTag=fr`)
+
+    expect(viaSlug.status).toBe(200)
+    expect(await viaSlug.json()).toEqual({
+      data: { ...PRODUCT, contentLanguageTag: "ro" },
+    })
+    expect(mockedService.getCatalogProductById.mock.calls[0]?.[2]).toEqual({
+      languageTag: "ro",
+    })
   })
 
   it("locale variants cache independently", async () => {

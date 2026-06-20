@@ -103,18 +103,32 @@ export const publicProductRoutes = new Hono<Env>()
 
     // Resolve slug → id through the short-lived KV mapping so both detail
     // routes share one id-keyed document per variant.
-    const productId = await readThroughSlugMapping(kv, slug, async () => {
+    const requestedVariant = productDocVariant(query)
+    const resolution = await readThroughSlugMapping(kv, slug, requestedVariant, async () => {
       const row = await publicProductsService.getCatalogProductBySlug(c.get("db"), slug, query)
-      return row ? ((row as { id?: string }).id ?? null) : null
+      const productId = row ? ((row as { id?: string }).id ?? null) : null
+      if (!productId) return null
+      return {
+        productId,
+        languageTag:
+          (row as { contentLanguageTag?: string | null }).contentLanguageTag ??
+          query.languageTag ??
+          null,
+      }
     })
-    if (!productId) {
+    if (!resolution) {
       return c.json({ error: "Catalog product not found" }, 404)
     }
 
+    const detailQuery = resolution.languageTag
+      ? { ...query, languageTag: resolution.languageTag }
+      : query
+
     const { data } = await readThroughProductDoc(
       kv,
-      productDocKey(productId, productDocVariant(query)),
-      () => publicProductsService.getCatalogProductById(c.get("db"), productId, query),
+      productDocKey(resolution.productId, productDocVariant(detailQuery)),
+      () =>
+        publicProductsService.getCatalogProductById(c.get("db"), resolution.productId, detailQuery),
     )
     if (!data) {
       return c.json({ error: "Catalog product not found" }, 404)
