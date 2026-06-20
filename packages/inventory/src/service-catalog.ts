@@ -34,6 +34,8 @@ type HydrateCatalogProductOptions = {
   fallbackLanguageTags?: string[]
 }
 
+export const DEFAULT_CATALOG_SEARCH_FALLBACK_LANGUAGE_TAGS = ["en", "ro"] as const
+
 function normalizeDate(value: Date | string | null | undefined): string | null {
   if (!value) {
     return null
@@ -631,7 +633,9 @@ export const catalogProductsService = {
     const localizedProducts = (await this.hydrateProducts(db, rows, {
       includeContent: true,
       languageTag: query.languageTag,
-      fallbackLanguageTags: query.fallbackLanguageTags ?? (query.languageTag ? ["en", "ro"] : []),
+      fallbackLanguageTags:
+        query.fallbackLanguageTags ??
+        (query.languageTag ? [...DEFAULT_CATALOG_SEARCH_FALLBACK_LANGUAGE_TAGS] : []),
     })) as LocalizedCatalogProductDetail[]
 
     const rowById = new Map(rows.map((row) => [row.id, row] as const))

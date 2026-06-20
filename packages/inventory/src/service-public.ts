@@ -15,7 +15,10 @@ import {
   productTranslations,
   productVisibilitySettings,
 } from "./schema.js"
-import { catalogProductsService } from "./service-catalog.js"
+import {
+  catalogProductsService,
+  DEFAULT_CATALOG_SEARCH_FALLBACK_LANGUAGE_TAGS,
+} from "./service-catalog.js"
 import type {
   PublicCatalogCategoryListQuery,
   PublicCatalogDestinationListQuery,
@@ -33,6 +36,16 @@ function impossibleCondition() {
 function normalizeLanguageTag(value: string | null | undefined) {
   const normalized = value?.trim().toLowerCase()
   return normalized || null
+}
+
+function normalizeLanguageTagList(values: Array<string | null | undefined>) {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => normalizeLanguageTag(value))
+        .filter((value): value is string => Boolean(value)),
+    ),
+  )
 }
 
 async function listProductIdsForCategory(db: PostgresJsDatabase, categoryId: string) {
@@ -313,6 +326,12 @@ export const publicProductsService = {
   ) {
     const normalizedSlug = slug.trim().toLowerCase()
     const normalizedLanguageTag = normalizeLanguageTag(query.languageTag)
+    const candidateLanguageTags = normalizedLanguageTag
+      ? normalizeLanguageTagList([
+          normalizedLanguageTag,
+          ...DEFAULT_CATALOG_SEARCH_FALLBACK_LANGUAGE_TAGS,
+        ])
+      : []
     const conditions = [
       // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
       sql`lower(${productTranslations.slug}) = ${normalizedSlug}`,
@@ -322,10 +341,10 @@ export const publicProductsService = {
     ]
 
     if (normalizedLanguageTag) {
-      conditions.push(eq(productTranslations.languageTag, normalizedLanguageTag))
+      conditions.push(inArray(productTranslations.languageTag, candidateLanguageTags))
     }
 
-    const [row] = await db
+    const rows = await db
       .select({
         productId: products.id,
         languageTag: productTranslations.languageTag,
@@ -334,7 +353,16 @@ export const publicProductsService = {
       .innerJoin(products, eq(products.id, productTranslations.productId))
       .where(and(...conditions))
       .orderBy(desc(productTranslations.updatedAt))
-      .limit(1)
+      .limit(candidateLanguageTags.length || 1)
+
+    const row =
+      candidateLanguageTags.length > 0
+        ? (candidateLanguageTags
+            .map((languageTag) =>
+              rows.find((item) => normalizeLanguageTag(item.languageTag) === languageTag),
+            )
+            .find(Boolean) ?? null)
+        : (rows[0] ?? null)
 
     if (!row) {
       return null
