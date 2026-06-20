@@ -28,7 +28,8 @@
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
-    "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts"
+    "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=finance_baseline"
   },
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",
@@ -47,10 +48,13 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

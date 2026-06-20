@@ -27,11 +27,16 @@ if (pkgs.length === 0) {
 }
 
 /** Resolve the `voyant.schema` entrypoint (e.g. "./schema") to a src/ TS path. */
-function schemaEntrypoint(pkgJson) {
+function schemaEntrypoint(pkgJson, dir) {
   const sub = pkgJson.voyant?.schema
   if (!sub) throw new Error("package.json has no `voyant.schema`")
-  // "./schema" -> "./src/schema.ts"; "./verification/schema" -> "./src/verification/schema.ts"
-  return `./src/${sub.replace(/^\.\//, "")}.ts`
+  // "./schema" -> "./src/schema.ts" or a barrel "./src/schema/index.ts"
+  // (e.g. db). "./verification/schema" -> "./src/verification/schema.ts".
+  const base = `src/${sub.replace(/^\.\//, "")}`
+  for (const candidate of [`${base}.ts`, `${base}/index.ts`]) {
+    if (existsSync(join(dir, candidate))) return `./${candidate}`
+  }
+  throw new Error(`no schema file at ${base}.ts or ${base}/index.ts`)
 }
 
 const CONFIG = (schemaPath) => `/**
@@ -81,10 +86,11 @@ for (const name of pkgs) {
 
   writeFileSync(pjPath, `${JSON.stringify(pj, null, 2)}\n`)
 
+  const entrypoint = schemaEntrypoint(pj, dir)
   const cfgPath = join(dir, "drizzle.migrations.config.ts")
-  writeFileSync(cfgPath, CONFIG(schemaEntrypoint(pj)))
+  writeFileSync(cfgPath, CONFIG(entrypoint))
 
-  console.log(`  scaffolded ${name} (schema ${schemaEntrypoint(pj)})`)
+  console.log(`  scaffolded ${name} (schema ${entrypoint})`)
 }
 
 console.log(

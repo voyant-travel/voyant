@@ -33,7 +33,8 @@
     "test": "vitest run",
     "build": "pnpm run clean && tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=storefront_baseline"
   },
   "dependencies": {
     "@voyant-travel/bookings": "workspace:^",
@@ -71,11 +72,14 @@
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",
