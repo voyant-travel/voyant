@@ -1,6 +1,6 @@
 # ADR: D.2 — package-owned migrations + topological collector
 
-- **Status:** Implemented (apply path) — the dual-path collector (`applyD2Migrations`), per-package migration folders, the cutline manifest, and the live operator runner all shipped (see *Shipped* below). Remaining: delete the transition artifacts (bundle + cutline) once the two existing D.1 deployments have cut over.
+- **Status:** **Done.** The dual-path collector (`applyD2Migrations`), per-package migration folders, the cutline manifest, the portable deployment runner (`discoverMigrationSources` + `runDeploymentMigrations`, `framework-migrations@0.5.x`), and the live operator runner all shipped. **Both existing deployments (eturia + protravel) cut over to D.2 on 2026-06-20** (ledger-only import-baseline, validated on isolated Neon branches first). The cutline is now **frozen** and the bundle is decommissioned from the apply path + the staleness gate (slice 3c, below).
 - **Date:** 2026-06-20
 - **Shipped:**
   - `applyD2Migrations` dual-path collector + cutline (`@voyant-travel/framework-migrations`) — PR #2014 (3b-1).
@@ -90,10 +90,12 @@ These kept package-owned history *trustworthy* and were part of acceptance:
 
 There is **no long tail of D.1 databases in the wild**: exactly two deployments ran the D.1 collector, and both are source-controlled by us. So the bundle + cutline + dual-path are a **short-lived transition artifact**, not permanent infrastructure — we deliberately do **not** build a freeze-forever oracle or reframe the equivalence gates around an evolving cutline.
 
-Plan:
-1. Run the D.2 runner once against each of the two D.1 deployments (the EXISTING path import-baselines the cutline, recording the per-package rows without re-executing). After that their ledgers carry `<package>/<tag>` rows and the `framework/*` rows are inert history.
-2. **Until both have cut over, do not add a post-cutline package migration** — the cutline drift gate would absorb its tag into the cutline, and the runner would then import-baseline (skip the DDL for) that migration on a not-yet-transitioned D.1 DB. With only two controlled deployments this is an operational ordering note, not a machinery requirement.
-3. Once both are on D.2: delete the framework bundle (`packages/framework-migrations/migrations/` + `bundle.ts` + `generate-framework-migration-bundle.mjs` + the `verify:framework-migration-bundle` gate), retire the cutline + `loadCutline` + the EXISTING/import-baseline branch of `applyD2Migrations`, and simplify the operator runner to plain `applyMigrations` over the discovered package sources. The per-package equivalence oracle (`verify-package-baseline.mjs`) loses its bundle reference at that point and is replaced by the per-package replay check alone.
+**What happened (done 2026-06-20):**
+1. ✅ Both deployments cut over: the EXISTING path import-baselined the cutline (eturia 26 / protravel 66 baselines, 0 executed), validated first on isolated Neon branches. Their ledgers now carry `<package>/<tag>` rows; `framework/*` (eturia) and legacy `__drizzle_migrations` (protravel) are inert history.
+2. ✅ **The cutline is FROZEN, not deleted.** Correcting the original plan: the cutline and the EXISTING/import-baseline path are **not** removable. A transitioned deployment stays permanently "existing" (its `framework/*` / legacy rows persist), so every future run takes the EXISTING path; and a NEW package migration must fall OUTSIDE the frozen cutline so the collector EXECUTES it (adding it to the cutline would make those deployments skip its DDL forever). `scripts/d2/generate-cutline.mjs` no longer regenerates-and-compares — it asserts the frozen cutline's tags still exist and lets post-cutline increments through.
+3. ✅ **Bundle decommissioned from the gates** (kept frozen on disk as the completeness oracle + transition-test seed, not deleted): the `verify:framework-migration-bundle` staleness gate is removed from `verify:architecture` (it regenerated the bundle and would force it to grow as packages evolve), and `verify-package-baseline.mjs` now scopes its bundle comparison to **cutline-covered** migrations (a post-cutline increment correctly diverges from the frozen bundle) while still applying *all* sources for the collision check.
+
+**Package evolution now works:** adding a new package migration is a post-cutline increment — it executes on every database (fresh and transitioned), is excluded from the bundle comparison, and is never absorbed into the cutline.
 
 ## Open questions (genuine unknowns to resolve before/with implementation)
 
