@@ -181,12 +181,23 @@ async function main() {
         const own = new Set()
         for (const m of order) for (const t of ownTables(m.migrationsDir)) own.add(t)
         const problems = []
+        // Forward: every owned table matches the bundle column-for-column.
         for (const table of own) {
           const got = cols.get(table)
           const want = bundleCols.get(table)
           if (!want) problems.push(`table ${table} not in framework bundle`)
           else if (JSON.stringify(got) !== JSON.stringify(want))
             problems.push(`table ${table} columns differ from the bundle`)
+        }
+        // Reverse coverage: every bundle table must be owned by SOME source —
+        // otherwise a schema-owning package was never onboarded (e.g. flights),
+        // and a fresh D.2 database would silently miss those tables.
+        for (const table of bundleCols.keys()) {
+          if (!own.has(table)) {
+            problems.push(
+              `bundle table ${table} is owned by no package source (un-onboarded owner?)`,
+            )
+          }
         }
         if (problems.length === 0) {
           console.log(
