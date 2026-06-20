@@ -1,5 +1,11 @@
 # @voyant-travel/inventory
 
+## 0.3.8
+
+### Patch Changes
+
+- fc678e9: Align public product slug lookups with catalog search locale fallback so exact fallback slugs resolve product details.
+
 ## 0.3.7
 
 ### Patch Changes

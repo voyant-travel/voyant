@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [fc678e9]
+  - @voyant-travel/inventory@0.3.8
+
 ## 0.2.6
 
 ### Patch Changes
