@@ -1,9 +1,9 @@
+import { availabilitySlots } from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { eq } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { products } from "../../../../inventory/src/schema.js"
-import { availabilitySlots } from "../../../src/availability/schema.js"
 import { updateSlot } from "../../../src/availability/service-core.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL

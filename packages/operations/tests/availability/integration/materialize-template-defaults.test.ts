@@ -1,15 +1,14 @@
+import {
+  availabilityRules,
+  availabilitySlots,
+  productOptionResourceTemplates,
+} from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { eq, sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { productOptions, products } from "../../../../inventory/src/schema.js"
-
 import { generateAvailabilitySlots } from "../../../src/availability/generate-slots.js"
-import {
-  availabilityRules,
-  availabilitySlots,
-  productOptionResourceTemplates,
-} from "../../../src/availability/schema.js"
 import { materializeSlotResourcesFromTemplateDefaults } from "../../../src/availability/service-allocation-automation.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
