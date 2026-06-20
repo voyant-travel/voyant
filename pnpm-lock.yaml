@@ -2927,6 +2927,37 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/plugins/voyant-connect:
+    dependencies:
+      '@voyant-travel/catalog':
+        specifier: workspace:^
+        version: link:../../catalog
+      '@voyant-travel/connect-adapter':
+        specifier: 0.3.0
+        version: 0.3.0(@voyant-travel/catalog@packages+catalog)
+      '@voyant-travel/connect-cruises':
+        specifier: 0.4.0
+        version: 0.4.0(@voyant-travel/cruises@packages+cruises)
+      '@voyant-travel/connect-sdk':
+        specifier: 0.9.0
+        version: 0.9.0
+      '@voyant-travel/cruises':
+        specifier: workspace:^
+        version: link:../../cruises
+      '@voyant-travel/data-sdk':
+        specifier: ^0.5.0
+        version: 0.5.0
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/products-contracts:
     dependencies:
       '@voyant-travel/catalog-contracts':
@@ -3979,12 +4010,6 @@ importers:
       '@voyant-travel/commerce-react':
         specifier: workspace:^
         version: link:../../packages/commerce-react
-      '@voyant-travel/connect-adapter':
-        specifier: 0.3.0
-        version: 0.3.0(@voyant-travel/catalog@packages+catalog)
-      '@voyant-travel/connect-cruises':
-        specifier: 0.4.0
-        version: 0.4.0(@voyant-travel/cruises@packages+cruises)
       '@voyant-travel/connect-sdk':
         specifier: 0.9.0
         version: 0.9.0
@@ -4078,6 +4103,9 @@ importers:
       '@voyant-travel/plugin-smartbill':
         specifier: workspace:^
         version: link:../../packages/plugins/smartbill
+      '@voyant-travel/plugin-voyant-connect':
+        specifier: workspace:^
+        version: link:../../packages/plugins/voyant-connect
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes

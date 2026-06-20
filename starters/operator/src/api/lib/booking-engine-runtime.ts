@@ -9,15 +9,13 @@ import {
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
-import { createVoyantConnectSourceAdapter } from "@voyant-travel/connect-adapter"
 import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
+import {
+  createVoyantConnectSources,
+  registerVoyantConnectSources,
+} from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
 
-import {
-  createConnectCruiseSourceAdapter,
-  skipCruiseConnectDocuments,
-} from "./connect-cruise-source"
-import { createGeoNameResolver } from "./geo-resolver"
 import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
 
 let _registry: SourceAdapterRegistry | undefined
@@ -78,44 +76,16 @@ function registerVoyantConnectAdapter(
     return
   }
 
-  registry.register(
-    createVoyantConnectSourceAdapter({
-      connect: {
-        apiKey,
-        operatorId,
-        baseUrl: env.VOYANT_CONNECT_API_URL,
-      },
+  registerVoyantConnectSources(
+    registry,
+    createVoyantConnectSources({
+      apiKey,
       operatorId,
+      baseUrl: env.VOYANT_CONNECT_API_URL,
       market: env.VOYANT_CONNECT_MARKET,
-      discoverLimit: positiveInteger(env.VOYANT_CONNECT_SYNC_LIMIT) ?? 500,
-      // Cruises are sourced through the structured cruise adapter below so the
-      // canonical geography survives; skip them on the generic path.
-      mapDocument: skipCruiseConnectDocuments,
+      syncLimit: env.VOYANT_CONNECT_SYNC_LIMIT,
     }),
   )
-
-  // Structured cruise sourcing — lands sourced cruises in the cruise vertical
-  // with facetable geography (waterways / regions / countries + canonical ids).
-  registry.register(
-    createConnectCruiseSourceAdapter(
-      {
-        connect: {
-          apiKey,
-          operatorId,
-          baseUrl: env.VOYANT_CONNECT_API_URL,
-        },
-        operatorId,
-      },
-      undefined,
-      { geo: createGeoNameResolver({ apiKey }) },
-    ),
-  )
-}
-
-function positiveInteger(value: string | undefined): number | undefined {
-  if (!value) return undefined
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
 
 /**
