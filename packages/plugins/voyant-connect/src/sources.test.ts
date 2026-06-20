@@ -13,6 +13,41 @@ import {
 } from "./sources.js"
 
 describe("createVoyantConnectSources", () => {
+  it("creates default sources when connections are omitted", () => {
+    const sources = createVoyantConnectSources({
+      client: fakeClient(),
+      operatorId: "op_123",
+      geo: false,
+    })
+
+    expect(sources.map((source) => [source.connectionId, source.role])).toEqual([
+      [undefined, "generic"],
+      [undefined, "cruises"],
+    ])
+  })
+
+  it("does not create default sources when connections are explicitly empty", () => {
+    const sources = createVoyantConnectSources({
+      client: fakeClient(),
+      operatorId: "op_123",
+      connections: [],
+      geo: false,
+    })
+
+    expect(sources).toEqual([])
+  })
+
+  it("does not create default sources when explicit connections filter to empty", () => {
+    const sources = createVoyantConnectSources({
+      client: fakeClient(),
+      operatorId: "op_123",
+      connections: [{ id: "conn_paused", status: "paused", providerKey: "tui" }],
+      geo: false,
+    })
+
+    expect(sources).toEqual([])
+  })
+
   it("creates generic, structured cruise, and TUI package sources per active connection", () => {
     const sources = createVoyantConnectSources({
       client: fakeClient(),

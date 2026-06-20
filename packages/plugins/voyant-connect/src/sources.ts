@@ -64,7 +64,7 @@ export function createVoyantConnectSources(
     (connection) => connection.status == null || connection.status === "active",
   )
 
-  if (connections?.length) {
+  if (connections) {
     return connections.flatMap((connection) =>
       createConnectionScopedSources({ ...options, client, discoverLimit }, connection),
     )
