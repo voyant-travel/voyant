@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   type AvailabilityHold,
   type AvailabilitySlot,
   availabilityHolds,
-} from "./availability/schema.js"
+} from "@voyant-travel/availability/schema"
+import { eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { availabilityService } from "./availability/service.js"
 import {
   type PlaceAvailabilityHoldInput,

@@ -1,14 +1,13 @@
+import { availabilitySlots } from "@voyant-travel/availability/schema"
 import { createEventBus } from "@voyant-travel/core"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { products } from "../../../../inventory/src/schema.js"
-
 import {
   AVAILABILITY_SLOT_CHANGED_EVENT,
   type AvailabilitySlotChangedEvent,
 } from "../../../src/availability/events.js"
-import { availabilitySlots } from "../../../src/availability/schema.js"
 import { createSlot, deleteSlot, updateSlot } from "../../../src/availability/service-core.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL

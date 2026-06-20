@@ -50,7 +50,6 @@ function packageList(value: string): TemporaryPackage[] {
 
 const temporaryPackages = packageList(`
   @voyant-travel/allocation-ui|orphan|@voyant-travel/operations-react/availability/allocation|@voyant-travel/operations-react
-  @voyant-travel/availability|facade|@voyant-travel/operations/availability|@voyant-travel/operations
   @voyant-travel/availability-react|facade|@voyant-travel/operations-react/availability|@voyant-travel/operations-react
   @voyant-travel/booking-requirements|orphan|@voyant-travel/bookings/requirements|@voyant-travel/bookings
   @voyant-travel/booking-requirements-react|orphan|@voyant-travel/bookings-react/requirements|@voyant-travel/bookings-react

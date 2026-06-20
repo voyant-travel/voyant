@@ -1,0 +1,1 @@
+ALTER TABLE "booking_allocations" DROP CONSTRAINT "booking_allocations_availability_slot_id_availability_slots_id_fk";

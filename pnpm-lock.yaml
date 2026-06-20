@@ -392,6 +392,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -783,6 +786,28 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/availability:
+    dependencies:
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/bookings:
     dependencies:
       '@voyant-travel/action-ledger':
@@ -816,6 +841,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2587,6 +2615,9 @@ importers:
 
   packages/operations:
     dependencies:
+      '@voyant-travel/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -3918,6 +3949,9 @@ importers:
       '@voyant-travel/auth-react':
         specifier: workspace:^
         version: link:../../packages/auth-react
+      '@voyant-travel/availability':
+        specifier: workspace:^
+        version: link:../../packages/availability
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../../packages/bookings

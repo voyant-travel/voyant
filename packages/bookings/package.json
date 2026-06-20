@@ -34,7 +34,8 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=bookings_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations && node ../../scripts/d2/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",
@@ -49,10 +50,13 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

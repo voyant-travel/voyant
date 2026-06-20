@@ -1,0 +1,63 @@
+{
+  "name": "@voyant-travel/availability",
+  "version": "0.0.0",
+  "description": "Availability domain schema — bookable slots, rules, start times, holds, pickups and capacity. The foundational owner consumed by bookings, operations and accommodations.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=availability_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations && node ../../scripts/d2/ensure-extensions.mjs ./migrations"
+  },
+  "dependencies": {
+    "@voyant-travel/db": "workspace:^",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/availability"
+  }
+}

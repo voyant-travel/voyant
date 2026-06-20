@@ -11,11 +11,14 @@
  * over-allocate.
  */
 
+import {
+  type AvailabilityHold,
+  availabilityHolds,
+  availabilitySlots,
+} from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq, isNull, lt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import { type AvailabilityHold, availabilityHolds, availabilitySlots } from "./schema.js"
 
 export interface PlaceAvailabilityHoldInput {
   draftId: string

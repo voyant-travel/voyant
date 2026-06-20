@@ -1,9 +1,9 @@
+import { allocationResources, availabilitySlots } from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { optionUnits, productOptions, products } from "../../../../inventory/src/schema.js"
-import { allocationResources, availabilitySlots } from "../../../src/availability/schema.js"
 import {
   getSlotAllocationManifest,
   getSlotResourceAvailability,

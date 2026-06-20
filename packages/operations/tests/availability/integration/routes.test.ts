@@ -1,13 +1,13 @@
 // agent-quality: file-size exception -- owner: availability; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
+
+import { availabilityPickupPoints, availabilitySlots } from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { optionUnits, productOptions, products } from "../../../../inventory/src/schema.js"
-
 import { availabilityRoutes } from "../../../src/availability/routes.js"
-import { availabilityPickupPoints, availabilitySlots } from "../../../src/availability/schema.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL

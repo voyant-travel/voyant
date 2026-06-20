@@ -13,6 +13,7 @@ export const schema = [
   "../../packages/catalog/src/schema.ts",
   "../../packages/bookings/src/schema.ts",
   "../../packages/finance/src/schema.ts",
+  "../../packages/availability/src/schema.ts",
   "../../packages/operations/src/schema.ts",
   "../../packages/notifications/src/schema.ts",
   "../../packages/flights/src/reference/local-postgres.ts",
