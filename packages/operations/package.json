@@ -23,6 +23,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=operations_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations && node ../../scripts/d2/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@voyant-travel/availability": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
@@ -98,6 +99,7 @@
   "voyant": {
     "schema": "./schema",
     "requiresSchemas": [
+      "@voyant-travel/availability",
       "@voyant-travel/db",
       "@voyant-travel/identity"
     ]

@@ -33,16 +33,6 @@ export const availabilityHonoModule: HonoModule = {
   adminRoutes: availabilityAdminRoutes,
 }
 
-export {
-  AVAILABILITY_SLOT_CHANGED_EVENT,
-  type AvailabilitySlotChangedEvent,
-  type AvailabilitySlotChangeSource,
-} from "./events.js"
-export {
-  type GenerateAvailabilitySlotsOptions,
-  type GenerateAvailabilitySlotsResult,
-  generateAvailabilitySlots,
-} from "./generate-slots.js"
 export type {
   AllocationAuditLog,
   AllocationResource,
@@ -72,7 +62,7 @@ export type {
   ProductMeetingConfig,
   ProductOptionResourceTemplate,
   SharingGroupLabel,
-} from "./schema.js"
+} from "@voyant-travel/availability/schema"
 export {
   allocationAuditLog,
   allocationResources,
@@ -89,7 +79,17 @@ export {
   productMeetingConfigs,
   productOptionResourceTemplates,
   sharingGroupLabels,
-} from "./schema.js"
+} from "@voyant-travel/availability/schema"
+export {
+  AVAILABILITY_SLOT_CHANGED_EVENT,
+  type AvailabilitySlotChangedEvent,
+  type AvailabilitySlotChangeSource,
+} from "./events.js"
+export {
+  type GenerateAvailabilitySlotsOptions,
+  type GenerateAvailabilitySlotsResult,
+  generateAvailabilitySlots,
+} from "./generate-slots.js"
 export {
   type AllocationManifestBooking,
   type AllocationManifestTraveler,

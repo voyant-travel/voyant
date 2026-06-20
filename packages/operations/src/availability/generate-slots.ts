@@ -1,8 +1,7 @@
+import { availabilityRules, availabilitySlots } from "@voyant-travel/availability/schema"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import { expandRRule } from "./rrule.js"
-import { availabilityRules, availabilitySlots } from "./schema.js"
 import { materializeSlotResourcesFromTemplateDefaults } from "./service-allocation-automation.js"
 import { localToInstant } from "./slot-timezone.js"
 

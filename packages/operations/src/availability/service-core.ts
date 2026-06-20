@@ -1,16 +1,15 @@
-import type { EventBus } from "@voyant-travel/core"
-import { and, asc, desc, eq, getTableColumns, gte, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
-import { productsRef } from "./products-ref.js"
 import {
   type AvailabilitySlot,
   availabilityCloseouts,
   availabilityRules,
   availabilitySlots,
   availabilityStartTimes,
-} from "./schema.js"
+} from "@voyant-travel/availability/schema"
+import type { EventBus } from "@voyant-travel/core"
+import { and, asc, desc, eq, getTableColumns, gte, sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
+import { productsRef } from "./products-ref.js"
 import type {
   AvailabilityCloseoutListQuery,
   AvailabilityRuleListQuery,

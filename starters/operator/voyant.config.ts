@@ -48,6 +48,7 @@ export default defineVoyantConfig({
   //  - accommodations: FK-target schema, not mounted
   //  - charters / cruises: schema migrated ahead of route mounting
   additionalSchemas: [
+    "@voyant-travel/availability",
     "@voyant-travel/workflow-runs",
     "@voyant-travel/accommodations",
     "@voyant-travel/charters",
