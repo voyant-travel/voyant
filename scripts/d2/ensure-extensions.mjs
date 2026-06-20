@@ -23,10 +23,6 @@ if (!dir) {
   console.error("usage: node scripts/d2/ensure-extensions.mjs <migrations-dir> [ext...]")
   process.exit(2)
 }
-const exts = process.argv.slice(3)
-if (exts.length === 0) exts.push("pg_trgm", "unaccent")
-
-// The baseline is the lexically-first migration file.
 const files = readdirSync(dir)
   .filter((f) => f.endsWith(".sql"))
   .sort()
@@ -36,6 +32,21 @@ if (files.length === 0) {
 }
 const path = join(dir, files[0])
 let sql = readFileSync(path, "utf8")
+
+// Explicit extensions, or AUTO-DETECT from the migration SQL so every package
+// that uses an extension creates it itself (idempotently) — self-sufficient and
+// subset-safe, not reliant on another source running first.
+let exts = process.argv.slice(3)
+if (exts.length === 0) {
+  const all = files.map((f) => readFileSync(join(dir, f), "utf8")).join("\n")
+  exts = []
+  if (all.includes("gin_trgm_ops")) exts.push("pg_trgm")
+  if (/\bunaccent\s*\(/.test(all)) exts.push("unaccent")
+  if (exts.length === 0) {
+    console.log("ensure-extensions: no trigram/unaccent usage — nothing to add")
+    process.exit(0)
+  }
+}
 
 const missing = exts.filter((e) => !sql.includes(`CREATE EXTENSION IF NOT EXISTS "${e}"`))
 if (missing.length === 0) {

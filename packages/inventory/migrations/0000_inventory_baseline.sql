@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+--> statement-breakpoint
 DO $$ BEGIN
  CREATE TYPE "public"."extra_collection_mode" AS ENUM('booking_total', 'cash_on_trip', 'external', 'included', 'none');
 EXCEPTION WHEN duplicate_object THEN null;
