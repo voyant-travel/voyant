@@ -1,0 +1,97 @@
+# ADR: D.2 — package-owned migrations + topological collector
+
+- **Status:** Proposed — not started; gated behind acceptance of this ADR.
+- **Date:** 2026-06-20
+- **Supersedes (on acceptance):** the single combined history of `migration-resilience-rfc.md` (voyant#1608) and the standard-profile-only scope of `migration-collector-d1.md`. D.1 explicitly deferred this: *"D.2 (package-owned migrations) would supersede #1608; it is out of scope here and gated behind its own ADR."*
+- **Implements:** `consolidated-deployments-rfc.md` Workstream **D.2**.
+- **Builds on:** `migration-collector-d1.md` (the multi-source collector primitive). D.2 reuses the collector and ledger **unchanged** — `planMigrations` / `applyMigrations` / `importBaseline` in `packages/framework-migrations/src/collector.ts` are untouched. Only *how sources are produced, ordered, and reconciled with existing ledgers* changes.
+
+## Context
+
+D.1 moved migration-history **ownership** from the deployment fork to the framework, while keeping a **single aggregate-generated history**. It ships one monolithic `framework` bundle (`@voyant-travel/framework-migrations`, priority 0) plus the deployment's own source (link tables + custom modules, priority 1). The collector applies sources in `(priority → in-source seq)` order against a version-independent `_voyant_migrations(source, tag, content_hash)` ledger whose primary key is **`(source, tag)`**.
+
+D.1 is clean **only for the standard profile** — a deployment mounting exactly the reference module set. The moment a deployment **adds or removes a module**, it diverges from the fixed aggregate bundle: the bundle either creates tables the deployment doesn't want, or omits tables it does. D.1's own scope boundary names the fix as D.2 — *package-owned migrations + a topological collector*.
+
+The collector primitive is already source-agnostic: `planMigrations()` sorts N sources by `(priority, seq)`. The hard part of D.2 is therefore **not** the apply engine — it is (a) **producing** per-package sources, (b) **ordering** them correctly, and (c) **reconciling the D.1 → D.2 transition** so that a single design works for *both* existing monolithic-ledger databases *and* fresh arbitrary-subset databases. Getting (c) wrong is how this turns into duplicate-DDL failures on live databases.
+
+## Decision (proposed)
+
+### 1. Each schema-owning package ships its own complete `migrations/` history
+
+One drizzle migrations folder per package — generated from that package's own schema, shipped exactly as `@voyant-travel/framework-migrations` ships its bundle today, but per-package. **The folder contains the package's full history (its baseline + every increment)**, not just new migrations — fresh arbitrary-subset databases must be able to create historical package tables *without* the old monolithic bundle, which is the whole point of supporting module removal. Each package exports a loader (mirroring `loadFrameworkBundleSource()` / `loadMigrationFolder()`).
+
+### 2. Discovery resolves the schema **closure**, not the mounted set
+
+A deployment's sources are not just the packages in `voyant.config.ts`. The aggregate schema list already pulls in transitive, non-mounted schema dependencies — e.g. `@voyant-travel/db` appears in `starters/operator/drizzle.schemas.generated.ts` though it is in no `modules`/`extensions`/`additionalSchemas` entry. D.2 **reuses the same closure resolver that emits `drizzle.schemas.generated.ts`** — the one driven by each package's `voyant.requiresSchemas` metadata (`packages/catalog/package.json` declares `requiresSchemas: ["@voyant-travel/db"]`; the closure is already walked in `scripts/check-retail-spine-closure.mjs`). The set of migration sources is exactly the set of packages in that resolved schema closure, plus the deployment-local source.
+
+### 3. Topological ordering from `voyant.requiresSchemas` (DAG now, not deferred)
+
+This is a **topological** collector, not merely an ordered one. Order package sources by a topological sort of the `voyant.requiresSchemas` DAG — the same metadata the closure resolver already consumes, which already throws on cycles. The `voyant.config.ts` module-array order is used only as a **deterministic tie-breaker** among packages with no dependency edge between them. The deployment-local source (cross-module link tables + `src/modules`/`src/extensions`) is pinned **last** — its link tables FK into every module.
+
+(Restating D.1's invariant: ordering is **per-run**, not a global guarantee. A new package migration on a later upgrade may apply *after* deployment migrations that ran in an earlier run — safe because DDL is forward-only and the ledger records only what is applied.)
+
+### 4. Per-package source identity comes from package metadata, never paths or versions
+
+A source's `name` (the ledger key half) must be **stable across refactors and versions**. Derive it from the package name plus its declared `voyant.schema` entrypoint — *not* the filesystem path and *not* the package version. Schema subpaths vary by package (`@voyant-travel/storefront` → `./verification/schema`; `@voyant-travel/flights` → `./reference/local-postgres`), so the folder location is discovered via metadata, but the **ledger source name is the package identity** and is frozen once shipped. `introducedInVersion` (if ever needed) stays metadata-only, exactly as in D.1.
+
+### 5. The D.1 → D.2 transition is **append-only** — execute on fresh, import-baseline on existing
+
+This is the load-bearing decision; the rest is mechanics. The same migrate run must do the right thing for two starting states, distinguished by what is already in the ledger:
+
+- **Fresh D.2 database (no `framework/*` rows):** execute each package's baseline + increments normally (`applyMigrations`), recording `<source>/<tag>` per package.
+- **Existing D.1 database (has `framework/*` rows):** the historical schema is already materialised under the monolithic `framework` source. Run the **parity guard first** (the D.1 `assertSchemaAtBaseline` pattern — every expected table/column present, every dropped table gone), then **`importBaseline()` the equivalent per-package baseline ledger rows *without executing their SQL*** (`importBaseline` already records rows `ON CONFLICT DO NOTHING`). The old `framework/*` rows are **kept as audit history and never rewritten**; new per-package increments apply normally on top.
+
+Why this resolves the conflict the naïve umbrella model could not:
+
+- Packages **do** ship historical baselines (Decision 1) → fresh subset databases can build historical tables. ✔
+- Existing D.1 databases **import-baseline** those same package rows instead of executing them → **no duplicate DDL**. ✔
+- No applied ledger row is ever re-keyed → the immutability law is never tripped. ✔
+
+### Why a blind re-key is wrong (correcting the immutability claim)
+
+It is tempting to say "the content-hash immutability guard prevents re-keying." **That is not what the guard does.** `MigrationImmutabilityError` fires only when the *same* `(source, tag)` reappears with a *different* `content_hash`. Because the ledger primary key is `(source, tag)`, renaming a source (`framework/0003_x` → `catalog/0003_x`) produces a **new key the collector has never seen**, so the migration looks **unapplied** and `applyMigrations` **re-executes its SQL** — duplicate `CREATE TABLE`/`CREATE INDEX`/`CREATE TYPE` against tables that already exist. The failure mode is duplicate-DDL, not an immutability error. This is precisely why Decision 5 *import-baselines* (records without executing) rather than re-keying.
+
+### 6. Module removal: fresh-subset is in scope; live uninstall is its own capability
+
+- **Fresh subset selection (in scope):** a deployment that never mounted module X simply has no X source in its closure. Nothing to drop. ✔
+- **Live uninstall of an already-applied module (out of scope for v1, specified here so it isn't assumed):** dropping a module from a live database requires teardown DDL, and that DDL is **deployment-owned, not package-owned** — a package cannot know which deployments installed it, and removing FK-bearing tables can break the deployment's own link migrations. If/when live uninstall is taken on, it needs: (a) deployment-authored drop migrations in the deployment-local source (which already sorts last), (b) prior teardown of cross-module link rows/tables that FK into the departing package, and (c) a guard that refuses to drop a package whose tables are still referenced. v1 explicitly supports **additive** evolution + **fresh subset** only.
+
+### 7. Oracle: aggregate replay across N sources, and CI must fail closed
+
+`verify-migration-replay-parity.mjs` becomes the cross-source drift detector for N package sources. It must (not "should"):
+
+1. **Enumerate** the resolved package sources + the deployment source and log the list (silent under-enumeration is itself a failure).
+2. **Seed required extensions** (`pg_trgm`, `unaccent`) on the push DB.
+3. Apply all sources onto a fresh DB and `drizzle-kit push` the aggregate schema onto another.
+4. Assert **non-empty, plausible counts on both sides** (tables/columns/indexes/constraints within an expected floor) *before* trusting equality, then assert **fingerprint equality**.
+5. **Fail the CI job if the DB-backed oracle cannot run at all** (no skip-as-pass). The oracle is the only thing that catches per-source drift; a green build with a skipped oracle is a false negative.
+
+The "fail closed" requirement is a direct lesson from the 2026-06-20 postmortem below: a silently-skipped or empty-DB oracle reads identical to "everything passed."
+
+## Required implementation slices (not follow-up polish)
+
+These keep package-owned history *trustworthy* and are part of acceptance, not later cleanup:
+
+1. **Per-package generation + staleness gate.** Each schema-owning package gets a `drizzle.<pkg>.config.ts` and a `db:generate` that emits into its `migrations/`, plus a per-package analogue of `generate-framework-migration-bundle.mjs` that fails CI when a package's schema changed without regenerating its folder.
+2. **Per-package replay/parity.** A package-level check that the package's own `migrations/` reconstitutes its own schema, so drift is caught at the package boundary, not only in the deployment aggregate.
+3. **Publishing contract.** Most packages publish only `dist` (`packages/catalog/package.json` → `files: ["dist"]`), so `migrations/*.sql` and `migrations/meta/_journal.json` **would not ship today**. Acceptance requires: `files`/`exports` include the migrations folder, a packed-tarball check (`npm pack` contains the SQL + journal), and a published loader export contract each consumer relies on.
+
+## Open questions (genuine unknowns to resolve before/with implementation)
+
+1. **Tie-breaker stability.** Config-array order is the tie-breaker among independent packages (Decision 3). Confirm it is stable enough, or whether a lexical sort on source name is preferable for reproducibility.
+2. **Pilot scope.** Validate the full transition (Decision 5) on a single leaf package first (e.g. `operator-settings`, which depends only on `db`) before splitting the whole standard set — proves the import-baseline path end-to-end on a real D.1 database.
+3. **Parity-guard granularity for partial baselines.** D.1's guard checks the whole net schema; per-package import-baseline may want a per-package parity assertion so a partially-converged DB is rejected per-source rather than wholesale.
+4. **Live uninstall demand (Decision 6).** Is additive + fresh-subset sufficient for foreseeable deployments, or is live module removal a near-term requirement that should be scoped now rather than deferred?
+
+## Postmortem note (why this ADR is being written now)
+
+Validating the D.1 single-folder collapse (2026-06-20) surfaced that the replay-parity oracle had been silently comparing against an **empty** push database: `drizzle.config.ts` loaded `.dev.vars` with `override: true`, clobbering the `DATABASE_URL` the oracle injected, so `drizzle-kit push` ran against a non-extension DB, aborted on a `gin_trgm_ops` index, and **exited 0**. Fixed by making an explicit `DATABASE_URL` win (`fix(operator): explicit DATABASE_URL must win over .dev.vars`). The lesson is encoded in Decision 7: the oracle must fail closed and assert real counts, because per-source drift detection is the only safety net D.2 has.
+
+## References
+
+- `docs/architecture/migration-collector-d1.md` — the collector primitive + ledger D.2 reuses; the `assertSchemaAtBaseline` parity pattern.
+- `docs/architecture/consolidated-deployments-rfc.md` — Workstream D.
+- `docs/architecture/migration-resilience-rfc.md` — `voyant.requiresSchemas` closure + the original ordering model D.2 supersedes.
+- `docs/architecture/custom-modules.md` — the `src/modules` seam D.2 generalizes.
+- `packages/framework-migrations/src/collector.ts` — `planMigrations` / `applyMigrations` / `importBaseline`; ledger PK `(source, tag)`; `MigrationImmutabilityError` (unchanged by D.2).
+- `scripts/check-retail-spine-closure.mjs` — existing consumer of the `voyant.requiresSchemas` DAG.
