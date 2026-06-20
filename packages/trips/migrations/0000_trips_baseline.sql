@@ -1,8 +1,23 @@
-CREATE TYPE "public"."trip_component_event_type" AS ENUM('created', 'updated', 'priced', 'hold_placed', 'booked', 'checkout_started', 'failed', 'cancelled', 'removed', 'staff_remediation_required');--> statement-breakpoint
-CREATE TYPE "public"."trip_component_kind" AS ENUM('catalog_booking', 'manual_placeholder', 'flight_placeholder', 'flight_order', 'external_order');--> statement-breakpoint
-CREATE TYPE "public"."trip_component_status" AS ENUM('draft', 'priced', 'unavailable', 'held', 'booked', 'checkout_started', 'failed', 'cancelled', 'removed');--> statement-breakpoint
-CREATE TYPE "public"."trip_envelope_status" AS ENUM('draft', 'priced', 'reserve_in_progress', 'reserved', 'checkout_started', 'booked', 'failed', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."trip_reservation_plan_status" AS ENUM('pending', 'submitted', 'reserved', 'failed', 'cancelled');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."trip_component_event_type" AS ENUM('created', 'updated', 'priced', 'hold_placed', 'booked', 'checkout_started', 'failed', 'cancelled', 'removed', 'staff_remediation_required');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."trip_component_kind" AS ENUM('catalog_booking', 'manual_placeholder', 'flight_placeholder', 'flight_order', 'external_order');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."trip_component_status" AS ENUM('draft', 'priced', 'unavailable', 'held', 'booked', 'checkout_started', 'failed', 'cancelled', 'removed');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."trip_envelope_status" AS ENUM('draft', 'priced', 'reserve_in_progress', 'reserved', 'checkout_started', 'booked', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."trip_reservation_plan_status" AS ENUM('pending', 'submitted', 'reserved', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "trip_component_events" (
 	"id" text PRIMARY KEY NOT NULL,
 	"envelope_id" text NOT NULL,

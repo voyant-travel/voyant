@@ -329,7 +329,9 @@
     "types": "./dist/index.d.ts"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/fix-esm-imports.mjs",
@@ -337,7 +339,8 @@
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=db_baseline && node ../../scripts/d2/guard-create-type.mjs ./migrations && node ../../scripts/d2/ensure-extensions.mjs ./migrations pg_trgm unaccent"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -350,6 +353,7 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

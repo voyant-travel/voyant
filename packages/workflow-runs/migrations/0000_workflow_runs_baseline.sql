@@ -1,5 +1,11 @@
-CREATE TYPE "public"."workflow_run_status" AS ENUM('running', 'succeeded', 'failed', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."workflow_run_step_status" AS ENUM('running', 'succeeded', 'failed', 'skipped', 'compensated');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."workflow_run_status" AS ENUM('running', 'succeeded', 'failed', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."workflow_run_step_status" AS ENUM('running', 'succeeded', 'failed', 'skipped', 'compensated');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "workflow_run_steps" (
 	"id" text PRIMARY KEY NOT NULL,
 	"run_id" text NOT NULL,

@@ -15,6 +15,13 @@
       "when": 1777794488308,
       "tag": "0001_sourced_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781947489707,
+      "tag": "0002_catalog_baseline",
+      "breakpoints": true
     }
   ]
 }

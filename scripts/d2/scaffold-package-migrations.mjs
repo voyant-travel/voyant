@@ -27,11 +27,16 @@ if (pkgs.length === 0) {
 }
 
 /** Resolve the `voyant.schema` entrypoint (e.g. "./schema") to a src/ TS path. */
-function schemaEntrypoint(pkgJson) {
+function schemaEntrypoint(pkgJson, dir) {
   const sub = pkgJson.voyant?.schema
   if (!sub) throw new Error("package.json has no `voyant.schema`")
-  // "./schema" -> "./src/schema.ts"; "./verification/schema" -> "./src/verification/schema.ts"
-  return `./src/${sub.replace(/^\.\//, "")}.ts`
+  // "./schema" -> "./src/schema.ts" or a barrel "./src/schema/index.ts"
+  // (e.g. db). "./verification/schema" -> "./src/verification/schema.ts".
+  const base = `src/${sub.replace(/^\.\//, "")}`
+  for (const candidate of [`${base}.ts`, `${base}/index.ts`]) {
+    if (existsSync(join(dir, candidate))) return `./${candidate}`
+  }
+  throw new Error(`no schema file at ${base}.ts or ${base}/index.ts`)
 }
 
 const CONFIG = (schemaPath) => `/**
@@ -64,8 +69,17 @@ for (const name of pkgs) {
   // `--name` only names the first (baseline) migration; later runs auto-name the
   // diff (same behaviour as the framework bundle generator).
   const baselineName = `${name.replace(/-/g, "_")}_baseline`
+  // Each package self-creates the extensions its own migration uses (auto-detected
+  // from gin_trgm_ops / unaccent), idempotently — subset-safe, not reliant on
+  // another source running first. db additionally forces pg_trgm + unaccent as the
+  // infra base (covers runtime unaccent, which has no DDL marker).
+  const ensureExtensions =
+    pj.name === "@voyant-travel/db"
+      ? "node ../../scripts/d2/ensure-extensions.mjs ./migrations pg_trgm unaccent"
+      : "node ../../scripts/d2/ensure-extensions.mjs ./migrations"
   pj.scripts["db:generate"] =
-    `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName}`
+    `drizzle-kit generate --config=drizzle.migrations.config.ts --name=${baselineName} && ` +
+    `node ../../scripts/d2/guard-create-type.mjs ./migrations && ${ensureExtensions}`
 
   pj.devDependencies ??= {}
   if (!pj.devDependencies["drizzle-kit"]) pj.devDependencies["drizzle-kit"] = DRIZZLE_KIT
@@ -81,10 +95,11 @@ for (const name of pkgs) {
 
   writeFileSync(pjPath, `${JSON.stringify(pj, null, 2)}\n`)
 
+  const entrypoint = schemaEntrypoint(pj, dir)
   const cfgPath = join(dir, "drizzle.migrations.config.ts")
-  writeFileSync(cfgPath, CONFIG(schemaEntrypoint(pj)))
+  writeFileSync(cfgPath, CONFIG(entrypoint))
 
-  console.log(`  scaffolded ${name} (schema ${schemaEntrypoint(pj)})`)
+  console.log(`  scaffolded ${name} (schema ${entrypoint})`)
 }
 
 console.log(
