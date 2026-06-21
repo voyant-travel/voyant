@@ -178,6 +178,8 @@ export const adminAvailabilityMessagesRoPart2 = {
       validationStartsAtRequired: "Data si ora de start sunt obligatorii",
       validationTimezoneRequired: "Fusul orar este obligatoriu",
       validationOptionRequired: "Optiunea este obligatorie pentru produsele care au optiuni",
+      validationOptionsUnavailable:
+        "Optiunile produsului nu au putut fi incarcate inca — incearca din nou",
       editTitle: "Editeaza slotul",
       newTitle: "Slot nou",
       productLabel: "Produs",

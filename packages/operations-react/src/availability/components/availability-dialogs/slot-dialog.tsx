@@ -174,16 +174,32 @@ export function AvailabilitySlotDialog(props: {
   }, [optionsQuery.data])
   const productHasOptions = productOptions.length > 0
 
+  // Options are only *known* once the query for the selected product succeeds.
+  // Until then `productOptions` is empty for an unrelated reason (loading/error),
+  // so we must not treat the product as option-less.
+  const optionsResolved = !selectedProductId || optionsQuery.isSuccess
+
   const onSubmit = async (values: SlotFormOutput) => {
     const resolvedOptionId = values.optionId === NONE_VALUE ? null : (values.optionId ?? null)
-    // Guard against an unpriceable slot: when the product has options, one must
-    // be chosen (#2059). Products without options keep null.
-    if (productHasOptions && !resolvedOptionId) {
-      form.setError("optionId", {
-        type: "manual",
-        message: slotMessages.validationOptionRequired,
-      })
-      return
+    // Guard against an unpriceable slot. When no explicit option is chosen we
+    // must be sure the product genuinely has none — block while the options
+    // query is still loading/errored so the race can't slip a null option past
+    // the required-option check (#2059).
+    if (!resolvedOptionId) {
+      if (!optionsResolved) {
+        form.setError("optionId", {
+          type: "manual",
+          message: slotMessages.validationOptionsUnavailable,
+        })
+        return
+      }
+      if (productHasOptions) {
+        form.setError("optionId", {
+          type: "manual",
+          message: slotMessages.validationOptionRequired,
+        })
+        return
+      }
     }
     await props.onSubmit(
       {
@@ -449,6 +465,7 @@ export function AvailabilitySlotDialog(props: {
             create={slotMessages.create}
             isEditing={isEditing}
             isSubmitting={form.formState.isSubmitting}
+            disabled={Boolean(selectedProductId) && optionsQuery.isLoading}
             onCancel={() => props.onOpenChange(false)}
           />
         </form>

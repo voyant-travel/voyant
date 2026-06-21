@@ -176,6 +176,7 @@ export const adminAvailabilityMessagesEnPart2 = {
       validationStartsAtRequired: "Start datetime is required",
       validationTimezoneRequired: "Timezone is required",
       validationOptionRequired: "Option is required for products that have options",
+      validationOptionsUnavailable: "Couldn't load this product's options yet — please retry",
       editTitle: "Edit Slot",
       newTitle: "New Slot",
       productLabel: "Product",
