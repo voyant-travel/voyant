@@ -62,10 +62,15 @@ interface SlotDialogMessages {
   validationDateRequired: string
   validationStartsAtRequired: string
   validationTimezoneRequired: string
+  validationOptionRequired: string
   editTitle: string
   newTitle: string
   productLabel: string
   selectProductPlaceholder: string
+  optionLabel: string
+  selectOptionPlaceholder: string
+  noOption: string
+  defaultOptionSuffix: string
   ruleLabel: string
   optionalRulePlaceholder: string
   noRule: string
@@ -178,6 +183,7 @@ export type AvailabilityStartTimeSubmitPayload = {
 
 export type AvailabilitySlotSubmitPayload = {
   productId: string
+  optionId: string | null
   availabilityRuleId: string | null
   startTimeId: string | null
   dateLocal: string

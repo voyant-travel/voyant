@@ -1,5 +1,6 @@
 "use client"
 
+import { useProductOptions } from "@voyant-travel/inventory-react"
 import {
   Dialog,
   DialogBody,
@@ -17,7 +18,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "../../form-resolver.js"
@@ -48,6 +49,7 @@ import {
 function getSlotFormSchema(messages: AvailabilityDialogMessages) {
   return z.object({
     productId: z.string().min(1, messages.dialogs.slot.validationProductRequired),
+    optionId: z.string().optional(),
     availabilityRuleId: z.string().optional(),
     startTimeId: z.string().optional(),
     dateLocal: z.string().min(1, messages.dialogs.slot.validationDateRequired),
@@ -101,6 +103,7 @@ export function AvailabilitySlotDialog(props: {
     resolver: zodResolver(slotFormSchema),
     defaultValues: {
       productId: "",
+      optionId: NONE_VALUE,
       availabilityRuleId: NONE_VALUE,
       startTimeId: NONE_VALUE,
       dateLocal: "",
@@ -124,6 +127,7 @@ export function AvailabilitySlotDialog(props: {
     if (props.open && props.slot) {
       form.reset({
         productId: props.slot.productId,
+        optionId: props.slot.optionId ?? NONE_VALUE,
         availabilityRuleId: props.slot.availabilityRuleId ?? NONE_VALUE,
         startTimeId: props.slot.startTimeId ?? NONE_VALUE,
         dateLocal: props.slot.dateLocal,
@@ -155,10 +159,36 @@ export function AvailabilitySlotDialog(props: {
   )
   const isEditing = Boolean(props.slot)
 
+  // A departure's price is derived from its option's rate plans, so the slot
+  // needs to point at one of the product's options. Load the selected product's
+  // active options so the operator can pick (and repair) the linkage (#2059).
+  const optionsQuery = useProductOptions({
+    productId: selectedProductId || undefined,
+    status: "active",
+    limit: 100,
+    enabled: Boolean(selectedProductId),
+  })
+  const productOptions = useMemo(() => {
+    const rows = optionsQuery.data?.data ?? []
+    return [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  }, [optionsQuery.data])
+  const productHasOptions = productOptions.length > 0
+
   const onSubmit = async (values: SlotFormOutput) => {
+    const resolvedOptionId = values.optionId === NONE_VALUE ? null : (values.optionId ?? null)
+    // Guard against an unpriceable slot: when the product has options, one must
+    // be chosen (#2059). Products without options keep null.
+    if (productHasOptions && !resolvedOptionId) {
+      form.setError("optionId", {
+        type: "manual",
+        message: slotMessages.validationOptionRequired,
+      })
+      return
+    }
     await props.onSubmit(
       {
         productId: values.productId,
+        optionId: resolvedOptionId,
         availabilityRuleId:
           values.availabilityRuleId === NONE_VALUE ? null : (values.availabilityRuleId ?? null),
         startTimeId: values.startTimeId === NONE_VALUE ? null : (values.startTimeId ?? null),
@@ -195,8 +225,41 @@ export function AvailabilitySlotDialog(props: {
               placeholder={slotMessages.selectProductPlaceholder}
               products={props.products}
               value={form.watch("productId")}
-              onValueChange={(value) => form.setValue("productId", value ?? "")}
+              onValueChange={(value) => {
+                form.setValue("productId", value ?? "")
+                // The previously selected option belongs to the old product.
+                form.setValue("optionId", NONE_VALUE)
+                form.clearErrors("optionId")
+              }}
             />
+
+            <div className="grid gap-2">
+              <Label>{slotMessages.optionLabel}</Label>
+              <Select
+                value={form.watch("optionId") ?? NONE_VALUE}
+                onValueChange={(value) => {
+                  form.setValue("optionId", value ?? NONE_VALUE)
+                  form.clearErrors("optionId")
+                }}
+              >
+                <SelectTrigger className="w-full" disabled={!selectedProductId}>
+                  <SelectValue placeholder={slotMessages.selectOptionPlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>{slotMessages.noOption}</SelectItem>
+                  {productOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.isDefault
+                        ? `${option.name} (${slotMessages.defaultOptionSuffix})`
+                        : option.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.optionId ? (
+                <p className="text-destructive text-sm">{form.formState.errors.optionId.message}</p>
+              ) : null}
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
