@@ -12,13 +12,25 @@ import {
 import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   createVoyantConnectSources,
+  type PrepareVoyantConnectSourcesOptions,
   prepareVoyantConnectSources,
   registerVoyantConnectSources,
   resolveVoyantConnectEnv,
+  type VoyantConnectSourceConnection,
 } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
-
+import {
+  CRUISE_ADAPTER_READ_CACHE_TTL_MS,
+  registerCruiseAdapters,
+  syncVerticalRegistryFromCatalog,
+} from "./cruise-adapters-runtime"
 import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
+
+// `VoyantConnectConnectionCache` isn't re-exported from the package root (0.3.0),
+// so derive it from the options type rather than naming it directly.
+type VoyantConnectConnectionCache = NonNullable<
+  PrepareVoyantConnectSourcesOptions["connectionCache"]
+>
 
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
@@ -39,6 +51,12 @@ function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
       registry.register(createDemoCatalogAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
     }
     registerVoyantConnectFallback(registry, env)
+    // Single activation point for cruise adapters: register deployment-owned
+    // connectors into both planes and back-fill the vertical registry from the
+    // un-scoped Connect cruise fallback registered just above. The per-connection
+    // Connect cruise shims land later (async warm) and are back-filled again in
+    // `warmBookingEngineConnectSources`.
+    registerCruiseAdapters(registry, env as Record<string, string | undefined>)
     _registry = registry
   }
   return _registry
@@ -71,10 +89,17 @@ export function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<
   const registry = ensureRegistry(env)
   _connectWarm = prepareVoyantConnectSources(env, {
     enumerate: true,
+    // Cache the connection enumeration cross-isolate so a cold isolate skips the
+    // network round-trip; memoize cruise reads consistently with the fallback.
+    connectionCache: connectionCacheFromEnv(env),
+    cruise: CONNECT_CRUISE_MEMOIZE,
     warn: (message) => console.warn(`[booking-engine] ${message}`),
   })
     .then((sources) => {
       registerVoyantConnectSources(registry, sources)
+      // Per-connection Connect cruise shims just landed — back-fill the vertical
+      // registry so admin/public external cruise reads resolve them too.
+      syncVerticalRegistryFromCatalog(registry)
     })
     .catch((error) => {
       const message = error instanceof Error ? error.message : String(error)
@@ -120,6 +145,42 @@ export interface BookingEngineEnv {
   VOYANT_CONNECT_MARKET?: string
   VOYANT_CONNECT_OPERATOR_ID?: string
   VOYANT_CONNECT_SYNC_LIMIT?: string
+  /**
+   * KV namespace for cross-isolate caches. When present, the Connect connection
+   * enumeration is cached here so a cold isolate skips the network round-trip.
+   * Absent in the sync CLI / unit tests — caching is simply skipped.
+   */
+  CACHE?: KVNamespace
+}
+
+/** Short-TTL read cache applied to Connect cruise reads on both the fallback and
+ * per-connection warm paths (plugin >= 0.3.0). Shares the owned-adapter TTL. */
+const CONNECT_CRUISE_MEMOIZE = { memoize: { ttlMs: CRUISE_ADAPTER_READ_CACHE_TTL_MS } } as const
+
+/** TTL for the cached Connect connection list (seconds). Connections change
+ * infrequently; KV's minimum expirationTtl is 60s. */
+const CONNECT_CONNECTIONS_CACHE_TTL_S = 300
+
+/**
+ * Build a read-through KV cache for the Connect connection enumeration, or
+ * `undefined` when no `CACHE` binding is present (CLI / tests) — in which case the
+ * plugin enumerates over the network as before.
+ */
+function connectionCacheFromEnv(env: BookingEngineEnv): VoyantConnectConnectionCache | undefined {
+  const kv = env.CACHE
+  if (!kv) return undefined
+  const key = `voyant-connect:connections:${env.VOYANT_CONNECT_OPERATOR_ID ?? "default"}`
+  return {
+    get: async () => {
+      const raw = await kv.get(key)
+      return raw ? (JSON.parse(raw) as VoyantConnectSourceConnection[]) : undefined
+    },
+    set: async (connections) => {
+      await kv.put(key, JSON.stringify(connections), {
+        expirationTtl: CONNECT_CONNECTIONS_CACHE_TTL_S,
+      })
+    },
+  }
 }
 
 /**
@@ -137,7 +198,10 @@ function registerVoyantConnectFallback(
     warn: (message) => console.warn(`[booking-engine] ${message}`),
   })
   if (!config) return
-  registerVoyantConnectSources(registry, createVoyantConnectSources(config))
+  registerVoyantConnectSources(
+    registry,
+    createVoyantConnectSources({ ...config, cruise: CONNECT_CRUISE_MEMOIZE }),
+  )
 }
 
 /**

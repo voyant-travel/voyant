@@ -4079,8 +4079,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/plugins/smartbill
       '@voyant-travel/plugin-voyant-connect':
-        specifier: ^0.2.3
-        version: 0.2.3(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)
+        specifier: ^0.3.0
+        version: 0.3.0(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes
@@ -6842,8 +6842,8 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
-  '@voyant-travel/plugin-voyant-connect@0.2.3':
-    resolution: {integrity: sha512-AmLOVhTPZt7j7+DXtY5fPhB3DIxZoOqHGgmTwfF3PR9SphxxO0afiD2r22NKxMXhpEk+rLSI/AZDbEthGYk3TA==}
+  '@voyant-travel/plugin-voyant-connect@0.3.0':
+    resolution: {integrity: sha512-yIykiv4444eQqFmNDdtDzmIv91m6tnB5Numwa0wHTumYuzbolTqras5MyN3vYPIteNt7Rsncv3b5banWBh+pww==}
     peerDependencies:
       '@voyant-travel/catalog': '>=0.85.3 <1'
       '@voyant-travel/cruises': '>=0.85.3 <1'
@@ -12998,7 +12998,7 @@ snapshots:
 
   '@voyant-travel/data-sdk@0.5.0': {}
 
-  '@voyant-travel/plugin-voyant-connect@0.2.3(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)':
+  '@voyant-travel/plugin-voyant-connect@0.3.0(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)':
     dependencies:
       '@voyant-travel/connect-adapter': 0.3.2(@voyant-travel/catalog@packages+catalog)
       '@voyant-travel/connect-cruises': 0.6.1(@voyant-travel/cruises@packages+cruises)

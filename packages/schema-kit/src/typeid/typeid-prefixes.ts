@@ -69,7 +69,7 @@ export const PREFIXES = {
   product_days: "pday",
   product_day_services: "pdse",
   product_day_translations: "pdtr",
-  product_day_service_translations: "pdst",
+  product_day_service_translations: "pdsr",
   product_versions: "pver",
   product_notes: "prnt",
   bookings: "book",

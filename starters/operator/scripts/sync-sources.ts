@@ -40,21 +40,13 @@ import {
   type IndexerDocument,
   type IndexerSlice,
 } from "@voyant-travel/catalog"
-import {
-  createSourceAdapterRegistry,
-  type SyncSourcesSummary,
-  syncSources,
-} from "@voyant-travel/catalog/booking-engine"
-import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
-import {
-  prepareVoyantConnectSources,
-  registerVoyantConnectSources,
-} from "@voyant-travel/plugin-voyant-connect"
+import { type SyncSourcesSummary, syncSources } from "@voyant-travel/catalog/booking-engine"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
 import { getFieldPolicyRegistries } from "../src/api/lib/catalog-runtime.js"
+import { buildSyncSourceRegistry } from "./lib/build-sync-source-registry.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
 config({ path: ".env" })
@@ -72,7 +64,6 @@ const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.tra
   /\/$/,
   "",
 )
-const catalogDemoUrl = process.env.CATALOG_DEMO_API_URL
 const databaseUrl = process.env.DATABASE_URL
 
 if (!typesenseHost) throw new Error("TYPESENSE_HOST is not set")
@@ -87,21 +78,9 @@ const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} })
 const db = drizzle(sql)
 
 // ── Registry: register every adapter the deployment supports ─────────────
-const registry = createSourceAdapterRegistry()
-if (catalogDemoUrl) {
-  registry.register(createDemoCatalogAdapter({ baseUrl: catalogDemoUrl }))
-}
-// Voyant Connect: enumerate the operator's active connections and register one
-// generic + structured-cruise (+ TUI package) adapter set per connection, keyed
-// by connection id. Env resolution is shared with the live booking-engine
-// registry via `prepareVoyantConnectSources` so the two paths can't drift.
-registerVoyantConnectSources(
-  registry,
-  await prepareVoyantConnectSources(process.env, {
-    enumerate: true,
-    warn: (message) => console.warn(`[sync-sources] ${message}`),
-  }),
-)
+// Same wiring (demo + Connect + cruise adapters) as the live booking-engine
+// registry, factored out so it can be unit-tested without the CLI side effects.
+const registry = await buildSyncSourceRegistry(process.env)
 
 const adapterKinds = registry.kinds()
 if (adapterKinds.length === 0) {
