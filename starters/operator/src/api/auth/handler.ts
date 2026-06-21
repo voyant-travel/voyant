@@ -28,9 +28,9 @@ import { type Context, Hono } from "hono"
 
 import type { BootstrapStatus, CurrentUser } from "../../lib/current-user-model"
 import { resolveEmailReplyTo } from "../../lib/notifications"
+import { OPERATOR_APP_NAME, operatorReporter } from "../../lib/observability"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { dbFromEnvForApp } from "../lib/db"
-import { OPERATOR_APP_NAME, operatorReporter } from "../observability"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory

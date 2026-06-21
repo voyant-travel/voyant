@@ -1,7 +1,7 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
-import { reportBackgroundFailure } from "./api/observability"
 import { operatorApiDispatch } from "./hono-api-dispatch"
+import { reportBackgroundFailure } from "./lib/observability"
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,
   CHANNEL_PUSH_BOOKING_LINK_CRON,

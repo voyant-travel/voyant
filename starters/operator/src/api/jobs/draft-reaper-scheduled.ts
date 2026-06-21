@@ -24,14 +24,13 @@ import {
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-
+import { reportBackgroundFailure } from "../../lib/observability"
 import {
   type BookingEngineEnv,
   ensureBookingEngineRegistry,
   getOwnedBookingHandlerRegistry,
 } from "../lib/booking-engine-runtime"
 import { withDbFromEnv } from "../lib/db"
-import { reportBackgroundFailure } from "../observability"
 
 export { DRAFT_REAPER_CRON } from "../../scheduled-crons"
 

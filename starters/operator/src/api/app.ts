@@ -1,6 +1,7 @@
 import { createVoyantApp } from "@voyant-travel/framework"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
   hasAuthPermission,
   resolveAuthRequest,
@@ -12,7 +13,6 @@ import {
   deploymentLocalModules,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { OPERATOR_APP_NAME, operatorReporter } from "./observability"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
 import {
