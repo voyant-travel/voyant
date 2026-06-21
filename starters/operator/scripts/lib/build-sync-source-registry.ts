@@ -19,7 +19,10 @@ import {
   registerVoyantConnectSources,
 } from "@voyant-travel/plugin-voyant-connect"
 
-import { registerCruiseAdapters } from "../../src/api/lib/cruise-adapters-runtime.js"
+import {
+  CRUISE_ADAPTER_READ_CACHE_TTL_MS,
+  registerCruiseAdapters,
+} from "../../src/api/lib/cruise-adapters-runtime.js"
 
 export async function buildSyncSourceRegistry(
   env: NodeJS.ProcessEnv,
@@ -39,6 +42,9 @@ export async function buildSyncSourceRegistry(
     registry,
     await prepareVoyantConnectSources(env, {
       enumerate: true,
+      // Memoize cruise reads for the duration of the run (no KV in the CLI, so no
+      // cross-isolate connection cache here).
+      cruise: { memoize: { ttlMs: CRUISE_ADAPTER_READ_CACHE_TTL_MS } },
       warn: (message) => console.warn(`[sync-sources] ${message}`),
     }),
   )
