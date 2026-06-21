@@ -165,11 +165,12 @@ async function main() {
       })
       // `drizzle-kit push` does NOT materialise `.existing()` views — person_directory
       // is a `pgView(...).existing()` (packages/relationships), so push leaves it out.
-      // The framework bundle DOES ship it (0008_person_directory_view), so seed the same
-      // DDL here for parity; otherwise the view's columns show up in the bundle path's
-      // information_schema.columns but not the push reference. See issue #1971.
+      // The deployment migration source DOES create it (0002_person_directory_view), so
+      // the bundle+links path has it; seed the same DDL here for parity, otherwise the
+      // view's columns show up in information_schema.columns for the bundle+links path
+      // but not the push reference. See issue #1971.
       await onDb("voyant_replay_push", async (c) => {
-        for (const stmt of loadFolderTag(FRAMEWORK_BUNDLE, "0008_person_directory_view"))
+        for (const stmt of loadFolderTag(DEPLOYMENT_LINKS, "0002_person_directory_view"))
           await c.query(stmt)
       })
       return onDb("voyant_replay_push", fingerprint)

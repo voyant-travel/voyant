@@ -210,10 +210,15 @@ export const peopleAccountsService = {
       .set({ ...personBaseFields(data), updatedAt: new Date() })
       .where(eq(people.id, id))
 
+    // Pass the request fields through verbatim: syncPersonIdentity leaves
+    // `undefined` (omitted) fields untouched and only clears on explicit
+    // null/empty. Backfilling omitted fields from `existing` (a hydrated read
+    // that degrades to null when person_directory is missing) would silently
+    // delete the person's contact points on an affected DB. See issue #1971.
     await syncPersonIdentity(db, id, {
-      email: data.email === undefined ? existing.email : data.email,
-      phone: data.phone === undefined ? existing.phone : data.phone,
-      website: data.website === undefined ? existing.website : data.website,
+      email: data.email,
+      phone: data.phone,
+      website: data.website,
     })
 
     return this.getPersonById(db, id)

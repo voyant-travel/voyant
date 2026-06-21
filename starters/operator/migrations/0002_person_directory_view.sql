@@ -1,15 +1,17 @@
--- Ship the `person_directory` view in the framework bundle.
+-- Create the `person_directory` view (cross-module: relationships.people +
+-- identity.identity_contact_points).
 --
 -- `personDirectoryView` (packages/relationships/src/schema-accounts.ts) is a
--- drizzle `pgView(...).existing()`, so drizzle-kit never emits its DDL into the
--- generated bundle — the same gap that `SEED_EXTENSIONS` / the extensions
--- preamble fills for pg_trgm/unaccent. Without this migration a schema-derived
--- operator DB (one built from the framework bundle rather than copied from a
--- starter baseline) has no `person_directory` view, and every relationships
--- read that hydrates contact points fails with 42P01. See issue #1971.
+-- drizzle `pgView(...).existing()`, so drizzle-kit never emits its DDL — neither
+-- the per-package relationships source nor `drizzle-kit push` materialises it.
+-- The view spans two modules (people / identity_contact_points), so like the
+-- cross-module link tables it lives in the DEPLOYMENT source, which the collector
+-- applies LAST — after both owning packages' tables exist. Without it a
+-- schema-derived operator DB lacks the view and every relationships read that
+-- hydrates contact points fails with Postgres 42P01. See issue #1971.
 --
--- CREATE OR REPLACE keeps it idempotent: the column list is unchanged from the
--- original baseline view, so a DB that already has it is a no-op.
+-- CREATE OR REPLACE keeps it idempotent: the column list matches the original
+-- starter baseline view, so a DB that already has it is a no-op.
 CREATE OR REPLACE VIEW "person_directory" AS
 SELECT
   p."id" AS "person_id",

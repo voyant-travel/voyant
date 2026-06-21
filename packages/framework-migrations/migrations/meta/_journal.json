@@ -57,13 +57,6 @@
       "when": 1781955149102,
       "tag": "0007_framework_baseline",
       "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1782024419593,
-      "tag": "0008_person_directory_view",
-      "breakpoints": true
     }
   ]
 }

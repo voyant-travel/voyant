@@ -159,17 +159,12 @@ async function withFreshDb(admin, name, fn) {
   }
 }
 
-/** table_name -> sorted column descriptor list. BASE TABLEs only — views
- *  (e.g. person_directory) are bundle-injected DDL owned by no package source,
- *  like extensions, so they are out of scope for the table-ownership check. */
+/** table_name -> sorted column descriptor list. */
 async function columnsByTable(client) {
   const r = await client.query(`
-    SELECT c.table_name, c.column_name, c.data_type, c.udt_name, c.is_nullable, c.column_default
-    FROM information_schema.columns c
-    JOIN information_schema.tables t
-      ON t.table_schema = c.table_schema AND t.table_name = c.table_name
-    WHERE c.table_schema='public' AND t.table_type='BASE TABLE'
-    ORDER BY c.table_name, c.column_name`)
+    SELECT table_name, column_name, data_type, udt_name, is_nullable, column_default
+    FROM information_schema.columns WHERE table_schema='public'
+    ORDER BY table_name, column_name`)
   const m = new Map()
   for (const row of r.rows) {
     if (!m.has(row.table_name)) m.set(row.table_name, [])

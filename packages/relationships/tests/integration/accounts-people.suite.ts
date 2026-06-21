@@ -370,6 +370,47 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       expect(body.data.firstName).toBe("New")
     })
 
+    it("preserves contact points on a partial update that omits them (#1971)", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Keep",
+          lastName: "Contacts",
+          email: "keep@example.com",
+          phone: "+15551230000",
+        }),
+      })
+      const { data: created } = await createRes.json()
+
+      // PATCH a base field only — email/phone are absent from the body.
+      const res = await getApp().request(`/people/${created.id}`, {
+        method: "PATCH",
+        ...json({ jobTitle: "Manager" }),
+      })
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.jobTitle).toBe("Manager")
+      // The omitted identity fields must survive the update, not be cleared.
+      expect(body.data.email).toBe("keep@example.com")
+      expect(body.data.phone).toBe("+15551230000")
+    })
+
+    it("clears a contact point on an explicit null update (#1971)", async () => {
+      const createRes = await getApp().request("/people", {
+        method: "POST",
+        ...json({ firstName: "Clear", lastName: "Email", email: "clear@example.com" }),
+      })
+      const { data: created } = await createRes.json()
+
+      const res = await getApp().request(`/people/${created.id}`, {
+        method: "PATCH",
+        ...json({ email: null }),
+      })
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.email).toBeNull()
+    })
+
     it("deletes a person", async () => {
       const createRes = await getApp().request("/people", {
         method: "POST",
