@@ -39,7 +39,6 @@ import {
   type EmbeddingProvider,
   type IndexerDocument,
   type IndexerSlice,
-  type TypesenseClient,
 } from "@voyant-travel/catalog"
 import {
   createSourceAdapterRegistry,
@@ -58,10 +57,7 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
 import { getFieldPolicyRegistries } from "../src/api/lib/catalog-runtime.js"
-
-function asTypesenseClient(client: TypesenseSdkClient): TypesenseClient {
-  return client as never
-}
+import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
 config({ path: ".env" })
 config({ path: "../../.env" })

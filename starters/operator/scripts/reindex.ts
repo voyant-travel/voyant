@@ -5,6 +5,13 @@
  * Usage (from starters/operator):
  *   pnpm exec tsx scripts/reindex.ts                  # reindex all verticals
  *   pnpm exec tsx scripts/reindex.ts products         # one vertical only
+ *   pnpm exec tsx scripts/reindex.ts --best-effort    # log row failures, exit 0
+ *
+ * By default the command FAILS NON-ZERO if Typesense reports any row-level
+ * import failure (the import endpoint returns HTTP 200 even when individual
+ * documents fail validation, so a reindex can otherwise silently leave the
+ * collections empty). Pass `--best-effort` to log representative row errors
+ * and continue.
  *
  * Env required:
  *   DATABASE_URL              — Postgres connection string
@@ -31,7 +38,6 @@ import {
   type EmbeddingProvider,
   type IndexerDocument,
   type IndexerSlice,
-  type TypesenseClient,
 } from "@voyant-travel/catalog"
 import { charterProducts } from "@voyant-travel/charters/schema"
 import { createCharterDocumentBuilder } from "@voyant-travel/charters/service-catalog-plane"
@@ -50,6 +56,7 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
 } from "../src/api/lib/catalog-runtime.js"
+import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
 config({ path: ".env" })
 config({ path: "../../.env" })
@@ -76,7 +83,9 @@ const sellerOperatorId = process.env.TENANT_ID ?? "default"
 
 const VERTICALS = CATALOG_VERTICALS
 
-const requestedVertical = process.argv[2]
+const cliArgs = process.argv.slice(2)
+const bestEffort = cliArgs.includes("--best-effort")
+const requestedVertical = cliArgs.find((arg) => !arg.startsWith("--"))
 
 const db = createDbClient(databaseUrl, { adapter: "node" })
 const slices = await loadCatalogSlices(db)
@@ -108,7 +117,12 @@ const tsClient = new TypesenseSdkClient({
 const indexer = createTypesenseIndexer({
   client: asTypesenseClient(tsClient),
   vectorDimensions: embeddings?.capabilities.dimensions,
+  importFailureMode: bestEffort ? "best-effort" : "throw",
 })
+
+if (bestEffort) {
+  console.info("[reindex] best-effort mode — row import failures will be logged, not fatal")
+}
 
 // Use the shared registry map so the CLI and the live catalog-bridge
 // produce documents from the same composed policy. Without sharing this,
@@ -135,15 +149,6 @@ interface VerticalConfig {
   // shape compiles against the same `select all rows + read .id` flow.
   table: PgTable & { id: { name: string } }
   builder: DocumentBuilder
-}
-
-function asTypesenseClient(client: TypesenseSdkClient): TypesenseClient {
-  const sdk = client as { collections(name?: string): unknown }
-  return {
-    collections(name?: string) {
-      return sdk.collections(name) as ReturnType<TypesenseClient["collections"]>
-    },
-  }
 }
 
 function asVerticalTable(table: PgTable): VerticalConfig["table"] {

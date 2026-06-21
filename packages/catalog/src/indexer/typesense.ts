@@ -95,6 +95,142 @@ export interface TypesenseSearchResponse {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Bulk import result inspection
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One row's outcome from Typesense's `documents/import` endpoint. The endpoint
+ * returns HTTP 200 even when individual rows fail validation; each line of the
+ * response body is a JSON object of this shape. Failures are easy to miss —
+ * the whole point of inspecting the body is to not let them pass silently
+ * (a bad field shape can make *every* document fail while the CLI exits 0).
+ */
+export interface TypesenseImportRowResult {
+  success: boolean
+  error?: string
+  /** The offending document, serialized by Typesense. */
+  document?: string
+  code?: number
+}
+
+/** Summary of the failed rows in one import response. */
+export interface ImportFailureSummary {
+  collection: string
+  /** Number of rows that failed to import. */
+  failed: number
+  /** Total rows the response reported on. */
+  total: number
+  /** Up to `sampleSize` representative row errors. */
+  samples: string[]
+}
+
+/** How the adapter reacts to row-level import failures. */
+export type ImportFailureMode = "throw" | "best-effort"
+
+/**
+ * Raised when Typesense reports row-level import failures and the adapter is
+ * in `"throw"` mode (the default). Carries the failure counts so a CLI can
+ * exit non-zero and a caller can decide whether to retry.
+ */
+export class TypesenseImportError extends Error {
+  readonly collection: string
+  readonly failed: number
+  readonly total: number
+  readonly samples: string[]
+
+  constructor(summary: ImportFailureSummary) {
+    super(
+      `Typesense import into "${summary.collection}" failed for ${summary.failed}/${summary.total} document(s): ${summary.samples.join("; ")}`,
+    )
+    this.name = "TypesenseImportError"
+    this.collection = summary.collection
+    this.failed = summary.failed
+    this.total = summary.total
+    this.samples = summary.samples
+  }
+}
+
+function toImportRowResult(row: Record<string, unknown>): TypesenseImportRowResult {
+  return {
+    success: row.success === true,
+    error: typeof row.error === "string" ? row.error : undefined,
+    document: typeof row.document === "string" ? row.document : undefined,
+    code: typeof row.code === "number" ? row.code : undefined,
+  }
+}
+
+/**
+ * Normalizes the `documents/import` response into per-row results. The fetch
+ * client returns the raw newline-delimited JSON body (a `string`); the
+ * official `typesense` SDK returns an already-parsed array of objects. Any
+ * other shape (e.g. a `{}` test double, or `undefined`) yields `[]` — there
+ * is nothing to inspect, so it is treated as "no reported failures".
+ */
+export function parseTypesenseImportResults(result: unknown): TypesenseImportRowResult[] {
+  if (typeof result === "string") {
+    const rows: TypesenseImportRowResult[] = []
+    for (const line of result.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      try {
+        rows.push(toImportRowResult(JSON.parse(trimmed) as Record<string, unknown>))
+      } catch {
+        // Typesense always returns valid JSONL; an unparseable line means
+        // something is wrong, so surface it rather than hide it.
+        rows.push({ success: false, error: `unparseable import response line: ${trimmed}` })
+      }
+    }
+    return rows
+  }
+  if (Array.isArray(result)) {
+    return result.map((row) =>
+      row && typeof row === "object"
+        ? toImportRowResult(row as Record<string, unknown>)
+        : { success: false, error: "malformed import row" },
+    )
+  }
+  return []
+}
+
+function formatImportRowError(row: TypesenseImportRowResult): string {
+  const parts: string[] = []
+  if (row.error) parts.push(row.error)
+  if (row.document) {
+    const doc = row.document.length > 200 ? `${row.document.slice(0, 200)}…` : row.document
+    parts.push(`document=${doc}`)
+  }
+  return parts.length > 0 ? parts.join(" ") : "unknown import error"
+}
+
+/**
+ * Inspects an import response and returns a failure summary, or `null` when
+ * every reported row succeeded (or the response carried no inspectable rows).
+ */
+export function summarizeImportFailures(
+  collection: string,
+  result: unknown,
+  sampleSize = 5,
+): ImportFailureSummary | null {
+  const rows = parseTypesenseImportResults(result)
+  if (rows.length === 0) return null
+  const failures = rows.filter((row) => !row.success)
+  if (failures.length === 0) return null
+  return {
+    collection,
+    failed: failures.length,
+    total: rows.length,
+    samples: failures.slice(0, sampleSize).map(formatImportRowError),
+  }
+}
+
+function defaultImportFailureReporter(summary: ImportFailureSummary): void {
+  const detail = summary.samples.length > 0 ? ` Sample errors: ${summary.samples.join("; ")}` : ""
+  console.warn(
+    `[catalog/typesense] ${summary.failed}/${summary.total} document(s) failed to import into "${summary.collection}".${detail}`,
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Adapter
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -113,6 +249,23 @@ export interface TypesenseIndexerOptions {
    * sorts (e.g. `price-asc` → `priceFromAmountCents`) silently no-op.
    */
   registries?: ReadonlyMap<string, FieldPolicyRegistry>
+  /**
+   * How to treat row-level import failures. Typesense's bulk-import endpoint
+   * returns HTTP 200 even when individual rows fail validation (e.g. a field
+   * serialized as an object where the schema expects `string[]`), so a reindex
+   * can silently leave a collection empty. Default `"throw"` raises a
+   * {@link TypesenseImportError} so the reindex CLI exits non-zero; set
+   * `"best-effort"` to log and keep going.
+   */
+  importFailureMode?: ImportFailureMode
+  /**
+   * Invoked with a summary whenever any row fails to import, regardless of
+   * `importFailureMode` (in `"throw"` mode it fires just before the throw).
+   * Defaults to a `console.warn`. Use to route failures to a structured logger.
+   */
+  onImportFailure?: (summary: ImportFailureSummary) => void
+  /** Number of representative row errors included in summaries. Default 5. */
+  importErrorSampleSize?: number
 }
 
 const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
@@ -275,6 +428,22 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
   // falls back to the string-only inferred registry and numeric sorts no-op.
   const registryByVertical = new Map<string, FieldPolicyRegistry>(options.registries)
 
+  const importFailureMode = options.importFailureMode ?? "throw"
+  const importErrorSampleSize = options.importErrorSampleSize ?? 5
+  const reportImportFailure = options.onImportFailure ?? defaultImportFailureReporter
+
+  // Inspect an import response for row-level failures. Typesense returns HTTP
+  // 200 even when individual rows fail, so without this the index can silently
+  // end up empty after a successful-looking reindex.
+  const assertImportSucceeded = (collection: string, result: unknown): void => {
+    const summary = summarizeImportFailures(collection, result, importErrorSampleSize)
+    if (!summary) return
+    reportImportFailure(summary)
+    if (importFailureMode === "throw") {
+      throw new TypesenseImportError(summary)
+    }
+  }
+
   return {
     capabilities,
 
@@ -348,7 +517,11 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       if (documents.length === 0) return
       const name = collectionName(slice, collectionPrefix)
       const payload = documents.map((d) => flattenDocument(d))
-      await client.collections(name).documents().import(payload, { action: "upsert" })
+      const result = await client
+        .collections(name)
+        .documents()
+        .import(payload, { action: "upsert" })
+      assertImportSucceeded(name, result)
     },
 
     async delete(slice, ids) {
@@ -401,7 +574,11 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       const flush = async () => {
         if (batch.length === 0) return
         const payload = batch.map((d) => flattenDocument(d))
-        await client.collections(name).documents().import(payload, { action: "upsert" })
+        const result = await client
+          .collections(name)
+          .documents()
+          .import(payload, { action: "upsert" })
+        assertImportSucceeded(name, result)
         batch.length = 0
       }
       for await (const document of stream) {
