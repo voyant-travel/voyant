@@ -8,6 +8,7 @@ import { productCatalogRoutes } from "./routes-catalog.js"
 import { productConfigurationRoutes } from "./routes-configuration.js"
 import { productCoreRoutes } from "./routes-core.js"
 import { productItineraryRoutes } from "./routes-itinerary.js"
+import { productItineraryTranslationRoutes } from "./routes-itinerary-translations.js"
 import { productMaintenanceRoutes } from "./routes-maintenance.js"
 import { productMediaRoutes } from "./routes-media.js"
 import { productMerchandisingRoutes } from "./routes-merchandising.js"
@@ -70,6 +71,7 @@ export const productRoutes = new Hono<Env>()
   .route("/", productCatalogRoutes)
   .route("/", productMediaRoutes)
   .route("/", productItineraryRoutes)
+  .route("/", productItineraryTranslationRoutes)
   .route("/", productAssociationRoutes)
   .route("/", productMaintenanceRoutes)
   .route("/", productCoreRoutes)

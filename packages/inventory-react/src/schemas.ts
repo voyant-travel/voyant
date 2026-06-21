@@ -2,16 +2,20 @@ import {
   duplicateItinerarySchema,
   insertDaySchema,
   insertDayServiceSchema,
+  insertDayServiceTranslationSchema,
   insertItinerarySchema,
   insertProductDayTranslationSchema,
+  insertProductItineraryTranslationSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
   reorderProductMediaSchema,
   updateDaySchema,
   updateDayServiceSchema,
+  updateDayServiceTranslationSchema,
   updateItinerarySchema,
   updateProductDayTranslationSchema,
+  updateProductItineraryTranslationSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 } from "@voyant-travel/inventory/validation"
@@ -228,6 +232,19 @@ export type ProductDayTranslationRecord = z.infer<typeof productDayTranslationRe
 
 export type ProductDayRecord = z.infer<typeof productDayRecordSchema>
 
+export const productItineraryTranslationRecordSchema = z.object({
+  id: z.string(),
+  itineraryId: z.string(),
+  languageTag: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ProductItineraryTranslationRecord = z.infer<
+  typeof productItineraryTranslationRecordSchema
+>
+
 export const productDayServiceRecordSchema = z.object({
   id: z.string(),
   dayId: z.string(),
@@ -245,6 +262,19 @@ export const productDayServiceRecordSchema = z.object({
 })
 
 export type ProductDayServiceRecord = z.infer<typeof productDayServiceRecordSchema>
+
+export const dayServiceTranslationRecordSchema = z.object({
+  id: z.string(),
+  serviceId: z.string(),
+  languageTag: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type DayServiceTranslationRecord = z.infer<typeof dayServiceTranslationRecordSchema>
 
 export const productVersionRecordSchema = z.object({
   id: z.string(),
@@ -285,6 +315,16 @@ export const productDayTranslationListResponse = paginatedEnvelope(
   productDayTranslationRecordSchema,
 )
 export const productDayTranslationSingleResponse = singleEnvelope(productDayTranslationRecordSchema)
+export const productItineraryTranslationListResponse = paginatedEnvelope(
+  productItineraryTranslationRecordSchema,
+)
+export const productItineraryTranslationSingleResponse = singleEnvelope(
+  productItineraryTranslationRecordSchema,
+)
+export const dayServiceTranslationListResponse = paginatedEnvelope(
+  dayServiceTranslationRecordSchema,
+)
+export const dayServiceTranslationSingleResponse = singleEnvelope(dayServiceTranslationRecordSchema)
 export const productTypeListResponse = paginatedEnvelope(productTypeRecordSchema)
 export const productTypeSingleResponse = singleEnvelope(productTypeRecordSchema)
 export const productCategoryListResponse = paginatedEnvelope(productCategoryRecordSchema)
@@ -402,16 +442,20 @@ export {
   duplicateItinerarySchema,
   insertDaySchema,
   insertDayServiceSchema,
+  insertDayServiceTranslationSchema,
   insertItinerarySchema,
   insertProductDayTranslationSchema,
+  insertProductItineraryTranslationSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
   reorderProductMediaSchema,
   updateDaySchema,
   updateDayServiceSchema,
+  updateDayServiceTranslationSchema,
   updateItinerarySchema,
   updateProductDayTranslationSchema,
+  updateProductItineraryTranslationSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 }
@@ -430,4 +474,12 @@ export type CreateProductTranslationInput = z.input<typeof insertProductTranslat
 export type UpdateProductTranslationInput = z.input<typeof updateProductTranslationSchema>
 export type CreateProductDayTranslationInput = z.input<typeof insertProductDayTranslationSchema>
 export type UpdateProductDayTranslationInput = z.input<typeof updateProductDayTranslationSchema>
+export type CreateProductItineraryTranslationInput = z.input<
+  typeof insertProductItineraryTranslationSchema
+>
+export type UpdateProductItineraryTranslationInput = z.input<
+  typeof updateProductItineraryTranslationSchema
+>
+export type CreateDayServiceTranslationInput = z.input<typeof insertDayServiceTranslationSchema>
+export type UpdateDayServiceTranslationInput = z.input<typeof updateDayServiceTranslationSchema>
 export type ReorderProductMediaInput = z.input<typeof reorderProductMediaSchema>

@@ -204,6 +204,26 @@ export const productDayTranslationListQuerySchema = z.object({
 export type InsertProductDayTranslation = z.infer<typeof insertProductDayTranslationSchema>
 export type UpdateProductDayTranslation = z.infer<typeof updateProductDayTranslationSchema>
 
+const productItineraryTranslationCoreSchema = z.object({
+  languageTag: languageTagSchema,
+  name: z.string().min(1).max(255),
+})
+export const insertProductItineraryTranslationSchema = productItineraryTranslationCoreSchema
+export const updateProductItineraryTranslationSchema =
+  productItineraryTranslationCoreSchema.partial()
+export const productItineraryTranslationListQuerySchema = z.object({
+  itineraryId: z.string().optional(),
+  languageTag: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+export type InsertProductItineraryTranslation = z.infer<
+  typeof insertProductItineraryTranslationSchema
+>
+export type UpdateProductItineraryTranslation = z.infer<
+  typeof updateProductItineraryTranslationSchema
+>
+
 export const insertProductOptionTranslationSchema = optionTranslationCoreSchema
 export const updateProductOptionTranslationSchema = optionTranslationCoreSchema.partial()
 export const productOptionTranslationListQuerySchema = z.object({
@@ -269,6 +289,23 @@ export const insertDayServiceSchema = dayServiceCoreSchema
 export const updateDayServiceSchema = dayServiceCoreSchema.partial()
 export type InsertDayService = z.infer<typeof insertDayServiceSchema>
 export type UpdateDayService = z.infer<typeof updateDayServiceSchema>
+
+const dayServiceTranslationCoreSchema = z.object({
+  languageTag: languageTagSchema,
+  name: z.string().min(1).max(255),
+  description: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+})
+export const insertDayServiceTranslationSchema = dayServiceTranslationCoreSchema
+export const updateDayServiceTranslationSchema = dayServiceTranslationCoreSchema.partial()
+export const dayServiceTranslationListQuerySchema = z.object({
+  serviceId: z.string().optional(),
+  languageTag: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+export type InsertDayServiceTranslation = z.infer<typeof insertDayServiceTranslationSchema>
+export type UpdateDayServiceTranslation = z.infer<typeof updateDayServiceTranslationSchema>
 
 const productMediaTypeSchema = z.enum(["image", "video", "document"])
 const productMediaCoreSchema = z.object({

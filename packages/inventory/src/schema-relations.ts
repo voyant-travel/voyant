@@ -3,8 +3,11 @@ import { relations } from "drizzle-orm"
 import { optionUnits, productOptions, products } from "./schema-core.js"
 import {
   productDayServices,
+  productDayServiceTranslations,
   productDays,
+  productDayTranslations,
   productItineraries,
+  productItineraryTranslations,
   productMedia,
   productNotes,
   productVersions,
@@ -159,21 +162,48 @@ export const productItinerariesRelations = relations(productItineraries, ({ one,
     fields: [productItineraries.productId],
     references: [products.id],
   }),
+  translations: many(productItineraryTranslations),
   days: many(productDays),
 }))
+
+export const productItineraryTranslationsRelations = relations(
+  productItineraryTranslations,
+  ({ one }) => ({
+    itinerary: one(productItineraries, {
+      fields: [productItineraryTranslations.itineraryId],
+      references: [productItineraries.id],
+    }),
+  }),
+)
 
 export const productDaysRelations = relations(productDays, ({ one, many }) => ({
   itinerary: one(productItineraries, {
     fields: [productDays.itineraryId],
     references: [productItineraries.id],
   }),
+  translations: many(productDayTranslations),
   services: many(productDayServices),
   media: many(productMedia),
 }))
 
-export const productDayServicesRelations = relations(productDayServices, ({ one }) => ({
-  day: one(productDays, { fields: [productDayServices.dayId], references: [productDays.id] }),
+export const productDayTranslationsRelations = relations(productDayTranslations, ({ one }) => ({
+  day: one(productDays, { fields: [productDayTranslations.dayId], references: [productDays.id] }),
 }))
+
+export const productDayServicesRelations = relations(productDayServices, ({ one, many }) => ({
+  day: one(productDays, { fields: [productDayServices.dayId], references: [productDays.id] }),
+  translations: many(productDayServiceTranslations),
+}))
+
+export const productDayServiceTranslationsRelations = relations(
+  productDayServiceTranslations,
+  ({ one }) => ({
+    service: one(productDayServices, {
+      fields: [productDayServiceTranslations.serviceId],
+      references: [productDayServices.id],
+    }),
+  }),
+)
 
 export const productVersionsRelations = relations(productVersions, ({ one }) => ({
   product: one(products, { fields: [productVersions.productId], references: [products.id] }),

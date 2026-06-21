@@ -97,6 +97,18 @@ export interface ProductDayTranslationsListFilters {
   offset?: number | undefined
 }
 
+export interface ProductItineraryTranslationsListFilters {
+  languageTag?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
+export interface DayServiceTranslationsListFilters {
+  languageTag?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export const productsQueryKeys = {
   all: ["voyant", "products"] as const,
 
@@ -141,9 +153,32 @@ export const productsQueryKeys = {
     [...productsQueryKeys.product(productId), "itineraries"] as const,
   productItineraryDays: (productId: string, itineraryId: string) =>
     [...productsQueryKeys.productItineraries(productId), itineraryId, "days"] as const,
+  productItineraryTranslationsRoot: (productId: string, itineraryId: string) =>
+    [...productsQueryKeys.productItineraries(productId), itineraryId, "translations"] as const,
+  productItineraryTranslations: (
+    productId: string,
+    itineraryId: string,
+    filters: ProductItineraryTranslationsListFilters = {},
+  ) =>
+    [
+      ...productsQueryKeys.productItineraryTranslationsRoot(productId, itineraryId),
+      filters,
+    ] as const,
   productDays: (productId: string) => [...productsQueryKeys.product(productId), "days"] as const,
   productDayServices: (productId: string, dayId: string) =>
     [...productsQueryKeys.productDays(productId), dayId, "services"] as const,
+  dayServiceTranslationsRoot: (productId: string, dayId: string, serviceId: string) =>
+    [...productsQueryKeys.productDayServices(productId, dayId), serviceId, "translations"] as const,
+  dayServiceTranslations: (
+    productId: string,
+    dayId: string,
+    serviceId: string,
+    filters: DayServiceTranslationsListFilters = {},
+  ) =>
+    [
+      ...productsQueryKeys.dayServiceTranslationsRoot(productId, dayId, serviceId),
+      filters,
+    ] as const,
   productDayTranslationsRoot: (productId: string, dayId: string) =>
     [...productsQueryKeys.productDays(productId), dayId, "translations"] as const,
   productDayTranslations: (
