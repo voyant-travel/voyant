@@ -1,5 +1,11 @@
 # @voyant-travel/operations
 
+## 0.2.5
+
+### Patch Changes
+
+- ba89f0b: Let admin departure edits choose and persist a product option so existing departures with a missing option can be repaired from the UI. Explicit slot option links are now validated against the slot product while product-level generated slots can still omit an option.
+
 ## 0.2.4
 
 ### Patch Changes
