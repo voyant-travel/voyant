@@ -82,6 +82,11 @@ function loadFolder(folder) {
     .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
 }
 
+/** Load a single migration file's statements by tag (no journal needed). */
+function loadFolderTag(folder, tag) {
+  return splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8"))
+}
+
 async function applyFolders(client, folders) {
   for (const folder of folders) {
     for (const stmt of loadFolder(folder)) {
@@ -157,6 +162,16 @@ async function main() {
         stdio: "pipe",
         encoding: "utf8",
         env: { ...process.env, DATABASE_URL: urlFor("voyant_replay_push") },
+      })
+      // `drizzle-kit push` does NOT materialise `.existing()` views — person_directory
+      // is a `pgView(...).existing()` (packages/relationships), so push leaves it out.
+      // The deployment migration source DOES create it (0002_person_directory_view), so
+      // the bundle+links path has it; seed the same DDL here for parity, otherwise the
+      // view's columns show up in information_schema.columns for the bundle+links path
+      // but not the push reference. See issue #1971.
+      await onDb("voyant_replay_push", async (c) => {
+        for (const stmt of loadFolderTag(DEPLOYMENT_LINKS, "0002_person_directory_view"))
+          await c.query(stmt)
       })
       return onDb("voyant_replay_push", fingerprint)
     })

@@ -15,6 +15,13 @@
       "when": 1781943120886,
       "tag": "0001_opposite_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782026095800,
+      "tag": "0002_person_directory_view",
+      "breakpoints": true
     }
   ]
 }
