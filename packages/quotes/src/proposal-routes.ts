@@ -420,6 +420,7 @@ async function handleAcceptPublicProposal(
         db: tx as PostgresJsDatabase,
         quoteId,
         quoteVersionId,
+        body,
       }),
     )
     if (prepared.kind === "response") return prepared.response
@@ -513,11 +514,13 @@ async function preparePublicProposalAcceptWithQuoteLock({
   db,
   quoteId,
   quoteVersionId,
+  body,
 }: {
   c: Context<OperatorProposalRouteEnv>
   db: PostgresJsDatabase
   quoteId: string
   quoteVersionId: string
+  body: z.infer<typeof acceptPublicProposalSchema>
 }): Promise<PreparedAcceptResult> {
   await lockQuoteAccept(db, quoteId)
   await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
@@ -574,7 +577,19 @@ async function preparePublicProposalAcceptWithQuoteLock({
       response: c.json({ error: "Proposal Trip envelope not found" }, 409),
     }
   }
-  assertLiveTripMatchesSnapshot(liveTrip, snapshot)
+
+  // Resume a crashed acceptance: if the Trip was already reserved under this
+  // proposal's reserve key (reserve succeeded, finalize never ran), the live
+  // Trip is no longer `priced`, so skip the frozen-snapshot comparison and let
+  // phase 2 replay the reservation idempotently before finalize accepts.
+  if (
+    !isResumableProposalReservation(
+      liveTrip.envelope,
+      proposalReserveIdempotencyKey(quoteVersionId, body),
+    )
+  ) {
+    assertLiveTripMatchesSnapshot(liveTrip, snapshot)
+  }
 
   return { kind: "prepared", snapshot }
 }
@@ -646,15 +661,11 @@ function reservePreparedPublicProposal(
   body: z.infer<typeof acceptPublicProposalSchema>,
   quoteVersionId: string,
 ): Promise<ReserveTripResult> {
-  const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
-    body.idempotencyKey ?? "default"
-  }`
-
   return tripsService.reserveTrip(
     db,
     {
       envelopeId: snapshot.envelopeId,
-      idempotencyKey: reserveIdempotencyKey,
+      idempotencyKey: proposalReserveIdempotencyKey(quoteVersionId, body),
       refreshScope: {
         locale: "en-US",
         audience: "customer",
@@ -663,6 +674,32 @@ function reservePreparedPublicProposal(
       },
     },
     options.reserveTripDeps(c),
+  )
+}
+
+/**
+ * Deterministic reserve idempotency key for a proposal acceptance. Stable
+ * across retries with the same request body, so a crashed accept can replay the
+ * same reservation instead of creating a second supplier hold.
+ */
+function proposalReserveIdempotencyKey(
+  quoteVersionId: string,
+  body: z.infer<typeof acceptPublicProposalSchema>,
+): string {
+  return `proposal-accept-reserve:${quoteVersionId}:${body.idempotencyKey ?? "default"}`
+}
+
+/**
+ * A live Trip that has already been claimed/reserved under THIS proposal's
+ * reserve idempotency key is a resumable in-flight acceptance — not a "Trip
+ * changed since sent" conflict. Recognising it lets a retry replay the
+ * reservation and finalize, instead of wedging on the frozen `priced` snapshot
+ * comparison and stranding the supplier hold.
+ */
+function isResumableProposalReservation(envelope: Trip["envelope"], reserveKey: string): boolean {
+  return (
+    envelope.reserveIdempotencyKey === reserveKey &&
+    ["reserve_in_progress", "reserved", "checkout_started", "booked"].includes(envelope.status)
   )
 }
 
