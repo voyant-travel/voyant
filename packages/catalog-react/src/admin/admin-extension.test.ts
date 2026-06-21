@@ -5,6 +5,7 @@ import {
   resolveCatalogDefaultMarket,
   resolveCatalogLocaleOptions,
   resolveCatalogScope,
+  resolveCatalogScopeSearch,
   resolveCatalogSelectedLocale,
 } from "./catalog-vertical-host.js"
 import { CruiseDetailHost } from "./cruise-detail-host.js"
@@ -192,6 +193,20 @@ describe("catalog admin locale defaults", () => {
     expect(resolveCatalogScope({ market: "mkt_gb", locale: "en" }, localeOptions, market)).toEqual({
       market: "mkt_gb",
       locale: "en",
+    })
+  })
+
+  it("ignores URL market and locale when scope controls are hidden", () => {
+    expect(
+      resolveCatalogScopeSearch(
+        { page: 1, market: "mkt_ro", locale: "ro-RO", q: "delta" },
+        { hideScopeControls: true },
+      ),
+    ).toEqual({
+      page: 1,
+      market: undefined,
+      locale: undefined,
+      q: "delta",
     })
   })
 })

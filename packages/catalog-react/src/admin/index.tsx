@@ -281,7 +281,10 @@ export function createCatalogAdminExtension(
         id: "catalog-excursions-detail",
         path: `${basePath}/excursions/$id`,
         title: excursions,
-        page: () => import("./pages/catalog-excursions-detail-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-excursions-detail-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-tours-index",
@@ -294,7 +297,7 @@ export function createCatalogAdminExtension(
         id: "catalog-tours-detail",
         path: `${basePath}/tours/$id`,
         title: tours,
-        page: () => import("./pages/catalog-tours-detail-page.js"),
+        page: catalogAdminPage(() => import("./pages/catalog-tours-detail-page.js"), scopeOptions),
       },
       {
         id: "catalog-cruises-index",
@@ -307,7 +310,10 @@ export function createCatalogAdminExtension(
         id: "catalog-cruises-detail",
         path: `${basePath}/cruises/$id`,
         title: cruises,
-        page: () => import("./pages/catalog-cruises-detail-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-cruises-detail-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-accommodations-index",
@@ -323,7 +329,10 @@ export function createCatalogAdminExtension(
         id: "catalog-accommodations-detail",
         path: `${basePath}/accommodations/$id`,
         title: accommodations,
-        page: () => import("./pages/catalog-accommodations-detail-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-accommodations-detail-page.js"),
+          scopeOptions,
+        ),
       },
     ],
   })

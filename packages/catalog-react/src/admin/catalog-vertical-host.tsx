@@ -136,6 +136,13 @@ export function resolveCatalogScope(
   }
 }
 
+export function resolveCatalogScopeSearch(
+  search: CatalogSearchParams,
+  options: Pick<CatalogAdminScopeOptions, "hideScopeControls"> = {},
+): CatalogSearchParams {
+  return options.hideScopeControls ? { ...search, locale: undefined, market: undefined } : search
+}
+
 export interface CatalogVerticalHostProps {
   vertical: CatalogVerticalPageId
   search: CatalogSearchParams
@@ -197,7 +204,8 @@ export function CatalogVerticalHost({
   const suppliersQuery = useSuppliers({ limit: 100 })
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
   const markets = marketsQuery.data?.data ?? []
-  const selectedMarketId = search.market
+  const scopeSearch = resolveCatalogScopeSearch(search, scopeOptions)
+  const selectedMarketId = scopeSearch.market
   const defaultMarket = resolveCatalogDefaultMarket(markets, selectedMarketId, scopeOptions)
   const selectedMarket = selectedMarketId
     ? markets.find((market) => market.id === selectedMarketId || market.code === selectedMarketId)
@@ -218,7 +226,7 @@ export function CatalogVerticalHost({
       ),
     [localesQuery.data, localeMarket, scopeOptions.defaultLocale],
   )
-  const catalogScope = resolveCatalogScope(search, localeOptions, localeMarket, scopeOptions)
+  const catalogScope = resolveCatalogScope(scopeSearch, localeOptions, localeMarket, scopeOptions)
   const selectedLocale = catalogScope.locale
   const selectedMarketScope = catalogScope.market
   const supplierMap = useMemo(() => {
