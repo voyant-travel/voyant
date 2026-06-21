@@ -50,6 +50,13 @@ export {
   requirePermission,
 } from "./middleware/index.js"
 export type { HonoExtension, HonoModule } from "./module.js"
+export type { ErrorEvent, Reporter } from "./observability/index.js"
+export {
+  consoleReporter,
+  getRequestId,
+  noopReporter,
+  runWithRequestId,
+} from "./observability/index.js"
 export type {
   ExpandedHonoBundles,
   ExpandedHonoPlugins,

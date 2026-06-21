@@ -1,10 +1,12 @@
 import type { MiddlewareHandler } from "hono"
 
+import { getRequestId } from "../observability/request-context.js"
 import type { LoggerProvider } from "../types.js"
 
 export const consoleLoggerProvider: LoggerProvider = {
   log(entry) {
-    console.log(`${entry.method} ${entry.path} → ${entry.status} (${entry.durationMs}ms)`)
+    const id = entry.requestId ? ` [${entry.requestId}]` : ""
+    console.log(`${entry.method} ${entry.path} → ${entry.status} (${entry.durationMs}ms)${id}`)
   },
 }
 
@@ -27,6 +29,7 @@ export function logger(provider?: LoggerProvider): MiddlewareHandler {
       path: logPath(c),
       status: c.res.status,
       durationMs,
+      requestId: getRequestId() ?? (c.get("requestId") as string | undefined),
     })
   }
 }

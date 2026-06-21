@@ -12,6 +12,7 @@
     "./document-download": "./src/document-download.ts",
     "./public-document-delivery": "./src/public-document-delivery.ts",
     "./types": "./src/types.ts",
+    "./observability": "./src/observability/index.ts",
     "./middleware": "./src/middleware/index.ts",
     "./middleware/auth": "./src/middleware/auth.ts",
     "./middleware/body-size": "./src/middleware/body-size.ts",
@@ -98,6 +99,11 @@
         "types": "./dist/types.d.ts",
         "import": "./dist/types.js",
         "default": "./dist/types.js"
+      },
+      "./observability": {
+        "types": "./dist/observability/index.d.ts",
+        "import": "./dist/observability/index.js",
+        "default": "./dist/observability/index.js"
       },
       "./middleware": {
         "types": "./dist/middleware/index.d.ts",

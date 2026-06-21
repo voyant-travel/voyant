@@ -127,7 +127,9 @@ export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
 ): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
-  app.onError(handleApiError)
+  app.onError((err, c) =>
+    handleApiError(err, c, { reporter: config.reporter, appName: config.appName }),
+  )
 
   // Expand plugins into their constituent modules/extensions before mounting
   const expanded = config.plugins ? expandHonoPlugins(config.plugins) : null
