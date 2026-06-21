@@ -1,6 +1,6 @@
 import type { EventBus } from "@voyant-travel/core"
 import { RequestValidationError } from "@voyant-travel/hono"
-import { and, asc, desc, eq, sql } from "drizzle-orm"
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -100,12 +100,48 @@ export async function getOptionPriceRuleById(db: PostgresJsDatabase, id: string)
   return row ?? null
 }
 
+/**
+ * Demote any *other* default rate plan in the same (option, catalog) scope so
+ * at most one `is_default = true` plan survives per option+catalog. Without
+ * this, a save path that inserts (rather than upserts) the default plan can
+ * fan out several active `is_default` rows — and the public departures reader
+ * may then surface an empty duplicate instead of the priced plan, rendering a
+ * bookable departure as "price on request" (#1601). Latest write wins.
+ */
+async function demoteOtherDefaultRules(
+  tx: PostgresJsDatabase,
+  scope: { optionId: string; priceCatalogId: string; keepRuleId: string },
+): Promise<void> {
+  await tx
+    .update(optionPriceRules)
+    .set({ isDefault: false, updatedAt: new Date() })
+    .where(
+      and(
+        eq(optionPriceRules.optionId, scope.optionId),
+        eq(optionPriceRules.priceCatalogId, scope.priceCatalogId),
+        eq(optionPriceRules.isDefault, true),
+        ne(optionPriceRules.id, scope.keepRuleId),
+      ),
+    )
+}
+
 export async function createOptionPriceRule(
   db: PostgresJsDatabase,
   data: CreateOptionPriceRuleInput,
   runtime: RuleMutationRuntime = {},
 ) {
-  const [row] = await db.insert(optionPriceRules).values(data).returning()
+  const row = await db.transaction(async (tx) => {
+    const [inserted] = await tx.insert(optionPriceRules).values(data).returning()
+    if (!inserted) return null
+    if (inserted.isDefault && inserted.active) {
+      await demoteOtherDefaultRules(tx, {
+        optionId: inserted.optionId,
+        priceCatalogId: inserted.priceCatalogId,
+        keepRuleId: inserted.id,
+      })
+    }
+    return inserted
+  })
   if (!row) return null
   await emitRuleChanged(runtime.eventBus, {
     productId: row.productId,
@@ -136,22 +172,37 @@ export async function updateOptionPriceRule(
     }
   }
 
-  // Snapshot the pre-update productId so reassignment (rule moves
-  // between products) reindexes the *previous* product too. Without
-  // this, the projection on the old product keeps a stale MIN that
-  // includes a rule it no longer owns.
-  const [pre] = await db
-    .select({ productId: optionPriceRules.productId })
-    .from(optionPriceRules)
-    .where(eq(optionPriceRules.id, id))
-    .limit(1)
+  const result = await db.transaction(async (tx) => {
+    // Snapshot the pre-update productId so reassignment (rule moves
+    // between products) reindexes the *previous* product too. Without
+    // this, the projection on the old product keeps a stale MIN that
+    // includes a rule it no longer owns.
+    const [pre] = await tx
+      .select({ productId: optionPriceRules.productId })
+      .from(optionPriceRules)
+      .where(eq(optionPriceRules.id, id))
+      .limit(1)
 
-  const [row] = await db
-    .update(optionPriceRules)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(optionPriceRules.id, id))
-    .returning()
-  if (!row) return null
+    const [updated] = await tx
+      .update(optionPriceRules)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(optionPriceRules.id, id))
+      .returning()
+    if (!updated) return null
+
+    // Promoting this plan to the active default demotes any sibling default
+    // in the same (option, catalog) scope, so only one survives (#1601).
+    if (updated.isDefault && updated.active) {
+      await demoteOtherDefaultRules(tx, {
+        optionId: updated.optionId,
+        priceCatalogId: updated.priceCatalogId,
+        keepRuleId: updated.id,
+      })
+    }
+    return { pre, row: updated }
+  })
+  if (!result) return null
+  const { pre, row } = result
 
   await emitRuleChanged(runtime.eventBus, {
     productId: row.productId,

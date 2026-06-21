@@ -353,7 +353,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       })
       .returning()
 
-    const [_defaultItinerary] = await db
+    const [defaultItinerary] = await db
       .insert(productItineraries)
       .values({
         productId: product.id,
@@ -479,6 +479,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
           departureStatus: "open",
           nights: 7,
           days: 8,
+          resourceManifest: null,
           ratePlans: [
             {
               id: rule.id,
