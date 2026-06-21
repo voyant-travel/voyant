@@ -1,5 +1,27 @@
 # @voyant-travel/operations-react
 
+## 0.12.0
+
+### Minor Changes
+
+- 310565b: Surface a missing-option warning in the departures (availability slots) list (#2062).
+
+  The slots table now has an Option column that shows each departure's option name
+  and flags — with an amber badge + tooltip — any slot that has no option on a
+  product that actually has options (i.e. an unpriceable departure that should be
+  repaired via the option picker). Products without options are not flagged. The
+  column resolves names from one capped active-options query per visible product,
+  so a missing linkage is discoverable from the list, not just inside the edit
+  dialog.
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/bookings-react@0.131.0
+  - @voyant-travel/inventory-react@0.13.0
+  - @voyant-travel/operations@0.2.4
+
 ## 0.11.0
 
 ### Minor Changes
