@@ -6,7 +6,7 @@ import {
   optionUnitTiers,
   priceCatalogs,
 } from "@voyant-travel/commerce"
-import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -275,7 +275,31 @@ export async function resolvePricingContext(
         eq(optionPriceRules.active, true),
       ),
     )
-    .orderBy(desc(optionPriceRules.isDefault), asc(optionPriceRules.name))
+    // Prefer a rule that actually carries a price before falling back to the
+    // default flag. A stray empty default (base 0, no unit prices) must not
+    // mask a priced plan, or the departure renders "price on request" (#1601).
+    // A unit rule counts as priced via either its own sell amount or an active
+    // tier amount, mirroring how `selectUnitAmount` resolves the price.
+    // agent-quality: raw-sql reviewed -- owner: storefront; correlated existence check over priced unit rules/tiers, no string interpolation.
+    .orderBy(
+      desc(sql`(
+        coalesce(${optionPriceRules.baseSellAmountCents}, 0) > 0 OR EXISTS (
+          SELECT 1 FROM ${optionUnitPriceRules}
+          WHERE ${optionUnitPriceRules.optionPriceRuleId} = ${optionPriceRules.id}
+            AND ${optionUnitPriceRules.active} = true
+            AND (
+              coalesce(${optionUnitPriceRules.sellAmountCents}, 0) > 0 OR EXISTS (
+                SELECT 1 FROM ${optionUnitTiers}
+                WHERE ${optionUnitTiers.optionUnitPriceRuleId} = ${optionUnitPriceRules.id}
+                  AND ${optionUnitTiers.active} = true
+                  AND coalesce(${optionUnitTiers.sellAmountCents}, 0) > 0
+              )
+            )
+        )
+      )`),
+      desc(optionPriceRules.isDefault),
+      asc(optionPriceRules.name),
+    )
     .limit(1)
 
   const units = await listOptionUnitFacts(db, resolvedOption.id)
