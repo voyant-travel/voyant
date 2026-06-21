@@ -407,9 +407,17 @@ describe("quote proposal routes", () => {
     await expect(response.json()).resolves.toEqual({
       error: "Proposal can no longer be accepted",
     })
-    // The advisory lock was acquired before bailing, and the loser neither
-    // reserved its Trip nor accepted the Quote Version.
-    expect(fakeTx.execute).toHaveBeenCalled()
+    // The advisory lock must be acquired *before* the post-lock re-read that
+    // observes the declined status — otherwise a "read-then-lock" ordering
+    // would still 409 here while leaving the stale-read race wide open. The
+    // first proposal read is the pre-lock precheck; the second is the
+    // serialized re-read that must happen after the lock.
+    const lockOrder = fakeTx.execute.mock.invocationCallOrder[0]
+    const prelockReadOrder = mocks.getQuoteVersionProposal.mock.invocationCallOrder[0]
+    const postlockReadOrder = mocks.getQuoteVersionProposal.mock.invocationCallOrder[1]
+    expect(prelockReadOrder).toBeLessThan(lockOrder)
+    expect(lockOrder).toBeLessThan(postlockReadOrder)
+    // The loser neither reserved its Trip nor accepted the Quote Version.
     expect(mocks.reserveTrip).not.toHaveBeenCalled()
     expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
