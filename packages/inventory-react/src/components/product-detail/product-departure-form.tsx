@@ -27,7 +27,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useProductItineraries } from "../../index.js"
+import { useProductItineraries, useProductOptions } from "../../index.js"
 import { useProductResourceTemplates } from "./commerce-client.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { getTimezoneLabel, TIMEZONE_IDS, TIMEZONE_OPTIONS } from "./timezone-options.js"
@@ -45,6 +45,7 @@ const buildDepartureFormSchema = (messages: DepartureMessages) =>
       endDate: z.string().optional().nullable(),
       endTime: z.string().optional().nullable(),
       itineraryId: z.string().optional().nullable(),
+      optionId: z.string().optional().nullable(),
       timezone: z.string().min(1, messages.validationTimezoneRequired),
       status: z.enum(["open", "closed", "sold_out", "cancelled"]),
       unlimited: z.boolean(),
@@ -132,6 +133,7 @@ function initialValues(slot: DepartureSlot | undefined, defaultTz: string): Depa
       endDate: slot.endsAt ? isoToLocalDate(slot.endsAt) : "",
       endTime: slot.endsAt ? isoToLocalTime(slot.endsAt) : "",
       itineraryId: slot.itineraryId ?? "",
+      optionId: slot.optionId ?? "",
       timezone: slot.timezone,
       status: slot.status,
       unlimited: slot.unlimited,
@@ -147,6 +149,7 @@ function initialValues(slot: DepartureSlot | undefined, defaultTz: string): Depa
     endDate: "",
     endTime: "",
     itineraryId: "",
+    optionId: "",
     timezone: defaultTz,
     status: "open",
     unlimited: false,
@@ -189,6 +192,12 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   const { data: itineraryData } = useProductItineraries(productId)
   const itineraries = itineraryData?.data ?? []
   const defaultItinerary = itineraries.find((itinerary) => itinerary.isDefault) ?? itineraries[0]
+  const { data: optionData } = useProductOptions({ productId, status: "active", limit: 100 })
+  const productOptions = optionData?.data ?? []
+  const defaultOption = productOptions.find((option) => option.isDefault) ?? productOptions[0]
+  const selectedOptionId = form.watch("optionId")
+  const shouldShowOptionSelect =
+    productOptions.length > 1 || (isEditing && !selectedOptionId && Boolean(defaultOption))
 
   // Suggested pax = total physical capacity of the configured departure
   // inventory (each room/seat type's count × its capacity, e.g. 20 doubles
@@ -233,6 +242,17 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     form.reset(initialValues(slot, defaultTz))
   }, [slot, form, defaultTz])
 
+  useEffect(() => {
+    if (!defaultOption) return
+    const current = form.getValues("optionId")
+    if (current) return
+
+    form.setValue("optionId", defaultOption.id, {
+      shouldDirty: false,
+      shouldValidate: true,
+    })
+  }, [defaultOption, form])
+
   const onSubmit = async (values: DepartureFormOutput) => {
     const startsAt = combineLocalToIso(values.startDate, values.startTime)
 
@@ -259,6 +279,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     const nightsOverride =
       typeof values.nights === "number" && values.nights > 0 ? values.nights : null
     const daysOverride = typeof values.days === "number" && values.days > 0 ? values.days : null
+    const optionId = values.optionId || defaultOption?.id || null
 
     // `remainingPax` is intentionally omitted on edit — the slot service is
     // the source of truth for that field. Concurrent flows (holds, bookings,
@@ -269,6 +290,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     const baseFields = {
       productId,
       itineraryId: values.itineraryId ? values.itineraryId : null,
+      optionId,
       dateLocal: values.startDate,
       startsAt,
       endsAt,
@@ -438,6 +460,40 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">{itineraryMessages.overrideHint}</p>
+          </div>
+        ) : null}
+        {shouldShowOptionSelect ? (
+          <div className="flex flex-col gap-1.5">
+            <Label>{departureMessages.optionLabel}</Label>
+            <Select
+              value={selectedOptionId || defaultOption?.id || ""}
+              onValueChange={(value) =>
+                form.setValue("optionId", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              items={productOptions.map((option) => ({
+                label: option.isDefault
+                  ? formatMessage(departureMessages.defaultOptionLabel, { name: option.name })
+                  : option.name,
+                value: option.id,
+              }))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {productOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.isDefault
+                      ? formatMessage(departureMessages.defaultOptionLabel, { name: option.name })
+                      : option.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{departureMessages.optionRepairHint}</p>
           </div>
         ) : null}
         <div className="flex flex-col gap-1.5">
