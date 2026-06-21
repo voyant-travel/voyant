@@ -45,11 +45,9 @@ import {
   type SyncSourcesSummary,
   syncSources,
 } from "@voyant-travel/catalog/booking-engine"
-import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
-  createVoyantConnectSources,
-  listVoyantConnectSourceConnections,
+  prepareVoyantConnectSources,
   registerVoyantConnectSources,
 } from "@voyant-travel/plugin-voyant-connect"
 import { config } from "dotenv"
@@ -75,14 +73,6 @@ const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyant.tra
   "",
 )
 const catalogDemoUrl = process.env.CATALOG_DEMO_API_URL
-const voyantConnectApiKey =
-  process.env.VOYANT_API_KEY ??
-  process.env.VOYANT_CONNECT_API_KEY ??
-  process.env.VOYANT_CLOUD_API_KEY
-const voyantConnectApiUrl = process.env.VOYANT_CONNECT_API_URL
-const voyantConnectMarket = process.env.VOYANT_CONNECT_MARKET
-const voyantConnectOperatorId = process.env.VOYANT_CONNECT_OPERATOR_ID
-const voyantConnectSyncLimit = process.env.VOYANT_CONNECT_SYNC_LIMIT
 const databaseUrl = process.env.DATABASE_URL
 
 if (!typesenseHost) throw new Error("TYPESENSE_HOST is not set")
@@ -101,43 +91,17 @@ const registry = createSourceAdapterRegistry()
 if (catalogDemoUrl) {
   registry.register(createDemoCatalogAdapter({ baseUrl: catalogDemoUrl }))
 }
-if (voyantConnectApiKey || voyantConnectOperatorId) {
-  if (!voyantConnectApiKey || !voyantConnectOperatorId) {
-    console.warn(
-      "[sync-sources] incomplete Voyant Connect config; set VOYANT_API_KEY, " +
-        "and VOYANT_CONNECT_OPERATOR_ID to enable it.",
-    )
-  } else {
-    const client = createVoyantConnectClient({
-      apiKey: voyantConnectApiKey,
-      operatorId: voyantConnectOperatorId,
-      baseUrl: voyantConnectApiUrl,
-    })
-    const connections = await listVoyantConnectSourceConnections({
-      client,
-      operatorId: voyantConnectOperatorId,
-      warn: (message) => console.warn(`[sync-sources] ${message}`),
-    })
-    if (connections.length === 0) {
-      console.warn(
-        `[sync-sources] Voyant Connect has no active connections for operator ${voyantConnectOperatorId}`,
-      )
-    }
-    registerVoyantConnectSources(
-      registry,
-      createVoyantConnectSources({
-        client,
-        apiKey: voyantConnectApiKey,
-        operatorId: voyantConnectOperatorId,
-        market: voyantConnectMarket,
-        syncLimit: voyantConnectSyncLimit,
-        dataBaseUrl: cloudApiUrl,
-        connections,
-        warn: (message) => console.warn(`[sync-sources] ${message}`),
-      }),
-    )
-  }
-}
+// Voyant Connect: enumerate the operator's active connections and register one
+// generic + structured-cruise (+ TUI package) adapter set per connection, keyed
+// by connection id. Env resolution is shared with the live booking-engine
+// registry via `prepareVoyantConnectSources` so the two paths can't drift.
+registerVoyantConnectSources(
+  registry,
+  await prepareVoyantConnectSources(process.env, {
+    enumerate: true,
+    warn: (message) => console.warn(`[sync-sources] ${message}`),
+  }),
+)
 
 const adapterKinds = registry.kinds()
 if (adapterKinds.length === 0) {

@@ -2942,8 +2942,8 @@ importers:
         specifier: 0.3.0
         version: 0.3.0(@voyant-travel/catalog@packages+catalog)
       '@voyant-travel/connect-cruises':
-        specifier: 0.4.0
-        version: 0.4.0(@voyant-travel/cruises@packages+cruises)
+        specifier: 0.5.0
+        version: 0.5.0(@voyant-travel/cruises@packages+cruises)
       '@voyant-travel/connect-sdk':
         specifier: 0.9.0
         version: 0.9.0
@@ -6847,8 +6847,8 @@ packages:
     peerDependencies:
       '@voyant-travel/catalog': '>=0.85.3 <1'
 
-  '@voyant-travel/connect-cruises@0.4.0':
-    resolution: {integrity: sha512-CP3OrbnRC0MNXRjZnjqRmeBD6RCIkN5WHBwN9BTMbKZhJFEb20GXNWyoZV3oHUmyeGlur4DVMh3WvR9vYldhCw==}
+  '@voyant-travel/connect-cruises@0.5.0':
+    resolution: {integrity: sha512-tbZSMo2+feZru5fd5xRHIDKdkTh5KbqKYPYx7LVByjOk3fy/HG/bKKbzdvL0zm41KlMgMtCmkveOmfbTPK9nJQ==}
     peerDependencies:
       '@voyant-travel/cruises': '>=0.85.3 <1'
     peerDependenciesMeta:
@@ -13000,7 +13000,7 @@ snapshots:
       '@voyant-travel/catalog': link:packages/catalog
       '@voyant-travel/connect-sdk': 0.9.0
 
-  '@voyant-travel/connect-cruises@0.4.0(@voyant-travel/cruises@packages+cruises)':
+  '@voyant-travel/connect-cruises@0.5.0(@voyant-travel/cruises@packages+cruises)':
     dependencies:
       '@voyant-travel/connect-sdk': 0.9.0
     optionalDependencies:
