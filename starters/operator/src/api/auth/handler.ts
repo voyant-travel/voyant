@@ -22,7 +22,7 @@ import { createBetterAuth, handleApiTokenManagementRequest } from "@voyant-trave
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
 import { authUser, type SelectApikey, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyant-travel/hono"
-import { handleApiError } from "@voyant-travel/hono/middleware/error-boundary"
+import { handleApiError, requestId } from "@voyant-travel/hono/middleware/error-boundary"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
@@ -30,6 +30,7 @@ import type { BootstrapStatus, CurrentUser } from "../../lib/current-user-model"
 import { resolveEmailReplyTo } from "../../lib/notifications"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { dbFromEnvForApp } from "../lib/db"
+import { OPERATOR_APP_NAME, operatorReporter } from "../observability"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
@@ -38,7 +39,14 @@ type AuthHonoEnv = { Bindings: CloudflareBindings; Variables: { db: VoyantDb } }
 type OperatorAuthMode = "local" | "voyant-cloud"
 
 const auth = new Hono<AuthHonoEnv>()
-auth.onError(handleApiError)
+// This lean auth app is dispatched around `createVoyantApp` (see
+// hono-api-dispatch.ts), so it must mint/propagate the correlation id and wire
+// the reporter itself — otherwise auth 5xx are an observability blind spot and
+// the user-facing requestId wouldn't be findable (RFC voyant#1553).
+auth.use("*", requestId)
+auth.onError((err, c) =>
+  handleApiError(err, c, { reporter: operatorReporter, appName: OPERATOR_APP_NAME }),
+)
 
 const DEFAULT_APP_URL = "http://localhost:3300"
 const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([

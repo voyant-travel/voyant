@@ -1,5 +1,4 @@
 import { createVoyantApp } from "@voyant-travel/framework"
-import { consoleReporter } from "@voyant-travel/hono/observability"
 import { netopiaHonoBundle } from "@voyant-travel/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import authHandler, {
@@ -13,6 +12,7 @@ import {
   deploymentLocalModules,
 } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
+import { OPERATOR_APP_NAME, operatorReporter } from "./observability"
 import { bookingScheduleBundle } from "./routes/booking-schedule"
 import { channelPushBundle } from "./routes/channel-push"
 import {
@@ -49,10 +49,11 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   // Observability seam (RFC voyant#1553): stamp this app's name on emitted
   // error events and forward unhandled 5xx exceptions — each tagged with the
   // same `requestId` shown to the user on `X-Request-Id` — to the Workers log
-  // drain via the built-in console reporter. Swap for a Sentry/OpenTelemetry
-  // adapter by supplying a different `Reporter`; the no-op default stays valid.
-  appName: "operator",
-  reporter: consoleReporter(),
+  // drain. The same sink is wired into the lean auth app (api/auth/handler.ts),
+  // which is dispatched around this graph. Swap `operatorReporter` for a
+  // Sentry/OpenTelemetry adapter in one place; the no-op default stays valid.
+  appName: OPERATOR_APP_NAME,
+  reporter: operatorReporter,
   // Split data plane (perf, RFC voyant#1687 Phase 1.1):
   // - `db` (default): neon-http — one fetch per query, NO connection
   //   handshake. Serves all reads and single-statement writes.
