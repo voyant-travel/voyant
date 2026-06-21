@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
   bootstrapStorefrontBookingSession,
+  bootstrapStorefrontBookingSessionCompat,
   type StorefrontBookingSessionBootstrapOptions,
 } from "./service-booking-session-bootstrap.js"
 import {
@@ -28,6 +29,7 @@ import {
 import { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 import {
   type StorefrontBookingSessionBootstrapInput,
+  type StorefrontBookingSessionCompatBootstrapInput,
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
   type StorefrontFormField,
@@ -552,6 +554,18 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       userId?: string,
     ) {
       return bootstrapStorefrontBookingSession(
+        context,
+        input,
+        options?.bookingSessionBootstrap,
+        userId,
+      )
+    },
+    async bootstrapBookingSessionCompat(
+      context: StorefrontRequestContext & { db: PostgresJsDatabase },
+      input: StorefrontBookingSessionCompatBootstrapInput,
+      userId?: string,
+    ) {
+      return bootstrapStorefrontBookingSessionCompat(
         context,
         input,
         options?.bookingSessionBootstrap,

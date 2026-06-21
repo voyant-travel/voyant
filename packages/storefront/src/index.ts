@@ -39,6 +39,11 @@ export {
   resolveStorefrontSettings,
 } from "./service.js"
 export type { StorefrontBookingSessionBootstrapOptions } from "./service-booking-session-bootstrap.js"
+export {
+  describeStorefrontBootstrapError,
+  STOREFRONT_BOOTSTRAP_ERROR_CODES,
+  type StorefrontBootstrapErrorDescriptor,
+} from "./service-booking-session-bootstrap.js"
 export type {
   StorefrontCustomerSignalCreatedEvent,
   StorefrontIntakeGuard,
@@ -58,8 +63,11 @@ export type {
   StorefrontBankTransferAccount,
   StorefrontBankTransferAccountInput,
   StorefrontBankTransferInput,
+  StorefrontBookingBootstrapErrorCode,
+  StorefrontBookingBootstrapRejection,
   StorefrontBookingSessionBootstrap,
   StorefrontBookingSessionBootstrapInput,
+  StorefrontBookingSessionCompatBootstrapInput,
   StorefrontCurrencyDisplay,
   StorefrontDepartureListQuery,
   StorefrontDeparturePricePreview,
@@ -97,9 +105,12 @@ export {
   storefrontBankTransferAccountSchema,
   storefrontBankTransferInputSchema,
   storefrontBankTransferSchema,
+  storefrontBookingBootstrapErrorCodeSchema,
+  storefrontBookingBootstrapRejectionSchema,
   storefrontBookingSessionAvailabilitySnapshotSchema,
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionBootstrapSchema,
+  storefrontBookingSessionCompatBootstrapInputSchema,
   storefrontBookingSessionPaymentPlanSchema,
   storefrontBookingSessionQuoteSchema,
   storefrontBookingSessionRepricingSnapshotSchema,
