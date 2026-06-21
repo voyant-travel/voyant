@@ -48,6 +48,36 @@ What to add:
 
 This now plugs straight into the **already-shipped** quote-acceptance saga rather than needing its own commit backend.
 
+### 2.1 Contract-first — bring your own connector (Voyant Connect is not required)
+
+The integration point is a **public contract**, not a product. Voyant Connect is *a* provider — the first worked example — and is explicitly non-privileged. The `SourceAdapter` interface documents this directly: *"All implementations satisfy this same surface — no implementer is privileged."* The dependency runs **contract ← Connect**, never the reverse: neither `@voyant-travel/catalog` nor `@voyant-travel/catalog-contracts` depends on the Connect plugin, and `fanOutAvailabilitySearch` never names a provider — it iterates whatever adapters and handlers the **deployment** injects. This is the same stance the rest of the platform takes (provider specifics never live in a shared package; the deployment assembles).
+
+A deployment brings supply two ways, neither involving Voyant Connect:
+
+- **Sourced (external supplier API).** Implement `SourceAdapter.searchAvailability` and declare `supportsAvailabilitySearch`. The capability flag + method presence is the gate; the fan-out flags any adapter that lacks them as `capability_missing` and continues. Example: a bedbank, GDS, or DMC adapter.
+
+  ```ts
+  const myBedbank: SourceAdapter = {
+    kind: "bedbank:acme",
+    capabilities: { verticals: ["accommodations"], supportsAvailabilitySearch: true, /* … */ },
+    async searchAvailability(ctx, req) {
+      const rooms = await fetchAcme(req.criteria)
+      return { status: "ok", candidates: rooms.map(toCandidate) }
+    },
+  }
+  fanOutAvailabilitySearch({
+    adapters: [{ connectionId: "acme", adapter: myBedbank }],
+    request,
+  })
+  ```
+
+- **Owned (the operator's own inventory).** Implement `OwnedAvailabilitySearchHandler`, register it, and pass it via `ownedHandlers`. No external provider at all — owned and sourced supply merge into one ranked candidate list.
+
+Two honest caveats on the "BYO-ready" claim:
+
+1. **Proven against two shapes so far** — the flights bridge and an in-test mock adapter. Validating the generic contract against a *real third-party API* (the Voyant Connect follow-up on #2081) is what confirms the shape fits external suppliers; if it doesn't fit cleanly, the contract may need a tweak before it's truly BYO-stable.
+2. **Code-wired today** — adapters are injected in deployment code. A config-driven "register your connector" surface (mirroring the existing source-adapter registry) lands with the staff-facing surface in a later slice.
+
 ## 3. Terminology
 
 `Slot` is canonical (dated inventory unit); the catalog plane has no generic `Offer`. New terms avoid `Offer` / `Slot` / `Option`:
