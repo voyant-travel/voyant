@@ -81,11 +81,11 @@ export async function bootstrapWorkflowBundle(
 ): Promise<void> {
   if (channelPushDepsBootstrapped) return
   const env = ctx.env ?? process.env
-  const { getBookingEngineRegistry } = await import("./api/lib/booking-engine-runtime.js")
+  const { ensureBookingEngineRegistry } = await import("./api/lib/booking-engine-runtime.js")
   wireChannelPushDeps(
     ctx.channelPushDeps ?? {
       db: createLazyWorkflowDb(() => getDb(env)),
-      registry: getBookingEngineRegistry(env),
+      registry: await ensureBookingEngineRegistry(env),
     },
   )
   channelPushDepsBootstrapped = true

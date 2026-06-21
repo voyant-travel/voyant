@@ -92,9 +92,30 @@ registerVoyantConnectSources(
 
 The discovery sync enumerates connections and registers one connection-scoped
 adapter set per connection (`enumerate: true`), so sourced rows are keyed by
-their `connection.id`. The live booking-engine registry is initialized
-synchronously and registers the **un-scoped default** adapter pair instead —
-`bookEntity` resolves by `source_connection_id` first and falls back to the
-by-kind adapter, so sourced bookings still dispatch. Making the live registry
-also register per-connection requires an async-warmed (e.g. `ctx.waitUntil`)
-registry; that's tracked as a follow-up to issue #1976.
+their `connection.id`. The live booking-engine registry should match that so
+`bookEntity` (which resolves by `source_connection_id` first) routes a sourced
+booking to its connection's adapter rather than a connection-agnostic fallback.
+
+Because a synchronous registry can't await connection enumeration, the
+recommended pattern is **register the un-scoped default synchronously, then warm
+the per-connection adapters in the background**:
+
+```ts
+// synchronous: register the un-scoped default pair as the cold-window fallback
+registerVoyantConnectSources(
+  registry,
+  createVoyantConnectSources(resolveVoyantConnectEnv(env) ?? { operatorId: "" }),
+)
+
+// then, per isolate, enumerate connections and register them onto the SAME
+// registry instance — tie the promise to the request via ctx.waitUntil on
+// Workers so it isn't torn down when the request ends
+const sources = await prepareVoyantConnectSources(env, { enumerate: true })
+registerVoyantConnectSources(registry, sources)
+```
+
+`register(connectionId, adapter)` entries coexist with `default:<kind>`, so
+`resolveByConnection` routes precisely once warm while the by-kind fallback
+covers the cold window. The operator starter implements this in
+`booking-engine-runtime.ts` (`getBookingEngineRegistryFromContext` warms via
+`ctx.waitUntil`; async batch jobs use `ensureBookingEngineRegistry`).
