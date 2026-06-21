@@ -1,5 +1,11 @@
 # @voyant-travel/schema-kit
 
+## 0.106.1
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+
 ## 0.106.0
 
 ### Minor Changes

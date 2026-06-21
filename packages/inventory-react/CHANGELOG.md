@@ -1,5 +1,13 @@
 # @voyant-travel/inventory-react
 
+## 0.13.1
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/inventory@0.4.4
+
 ## 0.13.0
 
 ### Patch Changes

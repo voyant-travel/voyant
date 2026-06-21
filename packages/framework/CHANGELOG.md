@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.20
+
+### Patch Changes
+
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/inventory@0.4.4
+
 ## 0.2.19
 
 ### Patch Changes
