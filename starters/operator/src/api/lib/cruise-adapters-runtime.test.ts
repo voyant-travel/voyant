@@ -8,12 +8,13 @@ import {
   type CruiseSourceAdapterShim,
   cruiseAdapterToSourceAdapter,
 } from "@voyant-travel/cruises/adapters"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   registerCruiseAdapters,
   resetConfiguredCruiseAdapters,
   syncVerticalRegistryFromCatalog,
+  withReadCache,
 } from "./cruise-adapters-runtime"
 
 // The vertical cruise registry is a process-global Map — reset both it and the
@@ -95,5 +96,23 @@ describe("syncVerticalRegistryFromCatalog", () => {
     syncVerticalRegistryFromCatalog(registry)
 
     expect(resolveCruiseAdapter("voyant-connect")).toBeUndefined()
+  })
+})
+
+describe("withReadCache", () => {
+  it("serves repeated reads of the same entity from cache (one upstream call)", async () => {
+    const adapter = new MockCruiseAdapter({ name: "acme" })
+    const spy = vi.spyOn(adapter, "fetchCruise")
+    const cached = withReadCache(adapter)
+    const ref = { externalId: "x1" }
+
+    await cached.fetchCruise(ref)
+    await cached.fetchCruise(ref)
+
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves the adapter name so registration still keys correctly", () => {
+    expect(withReadCache(new MockCruiseAdapter({ name: "acme" })).name).toBe("acme")
   })
 })

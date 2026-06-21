@@ -25,12 +25,33 @@
  */
 
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
-import { hasCruiseAdapter, registerCruiseAdapter } from "@voyant-travel/cruises"
+import {
+  hasCruiseAdapter,
+  memoizeCruiseAdapter,
+  registerCruiseAdapter,
+} from "@voyant-travel/cruises"
 import {
   type CruiseAdapter,
   type CruiseSourceAdapterShim,
   cruiseAdapterToSourceAdapter,
 } from "@voyant-travel/cruises/adapters"
+
+/**
+ * Read-cache TTL for deployment-owned cruise adapters. `memoizeCruiseAdapter`
+ * caches per-entity fetches (cruise/sailing/ship/pricing/itinerary) for this long
+ * within an isolate; listings always go live. Matches the 60s public-read
+ * `s-maxage`, so a cache hit never serves content staler than the edge already
+ * does. Connect adapters are memoized upstream in the plugin, not here.
+ */
+export const CRUISE_ADAPTER_READ_CACHE_TTL_MS = 60_000
+
+/**
+ * Wrap an owned cruise adapter with the short-TTL read cache so repeated
+ * detail/sailing/ship reads within an isolate skip the upstream call.
+ */
+export function withReadCache(adapter: CruiseAdapter): CruiseAdapter {
+  return memoizeCruiseAdapter(adapter, { ttlMs: CRUISE_ADAPTER_READ_CACHE_TTL_MS })
+}
 
 /**
  * Env passed to the cruise-adapter seam — the raw string env bag. `process.env`
@@ -47,7 +68,8 @@ let _configured: CruiseAdapter[] | undefined
  * SAME instance is registered into both planes (the vertical map and the
  * catalog shim wrap one object — never two divergent instances).
  *
- * Add your connector here:
+ * Add your connector here (push the RAW adapter — the seam applies the read
+ * cache; don't pre-wrap with `memoizeCruiseAdapter` or you'll double-cache):
  *
  *   import { createMyCruiseAdapter } from "my-cruise-connector"
  *   adapters.push(createMyCruiseAdapter({ token: env.MY_CRUISE_ADAPTER_TOKEN }))
@@ -59,7 +81,9 @@ export function configuredCruiseAdapters(_env: CruiseAdapterEnv): CruiseAdapter[
   if (!_configured) {
     const adapters: CruiseAdapter[] = []
     // ── Register deployment-owned cruise connectors here ──────────────────
-    _configured = adapters
+    // Each is wrapped with the short-TTL read cache so the SAME memoized
+    // instance lands in both planes.
+    _configured = adapters.map(withReadCache)
   }
   return _configured
 }

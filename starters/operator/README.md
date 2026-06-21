@@ -73,6 +73,11 @@ discovery/sync, snapshot capture, booking-engine sourced inventory). The same se
 runs in the live API (`booking-engine-runtime.ts`), the external-cruise-refresh
 cron, and the `sync:sources` CLI, so all paths stay consistent.
 
+Owned adapters are wrapped with a short-TTL read cache (`memoizeCruiseAdapter`,
+60s) automatically — push the **raw** adapter, don't pre-wrap. Repeated
+detail/sailing/ship reads within an isolate then skip the upstream call (listings
+stay live). Voyant Connect cruise reads are cached upstream in the plugin.
+
 Missing config is a no-op — with no connector and Voyant Connect unconfigured,
 external cruise reads return a clean `adapter_not_registered`, never a boot
 failure. Voyant Connect cruise sources, when configured, are back-filled into the
