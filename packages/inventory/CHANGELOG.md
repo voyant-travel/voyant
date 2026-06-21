@@ -1,5 +1,22 @@
 # @voyant-travel/inventory
 
+## 0.4.0
+
+### Minor Changes
+
+- 9c47b00: Add a themed product brochure HTML renderer and printer decorator. Brochure
+  template context now includes product media and pax pricing tiers so custom
+  brochure layouts can render covers, galleries, and pricing tables without
+  extra app-local queries, while still replacing the section set for fully custom
+  brochure designs. The themed printer requires an HTML-capable browser printer
+  and guards against accidental composition with the built-in basic PDF printer.
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.126.0
+- @voyant-travel/commerce@0.10.0
+- @voyant-travel/operations@0.2.1
+
 ## 0.3.9
 
 ### Patch Changes

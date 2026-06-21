@@ -1,5 +1,12 @@
 # @voyant-travel/plugin-netopia
 
+## 0.105.6
+
+### Patch Changes
+
+- @voyant-travel/finance@0.128.0
+- @voyant-travel/notifications@0.114.4
+
 ## 0.105.5
 
 ### Patch Changes
