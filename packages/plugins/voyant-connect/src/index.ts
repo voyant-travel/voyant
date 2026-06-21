@@ -4,6 +4,14 @@ export {
   skipCruiseConnectDocuments,
 } from "./cruise-source.js"
 export {
+  type PrepareVoyantConnectSourcesOptions,
+  prepareVoyantConnectSources,
+  type ResolvedVoyantConnectConfig,
+  type ResolveVoyantConnectEnvOptions,
+  resolveVoyantConnectEnv,
+  type VoyantConnectEnv,
+} from "./env.js"
+export {
   createDestinationNameResolver,
   createGeoNameResolver,
   type DestinationNameResolver,
