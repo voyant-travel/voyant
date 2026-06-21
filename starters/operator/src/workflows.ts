@@ -41,17 +41,17 @@ function getDb(env: NodeJS.ProcessEnv = process.env) {
   return createDbClient(env.DATABASE_URL!, { adapter: "node" }) as PostgresJsDatabase
 }
 
-export function createLazyWorkflowDb(
-  factory: () => PostgresJsDatabase = getDb,
-): PostgresJsDatabase {
-  let db: PostgresJsDatabase | undefined
+export function createLazyWorkflowDb<TDb extends object = PostgresJsDatabase>(
+  factory: () => TDb = getDb as () => TDb,
+): TDb {
+  let db: TDb | undefined
 
   const resolveDb = () => {
     db ??= factory()
     return db
   }
 
-  return new Proxy({} as PostgresJsDatabase, {
+  return new Proxy({} as TDb, {
     get(_target, prop) {
       const resolved = resolveDb()
       const value = Reflect.get(resolved as object, prop, resolved)

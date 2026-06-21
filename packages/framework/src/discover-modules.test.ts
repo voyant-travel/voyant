@@ -12,7 +12,7 @@ import {
 const loyalty: HonoModule = { module: { name: "loyalty" } }
 const bookingNotes: HonoExtension = { extension: { name: "booking-notes", module: "bookings" } }
 // The factories under test ignore capabilities; cast a minimal context.
-const ctx = { capabilities: {}, options: {} } as unknown as CompositionContext<FrameworkProviders>
+const ctx = { capabilities: {}, options: {} } as CompositionContext<FrameworkProviders>
 
 describe("defineDeploymentModule", () => {
   it("wraps a ready HonoModule in a factory", () => {

@@ -55,7 +55,7 @@ function makeTrip(overrides?: Partial<Trip["envelope"]>): Trip {
         componentTotalAmountCents: 10000,
       },
     ],
-  } as unknown as Trip
+  } as Trip
 }
 
 function makeInput(intent: TripCheckoutInput["intent"]): TripCheckoutInput {

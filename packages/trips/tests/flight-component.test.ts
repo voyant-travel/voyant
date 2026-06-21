@@ -25,7 +25,7 @@ function envelope(travelerParty: Record<string, unknown> = {}): TripEnvelope {
     metadata: {},
     createdAt: new Date("2026-05-18T00:00:00.000Z"),
     updatedAt: new Date("2026-05-18T00:00:00.000Z"),
-  } as unknown as TripEnvelope
+  } as TripEnvelope
 }
 
 function flightComponent(metadata: Record<string, unknown>): TripComponent {
@@ -64,7 +64,7 @@ function flightComponent(metadata: Record<string, unknown>): TripComponent {
     metadata,
     createdAt: new Date("2026-05-18T00:00:00.000Z"),
     updatedAt: new Date("2026-05-18T00:00:00.000Z"),
-  } as unknown as TripComponent
+  } as TripComponent
 }
 
 function offer(overrides: Record<string, unknown> = {}) {
