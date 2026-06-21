@@ -1,5 +1,13 @@
 # @voyant-travel/octo
 
+## 0.104.29
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.4.1
+- @voyant-travel/operations@0.2.2
+- @voyant-travel/bookings@0.129.0
+
 ## 0.104.28
 
 ### Patch Changes
