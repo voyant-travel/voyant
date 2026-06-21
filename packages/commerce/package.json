@@ -29,9 +29,9 @@
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
+    "hono": "^4.12.26",
     "rrule": "^2.8.1",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "peerDependencies": {
     "@voyant-travel/legal": "workspace:^",
@@ -50,8 +50,8 @@
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist",

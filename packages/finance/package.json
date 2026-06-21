@@ -35,7 +35,7 @@
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
-    "@voyant-travel/data-sdk": "^0.5.0",
+    "@voyant-travel/data-sdk": "^0.6.0",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
@@ -43,13 +43,13 @@
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "fflate": "^0.8.2",
-    "hono": "^4.12.10",
-    "zod": "^4.3.6"
+    "hono": "^4.12.26",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "files": [
     "dist",
