@@ -59,7 +59,7 @@ function resolveConnectClient(c: Context): CatalogOffersConnectClient | null {
     apiKey,
     operatorId,
     ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-  }) as unknown as CatalogOffersConnectClient
+  }) as CatalogOffersConnectClient
 }
 
 /**

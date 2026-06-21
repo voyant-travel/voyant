@@ -5,7 +5,7 @@ import { loadCustomFieldDefinitions } from "../../src/service/custom-fields-regi
 
 /** Minimal stub: `db.select().from(table)` resolves to the given rows. */
 function fakeDb(rows: unknown[]): PostgresJsDatabase {
-  return { select: () => ({ from: () => Promise.resolve(rows) }) } as unknown as PostgresJsDatabase
+  return { select: () => ({ from: () => Promise.resolve(rows) }) } as PostgresJsDatabase
 }
 
 describe("loadCustomFieldDefinitions", () => {

@@ -1,5 +1,7 @@
 "use client"
 
+// agent-quality: file-size exception -- #2048 keeps this workflow page intact until quote detail panels are split.
+
 import type { AdminRoutePageProps } from "@voyant-travel/admin"
 import { useAdminNavigate } from "@voyant-travel/admin"
 import { formatMessage } from "@voyant-travel/i18n"

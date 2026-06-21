@@ -34,7 +34,7 @@ function envelope(constraints: Record<string, unknown> = {}): TripEnvelope {
     travelerParty: { travelers: [] },
     constraints,
     currency: "EUR",
-  } as unknown as TripEnvelope
+  } as TripEnvelope
 }
 
 function component(overrides: Partial<TripComponent> = {}): TripComponent {
@@ -53,7 +53,7 @@ function component(overrides: Partial<TripComponent> = {}): TripComponent {
     componentCurrency: "EUR",
     metadata: {},
     ...overrides,
-  } as unknown as TripComponent
+  } as TripComponent
 }
 
 function adapterFor(over: Partial<Parameters<typeof createCatalogComponentAdapter>[0]> = {}) {

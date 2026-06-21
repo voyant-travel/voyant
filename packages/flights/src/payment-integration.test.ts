@@ -13,7 +13,8 @@ import {
 const DB = { __db: true } as never
 let CTX: Context
 function stubContext(): Context {
-  CTX = { var: { db: DB } } as unknown as Context
+  const context: Pick<Context, "var"> = { var: { db: DB } }
+  CTX = context as Context
   return CTX
 }
 
