@@ -44,9 +44,11 @@ export interface HandleApiErrorOptions {
 /**
  * Forwards a normalized {@link ErrorEvent} to the reporter. Best-effort: never
  * throws, and flushes an async reporter via `waitUntil` so capture doesn't
- * block the response.
+ * block the response. Exported so non-`onError` catch points (e.g. the
+ * forwarded auth sub-app, which returns its own Response and never reaches the
+ * outer `onError`) can emit through the same path.
  */
-function reportException(reporter: Reporter, c: Context, event: ErrorEvent): void {
+export function reportException(reporter: Reporter, c: Context, event: ErrorEvent): void {
   let result: void | Promise<void>
   try {
     result = reporter.captureException(event)

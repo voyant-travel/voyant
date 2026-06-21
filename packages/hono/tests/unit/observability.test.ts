@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
+import { mountApp } from "../../src/app.js"
 import { handleApiError, requestId } from "../../src/middleware/error-boundary.js"
 import { logger } from "../../src/middleware/logger.js"
 import type { ErrorEvent, Reporter } from "../../src/observability/reporter.js"
@@ -188,5 +189,77 @@ describe("logger carries the requestId", () => {
 
     expect(entries).toHaveLength(1)
     expect(entries[0].requestId).toBe("log-me")
+  })
+})
+
+describe("forwarded auth sub-app honors the request id + reporter", () => {
+  // Auth handler that echoes the inbound x-request-id and returns `status`.
+  function authHandlerReturning(status: number) {
+    return () => ({
+      fetch: async (req: Request) =>
+        new Response(JSON.stringify({ requestId: req.headers.get("x-request-id") }), {
+          status,
+          headers: { "content-type": "application/json" },
+        }),
+    })
+  }
+
+  function mountWithAuth(status: number, reporter: Reporter) {
+    return mountApp({
+      // never invoked for /auth/* (returns before the db middleware), but
+      // required by the config shape.
+      db: () => ({}) as never,
+      appName: "auth-test",
+      reporter,
+      rateLimit: false,
+      metrics: false,
+      publicCache: false,
+      auth: { handler: authHandlerReturning(status) },
+    })
+  }
+
+  it("forwards the outer id so the sub-app body matches X-Request-Id (no second id)", async () => {
+    const app = mountWithAuth(200, noopReporter)
+
+    const res = await app.request("https://api.example/auth/sign-in", { method: "POST" }, {})
+    const headerId = res.headers.get("X-Request-Id")
+    const body = (await res.json()) as { requestId?: string }
+
+    expect(headerId).toMatch(/^[0-9a-f]{32}$/)
+    expect(body.requestId).toBe(headerId)
+  })
+
+  it("bridges an auth 5xx into the reporter with the same id", async () => {
+    const events: ErrorEvent[] = []
+    const app = mountWithAuth(500, {
+      captureException: (e) => {
+        events.push(e)
+      },
+    })
+
+    const res = await app.request(
+      "https://api.example/auth/sign-in",
+      { method: "POST", headers: { "x-request-id": "auth-trace" } },
+      {},
+    )
+
+    expect(res.status).toBe(500)
+    expect(res.headers.get("X-Request-Id")).toBe("auth-trace")
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      requestId: "auth-trace",
+      app: "auth-test",
+      context: { surface: "auth", status: 500, path: "/auth/sign-in" },
+    })
+  })
+
+  it("does not report an auth 4xx", async () => {
+    const capture = vi.fn()
+    const app = mountWithAuth(401, { captureException: capture })
+
+    const res = await app.request("https://api.example/auth/sign-in", { method: "POST" }, {})
+
+    expect(res.status).toBe(401)
+    expect(capture).not.toHaveBeenCalled()
   })
 })

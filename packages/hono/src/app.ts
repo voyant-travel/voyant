@@ -23,7 +23,7 @@ import { requireAuth } from "./middleware/auth.js"
 import { DEFAULT_REQUEST_BODY_LIMIT_BYTES, requestBodyLimit } from "./middleware/body-size.js"
 import { cors } from "./middleware/cors.js"
 import { db } from "./middleware/db.js"
-import { handleApiError, requestId } from "./middleware/error-boundary.js"
+import { handleApiError, reportException, requestId } from "./middleware/error-boundary.js"
 import { logger } from "./middleware/logger.js"
 import { metrics } from "./middleware/metrics.js"
 import { publicResponseCache } from "./middleware/public-cache.js"
@@ -35,6 +35,7 @@ import {
 } from "./middleware/rate-limit.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { securityHeaders } from "./middleware/security-headers.js"
+import { noopReporter } from "./observability/reporter.js"
 import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
@@ -127,9 +128,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
 ): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
-  app.onError((err, c) =>
-    handleApiError(err, c, { reporter: config.reporter, appName: config.appName }),
-  )
+  // Observability sink (RFC #1553) — resolved once and reused by both the
+  // outer onError and the forwarded auth sub-app catch point below.
+  const reporter = config.reporter ?? noopReporter
+  const appName = config.appName ?? "voyant"
+  app.onError((err, c) => handleApiError(err, c, { reporter, appName }))
 
   // Expand plugins into their constituent modules/extensions before mounting
   const expanded = config.plugins ? expandHonoPlugins(config.plugins) : null
@@ -396,7 +399,27 @@ export function mountApp<TBindings extends VoyantBindings>(
   if (authHandler) {
     app.all("/auth/*", async (c) => {
       const authApp = authHandler(c.env)
-      return authApp.fetch(c.req.raw, c.env, c.executionCtx)
+      // Propagate the correlation id into the forwarded request so the auth
+      // sub-app reuses it (its rendered error body would otherwise mint a
+      // second, uncorrelated id while the response still carries the outer
+      // X-Request-Id) — RFC #1553.
+      const id = c.get("requestId")
+      const forwardedHeaders = new Headers(c.req.raw.headers)
+      if (id) forwardedHeaders.set("x-request-id", id)
+      const forwarded = new Request(c.req.raw, { headers: forwardedHeaders })
+      const res = await authApp.fetch(forwarded, c.env, tryGetExecutionCtx(c))
+      // The auth sub-app handles its own errors and returns a Response, so the
+      // outer onError never sees auth faults. Bridge 5xx into the reporter with
+      // the same id so auth failures aren't an observability blind spot.
+      if (res.status >= 500) {
+        reportException(reporter, c, {
+          requestId: id ?? "",
+          app: appName,
+          error: new Error(`auth handler returned HTTP ${res.status}`),
+          context: { path: c.req.path, method: c.req.method, status: res.status, surface: "auth" },
+        })
+      }
+      return res
     })
   }
 

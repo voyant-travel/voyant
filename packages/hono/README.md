@@ -9,6 +9,19 @@ helpers, and plugin expansion for mounting Voyant modules behind a Hono app.
 pnpm add @voyant-travel/hono hono
 ```
 
+## Requirements
+
+On **Cloudflare Workers**, enable the `nodejs_compat` (or `nodejs_als`)
+compatibility flag — the request-id correlation context uses
+`AsyncLocalStorage` (`node:async_hooks`) on the always-used request path:
+
+```jsonc
+// wrangler.jsonc
+{ "compatibility_flags": ["nodejs_compat"] }
+```
+
+Voyant starters/templates already set this. **Node** deployments need nothing.
+
 ## Usage
 
 ```typescript
