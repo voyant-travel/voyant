@@ -107,6 +107,7 @@
   "dependencies": {
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",

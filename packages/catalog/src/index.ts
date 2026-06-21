@@ -224,10 +224,24 @@ export {
   type SourcedEntryStatus,
 } from "./schema-sourced-entries.js"
 export {
+  type AvailabilityConnectionResult,
+  type AvailabilityConnectionStatus,
+  type FanOutAvailabilityResult,
+  type FanOutAvailabilitySearchOptions,
+  fanOutAvailabilitySearch,
+} from "./search/availability-fan-out.js"
+export {
   type FederatedSearchOptions,
   federateAudienceSearch,
   mergeAndDedupe,
 } from "./search/federate.js"
+export {
+  createOwnedAvailabilitySearchHandlerRegistry,
+  NoOwnedSearchHandlerRegisteredError,
+  type OwnedAvailabilitySearchHandler,
+  type OwnedAvailabilitySearchHandlerRegistry,
+  type OwnedSearchContext,
+} from "./search/owned-search-handler.js"
 export {
   type LivePriceFn,
   type LivePriceResult,

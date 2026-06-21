@@ -1,6 +1,7 @@
 /** Source adapter interface and adapter error types. */
 
 import type { CatalogDriftEvent } from "../drift/events.js"
+import type { AvailabilitySearchRequest, AvailabilitySearchResult } from "./availability-search.js"
 import type {
   CancelRequest,
   CancelResult,
@@ -97,6 +98,23 @@ export interface SourceAdapter {
    * inventory count). Capability-gated by `supportsLiveResolution`.
    */
   liveResolve?(ctx: SourceAdapterContext, request: LiveResolveRequest): Promise<LiveResolveResult>
+
+  // ── Availability search ───────────────────────────────────────────────
+
+  /**
+   * Search live availability across an inventory space (destination + dates
+   * + pax → ranked candidates), as opposed to resolving volatile fields for
+   * an already-selected entity (`liveResolve`). Capability-gated by
+   * `supportsAvailabilitySearch`.
+   *
+   * The vertical-agnostic fan-out (`fanOutAvailabilitySearch`) parallelizes
+   * this across connections, merges, and ranks. See
+   * `docs/architecture/dynamic-packaging-rfc.md` §2 (Gap 1).
+   */
+  searchAvailability?(
+    ctx: SourceAdapterContext,
+    request: AvailabilitySearchRequest,
+  ): Promise<AvailabilitySearchResult>
 
   // ── Rich content ──────────────────────────────────────────────────────
 

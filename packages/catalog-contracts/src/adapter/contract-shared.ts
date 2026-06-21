@@ -103,6 +103,15 @@ export interface AdapterCapabilities {
   verticals: string[]
   /** Whether the adapter can resolve volatile-live fields on demand. */
   supportsLiveResolution: boolean
+  /**
+   * Whether the adapter can search live availability across an inventory
+   * space (destination + dates + pax → ranked candidates), as opposed to
+   * resolving volatile fields for an already-selected entity. Gates
+   * `searchAvailability`.
+   *
+   * See `docs/architecture/dynamic-packaging-rfc.md` §2 (Gap 1).
+   */
+  supportsAvailabilitySearch?: boolean
   /** Whether the adapter can emit drift events. */
   supportsDriftDetection: boolean
   /** Whether the adapter forwards bookings to the upstream source. */
