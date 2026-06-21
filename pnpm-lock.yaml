@@ -2933,37 +2933,6 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/plugins/voyant-connect:
-    dependencies:
-      '@voyant-travel/catalog':
-        specifier: workspace:^
-        version: link:../../catalog
-      '@voyant-travel/connect-adapter':
-        specifier: 0.3.0
-        version: 0.3.0(@voyant-travel/catalog@packages+catalog)
-      '@voyant-travel/connect-cruises':
-        specifier: 0.5.0
-        version: 0.5.0(@voyant-travel/cruises@packages+cruises)
-      '@voyant-travel/connect-sdk':
-        specifier: 0.9.0
-        version: 0.9.0
-      '@voyant-travel/cruises':
-        specifier: workspace:^
-        version: link:../../cruises
-      '@voyant-travel/data-sdk':
-        specifier: ^0.5.0
-        version: 0.5.0
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/products-contracts:
     dependencies:
       '@voyant-travel/catalog-contracts':
@@ -4110,8 +4079,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/plugins/smartbill
       '@voyant-travel/plugin-voyant-connect':
-        specifier: workspace:^
-        version: link:../../packages/plugins/voyant-connect
+        specifier: ^0.2.3
+        version: 0.2.3(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes
@@ -6842,13 +6811,13 @@ packages:
     bundledDependencies:
       - '@voyant-travel/sdk-core'
 
-  '@voyant-travel/connect-adapter@0.3.0':
-    resolution: {integrity: sha512-DPpAcC6HC7V4RBfN9reMSOmYv2j/bw18ZVPvCEbV9MFOxEchoTuSvjsoinrf3XGbQ9FNVr4rLbJ4xis+HHaTvw==}
+  '@voyant-travel/connect-adapter@0.3.2':
+    resolution: {integrity: sha512-aNVR9msv72egQ23ybtaFg1/MLaOKXK1lsQ1e8deV20Hp48M+KlrzykYhsWOHf1Krn+0TJ7AvCl9mnTL7Q/N5OA==}
     peerDependencies:
       '@voyant-travel/catalog': '>=0.85.3 <1'
 
-  '@voyant-travel/connect-cruises@0.5.0':
-    resolution: {integrity: sha512-tbZSMo2+feZru5fd5xRHIDKdkTh5KbqKYPYx7LVByjOk3fy/HG/bKKbzdvL0zm41KlMgMtCmkveOmfbTPK9nJQ==}
+  '@voyant-travel/connect-cruises@0.6.1':
+    resolution: {integrity: sha512-RGLZtIBxq+6uCXVlkjGQsArGfi3Cy7/MV4hToxPL4oi9j3H4kxnYX7CyOwi8KMBi7sxVTrAlj/BayW8EDbgfRg==}
     peerDependencies:
       '@voyant-travel/cruises': '>=0.85.3 <1'
     peerDependenciesMeta:
@@ -6860,6 +6829,11 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
+  '@voyant-travel/connect-sdk@0.9.1':
+    resolution: {integrity: sha512-DKL/0lO0399vluLjOJQnM2vl/gtLt+idV4JPdmoX+HUJq19nkskzKpc/ymncnwRnQS4Fe5F15XSs9+gQtYYEgg==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
   '@voyant-travel/core@0.109.0':
     resolution: {integrity: sha512-eu15XfqHgZbRXDTw6Tg2vlUC4s7Qiubi478cqmA3602AvQ8jBJ3rmpyClpobDWcY7cGKFmqUYKjBdc0xzTQALg==}
 
@@ -6867,6 +6841,16 @@ packages:
     resolution: {integrity: sha512-H7haHd5hwRls9AVJeOvFZEsgEWjV6/L0F3JUiifIjQ9mhHfX66V5ofV8xRFpd6FYr613Nc6RT1eyAQjRqk6hBQ==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
+
+  '@voyant-travel/plugin-voyant-connect@0.2.3':
+    resolution: {integrity: sha512-AmLOVhTPZt7j7+DXtY5fPhB3DIxZoOqHGgmTwfF3PR9SphxxO0afiD2r22NKxMXhpEk+rLSI/AZDbEthGYk3TA==}
+    peerDependencies:
+      '@voyant-travel/catalog': '>=0.85.3 <1'
+      '@voyant-travel/cruises': '>=0.85.3 <1'
+      '@voyant-travel/data-sdk': '>=0.5.0 <1'
+    peerDependenciesMeta:
+      '@voyant-travel/catalog':
+        optional: true
 
   '@voyant-travel/workflows-orchestrator-node@0.107.10':
     resolution: {integrity: sha512-OcgQ1H2TCFgPnyU3QavZ872mZWYCDA4Av1W7emyIIVhKG2SNI7vgm2htcsX8YrUs84S6s24ZXneorCv25cRyZg==}
@@ -12995,22 +12979,34 @@ snapshots:
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
-  '@voyant-travel/connect-adapter@0.3.0(@voyant-travel/catalog@packages+catalog)':
+  '@voyant-travel/connect-adapter@0.3.2(@voyant-travel/catalog@packages+catalog)':
     dependencies:
       '@voyant-travel/catalog': link:packages/catalog
-      '@voyant-travel/connect-sdk': 0.9.0
+      '@voyant-travel/connect-sdk': 0.9.1
 
-  '@voyant-travel/connect-cruises@0.5.0(@voyant-travel/cruises@packages+cruises)':
+  '@voyant-travel/connect-cruises@0.6.1(@voyant-travel/cruises@packages+cruises)':
     dependencies:
-      '@voyant-travel/connect-sdk': 0.9.0
+      '@voyant-travel/connect-sdk': 0.9.1
     optionalDependencies:
       '@voyant-travel/cruises': link:packages/cruises
 
   '@voyant-travel/connect-sdk@0.9.0': {}
 
+  '@voyant-travel/connect-sdk@0.9.1': {}
+
   '@voyant-travel/core@0.109.0': {}
 
   '@voyant-travel/data-sdk@0.5.0': {}
+
+  '@voyant-travel/plugin-voyant-connect@0.2.3(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)':
+    dependencies:
+      '@voyant-travel/connect-adapter': 0.3.2(@voyant-travel/catalog@packages+catalog)
+      '@voyant-travel/connect-cruises': 0.6.1(@voyant-travel/cruises@packages+cruises)
+      '@voyant-travel/connect-sdk': 0.9.1
+      '@voyant-travel/cruises': link:packages/cruises
+      '@voyant-travel/data-sdk': 0.5.0
+    optionalDependencies:
+      '@voyant-travel/catalog': link:packages/catalog
 
   '@voyant-travel/workflows-orchestrator-node@0.107.10(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
