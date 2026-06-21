@@ -381,6 +381,10 @@ function createBookingsExtension(messages: AdminExtensionNavMessages) {
 // src/routes/_workspace/catalog/* only bind route params/search onto them.
 function createCatalogExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.catalog({
+    defaultLocale: "en-GB",
+    defaultMarket: "default",
+    scopeStrategy: "deployment-default",
+    hideScopeControls: true,
     labels: {
       products: messages.catalogProducts,
       excursions: messages.catalogExcursions,

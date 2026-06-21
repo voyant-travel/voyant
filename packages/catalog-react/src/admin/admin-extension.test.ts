@@ -5,6 +5,7 @@ import {
   resolveCatalogDefaultMarket,
   resolveCatalogLocaleOptions,
   resolveCatalogScope,
+  resolveCatalogScopeSearch,
   resolveCatalogSelectedLocale,
 } from "./catalog-vertical-host.js"
 import { CruiseDetailHost } from "./cruise-detail-host.js"
@@ -155,6 +156,33 @@ describe("catalog admin locale defaults", () => {
     })
   })
 
+  it("uses deployment defaults when no commerce market exists", () => {
+    const market = resolveCatalogDefaultMarket([], undefined, {
+      defaultLocale: "en-GB",
+      defaultMarket: "default",
+      scopeStrategy: "deployment-default",
+    })
+    const localeOptions = resolveCatalogLocaleOptions(market, [], "en-GB")
+
+    expect(market).toMatchObject({
+      id: "default",
+      defaultLanguageTag: "en-GB",
+    })
+    expect(resolveCatalogScope({}, localeOptions, market, { defaultMarket: "default" })).toEqual({
+      market: "default",
+      locale: "en-GB",
+    })
+  })
+
+  it("prefers a configured commerce market before falling back to the first market", () => {
+    const market = resolveCatalogDefaultMarket(markets, undefined, {
+      defaultMarket: "GB",
+      scopeStrategy: "deployment-default",
+    })
+
+    expect(market?.id).toBe("mkt_gb")
+  })
+
   it("keeps explicit market and locale scope when provided", () => {
     const market = resolveCatalogDefaultMarket(markets, "mkt_gb")
     const localeOptions = resolveCatalogLocaleOptions(market, [
@@ -165,6 +193,20 @@ describe("catalog admin locale defaults", () => {
     expect(resolveCatalogScope({ market: "mkt_gb", locale: "en" }, localeOptions, market)).toEqual({
       market: "mkt_gb",
       locale: "en",
+    })
+  })
+
+  it("ignores URL market and locale when scope controls are hidden", () => {
+    expect(
+      resolveCatalogScopeSearch(
+        { page: 1, market: "mkt_ro", locale: "ro-RO", q: "delta" },
+        { hideScopeControls: true },
+      ),
+    ).toEqual({
+      page: 1,
+      market: undefined,
+      locale: undefined,
+      q: "delta",
     })
   })
 })

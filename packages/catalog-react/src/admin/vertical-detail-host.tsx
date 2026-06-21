@@ -18,6 +18,7 @@ import {
 export interface VerticalDetailHostProps {
   surface: CatalogDetailSurface
   id: string
+  locale?: string
 }
 
 /**
@@ -26,7 +27,7 @@ export interface VerticalDetailHostProps {
  * into the booking journey (packaged-admin RFC §4.7), and breadcrumbs, so
  * host route files stay trivial.
  */
-export function VerticalDetailHost({ surface, id }: VerticalDetailHostProps) {
+export function VerticalDetailHost({ surface, id, locale }: VerticalDetailHostProps) {
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
   const nav = useOperatorAdminMessages().nav
@@ -54,6 +55,7 @@ export function VerticalDetailHost({ surface, id }: VerticalDetailHostProps) {
       vertical={vertical}
       surfaceLabel={surfaceLabel}
       surfaceHref={surfaceHref}
+      locale={locale}
       formatSupplier={formatSupplier}
       onBreadcrumbs={setCrumbs}
       // Connect-sourced vertical (accommodation/excursion/tour) → the unified
