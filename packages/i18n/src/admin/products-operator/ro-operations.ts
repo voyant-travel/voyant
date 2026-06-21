@@ -37,6 +37,10 @@ export const operatorAdminProductsMessagesRoOperations = {
     timezoneLabel: "Fus orar",
     timezoneSearchPlaceholder: "Cauta fusuri orare…",
     timezoneEmpty: "Nu a fost gasit niciun fus orar.",
+    optionLabel: "Optiune",
+    defaultOptionLabel: "Optiune implicita: {name}",
+    optionRepairHint:
+      "Controleaza ce preturi de optiune foloseste aceasta plecare. Salvarea repara plecarile fara optiune.",
     statusLabel: "Status",
     capacityLabel: "Capacitate (pax)",
     capacityAutoHint: "Automat din camere: {count} — apasă pentru a folosi",

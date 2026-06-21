@@ -1,5 +1,13 @@
 # @voyant-travel/storefront-sdk
 
+## 0.133.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/finance@0.131.0
+- @voyant-travel/storefront@0.133.0
+
 ## 0.132.0
 
 ### Patch Changes

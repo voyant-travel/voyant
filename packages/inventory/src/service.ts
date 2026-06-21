@@ -5,6 +5,7 @@ import { deliveryFormatProductsService } from "./service-delivery-formats.js"
 import { destinationProductsService } from "./service-destinations.js"
 import { itineraryProductsService } from "./service-itinerary.js"
 import { itineraryHistoryProductsService } from "./service-itinerary-history.js"
+import { itineraryTranslationProductsService } from "./service-itinerary-translations.js"
 import { mediaProductsService } from "./service-media.js"
 import { merchandisingProductsService } from "./service-merchandising.js"
 import { optionTranslationProductsService } from "./service-option-translations.js"
@@ -23,6 +24,7 @@ export const productsService = {
   ...optionProductsService,
   ...optionTranslationProductsService,
   ...itineraryProductsService,
+  ...itineraryTranslationProductsService,
   ...itineraryHistoryProductsService,
   ...taxonomyProductsService,
   ...mediaProductsService,

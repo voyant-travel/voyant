@@ -1,5 +1,32 @@
 # @voyant-travel/inventory-react
 
+## 0.13.2
+
+### Patch Changes
+
+- ba89f0b: Let admin departure edits choose and persist a product option so existing departures with a missing option can be repaired from the UI. Explicit slot option links are now validated against the slot product while product-level generated slots can still omit an option.
+- Updated dependencies [ba89f0b]
+  - @voyant-travel/i18n@0.107.4
+
+## 0.13.1
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/inventory@0.4.4
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/finance-react@0.131.0
+  - @voyant-travel/catalog-react@0.129.0
+  - @voyant-travel/finance@0.131.0
+  - @voyant-travel/inventory@0.4.3
+
 ## 0.12.0
 
 ### Patch Changes
