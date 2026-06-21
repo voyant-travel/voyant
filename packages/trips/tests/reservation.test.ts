@@ -117,12 +117,15 @@ function envelope(overrides: Partial<TripEnvelope> = {}): TripEnvelope {
   }
 }
 
-function makeFakeDb(state: {
-  envelope: TripEnvelope
-  components: TripComponent[]
-  events?: NewTripComponentEvent[]
-  reservationPlans?: TripReservationPlan[]
-}): AnyDrizzleDb {
+function makeFakeDb(
+  state: {
+    envelope: TripEnvelope
+    components: TripComponent[]
+    events?: NewTripComponentEvent[]
+    reservationPlans?: TripReservationPlan[]
+  },
+  options: { failReserveClaim?: boolean } = {},
+): AnyDrizzleDb {
   const events = state.events ?? []
   const reservationPlans = state.reservationPlans ?? []
 
@@ -131,6 +134,19 @@ function makeFakeDb(state: {
     patch: Partial<TripEnvelope & TripComponent & TripReservationPlan>,
   ) {
     if (table === tripEnvelopes) {
+      // Simulate losing the atomic `priced -> reserve_in_progress` claim: a
+      // concurrent caller already flipped the envelope, so the CAS matches no
+      // rows (returns undefined) and leaves a rival idempotency key behind.
+      if (options.failReserveClaim && patch.status === "reserve_in_progress") {
+        Object.assign(state.envelope, {
+          status: "reserve_in_progress",
+          reserveIdempotencyKey: "attempt-other",
+          reserveStartedAt: new Date("2026-05-18T10:30:00.000Z"),
+          updatedAt: new Date("2026-05-18T10:30:00.000Z"),
+        })
+        return undefined
+      }
+
       Object.assign(state.envelope, patch)
       return state.envelope
     }
@@ -390,5 +406,102 @@ describe("trips reservation helpers", () => {
       failures: [{ componentId: "trcp_2", reason: "supplier_hold_failed" }],
       compensations: [{ componentId: "trcp_1", status: "released" }],
     })
+  })
+
+  it("does not dispatch provider reservations when the envelope reserve claim loses a race", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+      reservationPlans: [] as TripReservationPlan[],
+    }
+    const submitReservationPlan = vi.fn()
+
+    const result = await tripsService.reserveTrip(
+      makeFakeDb(state, { failReserveClaim: true }),
+      { envelopeId: state.envelope.id, idempotencyKey: "attempt-2" },
+      { submitReservationPlan },
+    )
+
+    expect(submitReservationPlan).not.toHaveBeenCalled()
+    expect(result.envelope.status).toBe("reserve_in_progress")
+    expect(result.failures).toEqual([
+      {
+        componentId: "trcp_1",
+        reason: "reservation_in_progress",
+        code: "reservation_in_progress",
+      },
+    ])
+    expect(result.reserved).toEqual([])
+    // No reservation plan is created for a lost claim.
+    expect(state.reservationPlans).toEqual([])
+  })
+
+  it("releases the envelope reserve claim when unavailable preflight fails before provider dispatch", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+      reservationPlans: [] as TripReservationPlan[],
+    }
+    const submitReservationPlan = vi.fn()
+
+    const result = await tripsService.reserveTrip(
+      makeFakeDb(state),
+      { envelopeId: state.envelope.id, idempotencyKey: "attempt-3" },
+      {
+        quoteCatalogComponentBeforeReserve: async () => ({
+          quoteId: "quote_unavailable",
+          quotedAt: "2026-05-18T10:30:00.000Z",
+          expiresAt: "2099-05-20T12:00:00.000Z",
+          available: false,
+          invalidReason: "sold_out",
+        }),
+        submitReservationPlan,
+      },
+    )
+
+    expect(submitReservationPlan).not.toHaveBeenCalled()
+    expect(result.envelope.status).toBe("priced")
+    expect(result.envelope.reserveIdempotencyKey).toBeNull()
+    expect(result.failures).toEqual([
+      expect.objectContaining({
+        componentId: "trcp_1",
+        reason: "sold_out",
+        code: "unavailable",
+      }),
+    ])
+    // The claim is released so a retry can re-enter from `priced`.
+    expect(state.envelope.status).toBe("priced")
+    expect(state.envelope.reserveIdempotencyKey).toBeNull()
+    expect(state.reservationPlans).toEqual([])
+  })
+
+  it("releases the envelope reserve claim when preflight throws before provider dispatch", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+      reservationPlans: [] as TripReservationPlan[],
+    }
+    const submitReservationPlan = vi.fn()
+
+    await expect(
+      tripsService.reserveTrip(
+        makeFakeDb(state),
+        { envelopeId: state.envelope.id, idempotencyKey: "attempt-4" },
+        {
+          quoteCatalogComponentBeforeReserve: async () => {
+            throw new Error("booking_engine_unavailable")
+          },
+          submitReservationPlan,
+        },
+      ),
+    ).rejects.toThrow("booking_engine_unavailable")
+
+    expect(submitReservationPlan).not.toHaveBeenCalled()
+    expect(state.envelope.status).toBe("priced")
+    expect(state.envelope.reserveIdempotencyKey).toBeNull()
+    expect(state.reservationPlans).toEqual([])
   })
 })
