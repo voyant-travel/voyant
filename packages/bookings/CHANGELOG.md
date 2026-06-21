@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.129.1
+
+### Patch Changes
+
+- 4a6d62f: Use current booking status values in resource capacity checks while keeping completed bookings counted.
+
 ## 0.129.0
 
 ## 0.128.0
