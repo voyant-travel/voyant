@@ -11,5 +11,12 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     passWithNoTests: true,
+    server: {
+      deps: {
+        inline: [
+          /@voyant-travel\/(catalog|connect-adapter|connect-cruises|connect-sdk|cruises|plugin-voyant-connect)(\/.*)?/,
+        ],
+      },
+    },
   },
 })
