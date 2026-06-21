@@ -1,5 +1,27 @@
 # @voyant-travel/operations-react
 
+## 0.11.0
+
+### Minor Changes
+
+- dbea53e: Add an option picker to the admin departure (availability slot) form (#2059).
+
+  The slot create/edit dialog now lets an operator choose which of the product's
+  active options a departure belongs to — populated from the product's options
+  (default marked), required when the product has options, and pre-selected from
+  the slot's current `optionId` on edit so an unpriceable/incorrect slot can be
+  repaired through the UI. Selecting a different product clears the stale option.
+  This complements the pricing-correctness fixes in #2058: a departure's price is
+  derived from its option's rate plans, so a slot must point at an option.
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/bookings-react@0.130.0
+  - @voyant-travel/inventory-react@0.12.0
+  - @voyant-travel/operations@0.2.3
+
 ## 0.10.0
 
 ### Patch Changes
