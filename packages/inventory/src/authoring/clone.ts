@@ -89,6 +89,7 @@ function newContext(
     unitsByNewOption: new Map(),
     itineraryIdMap: new Map(),
     dayIdMap: new Map(),
+    serviceIdMap: new Map(),
     startTimeIdMap: new Map(),
     ruleIdMap: new Map(),
     slotIdMap: new Map(),
