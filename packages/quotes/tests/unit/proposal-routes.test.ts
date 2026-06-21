@@ -386,6 +386,34 @@ describe("quote proposal routes", () => {
     })
   })
 
+  it("serializes the losing concurrent accept and never reserves its Trip", async () => {
+    const app = makeApp()
+    // The pre-lock precheck (line ~389) sees `sent`: this request raced a
+    // sibling accept and passed the public status gate concurrently. By the
+    // time it wins the quote-accept advisory lock, the sibling has committed
+    // and flipped this version to `declined`, so the post-lock re-read bails
+    // with 409 *before* reserveTrip runs — no orphan hold for the loser.
+    mocks.getQuoteVersionProposal.mockResolvedValueOnce(proposal).mockResolvedValueOnce({
+      ...proposal,
+      quoteVersion: { ...quoteVersion, status: "declined" },
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: "Proposal can no longer be accepted",
+    })
+    // The advisory lock was acquired before bailing, and the loser neither
+    // reserved its Trip nor accepted the Quote Version.
+    expect(fakeTx.execute).toHaveBeenCalled()
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+  })
+
   it("rejects accepting when the proposal does not match the frozen snapshot", async () => {
     const app = makeApp()
     mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
