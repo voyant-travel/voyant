@@ -1,5 +1,13 @@
 # @voyant-travel/products-contracts
 
+## 0.105.8
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/schema-kit@0.106.1
+
 ## 0.105.7
 
 ### Patch Changes
