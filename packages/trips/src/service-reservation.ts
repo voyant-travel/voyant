@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: trips; existing service module stays co-located until a dedicated split preserves behavior and tests.
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"
 import type {
@@ -50,25 +50,57 @@ export async function reserveTrip(
   }
 
   if (shouldReplayReserve(trip.envelope, input.idempotencyKey)) {
-    return {
-      envelope: trip.envelope,
-      components: trip.components,
-      reservationPlanId: null,
-      reserved: trip.components
-        .filter(isReservedTripComponent)
-        .map((component) => ({ componentId: component.id, status: component.status })),
-      failures: [],
-      compensations: [],
-      warnings: ["idempotent_replay"],
-    }
+    return reserveReplayResult(trip)
+  }
+
+  if (trip.envelope.status !== "priced") {
+    return reserveClaimConflictResult(trip)
   }
 
   assertTripTravelerPartyComplete(trip.envelope.travelerParty, "Trip reserve")
 
-  const preflight = await refreshComponentsBeforeReserve(db, trip, input, deps)
+  // Atomically claim the envelope before any provider dispatch. Public proposal
+  // accept now runs reserveTrip OUTSIDE a wrapping transaction, so this
+  // compare-and-set is the serialization point: only one concurrent caller can
+  // flip `priced` -> `reserve_in_progress` and create sourced upstream holds.
+  const [claimedEnvelope] = (await db
+    .update(tripEnvelopes)
+    .set({
+      status: "reserve_in_progress",
+      reserveIdempotencyKey: input.idempotencyKey ?? null,
+      reserveStartedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(tripEnvelopes.id, input.envelopeId), eq(tripEnvelopes.status, "priced")))
+    .returning()) as TripEnvelope[]
+
+  if (!claimedEnvelope) {
+    const refreshed = await getTrip(db, input.envelopeId)
+    if (!refreshed) {
+      throw new TripsInvariantError(`Trip envelope ${input.envelopeId} was not found`)
+    }
+    if (shouldReplayReserve(refreshed.envelope, input.idempotencyKey)) {
+      return reserveReplayResult(refreshed)
+    }
+    return reserveClaimConflictResult(refreshed)
+  }
+
+  trip = { envelope: claimedEnvelope, components: trip.components }
+
+  // Release the claim if preflight rejects or throws before provider dispatch,
+  // otherwise a booking-engine/network error would strand the envelope in
+  // `reserve_in_progress` and block every retry with `reservation_in_progress`.
+  let preflight: Awaited<ReturnType<typeof refreshComponentsBeforeReserve>>
+  try {
+    preflight = await refreshComponentsBeforeReserve(db, trip, input, deps)
+  } catch (error) {
+    await releaseReserveClaimAfterPreflightFailure(db, input, trip)
+    throw error
+  }
   if (preflight.failures.length > 0) {
+    const envelope = await releaseReserveClaimAfterPreflightFailure(db, input, preflight.trip)
     return {
-      envelope: preflight.trip.envelope,
+      envelope,
       components: preflight.trip.components,
       reservationPlanId: null,
       reserved: [],
@@ -81,16 +113,6 @@ export async function reserveTrip(
 
   const planComponents = prepareReservationPlanComponents(trip.components)
   const reservationPlan = await createReservationPlan(db, trip, input)
-
-  await db
-    .update(tripEnvelopes)
-    .set({
-      status: "reserve_in_progress",
-      reserveIdempotencyKey: input.idempotencyKey ?? null,
-      reserveStartedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(tripEnvelopes.id, input.envelopeId))
 
   const warnings = new Set(preflight.warnings)
   const componentsById = new Map(trip.components.map((component) => [component.id, component]))
@@ -206,6 +228,74 @@ export async function reserveTrip(
     compensations: [],
     warnings: [...warnings],
   }
+}
+
+function reserveReplayResult(trip: Trip): ReserveTripResult {
+  return {
+    envelope: trip.envelope,
+    components: trip.components,
+    reservationPlanId: null,
+    reserved: trip.components
+      .filter(isReservedTripComponent)
+      .map((component) => ({ componentId: component.id, status: component.status })),
+    failures: [],
+    compensations: [],
+    warnings: ["idempotent_replay"],
+  }
+}
+
+function reserveClaimConflictResult(trip: Trip): ReserveTripResult {
+  const reason = reserveClaimConflictReason(trip.envelope)
+  const componentId = reserveClaimConflictComponentId(trip)
+
+  return {
+    envelope: trip.envelope,
+    components: trip.components,
+    reservationPlanId: null,
+    reserved: trip.components
+      .filter(isReservedTripComponent)
+      .map((component) => ({ componentId: component.id, status: component.status })),
+    failures: [{ componentId, reason, code: reason }],
+    compensations: [],
+    warnings: [reason],
+  }
+}
+
+function reserveClaimConflictReason(envelope: TripEnvelope): string {
+  if (envelope.status === "reserve_in_progress") return "reservation_in_progress"
+  if (["reserved", "checkout_started", "booked"].includes(envelope.status)) {
+    return "reservation_already_completed"
+  }
+  return `trip_${envelope.status}_cannot_be_reserved`
+}
+
+function reserveClaimConflictComponentId(trip: Trip): string {
+  return (
+    trip.components.find(
+      (component) => component.status !== "removed" && component.status !== "cancelled",
+    )?.id ?? trip.envelope.id
+  )
+}
+
+async function releaseReserveClaimAfterPreflightFailure(
+  db: AnyDrizzleDb,
+  input: ReserveTripInput,
+  trip: Trip,
+): Promise<TripEnvelope> {
+  const [envelope] = (await db
+    .update(tripEnvelopes)
+    .set({
+      status: "priced",
+      reserveIdempotencyKey: null,
+      reserveStartedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(tripEnvelopes.id, input.envelopeId), eq(tripEnvelopes.status, "reserve_in_progress")),
+    )
+    .returning()) as TripEnvelope[]
+
+  return envelope ?? trip.envelope
 }
 
 function prepareReservationPlanComponents(components: TripComponent[]): {
@@ -473,7 +563,9 @@ async function refreshComponentsBeforeReserve(
     const [envelope] = (await db
       .update(tripEnvelopes)
       .set({
-        status: "priced",
+        // Preserve the caller's claimed status (`reserve_in_progress` once the
+        // reserve claim has been taken) instead of forcing back to `priced`.
+        status: trip.envelope.status,
         aggregateCurrency: aggregate.currency,
         aggregateSubtotalAmountCents: aggregate.subtotalAmountCents,
         aggregateTaxAmountCents: aggregate.taxAmountCents,
