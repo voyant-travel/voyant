@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.13
+
+### Patch Changes
+
+- Updated dependencies [7929dae]
+  - @voyant-travel/relationships@0.120.8
+
 ## 0.2.12
 
 ### Patch Changes
