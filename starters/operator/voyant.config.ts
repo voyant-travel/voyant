@@ -2,8 +2,9 @@ import { defineVoyantConfig } from "@voyant-travel/core/config"
 
 /**
  * voyant.config.ts — manifest powering CLI tooling (generators, link-table
- * sync, registry resolution). Runtime composition still lives in
- * `src/api/app.ts` via `createApp({ modules, plugins, ... })`.
+ * sync, schema resolution, admin composition). Standard runtime composition is
+ * owned by `@voyant-travel/framework`; deployment-local additions are appended
+ * through `createVoyantApp` in `src/api/app.ts`.
  */
 export default defineVoyantConfig({
   deployment: "cloudflare-worker",
