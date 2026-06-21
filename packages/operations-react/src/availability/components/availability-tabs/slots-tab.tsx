@@ -1,6 +1,7 @@
 "use client"
 
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { useProductOptions } from "@voyant-travel/inventory-react"
 import { ConfirmActionButton, SelectionActionBar } from "@voyant-travel/ui/components"
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@voyant-travel/ui/components/select"
 import { TabsContent } from "@voyant-travel/ui/components/tabs"
-import type { ReactNode } from "react"
+import { type ReactNode, useMemo } from "react"
 import { useAvailabilityUiMessagesOrDefault } from "../../i18n/index.js"
 import type { AvailabilitySlotRow, ProductOption } from "../../index.js"
 import { formatLocalizedSelectionLabel } from "../../utils.js"
@@ -43,6 +44,22 @@ export function AvailabilitySlotsTab(props: {
   bulkStatusSelect?: boolean
 }) {
   useAvailabilityUiMessagesOrDefault()
+
+  // Resolve each slot's option name, and learn which products have options at
+  // all, so the option column can flag a missing option only when it actually
+  // makes the departure unpriceable (#2062). A bulk active-options read keeps
+  // this to a single query across the products in the (paginated) table.
+  const optionsQuery = useProductOptions({ status: "active", limit: 1000 })
+  const optionInfo = useMemo(() => {
+    const optionNameById = new Map<string, string>()
+    const productsWithOptions = new Set<string>()
+    for (const option of optionsQuery.data?.data ?? []) {
+      optionNameById.set(option.id, option.name)
+      productsWithOptions.add(option.productId)
+    }
+    return { optionNameById, productsWithOptions }
+  }, [optionsQuery.data])
+
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
       count,
@@ -68,6 +85,7 @@ export function AvailabilitySlotsTab(props: {
           props.onOpenRoute,
           props.messages,
           props.onEdit,
+          optionInfo,
         )}
         data={props.filteredSlots}
         emptyMessage={props.messages.tabs.slots.emptyMessage}
