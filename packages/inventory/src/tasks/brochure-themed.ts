@@ -1,4 +1,8 @@
-import { brochureBodyToHtmlFragment, type ProductBrochurePrinter } from "./brochure-printers.js"
+import {
+  brochureBodyToHtmlFragment,
+  isBasicPdfProductBrochurePrinter,
+  type ProductBrochurePrinter,
+} from "./brochure-printers.js"
 import type {
   ProductBrochureTemplateContext,
   RenderedProductBrochureTemplate,
@@ -339,6 +343,12 @@ export function renderThemedBrochureHtml(
 export function createThemedBrochurePrinter(
   options: CreateThemedBrochurePrinterOptions,
 ): ProductBrochurePrinter {
+  if (isBasicPdfProductBrochurePrinter(options.printer)) {
+    throw new Error(
+      "createThemedBrochurePrinter requires an HTML-capable browser printer. The built-in basic PDF printer strips HTML tags and cannot render themed brochure styles.",
+    )
+  }
+
   return async ({ template, context }) => {
     const html = renderThemedBrochureHtml(template, context, options)
     const printed = await options.printer({

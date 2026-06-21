@@ -5,6 +5,7 @@ export {
   createBasicPdfProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinterFromEnv,
+  isBasicPdfProductBrochurePrinter,
   type PrintedProductBrochureArtifact,
   type ProductBrochurePrinter,
   type ProductBrochurePrinterContext,

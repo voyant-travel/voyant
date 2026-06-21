@@ -272,6 +272,14 @@ describe("product brochure template and printers", () => {
     expect(artifact.metadata).toEqual({ renderer: "browser", layout: "themed-brochure" })
   })
 
+  it("rejects the basic PDF printer for themed brochures", () => {
+    expect(() =>
+      createThemedBrochurePrinter({
+        printer: createBasicPdfProductBrochurePrinter(),
+      }),
+    ).toThrow(/HTML-capable browser printer/)
+  })
+
   it("sanitizes unsafe markdown HTML before browser rendering", () => {
     const html = brochureBodyToHtml(
       [

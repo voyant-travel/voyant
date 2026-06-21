@@ -24,6 +24,12 @@ export type ProductBrochurePrinter = (
   input: ProductBrochurePrinterContext,
 ) => Promise<PrintedProductBrochureArtifact>
 
+const BASIC_PDF_PRODUCT_BROCHURE_PRINTER_KIND = "voyant-basic-pdf"
+
+type ProductBrochurePrinterWithKind = ProductBrochurePrinter & {
+  __voyantProductBrochurePrinterKind?: string
+}
+
 export interface CloudflareBrowserBrochurePrinterOptions {
   accountId: string
   apiToken: string
@@ -123,8 +129,15 @@ export function brochureBodyToHtml(
   ].join("")
 }
 
+export function isBasicPdfProductBrochurePrinter(printer: ProductBrochurePrinter) {
+  return (
+    (printer as ProductBrochurePrinterWithKind).__voyantProductBrochurePrinterKind ===
+    BASIC_PDF_PRODUCT_BROCHURE_PRINTER_KIND
+  )
+}
+
 export function createBasicPdfProductBrochurePrinter(): ProductBrochurePrinter {
-  return async ({ template, context }) => {
+  const printer: ProductBrochurePrinterWithKind = async ({ template, context }) => {
     const body = await renderPdfDocument({
       title: template.title,
       content: template.body,
@@ -142,6 +155,9 @@ export function createBasicPdfProductBrochurePrinter(): ProductBrochurePrinter {
       },
     }
   }
+
+  printer.__voyantProductBrochurePrinterKind = BASIC_PDF_PRODUCT_BROCHURE_PRINTER_KIND
+  return printer
 }
 
 export function createCloudflareBrowserProductBrochurePrinter(
