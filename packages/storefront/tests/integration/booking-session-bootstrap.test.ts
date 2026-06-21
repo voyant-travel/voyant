@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: storefront; the sync + compat bootstrap cases share one seed harness and stay co-located until a dedicated split preserves coverage.
 import {
   departurePriceOverrides,
   optionPriceRules,
@@ -566,5 +567,35 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
     expect(res.status).toBe(404)
     const body = await res.json()
     expect(body.code).toBe("DEPARTURE_NOT_FOUND")
+  })
+
+  // An imported departure can carry an external id that is not the native
+  // availability-slot id — `slotId` points at the real slot, and the caller's
+  // external `departureId` is echoed back in the response.
+  it("honors a compat-bootstrap slotId override distinct from departureId", async () => {
+    const seed = await seedDeparture()
+
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      ...json({
+        productId: seed.product.id,
+        departureId: "import_dep_external_42",
+        slotId: seed.slot.id,
+        optionUnitId: seed.unit.id,
+        pax: 1,
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data.session.status).toBe("on_hold")
+    expect(body.data.repricing.current.totalSellAmountCents).toBe(50000)
+    expect(body.data.availability).toEqual(
+      expect.objectContaining({
+        departureId: "import_dep_external_42",
+        slotId: seed.slot.id,
+        productId: seed.product.id,
+      }),
+    )
   })
 })

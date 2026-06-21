@@ -605,7 +605,12 @@ export async function bootstrapStorefrontBookingSessionCompat(
   } satisfies StorefrontBookingSessionBootstrapInput["session"]
 
   const derivedInput = {
-    departureId: input.departureId,
+    // The native bootstrap resolves `departureId` and `slotId` as availability
+    // slots and rejects unless they are identical, so we hand it the canonical
+    // slot id for BOTH. The caller's external `departureId` (which need not be
+    // the native slot id for an imported departure) is echoed back into the
+    // response snapshot below.
+    departureId: slotId,
     slotId,
     catalogId: input.catalogId,
     session,
@@ -627,7 +632,7 @@ export async function bootstrapStorefrontBookingSessionCompat(
     return preview
   }
 
-  return bootstrapStorefrontBookingSession(
+  const result = await bootstrapStorefrontBookingSession(
     context,
     {
       ...derivedInput,
@@ -641,4 +646,12 @@ export async function bootstrapStorefrontBookingSessionCompat(
     options,
     userId,
   )
+
+  // Preserve the caller's external departure id in the availability snapshot
+  // when it differs from the canonical availability-slot id.
+  if (result.status === "ok" && "bootstrap" in result && input.departureId !== slotId) {
+    result.bootstrap.availability.departureId = input.departureId
+  }
+
+  return result
 }
