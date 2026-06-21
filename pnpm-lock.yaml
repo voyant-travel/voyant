@@ -4276,8 +4276,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@voyant-travel/cli':
-        specifier: ^0.26.0
-        version: 0.26.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)
+        specifier: ^0.30.0
+        version: 0.30.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)
       '@voyant-travel/vite-config':
         specifier: workspace:^
         version: link:../../packages/vite-config
@@ -6817,10 +6817,20 @@ packages:
   '@vitest/utils@4.1.2':
     resolution: {integrity: sha512-xw2/TiX82lQHA06cgbqRKFb5lCAy3axQ4H4SoUFhUsg+wztiet+co86IAMDtF6Vm1hc7J6j09oh/rgDn+JdKIQ==}
 
-  '@voyant-travel/cli@0.26.0':
-    resolution: {integrity: sha512-LRqFUY2dTFcBq6zPxJ1Dx13D0PN5vchLNZ0vYq4NnIn247lV0tvm9lrQct0LPOi2cwvBKmlFn5P2V76AZl5K7w==}
+  '@voyant-travel/cli@0.30.0':
+    resolution: {integrity: sha512-6F5CifQ7DgkGA+5NXPY/SpYJpF3edA/RhiZjb6dcFEJHoucM0fAx5Vb1UU5yxj/U8xxwjSl6JbzTRouLdrgNDg==}
     engines: {node: '>=20'}
     hasBin: true
+
+  '@voyant-travel/cloud-sdk@0.10.1':
+    resolution: {integrity: sha512-xqDk1ZNt1a1LR+aZ3W3u9xSnWKNpd2S3JP+G3QRRVeAecMohUq1jxG7hSSzKAjD0aH2gBfCQfXJqGlEzorKAig==}
+    peerDependencies:
+      typesense: '>=2.0.0 <4.0.0'
+    peerDependenciesMeta:
+      typesense:
+        optional: true
+    bundledDependencies:
+      - '@voyant-travel/sdk-core'
 
   '@voyant-travel/cloud-sdk@0.9.0':
     resolution: {integrity: sha512-pMaoOYSHbPW3V2KncU6PuzTyAphPx3q7HrNXADSiUpPWQxqq+trXnVqVyYRJBicuThfj7FLKe2RGx5+EN9Sdng==}
@@ -12935,9 +12945,9 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@voyant-travel/cli@0.26.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)':
+  '@voyant-travel/cli@0.30.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)':
     dependencies:
-      '@voyant-travel/cloud-sdk': 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
+      '@voyant-travel/cloud-sdk': 0.10.1(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/core': 0.109.0
       '@voyant-travel/workflows': 0.107.10(zod@4.3.6)
       '@voyant-travel/workflows-orchestrator': 0.107.10(zod@4.3.6)
@@ -12976,6 +12986,10 @@ snapshots:
       - sqlite3
       - typesense
       - zod
+
+  '@voyant-travel/cloud-sdk@0.10.1(typesense@3.0.6(@babel/runtime@7.29.2))':
+    optionalDependencies:
+      typesense: 3.0.6(@babel/runtime@7.29.2)
 
   '@voyant-travel/cloud-sdk@0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))':
     optionalDependencies:
