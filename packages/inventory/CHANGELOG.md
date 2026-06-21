@@ -1,5 +1,18 @@
 # @voyant-travel/inventory
 
+## 0.4.5
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/action-ledger@0.105.4
+  - @voyant-travel/catalog@0.129.1
+  - @voyant-travel/commerce@0.13.1
+  - @voyant-travel/operations@0.2.6
+  - @voyant-travel/db@0.108.5
+
 ## 0.4.4
 
 ### Patch Changes

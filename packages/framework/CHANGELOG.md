@@ -1,5 +1,29 @@
 # @voyant-travel/framework
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/action-ledger@0.105.4
+  - @voyant-travel/bookings@0.131.1
+  - @voyant-travel/catalog@0.129.1
+  - @voyant-travel/commerce@0.13.1
+  - @voyant-travel/distribution@0.121.1
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/flights@0.131.1
+  - @voyant-travel/identity@0.131.1
+  - @voyant-travel/inventory@0.4.5
+  - @voyant-travel/legal@0.131.1
+  - @voyant-travel/notifications@0.114.8
+  - @voyant-travel/operations@0.2.6
+  - @voyant-travel/operator-settings@0.2.11
+  - @voyant-travel/quotes@0.122.9
+  - @voyant-travel/relationships@0.120.11
+  - @voyant-travel/storefront@0.133.1
+  - @voyant-travel/trips@0.122.1
+
 ## 0.2.22
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @voyant-travel/plugin-payload-cms
 
+## 0.104.10
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/core@0.111.0
+
 ## 0.104.9
 
 ### Patch Changes
