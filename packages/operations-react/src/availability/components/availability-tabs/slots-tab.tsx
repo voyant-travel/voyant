@@ -1,7 +1,11 @@
 "use client"
 
+import { useQueries } from "@tanstack/react-query"
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
-import { useProductOptions } from "@voyant-travel/inventory-react"
+import {
+  getProductOptionsQueryOptions,
+  useVoyantProductsContext,
+} from "@voyant-travel/inventory-react"
 import { ConfirmActionButton, SelectionActionBar } from "@voyant-travel/ui/components"
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import {
@@ -47,18 +51,34 @@ export function AvailabilitySlotsTab(props: {
 
   // Resolve each slot's option name, and learn which products have options at
   // all, so the option column can flag a missing option only when it actually
-  // makes the departure unpriceable (#2062). A bulk active-options read keeps
-  // this to a single query across the products in the (paginated) table.
-  const optionsQuery = useProductOptions({ status: "active", limit: 1000 })
+  // makes the departure unpriceable (#2062). Scope the lookup to the products
+  // actually visible in the (paginated) table — one capped query per product —
+  // rather than an unbounded global read (the options API caps `limit` at 100).
+  const productsContext = useVoyantProductsContext()
+  const visibleProductIds = useMemo(
+    () => [...new Set(props.filteredSlots.map((slot) => slot.productId))],
+    [props.filteredSlots],
+  )
+  const optionQueries = useQueries({
+    queries: visibleProductIds.map((productId) =>
+      getProductOptionsQueryOptions(productsContext, {
+        productId,
+        status: "active",
+        limit: 100,
+      }),
+    ),
+  })
   const optionInfo = useMemo(() => {
     const optionNameById = new Map<string, string>()
     const productsWithOptions = new Set<string>()
-    for (const option of optionsQuery.data?.data ?? []) {
-      optionNameById.set(option.id, option.name)
-      productsWithOptions.add(option.productId)
+    for (const query of optionQueries) {
+      for (const option of query.data?.data ?? []) {
+        optionNameById.set(option.id, option.name)
+        productsWithOptions.add(option.productId)
+      }
     }
     return { optionNameById, productsWithOptions }
-  }, [optionsQuery.data])
+  }, [optionQueries])
 
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
