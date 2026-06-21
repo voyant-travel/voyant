@@ -196,6 +196,8 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   const productOptions = optionData?.data ?? []
   const defaultOption = productOptions.find((option) => option.isDefault) ?? productOptions[0]
   const selectedOptionId = form.watch("optionId")
+  const shouldShowOptionSelect =
+    productOptions.length > 1 || (isEditing && !selectedOptionId && Boolean(defaultOption))
 
   // Suggested pax = total physical capacity of the configured departure
   // inventory (each room/seat type's count × its capacity, e.g. 20 doubles
@@ -243,13 +245,13 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   useEffect(() => {
     if (!defaultOption) return
     const current = form.getValues("optionId")
-    if (current && productOptions.some((option) => option.id === current)) return
+    if (current) return
 
     form.setValue("optionId", defaultOption.id, {
       shouldDirty: false,
       shouldValidate: true,
     })
-  }, [defaultOption, form, productOptions])
+  }, [defaultOption, form])
 
   const onSubmit = async (values: DepartureFormOutput) => {
     const startsAt = combineLocalToIso(values.startDate, values.startTime)
@@ -460,7 +462,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
             <p className="text-xs text-muted-foreground">{itineraryMessages.overrideHint}</p>
           </div>
         ) : null}
-        {productOptions.length > 1 || (isEditing && !slot.optionId && defaultOption) ? (
+        {shouldShowOptionSelect ? (
           <div className="flex flex-col gap-1.5">
             <Label>{departureMessages.optionLabel}</Label>
             <Select
