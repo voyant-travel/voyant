@@ -102,6 +102,7 @@ export type CatalogUiMessages = {
       noTabsConfigured: string
       clearAll: string
       noResults: string
+      resolvedScope: string
       yourFilters: string
       resultSingular: string
       resultPlural: string

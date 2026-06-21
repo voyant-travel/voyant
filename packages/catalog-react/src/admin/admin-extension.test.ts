@@ -155,6 +155,33 @@ describe("catalog admin locale defaults", () => {
     })
   })
 
+  it("uses deployment defaults when no commerce market exists", () => {
+    const market = resolveCatalogDefaultMarket([], undefined, {
+      defaultLocale: "en-GB",
+      defaultMarket: "default",
+      scopeStrategy: "deployment-default",
+    })
+    const localeOptions = resolveCatalogLocaleOptions(market, [], "en-GB")
+
+    expect(market).toMatchObject({
+      id: "default",
+      defaultLanguageTag: "en-GB",
+    })
+    expect(resolveCatalogScope({}, localeOptions, market, { defaultMarket: "default" })).toEqual({
+      market: "default",
+      locale: "en-GB",
+    })
+  })
+
+  it("prefers a configured commerce market before falling back to the first market", () => {
+    const market = resolveCatalogDefaultMarket(markets, undefined, {
+      defaultMarket: "GB",
+      scopeStrategy: "deployment-default",
+    })
+
+    expect(market?.id).toBe("mkt_gb")
+  })
+
   it("keeps explicit market and locale scope when provided", () => {
     const market = resolveCatalogDefaultMarket(markets, "mkt_gb")
     const localeOptions = resolveCatalogLocaleOptions(market, [

@@ -101,6 +101,7 @@ export const catalogUiEn = {
       noTabsConfigured: "No catalog tabs configured.",
       clearAll: "Clear all",
       noResults: "No results for {query} in {tab}.",
+      resolvedScope: "Resolved scope: {locale} / {market}",
       yourFilters: "your filters",
       resultSingular: "result",
       resultPlural: "results",

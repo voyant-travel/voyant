@@ -101,6 +101,7 @@ export const catalogUiRo = {
       noTabsConfigured: "Nu sunt configurate taburi de catalog.",
       clearAll: "Sterge tot",
       noResults: "Niciun rezultat pentru {query} in {tab}.",
+      resolvedScope: "Domeniu rezolvat: {locale} / {market}",
       yourFilters: "filtrele tale",
       resultSingular: "rezultat",
       resultPlural: "rezultate",

@@ -1,13 +1,8 @@
 "use client"
 
-import {
-  type AdminRoutePageProps,
-  useAdminHref,
-  useOperatorAdminMessages,
-} from "@voyant-travel/admin"
-
-import type { CatalogSearchParams } from "../../index.js"
+import { useAdminHref, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { CatalogVerticalHost } from "../catalog-vertical-host.js"
+import type { CatalogAdminRoutePageProps, CatalogSearchParams } from "../index.js"
 import { openHrefInNewTab } from "../open-in-new-tab.js"
 
 /**
@@ -20,7 +15,8 @@ import { openHrefInNewTab } from "../open-in-new-tab.js"
 export default function CatalogAccommodationsIndexPage({
   search,
   updateSearch,
-}: AdminRoutePageProps) {
+  scopeOptions,
+}: CatalogAdminRoutePageProps) {
   const resolveHref = useAdminHref()
   const title = useOperatorAdminMessages().nav.catalogAccommodations
 
@@ -37,6 +33,7 @@ export default function CatalogAccommodationsIndexPage({
         search={search as CatalogSearchParams}
         onSearchChange={(updater, replace = true) => updateSearch(updater as never, { replace })}
         embedded
+        scopeOptions={scopeOptions}
         onOpenDetail={(hit) =>
           openHrefInNewTab(resolveHref("catalog.detail", { surface: "accommodations", id: hit.id }))
         }

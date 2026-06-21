@@ -1,4 +1,10 @@
-import { type AdminExtension, defineAdminExtension } from "@voyant-travel/admin"
+import {
+  type AdminExtension,
+  type AdminRoutePageModule,
+  type AdminRoutePageProps,
+  defineAdminExtension,
+} from "@voyant-travel/admin"
+import type * as React from "react"
 import { z } from "zod"
 // Lean static: the browse search contract lives in its own schema-only
 // module — importing it through `../index.js` would pin the whole catalog
@@ -94,7 +100,11 @@ export type {
   ScheduledCatalogPageProps,
   ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
-export type { CatalogVerticalHostProps } from "./catalog-vertical-host.js"
+export type {
+  CatalogAdminScopeOptions,
+  CatalogAdminScopeStrategy,
+  CatalogVerticalHostProps,
+} from "./catalog-vertical-host.js"
 export type { CruiseDetailHostProps } from "./cruise-detail-host.js"
 export type { DynamicCatalogHostProps } from "./dynamic-catalog-host.js"
 export type { ProductDetailHostProps } from "./product-detail-host.js"
@@ -118,6 +128,25 @@ export type ProductDetailSearchParams = z.infer<typeof productDetailSearchSchema
 export interface CreateCatalogAdminExtensionOptions {
   /** Mount path of the catalog surfaces inside the admin workspace. Default `/catalog`. */
   basePath?: string
+  /**
+   * Deployment-level locale fallback for the indexed admin catalog scope.
+   * Defaults to the package fallback when omitted.
+   */
+  defaultLocale?: string
+  /**
+   * Deployment-level market/scope fallback for the indexed admin catalog
+   * scope. Can be a commerce market id/code or a synthetic slice such as
+   * `"default"`.
+   */
+  defaultMarket?: string
+  /**
+   * Default scope source. `"commerce-market"` preserves legacy behavior;
+   * `"deployment-default"` uses `defaultLocale`/`defaultMarket` as the
+   * browse fallback while still allowing URL-selected scope to override it.
+   */
+  scopeStrategy?: "commerce-market" | "deployment-default"
+  /** Hide market/locale controls for fixed-scope deployments. */
+  hideScopeControls?: boolean
   /** Localized surface labels. Defaults are the English operator nav labels. */
   labels?: {
     products?: string
@@ -125,6 +154,30 @@ export interface CreateCatalogAdminExtensionOptions {
     tours?: string
     cruises?: string
     accommodations?: string
+  }
+}
+
+export interface CatalogAdminRoutePageProps extends AdminRoutePageProps {
+  scopeOptions?: Pick<
+    CreateCatalogAdminExtensionOptions,
+    "defaultLocale" | "defaultMarket" | "hideScopeControls" | "scopeStrategy"
+  >
+}
+
+function catalogAdminPage(
+  loader: () => Promise<AdminRoutePageModule>,
+  scopeOptions: CatalogAdminRoutePageProps["scopeOptions"],
+): () => Promise<AdminRoutePageModule> {
+  return async () => {
+    const module = await loader()
+    const Page = module.default as React.ComponentType<CatalogAdminRoutePageProps>
+
+    function CatalogAdminRoutePage(props: AdminRoutePageProps) {
+      return <Page {...props} scopeOptions={scopeOptions} />
+    }
+
+    CatalogAdminRoutePage.displayName = `CatalogAdminRoutePage(${Page.displayName ?? Page.name ?? "anonymous"})`
+    return { default: CatalogAdminRoutePage }
   }
 }
 
@@ -161,7 +214,16 @@ export interface CreateCatalogAdminExtensionOptions {
 export function createCatalogAdminExtension(
   options: CreateCatalogAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/catalog", labels = {} } = options
+  const {
+    basePath = "/catalog",
+    labels = {},
+    defaultLocale,
+    defaultMarket,
+    hideScopeControls,
+  } = options
+  const scopeStrategy =
+    options.scopeStrategy ?? (defaultLocale || defaultMarket ? "deployment-default" : undefined)
+  const scopeOptions = { defaultLocale, defaultMarket, hideScopeControls, scopeStrategy }
   const {
     products = "Packages",
     excursions = "Excursions",
@@ -190,21 +252,30 @@ export function createCatalogAdminExtension(
         path: `${basePath}/products`,
         title: products,
         validateSearch: browseSearch,
-        page: () => import("./pages/catalog-products-index-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-products-index-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-products-detail",
         path: `${basePath}/products/$productId`,
         title: products,
         validateSearch: productDetailSearch,
-        page: () => import("./pages/catalog-products-detail-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-products-detail-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-excursions-index",
         path: `${basePath}/excursions`,
         title: excursions,
         validateSearch: browseSearch,
-        page: () => import("./pages/catalog-excursions-index-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-excursions-index-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-excursions-detail",
@@ -217,7 +288,7 @@ export function createCatalogAdminExtension(
         path: `${basePath}/tours`,
         title: tours,
         validateSearch: browseSearch,
-        page: () => import("./pages/catalog-tours-index-page.js"),
+        page: catalogAdminPage(() => import("./pages/catalog-tours-index-page.js"), scopeOptions),
       },
       {
         id: "catalog-tours-detail",
@@ -230,7 +301,7 @@ export function createCatalogAdminExtension(
         path: `${basePath}/cruises`,
         title: cruises,
         validateSearch: browseSearch,
-        page: () => import("./pages/catalog-cruises-index-page.js"),
+        page: catalogAdminPage(() => import("./pages/catalog-cruises-index-page.js"), scopeOptions),
       },
       {
         id: "catalog-cruises-detail",
@@ -243,7 +314,10 @@ export function createCatalogAdminExtension(
         path: `${basePath}/accommodations`,
         title: accommodations,
         validateSearch: browseSearch,
-        page: () => import("./pages/catalog-accommodations-index-page.js"),
+        page: catalogAdminPage(
+          () => import("./pages/catalog-accommodations-index-page.js"),
+          scopeOptions,
+        ),
       },
       {
         id: "catalog-accommodations-detail",
