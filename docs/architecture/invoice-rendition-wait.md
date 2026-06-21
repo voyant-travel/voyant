@@ -1,17 +1,23 @@
 # Invoice Rendition Wait Contract
 
 Interactive invoice callers may request a short bounded wait for a generated
-document by passing `wait: "pdf"` or `wait=true` on supported invoice routes.
+document by passing `wait: "pdf"` or `wait=true` on supported render routes.
 The wait is additive: omitted or `wait: "none"` preserves the historical
 response shape.
 
 Supported surfaces:
 
-- `POST /v1/admin/finance/invoices/from-booking`
 - `POST /v1/admin/finance/invoices/:id/render`
 - `POST /v1/admin/finance/invoices/:id/generate-document` and
   `/regenerate-document` attach a `download` envelope when the generated
   rendition already has a resolvable URL.
+
+Invoice issuance endpoints are non-blocking by contract. `POST
+/v1/admin/finance/invoices/from-booking` returns the issued invoice row
+immediately even if the caller sends legacy `wait` fields. Downstream document
+sync/render subscribers run asynchronously in request runtimes that provide
+event scheduling; callers should poll `/v1/admin/finance/invoices/:id/renditions`
+or `/v1/admin/finance/invoices/:id/attachments` for the PDF.
 
 Waits are capped at 60 seconds and default to 30 seconds. Routes poll
 `invoice_renditions` for the target invoice and requested format until a
