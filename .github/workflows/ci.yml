@@ -182,7 +182,7 @@ jobs:
         # (deps-first) must not collide and must reconstitute the bundle
         # column-for-column. Catches duplicate shared enums / missing extensions /
         # ownerless tables before they ship. Creates/drops its own throwaway DBs.
-        run: node scripts/d2/verify-package-baseline.mjs --union
+        run: node scripts/migrations/verify-package-baseline.mjs --union
 
       - name: Materialize the aggregate schema (drizzle-kit push)
         # The custom-field integration route tests run against a real schema.

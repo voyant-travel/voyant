@@ -17,14 +17,14 @@
  * Drizzle diffs against its snapshot JSON, not this SQL, so the wrapper is
  * invisible to future `db:generate` runs.
  *
- * Usage: node scripts/d2/guard-create-type.mjs <migrations-dir>
+ * Usage: node scripts/migrations/guard-create-type.mjs <migrations-dir>
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
 const dir = process.argv[2]
 if (!dir) {
-  console.error("usage: node scripts/d2/guard-create-type.mjs <migrations-dir>")
+  console.error("usage: node scripts/migrations/guard-create-type.mjs <migrations-dir>")
   process.exit(2)
 }
 

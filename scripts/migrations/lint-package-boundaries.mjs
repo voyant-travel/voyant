@@ -17,7 +17,7 @@
  *     for D.2 because topo-order applies the owner package first; flagged only
  *     so the coupling stays visible.
  *
- * Run: node scripts/d2/lint-package-boundaries.mjs   (exit 1 on UNDECLARED)
+ * Run: node scripts/migrations/lint-package-boundaries.mjs   (exit 1 on UNDECLARED)
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"

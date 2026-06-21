@@ -1,15 +1,15 @@
 /**
- * End-to-end test of the D.2 deployment runner against the REAL operator package
+ * End-to-end test of the deployment runner against the REAL operator package
  * sources, exercised on two database states:
  *
- *   • FRESH         — empty DB: every package source + the deployment execute;
- *                     no `framework/*` rows; the schema materialises.
- *   • SEEDED-D.1    — a DB the retired D.1 bundle already materialised (we seed
- *                     it by executing the framework bundle + deployment via the
- *                     D.1 collector). The runner must take the EXISTING path,
- *                     IMPORT-BASELINE the cutline (record without executing — no
- *                     duplicate-CREATE errors), leave the schema intact, and be
- *                     idempotent on re-run.
+ *   • FRESH      — empty DB: every package source + the deployment execute;
+ *                  no `framework/*` rows; the schema materialises.
+ *   • SEEDED     — a DB already materialised by the retired monolithic bundle (we
+ *                  seed it by executing the bundle + deployment, leaving inert
+ *                  `framework/*` ledger rows). The runner must take the EXISTING
+ *                  path, IMPORT-BASELINE the cutline (record without executing —
+ *                  no duplicate-CREATE errors), leave the schema intact, and be
+ *                  idempotent on re-run.
  *
  * Requires a CREATEDB-capable Postgres in `TEST_DATABASE_URL`; skips otherwise.
  */
@@ -83,8 +83,8 @@ async function loadRealSources(): Promise<MigrationSource[]> {
   return sources
 }
 
-/** The D.1 seed: framework bundle (priority 0) + deployment ./migrations (1). */
-async function loadD1Sources(): Promise<MigrationSource[]> {
+/** The seed: monolithic bundle (priority 0) + deployment ./migrations (1). */
+async function loadBundleSeedSources(): Promise<MigrationSource[]> {
   const bundle = await loadFrameworkBundleSource()
   const deployment: MigrationSource = {
     name: "deployment",
@@ -108,9 +108,9 @@ async function ledgerCount(c: Client, where = ""): Promise<number> {
   return r.rows[0]?.n ?? 0
 }
 
-describe.skipIf(!DB_URL)("runDeploymentMigrations (D.2, real operator sources)", () => {
+describe.skipIf(!DB_URL)("runDeploymentMigrations (real operator sources)", () => {
   let sources: MigrationSource[]
-  let d1Sources: MigrationSource[]
+  let seedSources: MigrationSource[]
   let cutline: Cutline
   let admin: Client
   // Tables proving coverage: a package baseline + an onboarded-owner table.
@@ -118,7 +118,7 @@ describe.skipIf(!DB_URL)("runDeploymentMigrations (D.2, real operator sources)",
 
   beforeAll(async () => {
     sources = await loadRealSources()
-    d1Sources = await loadD1Sources()
+    seedSources = await loadBundleSeedSources()
     cutline = readCutline()
     admin = new Client({ connectionString: urlFor("postgres") })
     await admin.connect()
@@ -154,15 +154,15 @@ describe.skipIf(!DB_URL)("runDeploymentMigrations (D.2, real operator sources)",
     })
   }, 120_000)
 
-  it("SEEDED-D.1: import-baselines the cutline without re-executing, schema intact, idempotent", async () => {
+  it("SEEDED: import-baselines the cutline without re-executing, schema intact, idempotent", async () => {
     await withFreshDb("d2_run_existing", async () => {
-      // 1) Seed a realistic D.1 database: execute the bundle + deployment and
+      // 1) Seed a realistic pre-collector database: execute the bundle + deployment and
       //    record framework/* + deployment/* ledger rows.
       await onDb("d2_run_existing", async (c) => {
-        await applyMigrations(c, d1Sources)
+        await applyMigrations(c, seedSources)
       })
 
-      // 2) Run the D.2 runner. It must DETECT existing, import-baseline the
+      // 2) Run the runner. It must DETECT existing, import-baseline the
       //    cutline (record, not execute — re-running the CREATEs would throw
       //    "table already exists"), and execute only post-cutline increments.
       const result = await onDb("d2_run_existing", (c) =>
