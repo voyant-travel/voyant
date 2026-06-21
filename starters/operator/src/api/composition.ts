@@ -18,6 +18,7 @@
  * the runtime half of the migration-resilience work (voyant#1608 / #1620).
  */
 
+import { cruisesModule } from "@voyant-travel/cruises"
 import {
   extensionsFromGlob,
   FRAMEWORK_RUNTIME_MANIFEST,
@@ -229,8 +230,11 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
   // Cruise admin/public routes mounted at /v1/{admin,public}/cruises with the
   // booking-engine SourceAdapterRegistry injected into context. Provider-neutral:
   // external cruise providers are wired in `lib/cruise-adapters-runtime.ts`.
+  // Reuse the package's `cruisesModule` metadata (not a bare `{ name }`) so the
+  // `requiresTransactionalDb` flag survives — createApp routes these prefixes to
+  // the transactional DB, which the cruise mutation/booking handlers need.
   "operator/cruises": () => ({
-    module: { name: "cruises" },
+    module: cruisesModule,
     lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
   }),
