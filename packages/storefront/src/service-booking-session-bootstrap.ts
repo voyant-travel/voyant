@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: storefront; the bootstrap pricing/derivation helpers stay co-located with the sync + compat bootstrap paths until a dedicated split preserves behavior and tests.
 import { publicBookingsService, resolveSessionPricingSnapshot } from "@voyant-travel/bookings"
 import {
   computePaymentSchedule,
@@ -7,8 +8,17 @@ import {
 } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { loadStorefrontAvailabilitySlot } from "./service-boundary-sql.js"
-import type { StorefrontBookingSessionBootstrapInput } from "./validation.js"
+import {
+  listOptionUnitFacts,
+  loadProductOptionFacts,
+  loadProductPricingFacts,
+  loadStorefrontAvailabilitySlot,
+} from "./service-boundary-sql.js"
+import type {
+  StorefrontBookingBootstrapErrorCode,
+  StorefrontBookingSessionBootstrapInput,
+  StorefrontBookingSessionCompatBootstrapInput,
+} from "./validation.js"
 
 export interface StorefrontBootstrapRequestContext {
   db: PostgresJsDatabase
@@ -267,6 +277,91 @@ async function resolveBootstrapPaymentPolicy(
   )
 }
 
+export interface StorefrontBootstrapErrorDescriptor {
+  code: StorefrontBookingBootstrapErrorCode
+  httpStatus: 400 | 404 | 409
+  /** True when the caller can sensibly retry (e.g. re-fetch a fresh price). */
+  retryable: boolean
+  message: string
+}
+
+/**
+ * Single source of truth mapping internal bootstrap statuses to the
+ * machine-readable, user-actionable error contract documented in issue
+ * voyant#1984. Both the native and compatibility bootstrap routes derive their
+ * HTTP status, error code, and retryability from this table.
+ *
+ * `QUOTE_STALE` is the one expected, retryable rejection: it means the price
+ * the caller quoted no longer matches the server-derived price (the response
+ * carries a `repricing` snapshot so the host can re-quote and retry). The
+ * compatibility bootstrap derives the price server-side, so it never returns
+ * `QUOTE_STALE`.
+ */
+export const STOREFRONT_BOOTSTRAP_ERROR_CODES: Record<string, StorefrontBootstrapErrorDescriptor> =
+  {
+    departure_not_found: {
+      code: "DEPARTURE_NOT_FOUND",
+      httpStatus: 404,
+      retryable: false,
+      message: "Storefront departure not found",
+    },
+    slot_not_found: {
+      code: "SLOT_NOT_FOUND",
+      httpStatus: 404,
+      retryable: false,
+      message: "Availability slot not found",
+    },
+    product_mismatch: {
+      code: "PRODUCT_MISMATCH",
+      httpStatus: 409,
+      retryable: false,
+      message: "Departure does not belong to the requested product",
+    },
+    invalid_slot: {
+      code: "SLOT_DEPARTURE_MISMATCH",
+      httpStatus: 400,
+      retryable: false,
+      message: "Booking session slot does not match the requested departure",
+    },
+    pricing_unavailable: {
+      code: "PRICING_UNAVAILABLE",
+      httpStatus: 409,
+      retryable: false,
+      message: "Pricing is not available for the selected booking session items",
+    },
+    stale_quote: {
+      code: "QUOTE_STALE",
+      httpStatus: 409,
+      retryable: true,
+      message: "Booking session quote is stale",
+    },
+    slot_unavailable: {
+      code: "SLOT_UNAVAILABLE",
+      httpStatus: 409,
+      retryable: false,
+      message: "Availability slot is not bookable",
+    },
+    insufficient_capacity: {
+      code: "INSUFFICIENT_CAPACITY",
+      httpStatus: 409,
+      retryable: false,
+      message: "Insufficient slot capacity",
+    },
+  }
+
+const FALLBACK_BOOTSTRAP_ERROR: StorefrontBootstrapErrorDescriptor = {
+  code: "BOOTSTRAP_FAILED",
+  httpStatus: 409,
+  retryable: false,
+  message: "Unable to bootstrap booking session",
+}
+
+export function describeStorefrontBootstrapError(
+  status: string,
+): StorefrontBootstrapErrorDescriptor {
+  return STOREFRONT_BOOTSTRAP_ERROR_CODES[status] ?? FALLBACK_BOOTSTRAP_ERROR
+}
+
 export async function bootstrapStorefrontBookingSession(
   context: StorefrontBootstrapRequestContext,
   input: StorefrontBookingSessionBootstrapInput,
@@ -431,4 +526,119 @@ export async function bootstrapStorefrontBookingSession(
       currency: createdSession.sellCurrency,
     },
   }
+}
+
+/**
+ * Compatibility bootstrap (issue voyant#1984).
+ *
+ * Accepts the minimal `{ productId, departureId, pax, currency, locale }`
+ * contract a storefront host can always supply for an imported catalog
+ * departure, derives the current slot / option / price server-side, then funnels
+ * through the same {@link bootstrapStorefrontBookingSession} machinery. Because
+ * the quote is derived (not caller-supplied), this path never fails with
+ * `stale_quote` — it returns either a real booking session or a structured
+ * rejection whose status maps to {@link STOREFRONT_BOOTSTRAP_ERROR_CODES}.
+ */
+export async function bootstrapStorefrontBookingSessionCompat(
+  context: StorefrontBootstrapRequestContext & { db: PostgresJsDatabase },
+  input: StorefrontBookingSessionCompatBootstrapInput,
+  options: StorefrontBookingSessionBootstrapOptions | undefined,
+  userId?: string,
+): Promise<
+  Awaited<ReturnType<typeof bootstrapStorefrontBookingSession>> | { status: "product_mismatch" }
+> {
+  const now = options?.today ?? new Date()
+  // Native package departures are 1:1 with their availability slot, so the
+  // departure id IS the slot id unless the host overrides it explicitly.
+  const slotId = input.slotId ?? input.departureId
+
+  const slot = await resolveAvailabilitySlot(context.db, slotId)
+  if (!slot) {
+    return { status: "departure_not_found" as const }
+  }
+  if (slot.productId !== input.productId) {
+    return { status: "product_mismatch" as const }
+  }
+
+  const optionId = input.optionId ?? slot.optionId ?? null
+
+  let optionUnitId = input.optionUnitId ?? null
+  if (!optionUnitId && optionId) {
+    const units = await listOptionUnitFacts(context.db, optionId)
+    optionUnitId = units.find((unit) => unit.isRequired)?.id ?? units[0]?.id ?? null
+  }
+
+  const sellCurrency =
+    input.currency ??
+    (await loadProductPricingFacts(context.db, input.productId))?.sellCurrency ??
+    "USD"
+
+  const title =
+    input.title ??
+    (await loadProductOptionFacts(context.db, { productId: input.productId, optionId }))?.name ??
+    "Booking"
+
+  const session = {
+    sellCurrency,
+    communicationLanguage: input.locale ?? null,
+    pax: input.pax,
+    startDate: normalizeDate(slot.dateLocal) ?? normalizeDate(slot.startsAt),
+    endDate: normalizeDate(slot.endsAt) ?? normalizeDate(slot.dateLocal),
+    ...(input.holdMinutes ? { holdMinutes: input.holdMinutes } : {}),
+    items: [
+      {
+        title,
+        itemType: "unit" as const,
+        allocationType: "unit" as const,
+        // Map party size onto line quantity: per-person / per-unit pricing
+        // multiplies by it, while per-booking modes ignore it — so `pax` is the
+        // broadly-correct single choice for a derived session.
+        quantity: input.pax,
+        availabilitySlotId: slotId,
+        productId: input.productId,
+        optionId,
+        optionUnitId,
+        pricingCategoryId: input.pricingCategoryId ?? null,
+      },
+    ],
+    travelers: input.travelers ?? [],
+  } satisfies StorefrontBookingSessionBootstrapInput["session"]
+
+  const derivedInput = {
+    departureId: input.departureId,
+    slotId,
+    catalogId: input.catalogId,
+    session,
+    // Placeholder quote; replaced below with the server-derived price so the
+    // stale-quote guard inside bootstrapStorefrontBookingSession always passes.
+    quote: {
+      currencyCode: sellCurrency,
+      totalSellAmountCents: 0,
+      quotedAt: now.toISOString(),
+      expiresAt: null,
+    },
+  } satisfies StorefrontBookingSessionBootstrapInput
+
+  const preview = await previewBootstrapPricing(context.db, derivedInput, {
+    productId: slot.productId,
+    optionId,
+  })
+  if (preview.status !== "ok") {
+    return preview
+  }
+
+  return bootstrapStorefrontBookingSession(
+    context,
+    {
+      ...derivedInput,
+      quote: {
+        currencyCode: preview.pricing.currencyCode,
+        totalSellAmountCents: preview.pricing.totalSellAmountCents,
+        quotedAt: now.toISOString(),
+        expiresAt: null,
+      },
+    },
+    options,
+    userId,
+  )
 }

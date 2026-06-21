@@ -25,10 +25,12 @@ import {
   type StorefrontRequestContext,
   type StorefrontServiceOptions,
 } from "./service.js"
+import { describeStorefrontBootstrapError } from "./service-booking-session-bootstrap.js"
 import {
   type StorefrontLeadIntakeInput,
   type StorefrontNewsletterSubscribeInput,
   storefrontBookingSessionBootstrapInputSchema,
+  storefrontBookingSessionCompatBootstrapInputSchema,
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
   storefrontLeadIntakeInputSchema,
@@ -122,20 +124,23 @@ function getRuntimeEnv(c: Context) {
   }
 }
 
-function sessionConflictError(status: string) {
-  switch (status) {
-    case "insufficient_capacity":
-      return "Insufficient slot capacity"
-    case "slot_unavailable":
-      return "Availability slot is not bookable"
-    case "pricing_unavailable":
-      return "Pricing is not available for the selected booking session items"
-    case "stale_quote":
-      return "Booking session quote is stale"
-    case "invalid_slot":
-      return "Booking session slot does not match the requested departure"
-    default:
-      return "Unable to bootstrap booking session"
+/**
+ * Build the structured, machine-readable rejection envelope shared by both
+ * bootstrap routes (issue voyant#1984): a stable `code`, a `retryable` hint,
+ * and — for `stale_quote` — the `repricing` snapshot so hosts can re-quote.
+ */
+function bootstrapRejectionResponse(result: { status: string } & Record<string, unknown>) {
+  const descriptor = describeStorefrontBootstrapError(result.status)
+  return {
+    httpStatus: descriptor.httpStatus,
+    body: {
+      error: descriptor.message,
+      code: descriptor.code,
+      retryable: descriptor.retryable,
+      ...(result.status === "stale_quote" && "repricing" in result
+        ? { data: { repricing: result.repricing } }
+        : {}),
+    },
   }
 }
 
@@ -319,27 +324,64 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           c.get("userId" as never),
         )
 
-        if (result.status === "departure_not_found") {
-          return c.json({ error: "Storefront departure not found" }, 404)
-        }
-
-        if (result.status === "slot_not_found") {
-          return c.json({ error: "Availability slot not found" }, 404)
-        }
-
         if (result.status !== "ok") {
-          return c.json(
-            {
-              error: sessionConflictError(result.status),
-              ...(result.status === "stale_quote" && "repricing" in result
-                ? { data: { repricing: result.repricing } }
-                : {}),
-            },
-            result.status === "invalid_slot" ? 400 : 409,
-          )
+          const rejection = bootstrapRejectionResponse(result)
+          return c.json(rejection.body, rejection.httpStatus)
         }
         if (!("bootstrap" in result)) {
-          return c.json({ error: "Unable to bootstrap booking session" }, 409)
+          const rejection = bootstrapRejectionResponse({ status: "not_found" })
+          return c.json(rejection.body, rejection.httpStatus)
+        }
+
+        const { bootstrap } = result
+        const capability = await issueCheckoutCapability(
+          bootstrap.session.sessionId,
+          getRuntimeEnv(c),
+        )
+        c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
+          append: true,
+        })
+
+        return c.json(
+          {
+            data: {
+              ...bootstrap,
+              session: attachCheckoutCapability(bootstrap.session, capability),
+            },
+          },
+          201,
+        )
+      },
+    )
+    .post(
+      // Compatibility bootstrap (issue voyant#1984): hosts pass the minimal
+      // `{ productId, departureId, pax, currency, locale }` they can always
+      // build for an imported catalog departure; the server derives the slot,
+      // option, and authoritative price, then returns a normal booking session
+      // or a structured, machine-readable rejection. This is the first-class
+      // path for offers that are valid locally but cannot reconstruct the
+      // native quote/session contract.
+      "/bookings/sessions/compat-bootstrap",
+      idempotencyKey({
+        scope: "POST /v1/public/bookings/sessions/compat-bootstrap",
+        replayResponses: false,
+      }),
+      async (c) => {
+        const result = await storefrontService.bootstrapBookingSessionCompat(
+          getRequestContext(c) as StorefrontRequestContext & {
+            db: NonNullable<StorefrontRequestContext["db"]>
+          },
+          await parseJsonBody(c, storefrontBookingSessionCompatBootstrapInputSchema),
+          c.get("userId" as never),
+        )
+
+        if (result.status !== "ok") {
+          const rejection = bootstrapRejectionResponse(result)
+          return c.json(rejection.body, rejection.httpStatus)
+        }
+        if (!("bootstrap" in result)) {
+          const rejection = bootstrapRejectionResponse({ status: "not_found" })
+          return c.json(rejection.body, rejection.httpStatus)
         }
 
         const { bootstrap } = result
@@ -405,13 +447,17 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           httpStatus?: number
           repricing?: unknown
         }
+        // Surface the same machine-readable contract as the sync route
+        // (issue voyant#1984) so async pollers get a stable `code`/`retryable`.
+        const descriptor = detail.conflict
+          ? describeStorefrontBootstrapError(detail.conflict)
+          : null
         return c.json({
           data: {
             intentId: intent.id,
             status: "failed",
-            error: detail.conflict
-              ? sessionConflictError(detail.conflict)
-              : (intent.error ?? "Booking intent failed"),
+            error: descriptor?.message ?? intent.error ?? "Booking intent failed",
+            ...(descriptor ? { code: descriptor.code, retryable: descriptor.retryable } : {}),
             ...(detail.conflict ? { conflict: detail.conflict } : {}),
             ...(detail.httpStatus ? { httpStatus: detail.httpStatus } : {}),
             ...(detail.repricing !== undefined ? { repricing: detail.repricing } : {}),
