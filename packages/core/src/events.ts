@@ -159,6 +159,15 @@ export interface EventBusOptions {
    * e-invoicing API) can hold an emit. Set `false` to disable.
    */
   handlerTimeoutMs?: number | false
+  /**
+   * Invoked when a subscriber throws or times out. The bus already logs to
+   * console and keeps the "subscribers are fire-and-forget" contract (the
+   * emitter and sibling handlers are unaffected); this is the hook a runtime
+   * uses to route the failure to an error reporter (RFC voyant#1553). It MUST
+   * NOT throw — the bus guards the call defensively, but keep it best-effort.
+   * `error` is an `Error` for timeouts and the thrown value otherwise.
+   */
+  onSubscriberError?: (event: string, error: unknown) => void
 }
 
 export interface EventBus {
@@ -213,6 +222,16 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
   const handlers = new Map<string, Map<EventHandler, RegisteredHandler>>()
   const timeoutMs = options.handlerTimeoutMs ?? DEFAULT_HANDLER_TIMEOUT_MS
 
+  /** Route a subscriber failure to the optional reporter hook; never throws. */
+  function notifySubscriberError(event: string, error: unknown): void {
+    if (!options.onSubscriberError) return
+    try {
+      options.onSubscriberError(event, error)
+    } catch {
+      // the reporter hook must never break the bus
+    }
+  }
+
   /**
    * Runs one handler; never rejects. Returns the error message when the
    * handler threw or timed out, `null` on success. Errors are always
@@ -243,6 +262,7 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
           // on subscriber idempotency.
           const message = `subscriber for "${event}" exceeded ${timeoutMs}ms; not awaited`
           console.error(`[events] ${message}`)
+          notifySubscriberError(event, new Error(message))
           return message
         }
         return null
@@ -252,6 +272,7 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     } catch (err) {
       // Subscribers are fire-and-forget — log and continue.
       console.error(`[events] subscriber error for "${event}":`, err)
+      notifySubscriberError(event, err)
       return err instanceof Error ? err.message : String(err)
     }
   }

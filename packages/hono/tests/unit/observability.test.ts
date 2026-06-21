@@ -263,3 +263,65 @@ describe("forwarded auth sub-app honors the request id + reporter", () => {
     expect(capture).not.toHaveBeenCalled()
   })
 })
+
+describe("non-HTTP catch points route to the reporter (RFC #1553)", () => {
+  it("reports a module bootstrap failure", async () => {
+    const events: ErrorEvent[] = []
+    const boom = new Error("bootstrap kaboom")
+    const app = mountApp({
+      db: () => ({}) as never,
+      appName: "boot-test",
+      reporter: {
+        captureException: (e) => {
+          events.push(e)
+        },
+      },
+      modules: [
+        {
+          module: {
+            name: "flaky",
+            bootstrap: () => {
+              throw boom
+            },
+          },
+        } as never,
+      ],
+    })
+
+    // `ready()` fires the lazy bootstrap without needing a request.
+    await app.ready({})
+
+    const bootEvent = events.find((e) => e.context?.surface === "bootstrap")
+    expect(bootEvent).toBeDefined()
+    expect(bootEvent?.app).toBe("boot-test")
+    expect(bootEvent?.error).toBe(boom)
+    expect(bootEvent?.context).toMatchObject({ surface: "bootstrap", label: "module:flaky" })
+  })
+
+  it("reports an event-bus subscriber failure through the framework bus", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const events: ErrorEvent[] = []
+    const boom = new Error("subscriber kaboom")
+    const app = mountApp({
+      db: () => ({}) as never,
+      appName: "bus-test",
+      reporter: {
+        captureException: (e) => {
+          events.push(e)
+        },
+      },
+    })
+
+    app.eventBus.subscribe("thing.happened", () => {
+      throw boom
+    })
+    await app.eventBus.emit("thing.happened", { id: 1 })
+
+    const busEvent = events.find((e) => e.context?.surface === "event-bus")
+    expect(busEvent).toBeDefined()
+    expect(busEvent?.app).toBe("bus-test")
+    expect(busEvent?.error).toBe(boom)
+    expect(busEvent?.context).toMatchObject({ surface: "event-bus", event: "thing.happened" })
+    errorSpy.mockRestore()
+  })
+})

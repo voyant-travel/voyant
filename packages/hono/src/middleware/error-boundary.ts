@@ -2,7 +2,12 @@ import { apiErrorSchema } from "@voyant-travel/types"
 import type { Context, MiddlewareHandler } from "hono"
 
 import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
-import { type ErrorEvent, noopReporter, type Reporter } from "../observability/reporter.js"
+import {
+  type ErrorEvent,
+  noopReporter,
+  type Reporter,
+  safeCaptureException,
+} from "../observability/reporter.js"
 import { runWithRequestId } from "../observability/request-context.js"
 import { normalizeValidationError } from "../validation.js"
 
@@ -49,18 +54,8 @@ export interface HandleApiErrorOptions {
  * outer `onError`) can emit through the same path.
  */
 export function reportException(reporter: Reporter, c: Context, event: ErrorEvent): void {
-  let result: void | Promise<void>
-  try {
-    result = reporter.captureException(event)
-  } catch {
-    return // a reporter must never break the response
-  }
-  if (result && typeof (result as Promise<void>).then === "function") {
-    const settled = (result as Promise<void>).catch(() => {})
-    const ctx = tryGetExecutionCtx(c)
-    if (ctx) ctx.waitUntil(settled)
-    else void settled
-  }
+  const ctx = tryGetExecutionCtx(c)
+  safeCaptureException(reporter, event, ctx ? (promise) => ctx.waitUntil(promise) : undefined)
 }
 
 const LOGGED_HEADERS = new Set([

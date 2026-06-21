@@ -31,6 +31,7 @@ import {
   getOwnedBookingHandlerRegistry,
 } from "../lib/booking-engine-runtime"
 import { withDbFromEnv } from "../lib/db"
+import { reportBackgroundFailure } from "../observability"
 
 export { DRAFT_REAPER_CRON } from "../../scheduled-crons"
 
@@ -91,6 +92,9 @@ export async function runScheduledDraftReaper(
             draftId: draft.id,
             reason: err instanceof Error ? err.message : String(err),
           })
+          // Hold release is a booking invariant — a failure here can leak
+          // inventory, so surface it past the console (RFC voyant#1553).
+          reportBackgroundFailure("draft-reaper", err, { draftId: draft.id, op: "release-hold" })
         }
       }
 
@@ -102,6 +106,7 @@ export async function runScheduledDraftReaper(
           draftId: draft.id,
           reason: err instanceof Error ? err.message : String(err),
         })
+        reportBackgroundFailure("draft-reaper", err, { draftId: draft.id, op: "delete-draft" })
       }
     }
 

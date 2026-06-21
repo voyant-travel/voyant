@@ -30,6 +30,32 @@ export interface Reporter {
 }
 
 /**
+ * Forward an event to the reporter, defensively. Never throws (a reporter must
+ * not break the caller), and when `captureException` returns a promise, flushes
+ * it via the optional `waitUntil` (so HTTP catch points don't block the
+ * response) or lets it settle detached otherwise. The context-free counterpart
+ * to the HTTP `reportException` helper — used by non-request catch points
+ * (bootstrap, event-bus subscribers, scheduled jobs) where there is no `Context`.
+ */
+export function safeCaptureException(
+  reporter: Reporter,
+  event: ErrorEvent,
+  waitUntil?: (promise: Promise<unknown>) => void,
+): void {
+  let result: void | Promise<void>
+  try {
+    result = reporter.captureException(event)
+  } catch {
+    return
+  }
+  if (result && typeof (result as Promise<void>).then === "function") {
+    const settled = (result as Promise<void>).catch(() => {})
+    if (waitUntil) waitUntil(settled)
+    else void settled
+  }
+}
+
+/**
  * Default reporter: drops every event. Zero vendor coupling out of the box — a
  * deployment opts in by supplying its own {@link Reporter}. The no-op default
  * must stay a valid choice (RFC #1553 §5).

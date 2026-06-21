@@ -56,6 +56,7 @@ export {
   getRequestId,
   noopReporter,
   runWithRequestId,
+  safeCaptureException,
 } from "./observability/index.js"
 export type {
   ExpandedHonoBundles,
