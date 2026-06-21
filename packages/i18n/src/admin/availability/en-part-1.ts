@@ -25,6 +25,10 @@ export const adminAvailabilityMessagesEnPart1 = {
   statusSoldOut: "Sold Out",
   statusCancelled: "Cancelled",
   productLabel: "Product",
+  optionLabel: "Option",
+  optionMissingLabel: "No option",
+  optionMissingTooltip:
+    "This departure has no option, so it can't be priced. Edit it to choose one.",
   timezoneLabel: "Timezone",
   recurrenceLabel: "Recurrence",
   maxPaxLabel: "Max Pax",
