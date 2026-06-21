@@ -13,6 +13,8 @@
     "check:startup": "pnpm run build && wrangler check startup",
     "measure:startup": "pnpm run build && node ../../scripts/measure-cloudflare-startup.mjs .",
     "dev:worker": "voyant dev --file src/workflows.ts --port 3310",
+    "workflows:build": "voyant workflows build --file src/workflows.ts --out dist/workflows",
+    "workflows:doctor": "voyant workflows doctor --target entry --file src/workflows.ts",
     "db:generate": "drizzle-kit generate --config=drizzle.deployment-migrations.config.ts",
     "db:generate:deployment": "drizzle-kit generate --config=drizzle.deployment-migrations.config.ts",
     "db:migrate": "tsx scripts/migrate.ts",
