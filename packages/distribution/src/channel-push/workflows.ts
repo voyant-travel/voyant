@@ -96,7 +96,7 @@ export const channelBookingPushWorkflow = workflow<
  * Per §5.3 + §12.2.
  */
 export const channelAvailabilityPushWorkflow = workflow<
-  ProcessAvailabilityPushInput,
+  ProcessAvailabilityPushInput | null,
   ProcessAvailabilityPushResult
 >({
   id: CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,
@@ -105,7 +105,7 @@ export const channelAvailabilityPushWorkflow = workflow<
   retry: { backoff: "exponential", max: 3, initial: "10s" },
   timeout: "5m",
   concurrency: {
-    key: (input) => input.channelId ?? "all",
+    key: (input) => input?.channelId ?? "all",
     limit: 1,
     strategy: "queue",
   },
@@ -123,7 +123,7 @@ export const channelAvailabilityPushWorkflow = workflow<
  * Per §6 + §12.3.
  */
 export const channelContentPushWorkflow = workflow<
-  ProcessContentPushInput,
+  ProcessContentPushInput | null,
   ProcessContentPushResult
 >({
   id: CHANNEL_CONTENT_PUSH_WORKFLOW_ID,
@@ -132,7 +132,7 @@ export const channelContentPushWorkflow = workflow<
   retry: { backoff: "exponential", max: 3, initial: "30s" },
   timeout: "5m",
   concurrency: {
-    key: (input) => input.channelId ?? "all",
+    key: (input) => input?.channelId ?? "all",
     limit: 1,
     strategy: "queue",
   },
