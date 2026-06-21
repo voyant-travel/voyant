@@ -739,6 +739,16 @@ export const app = createApp({
 The framework never imports the concrete adapter package; the deployment wiring
 does.
 
+**Reference wiring:** the operator starter implements this in one place —
+`starters/operator/src/api/lib/cruise-adapters-runtime.ts`. Its
+`registerCruiseAdapters` seam registers each configured `CruiseAdapter` into both
+the vertical registry (above) and the catalog `SourceAdapterRegistry` (via
+`cruiseAdapterToSourceAdapter`), and back-fills the vertical registry from any
+Connect cruise shims. The same seam runs in the live API, the
+external-cruise-refresh cron, and the `sync:sources` CLI, so admin, public,
+content, booking, and sync paths share one configuration. See the starter README's
+"External cruise adapters" section.
+
 ### Where the adapter sits at request time
 
 - **Admin list (`GET /v1/admin/cruises`)** — backend reads local cruises from the DB AND calls each registered adapter's listing/search endpoint, merging results with provenance markers. Pagination is per-source and recombined; the API surface returns a unified cursor per page.

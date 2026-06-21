@@ -46,6 +46,39 @@ pnpm -F operator deploy
 - `/api/auth/*` — Better Auth handler
 - `/*` — TanStack Start SSR dashboard
 
+## External cruise adapters
+
+External cruise inventory (any upstream — Voyant Connect is just one option) is
+wired in **one place**: `src/api/lib/cruise-adapters-runtime.ts`. Add your
+connector's `CruiseAdapter` to `configuredCruiseAdapters`:
+
+```ts
+import { createMyCruiseAdapter } from "my-cruise-connector"
+
+export function configuredCruiseAdapters(env: CruiseAdapterEnv): CruiseAdapter[] {
+  if (!_configured) {
+    const adapters: CruiseAdapter[] = []
+    adapters.push(createMyCruiseAdapter({ token: env.MY_CRUISE_ADAPTER_TOKEN }))
+    _configured = adapters
+  }
+  return _configured
+}
+```
+
+That single registration reaches every path: a cruise adapter is registered into
+both the **vertical** registry (admin/public external cruise detail, refresh,
+detach, external booking — `cruiseAdminRoutes` / `cruisePublicRoutes`, mounted at
+`/v1/{admin,public}/cruises`) and the **catalog** `SourceAdapterRegistry` (content,
+discovery/sync, snapshot capture, booking-engine sourced inventory). The same seam
+runs in the live API (`booking-engine-runtime.ts`), the external-cruise-refresh
+cron, and the `sync:sources` CLI, so all paths stay consistent.
+
+Missing config is a no-op — with no connector and Voyant Connect unconfigured,
+external cruise reads return a clean `adapter_not_registered`, never a boot
+failure. Voyant Connect cruise sources, when configured, are back-filled into the
+vertical registry automatically (no manual entry needed). See
+`docs/architecture/cruises-module.md` §10 for the adapter contract.
+
 ## Operator Shell
 
 The workspace shell uses the shared `OperatorAdminWorkspaceLayout`. Operators

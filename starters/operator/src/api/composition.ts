@@ -226,6 +226,14 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     lazyPublicRoutes: () =>
       import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
   }),
+  // Cruise admin/public routes mounted at /v1/{admin,public}/cruises with the
+  // booking-engine SourceAdapterRegistry injected into context. Provider-neutral:
+  // external cruise providers are wired in `lib/cruise-adapters-runtime.ts`.
+  "operator/cruises": () => ({
+    module: { name: "cruises" },
+    lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
+    lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
+  }),
 }
 
 /**

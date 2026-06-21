@@ -17,7 +17,7 @@ import {
   resolveVoyantConnectEnv,
 } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
-
+import { registerCruiseAdapters, syncVerticalRegistryFromCatalog } from "./cruise-adapters-runtime"
 import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
 
 let _registry: SourceAdapterRegistry | undefined
@@ -39,6 +39,12 @@ function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
       registry.register(createDemoCatalogAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
     }
     registerVoyantConnectFallback(registry, env)
+    // Single activation point for cruise adapters: register deployment-owned
+    // connectors into both planes and back-fill the vertical registry from the
+    // un-scoped Connect cruise fallback registered just above. The per-connection
+    // Connect cruise shims land later (async warm) and are back-filled again in
+    // `warmBookingEngineConnectSources`.
+    registerCruiseAdapters(registry, env as Record<string, string | undefined>)
     _registry = registry
   }
   return _registry
@@ -75,6 +81,9 @@ export function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<
   })
     .then((sources) => {
       registerVoyantConnectSources(registry, sources)
+      // Per-connection Connect cruise shims just landed — back-fill the vertical
+      // registry so admin/public external cruise reads resolve them too.
+      syncVerticalRegistryFromCatalog(registry)
     })
     .catch((error) => {
       const message = error instanceof Error ? error.message : String(error)
