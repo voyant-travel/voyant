@@ -101,17 +101,21 @@ export {
 } from "./mcp-tools.js"
 export { tripsRoutes } from "./routes.js"
 export type {
+  NewTripCandidate,
   NewTripComponent,
   NewTripComponentEvent,
   NewTripEnvelope,
+  NewTripRequirement,
   NewTripReservationPlan,
   NewTripSnapshot,
+  TripCandidate,
   TripComponent,
   TripComponentEvent,
   TripComponentPricingSnapshot,
   TripComponentTaxLineSnapshot,
   TripEnvelope,
   TripEnvelopePricingSnapshot,
+  TripRequirement,
   TripReservationPlan,
   TripReservationPlanCompensationSnapshot,
   TripReservationPlanComponentSnapshot,
@@ -121,6 +125,8 @@ export type {
   TripSnapshotProposalLine,
 } from "./schema.js"
 export {
+  tripCandidateStatusEnum,
+  tripCandidates,
   tripComponentEvents,
   tripComponentEventTypeEnum,
   tripComponentKindEnum,
@@ -128,6 +134,8 @@ export {
   tripComponents,
   tripEnvelopeStatusEnum,
   tripEnvelopes,
+  tripRequirementStatusEnum,
+  tripRequirements,
   tripReservationPlanStatusEnum,
   tripReservationPlans,
   tripSnapshots,
