@@ -36,6 +36,10 @@ export const operatorAdminProductsMessagesEnOperations = {
     timezoneLabel: "Timezone",
     timezoneSearchPlaceholder: "Search timezones…",
     timezoneEmpty: "No timezone found.",
+    optionLabel: "Option",
+    defaultOptionLabel: "Default option: {name}",
+    optionRepairHint:
+      "Controls which option prices this departure uses. Saving repairs departures that were missing an option.",
     statusLabel: "Status",
     capacityLabel: "Capacity (pax)",
     capacityAutoHint: "Auto from rooms: {count} — click to use",
