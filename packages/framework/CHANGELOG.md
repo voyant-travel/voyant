@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.12
+
+### Patch Changes
+
+- Updated dependencies [e014a02]
+  - @voyant-travel/distribution@0.119.1
+
 ## 0.2.11
 
 ### Patch Changes
