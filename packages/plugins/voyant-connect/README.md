@@ -29,13 +29,16 @@ their own source adapters can skip it and register adapters directly against
 This package is tested against:
 
 - `@voyant-travel/connect-adapter@0.3.0`
-- `@voyant-travel/connect-cruises@0.4.0`
+- `@voyant-travel/connect-cruises@0.5.0`
 - `@voyant-travel/connect-sdk@0.9.0`
 
 Keep those three packages in lockstep with this plugin version. The structured
 cruise adapter is intentionally wrapped here so deployments do not need to
-reimplement the generic-vs-cruise split or bridge external cruise price-component
-typing differences themselves.
+reimplement the generic-vs-cruise split. `connect-cruises@0.5.0` aligned the
+price-component `kind` union; the wrapper still maps `fetchShip`'s deck plan
+field (`imageUrl` → `planImageUrl`) and nullable deck/cabin fields so deck plans
+survive into cruise content. Remaining ship-shape alignment is tracked in
+[connect-sdk#81](https://github.com/voyant-travel/connect-sdk/issues/81).
 
 ## Usage
 

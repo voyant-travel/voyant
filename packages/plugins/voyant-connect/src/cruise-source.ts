@@ -52,11 +52,8 @@ export function createConnectCruiseSourceAdapter(
   shimOptions?: CruiseSourceAdapterShimOptions,
   extras: ConnectCruiseSourceAdapterExtras = {},
 ): CruiseSourceAdapterShim {
-  // The published Connect adapter uses `string` for price-component kind while
-  // the cruise vertical narrows that union. The catalog shim paths used here do
-  // not read price components; this bridges the external package version pair.
   let adapter = memoizeCruiseAdapter(
-    createConnectCruiseAdapter(options) as CruiseAdapter,
+    conformConnectCruiseAdapter(createConnectCruiseAdapter(options)),
     extras.memoize,
   )
   if (extras.geo) adapter = withResolvedGeoNames(adapter, extras.geo)
@@ -65,6 +62,44 @@ export function createConnectCruiseSourceAdapter(
     cruiseAdapterToSourceAdapter(adapter, shimOptions),
     extras.defaultSupplyModel ?? "scheduled",
   ) as CruiseSourceAdapterShim
+}
+
+/**
+ * Bridge the published `ConnectCruiseAdapter` ship shape to the cruise
+ * vertical's `CruiseAdapter`. As of `connect-cruises@0.5.0` the price-component
+ * `kind` union is aligned, but `fetchShip` still diverges: connect carries deck
+ * plan art as `imageUrl` (the vertical reads `planImageUrl`) and types deck
+ * `name` as optional, while cabin-category `wheelchairAccessible` is nullable.
+ * Mapping it here — rather than casting — keeps deck plans from silently
+ * dropping out of cruise content. Tracked upstream in connect-sdk#81.
+ */
+function conformConnectCruiseAdapter(
+  adapter: ReturnType<typeof createConnectCruiseAdapter>,
+): CruiseAdapter {
+  return {
+    ...adapter,
+    async fetchShip(sourceRef) {
+      // Connect refs always carry a connection id (required by
+      // `ConnectCruiseSourceRef`); the vertical's `SourceRef` types it
+      // optional. Guard rather than cast so the boundary stays honest.
+      if (typeof sourceRef.connectionId !== "string") return null
+      const ship = await adapter.fetchShip({
+        ...sourceRef,
+        connectionId: sourceRef.connectionId,
+      })
+      if (!ship) return null
+      return {
+        ...ship,
+        decks: ship.decks?.flatMap((deck) =>
+          deck.name ? [{ name: deck.name, planImageUrl: deck.imageUrl }] : [],
+        ),
+        categories: ship.categories?.map((category) => ({
+          ...category,
+          wheelchairAccessible: category.wheelchairAccessible ?? undefined,
+        })),
+      }
+    },
+  }
 }
 
 function withDepartureWindows(adapter: CruiseAdapter): CruiseAdapter {
