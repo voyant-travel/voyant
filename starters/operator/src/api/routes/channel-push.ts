@@ -38,7 +38,11 @@ import type { HonoBundle } from "@voyant-travel/hono/plugin"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { Hono } from "hono"
 
-import { type BookingEngineEnv, getBookingEngineRegistry } from "../lib/booking-engine-runtime"
+import {
+  type BookingEngineEnv,
+  getBookingEngineRegistry,
+  getBookingEngineRegistryFromContext,
+} from "../lib/booking-engine-runtime"
 import { withDbFromEnv } from "../lib/db"
 
 interface BookingConfirmedPayload {
@@ -195,10 +199,9 @@ const channelPushExtensionDef: Extension = {
 export function createChannelPushExtension(): HonoExtension {
   const adminRoutes = new Hono<{ Variables: { db: VoyantDb } }>()
   adminRoutes.use("*", async (c, next) => {
-    const env = c.env as CloudflareBindings & BookingEngineEnv
     setChannelPushDeps({
       db: c.get("db") as NeonDatabase,
-      registry: getBookingEngineRegistry(env),
+      registry: getBookingEngineRegistryFromContext(c),
     })
     await next()
   })

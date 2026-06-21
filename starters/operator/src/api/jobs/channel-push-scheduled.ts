@@ -25,7 +25,7 @@ import {
   CHANNEL_PUSH_BOOKING_LINK_CRON,
   CHANNEL_PUSH_CONTENT_CRON,
 } from "../../scheduled-crons"
-import { type BookingEngineEnv, getBookingEngineRegistry } from "../lib/booking-engine-runtime"
+import { type BookingEngineEnv, ensureBookingEngineRegistry } from "../lib/booking-engine-runtime"
 import { withDbFromEnv } from "../lib/db"
 
 export async function runScheduledChannelPushReconciler(
@@ -36,7 +36,7 @@ export async function runScheduledChannelPushReconciler(
   // this scheduled run finishes, instead of leaking until isolate
   // teardown.
   await withDbFromEnv(env, async (db) => {
-    const deps = { db, registry: getBookingEngineRegistry(env) }
+    const deps = { db, registry: await ensureBookingEngineRegistry(env) }
 
     try {
       switch (event.cron) {

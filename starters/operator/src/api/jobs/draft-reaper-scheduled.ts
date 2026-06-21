@@ -27,7 +27,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
   type BookingEngineEnv,
-  getBookingEngineRegistry,
+  ensureBookingEngineRegistry,
   getOwnedBookingHandlerRegistry,
 } from "../lib/booking-engine-runtime"
 import { withDbFromEnv } from "../lib/db"
@@ -48,7 +48,7 @@ export async function runScheduledDraftReaper(
   _event: ScheduledController,
   env: CloudflareBindings & BookingEngineEnv,
 ): Promise<ReaperResult> {
-  const registry = getBookingEngineRegistry(env)
+  const registry = await ensureBookingEngineRegistry(env)
   const ownedHandlers = getOwnedBookingHandlerRegistry(env)
 
   // `withDbFromEnv` owns the per-tick Pool — the WebSocket closes when

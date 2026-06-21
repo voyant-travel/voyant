@@ -9,7 +9,7 @@
 import { createIndexerService } from "@voyant-travel/catalog"
 import { refreshExternalCruiseCatalog } from "@voyant-travel/cruises/service-external-refresh"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type BookingEngineEnv, getBookingEngineRegistry } from "../lib/booking-engine-runtime"
+import { type BookingEngineEnv, ensureBookingEngineRegistry } from "../lib/booking-engine-runtime"
 import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
@@ -43,7 +43,7 @@ export async function runScheduledExternalCruiseCatalogRefresh(
 
     return refreshExternalCruiseCatalog({
       db,
-      sourceAdapterRegistry: getBookingEngineRegistry(env),
+      sourceAdapterRegistry: await ensureBookingEngineRegistry(env),
       indexerService,
       fieldPolicyRegistries: getFieldPolicyRegistries(),
       wrapCatalogBuilder: (builder) => withEmbedding(builder, embeddings),
