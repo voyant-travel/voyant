@@ -615,6 +615,14 @@ async function resolveRoomOptionUnitIds(
   if (optionUnitIds.length === 0) return new Set()
 
   try {
+    // `unit_type` is cast to text before comparing against the literals on
+    // purpose: `accommodation` is not a member of the `option_unit_type` enum
+    // on every deployment (the enum ships as person/group/room/vehicle/service/
+    // other). Comparing the raw enum column against an unknown literal makes
+    // Postgres reject the statement with "invalid input value for enum" before
+    // it runs, which would take down ALL contract generation on a lagging
+    // deployment. Casting to text compares plain strings, so a not-yet-present
+    // value simply never matches instead of throwing.
     const result = await db.execute(sql`
       SELECT id
       FROM option_units
@@ -623,7 +631,7 @@ async function resolveRoomOptionUnitIds(
         optionUnitIds.map((id) => sql`${id}`),
         sql`, `,
       )})
-        AND unit_type IN ('room', 'accommodation')
+        AND unit_type::text IN ('room', 'accommodation')
     `)
     return new Set(toRows<{ id: string }>(result).map((row) => row.id))
   } catch (error) {
