@@ -145,6 +145,61 @@ describe("fanOutAvailabilitySearch", () => {
     expect(result.candidates).toHaveLength(0)
   })
 
+  it("stamps each candidate's origin so a selection can be routed back to its source", async () => {
+    const result = await fanOutAvailabilitySearch({
+      adapters: [
+        {
+          connectionId: "conn_a",
+          adapter: adapter("a", { result: { candidates: [candidate("a1", "200")], status: "ok" } }),
+        },
+      ],
+      ownedHandlers: [ownedHandler("accommodations", [candidate("owned1", "150")])],
+      request: REQUEST,
+    })
+
+    const byId = Object.fromEntries(result.candidates.map((c) => [c.entity_id, c.source]))
+    expect(byId.a1).toEqual({ kind: "sourced", connectionId: "conn_a" })
+    expect(byId.owned1).toEqual({ kind: "owned", module: "accommodations" })
+  })
+
+  it("does not clobber an origin the adapter already set (cross-provider case)", async () => {
+    const pre = {
+      ...candidate("x", "200"),
+      source: { kind: "sourced" as const, connectionId: "upstream_real" },
+    }
+    const result = await fanOutAvailabilitySearch({
+      adapters: [
+        {
+          connectionId: "conn_aggregator",
+          adapter: adapter("agg", { result: { candidates: [pre], status: "ok" } }),
+        },
+      ],
+      request: REQUEST,
+    })
+
+    expect(result.candidates[0]?.source).toEqual({ kind: "sourced", connectionId: "upstream_real" })
+  })
+
+  it("surfaces each source's pagination cursor on perConnection", async () => {
+    const result = await fanOutAvailabilitySearch({
+      adapters: [
+        {
+          connectionId: "paged",
+          adapter: adapter("paged", {
+            result: {
+              candidates: [candidate("p", "100")],
+              status: "partial",
+              next_cursor: "cur_2",
+            },
+          }),
+        },
+      ],
+      request: REQUEST,
+    })
+
+    expect(result.perConnection.find((c) => c.source === "paged")?.nextCursor).toBe("cur_2")
+  })
+
   it("applies the merged-result limit after ranking", async () => {
     const result = await fanOutAvailabilitySearch({
       adapters: [

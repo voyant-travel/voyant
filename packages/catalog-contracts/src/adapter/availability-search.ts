@@ -69,6 +69,15 @@ export interface AvailabilityCandidate {
    * or departure + pax). Handed back to `liveResolve` / `reserve`.
    */
   selection: Record<string, unknown>
+  /**
+   * Origin of this candidate, so a selection can be routed back to the right
+   * source at reserve time — sourced booking dispatch is keyed by
+   * `connectionId`. An adapter that aggregates several upstream connections
+   * (e.g. a cross-provider search) sets this per-candidate to the true
+   * origin; otherwise the fan-out stamps it from the dispatching connection /
+   * owned module. Optional only so adapters need not construct it themselves.
+   */
+  source?: { kind: "sourced"; connectionId: string } | { kind: "owned"; module: string }
   /** Public-safe price for ranking and display. */
   price: { amount: string; currency: string }
   /**

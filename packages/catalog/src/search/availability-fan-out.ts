@@ -39,6 +39,12 @@ export interface AvailabilityConnectionResult {
   count: number
   latencyMs: number
   errorMessage?: string
+  /**
+   * Per-source pagination token. A merged cursor can't represent N sources,
+   * so paging is per-connection: re-run the fan-out for just this source with
+   * `request.cursor = nextCursor` to fetch its next page.
+   */
+  nextCursor?: string
 }
 
 export interface FanOutAvailabilityResult {
@@ -76,6 +82,7 @@ interface SourceOutcome {
   candidates: AvailabilityCandidate[]
   latencyMs: number
   errorMessage?: string
+  nextCursor?: string
 }
 
 /**
@@ -100,14 +107,22 @@ export async function fanOutAvailabilitySearch(
       }
       const ctx: SourceAdapterContext = { connection_id: connectionId, ...context }
       const result = await adapter.searchAvailability(ctx, request)
-      return { status: result.status, candidates: result.candidates }
+      // Stamp the dispatching connection as origin, unless the adapter already
+      // set a more specific one (e.g. a cross-provider search per candidate).
+      const candidates = result.candidates.map((c) =>
+        c.source ? c : { ...c, source: { kind: "sourced" as const, connectionId } },
+      )
+      return { status: result.status, candidates, nextCursor: result.next_cursor }
     }),
   )
 
   const ownedTasks = (options.ownedHandlers ?? []).map(({ handler, context }) =>
     runSource(handler.entityModule, "owned", timeoutMs, async () => {
       const result = await handler.searchAvailability(context, request)
-      return { status: result.status, candidates: result.candidates }
+      const candidates = result.candidates.map((c) =>
+        c.source ? c : { ...c, source: { kind: "owned" as const, module: handler.entityModule } },
+      )
+      return { status: result.status, candidates, nextCursor: result.next_cursor }
     }),
   )
 
@@ -120,6 +135,7 @@ export async function fanOutAvailabilitySearch(
     count: o.candidates.length,
     latencyMs: o.latencyMs,
     errorMessage: o.errorMessage,
+    nextCursor: o.nextCursor,
   }))
 
   const merged = outcomes
@@ -135,16 +151,20 @@ async function runSource(
   source: string,
   kind: "sourced" | "owned",
   timeoutMs: number,
-  run: () => Promise<{ status: AvailabilityConnectionStatus; candidates: AvailabilityCandidate[] }>,
+  run: () => Promise<{
+    status: AvailabilityConnectionStatus
+    candidates: AvailabilityCandidate[]
+    nextCursor?: string
+  }>,
 ): Promise<SourceOutcome> {
   const start = Date.now()
   try {
-    const { status, candidates } = await withTimeout(
+    const { status, candidates, nextCursor } = await withTimeout(
       run(),
       timeoutMs,
       `source ${source} timed out after ${timeoutMs}ms`,
     )
-    return { source, kind, status, candidates, latencyMs: Date.now() - start }
+    return { source, kind, status, candidates, nextCursor, latencyMs: Date.now() - start }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     const isTimeout = message.includes("timed out")
