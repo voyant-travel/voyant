@@ -30,6 +30,7 @@ function adapter(
   kind: string,
   behaviour: {
     supports?: boolean
+    verticals?: string[]
     result?: AvailabilitySearchResult
     throws?: Error
     delayMs?: number
@@ -39,7 +40,7 @@ function adapter(
   return {
     kind,
     capabilities: {
-      verticals: ["accommodations"],
+      verticals: behaviour.verticals ?? ["accommodations"],
       supportsLiveResolution: true,
       supportsAvailabilitySearch: supports,
       supportsDriftDetection: false,
@@ -178,6 +179,46 @@ describe("fanOutAvailabilitySearch", () => {
     })
 
     expect(result.candidates[0]?.source).toEqual({ kind: "sourced", connectionId: "upstream_real" })
+  })
+
+  it("skips sources that don't feed the requested vertical, without querying them", async () => {
+    let flightSearched = false
+    // A flight connection whose searchAvailability flips a flag if ever called.
+    const flightAdapter: SourceAdapter = {
+      kind: "flights",
+      capabilities: {
+        verticals: ["flights"],
+        supportsLiveResolution: true,
+        supportsAvailabilitySearch: true,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: false,
+        postBookOperations: [],
+      },
+      async searchAvailability() {
+        flightSearched = true
+        return { candidates: [], status: "ok" }
+      },
+    }
+    const result = await fanOutAvailabilitySearch({
+      adapters: [
+        {
+          connectionId: "stays",
+          adapter: adapter("stays", {
+            result: { candidates: [candidate("s", "100")], status: "ok" },
+          }),
+        },
+        { connectionId: "flights", adapter: flightAdapter },
+      ],
+      ownedHandlers: [ownedHandler("extras", [candidate("e", "50")])],
+      request: REQUEST, // vertical: "accommodations"
+    })
+
+    expect(flightSearched).toBe(false)
+    expect(result.candidates.map((c) => c.entity_id)).toEqual(["s"])
+    expect(result.perConnection.find((c) => c.source === "flights")?.status).toBe(
+      "vertical_skipped",
+    )
+    expect(result.perConnection.find((c) => c.source === "extras")?.status).toBe("vertical_skipped")
   })
 
   it("surfaces each source's pagination cursor on perConnection", async () => {

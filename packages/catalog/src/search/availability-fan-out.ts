@@ -30,6 +30,7 @@ export type AvailabilityConnectionStatus =
   | "timeout"
   | "error"
   | "capability_missing"
+  | "vertical_skipped"
 
 export interface AvailabilityConnectionResult {
   /** Connection id (sourced) or entity module (owned). */
@@ -101,6 +102,12 @@ export async function fanOutAvailabilitySearch(
 
   const sourcedTasks = (options.adapters ?? []).map(({ connectionId, adapter, context }) =>
     runSource(connectionId, "sourced", timeoutMs, async () => {
+      // Vertical gate — skip adapters that don't feed the requested vertical
+      // (e.g. a flight connection on an accommodations search) rather than
+      // querying them with criteria they don't own.
+      if (!adapter.capabilities.verticals.includes(request.vertical)) {
+        return { status: "vertical_skipped" as const, candidates: [] }
+      }
       // Capability gate up front — declared flag AND method presence.
       if (!adapter.capabilities.supportsAvailabilitySearch || !adapter.searchAvailability) {
         return { status: "capability_missing" as const, candidates: [] }
@@ -118,6 +125,11 @@ export async function fanOutAvailabilitySearch(
 
   const ownedTasks = (options.ownedHandlers ?? []).map(({ handler, context }) =>
     runSource(handler.entityModule, "owned", timeoutMs, async () => {
+      // An owned handler claims exactly one vertical (its entityModule); skip
+      // it when the search is for a different one.
+      if (handler.entityModule !== request.vertical) {
+        return { status: "vertical_skipped" as const, candidates: [] }
+      }
       const result = await handler.searchAvailability(context, request)
       const candidates = result.candidates.map((c) =>
         c.source ? c : { ...c, source: { kind: "owned" as const, module: handler.entityModule } },
