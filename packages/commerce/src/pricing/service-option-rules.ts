@@ -1,6 +1,6 @@
 import type { EventBus } from "@voyant-travel/core"
 import { RequestValidationError } from "@voyant-travel/hono"
-import { and, asc, desc, eq, ne, sql } from "drizzle-orm"
+import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -101,16 +101,27 @@ export async function getOptionPriceRuleById(db: PostgresJsDatabase, id: string)
 }
 
 /**
- * Demote any *other* default rate plan in the same (option, catalog) scope so
- * at most one `is_default = true` plan survives per option+catalog. Without
+ * Demote any *other* default rate plan in the same (option, catalog, schedule)
+ * scope so at most one `is_default = true` plan survives per scope. Without
  * this, a save path that inserts (rather than upserts) the default plan can
  * fan out several active `is_default` rows — and the public departures reader
  * may then surface an empty duplicate instead of the priced plan, rendering a
  * bookable departure as "price on request" (#1601). Latest write wins.
+ *
+ * The schedule is part of the scope on purpose: the date resolver treats a
+ * `priceScheduleId = null` default as the *out-of-season fallback* and each
+ * scheduled default as a separate seasonal default (see `pickRulesForDate`).
+ * Demoting across schedules would let a seasonal save clear the fallback
+ * default, leaving dates outside that schedule with no priced rule.
  */
 async function demoteOtherDefaultRules(
   tx: PostgresJsDatabase,
-  scope: { optionId: string; priceCatalogId: string; keepRuleId: string },
+  scope: {
+    optionId: string
+    priceCatalogId: string
+    priceScheduleId: string | null
+    keepRuleId: string
+  },
 ): Promise<void> {
   await tx
     .update(optionPriceRules)
@@ -119,6 +130,9 @@ async function demoteOtherDefaultRules(
       and(
         eq(optionPriceRules.optionId, scope.optionId),
         eq(optionPriceRules.priceCatalogId, scope.priceCatalogId),
+        scope.priceScheduleId === null
+          ? isNull(optionPriceRules.priceScheduleId)
+          : eq(optionPriceRules.priceScheduleId, scope.priceScheduleId),
         eq(optionPriceRules.isDefault, true),
         ne(optionPriceRules.id, scope.keepRuleId),
       ),
@@ -137,6 +151,7 @@ export async function createOptionPriceRule(
       await demoteOtherDefaultRules(tx, {
         optionId: inserted.optionId,
         priceCatalogId: inserted.priceCatalogId,
+        priceScheduleId: inserted.priceScheduleId,
         keepRuleId: inserted.id,
       })
     }
@@ -196,6 +211,7 @@ export async function updateOptionPriceRule(
       await demoteOtherDefaultRules(tx, {
         optionId: updated.optionId,
         priceCatalogId: updated.priceCatalogId,
+        priceScheduleId: updated.priceScheduleId,
         keepRuleId: updated.id,
       })
     }

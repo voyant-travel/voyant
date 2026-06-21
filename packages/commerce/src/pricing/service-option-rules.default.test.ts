@@ -1,7 +1,7 @@
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { and, eq } from "drizzle-orm"
 import { beforeEach, describe, expect, it } from "vitest"
-import { priceCatalogs } from "./schema-catalogs.js"
+import { priceCatalogs, priceSchedules } from "./schema-catalogs.js"
 import { optionPriceRules } from "./schema-option-rules.js"
 import {
   createOptionPriceRule,
@@ -22,6 +22,7 @@ function ruleInput(partial: {
   name: string
   isDefault?: boolean
   active?: boolean
+  priceScheduleId?: string
 }) {
   return insertOptionPriceRuleSchema.parse({ pricingMode: "per_person", ...partial })
 }
@@ -147,6 +148,51 @@ describe.skipIf(!DB_AVAILABLE)("option price rule single-default enforcement", (
     expect((await countDefaults("opt_a", catalog.id))[0]?.id).toBe(keep?.id)
     expect((await countDefaults("opt_b", catalog.id))[0]?.id).toBe(otherOption?.id)
     expect((await countDefaults("opt_a", otherCatalog.id))[0]?.id).toBe(otherCatalogRule?.id)
+  })
+
+  it("keeps the out-of-season fallback default when a seasonal default is saved", async () => {
+    const catalog = await seedCatalog("PUB-EUR-5")
+    const [schedule] = await db
+      .insert(priceSchedules)
+      .values({
+        priceCatalogId: catalog.id,
+        name: "Summer",
+        recurrenceRule: "FREQ=YEARLY;BYMONTH=6,7,8",
+      })
+      .returning()
+    if (!schedule) throw new Error("failed to seed price schedule")
+    const optionId = "opt_season"
+
+    // The unscheduled default acts as the out-of-season fallback (#1601 P1).
+    const fallback = await createOptionPriceRule(
+      db,
+      ruleInput({
+        productId: "prod_season",
+        optionId,
+        priceCatalogId: catalog.id,
+        name: "Fallback default",
+        isDefault: true,
+        active: true,
+      }),
+    )
+    // A seasonal default lives in its own schedule scope and must NOT demote
+    // the null-schedule fallback.
+    const seasonal = await createOptionPriceRule(
+      db,
+      ruleInput({
+        productId: "prod_season",
+        optionId,
+        priceCatalogId: catalog.id,
+        name: "Summer default",
+        isDefault: true,
+        active: true,
+        priceScheduleId: schedule.id,
+      }),
+    )
+
+    const all = await listOptionPriceRules(db, { optionId, limit: 50, offset: 0 })
+    expect(all.data.find((rule) => rule.id === fallback?.id)?.isDefault).toBe(true)
+    expect(all.data.find((rule) => rule.id === seasonal?.id)?.isDefault).toBe(true)
   })
 
   it("demotes prior defaults when an existing plan is promoted via update", async () => {

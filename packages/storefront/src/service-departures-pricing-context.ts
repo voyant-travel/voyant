@@ -278,14 +278,23 @@ export async function resolvePricingContext(
     // Prefer a rule that actually carries a price before falling back to the
     // default flag. A stray empty default (base 0, no unit prices) must not
     // mask a priced plan, or the departure renders "price on request" (#1601).
-    // agent-quality: raw-sql reviewed -- owner: storefront; correlated existence check over priced unit rules, no string interpolation.
+    // A unit rule counts as priced via either its own sell amount or an active
+    // tier amount, mirroring how `selectUnitAmount` resolves the price.
+    // agent-quality: raw-sql reviewed -- owner: storefront; correlated existence check over priced unit rules/tiers, no string interpolation.
     .orderBy(
       desc(sql`(
         coalesce(${optionPriceRules.baseSellAmountCents}, 0) > 0 OR EXISTS (
           SELECT 1 FROM ${optionUnitPriceRules}
           WHERE ${optionUnitPriceRules.optionPriceRuleId} = ${optionPriceRules.id}
             AND ${optionUnitPriceRules.active} = true
-            AND coalesce(${optionUnitPriceRules.sellAmountCents}, 0) > 0
+            AND (
+              coalesce(${optionUnitPriceRules.sellAmountCents}, 0) > 0 OR EXISTS (
+                SELECT 1 FROM ${optionUnitTiers}
+                WHERE ${optionUnitTiers.optionUnitPriceRuleId} = ${optionUnitPriceRules.id}
+                  AND ${optionUnitTiers.active} = true
+                  AND coalesce(${optionUnitTiers.sellAmountCents}, 0) > 0
+              )
+            )
         )
       )`),
       desc(optionPriceRules.isDefault),
