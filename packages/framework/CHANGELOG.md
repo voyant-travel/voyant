@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.16
+
+### Patch Changes
+
+- Updated dependencies [466e576]
+  - @voyant-travel/legal@0.129.1
+
 ## 0.2.15
 
 ### Patch Changes
