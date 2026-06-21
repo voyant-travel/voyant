@@ -1,10 +1,8 @@
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { Hono } from "hono"
-import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import {
-  buildInlineDownload,
   getActionLedgerRequestContext,
-  resolveWaitRequest,
+  getFinanceRouteRuntime,
   routeIdempotencyKey,
 } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
@@ -14,10 +12,8 @@ import {
   InvoiceNumberAllocationError,
   InvoiceNumberConflictError,
 } from "./service.js"
-import { waitForInvoiceRendition, waitFormatForMode } from "./service-rendition-wait.js"
 import {
   insertInvoiceSchema,
-  invoiceDocumentWaitQuerySchema,
   invoiceFromBookingSchema,
   invoiceListQuerySchema,
 } from "./validation.js"
@@ -55,7 +51,6 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
     }),
     async (c) => {
       const input = await parseJsonBody(c, invoiceFromBookingSchema)
-      const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
       const db = c.get("db")
       const [
         { bookingItems, bookings },
@@ -101,13 +96,7 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
         return c.json({ error: "Booking payment schedule not found" }, 404)
       }
 
-      const runtime = (() => {
-        try {
-          return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
-        } catch {
-          return undefined
-        }
-      })()
+      const runtime = getFinanceRouteRuntime(c)
 
       const issuer =
         input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
@@ -193,29 +182,7 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
         throw error
       }
 
-      if (!row || waitRequest.mode === "none") {
-        return c.json({ data: row }, 201)
-      }
-
-      const waitResult = await waitForInvoiceRendition(db, row.id, {
-        format: waitFormatForMode(waitRequest.mode),
-        timeoutMs: waitRequest.timeoutMs,
-      })
-      const payload = {
-        invoice: row,
-        rendition: waitResult.rendition,
-      }
-
-      if (waitResult.status !== "ready") {
-        return c.json({ data: payload }, 202)
-      }
-
-      const download = await buildInlineDownload(c, waitResult.rendition)
-      if (download.status !== "ready") {
-        return c.json({ data: payload }, 202)
-      }
-
-      return c.json({ data: { ...payload, download: download.download } }, 201)
+      return c.json({ data: row }, 201)
     },
   )
 
@@ -226,13 +193,7 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
       .json<{ invoiceNumber?: string; issueDate?: string; dueDate?: string }>()
       .catch(() => ({}))
 
-    const runtime = (() => {
-      try {
-        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
-      } catch {
-        return undefined
-      }
-    })()
+    const runtime = getFinanceRouteRuntime(c)
 
     let result: Awaited<ReturnType<typeof convertProformaToInvoice>>
     try {

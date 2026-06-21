@@ -1837,11 +1837,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         dueDate: "2025-07-01",
       }
 
-      const first = await app.request("/invoices/from-booking", {
+      const first = await app.request("/invoices/from-booking?wait=pdf&waitTimeoutMs=2000", {
         method: "POST",
         ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
       })
-      const replay = await app.request("/invoices/from-booking", {
+      const replay = await app.request("/invoices/from-booking?wait=pdf&waitTimeoutMs=2000", {
         method: "POST",
         ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
       })
@@ -2096,7 +2096,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(404)
     })
 
-    it("waits for an issued invoice PDF and returns its download URL inline", async () => {
+    it("issues invoices immediately even when callers request an inline PDF wait", async () => {
       const booking = await seedBooking({ sellAmountCents: 20000 })
       await seedBookingItem(booking.id)
       autoRenditionBookings.set(booking.id, {
@@ -2116,19 +2116,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       expect(res.status).toBe(201)
       const { data } = await res.json()
-      expect(data.invoice.id).toMatch(/^inv_/)
-      expect(data.invoice.bookingId).toBe(booking.id)
-      expect(data.rendition).toMatchObject({
-        invoiceId: data.invoice.id,
-        format: "pdf",
-        status: "ready",
-        storageKey: `invoices/${booking.id}/smartbill.pdf`,
-      })
-      expect(data.download).toEqual({
-        url: `https://files.example/invoices/${booking.id}/smartbill.pdf`,
-        expiresAt: null,
-        filename: "smartbill.pdf",
-      })
+      expect(data.id).toMatch(/^inv_/)
+      expect(data.bookingId).toBe(booking.id)
+      expect(data.rendition).toBeUndefined()
+      expect(data.download).toBeUndefined()
     })
   })
 

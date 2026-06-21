@@ -45,11 +45,16 @@ export async function buildInlineDownload(
 
 export function getFinanceRouteRuntime(c: {
   var: { container?: { resolve: <T>(key: string) => T } }
+  get?: (key: "eventBus") => FinanceRouteRuntime["eventBus"] | undefined
 }) {
+  const eventBus = c.get?.("eventBus")
   try {
-    return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+    const runtime = c.var.container?.resolve<FinanceRouteRuntime>(
+      FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
+    )
+    return eventBus ? { ...(runtime ?? {}), eventBus } : runtime
   } catch {
-    return undefined
+    return eventBus ? { invoiceSettlementPollers: {}, eventBus } : undefined
   }
 }
 

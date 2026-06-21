@@ -1,4 +1,4 @@
-import type { ModuleContainer } from "@voyant-travel/core"
+import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -27,6 +27,7 @@ export type Env = {
     workflowStepId?: string
     isInternalRequest?: boolean
     container?: ModuleContainer
+    eventBus?: EventBus
   }
 }
 
