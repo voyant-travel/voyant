@@ -1,5 +1,11 @@
 # @voyant-travel/finance
 
+## 0.131.1
+
+### Patch Changes
+
+- 8c9a402: Make invoice issuance endpoints return the issued row immediately while document sync and PDF attachment work continues asynchronously.
+
 ## 0.131.0
 
 ### Patch Changes

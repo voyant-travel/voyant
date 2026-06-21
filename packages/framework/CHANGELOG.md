@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.2.22
+
+### Patch Changes
+
+- Updated dependencies [8c9a402]
+  - @voyant-travel/finance@0.131.1
+
 ## 0.2.21
 
 ### Patch Changes
