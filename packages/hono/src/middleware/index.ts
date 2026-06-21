@@ -6,7 +6,12 @@ export {
 } from "./body-size.js"
 export { cors } from "./cors.js"
 export { db } from "./db.js"
-export { errorBoundary, handleApiError, requestId } from "./error-boundary.js"
+export {
+  errorBoundary,
+  type HandleApiErrorOptions,
+  handleApiError,
+  requestId,
+} from "./error-boundary.js"
 export {
   DEFAULT_IDEMPOTENCY_TTL_MS,
   type IdempotencyKeyOptions,

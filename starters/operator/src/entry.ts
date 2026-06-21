@@ -1,6 +1,7 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyant-travel/worker-runtime"
 import { operatorApiDispatch } from "./hono-api-dispatch"
+import { reportBackgroundFailure } from "./lib/observability"
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,
   CHANNEL_PUSH_BOOKING_LINK_CRON,
@@ -37,7 +38,8 @@ export default {
             if (result.claimed > 0 || result.deadLettered > 0) {
               console.info("[outbox-drain] result", result)
             }
-          }),
+          })
+          .catch((err) => reportBackgroundFailure("outbox-drain", err)),
       )
       return
     }
@@ -47,7 +49,8 @@ export default {
           .then((mod) => mod.runScheduledDraftReaper(event, env))
           .then((result) => {
             console.info("[draft-reaper] result", result)
-          }),
+          })
+          .catch((err) => reportBackgroundFailure("draft-reaper", err)),
       )
       return
     }
@@ -57,7 +60,8 @@ export default {
           .then((mod) => mod.runScheduledPromotionBoundary(event, env))
           .then((result) => {
             console.info("[promotion-scheduler] result", result)
-          }),
+          })
+          .catch((err) => reportBackgroundFailure("promotion-scheduler", err)),
       )
       return
     }
@@ -67,9 +71,9 @@ export default {
       event.cron === CHANNEL_PUSH_CONTENT_CRON
     ) {
       ctx.waitUntil(
-        import("./api/jobs/channel-push-scheduled").then((mod) =>
-          mod.runScheduledChannelPushReconciler(event, env),
-        ),
+        import("./api/jobs/channel-push-scheduled")
+          .then((mod) => mod.runScheduledChannelPushReconciler(event, env))
+          .catch((err) => reportBackgroundFailure("channel-push", err)),
       )
       return
     }
@@ -79,7 +83,8 @@ export default {
           .then((mod) => mod.runScheduledExternalCruiseCatalogRefresh(event, env))
           .then((result) => {
             console.info("[external-cruise-refresh] result", result)
-          }),
+          })
+          .catch((err) => reportBackgroundFailure("external-cruise-refresh", err)),
       )
       return
     }

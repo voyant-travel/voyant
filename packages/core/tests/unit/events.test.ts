@@ -349,3 +349,69 @@ describe("deliver — redelivery with failure reporting", () => {
     expect(result).toEqual({ attempted: 0, failed: 0, errors: [] })
   })
 })
+
+describe("onSubscriberError hook (RFC #1553)", () => {
+  it("invokes the hook with the event name + thrown error", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const onSubscriberError = vi.fn()
+    const boom = new Error("subscriber blew up")
+    const bus = createEventBus({ onSubscriberError })
+    bus.subscribe("booking.created", () => {
+      throw boom
+    })
+
+    await bus.emit("booking.created", { id: "b1" })
+
+    expect(onSubscriberError).toHaveBeenCalledTimes(1)
+    expect(onSubscriberError).toHaveBeenCalledWith("booking.created", boom)
+    errorSpy.mockRestore()
+  })
+
+  it("invokes the hook with an Error on handler timeout", async () => {
+    vi.useFakeTimers()
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const onSubscriberError = vi.fn()
+    const bus = createEventBus({ handlerTimeoutMs: 10, onSubscriberError })
+    bus.subscribe("slow.event", () => new Promise(() => {}))
+
+    const emitted = bus.emit("slow.event", {})
+    await vi.advanceTimersByTimeAsync(20)
+    await emitted
+
+    expect(onSubscriberError).toHaveBeenCalledTimes(1)
+    const [event, error] = onSubscriberError.mock.calls[0]
+    expect(event).toBe("slow.event")
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).toContain("exceeded 10ms")
+    errorSpy.mockRestore()
+    vi.useRealTimers()
+  })
+
+  it("a throwing hook never breaks the bus or the emitter", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const sibling = vi.fn()
+    const bus = createEventBus({
+      onSubscriberError: () => {
+        throw new Error("reporter exploded")
+      },
+    })
+    bus.subscribe("e", () => {
+      throw new Error("handler failed")
+    })
+    bus.subscribe("e", sibling)
+
+    await expect(bus.emit("e", {})).resolves.toBeUndefined()
+    expect(sibling).toHaveBeenCalledOnce()
+    errorSpy.mockRestore()
+  })
+
+  it("is not called when all subscribers succeed", async () => {
+    const onSubscriberError = vi.fn()
+    const bus = createEventBus({ onSubscriberError })
+    bus.subscribe("ok", () => {})
+
+    await bus.emit("ok", {})
+
+    expect(onSubscriberError).not.toHaveBeenCalled()
+  })
+})

@@ -24,7 +24,7 @@ import {
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-
+import { reportBackgroundFailure } from "../../lib/observability"
 import {
   type BookingEngineEnv,
   ensureBookingEngineRegistry,
@@ -91,6 +91,9 @@ export async function runScheduledDraftReaper(
             draftId: draft.id,
             reason: err instanceof Error ? err.message : String(err),
           })
+          // Hold release is a booking invariant — a failure here can leak
+          // inventory, so surface it past the console (RFC voyant#1553).
+          reportBackgroundFailure("draft-reaper", err, { draftId: draft.id, op: "release-hold" })
         }
       }
 
@@ -102,6 +105,7 @@ export async function runScheduledDraftReaper(
           draftId: draft.id,
           reason: err instanceof Error ? err.message : String(err),
         })
+        reportBackgroundFailure("draft-reaper", err, { draftId: draft.id, op: "delete-draft" })
       }
     }
 
