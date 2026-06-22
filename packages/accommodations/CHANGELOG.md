@@ -1,5 +1,30 @@
 # @voyant-travel/accommodations
 
+## 0.107.0
+
+### Minor Changes
+
+- 924d201: Room-block allotment (Phase 1) + MICE program spine.
+
+  - accommodations: `room_blocks` / `room_block_nights` / `room_block_pickups` with
+    per-night counters, CHECK invariants, an append-only pickup ledger, and a
+    transactional pickup/reversal/cutoff-release service; first
+    `accommodationsHonoModule` (registered in the framework standard set) +
+    `roomBlockLinkable`.
+  - operations: `property` / `facility` linkable definitions.
+  - mice (new): `mice_programs` umbrella + admin routes + `programLinkable`,
+    mounted operator-local.
+  - schema-kit: TypeID prefixes `hrbn` / `hrbp` / `prog`.
+
+### Patch Changes
+
+- Updated dependencies [924d201]
+- Updated dependencies [f311826]
+  - @voyant-travel/operations@0.4.0
+  - @voyant-travel/db@0.109.1
+  - @voyant-travel/bookings@0.135.0
+  - @voyant-travel/catalog@0.133.0
+
 ## 0.106.1
 
 ### Patch Changes

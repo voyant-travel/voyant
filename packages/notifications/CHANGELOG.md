@@ -1,5 +1,14 @@
 # @voyant-travel/notifications
 
+## 0.116.3
+
+### Patch Changes
+
+- @voyant-travel/db@0.109.1
+- @voyant-travel/bookings@0.135.0
+- @voyant-travel/finance@0.135.0
+- @voyant-travel/legal@0.135.0
+
 ## 0.116.2
 
 ### Patch Changes
