@@ -205,6 +205,8 @@ export async function pickupRoomBlock(
 }
 
 export interface RoomBlockReversalInput {
+  /** When set, the pickup must belong to this block or it is treated as not found. */
+  blockId?: string
   pickupId?: string
   stayBookingItemId?: string
 }
@@ -238,6 +240,11 @@ export async function reverseRoomBlockPickup(
       .for("update")
       .limit(1)
     if (!pickup || pickup.status === "reversed") return { status: "pickup_not_found" as const }
+    // Scope to the requested block: never reverse a pickup that belongs to a
+    // different block just because the caller knows its id.
+    if (input.blockId && pickup.blockId !== input.blockId) {
+      return { status: "pickup_not_found" as const }
+    }
 
     for (const date of eachNight(pickup.checkIn, pickup.checkOut)) {
       await tx

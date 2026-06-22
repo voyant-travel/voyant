@@ -79,7 +79,10 @@ export const roomBlockAdminRoutes = new Hono<Env>()
   })
   .post("/room-blocks/:id/pickups/reverse", async (c) => {
     const body = await parseJsonBody(c, reverseRoomBlockPickupSchema)
-    const outcome = await reverseRoomBlockPickup(c.get("db"), body)
+    const outcome = await reverseRoomBlockPickup(c.get("db"), {
+      blockId: c.req.param("id"),
+      ...body,
+    })
     if (outcome.status === "pickup_not_found") {
       return c.json({ error: "Active pickup not found" }, 404)
     }

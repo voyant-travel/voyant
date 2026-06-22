@@ -149,6 +149,28 @@ describe.skipIf(!DB_AVAILABLE)("room-block allotment service", () => {
     expect(row?.status).toBe("reversed")
   })
 
+  it("refuses to reverse a pickup that belongs to a different block", async () => {
+    const a = await seedBlock(5)
+    const b = await seedBlock(5)
+    const picked = await pickupRoomBlock(db, {
+      blockId: a.block.id,
+      checkIn: NIGHTS[0],
+      checkOut: "2026-09-03",
+      rooms: 2,
+    })
+    if (picked.status !== "ok") throw new Error("pickup failed")
+
+    // Reversing under block B's id must not touch block A's pickup/counters.
+    const wrong = await reverseRoomBlockPickup(db, {
+      blockId: b.block.id,
+      pickupId: picked.pickup.id,
+    })
+    expect(wrong.status).toBe("pickup_not_found")
+
+    const summaryA = await summarizeRoomBlock(db, a.block.id)
+    expect(summaryA?.totalPickedUp).toBe(4)
+  })
+
   it("is idempotent on stayBookingItemId", async () => {
     const { roomType, block } = await seedBlock(5)
     const stay = await seedStayBookingItem(roomType.id)
