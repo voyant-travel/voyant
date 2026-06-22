@@ -133,8 +133,8 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
     // bundle bootstraps populate at construction time.
 
     // Workflow runs admin surface — list/get + rerun/resume actions
-    // feeding the standalone dashboard SPA in
-    // apps/workflow-runs-dashboard. The registry is populated by
+    // feeding the `WorkflowRunsPage` UI from
+    // `@voyant-travel/workflows-react/ui`. The registry is populated by
     // bundle bootstraps (e.g. catalog-checkout registers the
     // `checkout-finalize` runner).
     mountWorkflowRunsAdminRoutes(hono, {

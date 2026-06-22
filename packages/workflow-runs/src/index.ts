@@ -8,8 +8,9 @@
  *      rows into `workflow_runs` + `workflow_run_steps` as a
  *      workflow runs. Edge-compatible — postgres-js or neon-http.
  *   2. A read-only Hono router (`createWorkflowRunsAdminRoutes`)
- *      that serves `/v1/admin/workflow-runs[/:id]` for the standalone
- *      dashboard SPA in `apps/workflow-runs-dashboard/` to consume.
+ *      that serves `/v1/admin/workflow-runs[/:id]` for the
+ *      `WorkflowRunsPage` UI in `@voyant-travel/workflows-react/ui`
+ *      to consume.
  *
  * Distinct from the durable `@voyant-travel/workflows` SDK — that one is
  * the Cloud-orchestrated runtime; this one is the lightweight
