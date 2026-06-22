@@ -125,10 +125,14 @@ export function mountApp<TBindings extends VoyantBindings>(
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
   // Anonymous-access allow-list (ADR-0008): assembled from module/extension
-  // `anonymous` declarations + any explicit `publicPaths` escape-hatch entries.
+  // `anonymous` declarations + bundle-declared absolute anonymous paths (e.g. a
+  // payment-processor webhook) + any explicit `publicPaths` escape-hatch entries.
   // Used by both the auth middleware (skip auth / stamp customer actor) and the
   // public-write rate-limit matcher below, so the two never diverge.
-  const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, config.publicPaths)
+  const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, [
+    ...(config.publicPaths ?? []),
+    ...(expanded?.anonymousPaths ?? []),
+  ])
   // When the framework owns the bus, route subscriber-dispatch failures
   // (including the workflow forwarder) to the reporter — they're otherwise
   // only console-logged per the fire-and-forget EventBus contract (RFC #1553).

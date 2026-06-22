@@ -35,6 +35,18 @@ describe("expandHonoPlugins", () => {
     expect(result.modules[0]?.module.name).toBe("bundle")
   })
 
+  it("collects bundle-declared anonymous absolute paths (ADR-0008)", () => {
+    const result = expandHonoBundles([
+      defineHonoBundle({ name: "netopia", anonymous: ["/v1/finance/providers/netopia/callback"] }),
+      defineHonoBundle({ name: "other", anonymous: ["/v1/foo/webhook"] }),
+      defineHonoBundle({ name: "no-anon", modules: [makeModule("no-anon", "public")] }),
+    ])
+    expect(result.anonymousPaths).toEqual([
+      "/v1/finance/providers/netopia/callback",
+      "/v1/foo/webhook",
+    ])
+  })
+
   it("returns empty collections for no plugins", () => {
     const result = expandHonoPlugins([])
     expect(result.modules).toEqual([])
