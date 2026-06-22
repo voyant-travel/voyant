@@ -5,6 +5,8 @@ import { contractInvoiceLink } from "./contract-invoice.js"
 import { contractOrganizationLink } from "./contract-organization.js"
 import { contractPersonLink } from "./contract-person.js"
 import { contractSupplierLink } from "./contract-supplier.js"
+import { delegateBookingLink } from "./delegate-booking.js"
+import { delegatePersonLink } from "./delegate-person.js"
 import { organizationProductLink } from "./organization-product.js"
 import { organizationProgramLink } from "./organization-program.js"
 import { personProductLink } from "./person-product.js"
@@ -15,6 +17,7 @@ import { programSpaceBlockLink } from "./program-space-block.js"
 import { quoteProgramLink } from "./quote-program.js"
 import { roomBlockPropertyLink } from "./room-block-property.js"
 import { roomBlockSupplierLink } from "./room-block-supplier.js"
+import { roomingRoomBlockLink } from "./rooming-room-block.js"
 import { sessionFunctionSpaceLink } from "./session-function-space.js"
 
 export {
@@ -23,6 +26,8 @@ export {
   contractOrganizationLink,
   contractPersonLink,
   contractSupplierLink,
+  delegateBookingLink,
+  delegatePersonLink,
   organizationProductLink,
   organizationProgramLink,
   personProductLink,
@@ -33,6 +38,7 @@ export {
   quoteProgramLink,
   roomBlockPropertyLink,
   roomBlockSupplierLink,
+  roomingRoomBlockLink,
   sessionFunctionSpaceLink,
 }
 
@@ -57,4 +63,7 @@ export const links: LinkDefinition[] = [
   quoteProgramLink,
   sessionFunctionSpaceLink,
   programSpaceBlockLink,
+  delegatePersonLink,
+  delegateBookingLink,
+  roomingRoomBlockLink,
 ]

@@ -15,6 +15,13 @@
       "when": 1782153566121,
       "tag": "0001_mice_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782157604027,
+      "tag": "0002_mice_baseline",
+      "breakpoints": true
     }
   ]
 }

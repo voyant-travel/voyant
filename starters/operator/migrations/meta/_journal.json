@@ -43,6 +43,13 @@
       "when": 1782155914137,
       "tag": "0005_slow_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782157608087,
+      "tag": "0006_fresh_punisher",
+      "breakpoints": true
     }
   ]
 }

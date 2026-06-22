@@ -9,6 +9,20 @@ import { Hono } from "hono"
 
 import { createProgram, getProgram, listPrograms, updateProgram } from "./service.js"
 import {
+  createDelegate,
+  enrollDelegate,
+  getDelegate,
+  listDelegates,
+  updateDelegate,
+} from "./service-delegates.js"
+import {
+  createRoomingAssignment,
+  getRoomingAssignment,
+  listRoomingAssignments,
+  setRoomingDelegates,
+  updateRoomingAssignment,
+} from "./service-rooming.js"
+import {
   createSession,
   deleteSession,
   getSession,
@@ -17,6 +31,18 @@ import {
   updateSession,
 } from "./service-sessions.js"
 import { createProgramSchema, programListQuerySchema, updateProgramSchema } from "./validation.js"
+import {
+  createDelegateSchema,
+  delegateListQuerySchema,
+  enrollDelegateSchema,
+  updateDelegateSchema,
+} from "./validation-delegates.js"
+import {
+  createRoomingAssignmentSchema,
+  roomingListQuerySchema,
+  setRoomingDelegatesSchema,
+  updateRoomingAssignmentSchema,
+} from "./validation-rooming.js"
 import {
   createSessionSchema,
   sessionListQuerySchema,
@@ -84,6 +110,74 @@ export const miceAdminRoutes = new Hono<Env>()
     if (!session) return c.json({ error: "Session not found" }, 404)
     const { inclusions } = await parseJsonBody(c, setSessionInclusionsSchema)
     return c.json({ data: await setSessionInclusions(c.get("db"), id, inclusions) })
+  })
+  // Delegates + session enrollment (RFC voyant#1489 Phase 3).
+  .get("/delegates", async (c) => {
+    const query = await parseQuery(c, delegateListQuerySchema)
+    return c.json(await listDelegates(c.get("db"), query))
+  })
+  .post("/delegates", async (c) => {
+    const body = await parseJsonBody(c, createDelegateSchema)
+    const outcome = await createDelegate(c.get("db"), body)
+    if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
+    return c.json({ data: outcome.delegate }, 201)
+  })
+  .get("/delegates/:id", async (c) => {
+    const delegate = await getDelegate(c.get("db"), c.req.param("id"))
+    if (!delegate) return c.json({ error: "Delegate not found" }, 404)
+    return c.json({ data: delegate })
+  })
+  .patch("/delegates/:id", async (c) => {
+    const body = await parseJsonBody(c, updateDelegateSchema)
+    const delegate = await updateDelegate(c.get("db"), c.req.param("id"), body)
+    if (!delegate) return c.json({ error: "Delegate not found" }, 404)
+    return c.json({ data: delegate })
+  })
+  .post("/delegates/:id/enrollments", async (c) => {
+    const body = await parseJsonBody(c, enrollDelegateSchema)
+    const outcome = await enrollDelegate(c.get("db"), c.req.param("id"), body)
+    switch (outcome.status) {
+      case "ok":
+        return c.json({ data: outcome.enrollment }, outcome.idempotent ? 200 : 201)
+      case "delegate_not_found":
+        return c.json({ error: "Delegate not found" }, 404)
+      case "session_not_found":
+        return c.json({ error: "Session not found" }, 404)
+    }
+  })
+  // Rooming manifest (RFC voyant#1489 Phase 3).
+  .get("/rooming-assignments", async (c) => {
+    const query = await parseQuery(c, roomingListQuerySchema)
+    return c.json(await listRoomingAssignments(c.get("db"), query))
+  })
+  .post("/rooming-assignments", async (c) => {
+    const body = await parseJsonBody(c, createRoomingAssignmentSchema)
+    const outcome = await createRoomingAssignment(c.get("db"), body)
+    if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
+    return c.json({ data: outcome.assignment }, 201)
+  })
+  .get("/rooming-assignments/:id", async (c) => {
+    const assignment = await getRoomingAssignment(c.get("db"), c.req.param("id"))
+    if (!assignment) return c.json({ error: "Rooming assignment not found" }, 404)
+    return c.json({ data: assignment })
+  })
+  .patch("/rooming-assignments/:id", async (c) => {
+    const body = await parseJsonBody(c, updateRoomingAssignmentSchema)
+    const assignment = await updateRoomingAssignment(c.get("db"), c.req.param("id"), body)
+    if (!assignment) return c.json({ error: "Rooming assignment not found" }, 404)
+    return c.json({ data: assignment })
+  })
+  .put("/rooming-assignments/:id/delegates", async (c) => {
+    const { delegates } = await parseJsonBody(c, setRoomingDelegatesSchema)
+    const outcome = await setRoomingDelegates(c.get("db"), c.req.param("id"), delegates)
+    switch (outcome.status) {
+      case "ok":
+        return c.json({ data: outcome.delegates })
+      case "assignment_not_found":
+        return c.json({ error: "Rooming assignment not found" }, 404)
+      case "delegate_not_found":
+        return c.json({ error: "Delegate not found", detail: { missing: outcome.missing } }, 404)
+    }
   })
 
 export type MiceAdminRoutes = typeof miceAdminRoutes

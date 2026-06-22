@@ -40,7 +40,7 @@ describe("operator runtime composition", () => {
     // Distribution each mount multiple internal Hono modules.
     expect(OPERATOR_RUNTIME_MANIFEST.modules).toHaveLength(34)
     expect(composed.modules).toHaveLength(39)
-    expect(composed.extensions).toHaveLength(15)
+    expect(composed.extensions).toHaveLength(16)
 
     // Every composed unit is a real HonoModule/HonoExtension.
     for (const m of composed.modules) expect(m.module?.name).toBeTypeOf("string")

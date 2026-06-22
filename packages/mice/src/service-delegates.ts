@@ -1,0 +1,146 @@
+import { and, asc, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { programs } from "./schema.js"
+import {
+  type DelegateSessionEnrollment,
+  delegateSessionEnrollments,
+  type ProgramDelegate,
+  programDelegates,
+} from "./schema-delegates.js"
+import { programSessions } from "./schema-sessions.js"
+import type {
+  CreateDelegateBody,
+  DelegateListQuery,
+  EnrollDelegateBody,
+  UpdateDelegateBody,
+} from "./validation-delegates.js"
+
+/** Coerce ISO datetime strings (from validation) into Date for timestamp columns. */
+function withTimestamps<T extends { arrivalAt?: string; departureAt?: string }>(input: T) {
+  const { arrivalAt, departureAt, ...rest } = input
+  return {
+    ...rest,
+    ...(arrivalAt !== undefined ? { arrivalAt: new Date(arrivalAt) } : {}),
+    ...(departureAt !== undefined ? { departureAt: new Date(departureAt) } : {}),
+  }
+}
+
+export type CreateDelegateOutcome =
+  | { status: "ok"; delegate: ProgramDelegate }
+  | { status: "program_not_found" }
+
+export async function createDelegate(
+  db: PostgresJsDatabase,
+  input: CreateDelegateBody,
+): Promise<CreateDelegateOutcome> {
+  const [program] = await db
+    .select({ id: programs.id })
+    .from(programs)
+    .where(eq(programs.id, input.programId))
+    .limit(1)
+  if (!program) return { status: "program_not_found" }
+  const [delegate] = await db.insert(programDelegates).values(withTimestamps(input)).returning()
+  if (!delegate) throw new Error("createDelegate: insert returned no rows")
+  return { status: "ok", delegate }
+}
+
+export async function getDelegate(
+  db: PostgresJsDatabase,
+  id: string,
+): Promise<(ProgramDelegate & { enrollments: DelegateSessionEnrollment[] }) | null> {
+  const [delegate] = await db
+    .select()
+    .from(programDelegates)
+    .where(eq(programDelegates.id, id))
+    .limit(1)
+  if (!delegate) return null
+  const enrollments = await db
+    .select()
+    .from(delegateSessionEnrollments)
+    .where(eq(delegateSessionEnrollments.delegateId, id))
+  return { ...delegate, enrollments }
+}
+
+export async function listDelegates(
+  db: PostgresJsDatabase,
+  query: DelegateListQuery,
+): Promise<{ data: ProgramDelegate[]; limit: number; offset: number }> {
+  const conditions = [eq(programDelegates.programId, query.programId)]
+  if (query.status) conditions.push(eq(programDelegates.status, query.status))
+  if (query.role) conditions.push(eq(programDelegates.role, query.role))
+  const data = await db
+    .select()
+    .from(programDelegates)
+    .where(and(...conditions))
+    .orderBy(asc(programDelegates.createdAt))
+    .limit(query.limit)
+    .offset(query.offset)
+  return { data, limit: query.limit, offset: query.offset }
+}
+
+export async function updateDelegate(
+  db: PostgresJsDatabase,
+  id: string,
+  input: UpdateDelegateBody,
+): Promise<ProgramDelegate | null> {
+  const [delegate] = await db
+    .update(programDelegates)
+    .set({ ...withTimestamps(input), updatedAt: new Date() })
+    .where(eq(programDelegates.id, id))
+    .returning()
+  return delegate ?? null
+}
+
+export type EnrollDelegateOutcome =
+  | { status: "ok"; enrollment: DelegateSessionEnrollment; idempotent: boolean }
+  | { status: "delegate_not_found" }
+  | { status: "session_not_found" }
+
+/** Enroll a delegate in a session. Idempotent on (delegate, session). */
+export async function enrollDelegate(
+  db: PostgresJsDatabase,
+  delegateId: string,
+  input: EnrollDelegateBody,
+): Promise<EnrollDelegateOutcome> {
+  return db.transaction(async (tx) => {
+    const [delegate] = await tx
+      .select({ id: programDelegates.id })
+      .from(programDelegates)
+      .where(eq(programDelegates.id, delegateId))
+      .limit(1)
+    if (!delegate) return { status: "delegate_not_found" as const }
+    const [session] = await tx
+      .select({ id: programSessions.id })
+      .from(programSessions)
+      .where(eq(programSessions.id, input.sessionId))
+      .limit(1)
+    if (!session) return { status: "session_not_found" as const }
+
+    const [existing] = await tx
+      .select()
+      .from(delegateSessionEnrollments)
+      .where(
+        and(
+          eq(delegateSessionEnrollments.delegateId, delegateId),
+          eq(delegateSessionEnrollments.sessionId, input.sessionId),
+        ),
+      )
+      .limit(1)
+    if (existing) return { status: "ok" as const, enrollment: existing, idempotent: true }
+
+    const [enrollment] = await tx
+      .insert(delegateSessionEnrollments)
+      .values({ delegateId, sessionId: input.sessionId, status: input.status })
+      .returning()
+    if (!enrollment) throw new Error("enrollDelegate: insert returned no rows")
+    return { status: "ok" as const, enrollment, idempotent: false }
+  })
+}
+
+export const delegateService = {
+  createDelegate,
+  getDelegate,
+  listDelegates,
+  updateDelegate,
+  enrollDelegate,
+}
