@@ -7,16 +7,19 @@
  * standard module added to the framework auto-joins the default set — the
  * deployment doesn't re-list it.
  *
- * D.1 ships a FIXED standard profile: `createVoyantApp` always mounts this full
- * set and only appends deployment-local modules/extensions — it does not yet
- * consume `voyant.config` to pare the standard set down. Module subsetting is a
- * later workstream; until then a deployment that must drop a standard module
- * forks the manifest explicitly rather than configuring it away.
+ * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
+ * may pare it down via `createVoyantApp({ exclude })` (remove), validated against
+ * `FRAMEWORK_CAPABILITY_GRAPH` (below) so dropping a depended-on module, or an
+ * `isRequired` one, fails at boot rather than as a runtime 500. Phase 1 lands the
+ * runtime removal mechanism here; aligning schema/migration generation with the
+ * same subset is the immediate follow-up. Capability *replacement* (override a
+ * module with a substitute) is the v2 design — see ADR-0007 "Deferred to v2".
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
- * factories relocate into this package next; this is the manifest (the "which +
- * order") moving first.
+ * factories live in this package alongside the manifest (the "which + order").
  */
+import type { CapabilityGraph } from "@voyant-travel/hono/composition"
+
 export interface FrameworkManifest {
   modules: readonly string[]
   extensions: readonly string[]
@@ -78,3 +81,26 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "operator/catalog-checkout-extension",
   ],
 } as const satisfies FrameworkManifest
+
+/**
+ * The standard set's capability dependency graph (ADR-0007). `isRequired` marks
+ * foundational modules a deployment may not `exclude`; `createVoyantApp` throws a
+ * named boot error if one is excluded. The `provides`/`requires` edges (for
+ * non-required modules a deployment *could* drop) are validated the same way —
+ * excluding a depended-on module names the orphaned consumers — but the v1
+ * standard set declares no such edges: every cross-cutting module is simply
+ * required.
+ *
+ * The required set is kept intentionally minimal — cross-cutting infrastructure
+ * (audit ledger, identity/contact-points, commerce primitives) plus CRM. CRM
+ * (`relationships`) is required rather than pluggable: deployments extend it with
+ * custom fields (`customFieldDefinitions`), not by swapping it out. A pluggable
+ * CRM port was considered and rejected as over-engineering for v1 (ADR-0007
+ * "Alternatives"). Everything else (flights, trips, cruises, …) stays excludable.
+ */
+export const FRAMEWORK_CAPABILITY_GRAPH = {
+  "@voyant-travel/action-ledger": { isRequired: true },
+  "@voyant-travel/identity": { isRequired: true },
+  "@voyant-travel/commerce": { isRequired: true },
+  "@voyant-travel/relationships": { isRequired: true },
+} as const satisfies CapabilityGraph
