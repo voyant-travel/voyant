@@ -68,3 +68,10 @@ focused on product code, architecture docs, and quality checkers.
   services/workflows, and serialize responses.
 - Avoid exposing internal helpers as public exports unless they are intended as
   supported package API.
+- Never use the agent or model name (e.g. Codex, Claude, GPT) as authorship or
+  attribution in version-control metadata: branch names, commit subjects or
+  bodies, PR/issue titles or descriptions, `Co-authored-by` trailers, or
+  generated-with footers. Keep commits attributed to the human author only.
+  This restricts VCS metadata only — it does not restrict the content of
+  tracked files, such as this guide naming the prohibited models or the
+  `CLAUDE.md` importer file.
