@@ -1,5 +1,11 @@
 # @voyant-travel/notifications
 
+## 0.116.2
+
+### Patch Changes
+
+- fac9297: Bump `@voyant-travel/cloud-sdk` to `^0.11.0` (from `^0.9.0`). The `0.x` caret previously capped the SDK below `0.10`, so this picks up the standardized JSON error envelope (`{ error, code?, requestId? }`) and the re-exported `VoyantApiError` / `CloudErrorCode`. Backward compatible — the email/SMS providers' usage is unchanged.
+
 ## 0.116.1
 
 ### Patch Changes

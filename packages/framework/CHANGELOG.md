@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [fac9297]
+  - @voyant-travel/notifications@0.116.2
+
 ## 0.6.0
 
 ### Minor Changes
