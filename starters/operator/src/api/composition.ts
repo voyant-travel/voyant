@@ -34,10 +34,12 @@ import type {
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
+import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
+import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createBookingScheduleExtension } from "./routes/booking-schedule"
@@ -246,6 +248,15 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
   }),
+  // Realtime channels (voyant#1695). Mints scoped client tokens at
+  // /v1/{admin,public}/realtime/token and bridges domain events to channels as
+  // invalidation hints. Provider-agnostic and fully optional: inert until
+  // VOYANT_REALTIME_ENABLED is set (see lib/realtime.ts).
+  "operator/realtime": () =>
+    createRealtimeHonoModule({
+      resolveProviders: resolveRealtimeProviders,
+      bridgeRoutes: operatorRealtimeBridgeRoutes,
+    }),
 }
 
 /**

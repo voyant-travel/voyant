@@ -12,6 +12,7 @@ import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"
 import type * as React from "react"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { RealtimeLiveProvider } from "./realtime-live"
 
 // VoyantAvailabilityProvider needs a baseUrl prop — wrap it once so it
 // fits the child-only AdminChildProvider shape used by the admin shell.
@@ -19,7 +20,11 @@ const AvailabilityProvider: AdminChildProvider = ({ children }) => (
   <VoyantAvailabilityProvider baseUrl={getApiUrl()}>{children}</VoyantAvailabilityProvider>
 )
 
-const appProviders = [TooltipProvider, AvailabilityProvider] satisfies readonly AdminChildProvider[]
+const appProviders = [
+  TooltipProvider,
+  AvailabilityProvider,
+  RealtimeLiveProvider,
+] satisfies readonly AdminChildProvider[]
 
 export function Providers({
   children,
