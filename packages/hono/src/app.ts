@@ -125,10 +125,14 @@ export function mountApp<TBindings extends VoyantBindings>(
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
   // Anonymous-access allow-list (ADR-0008): assembled from module/extension
-  // `anonymous` declarations + any explicit `publicPaths` escape-hatch entries.
+  // `anonymous` declarations + bundle-declared absolute anonymous paths (e.g. a
+  // payment-processor webhook) + any explicit `publicPaths` escape-hatch entries.
   // Used by both the auth middleware (skip auth / stamp customer actor) and the
   // public-write rate-limit matcher below, so the two never diverge.
-  const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, config.publicPaths)
+  const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, [
+    ...(config.publicPaths ?? []),
+    ...(expanded?.anonymousPaths ?? []),
+  ])
   // When the framework owns the bus, route subscriber-dispatch failures
   // (including the workflow forwarder) to the reporter — they're otherwise
   // only console-logged per the fire-and-forget EventBus contract (RFC #1553).
@@ -478,6 +482,14 @@ export function mountApp<TBindings extends VoyantBindings>(
   app.use("/v1/*", (c, next) => {
     const pathname = new URL(c.req.url).pathname
     if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
+      return next()
+    }
+    // Anonymous legacy/webhook routes (ADR-0008) — e.g. a bundle-declared
+    // payment-processor callback at `/v1/finance/...`. `requireAuth` already
+    // skipped credential resolution for these, but it only stamps an actor on
+    // `/v1/public/*`, so without this skip the fail-closed staff guard would 401
+    // a route that is meant to be reachable without a session.
+    if (matchesPublicPath(pathname, anonymousPaths)) {
       return next()
     }
     return requireLegacyActor(c, next)

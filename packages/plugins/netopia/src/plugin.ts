@@ -320,6 +320,11 @@ export function netopiaHonoBundle(options: NetopiaRuntimeOptions = {}): HonoBund
       }
     },
     extensions: [createNetopiaFinanceExtension(options)],
+    // Netopia's servers POST the payment result here without a session cookie or
+    // bearer; the handler matches it to a payment session by orderID and verifies
+    // the processor signature (ADR-0008). Declared by the plugin that owns the
+    // route, so deployments don't carry it in `publicPaths`.
+    anonymous: ["/v1/finance/providers/netopia/callback"],
   })
 }
 

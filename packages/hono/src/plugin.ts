@@ -36,6 +36,17 @@ export interface HonoBundle {
   /** Link definitions contributed by the plugin. */
   links?: LinkDefinition[]
   /**
+   * Absolute API paths this bundle exposes that are reachable WITHOUT a session
+   * (ADR-0008). Unlike a module/extension's `anonymous` (relative to its
+   * `/v1/public` mount), bundle routes can mount anywhere — e.g. a payment
+   * processor's webhook at `/v1/finance/providers/netopia/callback`, which the
+   * processor's servers POST to without a cookie or bearer. Declaring it here
+   * keeps the "reachable-without-auth" decision with the plugin that owns the
+   * route, instead of in every deployment's `publicPaths`. The framework folds
+   * these into the assembled anonymous allow-list.
+   */
+  anonymous?: string[]
+  /**
    * Workflows contributed by the plugin. Mirrors the `Plugin.workflows`
    * field in `@voyant-travel/core` — collected at `createApp()` boot and
    * registered with the configured workflow driver.
@@ -66,6 +77,8 @@ export interface ExpandedHonoBundles {
   extensions: HonoExtension[]
   subscribers: Subscriber[]
   links: LinkDefinition[]
+  /** Absolute anonymous-access paths declared by bundles (ADR-0008). */
+  anonymousPaths: string[]
 }
 
 /** @deprecated Prefer {@link ExpandedHonoBundles}. */
@@ -82,6 +95,7 @@ export function expandHonoBundles(bundles: ReadonlyArray<HonoBundle>): ExpandedH
   const extensions: HonoExtension[] = []
   const subscribers: Subscriber[] = []
   const links: LinkDefinition[] = []
+  const anonymousPaths: string[] = []
 
   for (const bundle of bundles) {
     if (seen.has(bundle.name)) {
@@ -93,9 +107,10 @@ export function expandHonoBundles(bundles: ReadonlyArray<HonoBundle>): ExpandedH
     if (bundle.extensions) extensions.push(...bundle.extensions)
     if (bundle.subscribers) subscribers.push(...bundle.subscribers)
     if (bundle.links) links.push(...bundle.links)
+    if (bundle.anonymous) anonymousPaths.push(...bundle.anonymous)
   }
 
-  return { modules, extensions, subscribers, links }
+  return { modules, extensions, subscribers, links, anonymousPaths }
 }
 
 /** @deprecated Prefer {@link expandHonoBundles}. */

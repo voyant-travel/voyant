@@ -95,13 +95,13 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   // retried by the */2min drain cron in entry.ts. Requires migration
   // 0062 (event_outbox).
   outbox: true,
-  // ADR-0008: the anonymous-access surface is now mostly DECLARED on the routes
-  // that own it (`anonymous` on the module/extension), and the framework
-  // assembles the allow-list — see the `anonymous-surface` test in
-  // @voyant-travel/framework for the full declared set. What remains here is the
-  // escape hatch: routes not yet owned by an annotatable module. These are
-  // tracked for migration (a) onto their owning package module, or for the
-  // webhook, a plugin-level declaration.
+  // ADR-0008: the anonymous-access surface is DECLARED on the routes that own it
+  // (`anonymous` on the module/extension, or on a plugin bundle for webhook
+  // routes — the Netopia callback now declares its own via `netopiaHonoBundle`),
+  // and the framework assembles the allow-list (see the `anonymous-surface` test
+  // in @voyant-travel/framework). What remains here is the escape hatch: routes
+  // not yet owned by an annotatable module, tracked for migration onto their
+  // owning package module.
   //   - payment-link / payment-link-config: the storefront payment-link family
   //     mounts at split prefixes via lazy absolute routes; pending a per-bundle
   //     declaration.
@@ -109,9 +109,6 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   //     module isn't yet annotated.
   //   - operator-profile / payment-policy: sanitized storefront-preview reads;
   //     owning module not yet annotated.
-  //   - netopia callback: a plugin/webhook route (no owning module) — Netopia's
-  //     servers POST here without a session; matched to a payment session by
-  //     orderID. The natural home is a bundle-level `anonymous` declaration.
   publicPaths: [
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
@@ -119,7 +116,6 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
     "/v1/public/accommodations",
     "/v1/public/operator-profile",
     "/v1/public/payment-policy",
-    "/v1/finance/providers/netopia/callback",
   ],
   plugins: [
     // bookingScheduleBundle subscribes to booking.confirmed BEFORE
