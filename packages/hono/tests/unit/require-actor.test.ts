@@ -224,7 +224,7 @@ describe("requireActor", () => {
 })
 
 describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
-  const ON = { VOYANT_RBAC_ENFORCE: "1" }
+  const OFF = { VOYANT_RBAC_ENFORCE: "0" }
 
   function staffSession(scopes: string[]) {
     return makeApp((c) => {
@@ -234,13 +234,23 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     })
   }
 
-  it("does not enforce staff scopes when the flag is off (default)", async () => {
+  it("enforces staff scopes by default (no env)", async () => {
     const app = staffSession(["bookings:read"])
     app.use("*", requireActor("staff"))
     app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
 
-    // No env / flag unset → historical behavior: staff session passes.
-    expect((await app.request("/v1/admin/finance/invoices", { method: "POST" })).status).toBe(200)
+    // Default-on: a member without finance:write is denied.
+    expect((await app.request("/v1/admin/finance/invoices", { method: "POST" })).status).toBe(403)
+  })
+
+  it("can be disabled with the VOYANT_RBAC_ENFORCE kill switch", async () => {
+    const app = staffSession(["bookings:read"])
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/finance/invoices", { method: "POST" }, OFF)).status).toBe(
+      200,
+    )
   })
 
   it("lets a full-access (`*`) member through any admin route", async () => {
@@ -248,7 +258,7 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     app.use("*", requireActor("staff"))
     app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
 
-    const res = await app.request("/v1/admin/finance/invoices", { method: "POST" }, ON)
+    const res = await app.request("/v1/admin/finance/invoices", { method: "POST" })
     expect(res.status).toBe(200)
   })
 
@@ -261,8 +271,8 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
       return app
     }
 
-    expect((await build().request("/v1/admin/bookings", {}, ON)).status).toBe(200)
-    expect((await build().request("/v1/admin/bookings", { method: "POST" }, ON)).status).toBe(403)
+    expect((await build().request("/v1/admin/bookings")).status).toBe(200)
+    expect((await build().request("/v1/admin/bookings", { method: "POST" })).status).toBe(403)
   })
 
   it("denies a module the member has no scope for", async () => {
@@ -270,7 +280,7 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     app.use("*", requireActor("staff"))
     app.get("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
 
-    const res = await app.request("/v1/admin/finance/invoices", {}, ON)
+    const res = await app.request("/v1/admin/finance/invoices")
     expect(res.status).toBe(403)
   })
 
@@ -279,16 +289,14 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     denied.use("*", requireActor("staff"))
     denied.post("/v1/admin/team/members/m_1/permissions", (c) => c.json({ ok: true }))
     expect(
-      (await denied.request("/v1/admin/team/members/m_1/permissions", { method: "POST" }, ON))
-        .status,
+      (await denied.request("/v1/admin/team/members/m_1/permissions", { method: "POST" })).status,
     ).toBe(403)
 
     const allowed = staffSession(["team:write"])
     allowed.use("*", requireActor("staff"))
     allowed.post("/v1/admin/team/members/m_1/permissions", (c) => c.json({ ok: true }))
     expect(
-      (await allowed.request("/v1/admin/team/members/m_1/permissions", { method: "POST" }, ON))
-        .status,
+      (await allowed.request("/v1/admin/team/members/m_1/permissions", { method: "POST" })).status,
     ).toBe(200)
   })
 
@@ -297,7 +305,7 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     app.use("*", requireActor("staff"))
     app.get("/v1/admin/_meta/capabilities", (c) => c.json({ ok: true }))
 
-    expect((await app.request("/v1/admin/_meta/capabilities", {}, ON)).status).toBe(200)
+    expect((await app.request("/v1/admin/_meta/capabilities")).status).toBe(200)
   })
 
   it("denies a member with no scopes at all", async () => {
@@ -305,6 +313,6 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     app.use("*", requireActor("staff"))
     app.get("/v1/admin/bookings", (c) => c.json({ ok: true }))
 
-    expect((await app.request("/v1/admin/bookings", {}, ON)).status).toBe(403)
+    expect((await app.request("/v1/admin/bookings")).status).toBe(403)
   })
 })

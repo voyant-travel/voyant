@@ -173,9 +173,9 @@ Platform membership permission storage + assertion minting; deployment member en
 **Phase 3 — Enforcement (opt-in, reversible). _Implemented._**
 Rather than gate each route by hand, enforcement lives in `requireActor` (`packages/hono`), which already maps path→resource + method→action to gate API-key callers. The staff-session branch now enforces the member's scope set the same way. This covers **every** admin route that maps to a catalog resource at once — a Viewer can't write *anywhere*, not just on hand-gated routes — which is safer than gradual coverage. Paths with no mapped resource (e.g. `_meta`) stay open. `settings`/`team` resources were added to the catalog so those admin-only surfaces are gateable.
 
-Enforcement is **opt-in per deployment** via `VOYANT_RBAC_ENFORCE` (default off): existing deployments — where non-admin members may rely on historical full access — are unaffected until they flip it on after reviewing roles/permissions. Full-access members (`*`) bypass regardless. API-key enforcement is unchanged (always on).
+Enforcement is **on by default**. `VOYANT_RBAC_ENFORCE` is a kill switch — set it to `0`/`false`/`off` to disable (e.g. an emergency rollback) without a code change. Full-access members (`*`) bypass regardless, so owners/admins and any not-yet-restricted member are unaffected; only members with an explicit non-`*` scope set are gated. API-key enforcement is unchanged (always on).
 
-**Acceptance:** with the flag on — a Viewer cannot mutate anything; an Editor cannot touch team/settings/finance-write/deletes; an Admin (`*`) is unchanged; API-key behavior is untouched; both auth modes resolve identical scopes for the same role.
+**Acceptance:** a Viewer cannot mutate anything; an Editor cannot touch team/settings/finance-write/deletes; an Admin (`*`) is unchanged; API-key behavior is untouched; both auth modes resolve identical scopes for the same role; the kill switch restores pre-RBAC behavior.
 
 **PII reveal — _implemented._** `shouldRevealBookingPii` (`pii-redaction.ts`) now takes an `enforceRbac` flag (sourced from `isStaffRbacEnforced(c.env)` at every call site in bookings + legal). With the flag off, staff reveal PII as before; with it on, staff are gated by `bookings-pii:read`/`bookings-pii:*`/`*` like everyone else (full-access members keep access). Internal requests always bypass.
 
@@ -187,7 +187,7 @@ _Remaining (future hardening):_ map finer sub-resources (e.g. `products/:id/medi
 
 1. **Cloud permission storage** — ✅ Resolved: **platform-stored, assertion-carried, opaque** (§3.3). Alternative (deployment-owned, keyed by WorkOS user id) rejected because it splits assignment across two surfaces.
 2. **`settings`/`team` resources** — ✅ Resolved: added to `API_KEY_RESOURCES` + the permission catalog (read/write), so admin-only surfaces are gateable and assignable in the editor.
-3. **Default-deny cutover** — ✅ Resolved: enforcement is centralized in `requireActor` and **opt-in** via `VOYANT_RBAC_ENFORCE` (default off), rather than a per-module hand-gate. Unmapped paths stay open; full-access (`*`) bypasses.
+3. **Default-deny cutover** — ✅ Resolved: enforcement is centralized in `requireActor` and **on by default**, with `VOYANT_RBAC_ENFORCE` as a kill switch (`0`/`false`/`off` disables). Unmapped paths stay open; full-access (`*`) bypasses.
 4. **Shared role/bundle module location** — ✅ Resolved: `@voyant-travel/types` (`./member-roles`), alongside the catalog.
 
 > Resolved: preset bundles (incl. "Editor × Finance") are non-binding defaults, not policy — every module has independent view/edit toggles the admin overrides per member (§3.2). No product call needed.

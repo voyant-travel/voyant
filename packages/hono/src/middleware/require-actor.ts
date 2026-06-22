@@ -42,17 +42,17 @@ function hasAnyApiKeyPermission(
 }
 
 /**
- * Staff-session RBAC is opt-in per deployment (member-rbac-rfc, voyant#2085):
- * enabling it enforces every assigned member's scope set across admin routes.
- * It defaults off so existing deployments — where members may rely on the
- * historical full access — are unaffected until they deliberately flip it on
- * after reviewing roles/permissions. API-key scope enforcement is unconditional
- * (unchanged).
+ * Staff-session RBAC enforcement (member-rbac-rfc, voyant#2085). Enforced **by
+ * default**: every member's assigned scope set is checked across admin routes.
+ * Full-access members hold `*` and bypass, so they're unaffected. The
+ * `VOYANT_RBAC_ENFORCE` env var is a kill switch — set it to `0`/`false`/`off`
+ * to disable enforcement (e.g. an emergency rollback) without a code change.
+ * API-key scope enforcement is always on (unchanged).
  */
 export function isStaffRbacEnforced(env: unknown): boolean {
   const value = (env as { VOYANT_RBAC_ENFORCE?: string } | undefined)?.VOYANT_RBAC_ENFORCE
   const normalized = value?.trim().toLowerCase()
-  return normalized === "1" || normalized === "true"
+  return !(normalized === "0" || normalized === "false" || normalized === "off")
 }
 
 /**

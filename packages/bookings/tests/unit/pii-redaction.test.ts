@@ -21,7 +21,7 @@ describe("shouldRevealBookingPii()", () => {
     expect(shouldRevealBookingPii({ scopes: ["bookings-pii:read"] })).toBe(true)
   })
 
-  it("reveals for staff dashboard sessions (RBAC enforcement off — default)", () => {
+  it("reveals for staff dashboard sessions when enforceRbac is not set", () => {
     expect(shouldRevealBookingPii({ actor: "staff", scopes: [] })).toBe(true)
     expect(shouldRevealBookingPii({ actor: "staff", scopes: ["bookings:read"] })).toBe(true)
   })
