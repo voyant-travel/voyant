@@ -352,6 +352,19 @@ export interface FrameworkProviders {
 }
 
 /**
+ * Tag a module's anonymous-access surface (ADR-0008) without disturbing the rest
+ * of its definition: `true` = whole public mount is reachable without a session;
+ * a string array = specific sub-paths relative to the public mount. The framework
+ * assembles the global allow-list from these, so the "reachable-without-auth"
+ * decision for a standard route lives here next to its mount, not in a hand-kept
+ * `publicPaths` list in every deployment.
+ */
+const withAnonymous = (module: HonoModule, anonymous: HonoModule["anonymous"]): HonoModule => ({
+  ...module,
+  anonymous,
+})
+
+/**
  * Standard module/extension factories owned by the framework. Keyed by the same
  * manifest specifiers as `FRAMEWORK_RUNTIME_MANIFEST`; a deployment spreads this
  * into its registry (see file header).
@@ -385,120 +398,149 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       }),
     // Tier 2 — capability-shaped modules (providers injected via ctx).
     "@voyant-travel/catalog": ({ capabilities }) =>
-      createCatalogSearchHonoModule({
-        resolveRuntime: capabilities.resolveCatalogRuntime,
-        executeSearch: ({ adapter, embeddings, slice, request }) =>
-          executeSemanticSearch({
-            adapter,
-            embeddings: embeddings as EmbeddingProvider | undefined,
-            slice,
-            request,
-          }),
-      }),
-    "@voyant-travel/storefront": ({ capabilities }) =>
-      createStorefrontHonoModule({
-        offers: createCommerceStorefrontOfferResolvers(),
-        // Async booking-bootstrap intents (queued write pipeline, RFC
-        // voyant#1687 §3.2) — the handler runs on the app bus with
-        // outbox-grade retries; the */2min cron sweeps stale intents.
-        bookingIntents: { resolveDb: capabilities.resolveDb },
-        intake: { persistence: capabilities.storefrontIntakePersistence },
-      }),
-    "@voyant-travel/finance": ({ capabilities }) =>
-      createFinanceHonoModule({
-        resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-        resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
-        resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
-        invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-          bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-        resolveNotificationDispatcher: (bindings) => {
-          const providers = capabilities.resolveNotificationProviders(bindings)
-          if (providers.length === 0) return null
-
-          const dispatcher = createNotificationService(providers)
-          return {
-            sendInvoiceNotification: async (db, invoiceId, input) =>
-              toCheckoutNotificationDelivery(
-                await notificationsService.sendInvoiceNotification(
-                  db,
-                  dispatcher,
-                  invoiceId,
-                  input,
-                ),
-              ),
-            sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
-              toCheckoutNotificationDelivery(
-                await notificationsService.sendPaymentSessionNotification(
-                  db,
-                  dispatcher,
-                  paymentSessionId,
-                  input,
-                ),
-              ),
-          }
-        },
-        resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-          netopia: capabilities.netopiaCheckoutStarter,
+      // The storefront browse/search + detail surface is auth-less
+      // (booking-journey-architecture §10 Phase B).
+      withAnonymous(
+        createCatalogSearchHonoModule({
+          resolveRuntime: capabilities.resolveCatalogRuntime,
+          executeSearch: ({ adapter, embeddings, slice, request }) =>
+            executeSemanticSearch({
+              adapter,
+              embeddings: embeddings as EmbeddingProvider | undefined,
+              slice,
+              request,
+            }),
         }),
-        resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
-        resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
-        listBookingReminderRuns: async (db, bookingId, query) => {
-          const result = await notificationsService.listReminderRuns(db, {
-            bookingId,
-            status: query.status,
-            limit: query.limit,
-            offset: query.offset,
-          })
-          return {
-            data: result.data.map(toCheckoutReminderRun),
-            total: result.total,
-            limit: result.limit,
-            offset: result.offset,
-          }
-        },
-      }),
+        true,
+      ),
+    "@voyant-travel/storefront": ({ capabilities }) =>
+      // Storefront mounts at the public root (`publicPath: "/"`); its anonymous
+      // CRM-intake routes (lead capture + newsletter signup) are reached before
+      // any session.
+      withAnonymous(
+        createStorefrontHonoModule({
+          offers: createCommerceStorefrontOfferResolvers(),
+          // Async booking-bootstrap intents (queued write pipeline, RFC
+          // voyant#1687 §3.2) — the handler runs on the app bus with
+          // outbox-grade retries; the */2min cron sweeps stale intents.
+          bookingIntents: { resolveDb: capabilities.resolveDb },
+          intake: { persistence: capabilities.storefrontIntakePersistence },
+        }),
+        ["/leads", "/newsletter"],
+      ),
+    "@voyant-travel/finance": ({ capabilities }) =>
+      // The emailed-link finance pages (payment-session landing, collections,
+      // accountant share portal, booking summary) are reached without a session
+      // — the token/id in the path is the credential. Only these sub-paths.
+      withAnonymous(
+        createFinanceHonoModule({
+          resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
+            capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+          resolveInvoiceExchangeRateResolver: capabilities.createInvoiceExchangeRateResolver,
+          resolveInvoiceSettlementPollers: capabilities.createInvoiceSettlementPollers,
+          invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
+            bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
+          resolveNotificationDispatcher: (bindings) => {
+            const providers = capabilities.resolveNotificationProviders(bindings)
+            if (providers.length === 0) return null
+
+            const dispatcher = createNotificationService(providers)
+            return {
+              sendInvoiceNotification: async (db, invoiceId, input) =>
+                toCheckoutNotificationDelivery(
+                  await notificationsService.sendInvoiceNotification(
+                    db,
+                    dispatcher,
+                    invoiceId,
+                    input,
+                  ),
+                ),
+              sendPaymentSessionNotification: async (db, paymentSessionId, input) =>
+                toCheckoutNotificationDelivery(
+                  await notificationsService.sendPaymentSessionNotification(
+                    db,
+                    dispatcher,
+                    paymentSessionId,
+                    input,
+                  ),
+                ),
+            }
+          },
+          resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
+            netopia: capabilities.netopiaCheckoutStarter,
+          }),
+          resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
+          resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
+          listBookingReminderRuns: async (db, bookingId, query) => {
+            const result = await notificationsService.listReminderRuns(db, {
+              bookingId,
+              status: query.status,
+              limit: query.limit,
+              offset: query.offset,
+            })
+            return {
+              data: result.data.map(toCheckoutReminderRun),
+              total: result.total,
+              limit: result.limit,
+              offset: result.offset,
+            }
+          },
+        }),
+        ["/bookings", "/collections", "/payment-sessions", "/accountant"],
+      ),
     "@voyant-travel/bookings": ({ capabilities }) =>
-      createBookingsHonoModule({
-        resolveTravelSnapshot: (db, personId, { kms }) =>
-          capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
-        resolveBillingPerson: async (db, contact, ctx) => {
-          const person = await capabilities.relationshipsService.upsertPersonFromContact(
-            db,
-            contact,
-            {
-              source: ctx.source,
-              sourceRef: ctx.sourceRef,
-            },
-          )
-          return person?.id ?? null
-        },
-        resolveTravelerPerson: async (db, contact, ctx) => {
-          const person = await capabilities.relationshipsService.upsertPersonFromContact(
-            db,
-            contact,
-            {
-              source: ctx.source,
-              sourceRef: ctx.sourceRef,
-              requireContactPoint: true,
-            },
-          )
-          return person?.id ?? null
-        },
-        resolveBillingPersonById: async (db, personId) =>
-          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
-        resolveBillingOrganizationById: async (db, organizationId) =>
-          (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) != null,
-        closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
-        customFields: capabilities.customFields,
-      }),
+      // Storefront post-payment status poll: the booking id is a TypeID in the
+      // redirect URL and the response exposes only non-PII state.
+      withAnonymous(
+        createBookingsHonoModule({
+          resolveTravelSnapshot: (db, personId, { kms }) =>
+            capabilities.relationshipsService.loadPersonTravelSnapshot(db, personId, { kms }),
+          resolveBillingPerson: async (db, contact, ctx) => {
+            const person = await capabilities.relationshipsService.upsertPersonFromContact(
+              db,
+              contact,
+              {
+                source: ctx.source,
+                sourceRef: ctx.sourceRef,
+              },
+            )
+            return person?.id ?? null
+          },
+          resolveTravelerPerson: async (db, contact, ctx) => {
+            const person = await capabilities.relationshipsService.upsertPersonFromContact(
+              db,
+              contact,
+              {
+                source: ctx.source,
+                sourceRef: ctx.sourceRef,
+                requireContactPoint: true,
+              },
+            )
+            return person?.id ?? null
+          },
+          resolveBillingPersonById: async (db, personId) =>
+            (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+          resolveBillingOrganizationById: async (db, organizationId) =>
+            (await capabilities.relationshipsService.getOrganizationById(db, organizationId)) !=
+            null,
+          closePaymentSchedulesForBooking: capabilities.closePaymentSchedulesForBooking,
+          customFields: capabilities.customFields,
+        }),
+        true,
+      ),
     "@voyant-travel/public-document-delivery": ({ capabilities }) =>
-      createPublicDocumentDeliveryHonoModule({
-        // Same storage backend as legal documents; the unknown-bindings
-        // adapter keeps the provider contract uniform (the narrow-bindings
-        // `createDocumentStorage` is retired in the deployment).
-        resolveStorage: capabilities.createOperatorDocumentStorage,
-      }),
+      // Public document delivery (e.g. emailed contract/voucher links) is
+      // reached without a session — the unguessable id in the path is the
+      // credential.
+      withAnonymous(
+        createPublicDocumentDeliveryHonoModule({
+          // Same storage backend as legal documents; the unknown-bindings
+          // adapter keeps the provider contract uniform (the narrow-bindings
+          // `createDocumentStorage` is retired in the deployment).
+          resolveStorage: capabilities.createOperatorDocumentStorage,
+        }),
+        true,
+      ),
     "@voyant-travel/notifications": ({ capabilities }) =>
       createNotificationsHonoModule({
         resolveProviders: capabilities.resolveNotificationProviders,
@@ -534,25 +576,40 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
       }),
     "@voyant-travel/legal": ({ capabilities }) =>
-      createLegalHonoModule({
-        resolveDb: capabilities.resolveDb,
-        resolveDocumentDownloadUrl: (bindings, storageKey) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-        resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
-        resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
-        resolveBookingPiiService: capabilities.createBookingPiiService,
-        autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
-      }),
+      // Storefront contract preview (slug resolution + by-slug render) is
+      // reached during the auth-less booking journey, before any session.
+      withAnonymous(
+        createLegalHonoModule({
+          resolveDb: capabilities.resolveDb,
+          resolveDocumentDownloadUrl: (bindings, storageKey) =>
+            capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+          resolveDocumentStorage: capabilities.createOperatorDocumentStorage,
+          resolveDocumentGenerator: capabilities.resolveContractDocumentGenerator,
+          resolveBookingPiiService: capabilities.createBookingPiiService,
+          autoGenerateContractOnConfirmed: capabilities.autoGenerateContractOnConfirmed,
+        }),
+        true,
+      ),
     "@voyant-travel/storefront/customer-portal": ({ capabilities }) =>
-      createCustomerPortalHonoModule({
-        resolveDocumentDownloadUrl: (bindings, storageKey) =>
-          capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-      }),
+      // Only the pre-session contact-exists probe is anonymous; the rest of the
+      // customer portal requires a resolved customer session.
+      withAnonymous(
+        createCustomerPortalHonoModule({
+          resolveDocumentDownloadUrl: (bindings, storageKey) =>
+            capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
+        }),
+        ["/contact-exists"],
+      ),
     "@voyant-travel/storefront/verification": ({ capabilities }) =>
-      createStorefrontVerificationHonoModule({
-        resolveProviders: capabilities.resolveNotificationProviders,
-        email: { subject: "Your verification code" },
-      }),
+      // Storefront identity verification (send/confirm code) runs before a
+      // session exists.
+      withAnonymous(
+        createStorefrontVerificationHonoModule({
+          resolveProviders: capabilities.resolveNotificationProviders,
+          email: { subject: "Your verification code" },
+        }),
+        true,
+      ),
     "@voyant-travel/trips": ({ capabilities }) =>
       createTripsHonoModule({
         ...capabilities.createTripsRoutesOptions(),
@@ -637,6 +694,9 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
       publicPath: "proposals",
       lazyAdminRoutes: capabilities.loadProposalAdminRoutes,
       lazyPublicRoutes: capabilities.loadProposalPublicRoutes,
+      // The customer-facing sent proposal (accept/decline) is opened from an
+      // emailed link before any session — anonymous, customer-safe DTO only.
+      anonymous: true,
     }),
     "operator/catalog-offers-extension": ({ capabilities }) => ({
       extension: { name: "catalog-offers", module: "catalog" },

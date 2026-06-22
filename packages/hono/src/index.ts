@@ -1,4 +1,5 @@
 export type { VoyantPermission } from "@voyant-travel/core"
+export { assembleAnonymousPaths } from "./anonymous-paths.js"
 export { mountApp } from "./app.js"
 export type { SessionAuthContext } from "./auth/index.js"
 export {
