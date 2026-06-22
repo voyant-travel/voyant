@@ -175,7 +175,7 @@ describe.skipIf(!DB_AVAILABLE)("public departures rate-plan selection", () => {
   })
 
   it("treats a tier-only priced plan as priced (not masked by an empty default)", async () => {
-    const { product, option, unit, catalog, slot } = await seedDepartureScaffold("tier")
+    const { product, option, unit, catalog } = await seedDepartureScaffold("tier")
 
     const [emptyDefault] = await db
       .insert(optionPriceRules)
