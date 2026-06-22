@@ -43,6 +43,19 @@ export interface HonoModule {
    * public root and omit the extra module segment.
    */
   publicPath?: string
+  /**
+   * Declares which of this module's PUBLIC routes are reachable without a
+   * session (ADR-0008). `true` = the whole public mount is anonymous; a string
+   * array = specific sub-paths relative to the public mount (e.g.
+   * `["/contact-exists"]` on a module mounted at `/v1/public/customer-portal`
+   * opens `/v1/public/customer-portal/contact-exists`). The framework assembles
+   * the global anonymous allow-list from these declarations, so the
+   * "reachable-without-auth" decision lives next to the route rather than in a
+   * hand-maintained `publicPaths` list. Anonymous public requests are stamped
+   * `actor: "customer"`. Only affects the public surface — admin routes always
+   * require a `staff` actor.
+   */
+  anonymous?: boolean | readonly string[]
 }
 
 export interface HonoExtension {
@@ -69,4 +82,10 @@ export interface HonoExtension {
    * at the public root and omit the extra module segment.
    */
   publicPath?: string
+  /**
+   * Declares which of this extension's PUBLIC routes are reachable without a
+   * session (ADR-0008). Same semantics as {@link HonoModule.anonymous}, relative
+   * to the extension's public mount.
+   */
+  anonymous?: boolean | readonly string[]
 }

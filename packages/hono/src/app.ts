@@ -9,6 +9,7 @@ import { createOutboxEventStore } from "@voyant-travel/db/outbox"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import { Hono } from "hono"
 
+import { assembleAnonymousPaths } from "./anonymous-paths.js"
 import {
   containerToServiceResolver,
   makeFrameworkLogger,
@@ -36,28 +37,11 @@ import {
 } from "./middleware/rate-limit.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { securityHeaders } from "./middleware/security-headers.js"
+import { resolveSurfaceMountPath } from "./mount-paths.js"
 import { noopReporter, safeCaptureException } from "./observability/reporter.js"
 import { getRequestId } from "./observability/request-context.js"
 import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
-
-function resolveSurfaceMountPath(
-  prefix: string,
-  path: string | undefined,
-  fallback: string,
-): string {
-  const normalized = path?.trim()
-
-  if (!normalized) {
-    return `${prefix}/${fallback}`
-  }
-
-  if (normalized === "/") {
-    return prefix
-  }
-
-  return `${prefix}/${normalized.replace(/^\/+|\/+$/g, "")}`
-}
 
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
 
@@ -140,6 +124,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   const expanded = config.plugins ? expandHonoPlugins(config.plugins) : null
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
+  // Anonymous-access allow-list (ADR-0008): assembled from module/extension
+  // `anonymous` declarations + any explicit `publicPaths` escape-hatch entries.
+  // Used by both the auth middleware (skip auth / stamp customer actor) and the
+  // public-write rate-limit matcher below, so the two never diverge.
+  const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, config.publicPaths)
   // When the framework owns the bus, route subscriber-dispatch failures
   // (including the workflow forwarder) to the reporter — they're otherwise
   // only console-logged per the fire-and-forget EventBus contract (RFC #1553).
@@ -334,8 +323,7 @@ export function mountApp<TBindings extends VoyantBindings>(
         if (!WRITE_METHODS.has(c.req.method)) return next()
         const pathname = normalizePathname(new URL(c.req.url).pathname)
         const isPublicWrite =
-          pathname.startsWith("/v1/public/") ||
-          matchesPublicPath(pathname, config.publicPaths ?? [])
+          pathname.startsWith("/v1/public/") || matchesPublicPath(pathname, anonymousPaths)
         if (!isPublicWrite) return next()
         return rateLimit(
           buildRateLimitPolicy(rateLimitConfig, c.env, "public-write", publicWriteRule),
@@ -475,7 +463,7 @@ export function mountApp<TBindings extends VoyantBindings>(
     : config.db
 
   // Auth middleware for all other routes
-  app.use("*", requireAuth(dbSource, { publicPaths: config.publicPaths, auth: config.auth }))
+  app.use("*", requireAuth(dbSource, { publicPaths: anonymousPaths, auth: config.auth }))
 
   // DB middleware — sets c.var.db for all downstream handlers.
   // Pass the list of modules that need interactive transactions so the

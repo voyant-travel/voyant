@@ -228,6 +228,9 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
       import("./routes/invitations").then((m) => m.createInvitationsAdminRoutes()),
     lazyPublicRoutes: () =>
       import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
+    // Invitation redemption is reached from an emailed link without a session
+    // (ADR-0008); the public surface is anonymous.
+    anonymous: true,
   }),
   // Cloud-mode team management mounted at /v1/admin/team — proxies member
   // management to the Voyant Cloud platform when VOYANT_ADMIN_AUTH_MODE is
@@ -247,6 +250,8 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     module: cruisesModule,
     lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
+    // Storefront cruise detail/search is part of the auth-less journey (ADR-0008).
+    anonymous: true,
   }),
   // Realtime channels (voyant#1695). Mints scoped client tokens at
   // /v1/{admin,public}/realtime/token and bridges domain events to channels as

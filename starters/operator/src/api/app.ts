@@ -95,65 +95,30 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   // retried by the */2min drain cron in entry.ts. Requires migration
   // 0062 (event_outbox).
   outbox: true,
+  // ADR-0008: the anonymous-access surface is now mostly DECLARED on the routes
+  // that own it (`anonymous` on the module/extension), and the framework
+  // assembles the allow-list — see the `anonymous-surface` test in
+  // @voyant-travel/framework for the full declared set. What remains here is the
+  // escape hatch: routes not yet owned by an annotatable module. These are
+  // tracked for migration (a) onto their owning package module, or for the
+  // webhook, a plugin-level declaration.
+  //   - payment-link / payment-link-config: the storefront payment-link family
+  //     mounts at split prefixes via lazy absolute routes; pending a per-bundle
+  //     declaration.
+  //   - products / accommodations: storefront detail surfaces whose owning
+  //     module isn't yet annotated.
+  //   - operator-profile / payment-policy: sanitized storefront-preview reads;
+  //     owning module not yet annotated.
+  //   - netopia callback: a plugin/webhook route (no owning module) — Netopia's
+  //     servers POST here without a session; matched to a payment session by
+  //     orderID. The natural home is a bundle-level `anonymous` declaration.
   publicPaths: [
-    "/v1/public/customer-portal/contact-exists",
-    "/v1/public/storefront-verification",
-    "/v1/public/finance/bookings",
-    "/v1/public/finance/collections",
-    // Invitation redemption is reachable without a session.
-    "/v1/public/invitations",
-    // Payment-link landing page reads the session via TypeID (unguessable)
-    // and the bank-transfer block from a config endpoint. Both must be
-    // reachable without auth — the customer arrives from an emailed link.
-    "/v1/public/finance/payment-sessions",
-    // Accountant share portal — the token in the path is the bearer credential,
-    // validated server-side per request; the accountant arrives via a shared link.
-    "/v1/public/finance/accountant",
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
-    // Customer-facing sent Quote Version proposal. This public route must
-    // return only customer-safe DTO fields, never internal CRM rows.
-    "/v1/public/proposals",
-    // Storefront booking journey — quote / book / drafts run
-    // unauthenticated against the customer surface. Per
-    // booking-journey-architecture §10 Phase B (the journey is
-    // auth-less or session-token-bound; this template takes the
-    // auth-less posture and assigns `actor: "customer"`).
-    "/v1/public/catalog",
-    // Storefront post-card-payment status poll. The booking id is a
-    // TypeID in the redirect URL; the response exposes only non-PII state.
-    "/v1/public/bookings",
-    // Storefront product / cruise / accommodations detail —
-    // drives the `/shop/products/...` page's content fetch.
     "/v1/public/products",
-    "/v1/public/cruises",
     "/v1/public/accommodations",
-    // Storefront public CRM intake. Host deployments can wire captcha /
-    // rate-limit checks through the storefront intake guard.
-    "/v1/public/leads",
-    "/v1/public/newsletter",
-    // Storefront contract preview — the booking journey resolves the
-    // active customer-scope template and renders its preview HTML
-    // before the customer accepts. Both the slug-resolution lookup
-    // and the by-slug preview render live under this prefix.
-    "/v1/public/legal",
-    "/v1/public/documents",
-    // Operator profile + customer payment policy (sanitized subset).
-    // The storefront contract preview reads operator name / address /
-    // license + the deposit terms from here so it can render the
-    // operator block and a deposit/balance schedule before the booking
-    // exists.
     "/v1/public/operator-profile",
-    // Cascade-aware policy resolver — storefront preview hits this
-    // with `(entityModule, entityId)` + journey selections to get
-    // the policy that will apply at booking time (supplier /
-    // category / listing / operator default).
     "/v1/public/payment-policy",
-    // Netopia webhook receiver. Netopia's servers POST here without a
-    // session cookie or bearer; the plugin handler matches the inbound
-    // payload to a payment session by orderID and validates the
-    // processor's response shape. This is the URL set in
-    // `NETOPIA_NOTIFY_URL`.
     "/v1/finance/providers/netopia/callback",
   ],
   plugins: [
