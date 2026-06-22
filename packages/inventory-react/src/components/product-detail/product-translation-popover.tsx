@@ -2,6 +2,7 @@
 import { Button, Input, Label } from "@voyant-travel/ui/components"
 import {
   Combobox,
+  ComboboxCollection,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxInput,
@@ -526,25 +527,39 @@ export function LanguageCombobox({
   emptyLabel?: string
 }) {
   const excludeKey = exclude.join("|")
-  const options = useMemo(
-    () =>
-      Object.entries(languages)
-        .filter(([code]) => !excludeKey.split("|").includes(code))
-        .map(([code, name]) => ({ value: code, label: name })),
+  const codes = useMemo(
+    () => Object.keys(languages).filter((code) => !excludeKey.split("|").includes(code)),
     [excludeKey],
+  )
+  const labelForCode = useCallback(
+    (code: string) => (languages as Record<string, string>)[code] ?? code,
+    [],
   )
 
   return (
-    <Combobox value={value} onValueChange={(next) => onValueChange(next ?? "")}>
+    <Combobox
+      items={codes}
+      value={value}
+      onValueChange={(next) => onValueChange(next ?? "")}
+      itemToStringLabel={(code) => labelForCode(code as string)}
+      filter={(code, query) => {
+        const needle = query.trim().toLowerCase()
+        if (!needle) return true
+        const codeValue = code as string
+        return labelForCode(codeValue).toLowerCase().includes(needle) || codeValue.includes(needle)
+      }}
+    >
       <ComboboxInput placeholder={placeholder} className="w-full" />
       <ComboboxContent>
         <ComboboxList>
-          {options.map((option) => (
-            <ComboboxItem key={option.value} value={option.value}>
-              <span className="truncate">{option.label}</span>
-              <span className="font-mono text-xs text-muted-foreground">{option.value}</span>
-            </ComboboxItem>
-          ))}
+          <ComboboxCollection>
+            {(code) => (
+              <ComboboxItem key={code as string} value={code as string}>
+                <span className="truncate">{labelForCode(code as string)}</span>
+                <span className="font-mono text-xs text-muted-foreground">{code as string}</span>
+              </ComboboxItem>
+            )}
+          </ComboboxCollection>
           <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
         </ComboboxList>
       </ComboboxContent>
