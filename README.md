@@ -51,8 +51,8 @@ Install the CLI, scaffold an app from a first-party starter, and run it locally.
 # 1. Install the CLI
 npm install -g @voyant-travel/cli
 
-# 2. Scaffold a project from a starter
-voyant new my-travel-app --template operator
+# 2. Scaffold a project from the operator starter
+voyant new my-travel-app
 cd my-travel-app
 pnpm install
 
@@ -65,7 +65,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-> Built-in starters are downloaded from GitHub Release assets for the matching CLI release. You can also point `--template` at a custom local starter directory.
+> `voyant new` scaffolds from the `operator` starter by default. Pass `--starter <name>` to pick another built-in starter (downloaded from GitHub Release assets for the matching CLI release), or point it at a custom local starter directory.
 
 Visit the [documentation](https://voyant.travel/docs) to learn more.
 
