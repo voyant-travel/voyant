@@ -95,6 +95,8 @@
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/quotes-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/realtime": "workspace:^",
+    "@voyant-travel/realtime-react": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
