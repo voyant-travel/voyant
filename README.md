@@ -22,8 +22,8 @@
   <a href="https://www.npmjs.com/package/@voyant-travel/cli">
     <img src="https://img.shields.io/npm/v/@voyant-travel/cli.svg" alt="Current npm package version." />
   </a>
-  <a href="https://github.com/voyant-travel/voyant/pulls">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
+  <a href="https://github.com/voyant-travel/voyant/issues">
+    <img src="https://img.shields.io/badge/issues-welcome-brightgreen.svg" alt="Issues welcome!" />
   </a>
   <a href="https://x.com/voyant_travel">
     <img src="https://img.shields.io/twitter/follow/voyant_travel.svg?label=Follow%20@voyant_travel" alt="Follow @voyant_travel" />
