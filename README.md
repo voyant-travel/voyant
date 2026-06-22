@@ -110,27 +110,55 @@ Voyant ships one first-party starter:
 
 ### Core platform
 
-- [`@voyant-travel/core`](./packages/core/README.md), [`@voyant-travel/db`](./packages/db/README.md), [`@voyant-travel/hono`](./packages/hono/README.md), [`@voyant-travel/react`](./packages/react)
-- [`@voyant-travel/auth`](./packages/auth/README.md), [`@voyant-travel/auth-react`](./packages/auth-react/README.md), [`@voyant-travel/types`](./packages/types/README.md), [`@voyant-travel/utils`](./packages/utils/README.md), [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md)
-- [`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli), [`@voyant-travel/storage`](./packages/storage/README.md), [`@voyant-travel/i18n`](./packages/i18n)
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/core`](./packages/core/README.md) | Module system, container, event bus, and plugins |
+| [`@voyant-travel/db`](./packages/db/README.md) | Drizzle schemas, TypeID, and database adapters |
+| [`@voyant-travel/hono`](./packages/hono/README.md) | `createApp`, middleware, auth, and actor guards |
+| [`@voyant-travel/react`](./packages/react) | Shared React provider and typed fetch client |
+| [`@voyant-travel/auth`](./packages/auth/README.md) | Better Auth wiring for first-party starters |
+| [`@voyant-travel/auth-react`](./packages/auth-react/README.md) | Auth React hooks and components |
+| [`@voyant-travel/types`](./packages/types/README.md) | Shared workspace types |
+| [`@voyant-travel/utils`](./packages/utils/README.md) | Shared utility functions |
+| [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md) | Test helpers (db, http, seq, cli) |
+| [`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli) | The `voyant` CLI — scaffolding, generators, and db tooling |
+| [`@voyant-travel/storage`](./packages/storage/README.md) | `StorageProvider` abstraction (local, R2, S3) |
+| [`@voyant-travel/i18n`](./packages/i18n) | Internationalization primitives |
 
 ### Travel domain modules
 
-- [`@voyant-travel/catalog`](./packages/catalog/README.md), [`@voyant-travel/commerce`](./packages/commerce/README.md), [`@voyant-travel/inventory`](./packages/inventory), [`@voyant-travel/operations`](./packages/operations)
-- [`@voyant-travel/bookings`](./packages/bookings/README.md), [`@voyant-travel/finance`](./packages/finance/README.md), [`@voyant-travel/legal`](./packages/legal/README.md), [`@voyant-travel/notifications`](./packages/notifications/README.md)
-- [`@voyant-travel/distribution`](./packages/distribution/README.md), [`@voyant-travel/relationships`](./packages/relationships/README.md), [`@voyant-travel/quotes`](./packages/quotes/README.md), [`@voyant-travel/trips`](./packages/trips)
-- [`@voyant-travel/identity`](./packages/identity/README.md), [`@voyant-travel/storefront`](./packages/storefront)
-- [`@voyant-travel/accommodations`](./packages/accommodations), [`@voyant-travel/charters`](./packages/charters/README.md), [`@voyant-travel/cruises`](./packages/cruises/README.md), [`@voyant-travel/flights`](./packages/flights), [`@voyant-travel/octo`](./packages/octo)
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/catalog`](./packages/catalog/README.md) | Products, tours, packages, and media |
+| [`@voyant-travel/commerce`](./packages/commerce/README.md) | Pricing, offers, and sellability |
+| [`@voyant-travel/inventory`](./packages/inventory) | Bookable inventory and availability |
+| [`@voyant-travel/operations`](./packages/operations) | Suppliers and operational logistics |
+| [`@voyant-travel/bookings`](./packages/bookings/README.md) | Booking lifecycle and participants |
+| [`@voyant-travel/finance`](./packages/finance/README.md) | Invoicing, payments, tax, and profitability |
+| [`@voyant-travel/legal`](./packages/legal/README.md) | Contracts and policies |
+| [`@voyant-travel/notifications`](./packages/notifications/README.md) | Email/SMS provider abstraction |
+| [`@voyant-travel/distribution`](./packages/distribution/README.md) | Channel distribution |
+| [`@voyant-travel/relationships`](./packages/relationships/README.md) | CRM: people, organizations, and pipelines |
+| [`@voyant-travel/quotes`](./packages/quotes/README.md) | Quotes and trip revisions |
+| [`@voyant-travel/trips`](./packages/trips) | Trip composition and itineraries |
+| [`@voyant-travel/identity`](./packages/identity/README.md) | Contact points, addresses, and named contacts |
+| [`@voyant-travel/storefront`](./packages/storefront) | Public booking-portal surface |
+| [`@voyant-travel/accommodations`](./packages/accommodations) | Accommodation resale inventory |
+| [`@voyant-travel/charters`](./packages/charters/README.md) | Charter products |
+| [`@voyant-travel/cruises`](./packages/cruises/README.md) | Cruise products |
+| [`@voyant-travel/flights`](./packages/flights) | Flight products |
+| [`@voyant-travel/octo`](./packages/octo) | OCTO connectivity for tours and activities |
 
 ### Workflows (durable orchestration)
 
 Step-based workflows with durable state, retries, and a shared wire protocol —
 runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 
-- [`@voyant-travel/workflows`](./packages/workflows) — authoring SDK
-- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — orchestrator engine and Postgres self-host runtime primitives
-- `@voyant-travel/workflows/bindings`, `@voyant-travel/workflows/config`, and `@voyant-travel/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
-- [`@voyant-travel/workflows-react`](./packages/workflows-react) — UI hooks for run inspection, plus an importable workflow run admin UI at `@voyant-travel/workflows-react/ui`
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/workflows`](./packages/workflows) | Authoring SDK, with `./bindings`, `./config`, and `./errors` subpaths |
+| [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) | Orchestrator engine and Postgres self-host runtime primitives |
+| [`@voyant-travel/workflows-react`](./packages/workflows-react) | Run-inspection hooks, plus an importable admin UI at `./ui` |
 
 Reference apps under [`apps/`](./apps) compose these into deployable shapes —
 `workflows-selfhost-node-server` and `workflows-local-dashboard`.
@@ -152,10 +180,12 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 
 ### Plugins
 
-- [`@voyant-travel/plugin-netopia`](./packages/plugins/netopia) — Netopia payments
-- [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) — SmartBill e-invoicing (Romanian tax compliance)
-- [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) — Payload CMS sync
-- [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) — Sanity CMS sync
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/plugin-netopia`](./packages/plugins/netopia) | Netopia payments |
+| [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) | SmartBill e-invoicing (Romanian tax compliance) |
+| [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) | Payload CMS sync |
+| [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) | Sanity CMS sync |
 
 ## Architecture
 
