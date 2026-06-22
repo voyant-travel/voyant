@@ -98,6 +98,7 @@
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",

@@ -122,6 +122,7 @@
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",

@@ -20,6 +20,7 @@ import {
   legalTermAcceptanceStatusSchema,
   legalTermTypeSchema,
 } from "@voyant-travel/legal/terms/validation"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
 const legalTargetKindSchema = z.enum([
@@ -32,13 +33,7 @@ const legalTargetKindSchema = z.enum([
   "provider_source_ref",
 ])
 
-export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
-  z.object({
-    data: z.array(item),
-    total: z.number().int(),
-    limit: z.number().int(),
-    offset: z.number().int(),
-  })
+export const paginatedEnvelope = listResponseSchema
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })
 export const successEnvelope = z.object({ success: z.boolean() })

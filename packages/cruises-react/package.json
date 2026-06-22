@@ -59,6 +59,7 @@
     "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",

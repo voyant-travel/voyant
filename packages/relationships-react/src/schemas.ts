@@ -1,3 +1,4 @@
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
 /**
@@ -6,13 +7,7 @@ import { z } from "zod"
  * resource) so we assemble typed schemas from those envelopes here.
  */
 
-export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
-  z.object({
-    data: z.array(item),
-    total: z.number().int(),
-    limit: z.number().int(),
-    offset: z.number().int(),
-  })
+export const paginatedEnvelope = listResponseSchema
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })
 
