@@ -61,7 +61,19 @@ export function createRelationshipsHonoModule(
 
 export const relationshipsHonoModule: HonoModule = createRelationshipsHonoModule()
 
-export type { CustomerSignalCreatedEvent, CustomerSignalCreatedIntake } from "./events.js"
+export type {
+  CustomerSignalCreatedEvent,
+  CustomerSignalCreatedIntake,
+  OrganizationChangedEvent,
+  PersonChangedEvent,
+  RelationshipChangeAction,
+} from "./events.js"
+export {
+  emitOrganizationChanged,
+  emitPersonChanged,
+  ORGANIZATION_CHANGED_EVENT,
+  PERSON_CHANGED_EVENT,
+} from "./events.js"
 export type {
   RelationshipsRouteRuntime,
   RelationshipsRouteRuntimeOptions,
