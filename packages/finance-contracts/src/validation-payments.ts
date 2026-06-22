@@ -423,7 +423,7 @@ export const supplierPaymentListQuerySchema = z.object({
   paymentDateTo: z.string().optional(),
   sortBy: supplierPaymentListSortFieldSchema.default("createdAt"),
   sortDir: supplierPaymentListSortDirSchema.default("desc"),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
 
@@ -453,6 +453,6 @@ export const paymentListQuerySchema = z.object({
   search: z.string().optional(),
   sortBy: paymentListSortFieldSchema.default("createdAt"),
   sortDir: paymentListSortDirSchema.default("desc"),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

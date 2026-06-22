@@ -39,7 +39,7 @@ export const policyAssignmentScopeSchema = z.enum([
 export const policyAcceptanceMethodSchema = z.enum(["implicit", "explicit_checkbox", "signature"])
 
 const paginationSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
 

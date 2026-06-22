@@ -177,7 +177,7 @@ export const supplierInvoiceListQuerySchema = z.object({
   search: z.string().optional(),
   sortBy: supplierInvoiceListSortFieldSchema.default("createdAt"),
   sortDir: supplierInvoiceListSortDirSchema.default("desc"),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
 
