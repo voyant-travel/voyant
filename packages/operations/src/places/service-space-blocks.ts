@@ -107,6 +107,7 @@ export type SpaceBlockPickupOutcome =
   | { status: "invalid_range" }
   | { status: "block_not_found" }
   | { status: "block_not_active" }
+  | { status: "session_conflict" }
   | { status: "slot_unavailable"; date: string; remaining: number; needed: number }
 
 export async function pickupSpaceBlock(
@@ -138,7 +139,15 @@ export async function pickupSpaceBlock(
           ),
         )
         .limit(1)
-      if (existing) return { status: "ok" as const, pickup: existing, idempotent: true }
+      if (existing) {
+        // Idempotent only when the existing active pickup is on THIS block.
+        // A session holds at most one active pickup (global unique index), so an
+        // active pickup on another block is a conflict, not a path-scoped no-op.
+        if (existing.blockId === input.blockId) {
+          return { status: "ok" as const, pickup: existing, idempotent: true }
+        }
+        return { status: "session_conflict" as const }
+      }
     }
 
     const slotRows = await tx

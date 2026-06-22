@@ -394,6 +394,8 @@ export const facilitiesRoutes = new Hono<Env>()
         return c.json({ error: "Invalid start/end range" }, 400)
       case "block_not_active":
         return c.json({ error: "Space block is no longer accepting pickups" }, 409)
+      case "session_conflict":
+        return c.json({ error: "Session already has an active pickup on another block" }, 409)
       case "slot_unavailable":
         return c.json(
           {

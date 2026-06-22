@@ -92,6 +92,17 @@ describe.skipIf(!DB_AVAILABLE)("space-block allotment service", () => {
     expect(first.status).toBe("ok")
     if (second.status === "ok") expect(second.idempotent).toBe(true)
 
+    // Same session against a DIFFERENT block is a conflict, not a path-scoped
+    // no-op satisfied by block A's pickup.
+    const conflict = await spaceBlockService.pickupSpaceBlock(db, {
+      blockId: b.block.id,
+      sessionId: "mpss_x",
+      ...DATES,
+      units: 1,
+    })
+    expect(conflict.status).toBe("session_conflict")
+    expect((await spaceBlockService.summarizeSpaceBlock(db, b.block.id))?.totalPickedUp).toBe(0)
+
     // Reversing under block B must not touch block A.
     const wrong = await spaceBlockService.reverseSpaceBlockPickup(db, {
       blockId: b.block.id,
