@@ -2541,8 +2541,8 @@ importers:
         specifier: workspace:^
         version: link:../bookings
       '@voyant-travel/cloud-sdk':
-        specifier: ^0.9.0
-        version: 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -4131,8 +4131,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/charters
       '@voyant-travel/cloud-sdk':
-        specifier: ^0.9.0
-        version: 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/commerce':
         specifier: workspace:^
         version: link:../../packages/commerce
@@ -6961,8 +6961,8 @@ packages:
     bundledDependencies:
       - '@voyant-travel/sdk-core'
 
-  '@voyant-travel/cloud-sdk@0.9.0':
-    resolution: {integrity: sha512-pMaoOYSHbPW3V2KncU6PuzTyAphPx3q7HrNXADSiUpPWQxqq+trXnVqVyYRJBicuThfj7FLKe2RGx5+EN9Sdng==}
+  '@voyant-travel/cloud-sdk@0.11.0':
+    resolution: {integrity: sha512-IQQXOeZKpFuFZHff8gTDxgEHB+rvMtNecHvgyb6UsX5sTWjCXPBJW2WuXALZ0e2hEeZdy3K6j08mSE2HvrD/Pg==}
     peerDependencies:
       typesense: '>=2.0.0 <4.0.0'
     peerDependenciesMeta:
@@ -13135,7 +13135,7 @@ snapshots:
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
-  '@voyant-travel/cloud-sdk@0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))':
+  '@voyant-travel/cloud-sdk@0.11.0(typesense@3.0.6(@babel/runtime@7.29.2))':
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
