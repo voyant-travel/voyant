@@ -32,6 +32,7 @@ import {
   ForbiddenApiError,
   handleApiError,
   idempotencyKey,
+  isStaffRbacEnforced,
   normalizeValidationError,
   parseJsonBody,
   parseQuery,
@@ -1250,6 +1251,7 @@ async function listBookingActionLedger(c: Context<Env>) {
     scopes: c.get("scopes"),
     callerType: c.get("callerType"),
     isInternalRequest: c.get("isInternalRequest"),
+    enforceRbac: isStaffRbacEnforced(c.env),
   })
   const visibleTravelers = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
 
@@ -1417,6 +1419,7 @@ export const bookingRoutes = new Hono<Env>()
       scopes: c.get("scopes"),
       callerType: c.get("callerType"),
       isInternalRequest: c.get("isInternalRequest"),
+      enforceRbac: isStaffRbacEnforced(c.env),
     })
     await logBookingPiiAccess(c, {
       action: "read",
@@ -1491,6 +1494,7 @@ export const bookingRoutes = new Hono<Env>()
       scopes: c.get("scopes"),
       callerType: c.get("callerType"),
       isInternalRequest: c.get("isInternalRequest"),
+      enforceRbac: isStaffRbacEnforced(c.env),
     })
     await logBookingPiiAccess(c, {
       action: "read",
@@ -1514,6 +1518,7 @@ export const bookingRoutes = new Hono<Env>()
       scopes: c.get("scopes"),
       callerType: c.get("callerType"),
       isInternalRequest: c.get("isInternalRequest"),
+      enforceRbac: isStaffRbacEnforced(c.env),
     })
     await logBookingPiiAccess(c, {
       bookingId: row.id,
@@ -1920,6 +1925,7 @@ export const bookingRoutes = new Hono<Env>()
       scopes: c.get("scopes"),
       callerType: c.get("callerType"),
       isInternalRequest: c.get("isInternalRequest"),
+      enforceRbac: isStaffRbacEnforced(c.env),
     })
     await logBookingPiiAccess(c, {
       bookingId: c.req.param("id"),

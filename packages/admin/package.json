@@ -59,7 +59,8 @@
   },
   "dependencies": {
     "@voyant-travel/i18n": "workspace:^",
-    "@voyant-travel/react": "workspace:^"
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",

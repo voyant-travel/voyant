@@ -227,6 +227,14 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     lazyPublicRoutes: () =>
       import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
   }),
+  // Cloud-mode team management mounted at /v1/admin/team — proxies member
+  // management to the Voyant Cloud platform when VOYANT_ADMIN_AUTH_MODE is
+  // "voyant-cloud". The local invitations surface above stays the local-mode
+  // path; these routes 404 in local mode.
+  "operator/team": () => ({
+    module: { name: "team" },
+    lazyAdminRoutes: () => import("./routes/team").then((m) => m.createTeamAdminRoutes()),
+  }),
   // Cruise admin/public routes mounted at /v1/{admin,public}/cruises with the
   // booking-engine SourceAdapterRegistry injected into context. Provider-neutral:
   // external cruise providers are wired in `lib/cruise-adapters-runtime.ts`.

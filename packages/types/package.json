@@ -12,6 +12,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./api-keys": "./src/api-keys.ts",
+    "./member-roles": "./src/member-roles.ts",
     "./schemas/*": "./src/schemas/*.ts"
   },
   "publishConfig": {
@@ -28,6 +29,11 @@
         "types": "./dist/api-keys.d.ts",
         "import": "./dist/api-keys.js",
         "default": "./dist/api-keys.js"
+      },
+      "./member-roles": {
+        "types": "./dist/member-roles.d.ts",
+        "import": "./dist/member-roles.js",
+        "default": "./dist/member-roles.js"
       },
       "./schemas/*": {
         "types": "./dist/schemas/*.d.ts",

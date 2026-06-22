@@ -29,6 +29,27 @@ export type AdminTeamMessages = {
     emailPlaceholder: string
     cancel: string
     sendInvitation: string
+    members: {
+      title: string
+      description: string
+      empty: string
+      role: string
+      roleLabel: string
+      fullAccess: string
+      fullAccessHint: string
+      hasAccess: string
+      noAccess: string
+      grantAccess: string
+      revokeAccess: string
+      managePermissions: string
+      permissionsTitle: string
+      permissionsDescription: string
+      roleDefault: string
+      custom: string
+      presetLabel: string
+      save: string
+      saving: string
+    }
   }
 }
 
@@ -66,6 +87,28 @@ export const adminTeamMessages = {
       emailPlaceholder: "teammate@example.com",
       cancel: "Cancel",
       sendInvitation: "Send invitation",
+      members: {
+        title: "Members",
+        description: "People who can sign in to this workspace.",
+        empty: "No members yet.",
+        role: "Role",
+        roleLabel: "Role",
+        fullAccess: "Full access",
+        fullAccessHint: "Owners and admins are managed in the Voyant Cloud dashboard.",
+        hasAccess: "Has access",
+        noAccess: "No access",
+        grantAccess: "Grant access",
+        revokeAccess: "Revoke access",
+        managePermissions: "Manage permissions",
+        permissionsTitle: "Permissions",
+        permissionsDescription:
+          "Choose what this member can do in this workspace. Start from a preset, then fine-tune.",
+        roleDefault: "Role default",
+        custom: "Custom",
+        presetLabel: "Preset",
+        save: "Save",
+        saving: "Saving…",
+      },
     },
   },
   ro: {
@@ -102,6 +145,28 @@ export const adminTeamMessages = {
       emailPlaceholder: "coleg@example.com",
       cancel: "Anuleaza",
       sendInvitation: "Trimite invitatia",
+      members: {
+        title: "Membri",
+        description: "Persoanele care se pot autentifica in acest spatiu de lucru.",
+        empty: "Niciun membru momentan.",
+        role: "Rol",
+        roleLabel: "Rol",
+        fullAccess: "Acces complet",
+        fullAccessHint: "Proprietarii si administratorii sunt gestionati in panoul Voyant Cloud.",
+        hasAccess: "Are acces",
+        noAccess: "Fara acces",
+        grantAccess: "Acorda acces",
+        revokeAccess: "Retrage accesul",
+        managePermissions: "Gestioneaza permisiunile",
+        permissionsTitle: "Permisiuni",
+        permissionsDescription:
+          "Alege ce poate face acest membru in acest spatiu de lucru. Porneste de la o presetare, apoi ajusteaza.",
+        roleDefault: "Implicit pe rol",
+        custom: "Personalizat",
+        presetLabel: "Presetare",
+        save: "Salveaza",
+        saving: "Se salveaza…",
+      },
     },
   },
 }

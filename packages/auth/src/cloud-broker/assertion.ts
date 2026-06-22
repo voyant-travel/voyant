@@ -24,6 +24,11 @@ export type CloudAdminAssertion = {
   roleSlug?: string | null
   roleName?: string | null
   surfaces?: string[] | null
+  /**
+   * Member RBAC scope set (`resource:action` strings). Absent on older platforms
+   * — the deployment then derives scopes from `roleSlug`. See member-rbac-rfc.md.
+   */
+  scopes?: string[] | null
   nonce: string
   iat: number
   exp: number
@@ -62,6 +67,14 @@ export type CloudAdminAuthRevalidationResult = {
   ok: boolean
   status: "active" | "revoked"
   reason?: string
+  /**
+   * The member's current RBAC scope set for this deployment, refreshed from the
+   * platform (member-rbac-rfc, voyant#2085). `undefined` when the platform
+   * didn't include it (older platform); `null` means "no explicit permissions —
+   * derive from role". Lets a permission change take effect within one
+   * revalidation interval instead of only at next login.
+   */
+  scopes?: string[] | null
 }
 
 type JwsHeader = {
@@ -159,6 +172,9 @@ export async function revalidateCloudAdminAuthAccess({
     ok: body.ok,
     status: body.status,
     reason: optionalString(body.reason) ?? undefined,
+    // Only surface `scopes` when the platform sent the key, so an older platform
+    // (no key) leaves the cached scopes untouched rather than clearing them.
+    ...("scopes" in body ? { scopes: optionalStringArray(body.scopes) } : {}),
   }
 }
 
@@ -311,6 +327,7 @@ function parseCloudAdminAssertionPayload(payload: unknown): CloudAdminAssertion 
     roleSlug: optionalString(payload.roleSlug),
     roleName: optionalString(payload.roleName),
     surfaces: optionalStringArray(payload.surfaces),
+    scopes: optionalStringArray(payload.scopes),
     nonce: requiredString(payload.nonce, "nonce"),
     iat: requiredNumber(payload.iat, "iat"),
     exp: requiredNumber(payload.exp, "exp"),

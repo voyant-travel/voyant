@@ -42,6 +42,20 @@ function hasAnyApiKeyPermission(
 }
 
 /**
+ * Staff-session RBAC enforcement (member-rbac-rfc, voyant#2085). Enforced **by
+ * default**: every member's assigned scope set is checked across admin routes.
+ * Full-access members hold `*` and bypass, so they're unaffected. The
+ * `VOYANT_RBAC_ENFORCE` env var is a kill switch — set it to `0`/`false`/`off`
+ * to disable enforcement (e.g. an emergency rollback) without a code change.
+ * API-key scope enforcement is always on (unchanged).
+ */
+export function isStaffRbacEnforced(env: unknown): boolean {
+  const value = (env as { VOYANT_RBAC_ENFORCE?: string } | undefined)?.VOYANT_RBAC_ENFORCE
+  const normalized = value?.trim().toLowerCase()
+  return !(normalized === "0" || normalized === "false" || normalized === "off")
+}
+
+/**
  * Guards a route surface by actor type.
  *
  * Voyant exposes two API surfaces:
@@ -107,6 +121,23 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
     }
     if (!allowSet.has(actor)) {
       return c.json({ error: "Forbidden: actor not permitted on this surface" }, 403)
+    }
+
+    // Granular RBAC for staff sessions (member-rbac-rfc, voyant#2085). A member
+    // with an explicit, non-wildcard scope set is gated exactly like an API key:
+    // resource from the path, action from the method. Full-access members hold
+    // `*` (the default for unassigned members), so `hasAnyApiKeyPermission`
+    // passes them — existing deployments are unaffected. Paths with no mapped
+    // resource (e.g. `_meta`) stay open until a module is explicitly covered.
+    if (actor === "staff" && c.get("callerType") === "session" && isStaffRbacEnforced(c.env)) {
+      const scopes = c.get("scopes")
+      const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+      if (resource && resource !== "_meta") {
+        const actions = apiKeyPermissionActionsForMethod(c.req.method)
+        if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
+          return c.json({ error: "Forbidden: missing required permission" }, 403)
+        }
+      }
     }
 
     return next()

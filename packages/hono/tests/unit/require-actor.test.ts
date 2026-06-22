@@ -222,3 +222,97 @@ describe("requireActor", () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
+  const OFF = { VOYANT_RBAC_ENFORCE: "0" }
+
+  function staffSession(scopes: string[]) {
+    return makeApp((c) => {
+      c.set("actor", "staff")
+      c.set("callerType", "session")
+      c.set("scopes", scopes)
+    })
+  }
+
+  it("enforces staff scopes by default (no env)", async () => {
+    const app = staffSession(["bookings:read"])
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    // Default-on: a member without finance:write is denied.
+    expect((await app.request("/v1/admin/finance/invoices", { method: "POST" })).status).toBe(403)
+  })
+
+  it("can be disabled with the VOYANT_RBAC_ENFORCE kill switch", async () => {
+    const app = staffSession(["bookings:read"])
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/finance/invoices", { method: "POST" }, OFF)).status).toBe(
+      200,
+    )
+  })
+
+  it("lets a full-access (`*`) member through any admin route", async () => {
+    const app = staffSession(["*"])
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/finance/invoices", { method: "POST" })
+    expect(res.status).toBe(200)
+  })
+
+  it("allows a read but denies a write when the member only has :read", async () => {
+    const build = () => {
+      const app = staffSession(["bookings:read"])
+      app.use("*", requireActor("staff"))
+      app.get("/v1/admin/bookings", (c) => c.json({ ok: true }))
+      app.post("/v1/admin/bookings", (c) => c.json({ ok: true }))
+      return app
+    }
+
+    expect((await build().request("/v1/admin/bookings")).status).toBe(200)
+    expect((await build().request("/v1/admin/bookings", { method: "POST" })).status).toBe(403)
+  })
+
+  it("denies a module the member has no scope for", async () => {
+    const app = staffSession(["bookings:read", "bookings:write"])
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/finance/invoices")
+    expect(res.status).toBe(403)
+  })
+
+  it("gates team management on the team scope", async () => {
+    const denied = staffSession(["bookings:read", "bookings:write"]) // editor-ish, no team
+    denied.use("*", requireActor("staff"))
+    denied.post("/v1/admin/team/members/m_1/permissions", (c) => c.json({ ok: true }))
+    expect(
+      (await denied.request("/v1/admin/team/members/m_1/permissions", { method: "POST" })).status,
+    ).toBe(403)
+
+    const allowed = staffSession(["team:write"])
+    allowed.use("*", requireActor("staff"))
+    allowed.post("/v1/admin/team/members/m_1/permissions", (c) => c.json({ ok: true }))
+    expect(
+      (await allowed.request("/v1/admin/team/members/m_1/permissions", { method: "POST" })).status,
+    ).toBe(200)
+  })
+
+  it("still lets a restricted member read _meta", async () => {
+    const app = staffSession(["bookings:read"])
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/_meta/capabilities", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/_meta/capabilities")).status).toBe(200)
+  })
+
+  it("denies a member with no scopes at all", async () => {
+    const app = staffSession([])
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/bookings", (c) => c.json({ ok: true }))
+
+    expect((await app.request("/v1/admin/bookings")).status).toBe(403)
+  })
+})
