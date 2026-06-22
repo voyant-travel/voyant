@@ -30,24 +30,25 @@ const DASH_PRODUCTS: QueryKey = ["dashboard-products-aggregates"]
  * cheap no-op. Adding a module = one entry here + a bridge route (lib/realtime).
  */
 const ENTITY_INVALIDATIONS: Record<string, ReadonlyArray<QueryKey>> = {
-  product: [["voyant", "inventory"], ["voyant", "catalog"], ["voyant", "products"], DASH_PRODUCTS],
+  // inventory-react products root is `["voyant","products"]`; `catalog` hedges
+  // any catalog-react browse surface.
+  product: [["voyant", "products"], ["voyant", "catalog"], DASH_PRODUCTS],
   person: [["voyant", "relationships", "people"]],
   organization: [["voyant", "relationships", "organizations"]],
   signal: [["voyant", "relationships", "customer-signals"]],
   invoice: [["voyant", "finance"], DASH_FINANCE],
   contract: [["legal", "contracts"]],
   cruise: [["voyant", "cruises"]],
+  // A pricing-rule change also moves the product's pricing surfaces.
   pricing: [
     ["voyant", "pricing"],
-    ["voyant", "inventory"],
+    ["voyant", "products"],
   ],
-  promotion: [
-    ["voyant", "pricing"],
-    ["voyant", "inventory"],
-  ],
+  // commerce-react promotions use a bare `["promotions"]` root, not `voyant/*`.
+  promotion: [["promotions"], ["voyant", "pricing"]],
   booking: [["voyant", "bookings"], DASH_BOOKINGS, DASH_FINANCE],
   payment: [["voyant", "bookings"], ["voyant", "finance"], DASH_BOOKINGS, DASH_FINANCE],
-  availability: [["voyant", "availability"], ["voyant", "inventory"], DASH_PRODUCTS],
+  availability: [["voyant", "availability"], ["voyant", "products"], DASH_PRODUCTS],
 }
 
 function mapHintToKeys(hint: RealtimeInvalidationHint): ReadonlyArray<QueryKey> {
