@@ -1,0 +1,88 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { renderHook, waitFor } from "@testing-library/react"
+import type { ReactNode } from "react"
+import { describe, expect, it, vi } from "vitest"
+
+import type {
+  RealtimeClientMessage,
+  RealtimeConnector,
+  RealtimeSubscribeOptions,
+} from "../../src/connector.js"
+import { RealtimeReactProvider } from "../../src/provider.js"
+import { useLiveQueries } from "../../src/use-live-queries.js"
+
+/** Connector that records subscriptions and lets the test push messages. */
+function createFakeConnector() {
+  const subs = new Map<string, RealtimeSubscribeOptions>()
+  const connector: RealtimeConnector = {
+    subscribe(options) {
+      subs.set(options.channel, options)
+      return {
+        unsubscribe() {
+          subs.delete(options.channel)
+        },
+      }
+    },
+  }
+  return {
+    connector,
+    emit(channel: string, message: RealtimeClientMessage) {
+      subs.get(channel)?.onMessage?.(message)
+    },
+    subscribedChannels: () => [...subs.keys()],
+  }
+}
+
+describe("useLiveQueries", () => {
+  it("invalidates mapped query keys when a hint arrives", async () => {
+    const fake = createFakeConnector()
+    const queryClient = new QueryClient()
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries")
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider
+          connector={fake.connector}
+          fetchToken={async () => ({ token: "tok", expiresAt: "2099-01-01T00:00:00Z" })}
+        >
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(
+      () =>
+        useLiveQueries(["booking:bk_1"], (hint) => [["voyant", hint.entity, "detail", hint.id]]),
+      { wrapper },
+    )
+
+    await waitFor(() => expect(fake.subscribedChannels()).toContain("booking:bk_1"))
+
+    fake.emit("booking:bk_1", {
+      event: "booking.confirmed",
+      data: { event: "booking.confirmed", entity: "booking", id: "bk_1" },
+    })
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["voyant", "booking", "detail", "bk_1"],
+    })
+  })
+
+  it("does not subscribe when disabled", () => {
+    const fake = createFakeConnector()
+    const queryClient = new QueryClient()
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider
+          connector={fake.connector}
+          fetchToken={async () => ({ token: "tok", expiresAt: "2099-01-01T00:00:00Z" })}
+        >
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(() => useLiveQueries(["admin"], () => [], { enabled: false }), { wrapper })
+    expect(fake.subscribedChannels()).toEqual([])
+  })
+})

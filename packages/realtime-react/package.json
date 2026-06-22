@@ -1,0 +1,77 @@
+{
+  "name": "@voyant-travel/realtime-react",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./provider": "./src/provider.tsx",
+    "./connector": "./src/connector.ts",
+    "./connector-cloud": "./src/connector-cloud.ts",
+    "./query-keys": "./src/query-keys.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.2.14",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "jsdom": "^25.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./provider": {
+        "types": "./dist/provider.d.ts",
+        "import": "./dist/provider.js",
+        "default": "./dist/provider.js"
+      },
+      "./connector": {
+        "types": "./dist/connector.d.ts",
+        "import": "./dist/connector.js",
+        "default": "./dist/connector.js"
+      },
+      "./connector-cloud": {
+        "types": "./dist/connector-cloud.d.ts",
+        "import": "./dist/connector-cloud.js",
+        "default": "./dist/connector-cloud.js"
+      },
+      "./query-keys": {
+        "types": "./dist/query-keys.d.ts",
+        "import": "./dist/query-keys.js",
+        "default": "./dist/query-keys.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/realtime-react"
+  }
+}
