@@ -1385,5 +1385,4 @@ stay unchanged.
 | Internal dev-agent tooling | Keep outside the Voyant workspace. | Agent queue, remote sandbox, browser evidence, and code-execution tooling lives in `../internal-dev-agent`, not in the product monorepo. |
 | `@voyant-travel/scripts` | Keep as repository automation. | This is not part of the product package topology. |
 | `catalog-demo-api`, `flights-demo-api` | Keep as demo applications. | These may need dependency updates after Catalog, Inventory, or Flights package moves, but they should not drive Module boundaries. |
-| `@voyant-travel/workflow-runs-dashboard`, `@voyant-travel/workflows-local-dashboard` | Keep as workflow/admin tooling apps. | They are consumers of workflow infrastructure. |
-| `@voyant-travel/workflows-selfhost-node-server` | Keep as workflow runtime/deployment app. | This is the supported self-host Node workflow runtime target and should remain outside travel-domain consolidation. |
+| Workflow dashboard/self-host example apps (removed) | Deleted. | The standalone `workflow-runs-dashboard`, `workflows-local-dashboard`, and `workflows-selfhost-node-server` apps were redundant: self-hosting composes the `@voyant-travel/workflows-orchestrator` `./selfhost` runtime with the `@voyant-travel/workflows-react/ui` dashboard, so no in-repo example app is required. |
