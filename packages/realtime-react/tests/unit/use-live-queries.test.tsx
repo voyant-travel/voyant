@@ -68,6 +68,37 @@ describe("useLiveQueries", () => {
     })
   })
 
+  it("subscribes to every channel in a multi-channel set", async () => {
+    const fake = createFakeConnector()
+    const queryClient = new QueryClient()
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries")
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider
+          connector={fake.connector}
+          fetchToken={async () => ({ token: "tok", expiresAt: "2099-01-01T00:00:00Z" })}
+        >
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(
+      () => useLiveQueries(["admin", "booking:bk_1"], (hint) => [["voyant", hint.entity, hint.id]]),
+      { wrapper },
+    )
+
+    // Each channel is subscribed individually — not a single joined string.
+    await waitFor(() => expect(fake.subscribedChannels().sort()).toEqual(["admin", "booking:bk_1"]))
+
+    fake.emit("booking:bk_1", {
+      event: "booking.confirmed",
+      data: { event: "booking.confirmed", entity: "booking", id: "bk_1" },
+    })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["voyant", "booking", "bk_1"] })
+  })
+
   it("does not subscribe when disabled", () => {
     const fake = createFakeConnector()
     const queryClient = new QueryClient()
