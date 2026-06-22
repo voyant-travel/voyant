@@ -26,7 +26,7 @@
     "@voyant-travel/identity-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
+    "hono": "^4.12.26",
     "zod": "^4.3.6"
   },
   "devDependencies": {

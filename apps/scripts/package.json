@@ -14,14 +14,14 @@
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
-    "dotenv": "^17.4.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.8",
+    "postgres": "^3.4.9",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "tsx": "^4.21.0",
+    "@types/node": "^20.19.43",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.2"
   }
 }

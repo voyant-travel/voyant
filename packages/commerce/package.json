@@ -30,7 +30,7 @@
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
+    "hono": "^4.12.26",
     "rrule": "^2.8.1",
     "zod": "^4.3.6"
   },
