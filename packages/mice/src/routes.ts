@@ -58,7 +58,9 @@ export const miceAdminRoutes = new Hono<Env>()
   })
   .post("/sessions", async (c) => {
     const body = await parseJsonBody(c, createSessionSchema)
-    return c.json({ data: await createSession(c.get("db"), body) }, 201)
+    const outcome = await createSession(c.get("db"), body)
+    if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
+    return c.json({ data: outcome.session }, 201)
   })
   .get("/sessions/:id", async (c) => {
     const session = await getSession(c.get("db"), c.req.param("id"))

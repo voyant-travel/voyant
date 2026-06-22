@@ -35,14 +35,13 @@ export const functionSpaceListQuerySchema = z.object({
 })
 
 export const setFunctionSpaceCapacitiesSchema = z.object({
-  capacities: z
-    .array(
-      z.object({
-        layout: functionSpaceLayoutSchema,
-        capacity: z.number().int().min(0),
-      }),
-    )
-    .min(1),
+  // Full replace: an empty array clears the matrix.
+  capacities: z.array(
+    z.object({
+      layout: functionSpaceLayoutSchema,
+      capacity: z.number().int().min(0),
+    }),
+  ),
 })
 
 export type CreateFunctionSpaceBody = z.infer<typeof createFunctionSpaceSchema>

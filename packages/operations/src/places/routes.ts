@@ -319,7 +319,11 @@ export const facilitiesRoutes = new Hono<Env>()
   })
   .post("/function-spaces", async (c) => {
     const body = await parseJsonBody(c, createFunctionSpaceSchema)
-    return c.json({ data: await functionSpaceService.createFunctionSpace(c.get("db"), body) }, 201)
+    const outcome = await functionSpaceService.createFunctionSpace(c.get("db"), body)
+    if (outcome.status === "facility_not_found") return c.json({ error: "Facility not found" }, 404)
+    if (outcome.status === "parent_not_found")
+      return c.json({ error: "Parent space not found" }, 404)
+    return c.json({ data: outcome.space }, 201)
   })
   .get("/function-spaces/:id", async (c) => {
     const row = await functionSpaceService.getFunctionSpace(c.get("db"), c.req.param("id"))

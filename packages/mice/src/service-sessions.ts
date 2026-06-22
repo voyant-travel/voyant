@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { programs } from "./schema.js"
 import {
   type ProgramSession,
   programSessions,
@@ -24,13 +25,25 @@ function withTimestamps<T extends { startsAt?: string; endsAt?: string }>(input:
   }
 }
 
+export type CreateSessionOutcome =
+  | { status: "ok"; session: ProgramSession }
+  | { status: "program_not_found" }
+
 export async function createSession(
   db: PostgresJsDatabase,
   input: CreateSessionBody,
-): Promise<ProgramSession> {
+): Promise<CreateSessionOutcome> {
+  // Validate the program FK up front so a stale/mistyped programId is a 4xx,
+  // not a raw FK-violation 500.
+  const [program] = await db
+    .select({ id: programs.id })
+    .from(programs)
+    .where(eq(programs.id, input.programId))
+    .limit(1)
+  if (!program) return { status: "program_not_found" }
   const [session] = await db.insert(programSessions).values(withTimestamps(input)).returning()
   if (!session) throw new Error("createSession: insert returned no rows")
-  return session
+  return { status: "ok", session }
 }
 
 export async function getSession(

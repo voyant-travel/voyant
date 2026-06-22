@@ -1,6 +1,7 @@
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, eq, inArray, not } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { facilities } from "./schema.js"
 import {
   type FunctionSpace,
   type FunctionSpaceCapacity,
@@ -20,13 +21,34 @@ export interface CreateFunctionSpaceInput {
   sortOrder?: number
 }
 
+export type CreateFunctionSpaceOutcome =
+  | { status: "ok"; space: FunctionSpace }
+  | { status: "facility_not_found" }
+  | { status: "parent_not_found" }
+
 export async function createFunctionSpace(
   db: PostgresJsDatabase,
   input: CreateFunctionSpaceInput,
-): Promise<FunctionSpace> {
+): Promise<CreateFunctionSpaceOutcome> {
+  // Validate the cross-references up front so a stale/mistyped id is a 4xx,
+  // not a raw FK-violation 500.
+  const [facility] = await db
+    .select({ id: facilities.id })
+    .from(facilities)
+    .where(eq(facilities.id, input.facilityId))
+    .limit(1)
+  if (!facility) return { status: "facility_not_found" }
+  if (input.parentSpaceId) {
+    const [parent] = await db
+      .select({ id: functionSpaces.id })
+      .from(functionSpaces)
+      .where(eq(functionSpaces.id, input.parentSpaceId))
+      .limit(1)
+    if (!parent) return { status: "parent_not_found" }
+  }
   const [space] = await db.insert(functionSpaces).values(input).returning()
   if (!space) throw new Error("createFunctionSpace: insert returned no rows")
-  return space
+  return { status: "ok", space }
 }
 
 export async function getFunctionSpace(
@@ -79,13 +101,29 @@ export interface FunctionSpaceCapacityInput {
   capacity: number
 }
 
-/** Replace the per-layout capacity matrix for a space (upsert by layout). */
+/**
+ * Replace the per-layout capacity matrix for a space. This is a full replace:
+ * layouts omitted from the payload are deleted (an empty payload clears all),
+ * so the stored matrix always matches what the caller submitted.
+ */
 export async function setFunctionSpaceCapacities(
   db: PostgresJsDatabase,
   spaceId: string,
   capacities: FunctionSpaceCapacityInput[],
 ): Promise<FunctionSpaceCapacity[]> {
   return db.transaction(async (tx) => {
+    const keep = capacities.map((c) => c.layout)
+    // Drop layouts no longer present (and everything, when payload is empty).
+    await tx
+      .delete(functionSpaceCapacities)
+      .where(
+        keep.length
+          ? and(
+              eq(functionSpaceCapacities.spaceId, spaceId),
+              not(inArray(functionSpaceCapacities.layout, keep)),
+            )
+          : eq(functionSpaceCapacities.spaceId, spaceId),
+      )
     for (const c of capacities) {
       await tx
         .insert(functionSpaceCapacities)
