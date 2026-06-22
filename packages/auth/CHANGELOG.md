@@ -1,5 +1,11 @@
 # @voyant-travel/auth
 
+## 0.118.0
+
+### Patch Changes
+
+- @voyant-travel/utils@0.105.4
+
 ## 0.117.0
 
 ### Minor Changes

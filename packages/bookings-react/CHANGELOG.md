@@ -1,5 +1,38 @@
 # @voyant-travel/bookings-react
 
+## 0.134.0
+
+### Minor Changes
+
+- 51f7dea: Share one list-response contract instead of per-module copies (voyant#2109).
+
+  `@voyant-travel/types` now owns the canonical offset-paginated list envelope: the `ListResponse<T>` type + `listResponse(data, { total, limit, offset })` builder, plus the zod `paginationSchema` (coerced `limit` 1–200 default 50, `offset` ≥0 default 0) and the `listResponseSchema(item)` factory. Both server services and `*-react` clients import from this single source.
+
+  Server side: every module's local `paginate()` / inline `{ data, total, limit, offset }` construction now routes through the shared `listResponse` builder, and the count read is standardized on `count` internally — fixing the drift where finance, notifications and the legal contracts/policies services read `countResult[0]?.total` while every other module read `countResult[0]?.count` (their `count(*)` selects were aliased `total`; they are now aliased `count`). The returned shape is byte-for-byte identical.
+
+  Client side: the ~23 copied `paginatedEnvelope` zod schemas across the `*-react` packages are replaced by re-exporting the shared `listResponseSchema` factory under the same `paginatedEnvelope` name, so consumers are unchanged.
+
+  Input alignment: `finance-contracts` and `legal-contracts` pagination `limit` caps were raised from `.max(100)` to `.max(200)` to match the framework-wide max.
+
+  Additive and non-breaking.
+
+### Patch Changes
+
+- Updated dependencies [51f7dea]
+- Updated dependencies [0a0a014]
+  - @voyant-travel/types@0.106.0
+  - @voyant-travel/bookings@0.134.0
+  - @voyant-travel/commerce-react@0.16.0
+  - @voyant-travel/distribution-react@0.124.0
+  - @voyant-travel/finance-react@0.134.0
+  - @voyant-travel/identity-react@0.134.0
+  - @voyant-travel/inventory-react@0.16.0
+  - @voyant-travel/legal-react@0.134.0
+  - @voyant-travel/operations-react@0.15.0
+  - @voyant-travel/relationships-react@0.134.0
+  - @voyant-travel/admin@0.115.1
+  - @voyant-travel/catalog-react@0.132.0
+
 ## 0.133.0
 
 ### Patch Changes

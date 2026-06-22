@@ -1,5 +1,14 @@
 # @voyant-travel/flights
 
+## 0.134.0
+
+### Patch Changes
+
+- Updated dependencies [04b257c]
+- Updated dependencies [78c15fa]
+  - @voyant-travel/hono@0.115.0
+  - @voyant-travel/catalog@0.132.0
+
 ## 0.133.0
 
 ### Patch Changes

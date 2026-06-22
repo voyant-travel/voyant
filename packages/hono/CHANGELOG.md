@@ -1,5 +1,30 @@
 # @voyant-travel/hono
 
+## 0.115.0
+
+### Minor Changes
+
+- 04b257c: Anonymous-access declarations (ADR-0008 Phase 1). A module/extension can now declare which of its PUBLIC routes are reachable without a session via an `anonymous?: boolean | string[]` field on `HonoModule`/`HonoExtension` — `true` opens the whole public mount, a string array opens specific sub-paths relative to it. `createApp` assembles the global anonymous allow-list from these declarations (unioned with any explicit `publicPaths`, now an escape hatch) and feeds it to both the auth middleware and the public-write rate-limit matcher, so the "reachable-without-auth" decision lives next to the route instead of in a hand-maintained list. New pure helper `assembleAnonymousPaths(modules, extensions, explicit)` is exported for tooling/audit.
+
+  The standard framework families that own anonymous routes now declare it (catalog, bookings, finance payment/collections/accountant sub-paths, legal, public-document-delivery, storefront verification + intake, customer-portal contact-exists, proposals); the framework's `anonymous-surface` test asserts the full assembled standard surface as an auditable snapshot.
+
+  Additive and non-breaking: a deployment that declares no `anonymous` and passes `publicPaths` explicitly gets identical behavior.
+
+- 78c15fa: Module subsetting, Phase 1 (ADR-0007). The standard set is default-on; `createVoyantApp` now accepts `exclude` — a list of standard module/extension specifiers to REMOVE from the framework set, for a deployment that doesn't run them (e.g. `@voyant-travel/flights`).
+
+  Excludes are validated against the new `FRAMEWORK_CAPABILITY_GRAPH` (declaring `provides`/`requires`/`isRequired`): excluding a module another mounted module depends on, an `isRequired` foundational module, or a specifier not in the standard set throws a named boot error listing what's wrong — never a runtime 500. Adds the pure validators `findCapabilityGaps` (`@voyant-travel/hono/composition`) and `subsetStandardManifest` (`@voyant-travel/framework`).
+
+  Additive and non-breaking: omitting `exclude` mounts the full standard set exactly as before.
+
+  Capability _replacement_ (swap Voyant CRM for HubSpot via override-by-capability + injected ports) is the documented v2 design and intentionally not wired yet — the `PeopleDirectory` port doesn't exist, so a replace knob would silently mis-resolve. Removal works today; replacement, schema-side subsetting, and the port extraction are tracked follow-ups.
+
+### Patch Changes
+
+- Updated dependencies [51f7dea]
+  - @voyant-travel/types@0.106.0
+  - @voyant-travel/utils@0.105.4
+  - @voyant-travel/workflows@0.111.5
+
 ## 0.114.0
 
 ### Minor Changes
