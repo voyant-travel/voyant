@@ -14,6 +14,7 @@ import { programRoomBlockLink } from "./program-room-block.js"
 import { quoteProgramLink } from "./quote-program.js"
 import { roomBlockPropertyLink } from "./room-block-property.js"
 import { roomBlockSupplierLink } from "./room-block-supplier.js"
+import { sessionFunctionSpaceLink } from "./session-function-space.js"
 
 export {
   contractBookingLink,
@@ -30,6 +31,7 @@ export {
   quoteProgramLink,
   roomBlockPropertyLink,
   roomBlockSupplierLink,
+  sessionFunctionSpaceLink,
 }
 
 /**
@@ -51,4 +53,5 @@ export const links: LinkDefinition[] = [
   roomBlockSupplierLink,
   organizationProgramLink,
   quoteProgramLink,
+  sessionFunctionSpaceLink,
 ]

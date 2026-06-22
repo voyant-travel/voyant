@@ -15,8 +15,16 @@ export const programLinkable: LinkableDefinition = {
   idPrefix: "prog",
 }
 
+export const sessionLinkable: LinkableDefinition = {
+  module: "mice",
+  entity: "session",
+  table: "mice_program_sessions",
+  idPrefix: "mpss",
+}
+
 export const miceLinkable = {
   program: programLinkable,
+  session: sessionLinkable,
 }
 
 export const miceModule: Module = {
@@ -35,4 +43,6 @@ export type { MiceAdminRoutes } from "./routes.js"
 export { miceAdminRoutes } from "./routes.js"
 export * from "./schema.js"
 export * from "./service.js"
+export * from "./service-sessions.js"
 export * from "./validation.js"
+export * from "./validation-sessions.js"

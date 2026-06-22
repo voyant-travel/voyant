@@ -191,6 +191,8 @@ export const PREFIXES = {
   facility_contacts: "fcon",
   facility_features: "ffea",
   facility_operation_schedules: "fops",
+  function_spaces: "fnsp",
+  function_space_capacities: "fnsc",
   properties: "prop",
   property_groups: "pgrp",
   property_group_members: "pgpm",
@@ -420,6 +422,8 @@ export const PREFIXES = {
   // The group-program spine (operator-local). Room blocks live in
   // accommodations (room_blocks/hrbl above); this is the umbrella record.
   mice_programs: "prog",
+  mice_program_sessions: "mpss",
+  mice_session_inclusions: "mssi",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

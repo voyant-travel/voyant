@@ -242,3 +242,20 @@ export const quotes_quote_mice_program = pgTable(
     uniqueIndex("quotes_quote_mice_program_r_uniq").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
+
+export const operations_functionSpace_mice_session = pgTable(
+  "operations_functionSpace_mice_session",
+  {
+    id: text("id").primaryKey().notNull(),
+    "operations_functionSpace_id": text("operations_functionSpace_id").notNull(),
+    "mice_session_id": text("mice_session_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("operations_functionSpace_mice_session_pair_idx").on(t["operations_functionSpace_id"], t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
+    index("operations_functionSpace_mice_session_l_idx").on(t["operations_functionSpace_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("operations_functionSpace_mice_session_r_uniq").on(t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)

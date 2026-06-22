@@ -215,4 +215,8 @@ export const typeIdSchemas = {
   taxRegime: typeIdSchema("tax_regimes"),
   invoiceExternalRef: typeIdSchema("invoice_external_refs"),
   miceProgram: typeIdSchema("mice_programs"),
+  miceProgramSession: typeIdSchema("mice_program_sessions"),
+  miceSessionInclusion: typeIdSchema("mice_session_inclusions"),
+  functionSpace: typeIdSchema("function_spaces"),
+  functionSpaceCapacity: typeIdSchema("function_space_capacities"),
 } as const

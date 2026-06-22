@@ -9,6 +9,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 
 import { facilitiesService } from "./service.js"
+import { functionSpaceService } from "./service-function-spaces.js"
 import {
   facilityContactListQuerySchema,
   facilityFeatureListQuerySchema,
@@ -32,6 +33,12 @@ import {
   updatePropertyGroupSchema,
   updatePropertySchema,
 } from "./validation.js"
+import {
+  createFunctionSpaceSchema,
+  functionSpaceListQuerySchema,
+  setFunctionSpaceCapacitiesSchema,
+  updateFunctionSpaceSchema,
+} from "./validation-function-spaces.js"
 
 type Env = {
   Variables: {
@@ -304,6 +311,42 @@ export const facilitiesRoutes = new Hono<Env>()
     const row = await facilitiesService.deletePropertyGroupMember(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Property group member not found" }, 404)
     return c.json({ success: true })
+  })
+  // Function spaces (meeting/event sub-spaces of a venue) — RFC voyant#1489 Phase 2.
+  .get("/function-spaces", async (c) => {
+    const query = await parseQuery(c, functionSpaceListQuerySchema)
+    return c.json(await functionSpaceService.listFunctionSpaces(c.get("db"), query))
+  })
+  .post("/function-spaces", async (c) => {
+    const body = await parseJsonBody(c, createFunctionSpaceSchema)
+    const outcome = await functionSpaceService.createFunctionSpace(c.get("db"), body)
+    if (outcome.status === "facility_not_found") return c.json({ error: "Facility not found" }, 404)
+    if (outcome.status === "parent_not_found")
+      return c.json({ error: "Parent space not found" }, 404)
+    return c.json({ data: outcome.space }, 201)
+  })
+  .get("/function-spaces/:id", async (c) => {
+    const row = await functionSpaceService.getFunctionSpace(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Function space not found" }, 404)
+    return c.json({ data: row })
+  })
+  .patch("/function-spaces/:id", async (c) => {
+    const row = await functionSpaceService.updateFunctionSpace(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateFunctionSpaceSchema),
+    )
+    if (!row) return c.json({ error: "Function space not found" }, 404)
+    return c.json({ data: row })
+  })
+  .put("/function-spaces/:id/capacities", async (c) => {
+    const id = c.req.param("id")
+    const existing = await functionSpaceService.getFunctionSpace(c.get("db"), id)
+    if (!existing) return c.json({ error: "Function space not found" }, 404)
+    const { capacities } = await parseJsonBody(c, setFunctionSpaceCapacitiesSchema)
+    return c.json({
+      data: await functionSpaceService.setFunctionSpaceCapacities(c.get("db"), id, capacities),
+    })
   })
 
 export type FacilitiesRoutes = typeof facilitiesRoutes

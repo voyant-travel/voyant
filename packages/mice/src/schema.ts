@@ -58,3 +58,5 @@ export const programs = pgTable(
 
 export type Program = typeof programs.$inferSelect
 export type NewProgram = typeof programs.$inferInsert
+
+export * from "./schema-sessions.js"
