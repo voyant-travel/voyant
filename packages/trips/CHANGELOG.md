@@ -1,5 +1,15 @@
 # @voyant-travel/trips
 
+## 0.123.0
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog@0.130.0
+  - @voyant-travel/flights@0.132.0
+  - @voyant-travel/bookings@0.132.0
+  - @voyant-travel/finance@0.132.0
+
 ## 0.122.1
 
 ### Patch Changes
