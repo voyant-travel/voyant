@@ -1,5 +1,13 @@
 # @voyant-travel/catalog
 
+## 0.131.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+
 ## 0.130.0
 
 ### Minor Changes

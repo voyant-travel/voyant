@@ -1,5 +1,31 @@
 # @voyant-travel/legal
 
+## 0.133.0
+
+### Minor Changes
+
+- 4abf9a2: Deployment team management + granular member RBAC (voyant#2085).
+
+  - `@voyant-travel/types`: `member-roles` (preset bundles reusing the API-key permission catalog) + `settings`/`team` resources.
+  - `@voyant-travel/auth`: `cloud-broker` member-management client + assertion `scopes`.
+  - `@voyant-travel/hono`: opt-in staff-session scope enforcement in `requireActor` (`VOYANT_RBAC_ENFORCE`) + `isStaffRbacEnforced`.
+  - `@voyant-travel/admin`: auth-mode-aware `TeamSettingsPage` with a granular permission editor.
+  - `@voyant-travel/bookings`/`legal`: PII reveal gated on `bookings-pii:read` under enforcement.
+  - `@voyant-travel/db`: `user_profiles.permissions` + `cloud_auth_user_links.scopes`.
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/action-ledger@0.105.5
+  - @voyant-travel/distribution@0.123.0
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/relationships@0.120.13
+  - @voyant-travel/legal-contracts@0.105.2
+
 ## 0.132.0
 
 ### Patch Changes

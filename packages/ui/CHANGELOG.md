@@ -1,5 +1,13 @@
 # @voyant-travel/ui
 
+## 0.108.1
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/utils@0.105.3
+
 ## 0.108.0
 
 ### Minor Changes

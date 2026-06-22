@@ -1,5 +1,18 @@
 # @voyant-travel/distribution
 
+## 0.123.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/catalog@0.131.0
+  - @voyant-travel/identity@0.133.0
+  - @voyant-travel/suppliers-contracts@0.104.5
+  - @voyant-travel/workflows@0.111.4
+
 ## 0.122.0
 
 ### Patch Changes

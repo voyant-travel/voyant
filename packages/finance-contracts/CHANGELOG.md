@@ -1,5 +1,12 @@
 # @voyant-travel/finance-contracts
 
+## 0.104.7
+
+### Patch Changes
+
+- Updated dependencies [b68d6a7]
+  - @voyant-travel/schema-kit@0.107.0
+
 ## 0.104.6
 
 ### Patch Changes
