@@ -20,7 +20,12 @@ import {
 } from "@voyant-travel/auth/cloud-broker"
 import { createBetterAuth, handleApiTokenManagementRequest } from "@voyant-travel/auth/server"
 import { ensureCurrentUserProfile } from "@voyant-travel/auth/workspace"
-import { authUser, type SelectApikey, userProfilesTable } from "@voyant-travel/db/schema/iam"
+import {
+  authUser,
+  cloudAuthUserLinks,
+  type SelectApikey,
+  userProfilesTable,
+} from "@voyant-travel/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyant-travel/hono"
 import {
   handleApiError,
@@ -28,6 +33,7 @@ import {
   requestId,
 } from "@voyant-travel/hono/middleware/error-boundary"
 import { getRequestId } from "@voyant-travel/hono/observability"
+import { scopesForRole } from "@voyant-travel/types/member-roles"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
@@ -320,6 +326,42 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
   })
 }
 
+const FULL_ACCESS_SCOPES = ["*"]
+
+/**
+ * Resolve a member's RBAC scope set for the request (`resource:action` strings,
+ * shared with API keys — see @voyant-travel/types/member-roles, RFC voyant#2085).
+ *
+ * Phase 1: storage + seam are wired but default to full access, so behavior is
+ * unchanged until an admin assigns permissions (Phase 2) and routes gate on them
+ * (Phase 3).
+ *  - voyant-cloud: assertion-mirrored `cloud_auth_user_links.scopes` if the
+ *    platform sent them, else the role bundle for `roleSlug`, else full access.
+ *  - local: the member's `user_profiles.permissions` if assigned, else full
+ *    access (no local role concept yet).
+ */
+async function resolveMemberScopes(
+  db: ReturnType<typeof dbFromEnvForApp>["db"],
+  env: CloudflareBindings,
+  userId: string,
+): Promise<string[]> {
+  if (isVoyantCloudAuthMode(env)) {
+    const [link] = await db
+      .select({ scopes: cloudAuthUserLinks.scopes, roleSlug: cloudAuthUserLinks.roleSlug })
+      .from(cloudAuthUserLinks)
+      .where(eq(cloudAuthUserLinks.userId, userId))
+      .limit(1)
+    return link?.scopes ?? scopesForRole(link?.roleSlug) ?? FULL_ACCESS_SCOPES
+  }
+
+  const [profile] = await db
+    .select({ permissions: userProfilesTable.permissions })
+    .from(userProfilesTable)
+    .where(eq(userProfilesTable.id, userId))
+    .limit(1)
+  return profile?.permissions ?? FULL_ACCESS_SCOPES
+}
+
 export async function resolveAuthRequest(
   request: Request,
   env: CloudflareBindings,
@@ -361,11 +403,11 @@ export async function resolveAuthRequest(
       organizationId: null,
       callerType: "session",
       actor: "staff",
-      // Single-tenant operator: every authenticated session is staff with
-      // full access. Without "*", capabilities that gate on explicit
-      // grants (e.g. bookings-pii:read) reject the reveal endpoint and
-      // surface as "Forbidden" in the dashboard.
-      scopes: ["*"],
+      // Member RBAC scope set (RFC voyant#2085). Defaults to full access until
+      // an admin assigns permissions, so existing deployments are unchanged.
+      // `actor: "staff"` is retained, so actor-gated paths (incl. the
+      // bookings-pii reveal, which short-circuits on staff) are unaffected.
+      scopes: await resolveMemberScopes(db, env, session.user.id),
       email: session.user.email ?? null,
     }
   } finally {

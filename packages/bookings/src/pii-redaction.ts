@@ -27,18 +27,26 @@ export interface PiiAccessContext {
   scopes?: string[] | null
   callerType?: string | null
   isInternalRequest?: boolean
+  /**
+   * When true, staff sessions are gated by the PII scope like everyone else
+   * (member-rbac-rfc, voyant#2085). Defaults off, preserving the historical
+   * "staff always sees PII" posture until a deployment enables RBAC.
+   */
+  enforceRbac?: boolean
 }
 
 /**
  * Returns true when the caller has earned the right to see PII in the clear.
  *
- * Internal requests (server-to-server inside the trust boundary), staff
- * dashboard sessions, and API keys with explicit `bookings-pii:read`
- * scope (or superuser `*`) reveal.
+ * Internal requests (server-to-server inside the trust boundary) always reveal.
+ * Otherwise the caller needs an explicit `bookings-pii:read`/`bookings-pii:*`
+ * scope or superuser `*`. Staff dashboard sessions historically revealed
+ * unconditionally; under RBAC enforcement they too need the scope (full-access
+ * members hold `*`, so they keep access; restricted members do not).
  */
 export function shouldRevealBookingPii(ctx: PiiAccessContext): boolean {
   if (ctx.isInternalRequest) return true
-  if (ctx.actor === "staff") return true
+  if (ctx.actor === "staff" && !ctx.enforceRbac) return true
   const scopes = ctx.scopes ?? []
   return (
     scopes.includes(SUPERUSER_SCOPE) ||

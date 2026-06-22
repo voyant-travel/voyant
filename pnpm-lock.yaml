@@ -518,6 +518,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11

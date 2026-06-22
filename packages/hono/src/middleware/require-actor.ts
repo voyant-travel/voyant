@@ -42,6 +42,20 @@ function hasAnyApiKeyPermission(
 }
 
 /**
+ * Staff-session RBAC is opt-in per deployment (member-rbac-rfc, voyant#2085):
+ * enabling it enforces every assigned member's scope set across admin routes.
+ * It defaults off so existing deployments — where members may rely on the
+ * historical full access — are unaffected until they deliberately flip it on
+ * after reviewing roles/permissions. API-key scope enforcement is unconditional
+ * (unchanged).
+ */
+export function isStaffRbacEnforced(env: unknown): boolean {
+  const value = (env as { VOYANT_RBAC_ENFORCE?: string } | undefined)?.VOYANT_RBAC_ENFORCE
+  const normalized = value?.trim().toLowerCase()
+  return normalized === "1" || normalized === "true"
+}
+
+/**
  * Guards a route surface by actor type.
  *
  * Voyant exposes two API surfaces:
@@ -107,6 +121,23 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
     }
     if (!allowSet.has(actor)) {
       return c.json({ error: "Forbidden: actor not permitted on this surface" }, 403)
+    }
+
+    // Granular RBAC for staff sessions (member-rbac-rfc, voyant#2085). A member
+    // with an explicit, non-wildcard scope set is gated exactly like an API key:
+    // resource from the path, action from the method. Full-access members hold
+    // `*` (the default for unassigned members), so `hasAnyApiKeyPermission`
+    // passes them — existing deployments are unaffected. Paths with no mapped
+    // resource (e.g. `_meta`) stay open until a module is explicitly covered.
+    if (actor === "staff" && c.get("callerType") === "session" && isStaffRbacEnforced(c.env)) {
+      const scopes = c.get("scopes")
+      const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+      if (resource && resource !== "_meta") {
+        const actions = apiKeyPermissionActionsForMethod(c.req.method)
+        if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
+          return c.json({ error: "Forbidden: missing required permission" }, 403)
+        }
+      }
     }
 
     return next()

@@ -26,6 +26,8 @@ export const API_KEY_RESOURCES = [
   "transactions",
   "webhooks",
   "workflows",
+  "settings",
+  "team",
 ] as const
 
 export type ApiKeyResource = (typeof API_KEY_RESOURCES)[number]
@@ -253,6 +255,34 @@ export const API_KEY_PERMISSION_GROUPS = [
         "relay",
         "Relay webhooks",
         "Relay validated third-party webhook events.",
+      ),
+    ],
+  },
+  {
+    resource: "settings",
+    label: "Settings",
+    description: "Workspace configuration — profile, taxes, channels, tokens, payments.",
+    permissions: [
+      permission("settings", "read", "View settings", "Read workspace configuration."),
+      permission(
+        "settings",
+        "write",
+        "Manage settings",
+        "Change workspace configuration. Admin-only by default.",
+      ),
+    ],
+  },
+  {
+    resource: "team",
+    label: "Team",
+    description: "Members and their access to this workspace.",
+    permissions: [
+      permission("team", "read", "View team", "See members and pending invitations."),
+      permission(
+        "team",
+        "write",
+        "Manage team",
+        "Invite, remove, and set member permissions. Admin-only by default.",
       ),
     ],
   },

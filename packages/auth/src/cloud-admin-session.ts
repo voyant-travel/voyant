@@ -449,6 +449,10 @@ function cloudAuthUserLinkValues(
     roleSlug: assertion.roleSlug ?? null,
     roleName: assertion.roleName ?? null,
     surfaces: assertion.surfaces ?? [],
+    // Member RBAC scope set from the assertion. `null` (not `[]`) when the
+    // platform sent none, so resolveAuthRequest can tell "no scopes claim"
+    // (derive from role / full-access fallback) from "explicitly empty".
+    scopes: assertion.scopes ?? null,
     lastAssertionAt: new Date(assertion.iat * 1000),
     lastRevalidatedAt: now,
     revokedAt: null,

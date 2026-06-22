@@ -48,6 +48,12 @@ interface CloudflareBindings {
   // Admin auth mode. Localhost/self-hosted deployments use local Better Auth
   // flows. Voyant Cloud deployments use Cloud as the exclusive identity broker.
   VOYANT_ADMIN_AUTH_MODE?: "local" | "voyant-cloud"
+
+  // Member RBAC enforcement (member-rbac-rfc, voyant#2085). Off by default; set
+  // to "1"/"true" to enforce each staff member's assigned scope set across admin
+  // routes. Enable deliberately after reviewing member roles/permissions —
+  // full-access members (scopes `*`) are unaffected.
+  VOYANT_RBAC_ENFORCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
   VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?: string

@@ -24,6 +24,11 @@ export type CloudAdminAssertion = {
   roleSlug?: string | null
   roleName?: string | null
   surfaces?: string[] | null
+  /**
+   * Member RBAC scope set (`resource:action` strings). Absent on older platforms
+   * — the deployment then derives scopes from `roleSlug`. See member-rbac-rfc.md.
+   */
+  scopes?: string[] | null
   nonce: string
   iat: number
   exp: number
@@ -311,6 +316,7 @@ function parseCloudAdminAssertionPayload(payload: unknown): CloudAdminAssertion 
     roleSlug: optionalString(payload.roleSlug),
     roleName: optionalString(payload.roleName),
     surfaces: optionalStringArray(payload.surfaces),
+    scopes: optionalStringArray(payload.scopes),
     nonce: requiredString(payload.nonce, "nonce"),
     iat: requiredNumber(payload.iat, "iat"),
     exp: requiredNumber(payload.exp, "exp"),
