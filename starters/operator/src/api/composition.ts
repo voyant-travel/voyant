@@ -33,6 +33,7 @@ import type {
   ExtensionFactory,
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
+import { miceHonoModule } from "@voyant-travel/mice"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -262,6 +263,10 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
       resolveProviders: resolveRealtimeProviders,
       bridgeRoutes: operatorRealtimeBridgeRoutes,
     }),
+  // MICE group-program spine (voyant#1489). Operator-local (niche) — NOT in the
+  // framework standard set. Room blocks (the standard allotment primitive it
+  // links to) ship in accommodations via the framework composition.
+  "@voyant-travel/mice": () => miceHonoModule,
 }
 
 /**

@@ -105,6 +105,8 @@ export const typeIdSchemas = {
   availabilityPickupPoint: typeIdSchema("availability_pickup_points"),
   availabilitySlotPickup: typeIdSchema("availability_slot_pickups"),
   roomBlock: typeIdSchema("room_blocks"),
+  roomBlockNight: typeIdSchema("room_block_nights"),
+  roomBlockPickup: typeIdSchema("room_block_pickups"),
   roomUnitStatusEvent: typeIdSchema("room_unit_status_events"),
   maintenanceBlock: typeIdSchema("maintenance_blocks"),
   housekeepingTask: typeIdSchema("housekeeping_tasks"),
@@ -212,4 +214,5 @@ export const typeIdSchemas = {
   invoiceRendition: typeIdSchema("invoice_renditions"),
   taxRegime: typeIdSchema("tax_regimes"),
   invoiceExternalRef: typeIdSchema("invoice_external_refs"),
+  miceProgram: typeIdSchema("mice_programs"),
 } as const

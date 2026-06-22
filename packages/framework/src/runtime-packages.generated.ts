@@ -3,6 +3,7 @@
 // Refresh with `node scripts/generate-framework-bom.mjs --emit`.
 
 export const FRAMEWORK_RUNTIME_PACKAGES = [
+  "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
   "@voyant-travel/bookings",
   "@voyant-travel/catalog",
@@ -13,6 +14,7 @@ export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/identity",
   "@voyant-travel/inventory",
   "@voyant-travel/legal",
+  "@voyant-travel/mice",
   "@voyant-travel/notifications",
   "@voyant-travel/operations",
   "@voyant-travel/operator-settings",

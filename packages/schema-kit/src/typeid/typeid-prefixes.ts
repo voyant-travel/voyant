@@ -207,6 +207,8 @@ export const PREFIXES = {
   stay_daily_rates: "hsdr",
   room_type_rates: "hrtr",
   room_blocks: "hrbl",
+  room_block_nights: "hrbn",
+  room_block_pickups: "hrbp",
   room_unit_status_events: "hrse",
   maintenance_blocks: "hmbl",
   housekeeping_tasks: "hhkt",
@@ -413,6 +415,11 @@ export const PREFIXES = {
   // Boundary-scheduler watermark — single-row table, but typed for
   // registry completeness. Per §9.2 of the promotions architecture doc.
   promotional_offer_scheduler_state: "pofs",
+
+  // --- MICE (group programs) — see RFC voyant#1489 ---
+  // The group-program spine (operator-local). Room blocks live in
+  // accommodations (room_blocks/hrbl above); this is the umbrella record.
+  mice_programs: "prog",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

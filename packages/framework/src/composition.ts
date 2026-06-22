@@ -35,6 +35,7 @@
  * pass them into.
  */
 
+import { accommodationsHonoModule } from "@voyant-travel/accommodations"
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import {
   type BookingsHonoModuleOptions,
@@ -397,6 +398,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
     "@voyant-travel/relationships": ({ capabilities }) =>
       createRelationshipsHonoModule({ customFields: capabilities.customFields }),
     "@voyant-travel/quotes": () => createQuotesHonoModule(),
+    "@voyant-travel/accommodations": () => accommodationsHonoModule,
     "@voyant-travel/operations": () => operationsHonoModule,
     "@voyant-travel/identity": () => identityHonoModule,
     "@voyant-travel/distribution": () => [

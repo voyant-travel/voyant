@@ -38,6 +38,7 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "@voyant-travel/commerce",
     "@voyant-travel/inventory",
     "@voyant-travel/catalog",
+    "@voyant-travel/accommodations",
     "@voyant-travel/bookings",
     "@voyant-travel/finance",
     "@voyant-travel/legal",

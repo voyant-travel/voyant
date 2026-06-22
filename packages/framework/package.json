@@ -18,6 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@voyant-travel/accommodations": "workspace:*",
     "@voyant-travel/action-ledger": "workspace:*",
     "@voyant-travel/bookings": "workspace:*",
     "@voyant-travel/catalog": "workspace:*",
@@ -28,6 +29,7 @@
     "@voyant-travel/identity": "workspace:*",
     "@voyant-travel/inventory": "workspace:*",
     "@voyant-travel/legal": "workspace:*",
+    "@voyant-travel/mice": "workspace:*",
     "@voyant-travel/notifications": "workspace:*",
     "@voyant-travel/operations": "workspace:*",
     "@voyant-travel/operator-settings": "workspace:*",
