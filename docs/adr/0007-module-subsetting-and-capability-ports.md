@@ -163,6 +163,19 @@ the module; they are not part of any port.
   migration of those tables; an existing deployment that excludes a module still
   owns its historical tables and must drop them deliberately. `db doctor` reports
   orphaned-schema drift.
+- **Excluding a module does not auto-drop its augmenting extensions.** An
+  extension's mount prefix (`HonoExtension.extension.module`) is a *path*, not a
+  foreign key to a mounted module's `name` — the standard set legitimately
+  contains, e.g., a `proposal` extension that mounts under `quote-versions` with
+  no module of that name. So a name-match "orphan" check is unsound (it would
+  reject the full set at boot). `exclude` filters both the module and extension
+  manifest lists, so a deployment dropping a module with augmenting extensions
+  (e.g. `bookings` + `finance/bookings-create-extension`, which mounts under
+  `/v1/admin/bookings`) must list those extension specifiers too, else the
+  excluded module's surface partially leaks. Auto-cascade needs explicit
+  module→extension *ownership* metadata in the graph — a follow-up. (The CRM
+  replacement headline case is unaffected: no standard extension targets
+  `relationships`.)
 
 ## Phasing
 
@@ -171,6 +184,10 @@ the module; they are not part of any port.
    with auto-displacement, filtering the runtime manifest (schema generation
    next); `db doctor` parity over the result. Ships the mechanism with safety, no
    ports extracted yet. *(This PR ships the runtime half.)*
+1b. **Module→extension ownership + cascade** — declare which standard extensions
+   belong to each module so excluding/displacing a module auto-drops (or validates)
+   its augmenting extensions, closing the partial-surface-leak gap above. Plus the
+   schema-generation alignment so the subset drops tables, not just routes.
 2. **Extract `PeopleDirectory`** — narrow legal + storefront from direct
    `relationships` imports to the port; relationships becomes the default impl.
    After this, relationships is genuinely excludable backend-side.

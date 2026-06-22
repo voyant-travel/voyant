@@ -41,6 +41,7 @@ describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
           "@voyant-travel/bookings",
           "@voyant-travel/legal",
           "@voyant-travel/storefront",
+          "@voyant-travel/storefront/customer-portal",
         ],
       })
       expect(modules).not.toContain("@voyant-travel/relationships")

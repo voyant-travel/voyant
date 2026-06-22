@@ -58,12 +58,18 @@ export interface CreateVoyantAppConfig<
   /** Deployment-local extension factories, appended after the standard set. */
   extensions?: Record<string, ExtensionFactory<TProviders>>
   /**
-   * REMOVE (ADR-0007): standard module/extension specifiers to drop from the
-   * framework set entirely — for a deployment that simply doesn't run them (e.g.
-   * a non-flights operator excluding `@voyant-travel/flights`). Filters the
+   * REMOVE (ADR-0007): standard module *and/or extension* specifiers to drop from
+   * the framework set entirely — for a deployment that simply doesn't run them
+   * (e.g. a non-flights operator excluding `@voyant-travel/flights`). Filters the
    * runtime manifest (and, once the schema side lands, drizzle generation, so
-   * routes and tables drop together). Naming a specifier absent from the
-   * standard set is a typo and throws; excluding an `isRequired` module throws.
+   * routes and tables drop together). Naming a specifier absent from the standard
+   * set is a typo and throws; excluding an `isRequired` module throws.
+   *
+   * Note: an extension's mount prefix (`extension.module`) is a path, not a
+   * foreign key to a mounted module, so excluding a module does NOT auto-drop the
+   * standard extensions that augment its surface — list those extension
+   * specifiers here too. Automatic cascade needs explicit module→extension
+   * ownership metadata (a follow-up; see ADR-0007).
    */
   exclude?: readonly string[]
   /**

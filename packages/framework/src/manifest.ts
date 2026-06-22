@@ -114,4 +114,9 @@ export const FRAMEWORK_CAPABILITY_GRAPH = {
   "@voyant-travel/bookings": { requires: ["people-directory"] },
   "@voyant-travel/legal": { requires: ["people-directory"] },
   "@voyant-travel/storefront": { requires: ["people-directory"] },
+  // Customer-portal is a distinct standard module that calls relationshipsService
+  // directly (service-public-impl.ts: getPersonById / list+createPersonDocument /
+  // create+updatePerson), so it depends on people-directory in its own right —
+  // excluding relationships without it would otherwise validate yet 500 at runtime.
+  "@voyant-travel/storefront/customer-portal": { requires: ["people-directory"] },
 } as const satisfies CapabilityGraph
