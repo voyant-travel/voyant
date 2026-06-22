@@ -13,6 +13,13 @@
  * never stored on the block header.
  */
 
+import {
+  allotmentPickupProgress,
+  allotmentRemaining,
+  eachDateInRange,
+  isClosedAllotmentStatus,
+  type PickupProgress,
+} from "@voyant-travel/allotments"
 import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -24,23 +31,12 @@ import {
   roomBlocks,
 } from "./schema-room-blocks.js"
 
-/** Block statuses that can no longer accrue pickups. */
-const CLOSED_BLOCK_STATUSES = ["released", "cancelled", "expired"] as const
-
 /**
- * The night dates a stay occupies: each date from `checkIn` (inclusive) to
- * `checkOut` (exclusive). Dates are `YYYY-MM-DD`; parsed as UTC to avoid
- * timezone drift across the day boundary.
+ * The night dates a stay occupies (inclusive check-in → exclusive check-out).
+ * Thin alias over the shared allotment slot enumeration. See @voyant-travel/allotments.
  */
 export function eachNight(checkIn: string, checkOut: string): string[] {
-  const start = new Date(`${checkIn}T00:00:00Z`)
-  const end = new Date(`${checkOut}T00:00:00Z`)
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return []
-  const nights: string[] = []
-  for (let d = start; d < end; d.setUTCDate(d.getUTCDate() + 1)) {
-    nights.push(d.toISOString().slice(0, 10))
-  }
-  return nights
+  return eachDateInRange(checkIn, checkOut)
 }
 
 export interface CreateRoomBlockInput {
@@ -143,7 +139,7 @@ export async function pickupRoomBlock(
       .for("update")
       .limit(1)
     if (!block) return { status: "block_not_found" as const }
-    if ((CLOSED_BLOCK_STATUSES as readonly string[]).includes(block.status)) {
+    if (isClosedAllotmentStatus(block.status)) {
       return { status: "block_not_active" as const }
     }
 
@@ -319,7 +315,7 @@ export async function releaseRoomBlockAtCutoff(
   })
 }
 
-export type PickupProgress = "none" | "partial" | "full"
+export type { PickupProgress } from "@voyant-travel/allotments"
 
 export interface RoomBlockSummary {
   blockId: string
@@ -357,10 +353,9 @@ export async function summarizeRoomBlock(
     totalPickedUp += n.roomsPickedUp
     totalReleased += n.roomsReleased
   }
-  const totalRemaining = totalHeld - totalPickedUp - totalReleased
-
-  const pickupProgress: PickupProgress =
-    totalPickedUp === 0 ? "none" : totalRemaining === 0 ? "full" : "partial"
+  const counters = { held: totalHeld, pickedUp: totalPickedUp, released: totalReleased }
+  const totalRemaining = allotmentRemaining(counters)
+  const pickupProgress = allotmentPickupProgress(counters)
 
   return {
     blockId: block.id,

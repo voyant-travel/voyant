@@ -259,3 +259,20 @@ export const operations_functionSpace_mice_session = pgTable(
     uniqueIndex("operations_functionSpace_mice_session_r_uniq").on(t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
+
+export const mice_program_operations_spaceBlock = pgTable(
+  "mice_program_operations_spaceBlock",
+  {
+    id: text("id").primaryKey().notNull(),
+    "mice_program_id": text("mice_program_id").notNull(),
+    "operations_spaceBlock_id": text("operations_spaceBlock_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("mice_program_operations_spaceBlock_pair_idx").on(t["mice_program_id"], t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
+    index("mice_program_operations_spaceBlock_l_idx").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("mice_program_operations_spaceBlock_r_uniq").on(t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)

@@ -219,4 +219,7 @@ export const typeIdSchemas = {
   miceSessionInclusion: typeIdSchema("mice_session_inclusions"),
   functionSpace: typeIdSchema("function_spaces"),
   functionSpaceCapacity: typeIdSchema("function_space_capacities"),
+  spaceBlock: typeIdSchema("space_blocks"),
+  spaceBlockSlot: typeIdSchema("space_block_slots"),
+  spaceBlockPickup: typeIdSchema("space_block_pickups"),
 } as const

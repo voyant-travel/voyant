@@ -11,6 +11,7 @@ import { personProductLink } from "./person-product.js"
 import { policyAcceptanceBookingLink } from "./policy-acceptance-booking.js"
 import { policyProductLink } from "./policy-product.js"
 import { programRoomBlockLink } from "./program-room-block.js"
+import { programSpaceBlockLink } from "./program-space-block.js"
 import { quoteProgramLink } from "./quote-program.js"
 import { roomBlockPropertyLink } from "./room-block-property.js"
 import { roomBlockSupplierLink } from "./room-block-supplier.js"
@@ -28,6 +29,7 @@ export {
   policyAcceptanceBookingLink,
   policyProductLink,
   programRoomBlockLink,
+  programSpaceBlockLink,
   quoteProgramLink,
   roomBlockPropertyLink,
   roomBlockSupplierLink,
@@ -54,4 +56,5 @@ export const links: LinkDefinition[] = [
   organizationProgramLink,
   quoteProgramLink,
   sessionFunctionSpaceLink,
+  programSpaceBlockLink,
 ]

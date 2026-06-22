@@ -10,6 +10,7 @@ import { Hono } from "hono"
 
 import { facilitiesService } from "./service.js"
 import { functionSpaceService } from "./service-function-spaces.js"
+import { spaceBlockService } from "./service-space-blocks.js"
 import {
   facilityContactListQuerySchema,
   facilityFeatureListQuerySchema,
@@ -39,6 +40,12 @@ import {
   setFunctionSpaceCapacitiesSchema,
   updateFunctionSpaceSchema,
 } from "./validation-function-spaces.js"
+import {
+  createSpaceBlockSchema,
+  reverseSpaceBlockPickupSchema,
+  setSpaceBlockSlotsSchema,
+  spaceBlockPickupSchema,
+} from "./validation-space-blocks.js"
 
 type Env = {
   Variables: {
@@ -347,6 +354,72 @@ export const facilitiesRoutes = new Hono<Env>()
     return c.json({
       data: await functionSpaceService.setFunctionSpaceCapacities(c.get("db"), id, capacities),
     })
+  })
+  // Space blocks — held function-space inventory (RFC voyant#1489 §4.2).
+  .post("/space-blocks", async (c) => {
+    const body = await parseJsonBody(c, createSpaceBlockSchema)
+    const outcome = await spaceBlockService.createSpaceBlock(c.get("db"), body)
+    if (outcome.status === "function_space_not_found")
+      return c.json({ error: "Function space not found" }, 404)
+    return c.json({ data: outcome.block }, 201)
+  })
+  .get("/space-blocks/:id", async (c) => {
+    const id = c.req.param("id")
+    const block = await spaceBlockService.getSpaceBlock(c.get("db"), id)
+    if (!block) return c.json({ error: "Space block not found" }, 404)
+    return c.json({
+      data: { block, summary: await spaceBlockService.summarizeSpaceBlock(c.get("db"), id) },
+    })
+  })
+  .put("/space-blocks/:id/slots", async (c) => {
+    const id = c.req.param("id")
+    const block = await spaceBlockService.getSpaceBlock(c.get("db"), id)
+    if (!block) return c.json({ error: "Space block not found" }, 404)
+    const { slots } = await parseJsonBody(c, setSpaceBlockSlotsSchema)
+    await spaceBlockService.setSpaceBlockSlots(c.get("db"), id, slots)
+    return c.json({ data: await spaceBlockService.summarizeSpaceBlock(c.get("db"), id) })
+  })
+  .post("/space-blocks/:id/pickups", async (c) => {
+    const body = await parseJsonBody(c, spaceBlockPickupSchema)
+    const outcome = await spaceBlockService.pickupSpaceBlock(c.get("db"), {
+      blockId: c.req.param("id"),
+      ...body,
+    })
+    switch (outcome.status) {
+      case "ok":
+        return c.json({ data: outcome.pickup }, outcome.idempotent ? 200 : 201)
+      case "block_not_found":
+        return c.json({ error: "Space block not found" }, 404)
+      case "invalid_range":
+        return c.json({ error: "Invalid start/end range" }, 400)
+      case "block_not_active":
+        return c.json({ error: "Space block is no longer accepting pickups" }, 409)
+      case "slot_unavailable":
+        return c.json(
+          {
+            error: "Insufficient space inventory",
+            detail: { date: outcome.date, remaining: outcome.remaining, needed: outcome.needed },
+          },
+          409,
+        )
+    }
+  })
+  .post("/space-blocks/:id/pickups/reverse", async (c) => {
+    const body = await parseJsonBody(c, reverseSpaceBlockPickupSchema)
+    const outcome = await spaceBlockService.reverseSpaceBlockPickup(c.get("db"), {
+      blockId: c.req.param("id"),
+      ...body,
+    })
+    if (outcome.status === "pickup_not_found")
+      return c.json({ error: "Active pickup not found" }, 404)
+    return c.json({ data: outcome.pickup })
+  })
+  .post("/space-blocks/:id/release", async (c) => {
+    const outcome = await spaceBlockService.releaseSpaceBlockAtCutoff(c.get("db"), {
+      blockId: c.req.param("id"),
+    })
+    if (outcome.status === "block_not_found") return c.json({ error: "Space block not found" }, 404)
+    return c.json({ data: { releasedUnits: outcome.releasedUnits, block: outcome.block } })
   })
 
 export type FacilitiesRoutes = typeof facilitiesRoutes
