@@ -1,5 +1,31 @@
 # @voyant-travel/operations
 
+## 0.5.0
+
+### Minor Changes
+
+- 787c852: Space blocks + shared allotment-lifecycle primitive (Phase 2b).
+
+  - New `@voyant-travel/allotments`: the canonical allotment lifecycle contract
+    (status state machine, counter math, pickup-progress derivation, slot
+    enumeration) — one contract reused by type-specific tables (RFC §9-Q2).
+  - accommodations: room-block service refactored onto the shared primitive
+    (behavior-preserving; enum values unchanged, no migration).
+  - operations: `space_blocks` / `space_block_slots` / `space_block_pickups` —
+    held function-space inventory over a date range, the 2nd allotment consumer;
+    transactional pickup/reversal/cutoff service + admin routes + `spaceBlockLinkable`.
+  - schema-kit: TypeID prefixes `spbl` / `spsl` / `sppu`.
+
+### Patch Changes
+
+- Updated dependencies [787c852]
+- Updated dependencies [293e5e4]
+  - @voyant-travel/allotments@0.2.0
+  - @voyant-travel/hono@0.116.1
+  - @voyant-travel/db@0.109.2
+  - @voyant-travel/catalog@0.134.0
+  - @voyant-travel/identity@0.136.0
+
 ## 0.4.0
 
 ### Minor Changes

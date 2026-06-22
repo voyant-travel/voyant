@@ -1,5 +1,12 @@
 # @voyant-travel/hono
 
+## 0.116.1
+
+### Patch Changes
+
+- 293e5e4: Make Hono public path matching base-path aware for path-prefixed deployments.
+  - @voyant-travel/db@0.109.2
+
 ## 0.116.0
 
 ### Minor Changes
