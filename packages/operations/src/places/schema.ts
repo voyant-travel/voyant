@@ -388,3 +388,8 @@ export const propertyGroupMembersRelations = relations(propertyGroupMembers, ({ 
     references: [properties.id],
   }),
 }))
+
+// Function spaces (meeting/event sub-spaces) live in a sibling file but are part
+// of the places schema surface — re-exported here so the operations migration
+// config (which lists places/schema.ts) and the package barrel both pick them up.
+export * from "./schema-function-spaces.js"

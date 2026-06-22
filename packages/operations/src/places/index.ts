@@ -25,9 +25,18 @@ export const facilityLinkable: LinkableDefinition = {
   idPrefix: "fac",
 }
 
+/** Function spaces (meeting/event sub-spaces) — linkable so a MICE session can target one. */
+export const functionSpaceLinkable: LinkableDefinition = {
+  module: "operations",
+  entity: "functionSpace",
+  table: "function_spaces",
+  idPrefix: "fnsp",
+}
+
 export const placesLinkable = {
   property: propertyLinkable,
   facility: facilityLinkable,
+  functionSpace: functionSpaceLinkable,
 }
 
 export const facilitiesModule: Module = {
@@ -127,3 +136,17 @@ export {
 } from "./validation.js"
 export { facilitiesService }
 export const placesService = facilitiesService
+
+export type {
+  FunctionSpace,
+  FunctionSpaceCapacity,
+  NewFunctionSpace,
+  NewFunctionSpaceCapacity,
+} from "./schema-function-spaces.js"
+export {
+  functionSpaceCapacities,
+  functionSpaceLayoutEnum,
+  functionSpaces,
+} from "./schema-function-spaces.js"
+export { functionSpaceService } from "./service-function-spaces.js"
+export * from "./validation-function-spaces.js"
