@@ -37,9 +37,9 @@
 
 <p align="center">
   Voyant ships deployable starter apps, durable workflow orchestration, and a
-  wide set of headless domain modules — catalog, commerce, inventory, operations,
+  wide set of headless domain modules (catalog, commerce, inventory, operations,
   relationships, quotes, bookings, finance, distribution, legal, charters,
-  cruises, accommodation resale, and more — that you compose into your own
+  cruises, accommodation resale, and more) that you compose into your own
   travel platform.
 </p>
 
@@ -88,14 +88,14 @@ and deployable application shells that you own and extend.
   auth-provider agnostic.
 - **Versioned React packages per domain** (`relationships-react`,
   `inventory-react`, `commerce-react`, `bookings-react`, …) consumed as
-  ordinary dependencies — hooks, clients, providers, query keys, and reusable
+  ordinary dependencies: hooks, clients, providers, query keys, and reusable
   UI that wrap each module's HTTP contract.
 - **Optional integrations** for payments, e-invoicing, storage, CMS sync, and
   notifications.
 
 Voyant supports accommodation as catalog inventory for resale, packaging, and
 trip composition. It is not positioned as a hotel PMS or first-party
-hotel-operations system — see
+hotel-operations system. See
 [`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
 
 ## Starters
@@ -121,7 +121,7 @@ Voyant ships one first-party starter:
 | [`@voyant-travel/types`](./packages/types/README.md) | Shared workspace types |
 | [`@voyant-travel/utils`](./packages/utils/README.md) | Shared utility functions |
 | [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md) | Test helpers (db, http, seq, cli) |
-| [`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli) | The `voyant` CLI — scaffolding, generators, and db tooling |
+| [`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli) | The `voyant` CLI: scaffolding, generators, and db tooling |
 | [`@voyant-travel/storage`](./packages/storage/README.md) | `StorageProvider` abstraction (local, R2, S3) |
 | [`@voyant-travel/i18n`](./packages/i18n) | Internationalization primitives |
 
@@ -151,7 +151,7 @@ Voyant ships one first-party starter:
 
 ### Workflows (durable orchestration)
 
-Step-based workflows with durable state, retries, and a shared wire protocol —
+Step-based workflows with durable state, retries, and a shared wire protocol,
 runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 
 | Package | Description |
@@ -160,15 +160,15 @@ runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 | [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) | Orchestrator engine and Postgres self-host runtime primitives |
 | [`@voyant-travel/workflows-react`](./packages/workflows-react) | Run-inspection hooks, plus an importable admin UI at `./ui` |
 
-Reference apps under [`apps/`](./apps) compose these into deployable shapes —
+Reference apps under [`apps/`](./apps) compose these into deployable shapes:
 `workflows-selfhost-node-server` and `workflows-local-dashboard`.
 
 ### UI and React families
 
 Reusable frontend surfaces live in the matching `-react` package for each
 domain module. Those packages own hooks, clients, providers, query keys,
-view-model helpers, reusable components, and `./ui` owner paths where needed —
-for example [`@voyant-travel/relationships-react`](./packages/relationships-react/README.md),
+view-model helpers, reusable components, and `./ui` owner paths where needed.
+For example, [`@voyant-travel/relationships-react`](./packages/relationships-react/README.md),
 [`@voyant-travel/quotes-react`](./packages/quotes-react/README.md),
 [`@voyant-travel/inventory-react`](./packages/inventory-react),
 [`@voyant-travel/commerce-react`](./packages/commerce-react), and
@@ -204,7 +204,7 @@ live in [`docs/migrations/`](./docs/migrations/README.md).
 ### Security model
 
 **One Postgres database + one runtime per organization.** Tenancy is enforced
-at the deployment boundary, not by in-process middleware — so new package work
+at the deployment boundary, not by in-process middleware, so new package work
 under `packages/*` should not add in-process tenant scoping. See
 [ADR-0001](./docs/adr/0001-tenant-scoping.md) for the full rationale, the
 alternatives considered, and the conditions under which the decision should be
@@ -260,9 +260,9 @@ concurrent table truncation.
 
 ## Community & support
 
-- [Documentation](https://voyant.travel/docs) — guides, references, and concepts
-- [GitHub Issues](https://github.com/voyant-travel/voyant/issues) — bugs and feature requests
-- [@voyant_travel](https://x.com/voyant_travel) — news and updates
+- [Documentation](https://voyant.travel/docs): guides, references, and concepts
+- [GitHub Issues](https://github.com/voyant-travel/voyant/issues): bugs and feature requests
+- [@voyant_travel](https://x.com/voyant_travel): news and updates
 
 ## Credits
 
