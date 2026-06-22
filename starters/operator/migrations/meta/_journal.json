@@ -36,6 +36,13 @@
       "when": 1782153641573,
       "tag": "0004_red_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782155914137,
+      "tag": "0005_slow_raider",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { ALLOTMENT_PICKUP_STATUSES, ALLOTMENT_STATUSES } from "@voyant-travel/allotments"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
@@ -32,14 +33,7 @@ import { roomTypes } from "./schema-inventory.js"
 // (none / partial / full) is DERIVED at read time from room_block_nights
 // counters — never a stored header status — so the header can never drift
 // from the nightly ledger.
-export const roomBlockStatusEnum = pgEnum("hotel_room_block_status", [
-  "inquiry",
-  "held",
-  "confirmed",
-  "released",
-  "cancelled",
-  "expired",
-])
+export const roomBlockStatusEnum = pgEnum("hotel_room_block_status", ALLOTMENT_STATUSES)
 
 export const roomBlocks = pgTable(
   "room_blocks",
@@ -108,7 +102,10 @@ export const roomBlockNights = pgTable(
 )
 
 // The pickup ledger is append-only; reversal compensates rather than deletes.
-export const roomBlockPickupStatusEnum = pgEnum("room_block_pickup_status", ["active", "reversed"])
+export const roomBlockPickupStatusEnum = pgEnum(
+  "room_block_pickup_status",
+  ALLOTMENT_PICKUP_STATUSES,
+)
 
 export const roomBlockPickups = pgTable(
   "room_block_pickups",

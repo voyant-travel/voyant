@@ -393,3 +393,4 @@ export const propertyGroupMembersRelations = relations(propertyGroupMembers, ({ 
 // of the places schema surface — re-exported here so the operations migration
 // config (which lists places/schema.ts) and the package barrel both pick them up.
 export * from "./schema-function-spaces.js"
+export * from "./schema-space-blocks.js"

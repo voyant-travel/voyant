@@ -33,10 +33,19 @@ export const functionSpaceLinkable: LinkableDefinition = {
   idPrefix: "fnsp",
 }
 
+/** Space blocks — held function-space inventory; linkable to a MICE program. */
+export const spaceBlockLinkable: LinkableDefinition = {
+  module: "operations",
+  entity: "spaceBlock",
+  table: "space_blocks",
+  idPrefix: "spbl",
+}
+
 export const placesLinkable = {
   property: propertyLinkable,
   facility: facilityLinkable,
   functionSpace: functionSpaceLinkable,
+  spaceBlock: spaceBlockLinkable,
 }
 
 export const facilitiesModule: Module = {
@@ -148,5 +157,20 @@ export {
   functionSpaceLayoutEnum,
   functionSpaces,
 } from "./schema-function-spaces.js"
+export type {
+  NewSpaceBlock,
+  NewSpaceBlockPickup,
+  NewSpaceBlockSlot,
+  SpaceBlock,
+  SpaceBlockPickup,
+  SpaceBlockSlot,
+} from "./schema-space-blocks.js"
+export {
+  spaceBlockPickups,
+  spaceBlockSlots,
+  spaceBlocks,
+} from "./schema-space-blocks.js"
 export { functionSpaceService } from "./service-function-spaces.js"
+export { spaceBlockService } from "./service-space-blocks.js"
 export * from "./validation-function-spaces.js"
+export * from "./validation-space-blocks.js"
