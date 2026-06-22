@@ -73,7 +73,7 @@ export const financePaymentAuthorizationService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(paymentAuthorizations.createdAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(paymentAuthorizations).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(paymentAuthorizations).where(where),
       query.limit,
       query.offset,
     )
@@ -252,7 +252,7 @@ export const financePaymentAuthorizationService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(paymentCaptures.createdAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(paymentCaptures).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(paymentCaptures).where(where),
       query.limit,
       query.offset,
     )

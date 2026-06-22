@@ -828,6 +828,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -881,6 +884,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1138,6 +1144,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -1204,6 +1213,9 @@ importers:
       '@voyant-travel/charters':
         specifier: workspace:^
         version: link:../charters
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1255,6 +1267,9 @@ importers:
       '@voyant-travel/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/workflow-runs':
         specifier: workspace:^
         version: link:../workflow-runs
@@ -1301,6 +1316,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -1383,6 +1401,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -1452,6 +1473,9 @@ importers:
       '@voyant-travel/cruises':
         specifier: workspace:^
         version: link:../cruises
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1537,6 +1561,9 @@ importers:
       '@voyant-travel/suppliers-contracts':
         specifier: workspace:^
         version: link:../suppliers-contracts
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../workflows
@@ -1596,6 +1623,9 @@ importers:
       '@voyant-travel/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1666,6 +1696,9 @@ importers:
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -1750,6 +1783,9 @@ importers:
       '@voyant-travel/operations-react':
         specifier: workspace:^
         version: link:../operations-react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2076,6 +2112,9 @@ importers:
       '@voyant-travel/identity-contracts':
         specifier: workspace:^
         version: link:../identity-contracts
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -2151,6 +2190,9 @@ importers:
       '@voyant-travel/relationships-react':
         specifier: workspace:^
         version: link:../relationships-react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2211,6 +2253,9 @@ importers:
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -2257,6 +2302,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2357,6 +2405,9 @@ importers:
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -2416,6 +2467,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -2504,6 +2558,9 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:^
         version: link:../legal
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -2538,6 +2595,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -2660,6 +2720,9 @@ importers:
       '@voyant-travel/identity':
         specifier: workspace:^
         version: link:../identity
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -2716,6 +2779,9 @@ importers:
       '@voyant-travel/operations':
         specifier: workspace:^
         version: link:../operations
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -2993,6 +3059,9 @@ importers:
       '@voyant-travel/trips':
         specifier: workspace:^
         version: link:../trips
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -3037,6 +3106,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -3183,6 +3255,9 @@ importers:
       '@voyant-travel/relationships-contracts':
         specifier: workspace:^
         version: link:../relationships-contracts
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils
@@ -3233,6 +3308,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../utils

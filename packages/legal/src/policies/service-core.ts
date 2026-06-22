@@ -56,7 +56,7 @@ export const policiesCoreService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(policies.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(policies).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(policies).where(where),
       query.limit,
       query.offset,
     )
@@ -249,7 +249,7 @@ export const policiesCoreService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(policyAssignments.priority), desc(policyAssignments.createdAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(policyAssignments).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(policyAssignments).where(where),
       query.limit,
       query.offset,
     )
@@ -504,7 +504,7 @@ export const policiesCoreService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(policyAcceptances.acceptedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(policyAcceptances).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(policyAcceptances).where(where),
       query.limit,
       query.offset,
     )

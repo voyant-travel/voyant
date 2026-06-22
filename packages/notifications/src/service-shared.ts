@@ -1,10 +1,10 @@
 import { bookingItems, bookingTravelers } from "@voyant-travel/bookings/schema"
 import type { bookingPaymentSchedules } from "@voyant-travel/finance"
+import { listResponse } from "@voyant-travel/types"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { SQLWrapper } from "drizzle-orm/sql"
 import type { z } from "zod"
-
 import { renderLiquidTemplate } from "./liquid.js"
 import type { notificationReminderRules } from "./schema.js"
 import { enrichBookingItem, normalizeNotificationTemplateData } from "./service-template-data.js"
@@ -282,17 +282,12 @@ export async function listBookingNotificationItems(db: PostgresJsDatabase, booki
 
 export async function paginate<T>(
   rowsPromise: Promise<T[]>,
-  totalPromise: Promise<Array<{ total: number }>>,
+  totalPromise: Promise<Array<{ count: number }>>,
   limit: number,
   offset: number,
 ) {
   const [data, totalRows] = await Promise.all([rowsPromise, totalPromise])
-  return {
-    data,
-    total: totalRows[0]?.total ?? 0,
-    limit,
-    offset,
-  }
+  return listResponse(data, { total: totalRows[0]?.count ?? 0, limit, offset })
 }
 
 export function buildWhereClause<T extends SQLWrapper>(conditions: Array<T | undefined>) {

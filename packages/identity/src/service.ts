@@ -1,7 +1,7 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
 import { identityAddresses, identityContactPoints, identityNamedContacts } from "./schema.js"
 import type {
   addressListQuerySchema,
@@ -32,7 +32,7 @@ async function paginate<T extends object>(
   offset: number,
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
-  return { data, total: countResult[0]?.count ?? 0, limit, offset }
+  return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
 async function ensurePrimaryContactPoint(

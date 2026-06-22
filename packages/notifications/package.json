@@ -29,6 +29,7 @@
     "@voyant-travel/cloud-sdk": "^0.9.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/legal": "workspace:^",

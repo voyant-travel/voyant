@@ -1,8 +1,8 @@
 import { identityService } from "@voyant-travel/identity/service"
+import { listResponse } from "@voyant-travel/types"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
 import { facilities, facilityAddressProjections } from "./schema.js"
 import type {
   facilityContactListQuerySchema,
@@ -80,12 +80,7 @@ export async function paginate<T extends object>(
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
 
-  return {
-    data,
-    total: countResult[0]?.count ?? 0,
-    limit,
-    offset,
-  }
+  return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
 function isManagedBySource(metadata: Record<string, unknown> | null | undefined, source: string) {

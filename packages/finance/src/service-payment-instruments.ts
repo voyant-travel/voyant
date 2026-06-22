@@ -47,7 +47,7 @@ export const financePaymentInstrumentService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(paymentInstruments.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(paymentInstruments).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(paymentInstruments).where(where),
       query.limit,
       query.offset,
     )

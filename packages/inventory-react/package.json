@@ -67,6 +67,7 @@
   "dependencies": {
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "date-fns": "^4.1.0",
     "motion": "^12.38.0",
     "react-day-picker": "^9.8.0",

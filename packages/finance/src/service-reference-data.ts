@@ -45,7 +45,7 @@ export const financeReferenceDataService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(taxRegimes.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(taxRegimes).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(taxRegimes).where(where),
       query.limit,
       query.offset,
     )
@@ -107,7 +107,7 @@ export const financeReferenceDataService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(taxClasses.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(taxClasses).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(taxClasses).where(where),
       query.limit,
       query.offset,
     )
@@ -170,7 +170,7 @@ export const financeReferenceDataService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(taxPolicyProfiles.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyProfiles).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(taxPolicyProfiles).where(where),
       query.limit,
       query.offset,
     )
@@ -238,7 +238,7 @@ export const financeReferenceDataService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(asc(taxPolicyRules.priority), desc(taxPolicyRules.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyRules).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(taxPolicyRules).where(where),
       query.limit,
       query.offset,
     )

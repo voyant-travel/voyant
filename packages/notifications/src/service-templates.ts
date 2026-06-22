@@ -137,7 +137,7 @@ export async function listTemplates(db: PostgresJsDatabase, query: NotificationT
       .limit(query.limit)
       .offset(query.offset)
       .orderBy(desc(notificationTemplates.updatedAt)),
-    db.select({ total: sql<number>`count(*)::int` }).from(notificationTemplates).where(where),
+    db.select({ count: sql<number>`count(*)::int` }).from(notificationTemplates).where(where),
     query.limit,
     query.offset,
   )
@@ -214,7 +214,7 @@ export async function listReminderRules(
       .limit(query.limit)
       .offset(query.offset)
       .orderBy(desc(notificationReminderRules.updatedAt)),
-    db.select({ total: sql<number>`count(*)::int` }).from(notificationReminderRules).where(where),
+    db.select({ count: sql<number>`count(*)::int` }).from(notificationReminderRules).where(where),
     query.limit,
     query.offset,
   )
@@ -356,7 +356,7 @@ export async function listReminderRuns(
       .offset(query.offset)
       .orderBy(desc(notificationReminderRuns.createdAt))
       .then((rows) => rows.map(normalizeReminderRun)),
-    db.select({ total: sql<number>`count(*)::int` }).from(notificationReminderRuns).where(where),
+    db.select({ count: sql<number>`count(*)::int` }).from(notificationReminderRuns).where(where),
     query.limit,
     query.offset,
   )

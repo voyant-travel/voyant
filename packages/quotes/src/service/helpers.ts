@@ -1,3 +1,4 @@
+import { listResponse } from "@voyant-travel/types"
 export async function paginate<T extends object>(
   rowsQuery: Promise<T[]>,
   countQuery: Promise<Array<{ count: number }>>,
@@ -6,12 +7,7 @@ export async function paginate<T extends object>(
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
 
-  return {
-    data,
-    total: countResult[0]?.count ?? 0,
-    limit,
-    offset,
-  }
+  return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
 export function toDateOrNull(value: string | null | undefined) {
