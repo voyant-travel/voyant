@@ -56,19 +56,19 @@
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.10",
-    "marked": "^18.0.3",
+    "hono": "^4.12.26",
+    "marked": "^18.0.5",
     "pdf-lib": "^1.17.1",
-    "sanitize-html": "^2.17.4",
-    "zod": "^4.3.6",
+    "sanitize-html": "^2.17.5",
+    "zod": "^4.4.3",
     "@voyant-travel/operations": "workspace:^"
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist",

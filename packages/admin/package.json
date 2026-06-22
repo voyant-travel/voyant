@@ -63,20 +63,20 @@
     "@voyant-travel/types": "workspace:^"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.11",
-    "@tanstack/react-router": "^1.170.4",
+    "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-router": "^1.170.16",
     "@testing-library/react": "^16.0.0",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "jsdom": "^25.0.0",
-    "lucide-react": "^1.7.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "jsdom": "^29.1.1",
+    "lucide-react": "^1.21.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "recharts": "3.8.1",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist",

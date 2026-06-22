@@ -63,15 +63,15 @@
   "dependencies": {
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "^0.45.2",
-    "pg": "^8.20.0"
+    "pg": "^8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.0",
+    "@types/node": "^26.0.0",
     "@types/pg": "^8.20.0",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.6"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public",
