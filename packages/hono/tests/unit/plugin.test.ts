@@ -109,6 +109,54 @@ describe("mountApp with plugins", () => {
     expect(res.status).toBe(200)
   })
 
+  // ADR-0008: a bundle webhook route mounts on the legacy `/v1/{module}` surface
+  // (not `/v1/public`), so `requireAuth` skips auth but stamps no actor; the
+  // fail-closed legacy guard must also skip it, or the "anonymous" route 401s.
+  function webhookBundle(anonymous?: string[]) {
+    return defineHonoBundle({
+      name: "processor",
+      extensions: [
+        {
+          extension: { name: "processor-finance", module: "finance" },
+          routes: new Hono().post("/providers/processor/callback", (c) => c.json({ ok: true })),
+        },
+      ],
+      ...(anonymous ? { anonymous } : {}),
+    })
+  }
+
+  function buildUnauthenticated(plugins: ReturnType<typeof defineHonoPlugin>[]) {
+    return mountApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db.
+      db: () => ({}) as any,
+      plugins,
+      // Simulate the processor's credential-less POST: no actor resolved.
+      auth: { resolve: () => ({ userId: "", actor: undefined as unknown as Actor }) },
+    })
+  }
+
+  it("makes a bundle-declared anonymous legacy webhook reachable without a session", async () => {
+    const app = buildUnauthenticated([webhookBundle(["/v1/finance/providers/processor/callback"])])
+    const res = await app.request(
+      "/v1/finance/providers/processor/callback",
+      { method: "POST" },
+      TEST_ENV,
+      TEST_CTX,
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it("401s the same legacy webhook route when the bundle does NOT declare it anonymous", async () => {
+    const app = buildUnauthenticated([webhookBundle()])
+    const res = await app.request(
+      "/v1/finance/providers/processor/callback",
+      { method: "POST" },
+      TEST_ENV,
+      TEST_CTX,
+    )
+    expect(res.status).toBe(401)
+  })
+
   it("combines top-level modules with plugin modules", async () => {
     const top = makeModule("top", "admin")
     const viaPlugin = makeModule("viaPlugin", "admin")

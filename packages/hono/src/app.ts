@@ -484,6 +484,14 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
       return next()
     }
+    // Anonymous legacy/webhook routes (ADR-0008) — e.g. a bundle-declared
+    // payment-processor callback at `/v1/finance/...`. `requireAuth` already
+    // skipped credential resolution for these, but it only stamps an actor on
+    // `/v1/public/*`, so without this skip the fail-closed staff guard would 401
+    // a route that is meant to be reachable without a session.
+    if (matchesPublicPath(pathname, anonymousPaths)) {
+      return next()
+    }
     return requireLegacyActor(c, next)
   })
 
