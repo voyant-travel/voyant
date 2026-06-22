@@ -65,9 +65,11 @@ export const PREFIXES = {
   product_option_translations: "potr",
   option_unit_translations: "outr",
   product_itineraries: "piti",
+  product_itinerary_translations: "pitr",
   product_days: "pday",
   product_day_services: "pdse",
   product_day_translations: "pdtr",
+  product_day_service_translations: "pdsr",
   product_versions: "pver",
   product_notes: "prnt",
   bookings: "book",
@@ -114,6 +116,7 @@ export const PREFIXES = {
   quote_products: "qprd",
   quote_versions: "qver",
   quote_version_lines: "qtln",
+  quote_media: "qmed",
   activities: "act",
   activity_links: "actl",
   activity_participants: "actp",
@@ -367,6 +370,8 @@ export const PREFIXES = {
   trip_component_events: "trce",
   trip_snapshots: "trsn",
   trip_reservation_plans: "trpl",
+  trip_requirements: "trrq",
+  trip_candidates: "trcd",
 
   // --- FINANCE (extensions for journey tax computation) ---
   // Per booking-journey-architecture §9. The classes are the per-

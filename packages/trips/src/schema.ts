@@ -1,6 +1,15 @@
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { relations } from "drizzle-orm"
-import { index, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core"
 
 export const tripEnvelopeStatusEnum = pgEnum("trip_envelope_status", [
   "draft",
@@ -52,6 +61,24 @@ export const tripReservationPlanStatusEnum = pgEnum("trip_reservation_plan_statu
   "reserved",
   "failed",
   "cancelled",
+])
+
+// ── Dynamic packaging: unresolved requirements + ranked candidates (RFC #2082) ──
+
+export const tripRequirementStatusEnum = pgEnum("trip_requirement_status", [
+  "open", // created, not yet sourced
+  "sourcing", // a fan-out search is in flight
+  "candidates_ready", // ranked candidates available, none selected
+  "selected", // a candidate was picked and pinned to a component
+  "no_availability", // a search returned nothing
+  "cancelled",
+])
+
+export const tripCandidateStatusEnum = pgEnum("trip_candidate_status", [
+  "ranked", // live option under a requirement
+  "selected", // the chosen candidate (one per requirement)
+  "expired", // TTL elapsed; reaper-swept, not bookable without re-shop
+  "discarded", // superseded by a re-shop round
 ])
 
 export type TripEnvelopePricingSnapshot = {
@@ -352,11 +379,103 @@ export const tripReservationPlans = pgTable(
   ],
 )
 
+// An unresolved customer-facing need on an envelope ("3-night stay in Cairo,
+// 2 adults"). Sourced via the catalog availability fan-out into ranked
+// candidates; selecting one resolves it into a pinned trip component.
+export const tripRequirements = pgTable(
+  "trip_requirements",
+  {
+    id: typeId("trip_requirements"),
+    envelopeId: typeIdRef("envelope_id")
+      .notNull()
+      .references(() => tripEnvelopes.id, { onDelete: "cascade" }),
+
+    sequence: integer("sequence").notNull().default(0),
+    status: tripRequirementStatusEnum("status").notNull().default("open"),
+    title: text("title"),
+    description: text("description"),
+
+    // Vertical + criteria mirror the catalog `AvailabilitySearchRequest`.
+    vertical: text("vertical").notNull(),
+    criteria: jsonb("criteria").$type<Record<string, unknown>>().notNull().default({}),
+    criteriaVersion: text("criteria_version").notNull(),
+
+    // When true, `reserveTrip` is gated until this requirement is `selected`.
+    required: boolean("required").notNull().default(true),
+
+    // The chosen candidate + the component it was pinned into. Plain typed-id
+    // columns (no FK constraint) to avoid a circular requirement↔candidate FK;
+    // selected-uniqueness is enforced in the service layer.
+    selectedCandidateId: typeIdRef("selected_candidate_id"),
+    resolvedComponentId: typeIdRef("resolved_component_id"),
+
+    lastSourcedAt: timestamp("last_sourced_at", { withTimezone: true }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_trip_requirements_envelope_sequence").on(table.envelopeId, table.sequence),
+    index("idx_trip_requirements_envelope_status").on(table.envelopeId, table.status),
+  ],
+)
+
+// A normalized `AvailabilityCandidate` attached to a requirement: ranked,
+// TTL'd, resumable trip state (re-validated before commit) — NOT a catalog
+// cache. `providerData` holds internal economics + the payload needed to
+// re-resolve/reserve; it never leaks into public/proposal DTOs.
+export const tripCandidates = pgTable(
+  "trip_candidates",
+  {
+    id: typeId("trip_candidates"),
+    requirementId: typeIdRef("requirement_id")
+      .notNull()
+      .references(() => tripRequirements.id, { onDelete: "cascade" }),
+    // Denormalized for envelope-wide reaper / queries without a join.
+    envelopeId: typeIdRef("envelope_id")
+      .notNull()
+      .references(() => tripEnvelopes.id, { onDelete: "cascade" }),
+
+    rank: integer("rank").notNull().default(0),
+    status: tripCandidateStatusEnum("status").notNull().default("ranked"),
+
+    // Mirrors catalog `AvailabilityCandidate`. `candidateRef` is the adapter's
+    // per-search id and is NOT replay-safe — `selection` is re-resolved before
+    // reserve.
+    candidateRef: text("candidate_ref").notNull(),
+    entityModule: text("entity_module").notNull(),
+    entityId: text("entity_id").notNull(),
+
+    // Origin, so a selection routes back to the right source at reserve time.
+    sourceKind: text("source_kind").notNull(), // "sourced" | "owned"
+    sourceConnectionId: text("source_connection_id"), // when sourced
+    sourceModule: text("source_module"), // when owned
+
+    selection: jsonb("selection").$type<Record<string, unknown>>().notNull().default({}),
+    priceCurrency: text("price_currency").notNull(),
+    // Decimal string, matching `AvailabilityCandidate.price.amount` exactly.
+    priceAmount: text("price_amount").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    providerData: jsonb("provider_data").$type<Record<string, unknown>>(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_trip_candidates_requirement_rank").on(table.requirementId, table.rank),
+    index("idx_trip_candidates_requirement_status").on(table.requirementId, table.status),
+    index("idx_trip_candidates_envelope").on(table.envelopeId),
+    index("idx_trip_candidates_expires").on(table.expiresAt),
+  ],
+)
+
 export const tripEnvelopeRelations = relations(tripEnvelopes, ({ many }) => ({
   components: many(tripComponents),
   events: many(tripComponentEvents),
   snapshots: many(tripSnapshots),
   reservationPlans: many(tripReservationPlans),
+  requirements: many(tripRequirements),
 }))
 
 export const tripComponentRelations = relations(tripComponents, ({ one, many }) => ({
@@ -396,6 +515,25 @@ export const tripReservationPlanRelations = relations(tripReservationPlans, ({ o
   }),
 }))
 
+export const tripRequirementRelations = relations(tripRequirements, ({ one, many }) => ({
+  envelope: one(tripEnvelopes, {
+    fields: [tripRequirements.envelopeId],
+    references: [tripEnvelopes.id],
+  }),
+  candidates: many(tripCandidates),
+}))
+
+export const tripCandidateRelations = relations(tripCandidates, ({ one }) => ({
+  requirement: one(tripRequirements, {
+    fields: [tripCandidates.requirementId],
+    references: [tripRequirements.id],
+  }),
+  envelope: one(tripEnvelopes, {
+    fields: [tripCandidates.envelopeId],
+    references: [tripEnvelopes.id],
+  }),
+}))
+
 export type TripEnvelope = typeof tripEnvelopes.$inferSelect
 export type NewTripEnvelope = typeof tripEnvelopes.$inferInsert
 export type TripComponent = typeof tripComponents.$inferSelect
@@ -406,3 +544,7 @@ export type TripSnapshot = typeof tripSnapshots.$inferSelect
 export type NewTripSnapshot = typeof tripSnapshots.$inferInsert
 export type TripReservationPlan = typeof tripReservationPlans.$inferSelect
 export type NewTripReservationPlan = typeof tripReservationPlans.$inferInsert
+export type TripRequirement = typeof tripRequirements.$inferSelect
+export type NewTripRequirement = typeof tripRequirements.$inferInsert
+export type TripCandidate = typeof tripCandidates.$inferSelect
+export type NewTripCandidate = typeof tripCandidates.$inferInsert

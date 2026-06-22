@@ -1,5 +1,155 @@
 # @voyant-travel/finance-react
 
+## 0.133.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/bookings-react@0.133.0
+  - @voyant-travel/distribution-react@0.123.0
+  - @voyant-travel/inventory-react@0.15.0
+  - @voyant-travel/operations-react@0.14.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.132.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.132.0
+- @voyant-travel/distribution-react@0.122.0
+- @voyant-travel/inventory-react@0.14.0
+- @voyant-travel/operations-react@0.13.0
+- @voyant-travel/finance@0.132.0
+
+## 0.131.2
+
+### Patch Changes
+
+- @voyant-travel/finance@0.131.2
+- @voyant-travel/bookings-react@0.131.1
+- @voyant-travel/distribution-react@0.121.1
+
+## 0.131.1
+
+### Patch Changes
+
+- Updated dependencies [8c9a402]
+  - @voyant-travel/finance@0.131.1
+
+## 0.131.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/operations-react@0.12.0
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/bookings-react@0.131.0
+  - @voyant-travel/distribution-react@0.121.0
+  - @voyant-travel/inventory-react@0.13.0
+  - @voyant-travel/finance@0.131.0
+
+## 0.130.0
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/operations-react@0.11.0
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/bookings-react@0.130.0
+  - @voyant-travel/distribution-react@0.120.0
+  - @voyant-travel/inventory-react@0.12.0
+  - @voyant-travel/finance@0.130.0
+
+## 0.129.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.119.0
+- @voyant-travel/bookings-react@0.129.0
+- @voyant-travel/inventory-react@0.11.0
+- @voyant-travel/operations-react@0.10.0
+- @voyant-travel/finance@0.129.0
+
+## 0.128.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.10.0
+- @voyant-travel/bookings-react@0.128.0
+- @voyant-travel/distribution-react@0.118.0
+- @voyant-travel/operations-react@0.9.0
+- @voyant-travel/finance@0.128.0
+
+## 0.127.0
+
+### Patch Changes
+
+- @voyant-travel/operations-react@0.8.0
+- @voyant-travel/bookings-react@0.127.0
+- @voyant-travel/finance@0.127.0
+- @voyant-travel/distribution-react@0.117.0
+- @voyant-travel/inventory-react@0.9.0
+
+## 0.126.1
+
+### Patch Changes
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/finance@0.126.1
+  - @voyant-travel/distribution-react@0.116.1
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.126.0
+- @voyant-travel/distribution-react@0.116.0
+- @voyant-travel/operations-react@0.7.0
+- @voyant-travel/inventory-react@0.8.0
+- @voyant-travel/finance@0.126.0
+
+## 0.125.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/bookings-react@0.125.0
+  - @voyant-travel/distribution-react@0.115.0
+  - @voyant-travel/inventory-react@0.7.0
+  - @voyant-travel/operations-react@0.6.0
+  - @voyant-travel/finance@0.125.0
+
+## 0.124.0
+
+### Minor Changes
+
+- 4f92198: Add optional product/departure attribution to the supplier-invoice create dialog. When a host wires `searchProducts` (and optionally `listDeparturesForProduct`), the create form gains a two-step product → departure picker plus a total field; on save it emits a single whole-invoice manual cost allocation seeded from the total, targeting the picked departure (or, failing that, the product). All new strings are added to the `supplierInvoiceDetail.form` messages (en + ro). Edit mode and hosts that don't pass `searchProducts` are unaffected.
+
+### Patch Changes
+
+- 4f92198: Voyant 1.0 visual refactor of the framework UI.
+
+  - **Tokens** (`@voyant-travel/ui` `globals.css`): warm off-white paper, near-black ink, and a single hot-orange brand accent (`--brand`, new token) reserved for charts/focus/active state. Inter Tight type. Fixed brand chart palette (`--chart-1..5`). A coherent radius system: controls + their dropdowns at `rounded-sm` (4px), cards/table surfaces at `rounded-md` (6px), dialogs/sheets at `rounded-xl`.
+  - **`@voyant-travel/ui` components**: new `SegmentedControl`; `Button` gains a `brand` variant; sharper, consistent radii across Button/Input/Select/Combobox/Textarea/Toggle/Tabs/Menus/Command/Card/DataTable/Badge; bordered active sidebar items (primary + sub) and inset-panel border; assorted fixes (Command search-input radius, toggle-group corners, sidebar sub-menu spacing).
+  - **`@voyant-travel/admin`**: Voyant 1.0 brand logo lockup (composed mark + wordmark, collapse-to-badge); operator shell defaults to the inset sidebar layout; dashboard KPI cards, brand chart colors, and Figma-matched sidebar (bordered active item, near-black nav text, bordered user card with open-state).
+  - **Domain `*-react` packages**: card surfaces normalized to the new `rounded-md` radius; flights search bar (trip-type toggle, route cards, airport dropdown) and the resources tabs aligned to the system.
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/distribution-react@0.114.0
+  - @voyant-travel/inventory-react@0.6.0
+  - @voyant-travel/operations-react@0.5.0
+  - @voyant-travel/bookings-react@0.124.0
+  - @voyant-travel/finance@0.124.0
+
 ## 0.123.0
 
 ### Patch Changes

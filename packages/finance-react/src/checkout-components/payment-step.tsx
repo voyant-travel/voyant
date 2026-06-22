@@ -111,7 +111,7 @@ function SavedMethodsSection({
 }) {
   const messages = useCheckoutUiMessagesOrDefault().paymentStep.savedMethods
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-5 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-medium text-sm">{messages.title}</h3>
         {methods.length > 0 && (
@@ -225,7 +225,7 @@ function AltMethodsSection({
   }
 
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-5 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-medium text-sm">{messages.title}</h3>
       </header>

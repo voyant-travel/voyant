@@ -62,10 +62,16 @@ interface SlotDialogMessages {
   validationDateRequired: string
   validationStartsAtRequired: string
   validationTimezoneRequired: string
+  validationOptionRequired: string
+  validationOptionsUnavailable: string
   editTitle: string
   newTitle: string
   productLabel: string
   selectProductPlaceholder: string
+  optionLabel: string
+  selectOptionPlaceholder: string
+  noOption: string
+  defaultOptionSuffix: string
   ruleLabel: string
   optionalRulePlaceholder: string
   noRule: string
@@ -178,6 +184,7 @@ export type AvailabilityStartTimeSubmitPayload = {
 
 export type AvailabilitySlotSubmitPayload = {
   productId: string
+  optionId: string | null
   availabilityRuleId: string | null
   startTimeId: string | null
   dateLocal: string
@@ -279,6 +286,7 @@ export function DialogActions({
   create,
   isEditing,
   isSubmitting,
+  disabled,
   onCancel,
 }: {
   cancel: string
@@ -286,6 +294,7 @@ export function DialogActions({
   create: string
   isEditing: boolean
   isSubmitting: boolean
+  disabled?: boolean
   onCancel: () => void
 }) {
   return (
@@ -293,7 +302,7 @@ export function DialogActions({
       <Button type="button" variant="ghost" onClick={onCancel}>
         {cancel}
       </Button>
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting || disabled}>
         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {isEditing ? save : create}
       </Button>

@@ -1,5 +1,157 @@
 # @voyant-travel/trips
 
+## 0.124.0
+
+### Minor Changes
+
+- b68d6a7: Add the dynamic-packaging requirement/candidate model to Trips (voyant#2082 / voyant#1600) — keystone gap 2.
+
+  - **`@voyant-travel/trips`** — new `trip_requirements` (unresolved customer need on an envelope: vertical + criteria + criteriaVersion mirroring the catalog `AvailabilitySearchRequest`) and `trip_candidates` (a normalized `AvailabilityCandidate` attached to a requirement: rank, status, origin, decimal price, TTL, internal `providerData`) tables, with enums, relations, and migration `0001`. Service operations: `addRequirement`, `sourceRequirementCandidates` (runs a deployment-injected availability fan-out, persists the ranked set), `selectCandidate` (enforces selected-uniqueness, pins a draft catalog component the existing price/reserve pipeline re-validates), `reshopRequirement` / `reshopTrip`, and `expireStaleTripCandidates` (TTL reaper). `reserveTrip` now gates on all required requirements being resolved. The fan-out is injected (`SourceRequirementCandidatesDeps`), never a named provider.
+  - **`@voyant-travel/schema-kit`** — register TypeID prefixes `trrq` (trip_requirements) and `trcd` (trip_candidates).
+
+  Additive; no behavioral change to existing trip flows (an envelope with no requirements reserves exactly as before).
+
+- bba70ee: Add admin HTTP routes + zod schemas for the dynamic-packaging requirement/candidate operations (voyant#2082): `POST`/`GET /:envelopeId/requirements`, `POST /requirements/:id/candidates` (source ranked candidates), `POST /requirements/:id/select`, `POST /requirements/:id/reshop`, and `POST /:envelopeId/reshop`. The availability fan-out is injected via `TripsRoutesOptions.sourceCandidatesDeps` (the deployment wires its adapters/owned handlers) — routes return 501 until configured and 403 on the public surface.
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/catalog@0.131.0
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/flights@0.133.0
+
+## 0.123.0
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog@0.130.0
+  - @voyant-travel/flights@0.132.0
+  - @voyant-travel/bookings@0.132.0
+  - @voyant-travel/finance@0.132.0
+
+## 0.122.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/bookings@0.131.1
+  - @voyant-travel/catalog@0.129.1
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/flights@0.131.1
+  - @voyant-travel/db@0.108.5
+
+## 0.122.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/catalog@0.129.0
+- @voyant-travel/finance@0.131.0
+- @voyant-travel/flights@0.131.0
+
+## 0.121.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.130.0
+- @voyant-travel/catalog@0.128.0
+- @voyant-travel/finance@0.130.0
+- @voyant-travel/flights@0.130.0
+
+## 0.120.1
+
+### Patch Changes
+
+- c5416cb: Make public proposal acceptance reservation-safe for sourced catalog components.
+
+  - `reserveTrip` now atomically claims the envelope (`priced` → `reserve_in_progress`) before any provider dispatch, so concurrent reserves are serialized and only one caller can create upstream supplier holds. A lost claim returns a `reservation_in_progress` conflict without dispatching, and the claim is released back to `priced` if preflight rejects or throws.
+  - Public proposal accept is split into prepare (under the quote-accept lock) → reserve (outside any transaction) → finalize (under the lock). Sourced catalog components are no longer rejected, and a reservation is released via `cancelComponents` if final CRM acceptance loses a race (guarding idempotent replays).
+
+## 0.120.0
+
+### Patch Changes
+
+- Updated dependencies [7779772]
+  - @voyant-travel/catalog@0.127.0
+  - @voyant-travel/flights@0.129.0
+  - @voyant-travel/bookings@0.129.0
+  - @voyant-travel/finance@0.129.0
+
+## 0.119.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.128.0
+- @voyant-travel/catalog@0.126.0
+- @voyant-travel/finance@0.128.0
+- @voyant-travel/flights@0.128.0
+
+## 0.118.0
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+- Updated dependencies [c143531]
+  - @voyant-travel/bookings@0.127.0
+  - @voyant-travel/flights@0.127.0
+  - @voyant-travel/finance@0.127.0
+  - @voyant-travel/catalog@0.125.0
+
+## 0.117.1
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/catalog@0.124.1
+  - @voyant-travel/finance@0.126.1
+
+## 0.117.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.126.0
+- @voyant-travel/catalog@0.124.0
+- @voyant-travel/finance@0.126.0
+- @voyant-travel/flights@0.126.0
+
+## 0.116.1
+
+### Patch Changes
+
+- e89640b: D.2 slice 1 — these packages now own and ship their migration history. Each gains a `drizzle.migrations.config.ts`, a `db:generate` script, and a generated `migrations/` folder (baseline) included in the published tarball (`files`). A D.2 deployment collects each package's folder as its migration source; existing D.1 databases import-baseline the bundle-covered baseline. No runtime behavior change. See `docs/architecture/migration-collector-d2.md`.
+
+## 0.116.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/bookings@0.125.0
+- @voyant-travel/catalog@0.123.0
+- @voyant-travel/finance@0.125.0
+- @voyant-travel/flights@0.125.0
+- @voyant-travel/hono@0.112.2
+
+## 0.115.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/catalog@0.122.0
+- @voyant-travel/finance@0.124.0
+- @voyant-travel/flights@0.124.0
+
 ## 0.114.0
 
 ### Patch Changes

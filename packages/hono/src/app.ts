@@ -15,6 +15,7 @@ import {
   wireWorkflowRuntime,
 } from "./app-workflows.js"
 import { mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
+import { mountAuthForwarding } from "./lib/auth-forward.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
@@ -35,6 +36,8 @@ import {
 } from "./middleware/rate-limit.js"
 import { requireActor } from "./middleware/require-actor.js"
 import { securityHeaders } from "./middleware/security-headers.js"
+import { noopReporter, safeCaptureException } from "./observability/reporter.js"
+import { getRequestId } from "./observability/request-context.js"
 import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
@@ -127,13 +130,31 @@ export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
 ): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
-  app.onError(handleApiError)
+  // Observability sink (RFC #1553) — resolved once and reused by both the
+  // outer onError and the forwarded auth sub-app catch point below.
+  const reporter = config.reporter ?? noopReporter
+  const appName = config.appName ?? "voyant"
+  app.onError((err, c) => handleApiError(err, c, { reporter, appName }))
 
   // Expand plugins into their constituent modules/extensions before mounting
   const expanded = config.plugins ? expandHonoPlugins(config.plugins) : null
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
-  const eventBus = config.eventBus ?? createEventBus()
+  // When the framework owns the bus, route subscriber-dispatch failures
+  // (including the workflow forwarder) to the reporter — they're otherwise
+  // only console-logged per the fire-and-forget EventBus contract (RFC #1553).
+  // A deployment-supplied bus owns its own error routing.
+  const eventBus =
+    config.eventBus ??
+    createEventBus({
+      onSubscriberError: (event, error) =>
+        safeCaptureException(reporter, {
+          requestId: getRequestId() ?? "",
+          app: appName,
+          error,
+          context: { event, surface: "event-bus" },
+        }),
+    })
   const query =
     typeof config.query === "function"
       ? config.query
@@ -239,6 +260,14 @@ export function mountApp<TBindings extends VoyantBindings>(
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
             console.error(`[voyant] bootstrap failed for ${label}: ${message}`)
+            // Bootstrap failures are startup-critical but silent today — surface
+            // them to the reporter too (RFC #1553). No request context here.
+            safeCaptureException(reporter, {
+              requestId: getRequestId() ?? "",
+              app: appName,
+              error,
+              context: { label, surface: "bootstrap" },
+            })
           }
         }
 
@@ -389,13 +418,11 @@ export function mountApp<TBindings extends VoyantBindings>(
   // Health check (public, no auth)
   app.get("/health", (c) => c.json({ status: "ok" }))
 
-  // App-owned auth handler (must be before auth middleware — these routes are public)
+  // App-owned auth handler (must be before auth middleware — these routes are
+  // public). Forwarding + observability bridging live in `mountAuthForwarding`.
   const authHandler = config.auth?.handler
   if (authHandler) {
-    app.all("/auth/*", async (c) => {
-      const authApp = authHandler(c.env)
-      return authApp.fetch(c.req.raw, c.env, c.executionCtx)
-    })
+    mountAuthForwarding(app, authHandler, { reporter, appName })
   }
 
   // Transactional surface map: a request must be served by a

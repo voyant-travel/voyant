@@ -739,6 +739,94 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     )
   })
 
+  it("generates the rooms summary without depending on the 'accommodation' enum value (#1603)", async () => {
+    // Regression for #1603: contract generation filtered option_units by
+    // `unit_type IN ('room', 'accommodation')`, but 'accommodation' is not a
+    // member of the option_unit_type enum on every deployment. Postgres rejects
+    // an unknown enum literal before the query runs, which used to 500 ALL
+    // contract generation on deployments whose enum lacks the value. This test
+    // seeds only enum values that always exist ('person', 'room', 'service')
+    // and asserts the summary still resolves the room unit.
+    const { template, version } = await seedTemplate("cust-rooms-1603")
+    await db
+      .update(contractTemplateVersions)
+      .set({ body: "Rooms {{ booking.roomsSummary }}" })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({ sellCurrency: "RON", sellAmountCents: 90000 })
+    await db.execute(sql`
+      INSERT INTO products (id, name, sell_currency)
+      VALUES ('prod_1603', 'Bucovina Tour', 'RON')
+    `)
+    await db.execute(sql`
+      INSERT INTO product_options (id, product_id, name)
+      VALUES ('opto_1603', 'prod_1603', 'Standard package')
+    `)
+    await db.execute(sql`
+      INSERT INTO option_units (id, option_id, name, unit_type)
+      VALUES
+        ('unit_1603_adult', 'opto_1603', 'Adult', 'person'),
+        ('unit_1603_room', 'opto_1603', 'Twin room', 'room'),
+        ('unit_1603_guide', 'opto_1603', 'Private guide', 'service')
+    `)
+    await db.insert(bookingItems).values([
+      {
+        bookingId: booking.id,
+        title: "Adult",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 2,
+        sellCurrency: "RON",
+        unitSellAmountCents: 30000,
+        totalSellAmountCents: 60000,
+        optionUnitId: "unit_1603_adult",
+        unitNameSnapshot: "Adult",
+      },
+      {
+        bookingId: booking.id,
+        title: "Twin room",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "RON",
+        unitSellAmountCents: 30000,
+        totalSellAmountCents: 30000,
+        optionUnitId: "unit_1603_room",
+        unitNameSnapshot: "Twin room",
+      },
+      {
+        bookingId: booking.id,
+        title: "Private guide",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "RON",
+        unitSellAmountCents: 0,
+        totalSellAmountCents: 0,
+        optionUnitId: "unit_1603_guide",
+        unitNameSnapshot: "Private guide",
+      },
+    ])
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const bookingVariables = variables.booking as Record<string, unknown>
+
+    // Only the 'room' unit is summarised; the service unit is excluded.
+    expect(bookingVariables.roomsSummary).toBe("1× Twin room")
+    expect(bodies[0]).toBe("Rooms 1× Twin room")
+  })
+
   it("resolves a series by name and writes seriesId onto the contract", async () => {
     const { template } = await seedTemplate("cust-series-1")
     const booking = await seedBooking()

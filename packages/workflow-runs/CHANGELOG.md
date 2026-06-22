@@ -1,5 +1,58 @@
 # @voyant-travel/workflow-runs
 
+## 0.111.4
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/workflows@0.111.4
+
+## 0.111.3
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/db@0.108.5
+  - @voyant-travel/workflows@0.111.3
+
+## 0.111.2
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/workflows@0.111.2
+
+## 0.111.1
+
+### Patch Changes
+
+- e89640b: D.2 slice 1 — these packages now own and ship their migration history. Each gains a `drizzle.migrations.config.ts`, a `db:generate` script, and a generated `migrations/` folder (baseline) included in the published tarball (`files`). A D.2 deployment collects each package's folder as its migration source; existing D.1 databases import-baseline the bundle-covered baseline. No runtime behavior change. See `docs/architecture/migration-collector-d2.md`.
+  - @voyant-travel/workflows@0.111.1
+
+## 0.111.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/workflows@0.111.0
+- @voyant-travel/hono@0.112.2
+
+## 0.110.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/workflows@0.110.0
+
 ## 0.109.4
 
 ### Patch Changes

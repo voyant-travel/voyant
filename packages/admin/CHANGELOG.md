@@ -1,5 +1,50 @@
 # @voyant-travel/admin
 
+## 0.115.0
+
+### Minor Changes
+
+- 4abf9a2: Deployment team management + granular member RBAC (voyant#2085).
+
+  - `@voyant-travel/types`: `member-roles` (preset bundles reusing the API-key permission catalog) + `settings`/`team` resources.
+  - `@voyant-travel/auth`: `cloud-broker` member-management client + assertion `scopes`.
+  - `@voyant-travel/hono`: opt-in staff-session scope enforcement in `requireActor` (`VOYANT_RBAC_ENFORCE`) + `isStaffRbacEnforced`.
+  - `@voyant-travel/admin`: auth-mode-aware `TeamSettingsPage` with a granular permission editor.
+  - `@voyant-travel/bookings`/`legal`: PII reveal gated on `bookings-pii:read` under enforcement.
+  - `@voyant-travel/db`: `user_profiles.permissions` + `cloud_auth_user_links.scopes`.
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/types@0.105.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+
+## 0.113.0
+
+### Minor Changes
+
+- 4f92198: Voyant 1.0 visual refactor of the framework UI.
+
+  - **Tokens** (`@voyant-travel/ui` `globals.css`): warm off-white paper, near-black ink, and a single hot-orange brand accent (`--brand`, new token) reserved for charts/focus/active state. Inter Tight type. Fixed brand chart palette (`--chart-1..5`). A coherent radius system: controls + their dropdowns at `rounded-sm` (4px), cards/table surfaces at `rounded-md` (6px), dialogs/sheets at `rounded-xl`.
+  - **`@voyant-travel/ui` components**: new `SegmentedControl`; `Button` gains a `brand` variant; sharper, consistent radii across Button/Input/Select/Combobox/Textarea/Toggle/Tabs/Menus/Command/Card/DataTable/Badge; bordered active sidebar items (primary + sub) and inset-panel border; assorted fixes (Command search-input radius, toggle-group corners, sidebar sub-menu spacing).
+  - **`@voyant-travel/admin`**: Voyant 1.0 brand logo lockup (composed mark + wordmark, collapse-to-badge); operator shell defaults to the inset sidebar layout; dashboard KPI cards, brand chart colors, and Figma-matched sidebar (bordered active item, near-black nav text, bordered user card with open-state).
+  - **Domain `*-react` packages**: card surfaces normalized to the new `rounded-md` radius; flights search bar (trip-type toggle, route cards, airport dropdown) and the resources tabs aligned to the system.
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+
 ## 0.112.0
 
 ### Minor Changes

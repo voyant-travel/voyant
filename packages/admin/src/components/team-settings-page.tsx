@@ -20,11 +20,18 @@ import {
 } from "@voyant-travel/ui/components"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
-import { createContext, useContext, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { formatMessage } from "../lib/i18n.js"
 import { useLocale } from "../providers/locale.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
+import {
+  createTeamSettingsPageApi,
+  type TeamSettingsPageApi,
+  TeamSettingsPageApiContext,
+  useTeamSettingsPageApi,
+} from "./team-settings-api.js"
+import { CloudTeamView } from "./team-settings-cloud.js"
 
 type Invitation = {
   id: string
@@ -47,72 +54,10 @@ type CreateInviteResponse = {
 
 const QK = ["admin-invitations"] as const
 
-export interface TeamSettingsPageApi {
-  get: <T = unknown>(path: string) => Promise<T>
-  post: <T = unknown>(path: string, body?: unknown) => Promise<T>
-  delete: <T = unknown>(path: string) => Promise<T>
-}
+export type { TeamSettingsPageApi }
 
 export interface TeamSettingsPageProps {
   api?: TeamSettingsPageApi
-}
-
-const TeamSettingsPageApiContext = createContext<TeamSettingsPageApi | null>(null)
-
-function joinUrl(baseUrl: string, path: string) {
-  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
-  const trimmedPath = path.startsWith("/") ? path : `/${path}`
-  return `${trimmedBase}${trimmedPath}`
-}
-
-async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    let body: unknown
-    try {
-      body = await response.json()
-    } catch {
-      body = await response.text().catch(() => undefined)
-    }
-    const message =
-      typeof body === "object" && body !== null && "error" in body
-        ? String((body as { error: unknown }).error)
-        : `API error: ${response.status} ${response.statusText}`
-    throw new Error(message)
-  }
-
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
-}
-
-function createTeamSettingsPageApi(
-  baseUrl: string,
-  fetcher: (url: string, init?: RequestInit) => Promise<Response>,
-) {
-  const request = async <T,>(path: string, init: RequestInit = {}) => {
-    const headers = new Headers(init.headers)
-    if (init.body !== undefined && !headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json")
-    }
-    return readJson<T>(await fetcher(joinUrl(baseUrl, path), { ...init, headers }))
-  }
-
-  const api: TeamSettingsPageApi = {
-    get: <T = unknown>(path: string) => request<T>(path, { method: "GET" }),
-    post: <T = unknown>(path: string, body?: unknown) =>
-      request<T>(path, {
-        method: "POST",
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      }),
-    delete: <T = unknown>(path: string) => request<T>(path, { method: "DELETE" }),
-  }
-
-  return api
-}
-
-function useTeamSettingsPageApi() {
-  const api = useContext(TeamSettingsPageApiContext)
-  if (!api) throw new Error("TeamSettingsPage requires a TeamSettingsPageApiContext provider")
-  return api
 }
 
 export function TeamSettingsPage({ api: apiProp }: TeamSettingsPageProps = {}) {
@@ -126,7 +71,28 @@ function TeamSettingsPageWithDefaultApi() {
   return <TeamSettingsPageContent api={api} />
 }
 
+type BootstrapStatus = { hasUsers: boolean; authMode?: "local" | "voyant-cloud" }
+
 function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
+  // The auth mode decides which team surface backs the page: local invitations
+  // (credential users in this deployment's DB) or the Voyant Cloud member roster
+  // proxied through /v1/admin/team/*. Default to local until known.
+  const bootstrapQuery = useQuery({
+    queryKey: ["admin-team-auth-mode"],
+    queryFn: () => api.get<BootstrapStatus>("/auth/bootstrap-status"),
+    staleTime: 5 * 60 * 1000,
+  })
+  const isCloud = bootstrapQuery.data?.authMode === "voyant-cloud"
+
+  return (
+    <TeamSettingsPageApiContext.Provider value={api}>
+      {isCloud ? <CloudTeamView /> : <LocalTeamView />}
+    </TeamSettingsPageApiContext.Provider>
+  )
+}
+
+function LocalTeamView() {
+  const api = useTeamSettingsPageApi()
   const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
   const queryClient = useQueryClient()
@@ -146,123 +112,121 @@ function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
   const spent = invites.filter((i) => i.redeemedAt || new Date(i.expiresAt) <= new Date())
 
   return (
-    <TeamSettingsPageApiContext.Provider value={api}>
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{messages.team.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{messages.team.description}</p>
-          </div>
-          <InviteMemberDialog />
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{messages.team.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{messages.team.description}</p>
         </div>
+        <InviteMemberDialog />
+      </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>{messages.team.pendingInvitations}</CardTitle>
+          <CardDescription>
+            {pending.length === 0
+              ? messages.team.noOutstandingInvitations
+              : formatMessage(
+                  pending.length === 1
+                    ? messages.team.invitationWaitingSingular
+                    : messages.team.invitationWaitingPlural,
+                  { count: pending.length },
+                )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invitesQuery.isPending ? (
+            <ul className="flex flex-col divide-y">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: admin; existing suppression is intentional pending typed cleanup.
+                  key={i}
+                  className="flex items-center gap-4 py-3"
+                >
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-48" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <Skeleton className="h-7 w-20" />
+                </li>
+              ))}
+            </ul>
+          ) : pending.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{messages.team.nothingHereYet}</p>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {pending.map((invite) => (
+                <li key={invite.id} className="flex items-center gap-4 py-3">
+                  <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{invite.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatMessage(messages.team.expires, {
+                        date: new Date(invite.expiresAt).toLocaleString(resolvedLocale),
+                      })}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          formatMessage(messages.team.revokeConfirm, {
+                            email: invite.email,
+                          }),
+                        )
+                      ) {
+                        revoke.mutate(invite.id)
+                      }
+                    }}
+                    disabled={revoke.isPending}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    {messages.team.revoke}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {spent.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>{messages.team.pendingInvitations}</CardTitle>
-            <CardDescription>
-              {pending.length === 0
-                ? messages.team.noOutstandingInvitations
-                : formatMessage(
-                    pending.length === 1
-                      ? messages.team.invitationWaitingSingular
-                      : messages.team.invitationWaitingPlural,
-                    { count: pending.length },
-                  )}
-            </CardDescription>
+            <CardTitle>{messages.team.history}</CardTitle>
+            <CardDescription>{messages.team.historyDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            {invitesQuery.isPending ? (
-              <ul className="flex flex-col divide-y">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <li
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder -- owner: admin; existing suppression is intentional pending typed cleanup.
-                    key={i}
-                    className="flex items-center gap-4 py-3"
-                  >
-                    <Skeleton className="h-4 w-4 rounded" />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <Skeleton className="h-3.5 w-48" />
-                      <Skeleton className="h-3 w-40" />
-                    </div>
-                    <Skeleton className="h-7 w-20" />
-                  </li>
-                ))}
-              </ul>
-            ) : pending.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{messages.team.nothingHereYet}</p>
-            ) : (
-              <ul className="flex flex-col divide-y">
-                {pending.map((invite) => (
-                  <li key={invite.id} className="flex items-center gap-4 py-3">
-                    <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{invite.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatMessage(messages.team.expires, {
-                          date: new Date(invite.expiresAt).toLocaleString(resolvedLocale),
+            <ul className="flex flex-col divide-y text-sm">
+              {spent.map((invite) => (
+                <li
+                  key={invite.id}
+                  className="flex items-center gap-4 py-2.5 text-muted-foreground"
+                >
+                  <Mail className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{invite.email}</span>
+                  <span className="text-xs">
+                    {invite.redeemedAt
+                      ? formatMessage(messages.team.redeemed, {
+                          date: new Date(invite.redeemedAt).toLocaleDateString(resolvedLocale),
+                        })
+                      : formatMessage(messages.team.expired, {
+                          date: new Date(invite.expiresAt).toLocaleDateString(resolvedLocale),
                         })}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={() => {
-                        if (
-                          confirm(
-                            formatMessage(messages.team.revokeConfirm, {
-                              email: invite.email,
-                            }),
-                          )
-                        ) {
-                          revoke.mutate(invite.id)
-                        }
-                      }}
-                      disabled={revoke.isPending}
-                    >
-                      <Trash2 className="mr-1 h-3.5 w-3.5" />
-                      {messages.team.revoke}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
-
-        {spent.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{messages.team.history}</CardTitle>
-              <CardDescription>{messages.team.historyDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="flex flex-col divide-y text-sm">
-                {spent.map((invite) => (
-                  <li
-                    key={invite.id}
-                    className="flex items-center gap-4 py-2.5 text-muted-foreground"
-                  >
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <span className="min-w-0 flex-1 truncate">{invite.email}</span>
-                    <span className="text-xs">
-                      {invite.redeemedAt
-                        ? formatMessage(messages.team.redeemed, {
-                            date: new Date(invite.redeemedAt).toLocaleDateString(resolvedLocale),
-                          })
-                        : formatMessage(messages.team.expired, {
-                            date: new Date(invite.expiresAt).toLocaleDateString(resolvedLocale),
-                          })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
-    </TeamSettingsPageApiContext.Provider>
+      ) : null}
+    </div>
   )
 }
 

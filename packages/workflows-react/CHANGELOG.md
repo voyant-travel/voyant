@@ -1,5 +1,50 @@
 # @voyant-travel/workflows-react
 
+## 0.111.4
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/ui@0.108.1
+  - @voyant-travel/workflows@0.111.4
+
+## 0.111.3
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.3
+
+## 0.111.2
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.2
+
+## 0.111.1
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.1
+
+## 0.111.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/workflows@0.111.0
+
+## 0.110.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/workflows@0.110.0
+
 ## 0.109.4
 
 ### Patch Changes

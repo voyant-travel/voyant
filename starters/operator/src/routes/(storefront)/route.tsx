@@ -1,5 +1,7 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 
+import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
+
 /**
  * `(storefront)` — simulated customer-facing surface inside the
  * operator starter. No auth gate; no workspace chrome.
@@ -14,18 +16,28 @@ export const Route = createFileRoute("/(storefront)")({
 
 function StorefrontLayout(): React.ReactElement {
   return (
+    <StorefrontMessagesProvider>
+      <StorefrontChrome />
+    </StorefrontMessagesProvider>
+  )
+}
+
+function StorefrontChrome(): React.ReactElement {
+  const t = useStorefrontMessages().layout
+
+  return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/shop" className="font-medium">
-            Voyant Storefront
+            {t.brand}
           </Link>
           <nav className="flex items-center gap-2">
             <Link
               to="/sign-in"
               className="rounded-md px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
             >
-              Sign in
+              {t.signIn}
             </Link>
           </nav>
         </div>

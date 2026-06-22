@@ -7,11 +7,24 @@ import {
   createCloudflareBrowserProductBrochurePrinterFromEnv,
 } from "../../src/tasks/brochure-printers.js"
 import { renderProductBrochureTemplate } from "../../src/tasks/brochure-templates.js"
+import {
+  createThemedBrochurePrinter,
+  renderThemedBrochureHtml,
+} from "../../src/tasks/brochure-themed.js"
 
 const templateContext = {
   product: {
     id: "prod_123",
     name: "Voyant City Break",
+    description: "A designed city itinerary.",
+    inclusionsHtml: "<ul><li>Breakfast</li></ul>",
+    exclusionsHtml: null,
+    termsHtml: "<p>Subject to availability.</p>",
+    sellAmountCents: 49900,
+    sellCurrency: "EUR",
+    startDate: "2026-05-01",
+    endDate: "2026-05-04",
+    pax: 2,
   },
   days: [
     {
@@ -24,6 +37,41 @@ const templateContext = {
       createdAt: new Date("2026-04-01T10:00:00.000Z"),
       updatedAt: new Date("2026-04-01T10:00:00.000Z"),
       services: [],
+    },
+  ],
+  media: [
+    {
+      id: "prod_media_1",
+      productId: "prod_123",
+      dayId: null,
+      mediaType: "image",
+      name: "Old town",
+      url: "https://example.com/old-town.jpg",
+      storageKey: null,
+      mimeType: "image/jpeg",
+      fileSize: null,
+      altText: "Old town skyline",
+      sortOrder: 0,
+      isCover: true,
+      isBrochure: false,
+      isBrochureCurrent: false,
+      brochureVersion: null,
+      createdAt: new Date("2026-04-01T10:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T10:00:00.000Z"),
+    },
+  ],
+  pricingTiers: [
+    {
+      id: "pax_tier_1",
+      productId: "prod_123",
+      optionUnitId: null,
+      tierPax: 2,
+      pricePerPaxCents: 24950,
+      promoPricePerPaxCents: 19950,
+      effectiveFrom: "2026-05-01",
+      effectiveTo: "2026-05-31",
+      createdAt: new Date("2026-04-01T10:00:00.000Z"),
+      updatedAt: new Date("2026-04-01T10:00:00.000Z"),
     },
   ],
   generatedAt: new Date("2026-04-14T10:00:00.000Z"),
@@ -154,6 +202,82 @@ describe("product brochure template and printers", () => {
     )
     expect(html).not.toContain("<pre")
     expect(html).not.toContain("&lt;div")
+  })
+
+  it("renders a themed brochure layout from media and pricing context", () => {
+    const html = renderThemedBrochureHtml(
+      {
+        title: "Voyant City Break brochure",
+        filename: "voyant-city-break.pdf",
+        body: "A compact brochure body",
+        bodyFormat: "markdown",
+        variables: {},
+        metadataLines: [],
+      },
+      templateContext,
+      {
+        theme: {
+          brandName: "Example Travel",
+          primaryColor: "#123456",
+          accentColor: "#0f766e",
+          footerText: "Example Travel footer",
+        },
+      },
+    )
+
+    expect(html).toContain("Example Travel")
+    expect(html).toContain("Old town skyline")
+    expect(html).toContain("https://example.com/old-town.jpg")
+    expect(html).toContain("Pricing")
+    expect(html).toContain("€249.50")
+    expect(html).toContain("€199.50")
+    expect(html).toContain("Breakfast")
+    expect(html).toContain("Subject to availability.")
+  })
+
+  it("wraps an existing printer with a replaceable themed section set", async () => {
+    const delegate = vi.fn(async () => ({
+      body: new Uint8Array([1, 2, 3]),
+      mimeType: "application/pdf",
+      fileSize: 3,
+      metadata: { renderer: "browser" },
+    }))
+    const printer = createThemedBrochurePrinter({
+      printer: delegate,
+      sections: [
+        {
+          id: "custom-cover",
+          render: ({ context }) => `<main><h1>${context.product.name}</h1></main>`,
+        },
+      ],
+    })
+
+    const artifact = await printer({
+      template: {
+        title: "Voyant City Break brochure",
+        filename: "voyant-city-break.pdf",
+        body: "# Ignored by custom sections",
+        bodyFormat: "markdown",
+        variables: {},
+        metadataLines: [],
+      },
+      context: templateContext,
+    })
+
+    expect(delegate).toHaveBeenCalledOnce()
+    const input = delegate.mock.calls[0]?.[0]
+    expect(input?.template.bodyFormat).toBe("html")
+    expect(input?.template.body).toContain("<main><h1>Voyant City Break</h1></main>")
+    expect(input?.template.body).not.toContain("Ignored by custom sections")
+    expect(artifact.metadata).toEqual({ renderer: "browser", layout: "themed-brochure" })
+  })
+
+  it("rejects the basic PDF printer for themed brochures", () => {
+    expect(() =>
+      createThemedBrochurePrinter({
+        printer: createBasicPdfProductBrochurePrinter(),
+      }),
+    ).toThrow(/HTML-capable browser printer/)
   })
 
   it("sanitizes unsafe markdown HTML before browser rendering", () => {

@@ -215,13 +215,13 @@ export const contracts = pgTable(
       onDelete: "set null",
     }),
 
-    personId: typeIdRef("person_id").references(() => people.id, { onDelete: "set null" }),
-    organizationId: typeIdRef("organization_id").references(() => organizations.id, {
-      onDelete: "set null",
-    }),
-    supplierId: typeIdRef("supplier_id").references(() => suppliers.id, {
-      onDelete: "set null",
-    }),
+    // Cross-module associations: plain id columns + `defineLink` at the
+    // deployment (person/organization/supplier link tables) + service-layer
+    // validation — NOT hard cross-package FKs, per module decoupling. (Matches
+    // channelId/bookingId below.)
+    personId: typeIdRef("person_id"),
+    organizationId: typeIdRef("organization_id"),
+    supplierId: typeIdRef("supplier_id"),
     channelId: typeIdRef("channel_id"),
 
     bookingId: typeIdRef("booking_id"),
@@ -286,7 +286,9 @@ export const contractSignatures = pgTable(
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email"),
     signerRole: text("signer_role"),
-    personId: typeIdRef("person_id").references(() => people.id, { onDelete: "set null" }),
+    // Cross-module association: plain id column + deployment `defineLink`, not a
+    // hard cross-package FK (see contracts.personId above).
+    personId: typeIdRef("person_id"),
     targetKind: legalTargetKindEnum("target_kind"),
     targetId: typeIdRef("target_id"),
     targetProvider: text("target_provider"),

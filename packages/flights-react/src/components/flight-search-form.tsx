@@ -79,12 +79,13 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
   }
 
   return (
-    <form onSubmit={submit} className="rounded-xl border bg-card px-5 py-5 shadow-sm">
+    <form onSubmit={submit} className="rounded-md border bg-card px-5 py-5 shadow-sm">
       {/* Single horizontal row. Every control is h-10 so the bar reads as
           one continuous strip. flex-wrap lets it stack at narrow widths. */}
       <div className="flex flex-wrap items-center gap-3">
         <ToggleGroup
           size="lg"
+          variant="outline"
           value={[tripType]}
           onValueChange={(v: string[]) => {
             const next = v[0] as TripType | undefined

@@ -3,7 +3,7 @@
 import { useAdminHref, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { DynamicCatalogPage as DynamicCatalogPageUi } from "../components/dynamic-catalog-page.js"
 import type { CatalogSearchParams } from "../index.js"
-import { CatalogVerticalHost } from "./catalog-vertical-host.js"
+import { type CatalogAdminScopeOptions, CatalogVerticalHost } from "./catalog-vertical-host.js"
 import { openHrefInNewTab } from "./open-in-new-tab.js"
 
 export interface DynamicCatalogHostProps {
@@ -12,6 +12,7 @@ export interface DynamicCatalogHostProps {
     updater: (prev: CatalogSearchParams) => CatalogSearchParams,
     replace?: boolean,
   ) => void
+  scopeOptions?: CatalogAdminScopeOptions
 }
 
 /**
@@ -20,7 +21,11 @@ export interface DynamicCatalogHostProps {
  * renders `CatalogVerticalHost` (markets/suppliers/products wiring) as the
  * no-search browse grid.
  */
-export function DynamicCatalogHost({ search, onSearchChange }: DynamicCatalogHostProps) {
+export function DynamicCatalogHost({
+  search,
+  onSearchChange,
+  scopeOptions,
+}: DynamicCatalogHostProps) {
   const resolveHref = useAdminHref()
   const nav = useOperatorAdminMessages().nav
 
@@ -40,6 +45,7 @@ export function DynamicCatalogHost({ search, onSearchChange }: DynamicCatalogHos
           onSearchChange={onSearchChange}
           embedded
           lockedFacets={lockedFacets}
+          scopeOptions={scopeOptions}
           onOpenDetail={(hit) =>
             openHrefInNewTab(resolveHref("catalog.detail", { surface: "products", id: hit.id }))
           }

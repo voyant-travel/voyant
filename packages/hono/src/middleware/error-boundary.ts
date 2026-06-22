@@ -1,6 +1,14 @@
 import { apiErrorSchema } from "@voyant-travel/types"
 import type { Context, MiddlewareHandler } from "hono"
 
+import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
+import {
+  type ErrorEvent,
+  noopReporter,
+  type Reporter,
+  safeCaptureException,
+} from "../observability/reporter.js"
+import { runWithRequestId } from "../observability/request-context.js"
 import { normalizeValidationError } from "../validation.js"
 
 function generateRequestId(): string {
@@ -11,11 +19,43 @@ function generateRequestId(): string {
     .join("")
 }
 
-export const requestId: MiddlewareHandler = async (c, next) => {
+/**
+ * Mints (or honors a trusted inbound) `x-request-id`, exposes it on the
+ * `X-Request-Id` response header and the `requestId` context variable, and runs
+ * the rest of the request inside the async-context store so `getRequestId()`
+ * works anywhere downstream (RFC #1553, primitive 1).
+ */
+export const requestId: MiddlewareHandler<{ Variables: { requestId?: string } }> = async (
+  c,
+  next,
+) => {
   const existing = c.req.header("x-request-id")
   const id = existing?.trim() || generateRequestId()
+  c.set("requestId", id)
   c.res.headers.set("X-Request-Id", id)
-  await next()
+  await runWithRequestId(id, next)
+}
+
+export interface HandleApiErrorOptions {
+  /**
+   * Observability sink for unhandled 5xx exceptions (RFC #1553, primitive 2).
+   * Defaults to {@link noopReporter}.
+   */
+  reporter?: Reporter
+  /** Logical app name stamped on emitted {@link ErrorEvent}s. Defaults to `"voyant"`. */
+  appName?: string
+}
+
+/**
+ * Forwards a normalized {@link ErrorEvent} to the reporter. Best-effort: never
+ * throws, and flushes an async reporter via `waitUntil` so capture doesn't
+ * block the response. Exported so non-`onError` catch points (e.g. the
+ * forwarded auth sub-app, which returns its own Response and never reaches the
+ * outer `onError`) can emit through the same path.
+ */
+export function reportException(reporter: Reporter, c: Context, event: ErrorEvent): void {
+  const ctx = tryGetExecutionCtx(c)
+  safeCaptureException(reporter, event, ctx ? (promise) => ctx.waitUntil(promise) : undefined)
 }
 
 const LOGGED_HEADERS = new Set([
@@ -31,7 +71,11 @@ const LOGGED_HEADERS = new Set([
   "x-request-id",
 ])
 
-export function handleApiError(err: unknown, c: Context): Response {
+export function handleApiError(
+  err: unknown,
+  c: Context,
+  options: HandleApiErrorOptions = {},
+): Response {
   const id = c.res.headers.get("X-Request-Id") || generateRequestId()
   const apiError = normalizeValidationError(err)
   const errRecord = err instanceof Object ? (err as Record<string, unknown>) : {}
@@ -67,12 +111,28 @@ export function handleApiError(err: unknown, c: Context): Response {
   }
 
   const statusCode = status >= 100 && status <= 599 ? status : 500
+
+  // Emit to the observability sink only for genuine server faults — handled
+  // 4xx (validation/auth) are expected and would be noise (RFC #1553).
+  if (statusCode >= 500) {
+    reportException(options.reporter ?? noopReporter, c, {
+      requestId: id,
+      app: options.appName ?? "voyant",
+      error: err,
+      context: { path: c.req.path, method: c.req.method, status: statusCode, code },
+    })
+  }
+
   return new Response(
     JSON.stringify(apiErrorSchema.parse({ error: errorMessage, code, requestId: id, details })),
     {
       status: statusCode,
       headers: {
         "content-type": "application/json",
+        // Carry the correlation id on the error response too — `onError`
+        // replaces `c.res`, which would otherwise drop the header set by the
+        // `requestId` middleware (RFC #1553).
+        "x-request-id": id,
       },
     },
   )

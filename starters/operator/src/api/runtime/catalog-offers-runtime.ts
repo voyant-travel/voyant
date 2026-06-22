@@ -9,7 +9,7 @@
  *   - the Voyant Connect client, constructed from env
  *     (`@voyant-travel/connect-sdk`),
  *   - the Typesense hero-field + dynamic-hotel lookups (TYPESENSE_* env),
- *   - destination-name resolution (`./lib/geo-resolver`).
+ *   - destination-name resolution (`@voyant-travel/plugin-voyant-connect`).
  */
 
 import {
@@ -21,9 +21,8 @@ import {
   createCatalogOffersAdminRoutes,
 } from "@voyant-travel/catalog/offers"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
+import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import type { Context, Hono } from "hono"
-
-import { createDestinationNameResolver } from "../lib/geo-resolver"
 
 interface PackageOffersEnv {
   VOYANT_API_KEY?: string
@@ -60,7 +59,7 @@ function resolveConnectClient(c: Context): CatalogOffersConnectClient | null {
     apiKey,
     operatorId,
     ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-  }) as unknown as CatalogOffersConnectClient
+  }) as CatalogOffersConnectClient
 }
 
 /**

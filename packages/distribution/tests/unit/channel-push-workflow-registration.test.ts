@@ -57,4 +57,20 @@ describe("channel-push workflow registration", () => {
       workflows.find((workflow) => workflow.id === "channel.content.push")?.config.schedule,
     ).toEqual({ every: "5m" })
   })
+
+  it("uses the all-channel concurrency key for scheduled null inputs", async () => {
+    await import("@voyant-travel/distribution/channel-push-workflows")
+
+    const workflows = __listRegisteredWorkflows()
+    const availabilityKey = workflows.find(
+      (workflow) => workflow.id === "channel.availability.push",
+    )?.config.concurrency?.key
+    const contentKey = workflows.find((workflow) => workflow.id === "channel.content.push")?.config
+      .concurrency?.key
+
+    expect(typeof availabilityKey).toBe("function")
+    expect(typeof contentKey).toBe("function")
+    expect((availabilityKey as (input: null) => string)(null)).toBe("all")
+    expect((contentKey as (input: null) => string)(null)).toBe("all")
+  })
 })

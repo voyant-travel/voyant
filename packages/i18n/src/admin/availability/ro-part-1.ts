@@ -26,6 +26,10 @@ export const adminAvailabilityMessagesRoPart1 = {
   statusSoldOut: "Epuizat",
   statusCancelled: "Anulat",
   productLabel: "Produs",
+  optionLabel: "Optiune",
+  optionMissingLabel: "Fara optiune",
+  optionMissingTooltip:
+    "Aceasta plecare nu are optiune, deci nu poate fi tarifata. Editeaz-o pentru a alege una.",
   timezoneLabel: "Fus orar",
   recurrenceLabel: "Recurenta",
   maxPaxLabel: "Max pax",

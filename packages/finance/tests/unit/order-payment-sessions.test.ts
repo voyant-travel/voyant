@@ -23,7 +23,7 @@ function stubDb(rows: SessionRow[]): PostgresJsDatabase {
     where: () => query,
     orderBy: () => Promise.resolve(rows),
   }
-  return { select: () => query } as unknown as PostgresJsDatabase
+  return { select: () => query } as PostgresJsDatabase
 }
 
 describe("createOrderPaymentSessions", () => {

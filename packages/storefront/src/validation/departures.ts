@@ -3,6 +3,7 @@ import {
   publicBookingSessionAllocationSchema,
   publicBookingSessionRepriceSummarySchema,
   publicBookingSessionSchema,
+  publicBookingSessionTravelerInputSchema,
   publicCreateBookingSessionSchema,
 } from "@voyant-travel/bookings/public-validation"
 import { publicBookingPaymentScheduleSchema } from "@voyant-travel/finance/public-validation"
@@ -354,6 +355,51 @@ export const storefrontBookingSessionBootstrapInputSchema = z
     }
   })
 
+/**
+ * Compatibility bootstrap input (issue voyant#1984).
+ *
+ * Hosts that surface imported catalog departures often cannot reconstruct the
+ * full native quote/session contract — they have a product, a departure, and a
+ * party size, but not the server's authoritative price. This input lets the
+ * server derive the slot/option/price itself from `{ productId, departureId,
+ * pax, currency, locale }` and answer with a normal booking session (or a
+ * structured, machine-readable rejection) instead of a `quote stale` 409.
+ */
+export const storefrontBookingSessionCompatBootstrapInputSchema = z.object({
+  productId: z.string().trim().min(1),
+  departureId: z.string().trim().min(1),
+  /** Defaults to `departureId` — native package departures are 1:1 with their availability slot. */
+  slotId: z.string().trim().min(1).optional(),
+  catalogId: z.string().trim().min(1).optional(),
+  optionId: z.string().trim().min(1).optional(),
+  optionUnitId: z.string().trim().min(1).optional(),
+  pricingCategoryId: z.string().trim().min(1).optional(),
+  pax: z.number().int().positive().max(99),
+  currency: z.string().trim().length(3).optional(),
+  locale: z.string().trim().min(2).max(35).optional(),
+  title: z.string().trim().min(1).max(255).optional(),
+  travelers: z.array(publicBookingSessionTravelerInputSchema).optional(),
+  holdMinutes: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 60)
+    .optional(),
+})
+
+/** Machine-readable rejection reasons for the storefront booking bootstrap (issue voyant#1984). */
+export const storefrontBookingBootstrapErrorCodeSchema = z.enum([
+  "DEPARTURE_NOT_FOUND",
+  "SLOT_NOT_FOUND",
+  "PRODUCT_MISMATCH",
+  "SLOT_DEPARTURE_MISMATCH",
+  "PRICING_UNAVAILABLE",
+  "QUOTE_STALE",
+  "SLOT_UNAVAILABLE",
+  "INSUFFICIENT_CAPACITY",
+  "BOOTSTRAP_FAILED",
+])
+
 export const storefrontBookingSessionPaymentPlanSchema = z.object({
   source: z.literal("storefront_default"),
   depositKind: z.enum(["none", "percent", "fixed_cents"]),
@@ -391,6 +437,18 @@ export const storefrontBookingSessionBootstrapSchema = z.object({
   availability: storefrontBookingSessionAvailabilitySnapshotSchema,
   allocation: z.array(publicBookingSessionAllocationSchema),
   currency: z.string(),
+})
+
+/** Structured, user-actionable rejection envelope for booking bootstrap (issue voyant#1984). */
+export const storefrontBookingBootstrapRejectionSchema = z.object({
+  error: z.string(),
+  code: storefrontBookingBootstrapErrorCodeSchema,
+  retryable: z.boolean(),
+  data: z
+    .object({
+      repricing: storefrontBookingSessionRepricingSnapshotSchema.optional(),
+    })
+    .optional(),
 })
 
 export const storefrontProductExtensionsQuerySchema = z.object({
@@ -467,6 +525,15 @@ export type StorefrontDeparturePricePreview = z.infer<typeof storefrontDeparture
 export type StorefrontBookingSessionBootstrapInput = z.infer<
   typeof storefrontBookingSessionBootstrapInputSchema
 >
+export type StorefrontBookingSessionCompatBootstrapInput = z.infer<
+  typeof storefrontBookingSessionCompatBootstrapInputSchema
+>
 export type StorefrontBookingSessionBootstrap = z.infer<
   typeof storefrontBookingSessionBootstrapSchema
+>
+export type StorefrontBookingBootstrapErrorCode = z.infer<
+  typeof storefrontBookingBootstrapErrorCodeSchema
+>
+export type StorefrontBookingBootstrapRejection = z.infer<
+  typeof storefrontBookingBootstrapRejectionSchema
 >

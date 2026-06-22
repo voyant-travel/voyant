@@ -1,5 +1,35 @@
 # @voyant-travel/ui
 
+## 0.108.1
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/utils@0.105.3
+
+## 0.108.0
+
+### Minor Changes
+
+- a74471e: Re-export sonner's `toast` from the components barrel, so consumers fire toasts via `@voyant-travel/ui` (alongside the already-exported `Toaster`) instead of importing `sonner` directly.
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+
+## 0.107.0
+
+### Minor Changes
+
+- 4f92198: Voyant 1.0 visual refactor of the framework UI.
+
+  - **Tokens** (`@voyant-travel/ui` `globals.css`): warm off-white paper, near-black ink, and a single hot-orange brand accent (`--brand`, new token) reserved for charts/focus/active state. Inter Tight type. Fixed brand chart palette (`--chart-1..5`). A coherent radius system: controls + their dropdowns at `rounded-sm` (4px), cards/table surfaces at `rounded-md` (6px), dialogs/sheets at `rounded-xl`.
+  - **`@voyant-travel/ui` components**: new `SegmentedControl`; `Button` gains a `brand` variant; sharper, consistent radii across Button/Input/Select/Combobox/Textarea/Toggle/Tabs/Menus/Command/Card/DataTable/Badge; bordered active sidebar items (primary + sub) and inset-panel border; assorted fixes (Command search-input radius, toggle-group corners, sidebar sub-menu spacing).
+  - **`@voyant-travel/admin`**: Voyant 1.0 brand logo lockup (composed mark + wordmark, collapse-to-badge); operator shell defaults to the inset sidebar layout; dashboard KPI cards, brand chart colors, and Figma-matched sidebar (bordered active item, near-black nav text, bordered user card with open-state).
+  - **Domain `*-react` packages**: card surfaces normalized to the new `rounded-md` radius; flights search bar (trip-type toggle, route cards, airport dropdown) and the resources tabs aligned to the system.
+
 ## 0.106.2
 
 ### Patch Changes

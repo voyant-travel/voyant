@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/inventory",
-  "version": "0.3.3",
+  "version": "0.4.7",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -41,7 +41,8 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=inventory_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
     "@voyant-travel/action-ledger": "workspace:^",
@@ -65,11 +66,14 @@
   "devDependencies": {
     "@types/sanitize-html": "^2.16.1",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

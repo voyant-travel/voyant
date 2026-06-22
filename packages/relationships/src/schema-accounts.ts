@@ -161,8 +161,12 @@ export const people = pgTable(
 /**
  * `person_directory` is a Postgres VIEW (not a table) that exposes
  * each person's primary email / phone / website by `LATERAL` lookup
- * against `identity_contact_points`. The view is created in the
- * 0028 migration; this binding gives Drizzle a typed read surface.
+ * against `identity_contact_points`. `.existing()` means drizzle-kit
+ * never emits its DDL, and it spans two modules (people + identity), so
+ * — like the cross-module link tables — it is shipped by hand in the
+ * deployment migration source, applied last once both owning packages'
+ * tables exist (`starters/operator/migrations/0002_person_directory_view.sql`).
+ * See issue #1971. This binding gives Drizzle a typed read surface.
  *
  * The previous `person_directory_projections` table was a denormalized
  * cache that had to be rebuilt on every contact-point change — see

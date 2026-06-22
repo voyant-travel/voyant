@@ -88,6 +88,7 @@ export {
 } from "./state-machine.js"
 export {
   BOOKING_RESOURCE_AVAILABILITY_STATUSES,
+  BOOKING_RESOURCE_CAPACITY_STATUSES,
   isBookingResourceAvailabilityStatus,
 } from "./status.js"
 export {

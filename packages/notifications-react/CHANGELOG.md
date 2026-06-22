@@ -1,5 +1,94 @@
 # @voyant-travel/notifications-react
 
+## 0.115.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/notifications@0.115.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.114.9
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.9
+
+## 0.114.8
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.8
+
+## 0.114.7
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/notifications@0.114.7
+
+## 0.114.6
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/notifications@0.114.6
+
+## 0.114.5
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.5
+
+## 0.114.4
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.4
+
+## 0.114.3
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.3
+
+## 0.114.2
+
+### Patch Changes
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/notifications@0.114.2
+
+## 0.114.1
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.1
+
+## 0.114.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/notifications@0.114.0
+
+## 0.113.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/notifications@0.113.0
+
 ## 0.112.0
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/catalog",
-  "version": "0.121.0",
+  "version": "0.131.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -51,10 +51,12 @@
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=catalog_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

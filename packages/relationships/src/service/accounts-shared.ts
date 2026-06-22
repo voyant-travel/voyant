@@ -44,7 +44,13 @@ export const organizationEntityType = "organization"
 export const personEntityType = "person"
 export const personBaseIdentitySource = "relationships.person.base"
 
-type PersonIdentityInput = Pick<CreatePersonInput, "email" | "phone" | "website">
+// Each field is optional: `undefined` means "leave the existing contact point
+// unchanged" (partial update), `null`/empty means "clear it", a value upserts.
+type PersonIdentityInput = {
+  email?: string | null
+  phone?: string | null
+  website?: string | null
+}
 
 export type PersonHydratedFields = {
   email: string | null
@@ -152,6 +158,12 @@ export async function syncPersonIdentity(
     phone: data.phone,
     website: data.website,
   }) as Array<["email" | "phone" | "website", string | null | undefined]>) {
+    // `undefined` means the caller did not touch this field — leave the existing
+    // contact point alone. Only an explicit null / empty string clears it. This
+    // keeps partial updates (PATCH) from deleting contact points the request
+    // never mentioned — critical now that callers no longer backfill omitted
+    // fields from a (possibly degraded) hydrated read. See issue #1971.
+    if (rawValue === undefined) continue
     const value = toNullableTrimmed(rawValue)
     const existing =
       managedContactPoints.find((point) => point.kind === kind) ??

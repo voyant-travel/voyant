@@ -1,7 +1,3 @@
-import { and, asc, desc, eq, getTableColumns, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import { productsRef } from "./products-ref.js"
 import {
   availabilityPickupPoints,
   availabilitySlotPickups,
@@ -10,7 +6,10 @@ import {
   pickupGroups,
   pickupLocations,
   productMeetingConfigs,
-} from "./schema.js"
+} from "@voyant-travel/availability/schema"
+import { and, asc, desc, eq, getTableColumns, sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { productsRef } from "./products-ref.js"
 import type {
   AvailabilityPickupPointListQuery,
   AvailabilitySlotPickupListQuery,

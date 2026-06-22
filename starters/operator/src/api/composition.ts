@@ -18,6 +18,7 @@
  * the runtime half of the migration-resilience work (voyant#1608 / #1620).
  */
 
+import { cruisesModule } from "@voyant-travel/cruises"
 import {
   extensionsFromGlob,
   FRAMEWORK_RUNTIME_MANIFEST,
@@ -33,10 +34,12 @@ import type {
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
+import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import { relationshipsService } from "@voyant-travel/relationships"
 import { Hono } from "hono"
 import { resolveOperatorCustomFields } from "../lib/custom-fields"
 import { resolveNotificationProviders } from "../lib/notifications"
+import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
 import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
 import { buildCatalogContext } from "./lib/catalog-context"
 import { createBookingScheduleExtension } from "./routes/booking-schedule"
@@ -226,6 +229,34 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     lazyPublicRoutes: () =>
       import("./routes/invitations").then((m) => m.createInvitationsPublicRoutes()),
   }),
+  // Cloud-mode team management mounted at /v1/admin/team — proxies member
+  // management to the Voyant Cloud platform when VOYANT_ADMIN_AUTH_MODE is
+  // "voyant-cloud". The local invitations surface above stays the local-mode
+  // path; these routes 404 in local mode.
+  "operator/team": () => ({
+    module: { name: "team" },
+    lazyAdminRoutes: () => import("./routes/team").then((m) => m.createTeamAdminRoutes()),
+  }),
+  // Cruise admin/public routes mounted at /v1/{admin,public}/cruises with the
+  // booking-engine SourceAdapterRegistry injected into context. Provider-neutral:
+  // external cruise providers are wired in `lib/cruise-adapters-runtime.ts`.
+  // Reuse the package's `cruisesModule` metadata (not a bare `{ name }`) so the
+  // `requiresTransactionalDb` flag survives — createApp routes these prefixes to
+  // the transactional DB, which the cruise mutation/booking handlers need.
+  "operator/cruises": () => ({
+    module: cruisesModule,
+    lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
+    lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
+  }),
+  // Realtime channels (voyant#1695). Mints scoped client tokens at
+  // /v1/{admin,public}/realtime/token and bridges domain events to channels as
+  // invalidation hints. Provider-agnostic and fully optional: inert until
+  // VOYANT_REALTIME_ENABLED is set (see lib/realtime.ts).
+  "operator/realtime": () =>
+    createRealtimeHonoModule({
+      resolveProviders: resolveRealtimeProviders,
+      bridgeRoutes: operatorRealtimeBridgeRoutes,
+    }),
 }
 
 /**

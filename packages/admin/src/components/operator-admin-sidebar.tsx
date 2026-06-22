@@ -67,16 +67,15 @@ export function DefaultOperatorAdminBrand({
           asChild
           tooltip="Voyant"
           size="lg"
-          className="group-data-[collapsible=icon]:justify-center"
+          className="gap-2 text-foreground group-data-[collapsible=icon]:justify-center"
         >
           <LinkComponent href={href} target="_self" aria-label="Voyant">
-            <VoyantMark
-              aria-hidden="true"
-              className="hidden! size-5! shrink-0 group-data-[collapsible=icon]:block!"
-            />
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-foreground text-background">
+              <VoyantMark aria-hidden="true" className="size-4!" />
+            </span>
             <VoyantWordmark
               aria-hidden="true"
-              className="h-6! w-auto! group-data-[collapsible=icon]:hidden!"
+              className="h-[1.125rem]! w-auto! group-data-[collapsible=icon]:hidden!"
             />
           </LinkComponent>
         </SidebarMenuButton>
@@ -95,6 +94,7 @@ export function OperatorAdminSidebar({
   navItems,
   onSignOut,
   user,
+  variant = "inset",
   ...props
 }: OperatorAdminSidebarProps) {
   const messages = useOperatorAdminMessages()
@@ -106,7 +106,7 @@ export function OperatorAdminSidebar({
   const settingsActive = navUrlMatchesPath("/settings", currentPath)
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" variant={variant} {...props}>
       <SidebarHeader>{resolvedBrand}</SidebarHeader>
       <SidebarContent>
         <AdminNavGroup

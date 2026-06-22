@@ -1,5 +1,105 @@
 # @voyant-travel/octo
 
+## 0.104.34
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/inventory@0.4.7
+  - @voyant-travel/operations@0.2.8
+
+## 0.104.33
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.4.6
+- @voyant-travel/operations@0.2.7
+- @voyant-travel/bookings@0.132.0
+
+## 0.104.32
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/bookings@0.131.1
+  - @voyant-travel/inventory@0.4.5
+  - @voyant-travel/operations@0.2.6
+  - @voyant-travel/db@0.108.5
+
+## 0.104.31
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/inventory@0.4.3
+- @voyant-travel/operations@0.2.4
+
+## 0.104.30
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.130.0
+- @voyant-travel/inventory@0.4.2
+- @voyant-travel/operations@0.2.3
+
+## 0.104.29
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.4.1
+- @voyant-travel/operations@0.2.2
+- @voyant-travel/bookings@0.129.0
+
+## 0.104.28
+
+### Patch Changes
+
+- Updated dependencies [9c47b00]
+  - @voyant-travel/inventory@0.4.0
+  - @voyant-travel/bookings@0.128.0
+  - @voyant-travel/operations@0.2.1
+
+## 0.104.27
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/operations@0.2.0
+  - @voyant-travel/bookings@0.127.0
+  - @voyant-travel/inventory@0.3.9
+
+## 0.104.26
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.3.6
+- @voyant-travel/bookings@0.126.0
+- @voyant-travel/operations@0.1.6
+
+## 0.104.25
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/inventory@0.3.5
+- @voyant-travel/bookings@0.125.0
+- @voyant-travel/operations@0.1.5
+- @voyant-travel/hono@0.112.2
+
+## 0.104.24
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/inventory@0.3.4
+- @voyant-travel/operations@0.1.4
+
 ## 0.104.23
 
 ### Patch Changes

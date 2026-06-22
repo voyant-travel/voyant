@@ -1,5 +1,62 @@
 # @voyant-travel/identity
 
+## 0.133.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/identity-contracts@0.104.4
+
+## 0.132.0
+
+## 0.131.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/db@0.108.5
+
+## 0.131.0
+
+## 0.130.0
+
+## 0.129.0
+
+## 0.128.0
+
+## 0.127.0
+
+## 0.126.1
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+
+## 0.126.0
+
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/identity-contracts@0.104.3
+- @voyant-travel/hono@0.112.2
+
+## 0.124.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+
 ## 0.123.0
 
 ### Patch Changes

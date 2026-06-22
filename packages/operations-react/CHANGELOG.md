@@ -1,5 +1,133 @@
 # @voyant-travel/operations-react
 
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/operations@0.2.8
+  - @voyant-travel/bookings-react@0.133.0
+  - @voyant-travel/inventory-react@0.15.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.13.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.132.0
+- @voyant-travel/operations@0.2.7
+- @voyant-travel/inventory-react@0.14.0
+
+## 0.12.0
+
+### Minor Changes
+
+- 310565b: Surface a missing-option warning in the departures (availability slots) list (#2062).
+
+  The slots table now has an Option column that shows each departure's option name
+  and flags — with an amber badge + tooltip — any slot that has no option on a
+  product that actually has options (i.e. an unpriceable departure that should be
+  repaired via the option picker). Products without options are not flagged. The
+  column resolves names from one capped active-options query per visible product,
+  so a missing linkage is discoverable from the list, not just inside the edit
+  dialog.
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/bookings-react@0.131.0
+  - @voyant-travel/inventory-react@0.13.0
+  - @voyant-travel/operations@0.2.4
+
+## 0.11.0
+
+### Minor Changes
+
+- dbea53e: Add an option picker to the admin departure (availability slot) form (#2059).
+
+  The slot create/edit dialog now lets an operator choose which of the product's
+  active options a departure belongs to — populated from the product's options
+  (default marked), required when the product has options, and pre-selected from
+  the slot's current `optionId` on edit so an unpriceable/incorrect slot can be
+  repaired through the UI. Selecting a different product clears the stale option.
+  This complements the pricing-correctness fixes in #2058: a departure's price is
+  derived from its option's rate plans, so a slot must point at an option.
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/bookings-react@0.130.0
+  - @voyant-travel/inventory-react@0.12.0
+  - @voyant-travel/operations@0.2.3
+
+## 0.10.0
+
+### Patch Changes
+
+- @voyant-travel/operations@0.2.2
+- @voyant-travel/bookings-react@0.129.0
+- @voyant-travel/inventory-react@0.11.0
+
+## 0.9.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.10.0
+- @voyant-travel/bookings-react@0.128.0
+- @voyant-travel/operations@0.2.1
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/operations@0.2.0
+  - @voyant-travel/bookings-react@0.127.0
+  - @voyant-travel/inventory-react@0.9.0
+
+## 0.7.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.126.0
+- @voyant-travel/inventory-react@0.8.0
+- @voyant-travel/operations@0.1.6
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/bookings-react@0.125.0
+  - @voyant-travel/inventory-react@0.7.0
+  - @voyant-travel/operations@0.1.5
+
+## 0.5.0
+
+### Patch Changes
+
+- 4f92198: Voyant 1.0 visual refactor of the framework UI.
+
+  - **Tokens** (`@voyant-travel/ui` `globals.css`): warm off-white paper, near-black ink, and a single hot-orange brand accent (`--brand`, new token) reserved for charts/focus/active state. Inter Tight type. Fixed brand chart palette (`--chart-1..5`). A coherent radius system: controls + their dropdowns at `rounded-sm` (4px), cards/table surfaces at `rounded-md` (6px), dialogs/sheets at `rounded-xl`.
+  - **`@voyant-travel/ui` components**: new `SegmentedControl`; `Button` gains a `brand` variant; sharper, consistent radii across Button/Input/Select/Combobox/Textarea/Toggle/Tabs/Menus/Command/Card/DataTable/Badge; bordered active sidebar items (primary + sub) and inset-panel border; assorted fixes (Command search-input radius, toggle-group corners, sidebar sub-menu spacing).
+  - **`@voyant-travel/admin`**: Voyant 1.0 brand logo lockup (composed mark + wordmark, collapse-to-badge); operator shell defaults to the inset sidebar layout; dashboard KPI cards, brand chart colors, and Figma-matched sidebar (bordered active item, near-black nav text, bordered user card with open-state).
+  - **Domain `*-react` packages**: card surfaces normalized to the new `rounded-md` radius; flights search bar (trip-type toggle, route cards, airport dropdown) and the resources tabs aligned to the system.
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/inventory-react@0.6.0
+  - @voyant-travel/bookings-react@0.124.0
+  - @voyant-travel/operations@0.1.4
+
 ## 0.4.0
 
 ### Patch Changes

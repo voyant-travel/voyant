@@ -1,5 +1,42 @@
 # @voyant-travel/products-contracts
 
+## 0.105.10
+
+### Patch Changes
+
+- Updated dependencies [b68d6a7]
+  - @voyant-travel/schema-kit@0.107.0
+
+## 0.105.9
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog-contracts@0.108.0
+
+## 0.105.8
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/schema-kit@0.106.1
+
+## 0.105.7
+
+### Patch Changes
+
+- fe6af54: Defer the cross-package `boardBasisSchema` dereference in the product and cruise `content-shape` schemas with `z.lazy(() => boardBasisSchema)`.
+
+  It was dereferenced at module-evaluation time, so app worker bundles (rolldown/vite) that split it into a circular chunk observed it `undefined` and threw `TypeError: Cannot read properties of undefined (reading 'nullable')`, 500ing every catalog read. No change to validation behavior or inferred types.
+
+## 0.105.6
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/schema-kit@0.106.0
+
 ## 0.105.5
 
 ### Patch Changes

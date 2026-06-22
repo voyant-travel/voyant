@@ -1,5 +1,67 @@
 # @voyant-travel/i18n
 
+## 0.108.0
+
+### Minor Changes
+
+- 4abf9a2: Deployment team management + granular member RBAC (voyant#2085).
+
+  - `@voyant-travel/types`: `member-roles` (preset bundles reusing the API-key permission catalog) + `settings`/`team` resources.
+  - `@voyant-travel/auth`: `cloud-broker` member-management client + assertion `scopes`.
+  - `@voyant-travel/hono`: opt-in staff-session scope enforcement in `requireActor` (`VOYANT_RBAC_ENFORCE`) + `isStaffRbacEnforced`.
+  - `@voyant-travel/admin`: auth-mode-aware `TeamSettingsPage` with a granular permission editor.
+  - `@voyant-travel/bookings`/`legal`: PII reveal gated on `bookings-pii:read` under enforcement.
+  - `@voyant-travel/db`: `user_profiles.permissions` + `cloud_auth_user_links.scopes`.
+
+## 0.107.4
+
+### Patch Changes
+
+- ba89f0b: Let admin departure edits choose and persist a product option so existing departures with a missing option can be repaired from the UI. Explicit slot option links are now validated against the slot product while product-level generated slots can still omit an option.
+
+## 0.107.3
+
+### Patch Changes
+
+- 310565b: Surface a missing-option warning in the departures (availability slots) list (#2062).
+
+  The slots table now has an Option column that shows each departure's option name
+  and flags — with an amber badge + tooltip — any slot that has no option on a
+  product that actually has options (i.e. an unpriceable departure that should be
+  repaired via the option picker). Products without options are not flagged. The
+  column resolves names from one capped active-options query per visible product,
+  so a missing linkage is discoverable from the list, not just inside the edit
+  dialog.
+
+## 0.107.2
+
+### Patch Changes
+
+- dbea53e: Add an option picker to the admin departure (availability slot) form (#2059).
+
+  The slot create/edit dialog now lets an operator choose which of the product's
+  active options a departure belongs to — populated from the product's options
+  (default marked), required when the product has options, and pre-selected from
+  the slot's current `optionId` on edit so an unpriceable/incorrect slot can be
+  repaired through the UI. Selecting a different product clears the stale option.
+  This complements the pricing-correctness fixes in #2058: a departure's price is
+  derived from its option's rate plans, so a slot must point at an option.
+
+## 0.107.1
+
+### Patch Changes
+
+- c64d288: Fix Romanian i18n gaps on operator admin surfaces.
+
+  - `@voyant-travel/catalog-react`: the cruises and accommodations browse pages rendered the static English route `title` prop as their heading; they now read the localized label from `useOperatorAdminMessages().nav.*`, matching the other catalog verticals.
+  - `@voyant-travel/i18n`: corrected the quotes terminology in Romanian (operator nav + CRM org-detail) from "Cotatii" to "Oferte" so it matches the quotes package, and added a `trips.list.composeTrip` label (used by the operator's "Compose trip" action on the bookings list).
+
+## 0.107.0
+
+### Minor Changes
+
+- a74471e: Quotes admin surface. A pipeline board (`/quotes`) plus a full quote workspace (`/quotes/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the quote's versions nested inline. The quote value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `quotes.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.quotes` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a quote description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
+
 ## 0.106.1
 
 ### Patch Changes

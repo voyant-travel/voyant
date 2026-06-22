@@ -1,5 +1,108 @@
 # @voyant-travel/flights
 
+## 0.133.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/catalog@0.131.0
+
+## 0.132.0
+
+### Minor Changes
+
+- 6a0edd2: Add the live availability-search primitive (dynamic-packaging RFC, voyant#2081 / voyant#1600) — keystone gap 1.
+
+  - **`@voyant-travel/catalog-contracts`** — new `supportsAvailabilitySearch` capability flag, the `AvailabilitySearchRequest` / `AvailabilityCandidate` / `AvailabilitySearchResult` shapes, and a capability-gated `searchAvailability` method on the `SourceAdapter` contract. `searchAvailability` searches an inventory space (destination + dates + pax → ranked candidates), as opposed to `liveResolve` which resolves volatile fields for an already-selected entity. Internal economics (net/margin/supplier ref) live under `AvailabilityCandidate.providerData` and must never appear in public DTOs.
+  - **`@voyant-travel/catalog`** — `fanOutAvailabilitySearch`, the vertical-agnostic counterpart of the flights fan-out: parallelizes `searchAvailability` across sourced connections and owned search handlers with a per-source timeout, partial-success status map, and a price-ranked merge. Adds an owned-availability-search-handler registry (`createOwnedAvailabilitySearchHandlerRegistry`) so owned inventory is a first-class search source alongside sourced adapters, mirroring the owned-booking-handler vs source-adapter split.
+  - **`@voyant-travel/flights`** — `mergedFlightOfferToCandidate` / `mergedFlightOffersToCandidates` bridge mapping the flights-native `MergedFlightOffer` onto the normalized `AvailabilityCandidate`. A mapping, not a re-implementation — flights keep their own connector contract and fan-out.
+
+  Additive only; no behavioral change to existing adapters (the new method and capability are optional). Follow-ups on voyant#2081: a concrete accommodations owned-search handler and the Voyant Connect `searchAvailability` implementation.
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog-contracts@0.108.0
+  - @voyant-travel/catalog@0.130.0
+  - @voyant-travel/flights-contracts@0.104.5
+
+## 0.131.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/catalog@0.129.1
+  - @voyant-travel/db@0.108.5
+
+## 0.131.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.129.0
+
+## 0.130.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.128.0
+
+## 0.129.0
+
+### Patch Changes
+
+- Updated dependencies [7779772]
+  - @voyant-travel/catalog@0.127.0
+
+## 0.128.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.126.0
+
+## 0.127.0
+
+### Patch Changes
+
+- c143531: D.2: onboard package-owned migrations for `flights` and `catalog-authoring`.
+
+  Both packages own tables that the retired framework bundle materialised but had
+  no per-package migration source — `flights` owns the `reference_airlines` /
+  `reference_airports` / `reference_aircraft` reference tables, and
+  `catalog-authoring` owns `product_authoring_requests` (via its re-export of the
+  inventory authoring schema). Without their own migration folders a fresh D.2
+  database would silently miss these tables.
+
+  Each now ships a generated `migrations/` folder (baseline) and a `db:generate`
+  script, and is published in the package tarball. The D.2 union verifier gained a
+  **reverse-coverage** gate so an un-onboarded owner can never slip through again:
+  every bundle table must be claimed by some package source.
+
+  - @voyant-travel/catalog@0.125.0
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.124.0
+
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/catalog@0.123.0
+- @voyant-travel/hono@0.112.2
+
+## 0.124.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/catalog@0.122.0
+
 ## 0.123.0
 
 ### Patch Changes

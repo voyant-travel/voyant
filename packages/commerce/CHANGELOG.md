@@ -1,5 +1,179 @@
 # @voyant-travel/commerce
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/legal@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/catalog@0.131.0
+  - @voyant-travel/distribution@0.123.0
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/quotes@0.122.11
+  - @voyant-travel/workflow-runs@0.111.4
+  - @voyant-travel/products-contracts@0.105.10
+  - @voyant-travel/workflows@0.111.4
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog@0.130.0
+  - @voyant-travel/products-contracts@0.105.9
+  - @voyant-travel/distribution@0.122.0
+  - @voyant-travel/bookings@0.132.0
+  - @voyant-travel/quotes@0.122.10
+  - @voyant-travel/finance@0.132.0
+  - @voyant-travel/legal@0.132.0
+
+## 0.13.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/bookings@0.131.1
+  - @voyant-travel/catalog@0.129.1
+  - @voyant-travel/distribution@0.121.1
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/legal@0.131.1
+  - @voyant-travel/quotes@0.122.9
+  - @voyant-travel/workflow-runs@0.111.3
+  - @voyant-travel/db@0.108.5
+  - @voyant-travel/workflows@0.111.3
+
+## 0.13.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/catalog@0.129.0
+- @voyant-travel/distribution@0.121.0
+- @voyant-travel/finance@0.131.0
+- @voyant-travel/legal@0.131.0
+- @voyant-travel/quotes@0.122.8
+
+## 0.12.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.130.0
+- @voyant-travel/catalog@0.128.0
+- @voyant-travel/distribution@0.120.0
+- @voyant-travel/finance@0.130.0
+- @voyant-travel/legal@0.130.0
+- @voyant-travel/quotes@0.122.7
+
+## 0.11.1
+
+### Patch Changes
+
+- 733bf33: Stop a bookable departure from rendering "price on request" when an option has a stray empty default rate plan (#1601).
+
+  - **commerce** — `createOptionPriceRule`/`updateOptionPriceRule` now enforce a single active default rate plan per `(option, price catalog)`. Writing or promoting a default plan demotes any sibling default in the same scope inside a transaction, so a save path can no longer fan out several active `is_default` rows where only the newest carries prices.
+  - **storefront** — the public departures pricing reader now prefers a rate plan that actually carries a price (positive base amount or a priced active unit rule) before falling back to the `is_default` flag, so a stray empty default can't mask the real priced plan and force a "price on request".
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [7779772]
+  - @voyant-travel/catalog@0.127.0
+  - @voyant-travel/distribution@0.119.0
+  - @voyant-travel/quotes@0.122.5
+  - @voyant-travel/bookings@0.129.0
+  - @voyant-travel/finance@0.129.0
+  - @voyant-travel/legal@0.129.0
+
+## 0.10.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.128.0
+- @voyant-travel/catalog@0.126.0
+- @voyant-travel/distribution@0.118.0
+- @voyant-travel/finance@0.128.0
+- @voyant-travel/legal@0.128.0
+- @voyant-travel/quotes@0.122.4
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/bookings@0.127.0
+  - @voyant-travel/distribution@0.117.0
+  - @voyant-travel/finance@0.127.0
+  - @voyant-travel/legal@0.127.0
+  - @voyant-travel/catalog@0.125.0
+  - @voyant-travel/quotes@0.122.3
+
+## 0.8.1
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/quotes@0.122.2
+  - @voyant-travel/distribution@0.116.1
+  - @voyant-travel/catalog@0.124.1
+  - @voyant-travel/finance@0.126.1
+  - @voyant-travel/legal@0.126.1
+  - @voyant-travel/workflow-runs@0.111.2
+  - @voyant-travel/workflows@0.111.2
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [84b9d4b]
+  - @voyant-travel/legal@0.126.0
+  - @voyant-travel/bookings@0.126.0
+  - @voyant-travel/catalog@0.124.0
+  - @voyant-travel/distribution@0.116.0
+  - @voyant-travel/finance@0.126.0
+  - @voyant-travel/quotes@0.122.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/quotes@0.122.0
+  - @voyant-travel/db@0.108.3
+  - @voyant-travel/products-contracts@0.105.6
+  - @voyant-travel/bookings@0.125.0
+  - @voyant-travel/catalog@0.123.0
+  - @voyant-travel/distribution@0.115.0
+  - @voyant-travel/finance@0.125.0
+  - @voyant-travel/legal@0.125.0
+  - @voyant-travel/workflow-runs@0.111.0
+  - @voyant-travel/workflows@0.111.0
+  - @voyant-travel/hono@0.112.2
+
+## 0.6.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/workflow-runs@0.110.0
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/catalog@0.122.0
+- @voyant-travel/distribution@0.114.0
+- @voyant-travel/finance@0.124.0
+- @voyant-travel/legal@0.124.0
+- @voyant-travel/workflows@0.110.0
+- @voyant-travel/quotes@0.121.1
+
 ## 0.5.0
 
 ### Patch Changes

@@ -2,6 +2,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it } from "vitest"
 
 import { loadResourceCapacityViolations } from "../../src/service.js"
+import { BOOKING_RESOURCE_CAPACITY_STATUSES } from "../../src/status.js"
 
 /**
  * Scripted `db.execute` mock. The capacity check must issue exactly:
@@ -12,14 +13,16 @@ import { loadResourceCapacityViolations } from "../../src/service.js"
  */
 function mockDb(responses: ReadonlyArray<unknown>) {
   let calls = 0
+  const queries: unknown[] = []
   const db = {
-    execute: async () => {
+    execute: async (query: unknown) => {
+      queries.push(query)
       const response = responses[calls] ?? []
       calls++
       return response
     },
   }
-  return { db: db as PostgresJsDatabase, executeCount: () => calls }
+  return { db: db as PostgresJsDatabase, executeCount: () => calls, queries }
 }
 
 const resource = (id: string, kind: string, capacity: number, slotId = "slot_1") => ({
@@ -31,7 +34,7 @@ const resource = (id: string, kind: string, capacity: number, slotId = "slot_1")
 
 describe("loadResourceCapacityViolations (grouped count)", () => {
   it("checks all allocation entries with two queries total (lock + one grouped count)", async () => {
-    const { db, executeCount } = mockDb([
+    const { db, executeCount, queries } = mockDb([
       // lock query: both resources exist with matching kinds
       [resource("alrs_room1", "room", 2), resource("alrs_bus1", "bus", 40)],
       // grouped count: room is full, bus has plenty of headroom
@@ -47,6 +50,12 @@ describe("loadResourceCapacityViolations (grouped count)", () => {
     })
 
     expect(executeCount()).toBe(2)
+    const groupedQueryValues = flattenSqlQueryChunks(queries[1])
+    for (const status of BOOKING_RESOURCE_CAPACITY_STATUSES) {
+      expect(groupedQueryValues).toContain(status)
+    }
+    expect(groupedQueryValues).not.toContain("pending")
+    expect(groupedQueryValues).not.toContain("checked_in")
     expect(violations).toEqual([
       {
         slotId: "slot_1",
@@ -110,3 +119,20 @@ describe("loadResourceCapacityViolations (grouped count)", () => {
     expect(executeCount()).toBe(0)
   })
 })
+
+function flattenSqlQueryChunks(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => flattenSqlQueryChunks(entry))
+  }
+
+  if (typeof value === "object" && value !== null) {
+    if ("queryChunks" in value) {
+      return flattenSqlQueryChunks((value as { queryChunks: unknown }).queryChunks)
+    }
+    if ("value" in value) {
+      return flattenSqlQueryChunks((value as { value: unknown }).value)
+    }
+  }
+
+  return [value]
+}

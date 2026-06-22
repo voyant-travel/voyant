@@ -1,5 +1,112 @@
 # @voyant-travel/crm
 
+## 0.120.13
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/action-ledger@0.105.5
+  - @voyant-travel/identity@0.133.0
+  - @voyant-travel/relationships-contracts@0.108.2
+
+## 0.120.12
+
+### Patch Changes
+
+- @voyant-travel/identity@0.132.0
+
+## 0.120.11
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/action-ledger@0.105.4
+  - @voyant-travel/identity@0.131.1
+  - @voyant-travel/db@0.108.5
+
+## 0.120.10
+
+### Patch Changes
+
+- @voyant-travel/identity@0.131.0
+
+## 0.120.9
+
+### Patch Changes
+
+- @voyant-travel/identity@0.130.0
+
+## 0.120.8
+
+### Patch Changes
+
+- 7929dae: Stop relationships people reads/updates from breaking when `person_directory` is missing (fixes #1971).
+
+  `personDirectoryView` is a `pgView(...).existing()`, so drizzle-kit never emits its DDL — neither the per-package relationships migration source nor `drizzle-kit push` materialises it. A schema-derived operator DB therefore lacked the view, and every relationships read that hydrates contact points failed with Postgres `42P01`: list people degraded to un-hydrated rows, while get/create/update person 500'd.
+
+  - The view is now created by the deployment migration source (it spans the relationships `people` and identity `identity_contact_points` tables, so — like the cross-module link tables — it ships in the deployment folder the collector applies last, after both owning packages' tables exist).
+  - Defense-in-depth: the by-id read path (and CSV export) now degrade to base rows on hydration failure, matching the list path, instead of 500ing.
+  - `updatePerson` no longer backfills omitted identity fields from the hydrated read before syncing — a partial PATCH that omits email/phone/website now leaves those contact points untouched instead of deleting them when the directory read has degraded. `syncPersonIdentity` treats an omitted (`undefined`) field as "leave unchanged"; only an explicit null/empty value clears it.
+  - Fixed the stale schema comment that pointed at the wrong migration.
+
+## 0.120.7
+
+### Patch Changes
+
+- @voyant-travel/identity@0.129.0
+
+## 0.120.6
+
+### Patch Changes
+
+- @voyant-travel/identity@0.128.0
+
+## 0.120.5
+
+### Patch Changes
+
+- @voyant-travel/identity@0.127.0
+
+## 0.120.4
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/identity@0.126.1
+  - @voyant-travel/action-ledger@0.105.3
+
+## 0.120.3
+
+### Patch Changes
+
+- @voyant-travel/identity@0.126.0
+
+## 0.120.2
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/relationships-contracts@0.108.1
+- @voyant-travel/identity@0.125.0
+- @voyant-travel/hono@0.112.2
+
+## 0.120.1
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/identity@0.124.0
+
 ## 0.120.0
 
 ### Minor Changes

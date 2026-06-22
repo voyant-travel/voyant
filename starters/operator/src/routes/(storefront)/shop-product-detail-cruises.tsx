@@ -9,6 +9,7 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
+import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
 import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   BackLink,
@@ -24,6 +25,7 @@ import {
 
 export function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
+  const t = useStorefrontMessagesOrDefault().shopDetailCruises
 
   const content = useQuery({
     queryKey: ["public-cruise-content", entityId],
@@ -107,10 +109,10 @@ export function CruiseDetailPage({ entityId }: { entityId: string }): React.Reac
           }}
         >
           <div className="space-y-3">
-            <Label>Occupancy</Label>
+            <Label>{t.occupancy}</Label>
             <PaxStepper
-              label="Guests in cabin"
-              hint="Per-pax pricing"
+              label={t.guestsInCabin}
+              hint={t.perPaxPricing}
               value={occupancy}
               setValue={setOccupancy}
               min={1}
@@ -140,6 +142,7 @@ function CruiseDetailBody({
   onSelectCabinCategory: (id: string) => void
   occupancy: number
 }): React.ReactElement {
+  const t = useStorefrontMessagesOrDefault().shopDetailCruises
   return (
     <div className="space-y-4">
       {content.cruise.hero_image_url ? (
@@ -154,8 +157,10 @@ function CruiseDetailBody({
         <CardContent className="space-y-3">
           {content.ship?.name ? (
             <div className="text-muted-foreground text-sm">
-              Aboard <span className="font-medium">{content.ship.name}</span>
-              {content.cruise.duration_nights ? ` · ${content.cruise.duration_nights} nights` : ""}
+              {t.aboard} <span className="font-medium">{content.ship.name}</span>
+              {content.cruise.duration_nights
+                ? ` · ${t.nights.replace("{count}", String(content.cruise.duration_nights))}`
+                : ""}
             </div>
           ) : null}
           {content.cruise.description ? (
@@ -171,17 +176,17 @@ function CruiseDetailBody({
 
       <Card>
         <CardHeader>
-          <CardTitle>Choose a sailing</CardTitle>
+          <CardTitle>{t.chooseSailing}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground text-xs uppercase">
-                  <th className="py-2">Date</th>
-                  <th className="py-2">Route</th>
-                  <th className="py-2">Nights</th>
-                  <th className="py-2 text-right">Status</th>
+                  <th className="py-2">{t.colDate}</th>
+                  <th className="py-2">{t.colRoute}</th>
+                  <th className="py-2">{t.colNights}</th>
+                  <th className="py-2 text-right">{t.colStatus}</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,7 +210,7 @@ function CruiseDetailBody({
                           : (sailing.embarkation_port ?? "—")}
                       </td>
                       <td className="py-2">{sailing.duration_nights ?? "—"}</td>
-                      <td className="py-2 text-right">{soldOut ? "Sold out" : "Available"}</td>
+                      <td className="py-2 text-right">{soldOut ? t.soldOut : t.available}</td>
                     </tr>
                   )
                 })}
@@ -218,7 +223,7 @@ function CruiseDetailBody({
       {selectedSailingId && content.cabin_categories.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Choose a cabin</CardTitle>
+            <CardTitle>{t.chooseCabin}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {content.cabin_categories.map((cat) => {
@@ -237,8 +242,7 @@ function CruiseDetailBody({
               )
             })}
             <p className="text-muted-foreground text-xs">
-              Pricing is per guest at occupancy {occupancy}; the sidebar total reflects the cabin
-              charge.
+              {t.pricingPerGuest.replace("{occupancy}", String(occupancy))}
             </p>
           </CardContent>
         </Card>
@@ -248,6 +252,7 @@ function CruiseDetailBody({
 }
 
 function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> }) {
+  const t = useStorefrontMessagesOrDefault().shopDetailCruises
   const deckPlanImages = [
     ...(ship.deck_plan_url ? [ship.deck_plan_url] : []),
     ...(ship.deck_plans ?? []).flatMap((deck) => (deck.image_url ? [deck.image_url] : [])),
@@ -258,9 +263,9 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
   )
   const specs = [
     ship.ship_type,
-    ship.capacity ? `${ship.capacity} guests` : null,
-    ship.decks ? `${ship.decks} decks` : null,
-    ship.year_built ? `Built ${ship.year_built}` : null,
+    ship.capacity ? t.guestsCount.replace("{count}", String(ship.capacity)) : null,
+    ship.decks ? t.decksCount.replace("{count}", String(ship.decks)) : null,
+    ship.year_built ? t.builtYear.replace("{year}", String(ship.year_built)) : null,
   ].filter((v): v is string => typeof v === "string" && v.length > 0)
 
   return (
@@ -284,7 +289,7 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
         ) : null}
         {deckPlanGalleryImages.length > 0 ? (
           <div className="space-y-2">
-            <div className="font-medium text-sm">Deck plan</div>
+            <div className="font-medium text-sm">{t.deckPlan}</div>
             <ImageStrip images={deckPlanGalleryImages} alt={`${ship.name} deck plan`} />
           </div>
         ) : null}
@@ -298,7 +303,7 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
                 rel="noreferrer"
                 className="rounded border px-3 py-1.5 text-sm hover:bg-muted"
               >
-                Open deck plan
+                {t.openDeckPlan}
               </a>
             ))}
           </div>
@@ -307,7 +312,9 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
           <div className="flex flex-wrap gap-1.5">
             {ship.deck_plans.map((deck) => (
               <Badge key={`${deck.level ?? ""}-${deck.name}`} variant="outline">
-                {deck.level != null ? `Deck ${deck.level}: ${deck.name}` : deck.name}
+                {deck.level != null
+                  ? t.deckLabel.replace("{level}", String(deck.level)).replace("{name}", deck.name)
+                  : deck.name}
               </Badge>
             ))}
           </div>
@@ -322,10 +329,11 @@ function CruiseCabinCategorySummary({
 }: {
   category: CruiseContent["cabin_categories"][number]
 }) {
+  const t = useStorefrontMessagesOrDefault().shopDetailCruises
   const meta = [
     category.type,
     category.square_feet ? `${category.square_feet} sqft` : null,
-    category.capacity_max ? `Sleeps ${category.capacity_max}` : null,
+    category.capacity_max ? t.sleeps.replace("{count}", String(category.capacity_max)) : null,
   ].filter((v): v is string => typeof v === "string" && v.length > 0)
   const cleanInclusions = category.inclusions.filter(
     (item) => item.trim() !== category.description?.trim() && !/^stateroom size/i.test(item.trim()),
@@ -346,7 +354,7 @@ function CruiseCabinCategorySummary({
           <div className="flex flex-wrap items-center gap-2">
             <div className="font-medium">{formatCabinName(category)}</div>
             {category.wheelchair_accessible ? (
-              <Badge variant="outline">Wheelchair accessible</Badge>
+              <Badge variant="outline">{t.wheelchairAccessible}</Badge>
             ) : null}
           </div>
           {meta.length > 0 ? (
@@ -354,7 +362,7 @@ function CruiseCabinCategorySummary({
           ) : null}
           {category.grade_codes.length > 0 ? (
             <div className="mt-1 text-muted-foreground text-xs">
-              Grades {category.grade_codes.join(", ")}
+              {t.grades.replace("{codes}", category.grade_codes.join(", "))}
             </div>
           ) : null}
           {category.description ? (
@@ -369,7 +377,7 @@ function CruiseCabinCategorySummary({
       ) : null}
       {category.floorplan_images.length > 0 ? (
         <div className="space-y-2">
-          <div className="font-medium text-sm">Floor plan</div>
+          <div className="font-medium text-sm">{t.floorPlan}</div>
           <ImageStrip
             images={category.floorplan_images}
             alt={`${category.name} floor plan`}

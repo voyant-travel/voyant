@@ -76,17 +76,15 @@ export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promis
   for (const eventType of eventTypes) {
     args.eventBus.subscribe(eventType, async (envelope: EventEnvelope) => {
       const stamped = ensureMetadataEventId(envelope)
-      try {
-        await args.driver.ingestEvent({
-          environment: args.environment,
-          envelope: stamped,
-        })
-      } catch (err) {
-        // Subscribers are observers per the EventBus contract - a misbehaving
-        // driver / network glitch must not break the emitter.
-        const message = err instanceof Error ? err.message : String(err)
-        console.error(`[voyant] workflow forwarder for "${eventType}" failed: ${message}`)
-      }
+      // Let ingest failures propagate: the EventBus catches every subscriber
+      // throw (the emitter and sibling handlers stay unaffected per its
+      // fire-and-forget contract) AND routes it through `onSubscriberError`, so
+      // a misbehaving driver / network glitch is both logged and reported via
+      // the framework reporter — instead of being swallowed here (RFC #1553).
+      await args.driver.ingestEvent({
+        environment: args.environment,
+        envelope: stamped,
+      })
     })
   }
 }

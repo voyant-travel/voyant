@@ -1,5 +1,137 @@
 # @voyant-travel/inventory-react
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/inventory@0.4.7
+  - @voyant-travel/catalog-react@0.131.0
+  - @voyant-travel/finance-react@0.133.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.130.0
+- @voyant-travel/inventory@0.4.6
+- @voyant-travel/finance-react@0.132.0
+- @voyant-travel/finance@0.132.0
+
+## 0.13.2
+
+### Patch Changes
+
+- ba89f0b: Let admin departure edits choose and persist a product option so existing departures with a missing option can be repaired from the UI. Explicit slot option links are now validated against the slot product while product-level generated slots can still omit an option.
+- Updated dependencies [ba89f0b]
+  - @voyant-travel/i18n@0.107.4
+
+## 0.13.1
+
+### Patch Changes
+
+- fcd2e0b: Add itinerary and day-service translation authoring surfaces, and localize owned itinerary content projection for translated days and service labels.
+- Updated dependencies [fcd2e0b]
+  - @voyant-travel/inventory@0.4.4
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/finance-react@0.131.0
+  - @voyant-travel/catalog-react@0.129.0
+  - @voyant-travel/finance@0.131.0
+  - @voyant-travel/inventory@0.4.3
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/finance-react@0.130.0
+  - @voyant-travel/catalog-react@0.128.0
+  - @voyant-travel/finance@0.130.0
+  - @voyant-travel/inventory@0.4.2
+
+## 0.11.0
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.4.1
+- @voyant-travel/catalog-react@0.127.0
+- @voyant-travel/finance-react@0.129.0
+- @voyant-travel/finance@0.129.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [9c47b00]
+  - @voyant-travel/inventory@0.4.0
+  - @voyant-travel/catalog-react@0.126.0
+  - @voyant-travel/finance-react@0.128.0
+  - @voyant-travel/finance@0.128.0
+
+## 0.9.0
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.3.9
+- @voyant-travel/finance@0.127.0
+- @voyant-travel/finance-react@0.127.0
+- @voyant-travel/catalog-react@0.125.0
+
+## 0.8.0
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.3.6
+- @voyant-travel/catalog-react@0.124.0
+- @voyant-travel/finance-react@0.126.0
+- @voyant-travel/finance@0.126.0
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/catalog-react@0.123.0
+  - @voyant-travel/finance-react@0.125.0
+  - @voyant-travel/inventory@0.3.5
+  - @voyant-travel/finance@0.125.0
+
+## 0.6.0
+
+### Patch Changes
+
+- 4f92198: Voyant 1.0 visual refactor of the framework UI.
+
+  - **Tokens** (`@voyant-travel/ui` `globals.css`): warm off-white paper, near-black ink, and a single hot-orange brand accent (`--brand`, new token) reserved for charts/focus/active state. Inter Tight type. Fixed brand chart palette (`--chart-1..5`). A coherent radius system: controls + their dropdowns at `rounded-sm` (4px), cards/table surfaces at `rounded-md` (6px), dialogs/sheets at `rounded-xl`.
+  - **`@voyant-travel/ui` components**: new `SegmentedControl`; `Button` gains a `brand` variant; sharper, consistent radii across Button/Input/Select/Combobox/Textarea/Toggle/Tabs/Menus/Command/Card/DataTable/Badge; bordered active sidebar items (primary + sub) and inset-panel border; assorted fixes (Command search-input radius, toggle-group corners, sidebar sub-menu spacing).
+  - **`@voyant-travel/admin`**: Voyant 1.0 brand logo lockup (composed mark + wordmark, collapse-to-badge); operator shell defaults to the inset sidebar layout; dashboard KPI cards, brand chart colors, and Figma-matched sidebar (bordered active item, near-black nav text, bordered user card with open-state).
+  - **Domain `*-react` packages**: card surfaces normalized to the new `rounded-md` radius; flights search bar (trip-type toggle, route cards, airport dropdown) and the resources tabs aligned to the system.
+
+- Updated dependencies [4f92198]
+- Updated dependencies [4f92198]
+  - @voyant-travel/finance-react@0.124.0
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/catalog-react@0.122.0
+  - @voyant-travel/finance@0.124.0
+  - @voyant-travel/inventory@0.3.4
+
 ## 0.5.0
 
 ### Patch Changes

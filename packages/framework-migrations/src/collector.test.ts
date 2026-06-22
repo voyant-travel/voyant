@@ -3,7 +3,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   applyMigrations,
-  importBaseline,
   MigrationImmutabilityError,
   type MigrationSource,
   planMigrations,
@@ -19,7 +18,7 @@ describe("planMigrations", () => {
     const plan = planMigrations([
       { name: "deployment", priority: 1, migrations: [{ tag: "d0", sql: "select 1" }] },
       {
-        name: "framework",
+        name: "db",
         priority: 0,
         migrations: [
           { tag: "f0", sql: "select 1" },
@@ -27,11 +26,7 @@ describe("planMigrations", () => {
         ],
       },
     ])
-    expect(plan.map((p) => `${p.source}/${p.tag}`)).toEqual([
-      "framework/f0",
-      "framework/f1",
-      "deployment/d0",
-    ])
+    expect(plan.map((p) => `${p.source}/${p.tag}`)).toEqual(["db/f0", "db/f1", "deployment/d0"])
   })
 
   it("hashes by SQL content (different SQL → different hash)", () => {
@@ -42,12 +37,12 @@ describe("planMigrations", () => {
   })
 })
 
-// ---- applyMigrations: integration (the spike's scenarios) -------------------
+// ---- applyMigrations: execute path (integration) ----------------------------
 
-function sources(): { framework: MigrationSource; deployment: MigrationSource } {
+function sources(): { db: MigrationSource; deployment: MigrationSource } {
   return {
-    framework: {
-      name: "framework",
+    db: {
+      name: "db",
       priority: 0,
       migrations: [
         { tag: "0001_init", sql: `CREATE TABLE ${SCHEMA}.bookings (id text PRIMARY KEY);` },
@@ -57,7 +52,7 @@ function sources(): { framework: MigrationSource; deployment: MigrationSource } 
     deployment: {
       name: "deployment",
       priority: 1,
-      // FK into a framework table — fails outright if applied before framework.
+      // FK into a db-source table — fails outright if applied before it.
       migrations: [
         {
           tag: "0001_acme_notes",
@@ -69,6 +64,11 @@ function sources(): { framework: MigrationSource; deployment: MigrationSource } 
 }
 
 const ledgerOpts = { ledgerSchema: SCHEMA, ledgerTable: "_voyant_migrations" }
+/** Cutline covering every tag in `sources()` — used to exercise import-baseline. */
+const fullCutline = {
+  db: ["0001_init", "0002_add_status"],
+  deployment: ["0001_acme_notes"],
+}
 
 describe.skipIf(!DB_URL)("applyMigrations (integration)", () => {
   let client: Client
@@ -98,59 +98,52 @@ describe.skipIf(!DB_URL)("applyMigrations (integration)", () => {
     return r.rows.length > 0
   }
 
-  it("scenario 1+5 — fresh apply is framework-first; deployment FK resolves", async () => {
+  it("fresh apply is deps-first; the FK-bearing deployment table resolves", async () => {
     const s = sources()
-    const applied = await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
-    expect(applied).toEqual([
-      "framework/0001_init",
-      "framework/0002_add_status",
-      "deployment/0001_acme_notes",
-    ])
+    const r = await applyMigrations(client, [s.db, s.deployment], ledgerOpts)
+    expect(r.executed).toEqual(["db/0001_init", "db/0002_add_status", "deployment/0001_acme_notes"])
+    expect(r.baselined).toEqual([])
     expect(await tableExists("bookings")).toBe(true)
-    // The deployment table FKs into the framework table — exists only because
-    // framework was applied first (ordering is load-bearing).
+    // The deployment table FKs into the db-source table — exists only because the
+    // db source applied first (ordering is load-bearing).
     expect(await tableExists("acme_notes")).toBe(true)
   })
 
-  it("scenario 2 — re-run is idempotent (applies nothing)", async () => {
+  it("re-run is idempotent (applies nothing)", async () => {
     const s = sources()
-    await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
-    const second = await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
-    expect(second).toEqual([])
+    await applyMigrations(client, [s.db, s.deployment], ledgerOpts)
+    const second = await applyMigrations(client, [s.db, s.deployment], ledgerOpts)
+    expect(second.executed).toEqual([])
   })
 
-  it("scenario 3 — a framework upgrade applies only the new migration", async () => {
+  it("an upgrade applies only the new migration", async () => {
     const s = sources()
-    await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
+    await applyMigrations(client, [s.db, s.deployment], ledgerOpts)
 
     const upgraded = sources()
-    upgraded.framework.migrations.push({
+    upgraded.db.migrations.push({
       tag: "0003_add_index",
       sql: `CREATE INDEX bookings_status_idx ON ${SCHEMA}.bookings (status);`,
     })
-    const applied = await applyMigrations(
-      client,
-      [upgraded.framework, upgraded.deployment],
-      ledgerOpts,
-    )
-    expect(applied).toEqual(["framework/0003_add_index"])
+    const r = await applyMigrations(client, [upgraded.db, upgraded.deployment], ledgerOpts)
+    expect(r.executed).toEqual(["db/0003_add_index"])
   })
 
-  it("scenario 4 — editing an applied migration is a hard error", async () => {
+  it("editing an applied migration is a hard error", async () => {
     const s = sources()
-    await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
+    await applyMigrations(client, [s.db, s.deployment], ledgerOpts)
 
     const tampered = sources()
-    tampered.framework.migrations[0]!.sql =
+    tampered.db.migrations[0]!.sql =
       `CREATE TABLE ${SCHEMA}.bookings (id text PRIMARY KEY, tampered boolean);`
     await expect(
-      applyMigrations(client, [tampered.framework, tampered.deployment], ledgerOpts),
+      applyMigrations(client, [tampered.db, tampered.deployment], ledgerOpts),
     ).rejects.toBeInstanceOf(MigrationImmutabilityError)
   })
 
   it("splits drizzle statement-breakpoints within one migration", async () => {
     const multi: MigrationSource = {
-      name: "framework",
+      name: "db",
       priority: 0,
       migrations: [
         {
@@ -164,47 +157,195 @@ describe.skipIf(!DB_URL)("applyMigrations (integration)", () => {
     expect(await tableExists("b")).toBe(true)
   })
 
-  // ---- importBaseline: record an existing schema without re-executing --------
+  // ---- import-baseline: adopt an already-materialised schema ------------------
 
-  it("baseline records the ledger WITHOUT executing any SQL", async () => {
+  it("import-baselines the cutline on an existing DB WITHOUT executing any SQL", async () => {
     const s = sources()
-    const imported = await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
-    // Every planned migration is recorded …
-    expect(imported).toEqual([
-      "framework/0001_init",
-      "framework/0002_add_status",
+    const r = await applyMigrations(client, [s.db, s.deployment], {
+      ...ledgerOpts,
+      cutline: fullCutline,
+      existing: true,
+    })
+    // Every cutline migration is recorded …
+    expect(r.baselined).toEqual([
+      "db/0001_init",
+      "db/0002_add_status",
       "deployment/0001_acme_notes",
     ])
+    expect(r.executed).toEqual([])
     // … but none of their SQL ran (the schema is assumed already present).
     expect(await tableExists("bookings")).toBe(false)
     expect(await tableExists("acme_notes")).toBe(false)
   })
 
-  it("a baselined deployment then applies nothing (ledger interop with applyMigrations)", async () => {
+  it("a baselined ledger then applies nothing, but a post-cutline increment still runs", async () => {
     const s = sources()
-    await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
-    // applyMigrations sees the baselined (source, tag) rows and skips them —
-    // so it does NOT try to re-create the already-existing schema.
-    const applied = await applyMigrations(client, [s.framework, s.deployment], ledgerOpts)
-    expect(applied).toEqual([])
-    // A genuinely new migration still applies after a baseline.
-    const upgraded = sources()
-    upgraded.framework.migrations.push({
-      tag: "0003_add_index",
-      sql: `CREATE TABLE ${SCHEMA}.bookings (id text PRIMARY KEY); CREATE INDEX bookings_status_idx ON ${SCHEMA}.bookings (id);`,
+    await applyMigrations(client, [s.db, s.deployment], {
+      ...ledgerOpts,
+      cutline: fullCutline,
+      existing: true,
     })
-    const next = await applyMigrations(
-      client,
-      [upgraded.framework, upgraded.deployment],
-      ledgerOpts,
-    )
-    expect(next).toEqual(["framework/0003_add_index"])
+    // The baselined (source, tag) rows are skipped — no attempt to re-create.
+    const again = await applyMigrations(client, [s.db, s.deployment], {
+      ...ledgerOpts,
+      cutline: fullCutline,
+      existing: true,
+    })
+    expect(again.executed).toEqual([])
+    expect(again.baselined).toEqual([])
   })
 
-  it("baseline is idempotent (re-run records nothing new)", async () => {
+  it("import-baseline is idempotent (re-run records nothing new)", async () => {
     const s = sources()
-    await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
-    const second = await importBaseline(client, [s.framework, s.deployment], ledgerOpts)
-    expect(second).toEqual([])
+    await applyMigrations(client, [s.db, s.deployment], {
+      ...ledgerOpts,
+      cutline: fullCutline,
+      existing: true,
+    })
+    const second = await applyMigrations(client, [s.db, s.deployment], {
+      ...ledgerOpts,
+      cutline: fullCutline,
+      existing: true,
+    })
+    expect(second.baselined).toEqual([])
+    expect(second.executed).toEqual([])
+  })
+})
+
+// ---- applyMigrations dual-path: fresh executes, existing import-baselines ----
+
+const DP_SCHEMA = "voyant_fwmig_dp_test"
+const dpLedger = { ledgerSchema: DP_SCHEMA, ledgerTable: "_voyant_migrations" }
+
+/** Two package sources (db → catalog) with a post-cutline catalog increment. */
+function dpSources(): { db: MigrationSource; catalog: MigrationSource } {
+  return {
+    db: {
+      name: "db",
+      priority: 0,
+      migrations: [
+        { tag: "0000_db_baseline", sql: `CREATE TABLE ${DP_SCHEMA}.org (id text PRIMARY KEY);` },
+      ],
+    },
+    catalog: {
+      name: "catalog",
+      priority: 1,
+      migrations: [
+        {
+          tag: "0000_catalog_baseline",
+          sql: `CREATE TABLE ${DP_SCHEMA}.product (id text PRIMARY KEY, org_id text REFERENCES ${DP_SCHEMA}.org(id));`,
+        },
+        // post-cutline increment (NOT in the cutline) — executes even on existing DBs
+        { tag: "0001_add_sku", sql: `ALTER TABLE ${DP_SCHEMA}.product ADD COLUMN sku text;` },
+      ],
+    },
+  }
+}
+
+// the prior runner materialised the baselines, not the post-cutline increment
+const dpCutline = { db: ["0000_db_baseline"], catalog: ["0000_catalog_baseline"] }
+
+describe.skipIf(!DB_URL)("applyMigrations (dual-path)", () => {
+  let client: Client
+
+  beforeAll(async () => {
+    client = new Client({ connectionString: DB_URL })
+    await client.connect()
+  })
+  afterAll(async () => {
+    if (client) {
+      await client.query(`DROP SCHEMA IF EXISTS ${DP_SCHEMA} CASCADE`)
+      await client.end()
+    }
+  })
+  beforeEach(async () => {
+    await client.query(`DROP SCHEMA IF EXISTS ${DP_SCHEMA} CASCADE`)
+    await client.query(`CREATE SCHEMA ${DP_SCHEMA}`)
+  })
+
+  const has = async (table: string, column?: string): Promise<boolean> => {
+    const r = column
+      ? await client.query(
+          "SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 AND column_name=$3",
+          [DP_SCHEMA, table, column],
+        )
+      : await client.query(
+          "SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name=$2",
+          [DP_SCHEMA, table],
+        )
+    return r.rows.length > 0
+  }
+  const ledgerIds = async (): Promise<string[]> => {
+    const r = await client.query(
+      `SELECT source, tag FROM ${DP_SCHEMA}._voyant_migrations ORDER BY source, tag`,
+    )
+    return r.rows.map((row) => `${row.source}/${row.tag}`)
+  }
+
+  it("fresh — executes every package source, baselines nothing", async () => {
+    const s = dpSources()
+    const r = await applyMigrations(client, [s.db, s.catalog], {
+      ...dpLedger,
+      cutline: dpCutline,
+      existing: false,
+    })
+    expect(r.executed).toEqual([
+      "db/0000_db_baseline",
+      "catalog/0000_catalog_baseline",
+      "catalog/0001_add_sku",
+    ])
+    expect(r.baselined).toEqual([])
+    expect(await has("org")).toBe(true)
+    expect(await has("product", "sku")).toBe(true)
+  })
+
+  it("existing — import-baselines the cutline, executes the post-cutline increment, keeps prior rows", async () => {
+    const s = dpSources()
+    // Simulate a previously-materialised database: the baseline tables already
+    // exist (no sku) and an inert prior-runner ledger row is present.
+    await client.query(`CREATE TABLE ${DP_SCHEMA}.org (id text PRIMARY KEY)`)
+    await client.query(
+      `CREATE TABLE ${DP_SCHEMA}.product (id text PRIMARY KEY, org_id text REFERENCES ${DP_SCHEMA}.org(id))`,
+    )
+    await client.query(
+      `CREATE TABLE IF NOT EXISTS ${DP_SCHEMA}._voyant_migrations
+         (source text NOT NULL, tag text NOT NULL, content_hash text NOT NULL,
+          applied_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (source, tag))`,
+    )
+    await client.query(
+      `INSERT INTO ${DP_SCHEMA}._voyant_migrations (source, tag, content_hash) VALUES ('framework','0000_baseline','deadbeef')`,
+    )
+
+    const r = await applyMigrations(client, [s.db, s.catalog], {
+      ...dpLedger,
+      cutline: dpCutline,
+      existing: true,
+    })
+    // baselines recorded without executing (tables already existed — no double-create)
+    expect(r.baselined.sort()).toEqual(["catalog/0000_catalog_baseline", "db/0000_db_baseline"])
+    // the post-cutline increment executes
+    expect(r.executed).toEqual(["catalog/0001_add_sku"])
+    expect(await has("product", "sku")).toBe(true)
+    // prior-runner history preserved + package rows recorded
+    const ids = await ledgerIds()
+    expect(ids).toContain("framework/0000_baseline")
+    expect(ids).toContain("db/0000_db_baseline")
+    expect(ids).toContain("catalog/0001_add_sku")
+  })
+
+  it("existing re-run is idempotent (nothing executed or baselined)", async () => {
+    const s = dpSources()
+    await applyMigrations(client, [s.db, s.catalog], {
+      ...dpLedger,
+      cutline: dpCutline,
+      existing: false,
+    })
+    const again = await applyMigrations(client, [s.db, s.catalog], {
+      ...dpLedger,
+      cutline: dpCutline,
+      existing: true,
+    })
+    expect(again.executed).toEqual([])
+    expect(again.baselined).toEqual([])
   })
 })

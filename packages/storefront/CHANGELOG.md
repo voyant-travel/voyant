@@ -1,5 +1,181 @@
 # @voyant-travel/storefront
 
+## 0.135.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/legal@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/commerce@0.15.0
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/identity@0.133.0
+  - @voyant-travel/relationships@0.120.13
+  - @voyant-travel/relationships-contracts@0.108.2
+
+## 0.134.0
+
+### Patch Changes
+
+- @voyant-travel/commerce@0.14.0
+- @voyant-travel/bookings@0.132.0
+- @voyant-travel/finance@0.132.0
+- @voyant-travel/identity@0.132.0
+- @voyant-travel/legal@0.132.0
+- @voyant-travel/relationships@0.120.12
+
+## 0.133.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/bookings@0.131.1
+  - @voyant-travel/commerce@0.13.1
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/identity@0.131.1
+  - @voyant-travel/legal@0.131.1
+  - @voyant-travel/relationships@0.120.11
+  - @voyant-travel/db@0.108.5
+
+## 0.133.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/finance@0.131.0
+- @voyant-travel/identity@0.131.0
+- @voyant-travel/legal@0.131.0
+- @voyant-travel/commerce@0.13.0
+- @voyant-travel/relationships@0.120.10
+
+## 0.132.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.130.0
+- @voyant-travel/finance@0.130.0
+- @voyant-travel/identity@0.130.0
+- @voyant-travel/legal@0.130.0
+- @voyant-travel/commerce@0.12.0
+- @voyant-travel/relationships@0.120.9
+
+## 0.131.1
+
+### Patch Changes
+
+- 733bf33: Stop a bookable departure from rendering "price on request" when an option has a stray empty default rate plan (#1601).
+
+  - **commerce** — `createOptionPriceRule`/`updateOptionPriceRule` now enforce a single active default rate plan per `(option, price catalog)`. Writing or promoting a default plan demotes any sibling default in the same scope inside a transaction, so a save path can no longer fan out several active `is_default` rows where only the newest carries prices.
+  - **storefront** — the public departures pricing reader now prefers a rate plan that actually carries a price (positive base amount or a priced active unit rule) before falling back to the `is_default` flag, so a stray empty default can't mask the real priced plan and force a "price on request".
+
+- Updated dependencies [733bf33]
+  - @voyant-travel/commerce@0.11.1
+
+## 0.131.0
+
+### Patch Changes
+
+- @voyant-travel/commerce@0.11.0
+- @voyant-travel/bookings@0.129.0
+- @voyant-travel/finance@0.129.0
+- @voyant-travel/identity@0.129.0
+- @voyant-travel/legal@0.129.0
+- @voyant-travel/relationships@0.120.7
+
+## 0.130.0
+
+### Minor Changes
+
+- 63e99ca: Add a first-class storefront booking **compatibility bootstrap** for imported catalog departures (issue voyant#1984).
+
+  - **New endpoint** `POST /v1/public/bookings/sessions/compat-bootstrap` accepts the minimal `{ productId, departureId, pax, currency?, locale?, optionId?, optionUnitId?, ... }` contract a host can always build for an imported departure. The server derives the current slot, option, and authoritative price itself, then returns a normal booking session — so this path never fails with `quote stale`.
+  - **Machine-readable error contract** across every bootstrap surface (sync, compat, and the async intent poll). A single `STOREFRONT_BOOTSTRAP_ERROR_CODES` table maps each internal status to a stable `code` (`DEPARTURE_NOT_FOUND`, `PRODUCT_MISMATCH`, `SLOT_DEPARTURE_MISMATCH`, `PRICING_UNAVAILABLE`, `QUOTE_STALE`, `SLOT_UNAVAILABLE`, `INSUFFICIENT_CAPACITY`, `BOOTSTRAP_FAILED`), an HTTP status, and a `retryable` hint. `QUOTE_STALE` is the one expected, retryable rejection and now carries those fields alongside its `repricing` snapshot.
+  - New exports: `bootstrapStorefrontBookingSessionCompat` machinery via the service, `describeStorefrontBootstrapError`, `STOREFRONT_BOOTSTRAP_ERROR_CODES`, plus the `storefrontBookingSessionCompatBootstrapInputSchema` / `storefrontBookingBootstrapRejectionSchema` schemas and types.
+
+  No breaking changes — the existing `bootstrap` endpoint is unchanged except for the additive `code`/`retryable` fields on its error responses.
+
+## 0.129.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.128.0
+- @voyant-travel/finance@0.128.0
+- @voyant-travel/identity@0.128.0
+- @voyant-travel/legal@0.128.0
+- @voyant-travel/commerce@0.10.0
+- @voyant-travel/relationships@0.120.6
+
+## 0.128.0
+
+### Patch Changes
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/bookings@0.127.0
+  - @voyant-travel/commerce@0.9.0
+  - @voyant-travel/finance@0.127.0
+  - @voyant-travel/legal@0.127.0
+  - @voyant-travel/identity@0.127.0
+  - @voyant-travel/relationships@0.120.5
+
+## 0.127.1
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/relationships@0.120.4
+  - @voyant-travel/identity@0.126.1
+  - @voyant-travel/commerce@0.8.1
+  - @voyant-travel/finance@0.126.1
+  - @voyant-travel/legal@0.126.1
+
+## 0.127.0
+
+### Patch Changes
+
+- Updated dependencies [84b9d4b]
+  - @voyant-travel/legal@0.126.0
+  - @voyant-travel/commerce@0.8.0
+  - @voyant-travel/bookings@0.126.0
+  - @voyant-travel/finance@0.126.0
+  - @voyant-travel/identity@0.126.0
+  - @voyant-travel/relationships@0.120.3
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/relationships-contracts@0.108.1
+- @voyant-travel/commerce@0.7.0
+- @voyant-travel/bookings@0.125.0
+- @voyant-travel/finance@0.125.0
+- @voyant-travel/identity@0.125.0
+- @voyant-travel/legal@0.125.0
+- @voyant-travel/relationships@0.120.2
+- @voyant-travel/hono@0.112.2
+
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/finance@0.124.0
+- @voyant-travel/identity@0.124.0
+- @voyant-travel/legal@0.124.0
+- @voyant-travel/commerce@0.6.0
+- @voyant-travel/relationships@0.120.1
+
 ## 0.124.0
 
 ### Patch Changes

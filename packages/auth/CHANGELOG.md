@@ -1,5 +1,40 @@
 # @voyant-travel/auth
 
+## 0.117.0
+
+### Minor Changes
+
+- 4abf9a2: Deployment team management + granular member RBAC (voyant#2085).
+
+  - `@voyant-travel/types`: `member-roles` (preset bundles reusing the API-key permission catalog) + `settings`/`team` resources.
+  - `@voyant-travel/auth`: `cloud-broker` member-management client + assertion `scopes`.
+  - `@voyant-travel/hono`: opt-in staff-session scope enforcement in `requireActor` (`VOYANT_RBAC_ENFORCE`) + `isStaffRbacEnforced`.
+  - `@voyant-travel/admin`: auth-mode-aware `TeamSettingsPage` with a granular permission editor.
+  - `@voyant-travel/bookings`/`legal`: PII reveal gated on `bookings-pii:read` under enforcement.
+  - `@voyant-travel/db`: `user_profiles.permissions` + `cloud_auth_user_links.scopes`.
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/utils@0.105.3
+
+## 0.116.1
+
+### Patch Changes
+
+- b6fa89d: Add `customerSignupSurfaces` to `createBetterAuth` so supported OTP customer
+  self-signups can be stamped with a non-admin surface before the single-tenant
+  signup guard evaluates the new user.
+
+## 0.116.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+
+## 0.115.0
+
 ## 0.114.0
 
 ### Patch Changes

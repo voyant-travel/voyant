@@ -21,9 +21,30 @@ describe("shouldRevealBookingPii()", () => {
     expect(shouldRevealBookingPii({ scopes: ["bookings-pii:read"] })).toBe(true)
   })
 
-  it("reveals for staff dashboard sessions", () => {
+  it("reveals for staff dashboard sessions when enforceRbac is not set", () => {
     expect(shouldRevealBookingPii({ actor: "staff", scopes: [] })).toBe(true)
     expect(shouldRevealBookingPii({ actor: "staff", scopes: ["bookings:read"] })).toBe(true)
+  })
+
+  it("gates staff PII on the scope when RBAC enforcement is on (voyant#2085)", () => {
+    // Restricted staff member without the PII scope is now redacted.
+    expect(
+      shouldRevealBookingPii({ actor: "staff", scopes: ["bookings:read"], enforceRbac: true }),
+    ).toBe(false)
+    expect(shouldRevealBookingPii({ actor: "staff", scopes: [], enforceRbac: true })).toBe(false)
+    // Full-access (`*`) and explicit PII scope still reveal under enforcement.
+    expect(shouldRevealBookingPii({ actor: "staff", scopes: ["*"], enforceRbac: true })).toBe(true)
+    expect(
+      shouldRevealBookingPii({
+        actor: "staff",
+        scopes: ["bookings-pii:read"],
+        enforceRbac: true,
+      }),
+    ).toBe(true)
+    // Internal requests bypass even under enforcement.
+    expect(
+      shouldRevealBookingPii({ actor: "staff", isInternalRequest: true, enforceRbac: true }),
+    ).toBe(true)
   })
 
   it("does NOT reveal for customer / partner / supplier actors", () => {

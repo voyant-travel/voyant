@@ -1,5 +1,19 @@
 # @voyant-travel/identity-contracts
 
+## 0.104.4
+
+### Patch Changes
+
+- Updated dependencies [b68d6a7]
+  - @voyant-travel/schema-kit@0.107.0
+
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/schema-kit@0.106.0
+
 ## 0.104.2
 
 ### Patch Changes

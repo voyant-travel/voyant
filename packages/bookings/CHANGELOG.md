@@ -1,5 +1,82 @@
 # @voyant-travel/bookings
 
+## 0.133.0
+
+### Minor Changes
+
+- 4abf9a2: Deployment team management + granular member RBAC (voyant#2085).
+
+  - `@voyant-travel/types`: `member-roles` (preset bundles reusing the API-key permission catalog) + `settings`/`team` resources.
+  - `@voyant-travel/auth`: `cloud-broker` member-management client + assertion `scopes`.
+  - `@voyant-travel/hono`: opt-in staff-session scope enforcement in `requireActor` (`VOYANT_RBAC_ENFORCE`) + `isStaffRbacEnforced`.
+  - `@voyant-travel/admin`: auth-mode-aware `TeamSettingsPage` with a granular permission editor.
+  - `@voyant-travel/bookings`/`legal`: PII reveal gated on `bookings-pii:read` under enforcement.
+  - `@voyant-travel/db`: `user_profiles.permissions` + `cloud_auth_user_links.scopes`.
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/action-ledger@0.105.5
+  - @voyant-travel/bookings-contracts@0.106.2
+
+## 0.132.0
+
+## 0.131.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/action-ledger@0.105.4
+  - @voyant-travel/db@0.108.5
+
+## 0.131.0
+
+## 0.130.0
+
+## 0.129.1
+
+### Patch Changes
+
+- 4a6d62f: Use current booking status values in resource capacity checks while keeping completed bookings counted.
+
+## 0.129.0
+
+## 0.128.0
+
+## 0.127.0
+
+### Minor Changes
+
+- 435a5d1: Extract the availability domain into a new foundational `@voyant-travel/availability` package, and complete D.2 per-package migration onboarding for the last schema-owning packages.
+
+  - **@voyant-travel/availability (new):** owns the `availability_*` schema (slots, rules, start times, holds, pickups, capacity) — previously buried in operations. Ships its own D.2 migration.
+  - **operations:** its availability **services and routes stay**, now importing the schema from `@voyant-travel/availability` (the barrel re-exports it for runtime consumers); operations' migration no longer owns the availability tables. Fixes the module direction — bookings/operations/accommodations consume availability, rather than reaching into operations for an inventory primitive.
+  - **bookings:** drops the hard cross-package FK from `booking_allocations.availability_slot_id` to `availability_slots` (it referenced a stale local duplicate); the column is now a plain indexed id per module decoupling. The refund workflow keeps a runtime-only reference to the availability table.
+  - **framework-migrations:** bundle migration drops the removed FK constraint.
+
+  All package sources verified column-for-column against the bundle and apply together cleanly on a fresh D.2 database (union).
+
+## 0.126.0
+
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-contracts@0.106.1
+- @voyant-travel/db@0.108.3
+- @voyant-travel/hono@0.112.2
+
+## 0.124.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+
 ## 0.123.0
 
 ### Minor Changes

@@ -18,7 +18,11 @@ import type { QuoteProposalRoutesOptions } from "@voyant-travel/quotes"
 import type { Context } from "hono"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
-import { createReserveTripDeps, createStartCheckoutDeps } from "./trips-runtime"
+import {
+  createCancelTripComponentsDeps,
+  createReserveTripDeps,
+  createStartCheckoutDeps,
+} from "./trips-runtime"
 
 /** Build the quotes proposal/snapshot route options for this deployment. */
 export function createQuoteProposalRoutesOptions(): QuoteProposalRoutesOptions {
@@ -28,6 +32,7 @@ export function createQuoteProposalRoutesOptions(): QuoteProposalRoutesOptions {
       resolvePublicCheckoutBaseUrlFromBindings(c.env ?? {}),
     reserveTripDeps: (c: Context) => createReserveTripDeps(c),
     startCheckoutDeps: (c: Context) => createStartCheckoutDeps(c),
+    cancelTripComponentsDeps: (c: Context) => createCancelTripComponentsDeps(c),
     resolveOperatorProfile: async (db) => {
       const operatorSettings = await getOperatorSettings(db)
       return operatorSettings ? toPublicOperatorSettings(operatorSettings) : null

@@ -15,7 +15,7 @@ compose statically — no runtime `require`):
 ```sh
 voyant generate module loyalty --dir src/modules   # scaffold
 # edit src/modules/loyalty/{schema,routes,service}.ts, add `export default` to index.ts
-pnpm db:generate:deployment                         # emit the migration → migrations-d1/
+pnpm db:generate:deployment                         # emit the migration → migrations/
 pnpm db:migrate                                     # collector applies it
 ```
 
@@ -103,7 +103,7 @@ Generate + apply:
 
 ```sh
 pnpm db:generate:deployment   # drizzle-kit generate against the deployment config
-                              # → migrations-d1/NNNN_*.sql (custom tables + link tables)
+                              # → migrations/NNNN_*.sql (custom tables + link tables)
 pnpm db:migrate               # collector: framework bundle → deployment (incl. custom)
 ```
 
@@ -174,7 +174,7 @@ Widget slots are starter-defined strings (`dashboard.after-kpis`,
 Everything you write lives under the deployment's `src/` — the framework owns
 none of it. `voyant upgrade` bumps `@voyant-travel/framework` (and its pinned
 runtime set + migration bundle); your `src/modules/*` and your deployment
-migration source (`migrations-d1/`) are untouched. The collector's
+migration source (`migrations/`) are untouched. The collector's
 content-hash ledger keys migrations by `(source, tag)`, so a framework upgrade
 never re-runs or collides with your deployment migrations.
 

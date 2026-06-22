@@ -171,7 +171,7 @@ describe("stampPolicySourceOnBooking", () => {
     const db = {
       select: () => selectChain,
       update: () => updateChain,
-    } as unknown as PostgresJsDatabase
+    } as PostgresJsDatabase
     return { db, getUpdate: () => updatePayload }
   }
 

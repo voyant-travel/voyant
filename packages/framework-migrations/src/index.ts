@@ -1,15 +1,16 @@
 /**
- * `@voyant-travel/framework-migrations` — the D.1 multi-source migration
- * collector + (in a later slice) the framework-shipped standard-profile bundle.
+ * `@voyant-travel/framework-migrations` — the multi-source migration collector:
+ * topologically-ordered package + deployment migration sources, applied against
+ * a single version-independent ledger, with an import-baseline path for adopting
+ * an already-materialised database.
  *
- * See `docs/architecture/migration-collector-d1.md`.
+ * See `docs/architecture/migration-collector-d2.md`.
  */
 
 export { frameworkBundleDir, loadFrameworkBundleSource } from "./bundle.js"
 export {
   type ApplyMigrationsOptions,
   applyMigrations,
-  importBaseline,
   type MigrationClient,
   MigrationImmutabilityError,
   type MigrationSource,
@@ -17,4 +18,20 @@ export {
   type PlannedMigration,
   planMigrations,
 } from "./collector.js"
+export { type Cutline, loadCutline } from "./cutline.js"
+export {
+  assertSchemaAtBaseline,
+  detectExisting,
+  expectedSchema,
+  type RunResult,
+  runDeploymentMigrations,
+} from "./deployment-runner.js"
+export {
+  DEPLOYMENT_SOURCE,
+  type DiscoveredSource,
+  type DiscoverOptions,
+  discoverMigrationSources,
+  type Fs,
+  packageRootOfSchemaPath,
+} from "./discover.js"
 export { loadMigrationFolder } from "./load-folder.js"

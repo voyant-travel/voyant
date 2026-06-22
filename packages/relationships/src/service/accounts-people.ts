@@ -177,7 +177,11 @@ export const peopleAccountsService = {
   async getPersonById(db: PostgresJsDatabase, id: string) {
     const [row] = await db.select().from(people).where(eq(people.id, id)).limit(1)
     if (!row) return null
-    const [hydrated] = await hydratePeople(db, [row])
+    // Same graceful degradation as listPeople: if person_directory is missing
+    // (e.g. a schema-derived DB predating issue #1971's bundle fix) the by-id
+    // read returns base rows instead of 500ing — which also unbreaks create /
+    // update, both of which round-trip through here.
+    const [hydrated] = await hydratePeople(db, [row], { fallbackOnError: true })
     return hydrated ?? null
   },
 
@@ -206,10 +210,15 @@ export const peopleAccountsService = {
       .set({ ...personBaseFields(data), updatedAt: new Date() })
       .where(eq(people.id, id))
 
+    // Pass the request fields through verbatim: syncPersonIdentity leaves
+    // `undefined` (omitted) fields untouched and only clears on explicit
+    // null/empty. Backfilling omitted fields from `existing` (a hydrated read
+    // that degrades to null when person_directory is missing) would silently
+    // delete the person's contact points on an affected DB. See issue #1971.
     await syncPersonIdentity(db, id, {
-      email: data.email === undefined ? existing.email : data.email,
-      phone: data.phone === undefined ? existing.phone : data.phone,
-      website: data.website === undefined ? existing.website : data.website,
+      email: data.email,
+      phone: data.phone,
+      website: data.website,
     })
 
     return this.getPersonById(db, id)
@@ -506,7 +515,9 @@ export const peopleAccountsService = {
     db: PostgresJsDatabase,
     customFields: ReadonlyArray<CustomFieldDefinition> = [],
   ) {
-    const rows = await hydratePeople(db, await db.select().from(people).orderBy(people.createdAt))
+    const rows = await hydratePeople(db, await db.select().from(people).orderBy(people.createdAt), {
+      fallbackOnError: true,
+    })
 
     const baseHeaders = [
       "id",

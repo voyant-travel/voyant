@@ -305,6 +305,9 @@ describe("GET /bookings/intents/:id", () => {
         intentId: "wint_1",
         status: "failed",
         error: "Insufficient slot capacity",
+        // Machine-readable contract mirrored from the sync route (issue voyant#1984).
+        code: "INSUFFICIENT_CAPACITY",
+        retryable: false,
         conflict: "insufficient_capacity",
         httpStatus: 409,
       },

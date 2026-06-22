@@ -6,6 +6,7 @@ import {
   createDrizzlePublicDocumentDeliveryGrantStore,
   createPublicDocumentDeliveryGrant,
   idempotencyKey,
+  isStaffRbacEnforced,
   parseJsonBody,
   parseOptionalJsonBody,
   parseQuery,
@@ -144,6 +145,7 @@ async function resolveAuthorizedBookingPiiService(
     scopes: c.get("scopes"),
     callerType: c.get("callerType"),
     isInternalRequest: c.get("isInternalRequest"),
+    enforceRbac: isStaffRbacEnforced(c.env),
   })
   if (!reveal) return null
 

@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm"
 
-import { availabilitySlotsRef } from "./availability-ref.js"
 import { bookings, bookingTravelers } from "./schema-core.js"
 import { bookingGroupMembers, bookingGroups } from "./schema-groups.js"
 import {
@@ -73,10 +72,6 @@ export const bookingAllocationsRelations = relations(bookingAllocations, ({ one 
   bookingItem: one(bookingItems, {
     fields: [bookingAllocations.bookingItemId],
     references: [bookingItems.id],
-  }),
-  availabilitySlot: one(availabilitySlotsRef, {
-    fields: [bookingAllocations.availabilitySlotId],
-    references: [availabilitySlotsRef.id],
   }),
 }))
 

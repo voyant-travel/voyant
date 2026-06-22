@@ -12,7 +12,6 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 
-import { availabilitySlotsRef } from "./availability-ref.js"
 import { bookings, bookingTravelers } from "./schema-core.js"
 import {
   bookingAllocationStatusEnum,
@@ -105,10 +104,10 @@ export const bookingAllocations = pgTable(
     optionId: text("option_id"),
     optionUnitId: text("option_unit_id"),
     pricingCategoryId: text("pricing_category_id"),
-    availabilitySlotId: typeIdRef("availability_slot_id").references(
-      () => availabilitySlotsRef.id,
-      { onDelete: "set null" },
-    ),
+    // Plain id (indexed below), not a hard cross-package FK — availability_slots
+    // is owned by @voyant-travel/availability; bookings references it loosely
+    // per module decoupling.
+    availabilitySlotId: typeIdRef("availability_slot_id"),
     quantity: integer("quantity").notNull().default(1),
     allocationType: bookingAllocationTypeEnum("allocation_type").notNull().default("unit"),
     status: bookingAllocationStatusEnum("status").notNull().default("held"),

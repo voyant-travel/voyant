@@ -8,7 +8,11 @@ import {
   buildDefaultTypesenseSearchFields,
   buildSearchQuery,
   createTypesenseIndexer,
+  type ImportFailureSummary,
+  parseTypesenseImportResults,
+  summarizeImportFailures,
   type TypesenseClient,
+  TypesenseImportError,
 } from "./typesense.js"
 
 const slice: IndexerSlice = {
@@ -292,5 +296,103 @@ describe("Typesense catalog indexer", () => {
       latitude: 45.76,
       hasOffer: true,
     })
+  })
+})
+
+const document: IndexerDocument = { id: "prod_abc", fields: { name: "Retreat" } }
+
+function clientReturningImport(result: unknown): TypesenseClient {
+  return {
+    collections: () => ({
+      create: async () => undefined,
+      update: async () => undefined,
+      delete: async () => undefined,
+      retrieve: async () => ({ name: "unused", fields: [] }),
+      documents: () => ({
+        import: async () => result,
+        delete: async () => undefined,
+        search: async () => ({ hits: [], found: 0 }),
+      }),
+    }),
+  }
+}
+
+describe("Typesense import-failure detection", () => {
+  const okLine = JSON.stringify({ success: true })
+  const failLine = JSON.stringify({
+    success: false,
+    error: "Field `categorySlugs` must be an array",
+    document: '{"id":"prod_abc"}',
+  })
+
+  it("parses an NDJSON import body into per-row results", () => {
+    const rows = parseTypesenseImportResults(`${okLine}\n${failLine}`)
+    expect(rows).toHaveLength(2)
+    expect(rows[0]?.success).toBe(true)
+    expect(rows[1]).toMatchObject({
+      success: false,
+      error: "Field `categorySlugs` must be an array",
+      document: '{"id":"prod_abc"}',
+    })
+  })
+
+  it("parses an already-parsed SDK results array", () => {
+    const rows = parseTypesenseImportResults([{ success: true }, { success: false, error: "boom" }])
+    expect(rows.map((r) => r.success)).toEqual([true, false])
+    expect(rows[1]?.error).toBe("boom")
+  })
+
+  it("treats non-inspectable responses (e.g. a `{}` double) as no failures", () => {
+    expect(summarizeImportFailures("c", {})).toBeNull()
+    expect(summarizeImportFailures("c", undefined)).toBeNull()
+    expect(summarizeImportFailures("c", `${okLine}\n${okLine}`)).toBeNull()
+  })
+
+  it("summarizes failures with counts and capped representative samples", () => {
+    const body = [failLine, failLine, failLine].join("\n")
+    const summary = summarizeImportFailures("products__en-GB__customer__default", body, 2)
+    expect(summary).toMatchObject({
+      collection: "products__en-GB__customer__default",
+      failed: 3,
+      total: 3,
+    })
+    expect(summary?.samples).toHaveLength(2)
+    expect(summary?.samples[0]).toContain("Field `categorySlugs` must be an array")
+  })
+
+  it("upsert throws TypesenseImportError when any row fails (default mode)", async () => {
+    const indexer = createTypesenseIndexer({
+      client: clientReturningImport(`${okLine}\n${failLine}`),
+    })
+    await expect(indexer.upsert(slice, [document])).rejects.toBeInstanceOf(TypesenseImportError)
+  })
+
+  it("best-effort mode reports failures via onImportFailure without throwing", async () => {
+    const reported: ImportFailureSummary[] = []
+    const indexer = createTypesenseIndexer({
+      client: clientReturningImport(`${okLine}\n${failLine}`),
+      importFailureMode: "best-effort",
+      onImportFailure: (summary) => reported.push(summary),
+    })
+    await expect(indexer.upsert(slice, [document])).resolves.toBeUndefined()
+    expect(reported).toHaveLength(1)
+    expect(reported[0]?.failed).toBe(1)
+  })
+
+  it("does not throw when every row succeeds", async () => {
+    const indexer = createTypesenseIndexer({
+      client: clientReturningImport(`${okLine}\n${okLine}`),
+    })
+    await expect(indexer.upsert(slice, [document])).resolves.toBeUndefined()
+  })
+
+  it("bulkReindex throws on row failure so the reindex CLI exits non-zero", async () => {
+    const indexer = createTypesenseIndexer({
+      client: clientReturningImport(`${okLine}\n${failLine}`),
+    })
+    async function* stream(): AsyncIterable<IndexerDocument> {
+      yield document
+    }
+    await expect(indexer.bulkReindex(slice, stream())).rejects.toBeInstanceOf(TypesenseImportError)
   })
 })

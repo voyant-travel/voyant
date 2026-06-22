@@ -3,13 +3,19 @@
  * runner cutover). Proves that the NEW migration sources reconstitute EXACTLY
  * the canonical CURRENT schema:
  *
- *   framework bundle   (packages/framework-migrations/migrations)
- *   + deployment links (starters/operator/migrations-d1)
+ *   frozen framework bundle      (packages/framework-migrations/migrations)
+ *   + package post-cutline increments
+ *   + deployment source          (starters/operator/migrations — link tables + custom)
  *   ===  drizzle-kit push of the live aggregate schema (drizzle.config.ts)
  *
- * WHY push, not a legacy replay. The committed legacy history
- * (`starters/operator/migrations/`) is BOTH incomplete and stale, so it is not
- * a valid canonical-schema source (measured 2026-06-17 — see
+ * The D.2 cutline is frozen. The framework bundle remains the squashed cutline
+ * seed for the replay oracle, while package migrations after the cutline execute
+ * normally. This mirrors the transitioned deployment path: import-baseline the
+ * cutline, then execute post-cutline increments.
+ *
+ * WHY push, not a legacy replay. The pre-collector legacy single-folder aggregate
+ * history (since REMOVED in the folder collapse) was BOTH incomplete and stale,
+ * so it was never a valid canonical-schema source (measured 2026-06-17 — see
  * docs/architecture/migration-collector-d1.md):
  *   • INCOMPLETE — 16 tables in the live schema have no CREATE migration at all
  *     (the whole operations/ground module: ground_dispatches/_drivers/_vehicles/
@@ -35,7 +41,7 @@
  */
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { join } from "node:path"
 
@@ -52,7 +58,8 @@ if (!DB_URL) {
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
-const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations-d1")
+const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations")
+const OPERATOR_SCHEMA_LIST = join(ROOT, "starters/operator/drizzle.schemas.generated.ts")
 const OPERATOR_DIR = join(ROOT, "starters/operator")
 
 // Extensions the live schema's trigram indexes need. The bundle ships these as a
@@ -76,6 +83,95 @@ function loadFolder(folder) {
   return [...journal.entries]
     .sort((a, b) => a.when - b.when)
     .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
+}
+
+function loadCutline() {
+  const p = join(ROOT, "packages/framework-migrations/cutline.generated.json")
+  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")).cutline ?? {}) : {}
+}
+
+function loadFolderAfterCutline(folder, sourceName, cutline) {
+  const covered = new Set(cutline[sourceName] ?? [])
+  const journal = JSON.parse(readFileSync(join(folder, "meta", "_journal.json"), "utf8"))
+  return [...journal.entries]
+    .sort((a, b) => a.when - b.when)
+    .filter((e) => !covered.has(e.tag))
+    .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
+}
+
+/** Load a single migration file's statements by tag (no journal needed). */
+function loadFolderTag(folder, tag) {
+  return splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8"))
+}
+
+function operatorSchemaPaths() {
+  const source = readFileSync(OPERATOR_SCHEMA_LIST, "utf8")
+  return [...source.matchAll(/["']([^"']+)["']/g)].map((m) => m[1])
+}
+
+function packageRootOfSchemaPath(schemaPath) {
+  const npm = schemaPath.match(/^(.*\/node_modules\/@voyant-travel\/([^/]+))\//)
+  if (npm) return { rootRel: npm[1], name: npm[2] }
+  const mono = schemaPath.match(/^(.*packages\/([^/]+))\//)
+  if (mono) return { rootRel: mono[1], name: mono[2] }
+  return null
+}
+
+function readPkgMeta(name, packageRoot) {
+  const pjPath = join(packageRoot, "package.json")
+  let pkgName = `@voyant-travel/${name}`
+  let requires = []
+  if (existsSync(pjPath)) {
+    const pj = JSON.parse(readFileSync(pjPath, "utf8"))
+    pkgName = pj.name ?? pkgName
+    requires = pj.voyant?.requiresSchemas ?? []
+  }
+  const migrationsDir = join(packageRoot, "migrations")
+  return {
+    name,
+    pkgName,
+    requires,
+    migrationsDir,
+    hasMigrations: existsSync(join(migrationsDir, "meta", "_journal.json")),
+  }
+}
+
+function discoverPackageSources() {
+  const order = []
+  const roots = new Map()
+  for (const p of operatorSchemaPaths()) {
+    const info = packageRootOfSchemaPath(p)
+    if (!info || roots.has(info.name)) continue
+    order.push(info.name)
+    roots.set(info.name, join(OPERATOR_DIR, info.rootRel))
+  }
+
+  const metas = new Map()
+  for (const name of order) metas.set(name, readPkgMeta(name, roots.get(name)))
+
+  const nameByPkg = new Map()
+  for (const m of metas.values()) nameByPkg.set(m.pkgName, m.name)
+
+  const sorted = []
+  const seen = new Set()
+  const visit = (name, stack = new Set()) => {
+    if (seen.has(name)) return
+    if (stack.has(name)) throw new Error(`schema migration source cycle at ${name}`)
+    stack.add(name)
+    const meta = metas.get(name)
+    if (meta) {
+      for (const dep of meta.requires) {
+        const depName = nameByPkg.get(dep)
+        if (depName) visit(depName, stack)
+      }
+    }
+    stack.delete(name)
+    seen.add(name)
+    sorted.push(name)
+  }
+  for (const name of order) visit(name)
+
+  return sorted.map((name) => metas.get(name)).filter(Boolean)
 }
 
 async function applyFolders(client, folders) {
@@ -154,16 +250,39 @@ async function main() {
         encoding: "utf8",
         env: { ...process.env, DATABASE_URL: urlFor("voyant_replay_push") },
       })
+      // `drizzle-kit push` does NOT materialise `.existing()` views — person_directory
+      // is a `pgView(...).existing()` (packages/relationships), so push leaves it out.
+      // The deployment migration source DOES create it (0002_person_directory_view), so
+      // the bundle+links path has it; seed the same DDL here for parity, otherwise the
+      // view's columns show up in information_schema.columns for the bundle+links path
+      // but not the push reference. See issue #1971.
+      await onDb("voyant_replay_push", async (c) => {
+        for (const stmt of loadFolderTag(DEPLOYMENT_LINKS, "0002_person_directory_view"))
+          await c.query(stmt)
+      })
       return onDb("voyant_replay_push", fingerprint)
     })
 
     // New path: framework bundle + deployment links applied fresh.
-    const newFp = await withFreshDb(admin, "voyant_replay_new", async () =>
-      onDb("voyant_replay_new", async (c) => {
-        await applyFolders(c, [FRAMEWORK_BUNDLE, DEPLOYMENT_LINKS])
+    const newFp = await withFreshDb(admin, "voyant_replay_new", async () => {
+      const cutline = loadCutline()
+      const packageSources = discoverPackageSources()
+      const sourceNames = packageSources.map((s) => s.name).join(", ")
+      console.log(`  sources: framework, ${sourceNames}, deployment`)
+      return onDb("voyant_replay_new", async (c) => {
+        await applyFolders(c, [FRAMEWORK_BUNDLE])
+        for (const source of packageSources) {
+          if (!source.hasMigrations) {
+            throw new Error(`schema source ${source.name} has no migrations folder`)
+          }
+          for (const stmt of loadFolderAfterCutline(source.migrationsDir, source.name, cutline)) {
+            await c.query(stmt)
+          }
+        }
+        await applyFolders(c, [DEPLOYMENT_LINKS])
         return fingerprint(c)
-      }),
-    )
+      })
+    })
 
     const sections = ["columns", "enums", "indexes", "constraints"]
     let ok = true

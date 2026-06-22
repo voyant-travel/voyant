@@ -49,7 +49,7 @@ function stubDb(rowsByTable: { schedule?: unknown[]; items?: unknown[] }): Postg
 
   return {
     select: (..._args: unknown[]) => makeChain(),
-  } as unknown as PostgresJsDatabase
+  } as PostgresJsDatabase
 }
 
 function makeDefaults(): DefaultContractVariables {
@@ -230,9 +230,9 @@ const bookingBase = {
   personId: null as string | null,
   organizationId: null as string | null,
   sourceType: "direct" as string | null,
-} as unknown as TestBooking
+} as TestBooking
 
-// biome-ignore lint/suspicious/noExplicitAny: test reads dynamic variable bag
+// biome-ignore lint/suspicious/noExplicitAny: because the test reads a dynamic variable bag
 type AnyRecord = Record<string, any>
 
 describe("buildContractVariableBindings", () => {

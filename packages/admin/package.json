@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/admin",
-  "version": "0.112.0",
+  "version": "0.115.0",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -59,7 +59,8 @@
   },
   "dependencies": {
     "@voyant-travel/i18n": "workspace:^",
-    "@voyant-travel/react": "workspace:^"
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",

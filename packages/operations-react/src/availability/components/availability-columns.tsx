@@ -3,8 +3,9 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge, Button } from "@voyant-travel/ui/components"
 import { DataTableColumnHeader } from "@voyant-travel/ui/components/data-table-column-header"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { cn } from "@voyant-travel/ui/lib/utils"
-import { ExternalLink, Pencil } from "lucide-react"
+import { AlertTriangle, ExternalLink, Pencil } from "lucide-react"
 import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type AvailabilityCloseoutRow,
@@ -34,6 +35,9 @@ export interface AvailabilityColumnsMessages {
   openLabel: string
   editLabel: string
   productLabel: string
+  optionLabel: string
+  optionMissingLabel: string
+  optionMissingTooltip: string
   productLevelLabel: string
   reasonLabel: string
   recurrenceLabel: string
@@ -204,16 +208,57 @@ export const availabilityStartTimeColumns = (
   },
 ]
 
+/**
+ * Lookup data for the option column. `optionNameById` resolves a slot's
+ * `optionId` to a readable name; `productsWithOptions` is the set of product ids
+ * that have at least one active option, used to warn only when a missing option
+ * actually makes the departure unpriceable (#2062).
+ */
+export interface SlotOptionInfo {
+  optionNameById: Map<string, string>
+  productsWithOptions: Set<string>
+}
+
 export const availabilitySlotColumns = (
   products: ProductOption[],
   onView: (slotId: string) => void,
   messages: AvailabilityColumnsMessages,
   onEdit?: (slot: AvailabilitySlotRow) => void,
+  optionInfo?: SlotOptionInfo,
 ): ColumnDef<AvailabilitySlotRow>[] => [
   {
     accessorKey: "productId",
     header: ({ column }) => <DataTableColumnHeader column={column} title={messages.productLabel} />,
     cell: ({ row }) => productNameById(products, row.original.productId, row.original.productName),
+  },
+  {
+    id: "option",
+    header: () => messages.optionLabel,
+    cell: ({ row }) => {
+      const { optionId, productId } = row.original
+      if (optionId) {
+        return optionInfo?.optionNameById.get(optionId) ?? messages.details.noValue
+      }
+      // No option set: only flag it when the product actually has options, so a
+      // legitimately option-less product isn't warned.
+      if (optionInfo?.productsWithOptions.has(productId)) {
+        return (
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">
+              <Badge
+                variant="outline"
+                className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400"
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {messages.optionMissingLabel}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>{messages.optionMissingTooltip}</TooltipContent>
+          </Tooltip>
+        )
+      }
+      return messages.details.noValue
+    },
   },
   {
     accessorKey: "startsAt",

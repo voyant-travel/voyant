@@ -6,7 +6,7 @@ import {
   type ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
 import type { CatalogSearchParams } from "../index.js"
-import { CatalogVerticalHost } from "./catalog-vertical-host.js"
+import { type CatalogAdminScopeOptions, CatalogVerticalHost } from "./catalog-vertical-host.js"
 import { openHrefInNewTab } from "./open-in-new-tab.js"
 
 export interface ScheduledCatalogHostProps {
@@ -16,6 +16,7 @@ export interface ScheduledCatalogHostProps {
     updater: (prev: CatalogSearchParams) => CatalogSearchParams,
     replace?: boolean,
   ) => void
+  scopeOptions?: CatalogAdminScopeOptions
 }
 
 /**
@@ -24,7 +25,12 @@ export interface ScheduledCatalogHostProps {
  * wiring) as the embedded browse grid, opening each result's vertical detail
  * page (the `catalog.detail` destination) in a new tab on click.
  */
-export function ScheduledCatalogHost({ scope, search, onSearchChange }: ScheduledCatalogHostProps) {
+export function ScheduledCatalogHost({
+  scope,
+  search,
+  onSearchChange,
+  scopeOptions,
+}: ScheduledCatalogHostProps) {
   const resolveHref = useAdminHref()
   const nav = useOperatorAdminMessages().nav
   const title = scope === "excursions" ? nav.catalogExcursions : nav.catalogTours
@@ -43,6 +49,7 @@ export function ScheduledCatalogHost({ scope, search, onSearchChange }: Schedule
           embedded
           lockedFacets={lockedFacets}
           lockedRanges={lockedRanges}
+          scopeOptions={scopeOptions}
           onOpenDetail={(hit) =>
             openHrefInNewTab(resolveHref("catalog.detail", { surface: scope, id: hit.id }))
           }

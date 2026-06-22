@@ -10,6 +10,7 @@ import {
   productCapabilities,
   productCategoryProducts,
   productDayServices,
+  productDayServiceTranslations,
   productDays,
   productDayTranslations,
   productDeliveryFormats,
@@ -17,6 +18,7 @@ import {
   productFaqs,
   productFeatures,
   productItineraries,
+  productItineraryTranslations,
   productLocations,
   productMedia,
   productOptions,
@@ -38,6 +40,7 @@ export interface CloneContext {
   unitsByNewOption: Map<string, { id: string }[]>
   itineraryIdMap: Map<string, string>
   dayIdMap: Map<string, string>
+  serviceIdMap: Map<string, string>
   startTimeIdMap: Map<string, string>
   ruleIdMap: Map<string, string>
   slotIdMap: Map<string, string>
@@ -315,7 +318,7 @@ async function copyPricingCategories(ctx: CloneContext): Promise<void> {
 }
 
 async function copyItinerary(ctx: CloneContext): Promise<void> {
-  const { tx, sourceId, targetId, itineraryIdMap, dayIdMap } = ctx
+  const { tx, sourceId, targetId, itineraryIdMap, dayIdMap, serviceIdMap } = ctx
 
   const sourceItineraries = await tx
     .select()
@@ -337,6 +340,18 @@ async function copyItinerary(ctx: CloneContext): Promise<void> {
   }
 
   const sourceItineraryIds = sourceItineraries.map((row) => row.id)
+  const itineraryTranslationRows = await tx
+    .select()
+    .from(productItineraryTranslations)
+    .where(inArray(productItineraryTranslations.itineraryId, sourceItineraryIds))
+  for (const row of itineraryTranslationRows) {
+    const targetItineraryId = itineraryIdMap.get(row.itineraryId)
+    if (!targetItineraryId) continue
+    await tx
+      .insert(productItineraryTranslations)
+      .values({ ...withoutSystemColumns(row), itineraryId: targetItineraryId })
+  }
+
   const sourceDays = await tx
     .select()
     .from(productDays)
@@ -361,7 +376,26 @@ async function copyItinerary(ctx: CloneContext): Promise<void> {
   for (const row of dayServiceRows) {
     const targetDayId = dayIdMap.get(row.dayId)
     if (!targetDayId) continue
-    await tx.insert(productDayServices).values({ ...withoutSystemColumns(row), dayId: targetDayId })
+    const [copy] = await tx
+      .insert(productDayServices)
+      .values({ ...withoutSystemColumns(row), dayId: targetDayId })
+      .returning()
+    if (copy) serviceIdMap.set(row.id, copy.id)
+  }
+
+  const sourceServiceIds = dayServiceRows.map((row) => row.id)
+  if (sourceServiceIds.length > 0) {
+    const dayServiceTranslationRows = await tx
+      .select()
+      .from(productDayServiceTranslations)
+      .where(inArray(productDayServiceTranslations.serviceId, sourceServiceIds))
+    for (const row of dayServiceTranslationRows) {
+      const targetServiceId = serviceIdMap.get(row.serviceId)
+      if (!targetServiceId) continue
+      await tx
+        .insert(productDayServiceTranslations)
+        .values({ ...withoutSystemColumns(row), serviceId: targetServiceId })
+    }
   }
 
   const dayTranslationRows = await tx

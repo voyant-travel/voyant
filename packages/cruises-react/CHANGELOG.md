@@ -1,5 +1,103 @@
 # @voyant-travel/cruises-react
 
+## 0.132.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/cruises@0.132.0
+  - @voyant-travel/catalog-react@0.131.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.131.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.130.0
+- @voyant-travel/cruises@0.131.0
+
+## 0.130.1
+
+### Patch Changes
+
+- @voyant-travel/cruises@0.130.1
+- @voyant-travel/catalog-react@0.129.1
+
+## 0.130.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/catalog-react@0.129.0
+  - @voyant-travel/cruises@0.130.0
+
+## 0.129.0
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/catalog-react@0.128.0
+  - @voyant-travel/cruises@0.129.0
+
+## 0.128.0
+
+### Patch Changes
+
+- @voyant-travel/cruises@0.128.0
+- @voyant-travel/catalog-react@0.127.0
+
+## 0.127.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.126.0
+- @voyant-travel/cruises@0.127.0
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/cruises@0.126.0
+- @voyant-travel/catalog-react@0.125.0
+
+## 0.125.1
+
+### Patch Changes
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/cruises@0.125.1
+  - @voyant-travel/catalog-react@0.124.1
+
+## 0.125.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.124.0
+- @voyant-travel/cruises@0.125.0
+
+## 0.124.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/catalog-react@0.123.0
+  - @voyant-travel/cruises@0.124.0
+
+## 0.123.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/catalog-react@0.122.0
+  - @voyant-travel/cruises@0.123.0
+
 ## 0.122.0
 
 ### Patch Changes

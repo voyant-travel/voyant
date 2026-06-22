@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react"
 import { usePaymentLinkBookingSummary } from "@/components/voyant/checkout/payment-link-booking-summary"
 import { usePaymentLinkTripSummary } from "@/components/voyant/checkout/payment-link-trip-summary"
 import { getApiUrl } from "@/lib/env"
+import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
 
 /**
  * Public payment-link landing page. The customer arrives here from a link
@@ -23,8 +24,16 @@ import { getApiUrl } from "@/lib/env"
  * See `docs/architecture/payments-architecture.md` §Core Rule 4.
  */
 export const Route = createFileRoute("/pay_/$sessionId")({
-  component: PayLandingInner,
+  component: PayLanding,
 })
+
+function PayLanding() {
+  return (
+    <StorefrontMessagesProvider>
+      <PayLandingInner />
+    </StorefrontMessagesProvider>
+  )
+}
 
 interface PaymentLinkConfigResponse {
   data: {
@@ -41,6 +50,7 @@ interface PaymentLinkConfigResponse {
 
 function PayLandingInner() {
   const { sessionId } = Route.useParams()
+  const t = useStorefrontMessages().pay
   const sessionQuery = usePublicPaymentSession(sessionId)
   const tripSummary = usePaymentLinkTripSummary(sessionId)
   const bookingSummary = usePaymentLinkBookingSummary(sessionId)
@@ -105,11 +115,8 @@ function PayLandingInner() {
     }
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-        <h1 className="font-semibold text-xl">Payment link not found</h1>
-        <p className="max-w-md text-muted-foreground text-sm">
-          This payment link is invalid or has been removed. Please contact your travel agent for a
-          fresh link.
-        </p>
+        <h1 className="font-semibold text-xl">{t.notFoundTitle}</h1>
+        <p className="max-w-md text-muted-foreground text-sm">{t.notFoundBody}</p>
       </div>
     )
   }
@@ -150,7 +157,7 @@ function PayLandingInner() {
           error?: string
         }
         if (!res.ok || !body.data) {
-          throw new Error(body.error ?? "Couldn't create a fresh payment link.")
+          throw new Error(body.error ?? t.retryFailed)
         }
         // Hard navigation — drops React Query cache for the dead session and
         // gives the new session id a clean URL.

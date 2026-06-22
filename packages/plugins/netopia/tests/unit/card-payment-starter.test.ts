@@ -31,7 +31,7 @@ function makeContext(runtime: unknown): Context {
         resolve: (key: string) => (key === NETOPIA_RUNTIME_CONTAINER_KEY ? runtime : undefined),
       },
     },
-  } as unknown as Context
+  } as Context
 }
 
 describe("netopiaCardPaymentStarter", () => {

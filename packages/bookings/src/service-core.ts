@@ -65,6 +65,7 @@ import {
 } from "./schema.js"
 import { cleanupGroupOnBookingCancelled } from "./service-groups.js"
 import { type BookingStatus, canTransitionBooking, transitionBooking } from "./state-machine.js"
+import { BOOKING_RESOURCE_CAPACITY_STATUSES } from "./status.js"
 import type {
   bookingListQuerySchema,
   cancelBookingSchema,
@@ -110,6 +111,14 @@ function sqlTextArray(values: readonly string[]): SQL {
     values.map((value) => sql`${value}`),
     sql.raw(", "),
   )}]::text[]`
+}
+
+function sqlValueList(values: readonly string[]): SQL {
+  // agent-quality: raw-sql reviewed -- owner: bookings; dynamic SQL interpolation uses Drizzle parameter binding.
+  return sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )
 }
 
 function buildBookingSearchCondition(search: string): SQL | undefined {
@@ -1499,7 +1508,7 @@ export async function loadResourceCapacityViolations(
         ON ba.booking_id = bt.booking_id
        AND ba.availability_slot_id = checks.slot_id
       JOIN bookings b ON b.id = bt.booking_id
-      WHERE b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      WHERE b.status IN (${sqlValueList(BOOKING_RESOURCE_CAPACITY_STATUSES)})
         AND ba.status IN ('held', 'confirmed', 'fulfilled')
         AND btd.traveler_id <> ${travelerId}
       GROUP BY checks.kind, checks.resource_id

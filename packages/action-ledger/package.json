@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/action-ledger",
-  "version": "0.105.1",
+  "version": "0.105.5",
   "description": "Action ledger schema, append-only write helpers, and idempotency primitives for Voyant control surfaces.",
   "license": "Apache-2.0",
   "type": "module",
@@ -22,7 +22,8 @@
     "test": "vitest run --passWithNoTests",
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=action_ledger_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
@@ -34,11 +35,14 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

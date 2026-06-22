@@ -7,6 +7,7 @@ export const adminTripsMessagesEnPart1 = {
     searchPlaceholder: "Search by id, title, or description",
     clearFilters: "Clear",
     newTrip: "New trip",
+    composeTrip: "Compose trip",
     loadFailed: "Failed to load trips.",
     emptyFiltered: "No trips match these filters.",
     empty: "No composed trips yet.",

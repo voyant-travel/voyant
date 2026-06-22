@@ -19,6 +19,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
 import type { HonoExtension, HonoModule } from "./module.js"
+import type { Reporter } from "./observability/reporter.js"
 import type { HonoBundle } from "./plugin.js"
 
 export interface VoyantExecutionContext {
@@ -51,6 +52,12 @@ export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase | NeonWsDatabase
 export type VoyantQueryRuntime = QueryRunner
 
 export type VoyantVariables = CoreVoyantVariables & {
+  /**
+   * Per-request correlation id (RFC #1553). Set by the `requestId` middleware;
+   * also on the `X-Request-Id` response header and readable from any async
+   * context via `getRequestId()`.
+   */
+  requestId?: string
   db: VoyantDb
   /** Shared app/runtime container for explicit service resolution. */
   container: ModuleContainer
@@ -170,6 +177,8 @@ export interface LogEntry {
   path: string
   status: number
   durationMs: number
+  /** Per-request correlation id (RFC #1553), when available. */
+  requestId?: string
 }
 
 export interface LoggerProvider {
@@ -246,6 +255,22 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   auth?: VoyantAuthIntegration<TBindings>
   publicPaths?: string[]
   logger?: LoggerProvider
+  /**
+   * Observability sink for unhandled exceptions at framework catch points
+   * (RFC #1553). Receives a normalized `{ requestId, app, error, context }`
+   * event for every 5xx — the `requestId` matches the one surfaced to the user
+   * on `X-Request-Id`, so a reported reference is findable in the backend.
+   * Defaults to a no-op (zero vendor coupling). Supply a `Reporter` — a
+   * Sentry/OpenTelemetry adapter, or the built-in `consoleReporter` — to wire a
+   * backend. The framework owns the catch points + event shape; the sink is a
+   * deployment choice.
+   */
+  reporter?: Reporter
+  /**
+   * Logical name for this app/worker, stamped on emitted error events and used
+   * for log correlation. Defaults to `"voyant"`.
+   */
+  appName?: string
   /**
    * Shared response cache for the public surface (`/v1/public/*` by
    * default). Enabled by default but inert until a route marks its

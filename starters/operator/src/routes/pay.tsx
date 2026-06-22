@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react"
 import { z } from "zod"
 
 import { getApiUrl } from "@/lib/env"
+import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
 
 /**
  * Public landing for processor redirects that don't carry our session id
@@ -26,7 +27,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/pay")({
   validateSearch: searchSchema,
-  component: PayLandingResolver,
+  component: PayLanding,
 })
 
 interface ResolveResponse {
@@ -34,9 +35,18 @@ interface ResolveResponse {
   error?: string
 }
 
+function PayLanding() {
+  return (
+    <StorefrontMessagesProvider>
+      <PayLandingResolver />
+    </StorefrontMessagesProvider>
+  )
+}
+
 function PayLandingResolver() {
   const { orderID, orderId, sessionId } = Route.useSearch()
   const ref = orderID ?? orderId ?? sessionId ?? null
+  const t = useStorefrontMessages().pay
 
   const resolveQuery = useQuery({
     queryKey: ["payment-link-resolve", ref],
@@ -56,30 +66,20 @@ function PayLandingResolver() {
   })
 
   if (!ref) {
-    return (
-      <FallbackPanel
-        title="Payment link missing identifier"
-        body="The link you followed didn't include a payment reference. Please contact your travel agent for a fresh link."
-      />
-    )
+    return <FallbackPanel title={t.missingIdentifierTitle} body={t.missingIdentifierBody} />
   }
 
   if (resolveQuery.isLoading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center gap-3 px-4 py-8 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <h1 className="font-semibold text-xl">Looking up your payment…</h1>
+        <h1 className="font-semibold text-xl">{t.lookingUp}</h1>
       </div>
     )
   }
 
   if (resolveQuery.error || !resolveQuery.data) {
-    return (
-      <FallbackPanel
-        title="Payment link not found"
-        body="This payment link is invalid or has been removed. Please contact your travel agent for a fresh link."
-      />
-    )
+    return <FallbackPanel title={t.notFoundTitle} body={t.notFoundBody} />
   }
 
   return (

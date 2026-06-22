@@ -301,7 +301,7 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+    <div className="flex flex-col gap-4 rounded-md border bg-card p-5">
       <div className="flex items-center gap-2 text-emerald-700">
         <CheckCircle2 className="h-5 w-5" />
         <span className="font-medium">{messages.result.ready}</span>

@@ -465,6 +465,55 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
     expect(slugBody.data.shortDescription).toBe("Croaziera fluviala prin capitale europene.")
   })
 
+  it("resolves slug lookups through the same locale fallback as public catalog search", async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Danube Cruise",
+        description: "River cruise through major capitals.",
+        status: "active",
+        activated: true,
+        visibility: "public",
+        sellCurrency: "EUR",
+      })
+      .returning()
+
+    await db.insert(productTranslations).values({
+      productId: product.id,
+      languageTag: "ro",
+      slug: "croaziera-dunare",
+      name: "Croaziera pe Dunare",
+      shortDescription: "Croaziera fluviala premium.",
+      description: "Descriere localizata pentru croaziera pe Dunare.",
+      seoTitle: "Croaziera pe Dunare",
+      seoDescription: "Rezerva croaziera pe Dunare.",
+    })
+
+    const searchDocuments = await catalogProductsService.listSearchDocuments(db, {
+      languageTag: "fr",
+      limit: 50,
+      offset: 0,
+    })
+
+    expect(searchDocuments.data[0]).toEqual(
+      expect.objectContaining({
+        productId: product.id,
+        languageTag: "ro",
+        slug: "croaziera-dunare",
+      }),
+    )
+
+    const slugRes = await app.request("/slug/croaziera-dunare?languageTag=fr", {
+      method: "GET",
+    })
+
+    expect(slugRes.status).toBe(200)
+    const slugBody = await slugRes.json()
+    expect(slugBody.data.id).toBe(product.id)
+    expect(slugBody.data.contentLanguageTag).toBe("ro")
+    expect(slugBody.data.slug).toBe("croaziera-dunare")
+  })
+
   it("builds localized search documents for indexing with translation fallback", async () => {
     const [product] = await db
       .insert(products)

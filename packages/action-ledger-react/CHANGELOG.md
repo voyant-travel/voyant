@@ -1,5 +1,102 @@
 # @voyant-travel/action-ledger-react
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/action-ledger@0.105.5
+  - @voyant-travel/bookings-react@0.133.0
+  - @voyant-travel/inventory-react@0.15.0
+  - @voyant-travel/relationships-react@0.133.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.19.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.132.0
+- @voyant-travel/inventory-react@0.14.0
+- @voyant-travel/relationships-react@0.132.0
+
+## 0.18.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/bookings-react@0.131.0
+  - @voyant-travel/inventory-react@0.13.0
+  - @voyant-travel/relationships-react@0.131.0
+
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/bookings-react@0.130.0
+  - @voyant-travel/inventory-react@0.12.0
+  - @voyant-travel/relationships-react@0.130.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.129.0
+- @voyant-travel/inventory-react@0.11.0
+- @voyant-travel/relationships-react@0.129.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.10.0
+- @voyant-travel/bookings-react@0.128.0
+- @voyant-travel/relationships-react@0.128.0
+
+## 0.14.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.127.0
+- @voyant-travel/inventory-react@0.9.0
+- @voyant-travel/relationships-react@0.127.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.126.0
+- @voyant-travel/inventory-react@0.8.0
+- @voyant-travel/relationships-react@0.126.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/bookings-react@0.125.0
+  - @voyant-travel/inventory-react@0.7.0
+  - @voyant-travel/relationships-react@0.125.0
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/inventory-react@0.6.0
+  - @voyant-travel/bookings-react@0.124.0
+  - @voyant-travel/relationships-react@0.124.0
+
 ## 0.10.0
 
 ### Patch Changes

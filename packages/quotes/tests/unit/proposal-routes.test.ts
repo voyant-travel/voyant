@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: quotes; the proposal route suite covers one cohesive accept-under-lock contract and stays co-located until a dedicated split preserves behavior and tests.
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -25,12 +26,14 @@ const mocks = vi.hoisted(() => {
     freezeTripSnapshot: vi.fn(),
     getQuoteVersionById: vi.fn(),
     getQuoteVersionProposal: vi.fn(),
+    listQuoteMedia: vi.fn(),
     markQuoteVersionViewed: vi.fn(),
     sendQuoteVersion: vi.fn(),
     // trips service
     getTrip: vi.fn(),
     getTripSnapshotById: vi.fn(),
     reserveTrip: vi.fn(),
+    cancelComponents: vi.fn(),
     startCheckout: vi.fn(),
   }
 })
@@ -44,6 +47,7 @@ vi.mock("../../src/service/index.js", () => ({
     expireQuoteVersionIfPastValidUntil: mocks.expireQuoteVersionIfPastValidUntil,
     getQuoteVersionById: mocks.getQuoteVersionById,
     getQuoteVersionProposal: mocks.getQuoteVersionProposal,
+    listQuoteMedia: mocks.listQuoteMedia,
     markQuoteVersionViewed: mocks.markQuoteVersionViewed,
     sendQuoteVersion: mocks.sendQuoteVersion,
   },
@@ -56,6 +60,7 @@ vi.mock("@voyant-travel/trips", () => ({
     getTrip: mocks.getTrip,
     getTripSnapshotById: mocks.getTripSnapshotById,
     reserveTrip: mocks.reserveTrip,
+    cancelComponents: mocks.cancelComponents,
     startCheckout: mocks.startCheckout,
   },
 }))
@@ -75,6 +80,7 @@ const options = {
   resolvePublicProposalBaseUrl: () => null,
   reserveTripDeps: () => ({ reserve: "deps" }) as never,
   startCheckoutDeps: () => ({ checkout: "deps" }) as never,
+  cancelTripComponentsDeps: () => ({ cancel: "deps" }) as never,
   resolveOperatorProfile: vi.fn(async () => operatorProfile as unknown),
 }
 
@@ -316,7 +322,7 @@ describe("quote proposal routes", () => {
     await expect(response.json()).resolves.toEqual({ data: { status: "declined" } })
   })
 
-  it("accepts a sent proposal: verify snapshot, reserve, accept, start checkout", async () => {
+  it("accepts a sent proposal: prepare under lock, reserve outside txn, finalize under lock", async () => {
     const app = makeApp()
     mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
     mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
@@ -349,11 +355,14 @@ describe("quote proposal routes", () => {
     })
 
     expect(response.status).toBe(200)
-    expect(fakeDb.transaction).toHaveBeenCalledOnce()
-    expect(fakeTx.execute).toHaveBeenCalledOnce()
+    // Two locked transactions now: prepare (txn 1) and finalize (txn 2). Each
+    // acquires the quote-accept advisory lock via fakeTx.execute.
+    expect(fakeDb.transaction).toHaveBeenCalledTimes(2)
+    expect(fakeTx.execute).toHaveBeenCalledTimes(2)
     expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeTx, "trsn_123")
+    // Reservation runs OUTSIDE the transaction, on the durable request db.
     expect(mocks.reserveTrip).toHaveBeenCalledWith(
-      fakeTx,
+      fakeDb,
       expect.objectContaining({
         envelopeId: "trip_123",
         idempotencyKey: "proposal-accept-reserve:qver_123:accept-1",
@@ -361,6 +370,7 @@ describe("quote proposal routes", () => {
       { reserve: "deps" },
     )
     expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
     expect(mocks.startCheckout).toHaveBeenCalledWith(
       fakeDb,
       expect.objectContaining({
@@ -369,8 +379,15 @@ describe("quote proposal routes", () => {
       }),
       { checkout: "deps" },
     )
+    // Order: prepare lock -> reserve -> finalize lock -> accept.
     expect(fakeTx.execute.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.reserveTrip.mock.invocationCallOrder[0],
+    )
+    expect(mocks.reserveTrip.mock.invocationCallOrder[0]).toBeLessThan(
+      fakeTx.execute.mock.invocationCallOrder[1],
+    )
+    expect(fakeTx.execute.mock.invocationCallOrder[1]).toBeLessThan(
+      mocks.acceptQuoteVersion.mock.invocationCallOrder[0],
     )
     await expect(response.json()).resolves.toEqual({
       data: {
@@ -382,6 +399,42 @@ describe("quote proposal routes", () => {
         warnings: [],
       },
     })
+  })
+
+  it("serializes the losing concurrent accept and never reserves its Trip", async () => {
+    const app = makeApp()
+    // The pre-lock precheck (line ~389) sees `sent`: this request raced a
+    // sibling accept and passed the public status gate concurrently. By the
+    // time it wins the quote-accept advisory lock, the sibling has committed
+    // and flipped this version to `declined`, so the post-lock re-read bails
+    // with 409 *before* reserveTrip runs — no orphan hold for the loser.
+    mocks.getQuoteVersionProposal.mockResolvedValueOnce(proposal).mockResolvedValueOnce({
+      ...proposal,
+      quoteVersion: { ...quoteVersion, status: "declined" },
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: "Proposal can no longer be accepted",
+    })
+    // The advisory lock must be acquired *before* the post-lock re-read that
+    // observes the declined status — otherwise a "read-then-lock" ordering
+    // would still 409 here while leaving the stale-read race wide open. The
+    // first proposal read is the pre-lock precheck; the second is the
+    // serialized re-read that must happen after the lock.
+    const lockOrder = fakeTx.execute.mock.invocationCallOrder[0]
+    const prelockReadOrder = mocks.getQuoteVersionProposal.mock.invocationCallOrder[0]
+    const postlockReadOrder = mocks.getQuoteVersionProposal.mock.invocationCallOrder[1]
+    expect(prelockReadOrder).toBeLessThan(lockOrder)
+    expect(lockOrder).toBeLessThan(postlockReadOrder)
+    // The loser neither reserved its Trip nor accepted the Quote Version.
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
 
   it("rejects accepting when the proposal does not match the frozen snapshot", async () => {
@@ -425,6 +478,206 @@ describe("quote proposal routes", () => {
       error: "Proposal could not be reserved",
       failures: [{ code: "price_changed", reason: "price_changed" }],
     })
+  })
+
+  it("reserves sourced catalog components outside the CRM accept transaction", async () => {
+    const app = makeApp()
+    const sourcedComponent = {
+      ...frozenComponent,
+      kind: "catalog_booking",
+      sourceKind: "supplier_api",
+      sourceConnectionId: "conn_123",
+    }
+    const sourcedSnapshot = {
+      ...tripSnapshot,
+      frozenComponents: [sourcedComponent],
+    }
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(sourcedSnapshot)
+    mocks.getTrip.mockResolvedValue({ envelope: frozenEnvelope, components: [sourcedComponent] })
+    mocks.reserveTrip.mockResolvedValue({
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: [],
+    })
+    mocks.acceptQuoteVersion.mockResolvedValue({
+      quote: { ...proposal.quote, acceptedVersionId: "qver_123" },
+      quoteVersion: { ...quoteVersion, status: "accepted" },
+      closedQuoteVersions: [],
+    })
+    mocks.startCheckout.mockResolvedValue({
+      target: {
+        currency: "EUR",
+        totalAmountCents: 10900,
+        paymentSessionId: null,
+        checkoutUrl: null,
+      },
+      failures: [],
+      warnings: [],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    // Sourced catalog components are no longer rejected; they reserve outside
+    // the CRM accept transaction and the proposal is accepted.
+    expect(response.status).toBe(200)
+    expect(mocks.reserveTrip).toHaveBeenCalledWith(
+      fakeDb,
+      expect.objectContaining({ envelopeId: "trip_123" }),
+      { reserve: "deps" },
+    )
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
+  })
+
+  it("releases the reserved trip when final CRM acceptance rejects", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
+    mocks.reserveTrip.mockResolvedValue({
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: [],
+    })
+    mocks.acceptQuoteVersion.mockRejectedValue(
+      new mocks.QuoteVersionConflictError("Quote already has an accepted Quote Version"),
+    )
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(409)
+    // The successful reservation is released so the supplier hold isn't orphaned.
+    expect(mocks.cancelComponents).toHaveBeenCalledWith(
+      fakeDb,
+      {
+        envelopeId: "trip_123",
+        componentIds: ["trcp_123"],
+        reason: "quote_accept_failed",
+        idempotencyKey: "proposal-accept-release:qver_123:quote_accept_failed",
+        request: {
+          initiatedBy: "public-proposal-accept",
+          quoteVersionId: "qver_123",
+        },
+      },
+      { cancel: "deps" },
+    )
+    expect(mocks.startCheckout).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("accepted Quote Version"),
+    })
+  })
+
+  it("does not release a replayed reservation when final CRM acceptance rejects", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
+    mocks.reserveTrip.mockResolvedValue({
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: ["idempotent_replay"],
+    })
+    mocks.acceptQuoteVersion.mockRejectedValue(
+      new mocks.QuoteVersionConflictError("Quote already has an accepted Quote Version"),
+    )
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(409)
+    // A replay returns pre-existing holds; releasing them would cancel another
+    // request's successful reservation.
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
+    expect(mocks.startCheckout).not.toHaveBeenCalled()
+  })
+
+  it("resumes a crashed acceptance whose Trip is already reserved under this proposal's key", async () => {
+    const app = makeApp()
+    // The reserve succeeded on a prior attempt but the worker died before
+    // finalize accepted the quote: the version is still `sent` while the live
+    // Trip is `reserved` under this proposal's reserve key.
+    const reservedLiveTrip = {
+      envelope: {
+        ...frozenEnvelope,
+        status: "reserved",
+        reserveIdempotencyKey: "proposal-accept-reserve:qver_123:accept-1",
+      },
+      components: [{ ...frozenComponent, status: "held" }],
+    }
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(reservedLiveTrip)
+    // reserveTrip replays the existing hold idempotently instead of re-holding.
+    mocks.reserveTrip.mockResolvedValue({
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: ["idempotent_replay"],
+    })
+    mocks.acceptQuoteVersion.mockResolvedValue({
+      quote: { ...proposal.quote, acceptedVersionId: "qver_123" },
+      quoteVersion: { ...quoteVersion, status: "accepted" },
+      closedQuoteVersions: [],
+    })
+    mocks.startCheckout.mockResolvedValue({
+      target: {
+        currency: "EUR",
+        totalAmountCents: 10900,
+        paymentSessionId: "pays_123",
+        checkoutUrl: "https://travel.example.com/pay/pays_123",
+      },
+      failures: [],
+      warnings: [],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    // The reserved-but-unaccepted state recovers instead of wedging on 409.
+    expect(response.status).toBe(200)
+    expect(mocks.reserveTrip).toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
+  })
+
+  it("still rejects a live Trip reserved under a different (non-proposal) key", async () => {
+    const app = makeApp()
+    // A Trip reserved outside this proposal flow (e.g. a staff reserve) carries
+    // a non-matching key, so it must remain a "Trip changed since sent" 409.
+    const foreignReservedTrip = {
+      envelope: {
+        ...frozenEnvelope,
+        status: "reserved",
+        reserveIdempotencyKey: "staff-reserve:other",
+      },
+      components: [{ ...frozenComponent, status: "held" }],
+    }
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(foreignReservedTrip)
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(409)
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
 
   it("freezes and applies a snapshot to a draft quote version", async () => {

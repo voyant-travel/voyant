@@ -180,6 +180,10 @@ export function CatalogTabPanel({
   const totalPages = Math.max(1, Math.ceil(total / effectivePageSize))
   const facetGroups = data?.facets ?? {}
   const hits = data?.hits ?? []
+  const scopeHint = formatTemplate(messages.search.resolvedScope, {
+    locale: locale ?? "any",
+    market: market ?? "any",
+  })
 
   const sortOptions = useMemo<CatalogSortOption[]>(() => {
     const opts: CatalogSortOption[] = ["relevance"]
@@ -198,7 +202,8 @@ export function CatalogTabPanel({
     const message = error instanceof Error ? error.message : String(error)
     return (
       <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-        {message}
+        <div>{message}</div>
+        <div className="mt-2 text-destructive/75 text-xs">{scopeHint}</div>
       </div>
     )
   }
@@ -300,10 +305,13 @@ export function CatalogTabPanel({
                 {hits.length === 0 ? (
                   (tab.emptyState ?? (
                     <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
-                      {formatTemplate(messages.search.noResults, {
-                        query: query ? `"${query}"` : messages.search.yourFilters,
-                        tab: tab.label.toLowerCase(),
-                      })}
+                      <div>
+                        {formatTemplate(messages.search.noResults, {
+                          query: query ? `"${query}"` : messages.search.yourFilters,
+                          tab: tab.label.toLowerCase(),
+                        })}
+                      </div>
+                      <div className="mt-2 text-xs">{scopeHint}</div>
                     </div>
                   ))
                 ) : viewMode === "grid" && cardConfig ? (

@@ -1,5 +1,67 @@
 # flights-demo-api
 
+## 0.19.29
+
+### Patch Changes
+
+- @voyant-travel/flights@0.133.0
+
+## 0.19.28
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/flights@0.132.0
+
+## 0.19.27
+
+### Patch Changes
+
+- @voyant-travel/flights@0.131.0
+
+## 0.19.26
+
+### Patch Changes
+
+- @voyant-travel/flights@0.130.0
+
+## 0.19.25
+
+### Patch Changes
+
+- @voyant-travel/flights@0.129.0
+
+## 0.19.24
+
+### Patch Changes
+
+- @voyant-travel/flights@0.128.0
+
+## 0.19.23
+
+### Patch Changes
+
+- Updated dependencies [c143531]
+  - @voyant-travel/flights@0.127.0
+
+## 0.19.22
+
+### Patch Changes
+
+- @voyant-travel/flights@0.126.0
+
+## 0.19.21
+
+### Patch Changes
+
+- @voyant-travel/flights@0.125.0
+
+## 0.19.20
+
+### Patch Changes
+
+- @voyant-travel/flights@0.124.0
+
 ## 0.19.19
 
 ### Patch Changes

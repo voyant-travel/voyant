@@ -1,4 +1,6 @@
+// agent-quality: file-size exception -- owner: operator; explicit source-controlled admin composition (one factory per domain) intentionally stays in one file.
 import { useNavigate } from "@tanstack/react-router"
+import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
@@ -10,7 +12,7 @@ import {
 } from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { Button } from "@voyant-travel/ui/components/button"
-import { Building, Route, ScrollText, Tag } from "lucide-react"
+import { Building, FileText, Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -69,6 +71,7 @@ type AdminExtensionNavMessages = Pick<
   | "products"
   | "profitability"
   | "promotions"
+  | "quotes"
   | "resources"
   | "supplierInvoices"
   | "suppliers"
@@ -166,6 +169,10 @@ const crmMessagesProvider = loadProvider(
   () => import("@voyant-travel/relationships-react/i18n"),
   (module) => module.CrmUiMessagesProvider,
 )
+const quotesMessagesProvider = loadProvider(
+  () => import("@voyant-travel/quotes-react/i18n"),
+  (module) => module.CrmUiMessagesProvider,
+)
 
 const bookingRouteMessagesProvider = composeProviderLoaders(
   bookingsMessagesProvider,
@@ -211,6 +218,7 @@ const extensionRouteMessagesProviders: Record<string, RouteMessagesProviderLoade
   legal: legalMessagesProvider,
   notifications: notificationsMessagesProvider,
   operations: operationsRouteMessagesProvider,
+  quotes: quotesMessagesProvider,
   relationships: relationshipsRouteMessagesProvider,
 }
 
@@ -324,6 +332,7 @@ function createOperationsExtension(messages: AdminExtensionNavMessages) {
 // `indexHeaderActions` option instead of a host route file.
 function ComposeTripButton() {
   const navigate = useNavigate()
+  const composeTrip = useOperatorAdminMessages().trips.list.composeTrip
 
   return (
     <Button
@@ -331,7 +340,7 @@ function ComposeTripButton() {
       onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
     >
       <Route className="size-4" aria-hidden="true" />
-      Compose trip
+      {composeTrip}
     </Button>
   )
 }
@@ -372,6 +381,10 @@ function createBookingsExtension(messages: AdminExtensionNavMessages) {
 // src/routes/_workspace/catalog/* only bind route params/search onto them.
 function createCatalogExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.catalog({
+    defaultLocale: "en-GB",
+    defaultMarket: "default",
+    scopeStrategy: "deployment-default",
+    hideScopeControls: true,
     labels: {
       products: messages.catalogProducts,
       excursions: messages.catalogExcursions,
@@ -568,6 +581,19 @@ function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
+// Quotes is package-delivered (packaged-admin RFC Phase 3): nav AND the route
+// implementations come from @voyant-travel/quotes-react/admin — the Quotes nav
+// item (spliced after Bookings via `insertAfter`, since both belong to the
+// quote → accept → book lifecycle), the quotes board (pipelines + stages +
+// quote creation), and the quote detail page where that quote's versions are
+// nested. The app only supplies the localized label and the icon.
+function createQuotesExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.quotes({
+    labels: { quotes: messages.quotes },
+    icon: FileText,
+  })
+}
+
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
@@ -600,6 +626,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   products: "Products",
   profitability: "Profitability",
   promotions: "Promotions",
+  quotes: "Quotes",
   resources: "Resources",
   supplierInvoices: "Supplier invoices",
   suppliers: "Suppliers",
@@ -637,6 +664,7 @@ export function createOperatorAdminExtensions(
       createNotificationsExtension(messages),
       createPromotionsExtension(messages),
       createTripsExtension(messages),
+      createQuotesExtension(messages),
       createActionLedgerExtension(messages),
       ...discoveredAdminExtensions,
     ),

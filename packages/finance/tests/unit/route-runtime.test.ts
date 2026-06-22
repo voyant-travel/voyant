@@ -1,6 +1,10 @@
+import type { EventBus } from "@voyant-travel/core"
 import { describe, expect, it } from "vitest"
-
-import { buildFinanceRouteRuntime } from "../../src/route-runtime.js"
+import {
+  buildFinanceRouteRuntime,
+  FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "../../src/route-runtime.js"
+import { getFinanceRouteRuntime } from "../../src/routes-runtime.js"
 
 describe("buildFinanceRouteRuntime", () => {
   it("exposes invoice-from-booking resolver options", async () => {
@@ -69,5 +73,26 @@ describe("buildFinanceRouteRuntime", () => {
         },
       }),
     ).toBe("Custom legal line")
+  })
+
+  it("prefers the request-scoped event bus over the bootstrap runtime bus", () => {
+    const bootstrapBus = {} as EventBus
+    const requestBus = {} as EventBus
+    const runtime = buildFinanceRouteRuntime({}, { eventBus: bootstrapBus })
+
+    const resolved = getFinanceRouteRuntime({
+      var: {
+        container: {
+          resolve: (key) => {
+            expect(key).toBe(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+            return runtime
+          },
+        },
+      },
+      get: () => requestBus,
+    })
+
+    expect(resolved?.eventBus).toBe(requestBus)
+    expect(runtime.eventBus).toBe(bootstrapBus)
   })
 })

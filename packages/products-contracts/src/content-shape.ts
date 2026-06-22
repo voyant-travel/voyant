@@ -70,7 +70,15 @@ export const productOptionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
-  board_basis: boardBasisSchema.nullable().optional(),
+  // `boardBasisSchema` comes from @voyant-travel/catalog-contracts. Defer the
+  // dereference with `z.lazy` so a bundler that splits it into a circular chunk
+  // cannot observe it `undefined` during this module's evaluation — accessing it
+  // eagerly here threw `Cannot read properties of undefined (reading 'nullable')`
+  // and 500'd every catalog read in app worker bundles.
+  board_basis: z
+    .lazy(() => boardBasisSchema)
+    .nullable()
+    .optional(),
   units: z.array(productOptionUnitSchema).optional().default([]),
   inclusions: z.array(z.string()).optional().default([]),
 })

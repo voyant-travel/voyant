@@ -155,7 +155,7 @@ export function PopularRoutes({
             key={`${route.origin}-${route.destination}`}
             type="button"
             onClick={() => onSelect(buildRequest(route))}
-            className="group flex flex-col gap-2 rounded-lg border bg-card p-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow"
+            className="group flex flex-col gap-2 rounded-md border bg-card p-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow"
           >
             <div className="flex items-center gap-2 text-sm">
               <span className="flex flex-col leading-tight">

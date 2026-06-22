@@ -39,27 +39,70 @@ interface CatalogMarket {
   defaultLanguageTag: string
 }
 
+export type CatalogAdminScopeStrategy = "commerce-market" | "deployment-default"
+
+export interface CatalogAdminScopeOptions {
+  /**
+   * Deployment-level locale fallback for catalog index slices. Used when no
+   * URL locale is selected, or when the selected market has no locale rows.
+   */
+  defaultLocale?: string
+  /**
+   * Deployment-level market/scope fallback for catalog index slices. This can
+   * be a commerce market id/code or a synthetic indexed slice such as
+   * `"default"`.
+   */
+  defaultMarket?: string
+  /**
+   * Pick the default scope from commerce markets (legacy behavior) or from the
+   * deployment defaults above. URL-selected scope still wins when controls are
+   * visible.
+   */
+  scopeStrategy?: CatalogAdminScopeStrategy
+  /** Hide the market/locale toolbar controls for fixed-scope deployments. */
+  hideScopeControls?: boolean
+}
+
 export function resolveCatalogDefaultMarket(
   markets: ReadonlyArray<CatalogMarket>,
   selectedMarketId?: string,
+  options: Pick<CatalogAdminScopeOptions, "defaultLocale" | "defaultMarket" | "scopeStrategy"> = {},
 ): CatalogMarket | undefined {
-  return (
-    markets.find((market) => market.id === selectedMarketId) ??
-    markets.find((market) => market.code === "default") ??
-    markets[0]
-  )
+  const selectedMarket = selectedMarketId
+    ? markets.find((market) => market.id === selectedMarketId || market.code === selectedMarketId)
+    : undefined
+  if (selectedMarket) return selectedMarket
+
+  const configuredMarket = options.defaultMarket
+    ? markets.find(
+        (market) => market.id === options.defaultMarket || market.code === options.defaultMarket,
+      )
+    : undefined
+  if (configuredMarket) return configuredMarket
+
+  if (options.scopeStrategy === "deployment-default" && options.defaultMarket) {
+    return {
+      id: options.defaultMarket,
+      name: options.defaultMarket,
+      code: options.defaultMarket,
+      defaultLanguageTag: options.defaultLocale ?? DEFAULT_CATALOG_LOCALE,
+    }
+  }
+
+  return markets.find((market) => market.code === "default") ?? markets[0]
 }
 
 export function resolveCatalogLocaleOptions(
   market: CatalogMarket | undefined,
   locales: ReadonlyArray<{ languageTag: string }>,
+  defaultLocale = DEFAULT_CATALOG_LOCALE,
 ): string[] {
   const tags = new Set<string>()
   if (market) {
     tags.add(market.defaultLanguageTag)
     for (const locale of locales) tags.add(locale.languageTag)
   } else {
-    tags.add(DEFAULT_CATALOG_LOCALE)
+    tags.add(defaultLocale)
   }
   return Array.from(tags).sort((left, right) => left.localeCompare(right))
 }
@@ -68,8 +111,9 @@ export function resolveCatalogSelectedLocale(
   requestedLocale: string | undefined,
   localeOptions: ReadonlyArray<string>,
   market: CatalogMarket | undefined,
+  defaultLocale = DEFAULT_CATALOG_LOCALE,
 ): string {
-  const fallbackLocale = market?.defaultLanguageTag ?? DEFAULT_CATALOG_LOCALE
+  const fallbackLocale = market?.defaultLanguageTag ?? defaultLocale
   return requestedLocale && localeOptions.includes(requestedLocale)
     ? requestedLocale
     : fallbackLocale
@@ -79,11 +123,24 @@ export function resolveCatalogScope(
   search: Pick<CatalogSearchParams, "locale" | "market">,
   localeOptions: ReadonlyArray<string>,
   market: CatalogMarket | undefined,
+  options: Pick<CatalogAdminScopeOptions, "defaultLocale" | "defaultMarket"> = {},
 ) {
   return {
-    locale: resolveCatalogSelectedLocale(search.locale, localeOptions, market),
-    market: search.market ?? market?.id,
+    locale: resolveCatalogSelectedLocale(
+      search.locale,
+      localeOptions,
+      market,
+      options.defaultLocale,
+    ),
+    market: search.market ?? market?.id ?? options.defaultMarket,
   }
+}
+
+export function resolveCatalogScopeSearch(
+  search: CatalogSearchParams,
+  options: Pick<CatalogAdminScopeOptions, "hideScopeControls"> = {},
+): CatalogSearchParams {
+  return options.hideScopeControls ? { ...search, locale: undefined, market: undefined } : search
 }
 
 export interface CatalogVerticalHostProps {
@@ -118,6 +175,7 @@ export interface CatalogVerticalHostProps {
    * tours → the generic vertical detail). When omitted, the sheet is used.
    */
   onOpenDetail?: (hit: CatalogSearchHit) => void
+  scopeOptions?: CatalogAdminScopeOptions
 }
 
 /**
@@ -136,6 +194,7 @@ export function CatalogVerticalHost({
   lockedFacets,
   lockedRanges,
   onOpenDetail,
+  scopeOptions = {},
 }: CatalogVerticalHostProps) {
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
@@ -145,21 +204,29 @@ export function CatalogVerticalHost({
   const suppliersQuery = useSuppliers({ limit: 100 })
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
   const markets = marketsQuery.data?.data ?? []
-  const selectedMarketId = search.market
-  const defaultMarket = resolveCatalogDefaultMarket(markets, selectedMarketId)
-  const selectedMarket = selectedMarketId ? defaultMarket : undefined
+  const scopeSearch = resolveCatalogScopeSearch(search, scopeOptions)
+  const selectedMarketId = scopeSearch.market
+  const defaultMarket = resolveCatalogDefaultMarket(markets, selectedMarketId, scopeOptions)
+  const selectedMarket = selectedMarketId
+    ? markets.find((market) => market.id === selectedMarketId || market.code === selectedMarketId)
+    : undefined
   const localeMarket = selectedMarket ?? defaultMarket
   const localesQuery = useMarketLocales({
     marketId: localeMarket?.id,
     active: true,
     limit: 100,
-    enabled: Boolean(localeMarket?.id),
+    enabled: Boolean(localeMarket?.id && markets.some((market) => market.id === localeMarket.id)),
   })
   const localeOptions = useMemo(
-    () => resolveCatalogLocaleOptions(localeMarket, localesQuery.data?.data ?? []),
-    [localesQuery.data, localeMarket],
+    () =>
+      resolveCatalogLocaleOptions(
+        localeMarket,
+        localesQuery.data?.data ?? [],
+        scopeOptions.defaultLocale,
+      ),
+    [localesQuery.data, localeMarket, scopeOptions.defaultLocale],
   )
-  const catalogScope = resolveCatalogScope(search, localeOptions, localeMarket)
+  const catalogScope = resolveCatalogScope(scopeSearch, localeOptions, localeMarket, scopeOptions)
   const selectedLocale = catalogScope.locale
   const selectedMarketScope = catalogScope.market
   const supplierMap = useMemo(() => {
@@ -237,7 +304,7 @@ export function CatalogVerticalHost({
         )
       }
       toolbarEnd={
-        embedded ? undefined : (
+        embedded || scopeOptions.hideScopeControls ? undefined : (
           <CatalogScopeControls
             messages={browserMessages}
             markets={marketsQuery.data?.data ?? []}

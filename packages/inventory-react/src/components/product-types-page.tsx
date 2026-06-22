@@ -93,7 +93,7 @@ export function ProductTypesPage({
       {isPending ? (
         <ProductTypesListLoading loadingLabel={messages.common.loading} />
       ) : (
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="rounded-md border bg-card text-card-foreground shadow-sm">
           {items.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">{pageMessages.empty}</p>
           ) : (
@@ -196,7 +196,7 @@ export function ProductTypesPage({
 
 function ProductTypesListLoading({ loadingLabel }: { loadingLabel: string }) {
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div className="rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
         <Loader2 className="mr-2 size-4 animate-spin" />
         {loadingLabel}

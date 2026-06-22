@@ -1,5 +1,90 @@
 # @voyant-travel/plugin-netopia
 
+## 0.105.12
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/notifications@0.115.0
+
+## 0.105.11
+
+### Patch Changes
+
+- @voyant-travel/finance@0.132.0
+- @voyant-travel/notifications@0.114.9
+
+## 0.105.10
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/notifications@0.114.8
+
+## 0.105.9
+
+### Patch Changes
+
+- @voyant-travel/finance@0.131.0
+- @voyant-travel/notifications@0.114.7
+
+## 0.105.8
+
+### Patch Changes
+
+- @voyant-travel/finance@0.130.0
+- @voyant-travel/notifications@0.114.6
+
+## 0.105.7
+
+### Patch Changes
+
+- @voyant-travel/finance@0.129.0
+- @voyant-travel/notifications@0.114.5
+
+## 0.105.6
+
+### Patch Changes
+
+- @voyant-travel/finance@0.128.0
+- @voyant-travel/notifications@0.114.4
+
+## 0.105.5
+
+### Patch Changes
+
+- @voyant-travel/finance@0.127.0
+- @voyant-travel/notifications@0.114.3
+
+## 0.105.4
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.114.1
+- @voyant-travel/finance@0.126.0
+
+## 0.105.3
+
+### Patch Changes
+
+- @voyant-travel/finance@0.125.0
+- @voyant-travel/notifications@0.114.0
+- @voyant-travel/hono@0.112.2
+
+## 0.105.2
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/finance@0.124.0
+- @voyant-travel/notifications@0.113.0
+
 ## 0.105.1
 
 ### Patch Changes

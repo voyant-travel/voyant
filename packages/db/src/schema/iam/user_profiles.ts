@@ -66,6 +66,16 @@ export const userProfilesTable = pgTable(
     /** Support user flag - don't count towards seat limits */
     isSupportUser: boolean("is_support_user").notNull().default(false),
 
+    /**
+     * Member RBAC scope set for LOCAL auth mode — `resource:action` permission
+     * strings (same vocabulary as API keys, see @voyant-travel/types/member-roles).
+     * `null` means "not explicitly assigned": resolveAuthRequest falls back to
+     * full access (`["*"]`) for back-compat until an admin assigns permissions.
+     * In voyant-cloud mode the scope set comes from the assertion instead
+     * (cloud_auth_user_links.scopes). See docs/architecture/member-rbac-rfc.md.
+     */
+    permissions: jsonb("permissions").$type<string[]>(),
+
     // ============================================
     // USER STATE
     // ============================================

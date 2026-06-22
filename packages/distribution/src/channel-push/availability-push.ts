@@ -179,11 +179,12 @@ export interface ProcessAvailabilityPushResult {
  * Per §5.3 + §12.2.
  */
 export async function processAvailabilityPushIntents(
-  input: ProcessAvailabilityPushInput = {},
+  input: ProcessAvailabilityPushInput | null = {},
   deps?: ChannelPushDeps,
 ): Promise<ProcessAvailabilityPushResult> {
   const { db, registry, logger = defaultLogger } = deps ?? getChannelPushDepsOrThrow()
-  const limit = input.limit ?? 100
+  const { channelId, limit: requestedLimit } = input ?? {}
+  const limit = requestedLimit ?? 100
 
   const intents = (await db
     .select({
@@ -194,7 +195,7 @@ export async function processAvailabilityPushIntents(
     .innerJoin(channels, eq(channelAvailabilityPushIntents.channelId, channels.id))
     .where(
       and(
-        input.channelId ? eq(channelAvailabilityPushIntents.channelId, input.channelId) : sql`true`,
+        channelId ? eq(channelAvailabilityPushIntents.channelId, channelId) : sql`true`,
         eq(channels.status, "active"),
       ),
     )

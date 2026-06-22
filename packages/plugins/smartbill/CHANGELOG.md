@@ -1,5 +1,102 @@
 # @voyant-travel/plugin-smartbill
 
+## 0.133.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/finance@0.133.0
+  - @voyant-travel/finance-react@0.133.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.132.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.132.0
+- @voyant-travel/finance@0.132.0
+
+## 0.131.1
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/finance@0.131.2
+  - @voyant-travel/finance-react@0.131.2
+
+## 0.131.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.131.0
+- @voyant-travel/finance@0.131.0
+
+## 0.130.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.130.0
+- @voyant-travel/finance@0.130.0
+
+## 0.129.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.129.0
+- @voyant-travel/finance@0.129.0
+
+## 0.128.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.128.0
+- @voyant-travel/finance@0.128.0
+
+## 0.127.0
+
+### Patch Changes
+
+- @voyant-travel/finance@0.127.0
+- @voyant-travel/finance-react@0.127.0
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.126.0
+- @voyant-travel/finance@0.126.0
+
+## 0.125.1
+
+### Patch Changes
+
+- ea96ad9: Strip deprecated `measureUnit` product fields from SmartBill outbound payloads so proforma creation is accepted by the strict estimate endpoint.
+
+## 0.125.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/finance-react@0.125.0
+  - @voyant-travel/finance@0.125.0
+  - @voyant-travel/hono@0.112.2
+
+## 0.124.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+- Updated dependencies [4f92198]
+  - @voyant-travel/finance-react@0.124.0
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/hono@0.112.1
+  - @voyant-travel/finance@0.124.0
+
 ## 0.123.0
 
 ### Patch Changes

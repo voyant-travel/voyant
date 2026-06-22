@@ -1,7 +1,7 @@
 /**
- * Generates the D.1 *deployment* migration source — applied AFTER the framework
- * bundle by the collector (these are deployment-owned; they span modules or are
- * deployment-local, so they can't be package-owned). Two kinds:
+ * Generates the *deployment* migration source (`./migrations`) — applied AFTER
+ * the framework bundle by the collector (these are deployment-owned; they span
+ * modules or are deployment-local, so they can't be package-owned). Two kinds:
  *
  *   1. cross-module link (pivot) tables (`drizzle.links.generated.ts`);
  *   2. **custom deployment modules** dropped in `src/modules/<name>/schema.ts`
@@ -19,6 +19,6 @@ export default defineConfig({
     "./src/modules/*/schema.ts",
     "./src/extensions/*/schema.ts",
   ],
-  out: "./migrations-d1",
+  out: "./migrations",
   dialect: "postgresql",
 })

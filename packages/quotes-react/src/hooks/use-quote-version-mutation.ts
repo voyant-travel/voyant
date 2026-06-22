@@ -80,6 +80,84 @@ export function useQuoteVersionMutation() {
     },
   })
 
+  // Snapshot the quote's current line items into a new version (the "Save"
+  // action). The server copies products → version lines, computes the total,
+  // and supersedes the prior current version.
+  const snapshot = useMutation({
+    mutationFn: async ({ quoteId }: { quoteId: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/quotes/quotes/${quoteId}/versions/snapshot`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST" },
+      )
+      return data
+    },
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({
+        queryKey: quotesQueryKeys.quoteVersionsList({ quoteId: vars.quoteId }),
+      })
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quote(vars.quoteId) })
+    },
+  })
+
+  // Narrow validity-date update (the generic update schema carries insert
+  // defaults that would clobber status/totals — see the service note).
+  const setValidUntil = useMutation({
+    mutationFn: async ({ id, validUntil }: { id: string; validUntil: string | null }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/quotes/quote-versions/${id}/validity`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "PATCH", body: JSON.stringify({ validUntil }) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quote(data.quoteId) })
+    },
+  })
+
+  // Send a version to the client for review (proposal admin route). Marks it
+  // "sent" and returns the shareable proposal URL.
+  const sendProposal = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quote-versions/${id}/send`,
+        z.object({
+          data: z.object({ quoteVersion: quoteVersionRecordSchema, proposalUrl: z.string() }),
+        }),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: quotesQueryKeys.quoteVersions() })
+      void queryClient.invalidateQueries({
+        queryKey: quotesQueryKeys.quote(data.quoteVersion.quoteId),
+      })
+    },
+  })
+
+  // Resolve the deployment's shareable proposal URL for an already-sent
+  // version without side effects (no re-send, no view tracking) — used when
+  // re-copying the review link. Returns the same deployment-resolved URL the
+  // initial send produced.
+  const fetchProposalLink = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quote-versions/${id}/proposal-link`,
+        z.object({ data: z.object({ proposalUrl: z.string() }) }),
+        { baseUrl, fetcher },
+        { method: "GET" },
+      )
+      return data
+    },
+  })
+
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
@@ -290,6 +368,10 @@ export function useQuoteVersionMutation() {
 
   return {
     create,
+    snapshot,
+    sendProposal,
+    fetchProposalLink,
+    setValidUntil,
     update,
     remove,
     send,

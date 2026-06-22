@@ -61,6 +61,7 @@ type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
     : VoyantBetterAuthPlugins
 
 const DEFAULT_SIGNUP_BLOCK_SURFACES = ["admin"] as const
+const CUSTOMER_SIGNUP_ENDPOINT_SUFFIXES = ["/phone-number/verify", "/sign-in/email-otp"] as const
 
 export interface DisableSignupWhenUsersExistOptions {
   /**
@@ -80,8 +81,19 @@ export interface DisableSignupWhenUsersExistOptions {
   surfaces?: readonly string[]
 }
 
+type BetterAuthCreateBeforeResult =
+  | boolean
+  | undefined
+  | {
+      data: Record<string, unknown>
+    }
+
 type SignupBlockUserPayload = {
   surfaces?: unknown
+}
+
+type BetterAuthHookContext = {
+  path?: string
 }
 
 function normalizeSignupBlockSurfaces(
@@ -92,6 +104,19 @@ function normalizeSignupBlockSurfaces(
 
 function isSignupBlockEnabled(options: DisableSignupWhenUsersExistOptions | undefined): boolean {
   return options?.enabled !== false
+}
+
+function normalizeSurfaceList(surfaces: readonly string[] | undefined): readonly string[] {
+  if (!surfaces) return []
+
+  const normalized = new Set<string>()
+  for (const surface of surfaces) {
+    const trimmed = surface.trim()
+    if (trimmed.length > 0) {
+      normalized.add(trimmed)
+    }
+  }
+  return Array.from(normalized)
 }
 
 function signupBlockAppliesToUser(
@@ -115,6 +140,28 @@ function signupBlockAppliesToUser(
   }
 
   return blockedSurfaces.includes("admin")
+}
+
+function isCustomerSignupCreate(context: BetterAuthHookContext | null | undefined): boolean {
+  const path = context?.path
+  if (!path) return false
+
+  return CUSTOMER_SIGNUP_ENDPOINT_SUFFIXES.some((suffix) => path.endsWith(suffix))
+}
+
+function stampCustomerSignupSurfaces(
+  user: SignupBlockUserPayload | undefined,
+  context: BetterAuthHookContext | null | undefined,
+  surfaces: readonly string[],
+): SignupBlockUserPayload | undefined {
+  if (surfaces.length === 0 || !isCustomerSignupCreate(context)) {
+    return user
+  }
+
+  return {
+    ...(user ?? {}),
+    surfaces,
+  }
 }
 
 type ResolvedCreateBetterAuthOptions<
@@ -143,6 +190,14 @@ export interface CreateBetterAuthOptions<
   extraSchema?: BetterAuthDrizzleSchema
   plugins?: Plugins
   user?: UserOptions
+  /**
+   * Surfaces stamped on Better Auth customer self-signups before the bundled
+   * single-tenant signup guard evaluates the new user. Applies to Better
+   * Auth OTP signup endpoints that create a user as part of verification.
+   *
+   * Leave undefined to preserve Better Auth's raw user payload.
+   */
+  customerSignupSurfaces?: readonly string[]
   disableSignupWhenUsersExist?: DisableSignupWhenUsersExistOptions
   /** Called when a user requests a password reset. If not provided, logs to console. */
   sendResetPassword?: (data: {
@@ -197,6 +252,7 @@ export function createBetterAuth<
   const extraPlugins = options.plugins ?? []
   const signupBlockSurfaces = normalizeSignupBlockSurfaces(options.disableSignupWhenUsersExist)
   const signupBlockEnabled = isSignupBlockEnabled(options.disableSignupWhenUsersExist)
+  const customerSignupSurfaces = normalizeSurfaceList(options.customerSignupSurfaces)
   const schema = {
     user: authUser,
     session: authSession,
@@ -308,17 +364,30 @@ export function createBetterAuth<
           // social sign-ins still work because this hook only fires on CREATE.
           // Seed scripts do raw drizzle inserts, so they bypass this hook —
           // which is intentional.
-          before: async (user) => {
+          before: async (user, context): Promise<BetterAuthCreateBeforeResult> => {
+            const normalizedUser = stampCustomerSignupSurfaces(
+              user as SignupBlockUserPayload,
+              context as BetterAuthHookContext | null,
+              customerSignupSurfaces,
+            )
+
             if (
               !signupBlockEnabled ||
-              !signupBlockAppliesToUser(user as SignupBlockUserPayload, signupBlockSurfaces)
+              !signupBlockAppliesToUser(normalizedUser, signupBlockSurfaces)
             ) {
-              return
+              if (normalizedUser === user) {
+                return
+              }
+              return { data: normalizedUser as Record<string, unknown> }
             }
 
             const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
             if ((row?.count ?? 0) > 0) {
               throw new Error("Sign-up is disabled. Ask an admin to invite you.")
+            }
+
+            if (normalizedUser !== user) {
+              return { data: normalizedUser as Record<string, unknown> }
             }
           },
           after: async (user) => {

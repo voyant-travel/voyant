@@ -17,6 +17,13 @@ export const cloudAuthUserLinks = pgTable(
     roleSlug: text("role_slug"),
     roleName: text("role_name"),
     surfaces: jsonb("surfaces").$type<string[]>().default([]),
+    /**
+     * Member RBAC scope set mirrored from the login assertion — `resource:action`
+     * permission strings (same vocabulary as API keys). `null` means the
+     * assertion carried no scopes (older platform): resolveAuthRequest then falls
+     * back to the role bundle or full access. See docs/architecture/member-rbac-rfc.md.
+     */
+    scopes: jsonb("scopes").$type<string[]>(),
     lastAssertionAt: timestamp("last_assertion_at", { withTimezone: true }),
     lastRevalidatedAt: timestamp("last_revalidated_at", { withTimezone: true }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),

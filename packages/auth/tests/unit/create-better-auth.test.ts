@@ -9,7 +9,10 @@ type BetterAuthConfig = {
   databaseHooks: {
     user: {
       create: {
-        before: (user?: Record<string, unknown>) => Promise<void>
+        before: (
+          user?: Record<string, unknown>,
+          context?: { path?: string } | null,
+        ) => Promise<undefined | { data: Record<string, unknown> }>
       }
     }
   }
@@ -279,6 +282,83 @@ describe("createBetterAuth", () => {
       }),
     ).resolves.toBeUndefined()
     expect(select).not.toHaveBeenCalled()
+  })
+
+  it("stamps configured customer surfaces on phone OTP self-signups before the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      customerSignupSurfaces: ["storefront"],
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before(
+        {
+          phoneNumber: "+40700000001",
+          surfaces: ["admin"],
+        },
+        { path: "/auth/phone-number/verify" },
+      ),
+    ).resolves.toEqual({
+      data: {
+        phoneNumber: "+40700000001",
+        surfaces: ["storefront"],
+      },
+    })
+    expect(select).not.toHaveBeenCalled()
+  })
+
+  it("stamps configured customer surfaces on email OTP self-signups before the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      customerSignupSurfaces: ["storefront", "storefront", " "],
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before(
+        {
+          email: "ana@example.com",
+          surfaces: ["admin"],
+        },
+        { path: "/sign-in/email-otp" },
+      ),
+    ).resolves.toEqual({
+      data: {
+        email: "ana@example.com",
+        surfaces: ["storefront"],
+      },
+    })
+    expect(select).not.toHaveBeenCalled()
+  })
+
+  it("does not stamp customer surfaces on non-customer signup endpoints", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      customerSignupSurfaces: ["storefront"],
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before(
+        {
+          surfaces: ["admin"],
+        },
+        { path: "/sign-up/email" },
+      ),
+    ).rejects.toThrow("Sign-up is disabled. Ask an admin to invite you.")
   })
 
   it("treats blank surface array entries as missing surfaces for the signup block", async () => {

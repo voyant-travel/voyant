@@ -1,22 +1,24 @@
 "use client"
 
-import { type AdminRoutePageProps, useAdminHref } from "@voyant-travel/admin"
-
-import type { CatalogSearchParams } from "../../index.js"
+import { useAdminHref, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { CatalogVerticalHost } from "../catalog-vertical-host.js"
+import type { CatalogAdminRoutePageProps, CatalogSearchParams } from "../index.js"
 import { openHrefInNewTab } from "../open-in-new-tab.js"
 
 /**
- * Packaged route page for the accommodations browse surface. `title` is the
- * contribution's localized label (factory `labels`); `search` was validated
- * by the contribution's `validateSearch` (catalogSearchSchema).
+ * Packaged route page for the accommodations browse surface. The header title
+ * is read from the localized operator nav messages (the `title` prop carries
+ * the static contribution label, which is not locale-resolved — the route tree
+ * is built once from the English defaults); `search` was validated by the
+ * contribution's `validateSearch` (catalogSearchSchema).
  */
 export default function CatalogAccommodationsIndexPage({
   search,
   updateSearch,
-  title,
-}: AdminRoutePageProps) {
+  scopeOptions,
+}: CatalogAdminRoutePageProps) {
   const resolveHref = useAdminHref()
+  const title = useOperatorAdminMessages().nav.catalogAccommodations
 
   // Browse-first surface — a consistent header over the embedded grid, with
   // results opening the dedicated accommodation detail page (the
@@ -31,6 +33,7 @@ export default function CatalogAccommodationsIndexPage({
         search={search as CatalogSearchParams}
         onSearchChange={(updater, replace = true) => updateSearch(updater as never, { replace })}
         embedded
+        scopeOptions={scopeOptions}
         onOpenDetail={(hit) =>
           openHrefInNewTab(resolveHref("catalog.detail", { surface: "accommodations", id: hit.id }))
         }

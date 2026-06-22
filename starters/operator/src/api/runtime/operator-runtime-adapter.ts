@@ -5,6 +5,7 @@ import {
   type CloudWorkflowsClientEnv,
   createCloudWorkflowDriver,
 } from "@voyant-travel/workflows/client"
+import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveVoyantApiKey } from "../../lib/voyant-cloud"
 import { getDbFromEnv } from "../lib/db"
@@ -88,7 +89,16 @@ export function operatorWorkflowCloudEnv(env: CloudflareBindings): CloudWorkflow
 
 export function createOperatorWorkflowDriver(bindings: unknown) {
   const env = operatorBindings(bindings)
-  return () => createCloudWorkflowDriver({ env: operatorWorkflowCloudEnv(env) })
+  // Use Voyant Cloud orchestration only when it's actually configured.
+  // Local/self-hosted deployments (no Cloud workflow URL + trigger token) run
+  // workflows fully in-process via the in-memory driver — no Cloud dependency.
+  const cloudConfigured =
+    Boolean(env.VOYANT_CLOUD_WORKFLOWS_URL?.trim()) &&
+    Boolean(env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim())
+  if (cloudConfigured) {
+    return () => createCloudWorkflowDriver({ env: operatorWorkflowCloudEnv(env) })
+  }
+  return createInMemoryDriver()
 }
 
 export { generateContractPdfForBooking }

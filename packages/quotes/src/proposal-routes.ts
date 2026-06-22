@@ -27,7 +27,9 @@
  */
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
 import {
+  type CancelTripComponentsDeps,
   type ReserveTripDeps,
+  type ReserveTripResult,
   type StartCheckoutDeps,
   type StartCheckoutResult,
   type Trip,
@@ -66,6 +68,11 @@ export interface QuoteProposalRoutesOptions {
   /** Build the trips checkout deps for a request (payment-session wiring). */
   startCheckoutDeps(c: Context): StartCheckoutDeps
   /**
+   * Build the trips cancel deps for a request (provider hold-release wiring).
+   * Used to release a reserved Trip when final CRM acceptance loses a race.
+   */
+  cancelTripComponentsDeps(c: Context): CancelTripComponentsDeps
+  /**
    * Resolve the deployment's public operator profile, surfaced on the public
    * proposal payload. Returns `null` when no profile is configured.
    */
@@ -95,9 +102,25 @@ export interface PublicQuoteVersionProposal {
   taxAmountCents: number
   totalAmountCents: number
   validUntil: string | null
+  notes: string | null
   lines: PublicQuoteVersionProposalLine[]
+  media: PublicQuoteVersionProposalMedia[]
   operator: unknown | null
   proposalUrl: string
+  /**
+   * Whether the client can accept this proposal. Acceptance reserves a frozen
+   * Trip snapshot, so product-only proposals (no `tripSnapshotId`) are
+   * review-only — the client can decline but the Accept action is hidden to
+   * avoid a guaranteed 409 ("Proposal has no frozen Trip snapshot").
+   */
+  acceptable: boolean
+}
+
+export interface PublicQuoteVersionProposalMedia {
+  url: string
+  name: string
+  altText: string | null
+  mediaType: string
 }
 
 export interface PublicQuoteVersionProposalLine {
@@ -140,13 +163,25 @@ type QuoteVersionProposalReadModel = NonNullable<
 type AcceptQuoteVersionResult = NonNullable<
   Awaited<ReturnType<typeof quotesService.acceptQuoteVersion>>
 >
-type LockedAcceptResult =
+/**
+ * Outcome of the prepare phase (txn 1, under the quote-accept lock). `accepted`
+ * is the idempotent-replay fast path (this version was already accepted under
+ * the lock); `prepared` means a fresh `sent` version passed all snapshot checks
+ * and is ready to reserve OUTSIDE the transaction.
+ */
+type PreparedAcceptResult =
   | {
       kind: "accepted"
       accepted: AcceptQuoteVersionResult
       snapshot: TripSnapshot
       warnings: string[]
     }
+  | { kind: "prepared"; snapshot: TripSnapshot }
+  | { kind: "response"; response: Response }
+
+/** Outcome of the finalize phase (txn 2, under the quote-accept lock). */
+type FinalizedAcceptResult =
+  | { kind: "accepted"; accepted: AcceptQuoteVersionResult }
   | { kind: "response"; response: Response }
 
 const acceptPublicProposalSchema = z.object({
@@ -174,6 +209,12 @@ function toPublicQuoteVersionProposal(
     quoteVersion?: QuoteVersion | null
     operator: unknown | null
     proposalUrl: string
+    media?: ReadonlyArray<{
+      url: string
+      name: string
+      altText: string | null
+      mediaType: string
+    }>
   },
 ): PublicQuoteVersionProposal {
   const quoteVersion = options.quoteVersion ?? proposal.quoteVersion
@@ -186,6 +227,7 @@ function toPublicQuoteVersionProposal(
     taxAmountCents: quoteVersion.taxAmountCents,
     totalAmountCents: quoteVersion.totalAmountCents,
     validUntil: quoteVersion.validUntil,
+    notes: quoteVersion.notes,
     lines: proposal.lines.map((line) => ({
       description: line.description,
       quantity: line.quantity,
@@ -193,8 +235,16 @@ function toPublicQuoteVersionProposal(
       totalAmountCents: line.totalAmountCents,
       currency: line.currency,
     })),
+    media: (options.media ?? []).map((item) => ({
+      url: item.url,
+      name: item.name,
+      altText: item.altText,
+      mediaType: item.mediaType,
+    })),
     operator: options.operator,
     proposalUrl: options.proposalUrl,
+    // Only Trip-snapshot-backed versions can be reserved on accept.
+    acceptable: quoteVersion.tripSnapshotId !== null,
   }
 }
 
@@ -204,6 +254,7 @@ export function createQuoteProposalAdminRoutes(
 ): Hono<OperatorProposalRouteEnv> {
   const app = new Hono<OperatorProposalRouteEnv>()
   app.post("/:quoteVersionId/send", (c) => handleSendQuoteVersion(c, options))
+  app.get("/:quoteVersionId/proposal-link", (c) => handleGetQuoteVersionProposalLink(c, options))
   return app
 }
 
@@ -260,6 +311,24 @@ async function handleSendQuoteVersion(
   }
 }
 
+async function handleGetQuoteVersionProposalLink(
+  c: Context<OperatorProposalRouteEnv>,
+  options: QuoteProposalRoutesOptions,
+) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  // Resolve the deployment's public proposal URL without any side effects
+  // (no view tracking, no status change) so operators can re-copy the link.
+  return c.json({
+    data: {
+      proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
+        baseUrl: options.resolvePublicProposalBaseUrl(c),
+      }),
+    },
+  })
+}
+
 async function handleGetPublicProposal(
   c: Context<OperatorProposalRouteEnv>,
   options: QuoteProposalRoutesOptions,
@@ -282,11 +351,13 @@ async function handleGetPublicProposal(
       ? await quotesService.markQuoteVersionViewed(db, quoteVersionId)
       : proposal.quoteVersion
   const operator = await options.resolveOperatorProfile(db)
+  const media = await quotesService.listQuoteMedia(db, proposal.quote.id)
 
   return c.json({
     data: toPublicQuoteVersionProposal(proposal, {
       quoteVersion: viewedQuoteVersion,
       operator: operator ?? null,
+      media,
       proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
         baseUrl: options.resolvePublicProposalBaseUrl(c),
       }),
@@ -337,41 +408,95 @@ async function handleAcceptPublicProposal(
   const proposalForLock = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
 
   if (!proposalForLock) return c.json({ error: "Proposal not found" }, 404)
+  const quoteId = proposalForLock.quote.id
 
   try {
-    const lockedResult = await db.transaction((tx) =>
-      acceptPublicProposalWithQuoteLock({
+    // Phase 1 — prepare under the quote-accept lock (txn 1). Validates the
+    // proposal/snapshot and either fast-paths an accepted replay or returns a
+    // prepared snapshot ready to reserve.
+    const prepared = await db.transaction((tx) =>
+      preparePublicProposalAcceptWithQuoteLock({
         c,
-        options,
         db: tx as PostgresJsDatabase,
-        quoteId: proposalForLock.quote.id,
+        quoteId,
         quoteVersionId,
         body,
       }),
     )
-    if (lockedResult.kind === "response") return lockedResult.response
+    if (prepared.kind === "response") return prepared.response
+    if (prepared.kind === "accepted") {
+      return respondWithAcceptedProposal({
+        c,
+        options,
+        snapshot: prepared.snapshot,
+        body,
+        quoteVersionId,
+        accepted: prepared.accepted,
+        reserveWarnings: prepared.warnings,
+      })
+    }
 
-    const checkout = await startAcceptedProposalCheckout(
+    // Phase 2 — reserve OUTSIDE any transaction, on the durable request db.
+    // Sourced catalog adapters may create upstream supplier holds; running this
+    // outside the CRM accept transaction keeps those holds durably recorded.
+    // reserveTrip's own atomic claim serializes concurrent accepts so only one
+    // request can create holds for the same envelope.
+    const reserved = await reservePreparedPublicProposal(
       c,
       options,
-      lockedResult.snapshot,
+      db,
+      prepared.snapshot,
       body,
       quoteVersionId,
     )
-    const checkoutWarnings = checkout
-      ? checkout.failures.map((failure) => failure.reason)
-      : ["checkout_start_failed"]
+    if (reserved.failures.length > 0) {
+      return c.json(
+        {
+          error: "Proposal could not be reserved",
+          failures: reserved.failures.map(({ code, reason }) => ({ code, reason })),
+        },
+        409,
+      )
+    }
 
-    return c.json({
-      data: {
-        status: "accepted",
-        checkoutUrl: checkout?.target.checkoutUrl ?? null,
-        paymentSessionId: checkout?.target.paymentSessionId ?? null,
-        currency: checkout?.target.currency ?? lockedResult.accepted.quoteVersion.currency,
-        totalAmountCents:
-          checkout?.target.totalAmountCents ?? lockedResult.accepted.quoteVersion.totalAmountCents,
-        warnings: [...lockedResult.warnings, ...(checkout?.warnings ?? []), ...checkoutWarnings],
-      } satisfies AcceptPublicProposalResult,
+    // Phase 3 — finalize CRM acceptance under the quote-accept lock (txn 2).
+    // If the final accept loses a race (declined/superseded/conflict), release
+    // the reservation so the supplier hold isn't orphaned.
+    let finalized: FinalizedAcceptResult
+    try {
+      finalized = await db.transaction((tx) =>
+        finalizePublicProposalAcceptWithQuoteLock({
+          c,
+          db: tx as PostgresJsDatabase,
+          quoteId,
+          quoteVersionId,
+          snapshot: prepared.snapshot,
+        }),
+      )
+    } catch (error) {
+      await releaseAcceptedProposalReservation(c, options, db, prepared.snapshot, reserved, {
+        quoteVersionId,
+        reason: "quote_accept_failed",
+      })
+      throw error
+    }
+
+    if (finalized.kind === "response") {
+      await releaseAcceptedProposalReservation(c, options, db, prepared.snapshot, reserved, {
+        quoteVersionId,
+        reason: "quote_accept_failed",
+      })
+      return finalized.response
+    }
+
+    return respondWithAcceptedProposal({
+      c,
+      options,
+      snapshot: prepared.snapshot,
+      body,
+      quoteVersionId,
+      accepted: finalized.accepted,
+      reserveWarnings: reserved.warnings,
     })
   } catch (error) {
     if (error instanceof QuoteVersionConflictError) {
@@ -384,21 +509,19 @@ async function handleAcceptPublicProposal(
   }
 }
 
-async function acceptPublicProposalWithQuoteLock({
+async function preparePublicProposalAcceptWithQuoteLock({
   c,
-  options,
   db,
   quoteId,
   quoteVersionId,
   body,
 }: {
   c: Context<OperatorProposalRouteEnv>
-  options: QuoteProposalRoutesOptions
   db: PostgresJsDatabase
   quoteId: string
   quoteVersionId: string
   body: z.infer<typeof acceptPublicProposalSchema>
-}): Promise<LockedAcceptResult> {
+}): Promise<PreparedAcceptResult> {
   await lockQuoteAccept(db, quoteId)
   await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
   const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
@@ -447,8 +570,6 @@ async function acceptPublicProposalWithQuoteLock({
     return { kind: "accepted", accepted, snapshot, warnings: [] }
   }
 
-  assertSnapshotCanUsePublicAcceptReserve(snapshot)
-
   const liveTrip = await tripsService.getTrip(db, snapshot.envelopeId)
   if (!liveTrip) {
     return {
@@ -456,16 +577,95 @@ async function acceptPublicProposalWithQuoteLock({
       response: c.json({ error: "Proposal Trip envelope not found" }, 409),
     }
   }
-  assertLiveTripMatchesSnapshot(liveTrip, snapshot)
 
-  const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
-    body.idempotencyKey ?? "default"
-  }`
-  const reserved = await tripsService.reserveTrip(
+  // Resume a crashed acceptance: if the Trip was already reserved under this
+  // proposal's reserve key (reserve succeeded, finalize never ran), the live
+  // Trip is no longer `priced`, so skip the frozen-snapshot comparison and let
+  // phase 2 replay the reservation idempotently before finalize accepts.
+  if (
+    !isResumableProposalReservation(
+      liveTrip.envelope,
+      proposalReserveIdempotencyKey(quoteVersionId, body),
+    )
+  ) {
+    assertLiveTripMatchesSnapshot(liveTrip, snapshot)
+  }
+
+  return { kind: "prepared", snapshot }
+}
+
+async function finalizePublicProposalAcceptWithQuoteLock({
+  c,
+  db,
+  quoteId,
+  quoteVersionId,
+  snapshot,
+}: {
+  c: Context<OperatorProposalRouteEnv>
+  db: PostgresJsDatabase
+  quoteId: string
+  quoteVersionId: string
+  snapshot: TripSnapshot
+}): Promise<FinalizedAcceptResult> {
+  await lockQuoteAccept(db, quoteId)
+  await quotesService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await quotesService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+  if (proposal.quoteVersion.status === "draft") {
+    return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+  }
+  if (proposal.quoteVersion.status === "superseded") {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal has been superseded" }, 410),
+    }
+  }
+  if (
+    proposal.quoteVersion.status === "accepted" &&
+    proposal.quote.acceptedVersionId === proposal.quoteVersion.id
+  ) {
+    const accepted = await quotesService.acceptQuoteVersion(db, quoteVersionId, {})
+    if (!accepted) {
+      return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+    }
+
+    return { kind: "accepted", accepted }
+  }
+  if (proposal.quoteVersion.status !== "sent") {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal can no longer be accepted" }, 409),
+    }
+  }
+  // The frozen snapshot must not have changed between prepare and finalize.
+  if (proposal.quoteVersion.tripSnapshotId !== snapshot.id) {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal Trip snapshot changed before acceptance" }, 409),
+    }
+  }
+  assertProposalMatchesTripSnapshot(proposal, snapshot)
+
+  const accepted = await quotesService.acceptQuoteVersion(db, quoteVersionId, {})
+  if (!accepted) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+
+  return { kind: "accepted", accepted }
+}
+
+function reservePreparedPublicProposal(
+  c: Context<OperatorProposalRouteEnv>,
+  options: QuoteProposalRoutesOptions,
+  db: PostgresJsDatabase,
+  snapshot: TripSnapshot,
+  body: z.infer<typeof acceptPublicProposalSchema>,
+  quoteVersionId: string,
+): Promise<ReserveTripResult> {
+  return tripsService.reserveTrip(
     db,
     {
       envelopeId: snapshot.envelopeId,
-      idempotencyKey: reserveIdempotencyKey,
+      idempotencyKey: proposalReserveIdempotencyKey(quoteVersionId, body),
       refreshScope: {
         locale: "en-US",
         audience: "customer",
@@ -475,23 +675,102 @@ async function acceptPublicProposalWithQuoteLock({
     },
     options.reserveTripDeps(c),
   )
-  if (reserved.failures.length > 0) {
-    return {
-      kind: "response",
-      response: c.json(
-        {
-          error: "Proposal could not be reserved",
-          failures: reserved.failures.map(({ code, reason }) => ({ code, reason })),
+}
+
+/**
+ * Deterministic reserve idempotency key for a proposal acceptance. Stable
+ * across retries with the same request body, so a crashed accept can replay the
+ * same reservation instead of creating a second supplier hold.
+ */
+function proposalReserveIdempotencyKey(
+  quoteVersionId: string,
+  body: z.infer<typeof acceptPublicProposalSchema>,
+): string {
+  return `proposal-accept-reserve:${quoteVersionId}:${body.idempotencyKey ?? "default"}`
+}
+
+/**
+ * A live Trip that has already been claimed/reserved under THIS proposal's
+ * reserve idempotency key is a resumable in-flight acceptance — not a "Trip
+ * changed since sent" conflict. Recognising it lets a retry replay the
+ * reservation and finalize, instead of wedging on the frozen `priced` snapshot
+ * comparison and stranding the supplier hold.
+ */
+function isResumableProposalReservation(envelope: Trip["envelope"], reserveKey: string): boolean {
+  return (
+    envelope.reserveIdempotencyKey === reserveKey &&
+    ["reserve_in_progress", "reserved", "checkout_started", "booked"].includes(envelope.status)
+  )
+}
+
+async function releaseAcceptedProposalReservation(
+  c: Context<OperatorProposalRouteEnv>,
+  options: QuoteProposalRoutesOptions,
+  db: PostgresJsDatabase,
+  snapshot: TripSnapshot,
+  reserved: ReserveTripResult,
+  release: { quoteVersionId: string; reason: string },
+) {
+  // An idempotent replay returns the existing holds without creating new ones,
+  // so it must never trigger a cancellation of components owned by the request
+  // that actually reserved them.
+  if (reserved.warnings.includes("idempotent_replay")) return
+
+  const reservedComponentIds = reserved.reserved.map((component) => component.componentId)
+  if (reservedComponentIds.length === 0) return
+
+  try {
+    await tripsService.cancelComponents(
+      db,
+      {
+        envelopeId: snapshot.envelopeId,
+        componentIds: reservedComponentIds,
+        reason: release.reason,
+        idempotencyKey: `proposal-accept-release:${release.quoteVersionId}:${release.reason}`,
+        request: {
+          initiatedBy: "public-proposal-accept",
+          quoteVersionId: release.quoteVersionId,
         },
-        409,
-      ),
-    }
+      },
+      options.cancelTripComponentsDeps(c),
+    )
+  } catch (error) {
+    console.warn("[proposal] failed to release reservation after proposal accept conflict:", error)
   }
+}
 
-  const accepted = await quotesService.acceptQuoteVersion(db, quoteVersionId, {})
-  if (!accepted) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+async function respondWithAcceptedProposal({
+  c,
+  options,
+  snapshot,
+  body,
+  quoteVersionId,
+  accepted,
+  reserveWarnings,
+}: {
+  c: Context<OperatorProposalRouteEnv>
+  options: QuoteProposalRoutesOptions
+  snapshot: TripSnapshot
+  body: z.infer<typeof acceptPublicProposalSchema>
+  quoteVersionId: string
+  accepted: AcceptQuoteVersionResult
+  reserveWarnings: string[]
+}) {
+  const checkout = await startAcceptedProposalCheckout(c, options, snapshot, body, quoteVersionId)
+  const checkoutWarnings = checkout
+    ? checkout.failures.map((failure) => failure.reason)
+    : ["checkout_start_failed"]
 
-  return { kind: "accepted", accepted, snapshot, warnings: reserved.warnings }
+  return c.json({
+    data: {
+      status: "accepted",
+      checkoutUrl: checkout?.target.checkoutUrl ?? null,
+      paymentSessionId: checkout?.target.paymentSessionId ?? null,
+      currency: checkout?.target.currency ?? accepted.quoteVersion.currency,
+      totalAmountCents: checkout?.target.totalAmountCents ?? accepted.quoteVersion.totalAmountCents,
+      warnings: [...reserveWarnings, ...(checkout?.warnings ?? []), ...checkoutWarnings],
+    } satisfies AcceptPublicProposalResult,
+  })
 }
 
 function lockQuoteAccept(db: PostgresJsDatabase, quoteId: string) {
@@ -503,28 +782,6 @@ function lockQuoteAccept(db: PostgresJsDatabase, quoteId: string) {
 
 function quoteAcceptLockKey(quoteId: string) {
   return `quote-accept:${quoteId}`
-}
-
-function assertSnapshotCanUsePublicAcceptReserve(snapshot: TripSnapshot) {
-  const sourcedCatalogComponent = snapshot.frozenComponents.find(isSourcedCatalogSnapshotComponent)
-  if (!sourcedCatalogComponent) return
-
-  // reserveTrip runs under the Quote accept transaction. Owned catalog holds
-  // and manual placeholders are DB-local, but sourced catalog adapters can
-  // create upstream holds before local release records commit.
-  throw new QuoteVersionConflictError(
-    "Sourced catalog components cannot be accepted from public proposals yet",
-  )
-}
-
-function isSourcedCatalogSnapshotComponent(component: Record<string, unknown>): boolean {
-  return Boolean(
-    component.kind === "catalog_booking" &&
-      component.entityModule &&
-      component.entityId &&
-      component.sourceKind &&
-      component.sourceKind !== "owned",
-  )
 }
 
 async function startAcceptedProposalCheckout(

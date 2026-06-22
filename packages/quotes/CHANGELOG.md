@@ -1,5 +1,113 @@
 # @voyant-travel/crm
 
+## 0.122.11
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+- Updated dependencies [b68d6a7]
+- Updated dependencies [bba70ee]
+  - @voyant-travel/hono@0.114.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/trips@0.124.0
+
+## 0.122.10
+
+### Patch Changes
+
+- @voyant-travel/trips@0.123.0
+
+## 0.122.9
+
+### Patch Changes
+
+- Updated dependencies [021ec00]
+  - @voyant-travel/hono@0.113.0
+  - @voyant-travel/core@0.111.0
+  - @voyant-travel/trips@0.122.1
+  - @voyant-travel/db@0.108.5
+
+## 0.122.8
+
+### Patch Changes
+
+- @voyant-travel/trips@0.122.0
+
+## 0.122.7
+
+### Patch Changes
+
+- @voyant-travel/trips@0.121.0
+
+## 0.122.6
+
+### Patch Changes
+
+- c5416cb: Make public proposal acceptance reservation-safe for sourced catalog components.
+
+  - `reserveTrip` now atomically claims the envelope (`priced` → `reserve_in_progress`) before any provider dispatch, so concurrent reserves are serialized and only one caller can create upstream supplier holds. A lost claim returns a `reservation_in_progress` conflict without dispatching, and the claim is released back to `priced` if preflight rejects or throws.
+  - Public proposal accept is split into prepare (under the quote-accept lock) → reserve (outside any transaction) → finalize (under the lock). Sourced catalog components are no longer rejected, and a reservation is released via `cancelComponents` if final CRM acceptance loses a race (guarding idempotent replays).
+
+- Updated dependencies [c5416cb]
+  - @voyant-travel/trips@0.120.1
+
+## 0.122.5
+
+### Patch Changes
+
+- @voyant-travel/trips@0.120.0
+
+## 0.122.4
+
+### Patch Changes
+
+- @voyant-travel/trips@0.119.0
+
+## 0.122.3
+
+### Patch Changes
+
+- @voyant-travel/trips@0.118.0
+
+## 0.122.2
+
+### Patch Changes
+
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+
+- Updated dependencies [1841ce2]
+  - @voyant-travel/db@0.108.4
+  - @voyant-travel/trips@0.117.1
+
+## 0.122.1
+
+### Patch Changes
+
+- @voyant-travel/trips@0.117.0
+
+## 0.122.0
+
+### Minor Changes
+
+- a74471e: Quotes admin surface. A pipeline board (`/quotes`) plus a full quote workspace (`/quotes/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the quote's versions nested inline. The quote value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `quotes.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.quotes` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a quote description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/quotes-contracts@0.108.0
+  - @voyant-travel/db@0.108.3
+  - @voyant-travel/trips@0.116.0
+  - @voyant-travel/hono@0.112.2
+
+## 0.121.1
+
+### Patch Changes
+
+- @voyant-travel/hono@0.112.1
+- @voyant-travel/trips@0.115.0
+
 ## 0.121.0
 
 ### Minor Changes

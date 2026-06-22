@@ -1,5 +1,69 @@
 # @voyant-travel/framework-migrations
 
+## 0.6.0
+
+### Minor Changes
+
+- c70e7b8: Clean up D.1/D.2 transition scaffolding from the migration collector's public API now that there's a single model.
+
+  - **`applyD2Migrations` → `applyMigrations`** (the one collector apply path). `cutline`/`existing` are now optional fields on `ApplyMigrationsOptions` — with neither, it simply executes every pending migration; with both, it import-baselines the cutline on an existing DB. Returns `{ executed, baselined }`.
+  - **Removed** the now-redundant legacy `applyMigrations` (simple) + `importBaseline` + `ApplyD2MigrationsOptions` — the unified `applyMigrations` subsumes them.
+  - Internal: `scripts/d2/` → `scripts/migrations/`; `verify:d2-*` → `verify:migration-*`; comments/test identifiers dropped the `D.1`/`D.2` labels.
+
+  BREAKING: consumers of `applyD2Migrations`/`importBaseline` should call `applyMigrations`. The deployment-facing API (`runDeploymentMigrations`, `discoverMigrationSources`, `loadCutline`, `loadMigrationFolder`) is unchanged.
+
+## 0.5.1
+
+### Patch Changes
+
+- 9cff1d9: D.2 parity-check correctness fixes (found validating real legacy→D.2 deployment transitions on Neon production-copy branches):
+
+  - **`expectedSchema` now honors `ALTER TABLE … DROP COLUMN`** — a column added by an earlier migration and dropped by a later one (e.g. a deployment experiment later reverted) is no longer expected at baseline. Without this the import-baseline parity check demanded 31 columns that a deployment had deliberately dropped.
+  - **`expectedSchema` now honors `ALTER TABLE … RENAME COLUMN`** — a renamed column is expected under its NEW name, not the original the baseline declared (e.g. a deployment that renames a package column).
+  - The parity-failure error no longer recommends `drizzle-kit push` (unsafe in production); it explains that a behind database must reach the cutline via its normal migration path, or be dropped + FRESH-migrated if disposable, and clarifies that import-baseline only records the cutline — it never alters schema.
+
+## 0.5.0
+
+### Minor Changes
+
+- 7b377bc: Export a portable D.2 deployment runner so any deployment (not just the monorepo operator) can adopt package-owned migrations.
+
+  - `discoverMigrationSources(schemaPaths, { baseDir, deploymentMigrationsDir })` — resolves each package's shipped `migrations/` folder from the generated schema list, topologically ordered by `voyant.requiresSchemas`. Layout-agnostic: handles both the monorepo `…/packages/<dir>/…` paths and installed `…/node_modules/@voyant-travel/<name>/…` (incl. pnpm `.pnpm/…`) paths, so npm-consuming deployments resolve the same sources the operator does.
+  - `runDeploymentMigrations(client, sources, cutline)` + `detectExisting` / `assertSchemaAtBaseline` / `expectedSchema` — the FRESH-vs-EXISTING dual-path engine (import-baseline the cutline on a pre-D.2 DB, gated by a schema-parity check), extracted from the operator so deployments share one tested implementation instead of copying it.
+
+  The operator's `scripts/migrate.ts` now imports these from the package; its local copies were removed.
+
+## 0.4.0
+
+### Minor Changes
+
+- 3acd772: Add the D.2 dual-path collector engine. `applyD2Migrations(client, sources, { cutline, existing })` applies per-package + deployment sources, import-baselining cutline-covered migrations on an existing database (record-without-execute) while executing fresh databases and post-cutline increments — the retired framework bundle's `framework/*` rows are left as inert history. `loadCutline()` reads the shipped `cutline.generated.json`. The operator migrate runner is rewired to use these in a follow-up.
+
+### Patch Changes
+
+- 435a5d1: Extract the availability domain into a new foundational `@voyant-travel/availability` package, and complete D.2 per-package migration onboarding for the last schema-owning packages.
+
+  - **@voyant-travel/availability (new):** owns the `availability_*` schema (slots, rules, start times, holds, pickups, capacity) — previously buried in operations. Ships its own D.2 migration.
+  - **operations:** its availability **services and routes stay**, now importing the schema from `@voyant-travel/availability` (the barrel re-exports it for runtime consumers); operations' migration no longer owns the availability tables. Fixes the module direction — bookings/operations/accommodations consume availability, rather than reaching into operations for an inventory primitive.
+  - **bookings:** drops the hard cross-package FK from `booking_allocations.availability_slot_id` to `availability_slots` (it referenced a stale local duplicate); the column is now a plain indexed id per module decoupling. The refund workflow keeps a runtime-only reference to the availability table.
+  - **framework-migrations:** bundle migration drops the removed FK constraint.
+
+  All package sources verified column-for-column against the bundle and apply together cleanly on a fresh D.2 database (union).
+
+## 0.3.1
+
+### Patch Changes
+
+- 84b9d4b: legal: remove cross-package foreign-key constraints from `contracts` and `contract_signatures` (`person_id → relationships.people`, `organization_id → relationships.organizations`, `supplier_id → distribution.suppliers`). These horizontal cross-module associations now follow the module-decoupling pattern — plain id columns + `defineLink` at the deployment (person/organization/supplier ↔ contract) + service-layer validation — instead of hard cross-package FKs. The `person_id`/`organization_id`/`supplier_id` columns and their indexes are unchanged; only the FK constraints are dropped. `createContract`/`updateContract` now validate that referenced person/organization/supplier ids exist (400 on a stale/mistyped id), preserving the integrity the FK used to enforce.
+
+  framework-migrations: bundle migration drops the four legal cross-package FK constraints so the shipped bundle matches the decoupled schema. (The deployment migrate runner's baseline-import guard now also verifies dropped constraints are actually gone before importing — so existing deployments can't silently baseline this constraint drop without applying it.)
+
+## 0.3.0
+
+### Minor Changes
+
+- a74471e: Add the new `quotes` columns + `quote_media` table to the standard migration bundle: `quotes.pax_count`, `quotes.created_by` / `quotes.updated_by`, `quotes.description`, and the `quote_media` table (quote images/attachments shown on the proposal).
+
 ## 0.2.0
 
 ### Minor Changes

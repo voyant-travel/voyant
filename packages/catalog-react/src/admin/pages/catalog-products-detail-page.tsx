@@ -1,8 +1,6 @@
 "use client"
 
-import type { AdminRoutePageProps } from "@voyant-travel/admin"
-
-import type { ProductDetailSearchParams } from "../index.js"
+import type { CatalogAdminRoutePageProps, ProductDetailSearchParams } from "../index.js"
 import { ProductDetailHost } from "../product-detail-host.js"
 
 /**
@@ -10,7 +8,11 @@ import { ProductDetailHost } from "../product-detail-host.js"
  * contribution's `validateSearch` (productDetailSearchSchema) already
  * validated `search`, so the cast onto the package search contract is sound.
  */
-export default function CatalogProductsDetailPage({ params, search }: AdminRoutePageProps) {
+export default function CatalogProductsDetailPage({
+  params,
+  search,
+  scopeOptions,
+}: CatalogAdminRoutePageProps) {
   const { adults, nights, locale } = search as ProductDetailSearchParams
 
   return (
@@ -18,7 +20,7 @@ export default function CatalogProductsDetailPage({ params, search }: AdminRoute
       productId={params.productId ?? ""}
       adults={adults}
       nights={nights}
-      locale={locale}
+      locale={locale ?? scopeOptions?.defaultLocale}
     />
   )
 }

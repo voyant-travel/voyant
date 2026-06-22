@@ -119,11 +119,12 @@ export interface ProcessContentPushResult {
  * Per §6 + §12.3.
  */
 export async function processContentPushIntents(
-  input: ProcessContentPushInput = {},
+  input: ProcessContentPushInput | null = {},
   deps?: ChannelPushDeps,
 ): Promise<ProcessContentPushResult> {
   const { db, registry, logger = defaultLogger } = deps ?? getChannelPushDepsOrThrow()
-  const limit = input.limit ?? 100
+  const { channelId, limit: requestedLimit } = input ?? {}
+  const limit = requestedLimit ?? 100
 
   const intents = (await db
     .select({
@@ -134,7 +135,7 @@ export async function processContentPushIntents(
     .innerJoin(channels, eq(channelContentPushIntents.channelId, channels.id))
     .where(
       and(
-        input.channelId ? eq(channelContentPushIntents.channelId, input.channelId) : sql`true`,
+        channelId ? eq(channelContentPushIntents.channelId, channelId) : sql`true`,
         eq(channels.status, "active"),
       ),
     )

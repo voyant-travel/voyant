@@ -392,6 +392,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -442,6 +445,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -512,6 +518,9 @@ importers:
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -780,6 +789,28 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/availability:
+    dependencies:
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/bookings:
     dependencies:
       '@voyant-travel/action-ledger':
@@ -813,6 +844,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -988,6 +1022,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -1117,6 +1154,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1243,6 +1283,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1356,6 +1399,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1458,6 +1504,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1504,6 +1553,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1633,6 +1685,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1734,6 +1789,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -1756,6 +1814,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2028,6 +2089,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2175,6 +2239,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2309,6 +2376,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2450,6 +2520,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2554,6 +2627,9 @@ importers:
 
   packages/operations:
     dependencies:
+      '@voyant-travel/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -2582,6 +2658,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2677,6 +2756,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2909,6 +2991,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -2950,9 +3035,18 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyant-travel/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyant-travel/auth-react':
+        specifier: workspace:^
+        version: link:../auth-react
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../quotes
+      '@voyant-travel/relationships-react':
+        specifier: workspace:^
+        version: link:../relationships-react
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3002,6 +3096,58 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/realtime:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/realtime-react:
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.100.11
+        version: 5.100.11(react@19.2.4)
+      '@testing-library/react':
+        specifier: ^16.0.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      jsdom:
+        specifier: ^25.0.0
+        version: 25.0.1
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@25.0.1)(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/relationships:
     dependencies:
       '@voyant-travel/action-ledger':
@@ -3038,6 +3184,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3207,6 +3356,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3346,6 +3498,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -3374,6 +3529,9 @@ importers:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3684,6 +3842,9 @@ importers:
       '@voyant-travel/workflows-orchestrator':
         specifier: workspace:^
         version: link:../workflows-orchestrator
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3798,9 +3959,9 @@ importers:
       '@cloudflare/vite-plugin':
         specifier: ^1.36.3
         version: 1.36.3(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260507.1)(wrangler@4.90.0(@cloudflare/workers-types@4.20260426.1))
-      '@fontsource-variable/inter':
-        specifier: ^5.2.8
-        version: 5.2.8
+      '@fontsource-variable/inter-tight':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@neondatabase/serverless':
         specifier: ^1.0.2
         version: 1.0.2
@@ -3855,6 +4016,9 @@ importers:
       '@voyant-travel/auth-react':
         specifier: workspace:^
         version: link:../../packages/auth-react
+      '@voyant-travel/availability':
+        specifier: workspace:^
+        version: link:../../packages/availability
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../../packages/bookings
@@ -3882,12 +4046,6 @@ importers:
       '@voyant-travel/commerce-react':
         specifier: workspace:^
         version: link:../../packages/commerce-react
-      '@voyant-travel/connect-adapter':
-        specifier: 0.3.0
-        version: 0.3.0(@voyant-travel/catalog@packages+catalog)
-      '@voyant-travel/connect-cruises':
-        specifier: 0.4.0
-        version: 0.4.0(@voyant-travel/cruises@packages+cruises)
       '@voyant-travel/connect-sdk':
         specifier: 0.9.0
         version: 0.9.0
@@ -3981,12 +4139,24 @@ importers:
       '@voyant-travel/plugin-smartbill':
         specifier: workspace:^
         version: link:../../packages/plugins/smartbill
+      '@voyant-travel/plugin-voyant-connect':
+        specifier: ^0.3.0
+        version: 0.3.0(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes
+      '@voyant-travel/quotes-react':
+        specifier: workspace:^
+        version: link:../../packages/quotes-react
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@voyant-travel/realtime':
+        specifier: workspace:^
+        version: link:../../packages/realtime
+      '@voyant-travel/realtime-react':
+        specifier: workspace:^
+        version: link:../../packages/realtime-react
       '@voyant-travel/relationships':
         specifier: workspace:^
         version: link:../../packages/relationships
@@ -4142,8 +4312,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@voyant-travel/cli':
-        specifier: ^0.26.0
-        version: 0.26.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)
+        specifier: ^0.30.0
+        version: 0.30.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)
       '@voyant-travel/vite-config':
         specifier: workspace:^
         version: link:../../packages/vite-config
@@ -5018,8 +5188,8 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
-  '@fontsource-variable/inter@5.2.8':
-    resolution: {integrity: sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==}
+  '@fontsource-variable/inter-tight@5.2.7':
+    resolution: {integrity: sha512-uU0qW9vlzVQQv8GVrhn8SlNl2A44C0CE9IC6N9P0D9mwhmJcg8UF/fxvmdRayDPlMAnYqxlXtYENDIeZyVvxkg==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -6683,10 +6853,20 @@ packages:
   '@vitest/utils@4.1.2':
     resolution: {integrity: sha512-xw2/TiX82lQHA06cgbqRKFb5lCAy3axQ4H4SoUFhUsg+wztiet+co86IAMDtF6Vm1hc7J6j09oh/rgDn+JdKIQ==}
 
-  '@voyant-travel/cli@0.26.0':
-    resolution: {integrity: sha512-LRqFUY2dTFcBq6zPxJ1Dx13D0PN5vchLNZ0vYq4NnIn247lV0tvm9lrQct0LPOi2cwvBKmlFn5P2V76AZl5K7w==}
+  '@voyant-travel/cli@0.30.0':
+    resolution: {integrity: sha512-6F5CifQ7DgkGA+5NXPY/SpYJpF3edA/RhiZjb6dcFEJHoucM0fAx5Vb1UU5yxj/U8xxwjSl6JbzTRouLdrgNDg==}
     engines: {node: '>=20'}
     hasBin: true
+
+  '@voyant-travel/cloud-sdk@0.10.1':
+    resolution: {integrity: sha512-xqDk1ZNt1a1LR+aZ3W3u9xSnWKNpd2S3JP+G3QRRVeAecMohUq1jxG7hSSzKAjD0aH2gBfCQfXJqGlEzorKAig==}
+    peerDependencies:
+      typesense: '>=2.0.0 <4.0.0'
+    peerDependenciesMeta:
+      typesense:
+        optional: true
+    bundledDependencies:
+      - '@voyant-travel/sdk-core'
 
   '@voyant-travel/cloud-sdk@0.9.0':
     resolution: {integrity: sha512-pMaoOYSHbPW3V2KncU6PuzTyAphPx3q7HrNXADSiUpPWQxqq+trXnVqVyYRJBicuThfj7FLKe2RGx5+EN9Sdng==}
@@ -6698,13 +6878,13 @@ packages:
     bundledDependencies:
       - '@voyant-travel/sdk-core'
 
-  '@voyant-travel/connect-adapter@0.3.0':
-    resolution: {integrity: sha512-DPpAcC6HC7V4RBfN9reMSOmYv2j/bw18ZVPvCEbV9MFOxEchoTuSvjsoinrf3XGbQ9FNVr4rLbJ4xis+HHaTvw==}
+  '@voyant-travel/connect-adapter@0.3.2':
+    resolution: {integrity: sha512-aNVR9msv72egQ23ybtaFg1/MLaOKXK1lsQ1e8deV20Hp48M+KlrzykYhsWOHf1Krn+0TJ7AvCl9mnTL7Q/N5OA==}
     peerDependencies:
       '@voyant-travel/catalog': '>=0.85.3 <1'
 
-  '@voyant-travel/connect-cruises@0.4.0':
-    resolution: {integrity: sha512-CP3OrbnRC0MNXRjZnjqRmeBD6RCIkN5WHBwN9BTMbKZhJFEb20GXNWyoZV3oHUmyeGlur4DVMh3WvR9vYldhCw==}
+  '@voyant-travel/connect-cruises@0.6.1':
+    resolution: {integrity: sha512-RGLZtIBxq+6uCXVlkjGQsArGfi3Cy7/MV4hToxPL4oi9j3H4kxnYX7CyOwi8KMBi7sxVTrAlj/BayW8EDbgfRg==}
     peerDependencies:
       '@voyant-travel/cruises': '>=0.85.3 <1'
     peerDependenciesMeta:
@@ -6716,6 +6896,11 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
+  '@voyant-travel/connect-sdk@0.9.1':
+    resolution: {integrity: sha512-DKL/0lO0399vluLjOJQnM2vl/gtLt+idV4JPdmoX+HUJq19nkskzKpc/ymncnwRnQS4Fe5F15XSs9+gQtYYEgg==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
   '@voyant-travel/core@0.109.0':
     resolution: {integrity: sha512-eu15XfqHgZbRXDTw6Tg2vlUC4s7Qiubi478cqmA3602AvQ8jBJ3rmpyClpobDWcY7cGKFmqUYKjBdc0xzTQALg==}
 
@@ -6723,6 +6908,16 @@ packages:
     resolution: {integrity: sha512-H7haHd5hwRls9AVJeOvFZEsgEWjV6/L0F3JUiifIjQ9mhHfX66V5ofV8xRFpd6FYr613Nc6RT1eyAQjRqk6hBQ==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
+
+  '@voyant-travel/plugin-voyant-connect@0.3.0':
+    resolution: {integrity: sha512-yIykiv4444eQqFmNDdtDzmIv91m6tnB5Numwa0wHTumYuzbolTqras5MyN3vYPIteNt7Rsncv3b5banWBh+pww==}
+    peerDependencies:
+      '@voyant-travel/catalog': '>=0.85.3 <1'
+      '@voyant-travel/cruises': '>=0.85.3 <1'
+      '@voyant-travel/data-sdk': '>=0.5.0 <1'
+    peerDependenciesMeta:
+      '@voyant-travel/catalog':
+        optional: true
 
   '@voyant-travel/workflows-orchestrator-node@0.107.10':
     resolution: {integrity: sha512-OcgQ1H2TCFgPnyU3QavZ872mZWYCDA4Av1W7emyIIVhKG2SNI7vgm2htcsX8YrUs84S6s24ZXneorCv25cRyZg==}
@@ -11132,7 +11327,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
-  '@fontsource-variable/inter@5.2.8': {}
+  '@fontsource-variable/inter-tight@5.2.7': {}
 
   '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:
@@ -12801,9 +12996,9 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@voyant-travel/cli@0.26.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)':
+  '@voyant-travel/cli@0.30.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)':
     dependencies:
-      '@voyant-travel/cloud-sdk': 0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))
+      '@voyant-travel/cloud-sdk': 0.10.1(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyant-travel/core': 0.109.0
       '@voyant-travel/workflows': 0.107.10(zod@4.3.6)
       '@voyant-travel/workflows-orchestrator': 0.107.10(zod@4.3.6)
@@ -12843,26 +13038,42 @@ snapshots:
       - typesense
       - zod
 
+  '@voyant-travel/cloud-sdk@0.10.1(typesense@3.0.6(@babel/runtime@7.29.2))':
+    optionalDependencies:
+      typesense: 3.0.6(@babel/runtime@7.29.2)
+
   '@voyant-travel/cloud-sdk@0.9.0(typesense@3.0.6(@babel/runtime@7.29.2))':
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
-  '@voyant-travel/connect-adapter@0.3.0(@voyant-travel/catalog@packages+catalog)':
+  '@voyant-travel/connect-adapter@0.3.2(@voyant-travel/catalog@packages+catalog)':
     dependencies:
       '@voyant-travel/catalog': link:packages/catalog
-      '@voyant-travel/connect-sdk': 0.9.0
+      '@voyant-travel/connect-sdk': 0.9.1
 
-  '@voyant-travel/connect-cruises@0.4.0(@voyant-travel/cruises@packages+cruises)':
+  '@voyant-travel/connect-cruises@0.6.1(@voyant-travel/cruises@packages+cruises)':
     dependencies:
-      '@voyant-travel/connect-sdk': 0.9.0
+      '@voyant-travel/connect-sdk': 0.9.1
     optionalDependencies:
       '@voyant-travel/cruises': link:packages/cruises
 
   '@voyant-travel/connect-sdk@0.9.0': {}
 
+  '@voyant-travel/connect-sdk@0.9.1': {}
+
   '@voyant-travel/core@0.109.0': {}
 
   '@voyant-travel/data-sdk@0.5.0': {}
+
+  '@voyant-travel/plugin-voyant-connect@0.3.0(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.5.0)':
+    dependencies:
+      '@voyant-travel/connect-adapter': 0.3.2(@voyant-travel/catalog@packages+catalog)
+      '@voyant-travel/connect-cruises': 0.6.1(@voyant-travel/cruises@packages+cruises)
+      '@voyant-travel/connect-sdk': 0.9.1
+      '@voyant-travel/cruises': link:packages/cruises
+      '@voyant-travel/data-sdk': 0.5.0
+    optionalDependencies:
+      '@voyant-travel/catalog': link:packages/catalog
 
   '@voyant-travel/workflows-orchestrator-node@0.107.10(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)':
     dependencies:

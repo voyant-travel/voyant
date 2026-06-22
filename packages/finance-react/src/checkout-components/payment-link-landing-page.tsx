@@ -288,7 +288,7 @@ function CardPanel({
   }
 
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="rounded-md border bg-card p-5 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">{messages.card.description}</p>
       <Button className="w-full" disabled={starting} onClick={handleClick}>
         {starting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -318,7 +318,7 @@ function BankTransferPanel({
   const reference =
     instructions.reference ?? session.externalReference ?? session.clientReference ?? session.id
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="rounded-md border bg-card p-5 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">
         {formatMessage(messages.bank.instructions, {
           amount: i18n.formatCurrency(session.amountCents / 100, session.currency),
@@ -470,7 +470,7 @@ function TerminalState({
 function ProcessingState() {
   const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-8 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-md border bg-card p-8 text-center">
       <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
       <h2 className="font-semibold text-lg">{messages.processing.title}</h2>
       <p className="max-w-md text-muted-foreground text-sm">{messages.processing.body}</p>

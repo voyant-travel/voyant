@@ -6,6 +6,7 @@ export {
   entityTypeSchema,
   expireQuoteVersionsSchema,
   insertPipelineSchema,
+  insertQuoteMediaSchema,
   insertQuoteParticipantSchema,
   insertQuoteProductSchema,
   insertQuoteSchema,

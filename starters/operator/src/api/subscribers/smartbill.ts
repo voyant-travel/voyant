@@ -363,7 +363,7 @@ async function buildSmartbillInvoiceBody(
       const quantity = Math.max(line.quantity, 1)
       return {
         name: line.description,
-        measureUnit: "buc",
+        measuringUnitName: "buc",
         quantity,
         price: centsToMajor(line.unitPriceCents),
         currency: invoice.currency,

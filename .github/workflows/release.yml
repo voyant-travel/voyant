@@ -139,9 +139,43 @@ jobs:
       - name: Publish pending packages
         id: publish_pending
         if: steps.release_plan.outputs.pending == 'true'
+        # Hard outer bound so a stalled publish can never burn a full job slot.
+        timeout-minutes: 25
         run: |
-          pnpm release
-          echo "published=true" >> "$GITHUB_OUTPUT"
+          # `pnpm release` is `changeset publish`, which is idempotent: it
+          # checks npm per package and skips versions already published, so it
+          # only ever publishes the still-pending remainder. A single `npm
+          # publish` stalling on the registry / OIDC trusted-publishing /
+          # sigstore-provenance call would otherwise hang the whole batch with
+          # no output until the job is killed (observed: ~6 min of silence,
+          # nothing published past the stall). Time-box each attempt and retry
+          # the remainder so a transient hang self-heals instead of wedging.
+          set -uo pipefail
+          attempt=0
+          max_attempts=3
+          per_attempt_timeout=420 # seconds (7 min) — well above a healthy full publish
+          while :; do
+            attempt=$((attempt + 1))
+            echo "::group::changeset publish — attempt ${attempt}/${max_attempts}"
+            if timeout "${per_attempt_timeout}" pnpm release; then
+              echo "::endgroup::"
+              echo "published=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            status=$?
+            echo "::endgroup::"
+            if [ "${status}" -eq 124 ]; then
+              echo "::warning::publish attempt ${attempt} timed out after ${per_attempt_timeout}s (likely a stalled npm/OIDC publish)"
+            else
+              echo "::warning::publish attempt ${attempt} exited ${status}"
+            fi
+            if [ "${attempt}" -ge "${max_attempts}" ]; then
+              echo "::error::publish failed after ${max_attempts} attempts"
+              exit 1
+            fi
+            echo "retrying remaining (still-unpublished) packages in 20s…"
+            sleep 20
+          done
 
       - name: Create or update Release PR
         id: changesets

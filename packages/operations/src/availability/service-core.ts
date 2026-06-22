@@ -1,16 +1,16 @@
-import type { EventBus } from "@voyant-travel/core"
-import { and, asc, desc, eq, getTableColumns, gte, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
-import { productsRef } from "./products-ref.js"
 import {
   type AvailabilitySlot,
   availabilityCloseouts,
   availabilityRules,
   availabilitySlots,
   availabilityStartTimes,
-} from "./schema.js"
+} from "@voyant-travel/availability/schema"
+import type { EventBus } from "@voyant-travel/core"
+import { RequestValidationError } from "@voyant-travel/hono"
+import { and, asc, desc, eq, getTableColumns, gte, sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
+import { productOptionsRef, productsRef } from "./products-ref.js"
 import type {
   AvailabilityCloseoutListQuery,
   AvailabilityRuleListQuery,
@@ -39,6 +39,29 @@ function withSlotEndDateLocal<TSlot extends AvailabilitySlot & { productName?: s
   return {
     ...slot,
     endDateLocal: slotEndDateLocal(slot),
+  }
+}
+
+async function assertSlotOptionBelongsToProduct(
+  db: PostgresJsDatabase,
+  input: { productId: string; optionId: string },
+) {
+  const [option] = await db
+    .select({ id: productOptionsRef.id })
+    .from(productOptionsRef)
+    .where(
+      and(
+        eq(productOptionsRef.id, input.optionId),
+        eq(productOptionsRef.productId, input.productId),
+      ),
+    )
+    .limit(1)
+
+  if (!option) {
+    throw new RequestValidationError("Availability slot option must belong to the slot product", {
+      productId: input.productId,
+      optionId: input.optionId,
+    })
   }
 }
 
@@ -238,6 +261,13 @@ export async function createSlot(
   data: CreateAvailabilitySlotInput,
   runtime: SlotMutationRuntime = {},
 ) {
+  if (data.optionId) {
+    await assertSlotOptionBelongsToProduct(db, {
+      productId: data.productId,
+      optionId: data.optionId,
+    })
+  }
+
   const [row] = await db
     .insert(availabilitySlots)
     .values({
@@ -278,6 +308,24 @@ export async function updateSlot(
   data: UpdateAvailabilitySlotInput,
   runtime: SlotMutationRuntime = {},
 ) {
+  if (data.productId !== undefined || data.optionId !== undefined) {
+    const [current] = await db
+      .select({ productId: availabilitySlots.productId, optionId: availabilitySlots.optionId })
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.id, id))
+      .limit(1)
+    if (!current) return null
+
+    const nextProductId = data.productId ?? current.productId
+    const nextOptionId = data.optionId === undefined ? current.optionId : data.optionId
+    if (nextOptionId) {
+      await assertSlotOptionBelongsToProduct(db, {
+        productId: nextProductId,
+        optionId: nextOptionId,
+      })
+    }
+  }
+
   const { remainingPax: _ignoredRemainingPax, ...rest } = data
   const patch: Record<string, unknown> = {
     ...rest,

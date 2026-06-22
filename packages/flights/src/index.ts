@@ -31,6 +31,11 @@ export {
   type FlightsRouteOptions,
 } from "./hono.js"
 export {
+  FLIGHTS_ENTITY_MODULE,
+  mergedFlightOffersToCandidates,
+  mergedFlightOfferToCandidate,
+} from "./orchestration/availability-bridge.js"
+export {
   type ConnectionResult,
   type ConnectionSearchStatus,
   type FanOutFlightSearchOptions,

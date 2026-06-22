@@ -59,6 +59,24 @@ export const ActionLedgerIndexRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// quotes
+// ---------------------------------------------------------------------------
+
+const quotesExtension = extension("quotes")
+
+export const QuotesIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/quotes",
+  ...adminExtensionRouteOptions(quotesExtension, "quotes-index", runtime),
+})
+
+export const QuotesDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/quotes/$id",
+  ...adminExtensionRouteOptions(quotesExtension, "quotes-detail", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // bookings
 // ---------------------------------------------------------------------------
 
@@ -676,6 +694,8 @@ export const TripsDetailRoute = createRoute({
 
 export const adminExtensionRoutes = [
   ActionLedgerIndexRoute,
+  QuotesIndexRoute,
+  QuotesDetailRoute,
   BookingsIndexRoute,
   BookingsDetailRoute,
   BookingsNewRoute,
@@ -749,6 +769,8 @@ export const adminExtensionRoutes = [
 
 export interface AdminExtensionRoutesByFullPath {
   "/action-ledger": typeof ActionLedgerIndexRoute
+  "/quotes": typeof QuotesIndexRoute
+  "/quotes/$id": typeof QuotesDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -832,6 +854,8 @@ export interface AdminExtensionRoutesByFullPath {
 
 export interface AdminExtensionRoutesByTo {
   "/action-ledger": typeof ActionLedgerIndexRoute
+  "/quotes": typeof QuotesIndexRoute
+  "/quotes/$id": typeof QuotesDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -914,6 +938,8 @@ export interface AdminExtensionRoutesByTo {
 
 export interface AdminExtensionRoutesById {
   "/_workspace/action-ledger": typeof ActionLedgerIndexRoute
+  "/_workspace/quotes": typeof QuotesIndexRoute
+  "/_workspace/quotes/$id": typeof QuotesDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
   "/_workspace/bookings/new": typeof BookingsNewRoute

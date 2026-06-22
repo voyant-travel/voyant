@@ -13,6 +13,26 @@ export {
   verifyCloudAdminAssertion,
 } from "./cloud-broker/assertion.js"
 export type {
+  CloudAdminInvitation,
+  CloudAdminInviteInput,
+  CloudAdminMember,
+  CloudAdminMemberRole,
+  CloudAdminMembersConfig,
+  CloudAdminMembersRequest,
+} from "./cloud-broker/members.js"
+export {
+  CloudAdminMembersError,
+  cloudAdminMembersConfigFromRevalidate,
+  deriveCloudAdminMembersBaseUrl,
+  inviteCloudAdminMember,
+  listCloudAdminInvitations,
+  listCloudAdminMemberRoles,
+  listCloudAdminMembers,
+  revokeCloudAdminInvitation,
+  setCloudAdminMemberAccess,
+  setCloudAdminMemberPermissions,
+} from "./cloud-broker/members.js"
+export type {
   CloudAdminAuthStartConfig,
   CloudAdminAuthState,
   CreateCloudAdminAuthStartInput,

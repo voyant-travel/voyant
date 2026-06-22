@@ -1,5 +1,109 @@
 # @voyant-travel/accommodations
 
+## 0.106.0
+
+### Minor Changes
+
+- bbd8675: Add `createAccommodationOwnedSearchHandler` — the owned-arm availability-search handler for the accommodation vertical (dynamic packaging, voyant#2093). It lets owned accommodation inventory participate in the catalog availability fan-out (`fanOutAvailabilitySearch`) so owned and sourced supply land in one ranked candidate list.
+
+  Mirrors the existing `createAccommodationBookingHandler` thin-shell + injected-bridge pattern: the handler owns the vertical-agnostic parts (criteria validation, `nightsBetween`, `StayMatch → AvailabilityCandidate` assembly with a deterministic composed `candidateRef` and a reserve-ready `selection`), and a caller-supplied `AccommodationSearchBridge` owns the inventory query (owned accommodations have no date-aware rate/availability table in the schema yet, and the location lookup spans the operations places/facility schema — both deployment-specific). `source` is left for the fan-out to stamp as `{ kind: "owned", module: "accommodations" }`. Exported from `@voyant-travel/accommodations/booking-engine`.
+
+## 0.105.31
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/bookings@0.133.0
+  - @voyant-travel/db@0.109.0
+  - @voyant-travel/catalog@0.131.0
+  - @voyant-travel/operations@0.2.8
+
+## 0.105.30
+
+### Patch Changes
+
+- Updated dependencies [6a0edd2]
+  - @voyant-travel/catalog@0.130.0
+  - @voyant-travel/accommodations-contracts@0.105.3
+  - @voyant-travel/operations@0.2.7
+  - @voyant-travel/bookings@0.132.0
+
+## 0.105.29
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.131.0
+- @voyant-travel/catalog@0.129.0
+- @voyant-travel/operations@0.2.4
+
+## 0.105.28
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.130.0
+- @voyant-travel/catalog@0.128.0
+- @voyant-travel/operations@0.2.3
+
+## 0.105.27
+
+### Patch Changes
+
+- Updated dependencies [7779772]
+  - @voyant-travel/catalog@0.127.0
+  - @voyant-travel/operations@0.2.2
+  - @voyant-travel/bookings@0.129.0
+
+## 0.105.26
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.128.0
+- @voyant-travel/catalog@0.126.0
+- @voyant-travel/operations@0.2.1
+
+## 0.105.25
+
+### Patch Changes
+
+- 435a5d1: Extract the availability domain into a new foundational `@voyant-travel/availability` package, and complete D.2 per-package migration onboarding for the last schema-owning packages.
+
+  - **@voyant-travel/availability (new):** owns the `availability_*` schema (slots, rules, start times, holds, pickups, capacity) — previously buried in operations. Ships its own D.2 migration.
+  - **operations:** its availability **services and routes stay**, now importing the schema from `@voyant-travel/availability` (the barrel re-exports it for runtime consumers); operations' migration no longer owns the availability tables. Fixes the module direction — bookings/operations/accommodations consume availability, rather than reaching into operations for an inventory primitive.
+  - **bookings:** drops the hard cross-package FK from `booking_allocations.availability_slot_id` to `availability_slots` (it referenced a stale local duplicate); the column is now a plain indexed id per module decoupling. The refund workflow keeps a runtime-only reference to the availability table.
+  - **framework-migrations:** bundle migration drops the removed FK constraint.
+
+  All package sources verified column-for-column against the bundle and apply together cleanly on a fresh D.2 database (union).
+
+- Updated dependencies [435a5d1]
+  - @voyant-travel/operations@0.2.0
+  - @voyant-travel/bookings@0.127.0
+  - @voyant-travel/catalog@0.125.0
+
+## 0.105.24
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.126.0
+- @voyant-travel/catalog@0.124.0
+- @voyant-travel/operations@0.1.6
+
+## 0.105.23
+
+### Patch Changes
+
+- @voyant-travel/db@0.108.3
+- @voyant-travel/bookings@0.125.0
+- @voyant-travel/catalog@0.123.0
+- @voyant-travel/operations@0.1.5
+
+## 0.105.22
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.124.0
+- @voyant-travel/catalog@0.122.0
+- @voyant-travel/operations@0.1.4
+
 ## 0.105.21
 
 ### Patch Changes

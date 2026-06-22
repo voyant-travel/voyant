@@ -1,5 +1,92 @@
 # @voyant-travel/crm-react
 
+## 0.133.0
+
+### Patch Changes
+
+- Updated dependencies [4abf9a2]
+  - @voyant-travel/admin@0.115.0
+  - @voyant-travel/i18n@0.108.0
+  - @voyant-travel/utils@0.105.3
+  - @voyant-travel/relationships@0.120.13
+  - @voyant-travel/identity-react@0.133.0
+  - @voyant-travel/ui@0.108.1
+
+## 0.132.0
+
+### Patch Changes
+
+- @voyant-travel/identity-react@0.132.0
+- @voyant-travel/relationships@0.120.12
+
+## 0.131.0
+
+### Patch Changes
+
+- Updated dependencies [310565b]
+  - @voyant-travel/i18n@0.107.3
+  - @voyant-travel/identity-react@0.131.0
+  - @voyant-travel/relationships@0.120.10
+
+## 0.130.0
+
+### Patch Changes
+
+- Updated dependencies [dbea53e]
+  - @voyant-travel/i18n@0.107.2
+  - @voyant-travel/identity-react@0.130.0
+  - @voyant-travel/relationships@0.120.9
+
+## 0.129.0
+
+### Patch Changes
+
+- @voyant-travel/identity-react@0.129.0
+- @voyant-travel/relationships@0.120.7
+
+## 0.128.0
+
+### Patch Changes
+
+- @voyant-travel/identity-react@0.128.0
+- @voyant-travel/relationships@0.120.6
+
+## 0.127.0
+
+### Patch Changes
+
+- @voyant-travel/identity-react@0.127.0
+- @voyant-travel/relationships@0.120.5
+
+## 0.126.0
+
+### Patch Changes
+
+- @voyant-travel/identity-react@0.126.0
+- @voyant-travel/relationships@0.120.3
+
+## 0.125.0
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+- Updated dependencies [a74471e]
+  - @voyant-travel/i18n@0.107.0
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/admin@0.114.0
+  - @voyant-travel/identity-react@0.125.0
+  - @voyant-travel/relationships@0.120.2
+
+## 0.124.0
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/admin@0.113.0
+  - @voyant-travel/identity-react@0.124.0
+  - @voyant-travel/relationships@0.120.1
+
 ## 0.123.0
 
 ### Patch Changes

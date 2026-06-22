@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/framework-migrations",
-  "version": "0.2.0",
+  "version": "0.6.0",
   "description": "D.1 multi-source migration collector — applies the framework-shipped bundle then the deployment's own migrations via one version-independent (source, tag, content_hash) ledger.",
   "license": "Apache-2.0",
   "type": "module",
@@ -26,7 +26,8 @@
   "files": [
     "dist",
     "migrations/*.sql",
-    "migrations/meta/_journal.json"
+    "migrations/meta/_journal.json",
+    "cutline.generated.json"
   ],
   "publishConfig": {
     "access": "public",

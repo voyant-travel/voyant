@@ -7,6 +7,7 @@ import {
   type Quote,
   type QuoteVersion,
   type QuoteVersionLine,
+  quoteProducts,
   quotes,
   quoteVersionLines,
   quoteVersions,
@@ -137,6 +138,85 @@ export const quoteVersionsService = {
     return row
   },
 
+  /**
+   * Snapshot the quote's CURRENT line items into a new version ("save a
+   * proposal"). Copies `quoteProducts` → `quoteVersionLines` with the computed
+   * total, links `supersedesId` to the prior current version, and supersedes
+   * every still-live (draft/sent) version so exactly one version is current.
+   * Returns `null` if the quote doesn't exist.
+   */
+  async createVersionSnapshotFromQuote(db: PostgresJsDatabase, quoteId: string) {
+    return db.transaction(async (tx) => {
+      const [quote] = await tx.select().from(quotes).where(eq(quotes.id, quoteId)).limit(1)
+      if (!quote) return null
+
+      const currency = quote.valueCurrency ?? "USD"
+      const products = await tx
+        .select()
+        .from(quoteProducts)
+        .where(eq(quoteProducts.quoteId, quoteId))
+        .orderBy(quoteProducts.createdAt)
+
+      const lines = products.map((product) => {
+        const unit = product.unitPriceAmountCents ?? 0
+        return {
+          productId: product.productId,
+          supplierServiceId: product.supplierServiceId,
+          description: product.nameSnapshot,
+          quantity: product.quantity,
+          unitPriceAmountCents: unit,
+          totalAmountCents: unit * product.quantity - (product.discountAmountCents ?? 0),
+          currency: product.currency ?? currency,
+        }
+      })
+      const subtotal = lines.reduce((sum, line) => sum + line.totalAmountCents, 0)
+
+      // The prior current version (newest non-superseded) becomes this one's
+      // predecessor before we supersede the live ones.
+      const [previous] = await tx
+        .select({ id: quoteVersions.id })
+        .from(quoteVersions)
+        .where(and(eq(quoteVersions.quoteId, quoteId), ne(quoteVersions.status, "superseded")))
+        .orderBy(desc(quoteVersions.updatedAt))
+        .limit(1)
+
+      // The prior live version(s) are no longer valid once a new one is saved —
+      // mark them expired so exactly one version reads as current.
+      await tx
+        .update(quoteVersions)
+        .set({ status: "expired", updatedAt: new Date() })
+        .where(
+          and(
+            eq(quoteVersions.quoteId, quoteId),
+            or(eq(quoteVersions.status, "draft"), eq(quoteVersions.status, "sent")),
+          ),
+        )
+
+      const [version] = await tx
+        .insert(quoteVersions)
+        .values({
+          quoteId,
+          currency,
+          status: "draft",
+          supersedesId: previous?.id ?? null,
+          subtotalAmountCents: subtotal,
+          taxAmountCents: 0,
+          totalAmountCents: subtotal,
+          notes: quote.description,
+        })
+        .returning()
+      if (!version) throw new Error("Failed to create quote version snapshot")
+
+      if (lines.length) {
+        await tx
+          .insert(quoteVersionLines)
+          .values(lines.map((line) => ({ ...line, quoteVersionId: version.id })))
+      }
+
+      return version
+    })
+  },
+
   async updateQuoteVersion(db: PostgresJsDatabase, id: string, data: UpdateQuoteVersionInput) {
     if (data.status !== undefined) {
       throw new QuoteVersionConflictError("Quote Version status changes must use lifecycle routes")
@@ -163,6 +243,20 @@ export const quoteVersionsService = {
       .limit(1)
     if (!existing) return null
     throw new QuoteVersionConflictError("Quote Versions can only be edited while draft")
+  },
+
+  /**
+   * Set a version's validity date. Narrow on purpose — the generic update
+   * schema carries insert defaults (status/totals) that would otherwise be
+   * written, so validity gets its own path.
+   */
+  async setQuoteVersionValidUntil(db: PostgresJsDatabase, id: string, validUntil: string | null) {
+    const [row] = await db
+      .update(quoteVersions)
+      .set({ validUntil, updatedAt: new Date() })
+      .where(eq(quoteVersions.id, id))
+      .returning()
+    return row ?? null
   },
 
   async deleteQuoteVersion(db: PostgresJsDatabase, id: string) {
@@ -239,11 +333,9 @@ export const quoteVersionsService = {
       if (existing.status !== "draft") {
         throw new QuoteVersionConflictError("Quote Versions can only be sent from draft")
       }
-      if (!existing.tripSnapshotId) {
-        throw new QuoteVersionConflictError(
-          "Quote Versions must have a Trip snapshot before they can be sent",
-        )
-      }
+      // A version may be sent for client review whether its lines come from a
+      // frozen Trip snapshot or from the quote's products (line-item proposal).
+      // (Accept → reserve still requires a Trip snapshot; see the public accept.)
 
       const now = new Date()
       const validUntil = data.validUntil === undefined ? existing.validUntil : data.validUntil

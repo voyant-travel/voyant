@@ -40,7 +40,7 @@ function stubDb(bookingNumber: string | null): PostgresJsDatabase {
     where: () => chain,
     limit: () => Promise.resolve(rows),
   }
-  return { select: () => chain } as unknown as PostgresJsDatabase
+  return { select: () => chain } as PostgresJsDatabase
 }
 
 const AUTO_OPTIONS: AutoGenerateContractOptions = {

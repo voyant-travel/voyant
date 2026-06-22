@@ -42,11 +42,33 @@ export {
   usePipelines,
 } from "./hooks/use-pipelines.js"
 export { type UseQuoteOptions, useQuote } from "./hooks/use-quote.js"
+export { type UseQuoteMediaOptions, useQuoteMedia } from "./hooks/use-quote-media.js"
+export {
+  type CreateQuoteMediaInput,
+  useQuoteMediaMutation,
+} from "./hooks/use-quote-media-mutation.js"
 export {
   type CreateQuoteInput,
   type UpdateQuoteInput,
   useQuoteMutation,
 } from "./hooks/use-quote-mutation.js"
+export {
+  type CreateQuoteParticipantInput,
+  useQuoteParticipantMutation,
+} from "./hooks/use-quote-participant-mutation.js"
+export {
+  type UseQuoteParticipantsOptions,
+  useQuoteParticipants,
+} from "./hooks/use-quote-participants.js"
+export {
+  type CreateQuoteProductInput,
+  type UpdateQuoteProductInput,
+  useQuoteProductMutation,
+} from "./hooks/use-quote-product-mutation.js"
+export {
+  type UseQuoteProductsOptions,
+  useQuoteProducts,
+} from "./hooks/use-quote-products.js"
 export {
   type UseQuoteVersionOptions,
   useQuoteVersion,
@@ -113,9 +135,15 @@ export {
 export {
   type PipelineRecord,
   pipelineRecordSchema,
+  type QuoteMediaRecord,
+  type QuoteParticipantRecord,
+  type QuoteProductRecord,
   type QuoteRecord,
   type QuoteVersionLineRecord,
   type QuoteVersionRecord,
+  quoteMediaRecordSchema,
+  quoteParticipantRecordSchema,
+  quoteProductRecordSchema,
   quoteRecordSchema,
   quoteVersionLineRecordSchema,
   quoteVersionRecordSchema,

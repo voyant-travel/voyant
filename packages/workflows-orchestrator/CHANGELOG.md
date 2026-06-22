@@ -1,5 +1,45 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.111.4
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.4
+
+## 0.111.3
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.3
+
+## 0.111.2
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.2
+
+## 0.111.1
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.1
+
+## 0.111.0
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.0
+
+## 0.110.0
+
+### Minor Changes
+
+- 4f92198: Expose the in-memory orchestration driver via a dedicated `./in-memory` export so deployments (e.g. the operator starter) can run workflows locally without an external orchestrator.
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.110.0
+
 ## 0.109.4
 
 ### Patch Changes

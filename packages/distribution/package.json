@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/distribution",
-  "version": "0.113.0",
+  "version": "0.123.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -16,7 +16,8 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=distribution_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
     "@voyant-travel/bookings": "workspace:^",
@@ -33,10 +34,13 @@
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
   ],
   "publishConfig": {
     "access": "public",

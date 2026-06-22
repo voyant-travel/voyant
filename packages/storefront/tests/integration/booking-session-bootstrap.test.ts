@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: storefront; the sync + compat bootstrap cases share one seed harness and stay co-located until a dedicated split preserves coverage.
 import {
   departurePriceOverrides,
   optionPriceRules,
@@ -479,10 +480,121 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
     expect(res.status).toBe(409)
     const body = await res.json()
     expect(body.error).toBe("Booking session quote is stale")
+    expect(body.code).toBe("QUOTE_STALE")
+    expect(body.retryable).toBe(true)
     expect(body.data.repricing).toEqual(
       expect.objectContaining({
         deltaAmountCents: 1000,
         staleQuote: true,
+      }),
+    )
+  })
+
+  // Compatibility bootstrap (issue voyant#1984): derive slot/price server-side
+  // from the minimal `{ productId, departureId, pax, ... }` contract.
+  it("compat-bootstraps a session from minimal product/departure input", async () => {
+    const seed = await seedDeparture()
+
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      ...json({
+        productId: seed.product.id,
+        departureId: seed.slot.id,
+        optionUnitId: seed.unit.id,
+        pax: 1,
+        currency: "EUR",
+        locale: "en",
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data.currency).toBe("EUR")
+    expect(body.data.session.status).toBe("on_hold")
+    expect(body.data.session.checkoutCapability.actions).toContain("payment:start")
+    // The server derived the price, so the quote is never stale.
+    expect(body.data.repricing).toEqual(
+      expect.objectContaining({ deltaAmountCents: 0, staleQuote: false }),
+    )
+    expect(body.data.repricing.current.totalSellAmountCents).toBe(50000)
+    expect(body.data.session.items[0]).toEqual(
+      expect.objectContaining({
+        productId: seed.product.id,
+        optionId: seed.option.id,
+        optionUnitId: seed.unit.id,
+      }),
+    )
+    expect(body.data.availability).toEqual(
+      expect.objectContaining({
+        departureId: seed.slot.id,
+        slotId: seed.slot.id,
+        productId: seed.product.id,
+        remaining: 9,
+      }),
+    )
+  })
+
+  it("rejects compat-bootstrap when the departure does not belong to the product", async () => {
+    const seed = await seedDeparture()
+
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      ...json({
+        productId: "prod_someone_else",
+        departureId: seed.slot.id,
+        pax: 1,
+      }),
+    })
+
+    expect(res.status).toBe(409)
+    const body = await res.json()
+    expect(body.code).toBe("PRODUCT_MISMATCH")
+    expect(body.retryable).toBe(false)
+  })
+
+  it("returns DEPARTURE_NOT_FOUND for an unknown compat-bootstrap departure", async () => {
+    const seed = await seedDeparture()
+
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      ...json({
+        productId: seed.product.id,
+        departureId: "slot_missing",
+        pax: 1,
+      }),
+    })
+
+    expect(res.status).toBe(404)
+    const body = await res.json()
+    expect(body.code).toBe("DEPARTURE_NOT_FOUND")
+  })
+
+  // An imported departure can carry an external id that is not the native
+  // availability-slot id — `slotId` points at the real slot, and the caller's
+  // external `departureId` is echoed back in the response.
+  it("honors a compat-bootstrap slotId override distinct from departureId", async () => {
+    const seed = await seedDeparture()
+
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      ...json({
+        productId: seed.product.id,
+        departureId: "import_dep_external_42",
+        slotId: seed.slot.id,
+        optionUnitId: seed.unit.id,
+        pax: 1,
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data.session.status).toBe("on_hold")
+    expect(body.data.repricing.current.totalSellAmountCents).toBe(50000)
+    expect(body.data.availability).toEqual(
+      expect.objectContaining({
+        departureId: "import_dep_external_42",
+        slotId: seed.slot.id,
+        productId: seed.product.id,
       }),
     )
   })

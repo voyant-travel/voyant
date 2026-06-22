@@ -1,5 +1,23 @@
 # @voyant-travel/workflows-local-dashboard
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [a74471e]
+  - @voyant-travel/ui@0.108.0
+  - @voyant-travel/workflows-react@0.111.0
+  - @voyant-travel/workflows@0.111.0
+
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [4f92198]
+  - @voyant-travel/ui@0.107.0
+  - @voyant-travel/workflows-react@0.110.0
+  - @voyant-travel/workflows@0.110.0
+
 ## 0.0.5
 
 ### Patch Changes

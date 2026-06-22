@@ -7,11 +7,13 @@ import {
   type CancelTripComponentsDeps,
   type PriceTripDeps,
   type ReserveTripDeps,
+  type SourceRequirementCandidatesDeps,
   type StartCheckoutDeps,
   TripsInvariantError,
   tripsService,
 } from "./service.js"
 import {
+  addRequirementSchema,
   cancelTripComponentsSchema,
   createTripComponentBodySchema,
   createTripEnvelopeSchema,
@@ -21,6 +23,9 @@ import {
   priceTripSchema,
   reorderTripComponentsSchema,
   reserveTripSchema,
+  reshopTripSchema,
+  selectCandidateSchema,
+  sourceRequirementCandidatesSchema,
   startTripCheckoutSchema,
   updateTripComponentRefsSchema,
   updateTripComponentSchema,
@@ -40,6 +45,8 @@ export interface TripsRoutesOptions {
   reserveTripDeps?: TripsRouteDeps<ReserveTripDeps>
   startCheckoutDeps?: TripsRouteDeps<StartCheckoutDeps>
   cancelTripComponentsDeps?: TripsRouteDeps<CancelTripComponentsDeps>
+  /** Availability fan-out wiring for requirement sourcing / re-shop (RFC #2082). */
+  sourceCandidatesDeps?: TripsRouteDeps<SourceRequirementCandidatesDeps>
 }
 
 export type TripsRouteDeps<T> = T | ((c: Context<Env>) => T | undefined)
@@ -50,6 +57,10 @@ const reserveTripBodySchema = reserveTripSchema.omit({ envelopeId: true })
 const startCheckoutBodySchema = startTripCheckoutSchema.omit({ envelopeId: true })
 const previewCancellationBodySchema = previewTripCancellationSchema.omit({ envelopeId: true })
 const cancelTripComponentsBodySchema = cancelTripComponentsSchema.omit({ envelopeId: true })
+const addRequirementBodySchema = addRequirementSchema.omit({ envelopeId: true })
+const sourceCandidatesBodySchema = sourceRequirementCandidatesSchema.omit({ requirementId: true })
+const selectCandidateBodySchema = selectCandidateSchema.omit({ requirementId: true })
+const reshopTripBodySchema = reshopTripSchema.omit({ envelopeId: true })
 
 function routeError(error: unknown): { message: string; status: 400 | 404 | 409 } {
   if (error instanceof TripsInvariantError) {
@@ -86,6 +97,11 @@ function envelopeIdParam(c: Context<Env>): string {
   const envelopeId = c.req.param("envelopeId")
   if (!envelopeId) throw new TripsInvariantError("Trip envelope id is required")
   return envelopeId
+}
+function requirementIdParam(c: Context<Env>): string {
+  const requirementId = c.req.param("requirementId")
+  if (!requirementId) throw new TripsInvariantError("Trip requirement id is required")
+  return requirementId
 }
 
 function snapshotIdParam(c: Context<Env>): string {
@@ -286,6 +302,109 @@ async function cancelTripComponentsHandler(c: Context<Env>, options: TripsRoutes
   }
 }
 
+// ── Dynamic packaging: requirements + candidates (RFC #2082, admin-only) ──
+
+async function addRequirementHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  try {
+    const body = await parseJsonBody(c, addRequirementBodySchema)
+    const requirement = await tripsService.addRequirement(c.get("db"), {
+      ...body,
+      envelopeId: envelopeIdParam(c),
+    })
+    return c.json({ data: requirement }, 201)
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function listRequirementsHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  try {
+    const data = await tripsService.listEnvelopeRequirements(c.get("db"), envelopeIdParam(c))
+    return c.json({ data })
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function sourceCandidatesHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+  if (!deps) {
+    return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
+  }
+  try {
+    const body = await parseJsonBody(c, sourceCandidatesBodySchema)
+    const result = await tripsService.sourceRequirementCandidates(
+      c.get("db"),
+      { ...body, requirementId: requirementIdParam(c) },
+      deps,
+    )
+    return c.json({ data: result })
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function selectCandidateHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  try {
+    const body = await parseJsonBody(c, selectCandidateBodySchema)
+    const result = await tripsService.selectCandidate(c.get("db"), {
+      ...body,
+      requirementId: requirementIdParam(c),
+    })
+    return c.json({ data: result })
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function reshopRequirementHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+  if (!deps) {
+    return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
+  }
+  try {
+    const body = await parseJsonBody(c, sourceCandidatesBodySchema)
+    const result = await tripsService.reshopRequirement(
+      c.get("db"),
+      { ...body, requirementId: requirementIdParam(c) },
+      deps,
+    )
+    return c.json({ data: result })
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function reshopTripHandler(c: Context<Env>, options: TripsRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+  if (!deps) {
+    return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
+  }
+  try {
+    const body = await parseJsonBody(c, reshopTripBodySchema)
+    const result = await tripsService.reshopTrip(
+      c.get("db"),
+      { ...body, envelopeId: envelopeIdParam(c) },
+      deps,
+    )
+    return c.json({ data: result })
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
 export function createTripsRoutes(options: TripsRoutesOptions = {}) {
   return new Hono<Env>()
     .get("/health", (c) => {
@@ -300,6 +419,12 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
     .patch("/:envelopeId", (c) => updateTripHandler(c, options))
     .post("/:envelopeId/components", addTripComponentHandler)
     .post("/:envelopeId/components/reorder", (c) => reorderTripComponentsHandler(c, options))
+    .post("/:envelopeId/requirements", (c) => addRequirementHandler(c, options))
+    .get("/:envelopeId/requirements", (c) => listRequirementsHandler(c, options))
+    .post("/:envelopeId/reshop", (c) => reshopTripHandler(c, options))
+    .post("/requirements/:requirementId/candidates", (c) => sourceCandidatesHandler(c, options))
+    .post("/requirements/:requirementId/select", (c) => selectCandidateHandler(c, options))
+    .post("/requirements/:requirementId/reshop", (c) => reshopRequirementHandler(c, options))
     .post("/:envelopeId/price", (c) => priceTripHandler(c, options))
     .post("/:envelopeId/reserve", (c) => reserveTripHandler(c, options))
     .post("/:envelopeId/checkout", (c) => startTripCheckoutHandler(c, options))
