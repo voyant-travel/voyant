@@ -34,6 +34,11 @@ describe("standard transactional surface (ADR-0008)", () => {
     expect(trips?.module.requiresTransactionalDb).toBe(true)
   })
 
+  it("accommodations transacts (room-block pickup/release counters)", () => {
+    const accommodations = modules.find((m) => m.module.name === "accommodations")
+    expect(accommodations?.module.requiresTransactionalDb).toBe(true)
+  })
+
   it("the catalog booking engine declares its transactional path subset", () => {
     const catalogBooking = modules.find((m) => m.module.name === "catalog-booking")
     expect([...(catalogBooking?.transactionalPaths ?? [])]).toEqual([

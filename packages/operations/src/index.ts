@@ -2,6 +2,7 @@ import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { availabilityLinkable } from "./availability/index.js"
+import { placesLinkable } from "./places/index.js"
 import { operationsAdminRoutes, operationsRoutes } from "./routes.js"
 import {
   checkOperationalAvailability,
@@ -14,7 +15,7 @@ import {
 export const operationsModule: Module = {
   name: "operations",
   requiresTransactionalDb: true,
-  linkable: availabilityLinkable,
+  linkable: { ...availabilityLinkable, ...placesLinkable },
 }
 
 export const operationsHonoModule: HonoModule = {

@@ -21,6 +21,7 @@ export const schema = [
   "../../packages/storefront/src/verification/schema.ts",
   "../../packages/trips/src/schema.ts",
   "../../packages/operator-settings/src/schema.ts",
+  "../../packages/mice/src/schema.ts",
   "../../packages/catalog-authoring/src/schema.ts",
   "../../packages/workflow-runs/src/schema.ts",
   "../../packages/accommodations/src/schema.ts",

@@ -40,18 +40,24 @@ export default defineVoyantConfig({
     // Operator-tenant settings (profile + payment + booking-tax) — a standard
     // module: schema-owning + routes mounted via the framework composition.
     "@voyant-travel/operator-settings",
+    // Accommodations — now a standard runtime module (voyant#1489): room blocks
+    // are mounted via the framework composition (accommodationsHonoModule), and
+    // its schema (incl. room_blocks) is migrated.
+    "@voyant-travel/accommodations",
+    // MICE group-program spine (voyant#1489) — deployment-local (niche),
+    // mounted via createVoyantApp's deploymentLocalModules. Listed here so its
+    // schema (mice_programs) is discovered for migration generation.
+    "@voyant-travel/mice",
   ],
   plugins: ["@voyant-travel/plugin-smartbill"],
   // Mounted Hono extensions that own migrated schema.
   extensions: ["@voyant-travel/catalog-authoring"],
   // Schema this template migrates but does not mount as a module or extension:
   //  - workflow-runs: only its admin routes are mounted, not a module
-  //  - accommodations: FK-target schema, not mounted
   //  - charters / cruises: schema migrated ahead of route mounting
   additionalSchemas: [
     "@voyant-travel/availability",
     "@voyant-travel/workflow-runs",
-    "@voyant-travel/accommodations",
     "@voyant-travel/charters",
     "@voyant-travel/cruises",
   ],

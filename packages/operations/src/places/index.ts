@@ -1,4 +1,4 @@
-import type { Module } from "@voyant-travel/core"
+import type { LinkableDefinition, Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { facilitiesRoutes } from "./routes.js"
@@ -6,8 +6,33 @@ import { facilitiesService } from "./service.js"
 
 export type { FacilitiesRoutes } from "./routes.js"
 
+/**
+ * Properties and facilities exposed as linkable entities so other modules can
+ * associate to them via `defineLink` (e.g. a room block → its property). See
+ * RFC voyant#1489.
+ */
+export const propertyLinkable: LinkableDefinition = {
+  module: "operations",
+  entity: "property",
+  table: "properties",
+  idPrefix: "prop",
+}
+
+export const facilityLinkable: LinkableDefinition = {
+  module: "operations",
+  entity: "facility",
+  table: "facilities",
+  idPrefix: "fac",
+}
+
+export const placesLinkable = {
+  property: propertyLinkable,
+  facility: facilityLinkable,
+}
+
 export const facilitiesModule: Module = {
   name: "facilities",
+  linkable: placesLinkable,
 }
 
 export const facilitiesHonoModule: HonoModule = {

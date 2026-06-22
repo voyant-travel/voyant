@@ -253,9 +253,15 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
       '@voyant-travel/operations':
         specifier: workspace:^
         version: link:../operations
@@ -1825,6 +1831,9 @@ importers:
 
   packages/framework:
     dependencies:
+      '@voyant-travel/accommodations':
+        specifier: workspace:*
+        version: link:../accommodations
       '@voyant-travel/action-ledger':
         specifier: workspace:*
         version: link:../action-ledger
@@ -1855,6 +1864,9 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:*
         version: link:../legal
+      '@voyant-travel/mice':
+        specifier: workspace:*
+        version: link:../mice
       '@voyant-travel/notifications':
         specifier: workspace:*
         version: link:../notifications
@@ -2414,6 +2426,40 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
+
+  packages/mice:
+    dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/notifications:
     dependencies:
@@ -4085,6 +4131,9 @@ importers:
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../../packages/legal-react
+      '@voyant-travel/mice':
+        specifier: workspace:^
+        version: link:../../packages/mice
       '@voyant-travel/notifications':
         specifier: workspace:^
         version: link:../../packages/notifications
