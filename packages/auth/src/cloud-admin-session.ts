@@ -211,6 +211,16 @@ export async function revalidateVoyantCloudAdminAuthSession({
       now,
       revalidateAfterSeconds,
     })
+    // Refresh the cached RBAC scopes so a permission change applied while the
+    // member is signed in takes effect at the next revalidation, not only at
+    // next login (member-rbac-rfc, voyant#2085). `undefined` ⇒ older platform
+    // didn't send scopes; leave the column as-is.
+    if (revalidation.scopes !== undefined) {
+      await db
+        .update(cloudAuthUserLinks)
+        .set({ scopes: revalidation.scopes, updatedAt: now })
+        .where(eq(cloudAuthUserLinks.userId, sessionLink.userId))
+    }
     return { ok: true, status: "active" }
   }
 

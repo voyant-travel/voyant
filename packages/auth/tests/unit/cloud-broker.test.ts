@@ -166,6 +166,39 @@ describe("revalidateCloudAdminAuthAccess", () => {
       reason: "no_membership",
     })
   })
+
+  it("surfaces refreshed scopes when Cloud includes them", async () => {
+    const fetch = async () =>
+      Response.json({ ok: true, status: "active", scopes: ["bookings:read"] })
+
+    await expect(
+      revalidateCloudAdminAuthAccess({
+        workosUserId: "user_workos_123",
+        fetch: fetch as typeof globalThis.fetch,
+        config: {
+          revalidateUrl: "https://api.voyant.travel/cloud/v1/admin-auth/revalidate",
+          deploymentId: "dep_123",
+          clientToken: "client_token_123",
+        },
+      }),
+    ).resolves.toEqual({ ok: true, status: "active", scopes: ["bookings:read"] })
+  })
+
+  it("omits scopes when Cloud doesn't send them (older platform)", async () => {
+    const fetch = async () => Response.json({ ok: true, status: "active" })
+
+    const result = await revalidateCloudAdminAuthAccess({
+      workosUserId: "user_workos_123",
+      fetch: fetch as typeof globalThis.fetch,
+      config: {
+        revalidateUrl: "https://api.voyant.travel/cloud/v1/admin-auth/revalidate",
+        deploymentId: "dep_123",
+        clientToken: "client_token_123",
+      },
+    })
+
+    expect("scopes" in result).toBe(false)
+  })
 })
 
 describe("normalizeCloudAdminAuthNext", () => {

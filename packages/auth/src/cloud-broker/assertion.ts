@@ -67,6 +67,14 @@ export type CloudAdminAuthRevalidationResult = {
   ok: boolean
   status: "active" | "revoked"
   reason?: string
+  /**
+   * The member's current RBAC scope set for this deployment, refreshed from the
+   * platform (member-rbac-rfc, voyant#2085). `undefined` when the platform
+   * didn't include it (older platform); `null` means "no explicit permissions —
+   * derive from role". Lets a permission change take effect within one
+   * revalidation interval instead of only at next login.
+   */
+  scopes?: string[] | null
 }
 
 type JwsHeader = {
@@ -164,6 +172,9 @@ export async function revalidateCloudAdminAuthAccess({
     ok: body.ok,
     status: body.status,
     reason: optionalString(body.reason) ?? undefined,
+    // Only surface `scopes` when the platform sent the key, so an older platform
+    // (no key) leaves the cached scopes untouched rather than clearing them.
+    ...("scopes" in body ? { scopes: optionalStringArray(body.scopes) } : {}),
   }
 }
 

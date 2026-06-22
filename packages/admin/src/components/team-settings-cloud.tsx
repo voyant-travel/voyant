@@ -368,11 +368,6 @@ function CloudInviteMemberDialog() {
 
 type AdminMessages = ReturnType<typeof useOperatorAdminMessages>
 
-// Flat catalog of concrete resource:action permissions, shared with API keys.
-const ALL_CATALOG_PERMISSIONS = API_KEY_PERMISSION_GROUPS.flatMap((group) =>
-  group.permissions.map((p) => `${p.resource}:${p.action}`),
-)
-
 /** Expand a (possibly wildcard) scope list to the concrete catalog permissions it grants. */
 function expandToConcrete(scopes: string[]): Set<string> {
   const permissions = permissionStringsToPermissions(scopes)
@@ -398,8 +393,10 @@ function memberAccessSummary(member: CloudMember, messages: AdminMessages): stri
   return member.roleName ?? member.roleSlug ?? messages.team.members.roleDefault
 }
 
-const EDITOR_PRESETS = [
-  { key: "admin", label: MEMBER_ROLE_PRESETS.admin.label, scopes: ALL_CATALOG_PERMISSIONS },
+// Concrete-scope presets. "Admin" is intentionally NOT here: full access must
+// persist the real `*` wildcard (so it covers PII + future resources), not an
+// expansion of the visible catalog — handled as a dedicated control below.
+const SCOPE_PRESETS = [
   { key: "editor", label: MEMBER_ROLE_PRESETS.editor.label, scopes: scopesForRole("editor") ?? [] },
   { key: "viewer", label: MEMBER_ROLE_PRESETS.viewer.label, scopes: scopesForRole("viewer") ?? [] },
 ] as const
@@ -416,16 +413,21 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  // Full access is a real `*`, not an expansion of the visible catalog — so it
+  // keeps PII + any future resources. Tracked separately from the checklist.
+  const [wildcard, setWildcard] = useState(false)
 
   const openDialog = () => {
-    setSelected(expandToConcrete(memberCurrentScopes(member)))
+    const scopes = memberCurrentScopes(member)
+    setWildcard(scopes.includes("*"))
+    setSelected(expandToConcrete(scopes))
     setOpen(true)
   }
 
   const save = useMutation({
     mutationFn: () =>
       api.put(`/v1/admin/team/members/${member.membershipId}/permissions`, {
-        permissions: [...selected],
+        permissions: wildcard ? ["*"] : [...selected],
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: CLOUD_MEMBERS_QK })
@@ -433,13 +435,25 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
     },
   })
 
-  const toggle = (key: string, checked: boolean) =>
+  const applyPreset = (scopes: readonly string[]) => {
+    setWildcard(false)
+    setSelected(expandToConcrete([...scopes]))
+  }
+
+  const applyFullAccess = () => {
+    setWildcard(true)
+    setSelected(expandToConcrete(["*"]))
+  }
+
+  const toggle = (key: string, checked: boolean) => {
+    setWildcard(false)
     setSelected((prev) => {
       const next = new Set(prev)
       if (checked) next.add(key)
       else next.delete(key)
       return next
     })
+  }
 
   return (
     <>
@@ -457,18 +471,34 @@ function MemberPermissionsDialog({ member }: { member: CloudMember }) {
             <span className="text-xs text-muted-foreground">
               {messages.team.members.presetLabel}:
             </span>
-            {EDITOR_PRESETS.map((preset) => (
+            <Button
+              type="button"
+              variant={wildcard ? "default" : "secondary"}
+              size="sm"
+              onClick={applyFullAccess}
+            >
+              {MEMBER_ROLE_PRESETS.admin.label}
+            </Button>
+            {SCOPE_PRESETS.map((preset) => (
               <Button
                 key={preset.key}
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelected(expandToConcrete([...preset.scopes]))}
+                onClick={() => applyPreset(preset.scopes)}
               >
                 {preset.label}
               </Button>
             ))}
-            <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setWildcard(false)
+                setSelected(new Set())
+              }}
+            >
               {messages.team.members.noAccess}
             </Button>
           </div>

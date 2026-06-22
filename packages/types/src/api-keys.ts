@@ -270,6 +270,12 @@ export const API_KEY_PERMISSION_GROUPS = [
         "Manage settings",
         "Change workspace configuration. Admin-only by default.",
       ),
+      permission(
+        "settings",
+        "delete",
+        "Delete settings",
+        "Remove workspace configuration entries. Admin-only by default.",
+      ),
     ],
   },
   {
@@ -282,7 +288,13 @@ export const API_KEY_PERMISSION_GROUPS = [
         "team",
         "write",
         "Manage team",
-        "Invite, remove, and set member permissions. Admin-only by default.",
+        "Invite members and set their permissions. Admin-only by default.",
+      ),
+      permission(
+        "team",
+        "delete",
+        "Revoke invitations",
+        "Revoke pending invitations. Admin-only by default.",
       ),
     ],
   },
