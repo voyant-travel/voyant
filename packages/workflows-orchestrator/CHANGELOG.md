@@ -1,5 +1,12 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.111.7
+
+### Patch Changes
+
+- ab95d11: `findDashboardDir` no longer probes the in-repo `apps/workflows-local-dashboard/dist` path (that example app has been removed). It now falls back to a generic sibling `local-dashboard/dist`; production self-host should pass `staticDir` explicitly.
+  - @voyant-travel/workflows@0.111.7
+
 ## 0.111.6
 
 ### Patch Changes
