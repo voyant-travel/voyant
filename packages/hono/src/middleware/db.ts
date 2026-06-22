@@ -1,6 +1,7 @@
 import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
 import type { MiddlewareHandler } from "hono"
 
+import { normalizePathname } from "../lib/public-paths.js"
 import { type DbSource, isDbFactorySelector, type VoyantBindings, type VoyantDb } from "../types.js"
 import { DB_METRICS_CONTEXT_KEY, type RequestDbMetrics, withQueryCounting } from "./metrics.js"
 import { acquireRequestDb } from "./request-db.js"
@@ -17,6 +18,12 @@ export interface DbMiddlewareOptions {
    * (neon-http) trips the assertion.
    */
   requiresTransactionalDb?: readonly string[]
+  /**
+   * Deployment prefix stripped before path-based DB surface selection. Must
+   * match the app's auth/public-path basePath when the app is hosted under a
+   * path prefix.
+   */
+  basePath?: string
 }
 
 function buildIncapableDbError(modules: readonly string[]): Error {
@@ -70,8 +77,9 @@ export function db<TBindings extends VoyantBindings>(
   // by design, to be transaction-incapable.
   let txCapabilityVerified = false
   return async (c, next) => {
+    const pathname = normalizePathname(c.req.path, { basePath: options.basePath })
     const selection = isDbFactorySelector(source)
-      ? source.select(c.req.path)
+      ? source.select(pathname)
       : { factory: source, mustSupportTransactions: requiresTx.length > 0 }
     const lease = acquireRequestDb(c, selection.factory)
     if (!txCapabilityVerified && selection.mustSupportTransactions && requiresTx.length > 0) {

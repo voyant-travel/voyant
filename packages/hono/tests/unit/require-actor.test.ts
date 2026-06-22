@@ -157,6 +157,18 @@ describe("requireActor", () => {
     expect(res.status).toBe(200)
   })
 
+  it("strips basePath before checking API key route resource permissions", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["products:read"])
+    })
+    app.use("*", requireActor({ basePath: "/api" }, "customer", "partner", "supplier"))
+    app.get("/api/v1/public/products", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/api/v1/public/products")
+    expect(res.status).toBe(200)
+  })
+
   it("rejects API keys on actor surfaces when the resource permission is missing", async () => {
     const app = makeApp((c) => {
       c.set("callerType", "api_key")
@@ -281,6 +293,15 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     app.get("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
 
     const res = await app.request("/v1/admin/finance/invoices")
+    expect(res.status).toBe(403)
+  })
+
+  it("strips basePath before enforcing staff session RBAC scopes", async () => {
+    const app = staffSession(["bookings:read", "bookings:write"])
+    app.use("*", requireActor({ basePath: "/api" }, "staff"))
+    app.get("/api/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/api/v1/admin/finance/invoices")
     expect(res.status).toBe(403)
   })
 

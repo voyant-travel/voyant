@@ -8,9 +8,38 @@
  * matcher lives here and everyone imports it.
  */
 
-/** Strip a single trailing slash so `/v1/x/` and `/v1/x` match alike. */
-export function normalizePathname(pathname: string): string {
-  return pathname.replace(/\/$/, "")
+export interface PathnameNormalizationOptions {
+  /**
+   * Deployment prefix stripped before matching app-local paths. Useful when a
+   * Hono app is mounted under a hosting prefix (for example `/api`) and sees
+   * the original request URL while its routes/publicPaths are app-relative.
+   */
+  basePath?: string
+}
+
+function normalizeBasePath(basePath: string | undefined): string {
+  const trimmed = basePath?.trim()
+  if (!trimmed || trimmed === "/") return ""
+  return `/${trimmed.replace(/^\/+|\/+$/g, "")}`
+}
+
+/**
+ * Strip a single trailing slash so `/v1/x/` and `/v1/x` match alike. When a
+ * deployment base path is configured, strip it first using path-segment
+ * semantics so `/api/v1/x` normalizes to `/v1/x`, but `/apiary/v1/x` does not.
+ */
+export function normalizePathname(
+  pathname: string,
+  options: PathnameNormalizationOptions = {},
+): string {
+  const normalized = pathname.replace(/\/$/, "")
+  const basePath = normalizeBasePath(options.basePath)
+  if (!basePath) return normalized
+  if (normalized === basePath) return ""
+  if (normalized.startsWith(`${basePath}/`)) {
+    return normalized.slice(basePath.length)
+  }
+  return normalized
 }
 
 /**

@@ -325,7 +325,9 @@ export function mountApp<TBindings extends VoyantBindings>(
       const publicWriteRule = rateLimitConfig?.publicWrite ?? { max: 60, windowSeconds: 60 }
       app.use("*", async (c, next) => {
         if (!WRITE_METHODS.has(c.req.method)) return next()
-        const pathname = normalizePathname(new URL(c.req.url).pathname)
+        const pathname = normalizePathname(new URL(c.req.url).pathname, {
+          basePath: config.basePath,
+        })
         const isPublicWrite =
           pathname.startsWith("/v1/public/") || matchesPublicPath(pathname, anonymousPaths)
         if (!isPublicWrite) return next()
@@ -471,21 +473,27 @@ export function mountApp<TBindings extends VoyantBindings>(
       })
     : config.db
 
+  const authOptions = { publicPaths: anonymousPaths, basePath: config.basePath, auth: config.auth }
+
   // Auth middleware for all other routes
-  app.use("*", requireAuth(dbSource, { publicPaths: anonymousPaths, auth: config.auth }))
+  app.use("*", requireAuth(dbSource, authOptions))
 
   // DB middleware — sets c.var.db for all downstream handlers.
   // Pass the list of modules that need interactive transactions so the
   // middleware can throw a clear startup-style error on first request if
   // the wired adapter is neon-http (which doesn't support db.transaction).
-  app.use("*", db(dbSource, { requiresTransactionalDb: txRequiringModules }))
+  app.use(
+    "*",
+    db(dbSource, { requiresTransactionalDb: txRequiringModules, basePath: config.basePath }),
+  )
 
   // Actor guards for the two API surfaces
-  app.use("/v1/admin/*", requireActor("staff"))
-  app.use("/v1/public/*", requireActor("customer", "partner", "supplier"))
-  const requireLegacyActor = requireActor<TBindings>("staff")
+  const actorOptions = { basePath: config.basePath }
+  app.use("/v1/admin/*", requireActor(actorOptions, "staff"))
+  app.use("/v1/public/*", requireActor(actorOptions, "customer", "partner", "supplier"))
+  const requireLegacyActor = requireActor<TBindings>(actorOptions, "staff")
   app.use("/v1/*", (c, next) => {
-    const pathname = new URL(c.req.url).pathname
+    const pathname = normalizePathname(new URL(c.req.url).pathname, { basePath: config.basePath })
     if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
       return next()
     }

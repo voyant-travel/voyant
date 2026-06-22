@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from "vitest"
 import { requireAuth } from "../../src/middleware/auth.js"
 import { db } from "../../src/middleware/db.js"
 import { acquireRequestDb } from "../../src/middleware/request-db.js"
-import type { DbFactory, DisposableDb, VoyantBindings, VoyantDb } from "../../src/types.js"
+import type {
+  DbFactory,
+  DbFactorySelector,
+  DisposableDb,
+  VoyantBindings,
+  VoyantDb,
+} from "../../src/types.js"
 
 function fakeDisposable(): DisposableDb & { disposeSpy: ReturnType<typeof vi.fn> } {
   const disposeSpy = vi.fn(async () => {})
@@ -96,6 +102,32 @@ describe("acquireRequestDb — per-request client sharing", () => {
 })
 
 describe("auth + db middleware — single shared client per request", () => {
+  it("selects path-based db surfaces after stripping a configured base path", async () => {
+    const handle = fakeDisposable()
+    const factory = vi.fn(() => handle)
+    const selector: DbFactorySelector<VoyantBindings> = {
+      select: vi.fn(() => ({
+        factory: dbFactoryForTest(factory),
+        mustSupportTransactions: false,
+      })),
+    }
+
+    const app = new Hono()
+    app.use("*", db(selector, { basePath: "/api" }))
+    app.get("/api/v1/admin/trips/:id", (c) => c.json({ hasDb: Boolean(c.get("db")) }))
+
+    const res = await app.request(
+      "/api/v1/admin/trips/trip_123",
+      {},
+      { DATABASE_URL: "postgres://localhost/test" },
+    )
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ hasDb: true })
+    expect(selector.select).toHaveBeenCalledWith("/v1/admin/trips/trip_123")
+    expect(factory).toHaveBeenCalledOnce()
+  })
+
   it("an authenticated (auth.resolve) request opens exactly one client", async () => {
     const handle = fakeDisposable()
     const factory = vi.fn(() => handle)
