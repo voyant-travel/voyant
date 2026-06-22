@@ -30,12 +30,14 @@ const DASH_PRODUCTS: QueryKey = ["dashboard-products-aggregates"]
  * cheap no-op. Adding a module = one entry here + a bridge route (lib/realtime).
  */
 const ENTITY_INVALIDATIONS: Record<string, ReadonlyArray<QueryKey>> = {
-  // inventory-react products root is `["voyant","products"]`; `catalog` hedges
-  // any catalog-react browse surface.
-  product: [["voyant", "products"], ["voyant", "catalog"], DASH_PRODUCTS],
+  // The operator product detail/edit pages use inventory-react (root
+  // `["voyant","products"]`).
+  product: [["voyant", "products"], DASH_PRODUCTS],
   person: [["voyant", "relationships", "people"]],
   organization: [["voyant", "relationships", "organizations"]],
   signal: [["voyant", "relationships", "customer-signals"]],
+  supplier: [["voyant", "suppliers"]],
+  quote: [["voyant", "quotes"]],
   invoice: [["voyant", "finance"], DASH_FINANCE],
   contract: [["legal", "contracts"]],
   cruise: [["voyant", "cruises"]],

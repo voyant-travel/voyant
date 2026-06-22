@@ -54,6 +54,16 @@ export const operatorRealtimeBridgeRoutes: RealtimeRoutes = {
   "organization.changed": (e) => adminHint("organization", firstId(e, "id")),
   "customer.signal.created": (e) => adminHint("signal", firstId(e, "id")),
 
+  // Suppliers (distribution module)
+  "supplier.created": (e) => adminHint("supplier", firstId(e, "id")),
+  "supplier.updated": (e) => adminHint("supplier", firstId(e, "id")),
+  "supplier.deleted": (e) => adminHint("supplier", firstId(e, "id")),
+
+  // Quotes
+  "quote.created": (e) => adminHint("quote", firstId(e, "id")),
+  "quote.updated": (e) => adminHint("quote", firstId(e, "id")),
+  "quote.deleted": (e) => adminHint("quote", firstId(e, "id")),
+
   // Finance invoices
   "invoice.issued": (e) => adminHint("invoice", firstId(e, "invoiceId", "id")),
   "invoice.voided": (e) => adminHint("invoice", firstId(e, "invoiceId", "id")),
