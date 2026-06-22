@@ -3,7 +3,7 @@ import { subsetStandardManifest } from "./create-app.js"
 import { FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
 
 describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
-  it("returns the full standard set when nothing is excluded or overridden", () => {
+  it("returns the full standard set when nothing is excluded", () => {
     const { modules, extensions } = subsetStandardManifest()
     expect(modules).toEqual([...FRAMEWORK_RUNTIME_MANIFEST.modules])
     expect(extensions).toEqual([...FRAMEWORK_RUNTIME_MANIFEST.extensions])
@@ -46,24 +46,6 @@ describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
       })
       expect(modules).not.toContain("@voyant-travel/relationships")
       expect(modules).not.toContain("@voyant-travel/bookings")
-    })
-  })
-
-  describe("overrideCapabilities (replace)", () => {
-    it("auto-displaces the default provider when its capability is overridden", () => {
-      // No explicit exclude — naming the capability displaces relationships.
-      const { modules } = subsetStandardManifest({ overrideCapabilities: ["people-directory"] })
-      expect(modules).not.toContain("@voyant-travel/relationships")
-      // Consumers still mount and read person/org through the injected substitute.
-      expect(modules).toContain("@voyant-travel/bookings")
-      expect(modules).toContain("@voyant-travel/legal")
-      expect(modules).toContain("@voyant-travel/storefront")
-    })
-
-    it("rejects overriding a capability no standard module provides (typo)", () => {
-      expect(() => subsetStandardManifest({ overrideCapabilities: ["peeple-directory"] })).toThrow(
-        /no standard module provides/,
-      )
     })
   })
 })

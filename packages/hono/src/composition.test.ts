@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { type CapabilityGraph, findCapabilityGaps, findCapabilityProviders } from "./composition.js"
+import { type CapabilityGraph, findCapabilityGaps } from "./composition.js"
 
 const graph: CapabilityGraph = {
   "@voyant-travel/relationships": { provides: ["people-directory"] },
@@ -29,11 +29,6 @@ describe("findCapabilityGaps", () => {
     ])
   })
 
-  it("treats an injected substitute as satisfying the capability", () => {
-    const gaps = findCapabilityGaps(["@voyant-travel/bookings"], graph, ["people-directory"])
-    expect(gaps).toEqual([])
-  })
-
   it("reports no gap when the provider and all consumers are excluded together", () => {
     const gaps = findCapabilityGaps(["@voyant-travel/finance"], graph)
     expect(gaps).toEqual([])
@@ -55,31 +50,5 @@ describe("findCapabilityGaps", () => {
       { capability: "alpha", requiredBy: ["b", "c"] },
       { capability: "zeta", requiredBy: ["a"] },
     ])
-  })
-})
-
-describe("findCapabilityProviders", () => {
-  it("returns the module(s) that provide a capability token", () => {
-    const providers = findCapabilityProviders(
-      ["@voyant-travel/relationships", "@voyant-travel/bookings"],
-      graph,
-      "people-directory",
-    )
-    expect(providers).toEqual(["@voyant-travel/relationships"])
-  })
-
-  it("returns empty when no mounted module provides the token", () => {
-    expect(findCapabilityProviders(["@voyant-travel/bookings"], graph, "people-directory")).toEqual(
-      [],
-    )
-    expect(findCapabilityProviders(["@voyant-travel/relationships"], graph, "nope")).toEqual([])
-  })
-
-  it("sorts multiple providers deterministically", () => {
-    const dual: CapabilityGraph = {
-      b: { provides: ["x"] },
-      a: { provides: ["x"] },
-    }
-    expect(findCapabilityProviders(["b", "a"], dual, "x")).toEqual(["a", "b"])
   })
 })

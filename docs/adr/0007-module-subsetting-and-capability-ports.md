@@ -2,7 +2,7 @@
 
 - **Status:** Proposed (2026-06-22)
 - **Relates to:** [consolidated-deployments-rfc](../architecture/consolidated-deployments-rfc.md) (Workstream B / D.1), [ADR-0006](./0006-live-availability-search-contract.md) (capability-gated adapters as precedent), [custom-modules](../architecture/custom-modules.md)
-- **Implemented by:** Phase 1 runtime mechanism (this PR) — `createVoyantApp({ exclude, overrideCapabilities })`, `FRAMEWORK_CAPABILITY_GRAPH` (with `isRequired`), and the pure `findCapabilityGaps` / `findCapabilityProviders` / `subsetStandardManifest` validators. Schema-side subsetting and the `PeopleDirectory` port extraction (Phases 1-schema → 4) are follow-ups.
+- **Implemented by:** Phase 1 runtime removal (this PR) — `createVoyantApp({ exclude })`, `FRAMEWORK_CAPABILITY_GRAPH` (with `isRequired`), and the pure `findCapabilityGaps` / `subsetStandardManifest` validators. Capability *replacement* (override + `PeopleDirectory` port) is deferred to v2 — see "Deferred to v2" — and tracked as separate follow-up issues (schema-side subsetting; port extraction; HubSpot reference; admin-UI subsetting).
 
 ## Context
 
@@ -51,48 +51,45 @@ Without a declared dependency graph, a bare `exclude` flag is just a sharper-edg
 fork: it would boot or 500 in production when a still-mounted module reaches for a
 capability that is no longer there.
 
-The model follows **Medusa**, whose commerce modules are *default-on* (loaded out
-of the box, never enumerated) and *replaced by registering a different
-implementation at the same module key* (gated by a `canOverride` flag), with core
-modules marked `isRequired` so they can be swapped but never removed. Voyant keeps
-the default-on stance — which the framework manifest was already designed for
-("a new standard module auto-joins the default set; the deployment doesn't
-re-list it") — and adopts Medusa's *override-by-key* and `isRequired`, but keys on
-the **capability** rather than the module so the deployment never holds two knobs
-that must agree.
+The model is **default-on with subtract**: built-in modules always mount (the
+framework manifest was already designed this way — "a new standard module
+auto-joins the default set; the deployment doesn't re-list it"), and a deployment
+*removes* what it doesn't run rather than enumerating what it wants. A foundational
+core is marked `isRequired` and cannot be removed. The eventual *replacement* path
+(v2) keys on the **capability** rather than the module — name the capability a
+substitute provides and the default provider is displaced — so the deployment
+never holds two knobs that must agree. This mirrors the prevailing pattern in
+mature modular commerce frameworks (default-on built-ins, override-by-key, a
+required core), adapted to Voyant's typed dependency-injection seam.
 
 ## Decision
 
-**1. Two ways to pare the default set — remove and replace.** The standard set is
-the default; `createVoyantApp` gains two knobs, each for a distinct intent:
+Phase 1 (this ADR's shipped scope) is **removal**: a deployment subtracts modules
+it doesn't run. **Replacement** — swapping a module's implementation for a
+substitute — is the documented v2 design below, deliberately not yet wired,
+because the ports it needs don't exist and shipping the knob early would
+*relocate* the runtime-500 failure mode rather than eliminate it.
+
+**1. `exclude` removes a module from the default set.** The standard set is the
+default; `createVoyantApp` gains one knob:
 
 ```ts
 createVoyantApp({
-  providers,                                     // substitute impl lives here, typed
-  exclude: ["@voyant-travel/flights"],           // REMOVE: a module you don't run
-  overrideCapabilities: ["people-directory"],    // REPLACE: displaces the default provider
+  providers,
+  exclude: ["@voyant-travel/flights"],   // a module this deployment doesn't run
   modules: deploymentLocalModules,
 })
 ```
 
-- `exclude` removes a module entirely (a non-flights operator drops flights).
-- `overrideCapabilities` names a **capability token**; the standard module that
-  provides it is **auto-displaced**. You reference the capability, not the
-  module, so "drop relationships" and "I provide people-directory" can't fall out
-  of sync — the single failure mode of an `exclude` + separate-flag design.
+`exclude` filters the runtime manifest (and, once the schema side lands, drizzle
+generation, so routes **and** tables drop together — `db doctor` validates the
+post-subset parity). The registry stays whole; composition mounts strictly from
+the manifest, so a dropped specifier simply never builds.
 
-The substitute *implementation* is injected through the typed `providers`
-container — Voyant's DI seam, type-checked, unlike Medusa's stringly `resolve`
-path. `overrideCapabilities` only declares *which* capability is taken over.
-
-The same subset feeds drizzle-config generation, so routes **and** schema drop
-together — no "routes gone, tables still migrated" split. `db doctor` is extended
-to validate the post-subset manifest/registry/schema parity. *(Schema-side
-alignment is the immediate follow-up; Phase 1 ships the runtime subset.)*
-
-**2. A capability dependency graph, validated at build.** Every module declares,
-on its graph entry, the capability tokens it `provides`/`requires`, plus an
-`isRequired` flag (Medusa's) for foundational modules:
+**2. A capability dependency graph, validated at build, makes removal safe.**
+Each standard module declares, in `FRAMEWORK_CAPABILITY_GRAPH`, the capability
+tokens it `provides`/`requires`, plus an `isRequired` flag for foundational
+modules:
 
 ```ts
 // FRAMEWORK_CAPABILITY_GRAPH
@@ -101,18 +98,42 @@ on its graph entry, the capability tokens it `provides`/`requires`, plus an
 "@voyant-travel/bookings":      { requires: ["people-directory"] }
 ```
 
-Composition resolves the graph and fails loudly — a **boot error with a named
-message**, never a runtime 500 — when: a still-mounted module's `requires` is
-unmet by any provider or override (`"people-directory" required by bookings,
-legal, storefront`); `exclude` names an `isRequired` module (override it instead);
-or `overrideCapabilities` names a token no module provides (a no-op typo). This is
-what makes subsetting safe rather than sharp.
+`exclude` fails loudly — a **boot error with a named message**, never a runtime
+500 — when: a still-mounted module's `requires` is left unmet (`"people-directory"
+required by bookings, legal, storefront — exclude the consumers too`); `exclude`
+names an `isRequired` module; or `exclude` names a specifier not in the standard
+set (a typo). This is what makes removal safe rather than a sharper fork. The
+`provides`/`requires` edges are also the seam the v2 replacement model plugs into.
 
-**3. Capability ports, so a module can be *replaced*.** A capability token is
-backed by a typed **port** on `FrameworkProviders`. The owning module is the
-*default implementation*; consumers read through the port, never by importing the
-module. For CRM the port is `PeopleDirectory`, scoped to exactly what the coupling
-map proved other modules need:
+**3. Portable vs. removable is explicit.** The graph encodes *which* surface other
+modules actually need from a module. For CRM that is `people-directory` —
+person/org read + upsert + travel-snapshot. Deep CRM features (activities,
+communications, segments, merges, custom fields, notes, payment methods) have
+**no cross-module consumers** (only the CRM admin UI), carry no token, and leave
+wholesale with the module. This boundary is what a v2 substitute would have to
+satisfy — and, just as importantly, what it would *not*.
+
+## Deferred to v2 — capability replacement (override + ports)
+
+The forcing use case (run CRM on HubSpot) is *replacement*, and the intended model
+is **override-by-capability**: name a capability token and the standard module that
+provides it is auto-displaced, with the substitute injected through the typed
+`providers` container — keyed on the capability, not the module, so a deployment
+never holds two knobs that must agree. The injection point is Voyant's existing
+typed DI seam, not a string-resolved module path, so the substitute is checked
+against the port type at compile time.
+
+```ts
+// v2 — NOT in this release
+createVoyantApp({
+  providers,                                   // hubspotPeopleDirectory lives here
+  overrideCapabilities: ["people-directory"],  // auto-displaces relationships
+})
+```
+
+This is **not wired in Phase 1**, by choice. A capability token must be backed by
+a typed **port** on `FrameworkProviders` that consumers read through instead of
+importing the module — for CRM:
 
 ```ts
 interface PeopleDirectory {
@@ -125,34 +146,33 @@ interface PeopleDirectory {
 }
 ```
 
-`relationshipsService` already satisfies this surface, so the default impl is
-free — the work is *narrowing* legal + storefront from direct imports to the port.
-The lead-intake write surface stays its own port (`StorefrontIntakePersistence`,
-already extracted). A HubSpot deployment then does: set
-`overrideCapabilities: ["people-directory"]` (auto-displacing relationships) +
-inject `hubspotPeopleDirectory` into `providers` + a HubSpot-backed intake
-persistence — never naming the relationships module at all.
-
-**4. Portable vs. removable is explicit.** Only the *read/upsert + intake* surface
-is portable. Deep CRM features — activities, communications, segments, person
-relationships, merges, custom fields, notes, payment methods — have **no
-cross-module consumers** (only the CRM admin UI). They are removed wholesale with
-the module; they are not part of any port.
+That port does **not exist yet**: the provider slot is typed to the concrete
+`relationshipsService`, and `legal` (`contract-variables.ts:34`) + storefront
+customer-portal still `import { relationshipsService }` directly rather than
+reading through a port. So an `overrideCapabilities` knob today would pass
+validation, drop the relationships routes, and then **silently mis-resolve** —
+legal rendering contracts against the now-absent CRM. That is the exact failure
+this ADR exists to prevent, so the knob is withheld until the port lands (Phase 2
+below). Phase 1 ships only what is true: removal works; replacement is designed,
+not yet available.
 
 ## Consequences
 
-- **Replacement is first-class, not a fork.** "Run CRM on HubSpot" is
-  `overrideCapabilities` + a port impl in `providers` — the same injection seam
-  the framework already uses for storage, FX, and notifications. The default
-  provider displaces automatically; the deployment never names it.
-- **Breaking a deployment becomes a build error.** The `provides`/`requires` graph
-  turns silent runtime breakage into a named composition failure listing the
-  unsatisfied consumers.
-- **Decoupling debt must be paid first.** `legal` (contract variables + party
-  search over `personDirectoryView`) and `storefront` customer-portal currently
-  import `relationships` services/schema directly; until they read through
-  `PeopleDirectory`, relationships is not actually excludable. This is the bulk of
-  the implementation, and it is mechanical, not speculative.
+- **Removal is safe and config-driven today.** A deployment drops a module it
+  doesn't run with one `exclude` line, and a depended-on or required module can't
+  be dropped by accident — the graph turns silent runtime breakage into a named
+  composition failure listing the unsatisfied consumers.
+- **Replacement is designed but not yet usable (v2).** "Run CRM on HubSpot" needs
+  the `PeopleDirectory` port + `overrideCapabilities`, neither of which ships here.
+  The injection seam exists (storage, FX, notifications already use it), but the
+  CRM provider slot is still the concrete service, so the swap isn't possible
+  without follow-up (b). The ADR commits to the shape so the v2 work has a target.
+- **Decoupling debt is the gate to replacement.** `legal` (contract variables +
+  party search over `personDirectoryView`) and `storefront` customer-portal import
+  `relationships` services/schema directly; until they read through
+  `PeopleDirectory`, relationships can be *removed* (with its consumers) but not
+  *replaced*. This is the bulk of follow-up (b), and it is mechanical, not
+  speculative.
 - **The admin UI is a separate, later concern.** `@voyant-travel/relationships-react`
   hooks and the CRM admin nav assume the module is present; person/org *pickers*
   embedded in bookings/quotes/trips UIs read its API. Excluding the backend module
@@ -179,23 +199,29 @@ the module; they are not part of any port.
 
 ## Phasing
 
-1. **Dependency graph + validated subsetting** — `provides`/`requires`/`isRequired`
-   in `FRAMEWORK_CAPABILITY_GRAPH`; `createVoyantApp({ exclude, overrideCapabilities })`
-   with auto-displacement, filtering the runtime manifest (schema generation
-   next); `db doctor` parity over the result. Ships the mechanism with safety, no
-   ports extracted yet. *(This PR ships the runtime half.)*
-1b. **Module→extension ownership + cascade** — declare which standard extensions
-   belong to each module so excluding/displacing a module auto-drops (or validates)
-   its augmenting extensions, closing the partial-surface-leak gap above. Plus the
-   schema-generation alignment so the subset drops tables, not just routes.
-2. **Extract `PeopleDirectory`** — narrow legal + storefront from direct
-   `relationships` imports to the port; relationships becomes the default impl.
-   After this, relationships is genuinely excludable backend-side.
-3. **Reference substitute** — a HubSpot `PeopleDirectory` + intake persistence as
-   the proof the port fits an external CRM (mirrors ADR-0006's "validate the
-   generic contract against a real third party").
-4. **Admin UI subsetting** — drop excluded modules' admin nav; stabilize the
-   `/v1/admin/people` picker contract so embedded pickers work against a substitute.
+**Phase 1 — removal (this PR, shipped).** `provides`/`requires`/`isRequired` in
+`FRAMEWORK_CAPABILITY_GRAPH`; `createVoyantApp({ exclude })` filtering the runtime
+manifest, validated by `findCapabilityGaps` + `subsetStandardManifest`. Removal
+works end to end; replacement is designed but not wired.
+
+The rest are **follow-ups, filed as separate issues** — sequenced, but
+demand-driven past Phase 2 (build the HubSpot/admin work when a deployment
+actually needs an alternate CRM, not speculatively):
+
+- **(a) Schema-side subsetting + extension cascade.** Feed `exclude` into drizzle
+  generation so tables drop with routes; declare module→extension *ownership* so
+  excluding a module also drops its augmenting extensions (closing the
+  partial-surface-leak above). Near-term cleanup.
+- **(b) Extract the `PeopleDirectory` port (enables v2 replacement).** Retype the
+  provider slot from concrete `relationshipsService` to the port; narrow legal +
+  storefront off direct imports. Only after this can `overrideCapabilities` be
+  wired truthfully. The one follow-up with near-term design merit.
+- **(c) HubSpot reference substitute.** A HubSpot `PeopleDirectory` + intake
+  persistence proving the port fits an external CRM (mirrors ADR-0006's "validate
+  against a real third party"). Demand-driven.
+- **(d) Admin-UI subsetting.** Drop excluded modules' admin nav; stabilize the
+  `/v1/admin/people` picker contract so embedded pickers work against a substitute.
+  Demand-driven.
 
 ## Alternatives considered
 
@@ -205,14 +231,17 @@ the module; they are not part of any port.
   module would force every deployment to opt in. Voyant is batteries-included —
   the common deployment runs *most* of the set — so a denylist (remove) plus
   override is little boilerplate for the rare case, where an allowlist is much for
-  the common one. Medusa reaches the same conclusion: commerce modules are loaded
-  out of the box, never enumerated.
-- **`exclude` + a separate `provideCapabilities` flag for replacement.** Rejected
-  (this was the first cut of Phase 1): two knobs the caller must keep in agreement
-  — `exclude` the module *and* declare the capability it provided — which silently
-  breaks if they drift. Keying replacement on the capability (`overrideCapabilities`)
-  auto-displaces the provider, so there is one source of truth. This is Medusa's
-  override-by-key, keyed on the capability rather than the module.
+  the common one — the conventional choice for batteries-included modular
+  frameworks, where built-ins load out of the box and are never enumerated.
+- **Shipping `overrideCapabilities` (replacement) now, alongside `exclude`.**
+  Rejected for Phase 1: the port it needs doesn't exist (the provider slot is the
+  concrete `relationshipsService`; legal + storefront import it directly), so the
+  knob would validate, drop the routes, then silently mis-resolve — relocating the
+  runtime-500 it's meant to prevent. Replacement is the documented v2 design; it
+  ships once the `PeopleDirectory` port lands (follow-up (b)). When it does, the
+  chosen shape is override-*by-capability* (name the token, auto-displace the
+  provider) rather than `exclude` + a separate "I provide X" flag — two knobs that
+  can drift — i.e. override-by-key, keyed on the capability.
 - **Bare `exclude` flag, no dependency graph.** Rejected: it is the hand-filtered
   `createApp` fork with nicer syntax — still 500s in production when a consumer's
   capability vanishes. The graph is the point.

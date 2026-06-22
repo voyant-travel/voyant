@@ -8,13 +8,12 @@
  * deployment doesn't re-list it.
  *
  * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
- * may pare it down via `createVoyantApp({ exclude })` (remove) or
- * `{ overrideCapabilities }` (replace — auto-displaces the default provider of a
- * capability); both are validated against `FRAMEWORK_CAPABILITY_GRAPH` (below) so
- * dropping a depended-on module without a substitute, or excluding an
- * `isRequired` module, fails at boot rather than as a runtime 500. Phase 1 lands
- * the runtime mechanism here; aligning schema/migration generation with the same
- * subset is the immediate follow-up.
+ * may pare it down via `createVoyantApp({ exclude })` (remove), validated against
+ * `FRAMEWORK_CAPABILITY_GRAPH` (below) so dropping a depended-on module, or an
+ * `isRequired` one, fails at boot rather than as a runtime 500. Phase 1 lands the
+ * runtime removal mechanism here; aligning schema/migration generation with the
+ * same subset is the immediate follow-up. Capability *replacement* (override a
+ * module with a substitute) is the v2 design — see ADR-0007 "Deferred to v2".
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
  * factories live in this package alongside the manifest (the "which + order").
@@ -87,24 +86,22 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
  * The standard set's capability dependency graph (ADR-0007). It declares which
  * standard modules `provide` a capability token and which `require` one, so that
  * subsetting the standard set (`createVoyantApp({ exclude })`) can be validated:
- * dropping a module whose capability is still required — and not satisfied by an
- * injected substitute (`provideCapabilities`) — becomes a boot error naming the
- * orphaned consumers, instead of a runtime 500.
+ * dropping a module whose capability is still required by another mounted module
+ * becomes a boot error naming the orphaned consumers, instead of a runtime 500.
  *
- * Phase 1 declares the single port the coupling map proved real:
- * `people-directory` — person/organization read + upsert + travel-snapshot,
- * provided by `@voyant-travel/relationships` and consumed by bookings (billing /
- * traveler resolution), legal (contract-party hydration), and storefront
- * (customer-portal lookups). Deep CRM features (activities, segments, merges,
- * custom fields) have no cross-module consumers and carry no token — they leave
- * with the module. New ports (e.g. a separate `crm-intake` write surface) are
- * added here as consumers are narrowed onto them.
+ * The single capability the coupling map proved real is `people-directory` —
+ * person/organization read + upsert + travel-snapshot, provided by
+ * `@voyant-travel/relationships` and consumed by bookings (billing / traveler
+ * resolution), legal (contract-party hydration), and storefront (customer-portal
+ * lookups). Deep CRM features (activities, segments, merges, custom fields) have
+ * no cross-module consumers and carry no token — they leave with the module. The
+ * token also names the boundary a future substitute (the v2 `PeopleDirectory`
+ * port — ADR-0007 "Deferred to v2") would satisfy.
  *
- * `isRequired` marks the foundational modules a deployment may not `exclude`
- * (it may still override their capability with a substitute). The set is kept
- * intentionally minimal — cross-cutting infrastructure only (audit ledger,
- * identity/contact-points, commerce primitives) — and tightens as coupling
- * dictates rather than defensively up front.
+ * `isRequired` marks the foundational modules a deployment may not `exclude`. The
+ * set is kept intentionally minimal — cross-cutting infrastructure only (audit
+ * ledger, identity/contact-points, commerce primitives) — and tightens as
+ * coupling dictates rather than defensively up front.
  */
 export const FRAMEWORK_CAPABILITY_GRAPH = {
   "@voyant-travel/action-ledger": { isRequired: true },

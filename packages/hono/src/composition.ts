@@ -107,8 +107,8 @@ export function composeFromManifest<TCapabilities>(
  * substitute — to supply. Tokens are opaque strings; the graph is the contract
  * between modules, decoupled from concrete service shapes.
  *
- * `isRequired` marks a module the platform cannot run without (Medusa's flag of
- * the same name): it can be *overridden* by a substitute but never `exclude`d.
+ * `isRequired` marks a module the platform cannot run without: it can be
+ * *overridden* by a substitute (a future capability) but never `exclude`d.
  */
 export interface CapabilityDeclaration {
   provides?: readonly string[]
@@ -128,20 +128,17 @@ export interface CapabilityGap {
 
 /**
  * Pure dependency-graph check for module subsetting (ADR-0007). Given the
- * specifiers that will actually mount (after any `exclude`), the capability
- * graph, and capabilities a deployment satisfies via an injected substitute
- * (`externallyProvided`, e.g. a HubSpot `PeopleDirectory`), return the gaps:
- * required capabilities that nothing provides. An empty array means the subset
- * is safe to compose. Callers turn a non-empty result into a build/boot error
- * so dropping a depended-on module fails loudly here rather than as a runtime
- * 500.
+ * specifiers that will actually mount (after any `exclude`) and the capability
+ * graph, return the gaps: required capabilities that nothing still-mounted
+ * provides. An empty array means the subset is safe to compose. Callers turn a
+ * non-empty result into a build/boot error so dropping a depended-on module
+ * fails loudly here rather than as a runtime 500.
  */
 export function findCapabilityGaps(
   mountedSpecifiers: readonly string[],
   graph: CapabilityGraph,
-  externallyProvided: readonly string[] = [],
 ): CapabilityGap[] {
-  const provided = new Set<string>(externallyProvided)
+  const provided = new Set<string>()
   for (const spec of mountedSpecifiers) {
     for (const cap of graph[spec]?.provides ?? []) provided.add(cap)
   }
@@ -159,20 +156,6 @@ export function findCapabilityGaps(
   return [...gaps.entries()]
     .map(([capability, by]) => ({ capability, requiredBy: [...by].sort() }))
     .sort((a, b) => a.capability.localeCompare(b.capability))
-}
-
-/**
- * The standard module specifiers that `provide` a capability token (ADR-0007).
- * When a deployment overrides a capability with its own substitute, these are
- * the default providers that get displaced (Medusa's override-by-key, keyed on
- * the capability rather than the module). Pure; sorted for determinism.
- */
-export function findCapabilityProviders(
-  specifiers: readonly string[],
-  graph: CapabilityGraph,
-  capability: string,
-): string[] {
-  return specifiers.filter((spec) => (graph[spec]?.provides ?? []).includes(capability)).sort()
 }
 
 export interface ManifestRegistryDiff {
