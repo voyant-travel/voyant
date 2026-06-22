@@ -1,6 +1,6 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, count, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import { cruiseSailings } from "./schema-core.js"
 import type { CruisePrice, NewCruisePrice, NewCruisePriceComponent } from "./schema-pricing.js"
 import { cruisePriceComponents, cruisePrices } from "./schema-pricing.js"
@@ -36,7 +36,7 @@ export const cruisePriceRowsService = {
         .offset(offset),
       db.select({ value: count() }).from(cruisePrices).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async createPrice(db: PostgresJsDatabase, data: InsertPrice): Promise<CruisePrice> {

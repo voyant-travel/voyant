@@ -125,7 +125,7 @@ export const contractRecordsService = {
         .offset(query.offset)
         .orderBy(desc(contracts.createdAt)),
       db
-        .select({ total: sql<number>`count(*)::int` })
+        .select({ count: sql<number>`count(*)::int` })
         .from(contracts)
         .leftJoin(people, eq(contracts.personId, people.id))
         .leftJoin(personDirectoryView, eq(contracts.personId, personDirectoryView.personId))

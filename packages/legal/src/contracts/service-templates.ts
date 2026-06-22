@@ -69,7 +69,7 @@ export const contractTemplatesService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(contractTemplates.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(contractTemplates).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(contractTemplates).where(where),
       query.limit,
       query.offset,
     )

@@ -38,7 +38,7 @@ export const financeInvoiceNumberingService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(invoiceNumberSeries.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(invoiceNumberSeries).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(invoiceNumberSeries).where(where),
       query.limit,
       query.offset,
     )

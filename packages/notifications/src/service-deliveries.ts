@@ -61,7 +61,7 @@ export async function listDeliveries(db: PostgresJsDatabase, query: Notification
       .limit(query.limit)
       .offset(query.offset)
       .orderBy(desc(notificationDeliveries.createdAt)),
-    db.select({ total: sql<number>`count(*)::int` }).from(notificationDeliveries).where(where),
+    db.select({ count: sql<number>`count(*)::int` }).from(notificationDeliveries).where(where),
     query.limit,
     query.offset,
   )

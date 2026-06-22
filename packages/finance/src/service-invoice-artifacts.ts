@@ -48,7 +48,7 @@ export const financeInvoiceArtifactService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(invoiceTemplates.updatedAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(invoiceTemplates).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(invoiceTemplates).where(where),
       query.limit,
       query.offset,
     )

@@ -24,6 +24,7 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",

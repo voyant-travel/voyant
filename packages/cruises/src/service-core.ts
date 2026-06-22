@@ -1,3 +1,4 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -75,7 +76,7 @@ export const cruiseCoreService = {
         .offset(offset),
       db.select({ value: count() }).from(cruiseVoyageGroups).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getVoyageGroupById(
@@ -169,7 +170,7 @@ export const cruiseCoreService = {
         .offset(offset),
       db.select({ value: count() }).from(cruiseVoyageGroupSegments).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async createVoyageGroupSegment(
@@ -231,7 +232,7 @@ export const cruiseCoreService = {
         .offset(offset),
       db.select({ value: count() }).from(cruises).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getCruiseById(

@@ -1,7 +1,7 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
 import { bookingExtras } from "./schema.js"
 import { bookingsExtrasManifestService } from "./service-manifest.js"
 import type {
@@ -21,7 +21,7 @@ async function paginate<T extends object>(
   offset: number,
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
-  return { data, total: countResult[0]?.count ?? 0, limit, offset }
+  return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
 export const bookingsExtrasService = {

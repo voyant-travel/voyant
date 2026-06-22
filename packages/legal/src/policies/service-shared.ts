@@ -1,6 +1,6 @@
+import { listResponse } from "@voyant-travel/types"
 import { inArray } from "drizzle-orm"
 import type { z } from "zod"
-
 import type {
   evaluateCancellationInputSchema,
   insertPolicyAcceptanceSchema,
@@ -35,12 +35,12 @@ export type ResolvePolicyInput = z.infer<typeof resolvePolicyInputSchema>
 
 export async function paginate<T extends object>(
   rowsQuery: Promise<T[]>,
-  countQuery: Promise<Array<{ total: number }>>,
+  countQuery: Promise<Array<{ count: number }>>,
   limit: number,
   offset: number,
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
-  return { data, total: countResult[0]?.total ?? 0, limit, offset }
+  return listResponse(data, { total: countResult[0]?.count ?? 0, limit, offset })
 }
 
 export function toDateString(value?: string | null): string | null {

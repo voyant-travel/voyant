@@ -32,6 +32,7 @@
     "@voyant-travel/charters-contracts": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "drizzle-orm": "^0.45.2",

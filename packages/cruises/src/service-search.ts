@@ -4,9 +4,9 @@
  * from local projection hooks and adapter `searchProjection()` streams.
  */
 
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, eq, gte, ilike, lte, notInArray, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import type { CruiseAdapter, SourceRef } from "./adapters/index.js"
 import { listCruiseAdapters } from "./adapters/registry.js"
 import { cruiseShips } from "./schema-cabins.js"
@@ -119,12 +119,11 @@ export const cruisesSearchService = {
         .offset(query.offset),
       db.select({ value: sql<number>`count(*)::int` }).from(cruiseSearchIndex).where(where),
     ])
-    return {
-      data: rows,
+    return listResponse(rows, {
       total: totalRows[0]?.value ?? 0,
       limit: query.limit,
       offset: query.offset,
-    }
+    })
   },
 
   async getBySlug(db: PostgresJsDatabase, slug: string): Promise<CruiseSearchIndexRow | null> {

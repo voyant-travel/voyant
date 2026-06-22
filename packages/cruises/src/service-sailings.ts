@@ -1,6 +1,6 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, count, eq, gte, inArray, lte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import type { CruiseSailing, NewCruiseSailing } from "./schema-core.js"
 import { cruiseSailings } from "./schema-core.js"
 import type { CruiseDay, CruiseSailingDay } from "./schema-itinerary.js"
@@ -33,7 +33,7 @@ export const cruiseSailingsService = {
         .offset(offset),
       db.select({ value: count() }).from(cruiseSailings).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getSailingById(

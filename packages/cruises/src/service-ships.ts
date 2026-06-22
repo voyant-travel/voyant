@@ -1,6 +1,6 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, count, eq, ilike } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import type { CruiseCabin, CruiseCabinCategory, CruiseDeck, CruiseShip } from "./schema-cabins.js"
 import { cruiseCabinCategories, cruiseCabins, cruiseDecks, cruiseShips } from "./schema-cabins.js"
 import { paginate, setUpdated } from "./service-shared.js"
@@ -37,7 +37,7 @@ export const cruiseShipService = {
         .offset(offset),
       db.select({ value: count() }).from(cruiseShips).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getShipById(db: PostgresJsDatabase, id: string): Promise<CruiseShip | null> {

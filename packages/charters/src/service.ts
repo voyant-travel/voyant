@@ -1,6 +1,6 @@
+import { listResponse } from "@voyant-travel/types"
 import { and, asc, count, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import {
   type CharterProduct,
   type CharterVoyage,
@@ -61,7 +61,7 @@ export const chartersService = {
         .offset(offset),
       db.select({ value: count() }).from(charterProducts).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getProductById(
@@ -203,7 +203,7 @@ export const chartersService = {
         .offset(offset),
       db.select({ value: count() }).from(charterVoyages).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getVoyageById(
@@ -339,7 +339,7 @@ export const chartersService = {
         .offset(offset),
       db.select({ value: count() }).from(charterYachts).where(where),
     ])
-    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
   },
 
   async getYachtById(db: PostgresJsDatabase, id: string): Promise<CharterYacht | null> {

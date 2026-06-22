@@ -97,7 +97,7 @@ export const financePaymentSessionService = {
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(paymentSessions.createdAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(paymentSessions).where(where),
+      db.select({ count: sql<number>`count(*)::int` }).from(paymentSessions).where(where),
       query.limit,
       query.offset,
     )
