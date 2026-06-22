@@ -19,8 +19,8 @@
   <a href="https://github.com/voyant-travel/voyant/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Voyant is released under the Apache 2.0 license." />
   </a>
-  <a href="https://www.npmjs.com/package/@voyant-travel/cli">
-    <img src="https://img.shields.io/npm/v/@voyant-travel/cli.svg" alt="Current npm package version." />
+  <a href="https://www.npmjs.com/package/@voyant-travel/core">
+    <img src="https://img.shields.io/npm/v/@voyant-travel/core.svg?label=%40voyant-travel%2Fcore" alt="Current @voyant-travel/core npm version." />
   </a>
   <a href="https://github.com/voyant-travel/voyant/issues">
     <img src="https://img.shields.io/badge/issues-welcome-brightgreen.svg" alt="Issues welcome!" />
