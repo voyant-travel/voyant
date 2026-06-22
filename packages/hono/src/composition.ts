@@ -106,10 +106,14 @@ export function composeFromManifest<TCapabilities>(
  * `requires` are tokens it depends on another mounted module — or an injected
  * substitute — to supply. Tokens are opaque strings; the graph is the contract
  * between modules, decoupled from concrete service shapes.
+ *
+ * `isRequired` marks a module the platform cannot run without (Medusa's flag of
+ * the same name): it can be *overridden* by a substitute but never `exclude`d.
  */
 export interface CapabilityDeclaration {
   provides?: readonly string[]
   requires?: readonly string[]
+  isRequired?: boolean
 }
 
 /** Maps a module specifier to its capability declaration. */
@@ -155,6 +159,20 @@ export function findCapabilityGaps(
   return [...gaps.entries()]
     .map(([capability, by]) => ({ capability, requiredBy: [...by].sort() }))
     .sort((a, b) => a.capability.localeCompare(b.capability))
+}
+
+/**
+ * The standard module specifiers that `provide` a capability token (ADR-0007).
+ * When a deployment overrides a capability with its own substitute, these are
+ * the default providers that get displaced (Medusa's override-by-key, keyed on
+ * the capability rather than the module). Pure; sorted for determinism.
+ */
+export function findCapabilityProviders(
+  specifiers: readonly string[],
+  graph: CapabilityGraph,
+  capability: string,
+): string[] {
+  return specifiers.filter((spec) => (graph[spec]?.provides ?? []).includes(capability)).sort()
 }
 
 export interface ManifestRegistryDiff {

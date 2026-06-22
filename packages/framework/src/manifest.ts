@@ -8,11 +8,13 @@
  * deployment doesn't re-list it.
  *
  * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
- * may pare it down via `createVoyantApp({ exclude })`; the exclusion is validated
- * against `FRAMEWORK_CAPABILITY_GRAPH` (below) so dropping a depended-on module
- * without a substitute fails at boot rather than as a runtime 500. Phase 1 lands
+ * may pare it down via `createVoyantApp({ exclude })` (remove) or
+ * `{ overrideCapabilities }` (replace — auto-displaces the default provider of a
+ * capability); both are validated against `FRAMEWORK_CAPABILITY_GRAPH` (below) so
+ * dropping a depended-on module without a substitute, or excluding an
+ * `isRequired` module, fails at boot rather than as a runtime 500. Phase 1 lands
  * the runtime mechanism here; aligning schema/migration generation with the same
- * `exclude` set is the immediate follow-up.
+ * subset is the immediate follow-up.
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
  * factories live in this package alongside the manifest (the "which + order").
@@ -97,8 +99,17 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
  * custom fields) have no cross-module consumers and carry no token — they leave
  * with the module. New ports (e.g. a separate `crm-intake` write surface) are
  * added here as consumers are narrowed onto them.
+ *
+ * `isRequired` marks the foundational modules a deployment may not `exclude`
+ * (it may still override their capability with a substitute). The set is kept
+ * intentionally minimal — cross-cutting infrastructure only (audit ledger,
+ * identity/contact-points, commerce primitives) — and tightens as coupling
+ * dictates rather than defensively up front.
  */
 export const FRAMEWORK_CAPABILITY_GRAPH = {
+  "@voyant-travel/action-ledger": { isRequired: true },
+  "@voyant-travel/identity": { isRequired: true },
+  "@voyant-travel/commerce": { isRequired: true },
   "@voyant-travel/relationships": { provides: ["people-directory"] },
   "@voyant-travel/bookings": { requires: ["people-directory"] },
   "@voyant-travel/legal": { requires: ["people-directory"] },

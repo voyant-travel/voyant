@@ -17,19 +17,25 @@
  * This is NOT the rejected "assembly kit": providers stay injected (never baked),
  * and the assembly is the framework-owned standard set — not a bottom-up file dump.
  *
- * Subsetting (ADR-0007): the standard set is the DEFAULT, not a fixed profile.
- * A deployment may `exclude` standard modules/extensions (e.g. swap Voyant CRM
- * for HubSpot) and declare the capabilities it satisfies via an injected
- * substitute (`provideCapabilities`). The exclusion is validated against
- * `FRAMEWORK_CAPABILITY_GRAPH`: dropping a module a still-mounted module depends
- * on — without providing a substitute — is a boot error here, not a runtime 500.
+ * Subsetting (ADR-0007): the standard set is the DEFAULT, not a fixed profile,
+ * with two ways to pare it down (modelled on Medusa's default-on modules):
+ *   - `exclude` REMOVES a module a deployment doesn't run (e.g. flights);
+ *   - `overrideCapabilities` REPLACES one — naming a capability token (e.g.
+ *     `people-directory`) auto-displaces the standard module that provides it,
+ *     so swapping Voyant CRM for HubSpot references the capability, not the
+ *     module, and the two can't drift apart.
+ * Both are validated against `FRAMEWORK_CAPABILITY_GRAPH`: dropping a depended-on
+ * module with no substitute — or excluding an `isRequired` module — is a boot
+ * error here, never a runtime 500.
  */
 
 import { type CreateAppConfig, createApp, type VoyantBindings } from "@voyant-travel/hono"
 import {
+  type CapabilityGraph,
   type CompositionRegistry,
   type ExtensionFactory,
   findCapabilityGaps,
+  findCapabilityProviders,
   type ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { type FrameworkProviders, frameworkComposition } from "./composition.js"
@@ -52,34 +58,49 @@ export interface CreateVoyantAppConfig<
   /** Deployment-local extension factories, appended after the standard set. */
   extensions?: Record<string, ExtensionFactory<TProviders>>
   /**
-   * Standard module/extension specifiers to drop from the framework set
-   * (ADR-0007). Filters both the runtime manifest and — once the schema side
-   * lands — drizzle generation, so routes and tables drop together. Naming a
-   * specifier absent from the standard set is a typo and throws.
+   * REMOVE (ADR-0007): standard module/extension specifiers to drop from the
+   * framework set entirely — for a deployment that simply doesn't run them (e.g.
+   * a non-flights operator excluding `@voyant-travel/flights`). Filters the
+   * runtime manifest (and, once the schema side lands, drizzle generation, so
+   * routes and tables drop together). Naming a specifier absent from the
+   * standard set is a typo and throws; excluding an `isRequired` module throws.
    */
   exclude?: readonly string[]
   /**
-   * Capability tokens this deployment satisfies via an injected substitute
-   * (e.g. `["people-directory"]` when a HubSpot `PeopleDirectory` replaces the
-   * excluded `@voyant-travel/relationships`). Lets a depended-on standard module
-   * be excluded without tripping the capability-gap check.
+   * REPLACE (ADR-0007): capability tokens this deployment takes over with its
+   * own implementation (e.g. `["people-directory"]` when a HubSpot adapter
+   * replaces Voyant CRM). The standard module that provides each token is
+   * **auto-displaced** — you name the capability, not the module, so the two
+   * can't fall out of sync (Medusa's override-by-key model). The substitute
+   * implementation itself is injected through the typed `providers` container;
+   * this only declares which capability the deployment is overriding.
    */
-  provideCapabilities?: readonly string[]
+  overrideCapabilities?: readonly string[]
+}
+
+/** Options for {@link subsetStandardManifest}. See {@link CreateVoyantAppConfig}. */
+export interface SubsetOptions {
+  /** Specifiers to remove entirely (rejected if unknown or `isRequired`). */
+  exclude?: readonly string[]
+  /** Capability tokens overridden by a substitute (auto-displaces the default provider). */
+  overrideCapabilities?: readonly string[]
 }
 
 /**
- * Apply `exclude` + capability validation to the standard set (ADR-0007),
- * returning the standard module/extension specifiers that should mount. Pure and
- * provider-free so it is unit-testable and reusable by tooling (`db doctor`).
+ * Apply `exclude` (remove) + `overrideCapabilities` (replace) to the standard
+ * set (ADR-0007), returning the module/extension specifiers that should mount.
+ * Pure and provider-free, so it is unit-testable and reusable by tooling
+ * (`db doctor`). Throws — fail-loud at boot, never a runtime 500 — when:
  *
- * Throws when `exclude` names a specifier that isn't in the standard set (a
- * typo), or when the resulting subset leaves a required capability unmet and no
- * substitute is declared in `provideCapabilities`.
+ *  - `exclude` names a specifier absent from the standard set (a typo);
+ *  - `exclude` names an `isRequired` module (override it instead);
+ *  - `overrideCapabilities` names a token no standard module provides (a no-op typo);
+ *  - the resulting subset leaves a `requires` unmet by any provider or override.
  */
-export function subsetStandardManifest(
-  exclude: readonly string[] = [],
-  provideCapabilities: readonly string[] = [],
-): { modules: string[]; extensions: string[] } {
+export function subsetStandardManifest({
+  exclude = [],
+  overrideCapabilities = [],
+}: SubsetOptions = {}): { modules: string[]; extensions: string[] } {
   const excludeSet = new Set(exclude)
 
   if (excludeSet.size > 0) {
@@ -94,22 +115,50 @@ export function subsetStandardManifest(
           `${unknown.join(", ")}. Only standard framework modules/extensions can be excluded.`,
       )
     }
+
+    const graph: CapabilityGraph = FRAMEWORK_CAPABILITY_GRAPH
+    const required = [...excludeSet].filter((spec) => graph[spec]?.isRequired).sort()
+    if (required.length > 0) {
+      throw new Error(
+        `createVoyantApp: cannot exclude required module(s): ${required.join(", ")}. ` +
+          "Override their capability with a substitute instead of removing them.",
+      )
+    }
   }
 
-  const modules = FRAMEWORK_RUNTIME_MANIFEST.modules.filter((m) => !excludeSet.has(m))
-  const extensions = FRAMEWORK_RUNTIME_MANIFEST.extensions.filter((e) => !excludeSet.has(e))
+  // REPLACE: each overridden capability displaces the standard module(s) that
+  // provide it — you name the capability, the default provider is removed.
+  const displaced = new Set<string>()
+  for (const cap of overrideCapabilities) {
+    const providers = findCapabilityProviders(
+      FRAMEWORK_RUNTIME_MANIFEST.modules,
+      FRAMEWORK_CAPABILITY_GRAPH,
+      cap,
+    )
+    if (providers.length === 0) {
+      throw new Error(
+        `createVoyantApp: overrideCapabilities names "${cap}", which no standard module provides. ` +
+          "Check the token, or drop it from overrideCapabilities.",
+      )
+    }
+    for (const spec of providers) displaced.add(spec)
+  }
+
+  const drop = (spec: string) => excludeSet.has(spec) || displaced.has(spec)
+  const modules = FRAMEWORK_RUNTIME_MANIFEST.modules.filter((m) => !drop(m))
+  const extensions = FRAMEWORK_RUNTIME_MANIFEST.extensions.filter((e) => !drop(e))
 
   // The capability graph is validated over what actually mounts: dropping a
-  // module a still-mounted module depends on — with no injected substitute —
-  // fails loudly here rather than as a runtime 500.
-  const gaps = findCapabilityGaps(modules, FRAMEWORK_CAPABILITY_GRAPH, provideCapabilities)
+  // module a still-mounted module depends on — with neither a substitute nor the
+  // consumer also removed — fails loudly here rather than as a runtime 500.
+  const gaps = findCapabilityGaps(modules, FRAMEWORK_CAPABILITY_GRAPH, overrideCapabilities)
   if (gaps.length > 0) {
     const detail = gaps
       .map((g) => `"${g.capability}" (required by ${g.requiredBy.join(", ")})`)
       .join("; ")
     throw new Error(
-      `createVoyantApp: exclude leaves unmet capabilities: ${detail}. ` +
-        "Exclude the consumers too, or inject a substitute and list the token in `provideCapabilities`.",
+      `createVoyantApp: subsetting leaves unmet capabilities: ${detail}. ` +
+        "Exclude the consumers too, or override the capability with a substitute.",
     )
   }
 
@@ -126,12 +175,19 @@ export function createVoyantApp<
   TBindings extends VoyantBindings,
   TProviders extends FrameworkProviders,
 >(config: CreateVoyantAppConfig<TBindings, TProviders>) {
-  const { providers, modules = {}, extensions = {}, exclude, provideCapabilities, ...rest } = config
-
-  const { modules: standardModules, extensions: standardExtensions } = subsetStandardManifest(
+  const {
+    providers,
+    modules = {},
+    extensions = {},
     exclude,
-    provideCapabilities,
-  )
+    overrideCapabilities,
+    ...rest
+  } = config
+
+  const { modules: standardModules, extensions: standardExtensions } = subsetStandardManifest({
+    exclude,
+    overrideCapabilities,
+  })
 
   const registry: CompositionRegistry<TProviders> = {
     // The framework factories read only the `FrameworkProviders` slice; a

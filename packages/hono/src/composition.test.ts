@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest"
 
-import { type CapabilityGraph, findCapabilityGaps } from "./composition.js"
+import { type CapabilityGraph, findCapabilityGaps, findCapabilityProviders } from "./composition.js"
+
+const graph: CapabilityGraph = {
+  "@voyant-travel/relationships": { provides: ["people-directory"] },
+  "@voyant-travel/bookings": { requires: ["people-directory"] },
+  "@voyant-travel/legal": { requires: ["people-directory"] },
+  "@voyant-travel/finance": {},
+}
 
 describe("findCapabilityGaps", () => {
-  const graph: CapabilityGraph = {
-    "@voyant-travel/relationships": { provides: ["people-directory"] },
-    "@voyant-travel/bookings": { requires: ["people-directory"] },
-    "@voyant-travel/legal": { requires: ["people-directory"] },
-    "@voyant-travel/finance": {},
-  }
-
   it("reports no gaps when every required capability is provided by a mounted module", () => {
     const gaps = findCapabilityGaps(
       ["@voyant-travel/relationships", "@voyant-travel/bookings", "@voyant-travel/legal"],
@@ -55,5 +55,31 @@ describe("findCapabilityGaps", () => {
       { capability: "alpha", requiredBy: ["b", "c"] },
       { capability: "zeta", requiredBy: ["a"] },
     ])
+  })
+})
+
+describe("findCapabilityProviders", () => {
+  it("returns the module(s) that provide a capability token", () => {
+    const providers = findCapabilityProviders(
+      ["@voyant-travel/relationships", "@voyant-travel/bookings"],
+      graph,
+      "people-directory",
+    )
+    expect(providers).toEqual(["@voyant-travel/relationships"])
+  })
+
+  it("returns empty when no mounted module provides the token", () => {
+    expect(findCapabilityProviders(["@voyant-travel/bookings"], graph, "people-directory")).toEqual(
+      [],
+    )
+    expect(findCapabilityProviders(["@voyant-travel/relationships"], graph, "nope")).toEqual([])
+  })
+
+  it("sorts multiple providers deterministically", () => {
+    const dual: CapabilityGraph = {
+      b: { provides: ["x"] },
+      a: { provides: ["x"] },
+    }
+    expect(findCapabilityProviders(["b", "a"], dual, "x")).toEqual(["a", "b"])
   })
 })
