@@ -83,37 +83,24 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
 } as const satisfies FrameworkManifest
 
 /**
- * The standard set's capability dependency graph (ADR-0007). It declares which
- * standard modules `provide` a capability token and which `require` one, so that
- * subsetting the standard set (`createVoyantApp({ exclude })`) can be validated:
- * dropping a module whose capability is still required by another mounted module
- * becomes a boot error naming the orphaned consumers, instead of a runtime 500.
+ * The standard set's capability dependency graph (ADR-0007). `isRequired` marks
+ * foundational modules a deployment may not `exclude`; `createVoyantApp` throws a
+ * named boot error if one is excluded. The `provides`/`requires` edges (for
+ * non-required modules a deployment *could* drop) are validated the same way —
+ * excluding a depended-on module names the orphaned consumers — but the v1
+ * standard set declares no such edges: every cross-cutting module is simply
+ * required.
  *
- * The single capability the coupling map proved real is `people-directory` —
- * person/organization read + upsert + travel-snapshot, provided by
- * `@voyant-travel/relationships` and consumed by bookings (billing / traveler
- * resolution), legal (contract-party hydration), and storefront (customer-portal
- * lookups). Deep CRM features (activities, segments, merges, custom fields) have
- * no cross-module consumers and carry no token — they leave with the module. The
- * token also names the boundary a future substitute (the v2 `PeopleDirectory`
- * port — ADR-0007 "Deferred to v2") would satisfy.
- *
- * `isRequired` marks the foundational modules a deployment may not `exclude`. The
- * set is kept intentionally minimal — cross-cutting infrastructure only (audit
- * ledger, identity/contact-points, commerce primitives) — and tightens as
- * coupling dictates rather than defensively up front.
+ * The required set is kept intentionally minimal — cross-cutting infrastructure
+ * (audit ledger, identity/contact-points, commerce primitives) plus CRM. CRM
+ * (`relationships`) is required rather than pluggable: deployments extend it with
+ * custom fields (`customFieldDefinitions`), not by swapping it out. A pluggable
+ * CRM port was considered and rejected as over-engineering for v1 (ADR-0007
+ * "Alternatives"). Everything else (flights, trips, cruises, …) stays excludable.
  */
 export const FRAMEWORK_CAPABILITY_GRAPH = {
   "@voyant-travel/action-ledger": { isRequired: true },
   "@voyant-travel/identity": { isRequired: true },
   "@voyant-travel/commerce": { isRequired: true },
-  "@voyant-travel/relationships": { provides: ["people-directory"] },
-  "@voyant-travel/bookings": { requires: ["people-directory"] },
-  "@voyant-travel/legal": { requires: ["people-directory"] },
-  "@voyant-travel/storefront": { requires: ["people-directory"] },
-  // Customer-portal is a distinct standard module that calls relationshipsService
-  // directly (service-public-impl.ts: getPersonById / list+createPersonDocument /
-  // create+updatePerson), so it depends on people-directory in its own right —
-  // excluding relationships without it would otherwise validate yet 500 at runtime.
-  "@voyant-travel/storefront/customer-portal": { requires: ["people-directory"] },
+  "@voyant-travel/relationships": { isRequired: true },
 } as const satisfies CapabilityGraph

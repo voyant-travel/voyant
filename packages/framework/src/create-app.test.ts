@@ -22,30 +22,22 @@ describe("subsetStandardManifest (ADR-0007 module subsetting)", () => {
       )
     })
 
-    it("rejects excluding an isRequired module", () => {
-      expect(() => subsetStandardManifest({ exclude: ["@voyant-travel/identity"] })).toThrow(
-        /cannot exclude required module/,
-      )
+    it("rejects excluding an isRequired core module", () => {
+      for (const required of [
+        "@voyant-travel/identity",
+        "@voyant-travel/action-ledger",
+        "@voyant-travel/commerce",
+      ]) {
+        expect(() => subsetStandardManifest({ exclude: [required] })).toThrow(
+          /cannot exclude required module/,
+        )
+      }
     })
 
-    it("rejects dropping relationships while its consumers remain, naming them", () => {
+    it("rejects excluding relationships — CRM is required (extend via custom fields)", () => {
       expect(() => subsetStandardManifest({ exclude: ["@voyant-travel/relationships"] })).toThrow(
-        /unmet capabilities: "people-directory" \(required by .*bookings.*legal.*storefront/,
+        /cannot exclude required module.*relationships/,
       )
-    })
-
-    it("allows dropping relationships together with every consumer", () => {
-      const { modules } = subsetStandardManifest({
-        exclude: [
-          "@voyant-travel/relationships",
-          "@voyant-travel/bookings",
-          "@voyant-travel/legal",
-          "@voyant-travel/storefront",
-          "@voyant-travel/storefront/customer-portal",
-        ],
-      })
-      expect(modules).not.toContain("@voyant-travel/relationships")
-      expect(modules).not.toContain("@voyant-travel/bookings")
     })
   })
 })

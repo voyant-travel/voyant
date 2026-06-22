@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { type CapabilityGraph, findCapabilityGaps } from "./composition.js"
+import { type CapabilityGraph, findCapabilityGaps } from "../../src/composition.js"
 
 const graph: CapabilityGraph = {
   "@voyant-travel/relationships": { provides: ["people-directory"] },
