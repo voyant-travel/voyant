@@ -1,43 +1,102 @@
-# Voyant
+<p align="center">
+  <a href="https://voyant.travel">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://voyant.travel/images/logo/light.svg" />
+      <img alt="Voyant" src="https://voyant.travel/images/logo/dark.svg" width="200" />
+    </picture>
+  </a>
+</p>
 
-Voyant is an open-source framework for OTAs, tour operators, and DMCs. It ships starter apps, durable workflow orchestration, and a wide set of headless domain modules - catalog, commerce, inventory, operations, relationships, quotes, bookings, finance, distribution, legal, charters, cruises, accommodation resale, and more - that you can compose into your own travel platform.
+<h1 align="center">
+  Voyant
+</h1>
 
-#### [CLI](./packages/cli/README.md) | [Operator Starter](./starters/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
+<p align="center">
+  The open-source travel commerce framework for OTAs, tour operators, and DMCs.
+</p>
 
-## Get started
+<p align="center">
+  <a href="https://github.com/voyant-travel/voyant/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Voyant is released under the Apache 2.0 license." />
+  </a>
+  <a href="https://www.npmjs.com/package/@voyant-travel/cli">
+    <img src="https://img.shields.io/npm/v/@voyant-travel/cli.svg" alt="Current npm package version." />
+  </a>
+  <a href="https://github.com/voyant-travel/voyant/issues">
+    <img src="https://img.shields.io/badge/issues-welcome-brightgreen.svg" alt="Issues welcome!" />
+  </a>
+  <a href="https://x.com/voyant_travel">
+    <img src="https://img.shields.io/twitter/follow/voyant_travel.svg?label=Follow%20@voyant_travel" alt="Follow @voyant_travel" />
+  </a>
+</p>
 
-### 1. Install the CLI
+<h4 align="center">
+  <a href="https://voyant.travel/docs">Documentation</a> |
+  <a href="https://voyant.travel">Website</a>
+</h4>
+
+<p align="center">
+  Voyant ships deployable starter apps, durable workflow orchestration, and a
+  wide set of headless domain modules — catalog, commerce, inventory, operations,
+  relationships, quotes, bookings, finance, distribution, legal, charters,
+  cruises, accommodation resale, and more — that you compose into your own
+  travel platform.
+</p>
+
+## Getting started
+
+Install the CLI, scaffold an app from a first-party starter, and run it locally.
 
 ```bash
+# 1. Install the CLI
 npm install -g @voyant-travel/cli
-```
 
-You can also use `pnpm add -g @voyant-travel/cli`.
-
-### 2. Scaffold a project from a starter
-
-```bash
+# 2. Scaffold a project from a starter
 voyant new my-travel-app --template operator
 cd my-travel-app
 pnpm install
-```
 
-Built-in starters are downloaded from GitHub Release assets for the starter/CLI release version. You can also point `--template` at a custom local starter directory.
-
-### 3. Configure the app
-
-```bash
+# 3. Configure the app
 cp .dev.vars.example .dev.vars
-```
+# set your secrets in .dev.vars, and DATABASE_URL in .env
 
-Set your secrets in `.dev.vars` and provide `DATABASE_URL` in `.env` for Drizzle and local worker processes.
-
-### 4. Run the app
-
-```bash
+# 4. Run the app
 pnpm db:migrate
 pnpm dev
 ```
+
+> Built-in starters are downloaded from GitHub Release assets for the matching CLI release. You can also point `--template` at a custom local starter directory.
+
+Visit the [documentation](https://voyant.travel/docs) to learn more.
+
+## What is Voyant?
+
+Voyant is a framework for building travel commerce platforms. Instead of a
+monolithic booking system, it gives you composable, headless domain modules
+and deployable application shells that you own and extend.
+
+- **Deployable application shells, not just isolated packages.** First-party
+  starters ship as real, runnable apps.
+- **A normalized travel operations data model** on PostgreSQL + Drizzle.
+- **Headless domain modules** for catalog, commerce, inventory, operations,
+  relationships, quotes, bookings, finance, distribution, legal, charters,
+  cruises, accommodation resale, and more.
+- **Hono-based API transport** with optional Next.js route helpers.
+- **Durable, step-based workflow orchestration** that runs on self-host
+  infrastructure or Voyant Cloud's hosted runtime.
+- **Better Auth wiring** in first-party starters, with core packages staying
+  auth-provider agnostic.
+- **Versioned React packages per domain** (`relationships-react`,
+  `inventory-react`, `commerce-react`, `bookings-react`, …) consumed as
+  ordinary dependencies — hooks, clients, providers, query keys, and reusable
+  UI that wrap each module's HTTP contract.
+- **Optional integrations** for payments, e-invoicing, storage, CMS sync, and
+  notifications.
+
+Voyant supports accommodation as catalog inventory for resale, packaging, and
+trip composition. It is not positioned as a hotel PMS or first-party
+hotel-operations system — see
+[`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
 
 ## Starters
 
@@ -47,56 +106,68 @@ Voyant ships one first-party starter:
 | --- | --- | --- |
 | [`starters/operator`](./starters/operator/README.md) | Tour operator workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
 
-## What you get
-
-- Deployable application shells, not just isolated packages
-- A normalized travel operations data model on PostgreSQL + Drizzle
-- Headless domain modules for catalog, commerce, inventory, operations, relationships, quotes, bookings, finance, distribution, legal, charters, cruises, accommodation resale, and more
-- Hono-based API transport with optional Next.js route helpers
-- Step-based durable workflow orchestration that runs on self-host infrastructure or Voyant Cloud's hosted runtime
-- Better Auth wiring in first-party starters, with core packages staying auth-provider agnostic
-- Versioned React packages per domain (`relationships-react`, `inventory-react`, `commerce-react`, `bookings-react`, …) consumed as ordinary dependencies
-- React hook and reusable UI libraries (`relationships-react`, `inventory-react`, `commerce-react`, `bookings-react`, …) that wrap the HTTP contract of each module
-- Optional integrations for payments, e-invoicing, storage, CMS sync, and notifications
-
-Voyant supports accommodation as catalog inventory for resale, packaging, and
-trip composition. It is not positioned as a hotel PMS or first-party
-hotel-operations system; see
-[`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
-
 ## The framework surface
 
 ### Core platform
 
-- [`@voyant-travel/core`](./packages/core/README.md), [`@voyant-travel/db`](./packages/db/README.md), [`@voyant-travel/hono`](./packages/hono/README.md), [`@voyant-travel/react`](./packages/react)
-- [`@voyant-travel/auth`](./packages/auth/README.md), [`@voyant-travel/auth-react`](./packages/auth-react/README.md), [`@voyant-travel/types`](./packages/types/README.md), [`@voyant-travel/utils`](./packages/utils/README.md), [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md)
-- [`@voyant-travel/cli`](./packages/cli/README.md), [`@voyant-travel/storage`](./packages/storage/README.md), [`@voyant-travel/i18n`](./packages/i18n)
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/core`](./packages/core/README.md) | Module system, container, event bus, and plugins |
+| [`@voyant-travel/db`](./packages/db/README.md) | Drizzle schemas, TypeID, and database adapters |
+| [`@voyant-travel/hono`](./packages/hono/README.md) | `createApp`, middleware, auth, and actor guards |
+| [`@voyant-travel/react`](./packages/react) | Shared React provider and typed fetch client |
+| [`@voyant-travel/auth`](./packages/auth/README.md) | Better Auth wiring for first-party starters |
+| [`@voyant-travel/auth-react`](./packages/auth-react/README.md) | Auth React hooks and components |
+| [`@voyant-travel/types`](./packages/types/README.md) | Shared workspace types |
+| [`@voyant-travel/utils`](./packages/utils/README.md) | Shared utility functions |
+| [`@voyant-travel/voyant-test-utils`](./packages/test-utils/README.md) | Test helpers (db, http, seq, cli) |
+| [`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli) | The `voyant` CLI — scaffolding, generators, and db tooling |
+| [`@voyant-travel/storage`](./packages/storage/README.md) | `StorageProvider` abstraction (local, R2, S3) |
+| [`@voyant-travel/i18n`](./packages/i18n) | Internationalization primitives |
 
 ### Travel domain modules
 
-- [`@voyant-travel/catalog`](./packages/catalog/README.md), [`@voyant-travel/commerce`](./packages/commerce/README.md), [`@voyant-travel/inventory`](./packages/inventory), [`@voyant-travel/operations`](./packages/operations)
-- [`@voyant-travel/bookings`](./packages/bookings/README.md), [`@voyant-travel/finance`](./packages/finance/README.md), [`@voyant-travel/legal`](./packages/legal/README.md), [`@voyant-travel/notifications`](./packages/notifications/README.md)
-- [`@voyant-travel/distribution`](./packages/distribution/README.md), [`@voyant-travel/relationships`](./packages/relationships/README.md), [`@voyant-travel/quotes`](./packages/quotes/README.md), [`@voyant-travel/trips`](./packages/trips)
-- [`@voyant-travel/identity`](./packages/identity/README.md), [`@voyant-travel/storefront`](./packages/storefront)
-- [`@voyant-travel/accommodations`](./packages/accommodations), [`@voyant-travel/charters`](./packages/charters/README.md), [`@voyant-travel/cruises`](./packages/cruises/README.md), [`@voyant-travel/flights`](./packages/flights), [`@voyant-travel/octo`](./packages/octo)
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/catalog`](./packages/catalog/README.md) | Products, tours, packages, and media |
+| [`@voyant-travel/commerce`](./packages/commerce/README.md) | Pricing, offers, and sellability |
+| [`@voyant-travel/inventory`](./packages/inventory) | Bookable inventory and availability |
+| [`@voyant-travel/operations`](./packages/operations) | Suppliers and operational logistics |
+| [`@voyant-travel/bookings`](./packages/bookings/README.md) | Booking lifecycle and participants |
+| [`@voyant-travel/finance`](./packages/finance/README.md) | Invoicing, payments, tax, and profitability |
+| [`@voyant-travel/legal`](./packages/legal/README.md) | Contracts and policies |
+| [`@voyant-travel/notifications`](./packages/notifications/README.md) | Email/SMS provider abstraction |
+| [`@voyant-travel/distribution`](./packages/distribution/README.md) | Channel distribution |
+| [`@voyant-travel/relationships`](./packages/relationships/README.md) | CRM: people, organizations, and pipelines |
+| [`@voyant-travel/quotes`](./packages/quotes/README.md) | Quotes and trip revisions |
+| [`@voyant-travel/trips`](./packages/trips) | Trip composition and itineraries |
+| [`@voyant-travel/identity`](./packages/identity/README.md) | Contact points, addresses, and named contacts |
+| [`@voyant-travel/storefront`](./packages/storefront) | Public booking-portal surface |
+| [`@voyant-travel/accommodations`](./packages/accommodations) | Accommodation resale inventory |
+| [`@voyant-travel/charters`](./packages/charters/README.md) | Charter products |
+| [`@voyant-travel/cruises`](./packages/cruises/README.md) | Cruise products |
+| [`@voyant-travel/flights`](./packages/flights) | Flight products |
+| [`@voyant-travel/octo`](./packages/octo) | OCTO connectivity for tours and activities |
 
 ### Workflows (durable orchestration)
 
-Step-based workflows with durable state, retries, and a shared wire protocol — runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
+Step-based workflows with durable state, retries, and a shared wire protocol —
+runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 
-- [`@voyant-travel/workflows`](./packages/workflows) — authoring SDK
-- [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) — orchestrator engine and Postgres self-host runtime primitives
-- `@voyant-travel/workflows/bindings`, `@voyant-travel/workflows/config`, and `@voyant-travel/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
-- [`@voyant-travel/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
-- [`@voyant-travel/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/workflows`](./packages/workflows) | Authoring SDK, with `./bindings`, `./config`, and `./errors` subpaths |
+| [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) | Orchestrator engine and Postgres self-host runtime primitives |
+| [`@voyant-travel/workflows-react`](./packages/workflows-react) | Run-inspection hooks, plus an importable admin UI at `./ui` |
 
-Reference apps under [`apps/`](./apps) compose these into deployable shapes — `workflows-selfhost-node-server` and `workflows-local-dashboard`.
+Reference apps under [`apps/`](./apps) compose these into deployable shapes —
+`workflows-selfhost-node-server` and `workflows-local-dashboard`.
 
 ### UI and React families
 
 Reusable frontend surfaces live in the matching `-react` package for each
 domain module. Those packages own hooks, clients, providers, query keys,
-view-model helpers, reusable components, and `./ui` owner paths where needed -
+view-model helpers, reusable components, and `./ui` owner paths where needed —
 for example [`@voyant-travel/relationships-react`](./packages/relationships-react/README.md),
 [`@voyant-travel/quotes-react`](./packages/quotes-react/README.md),
 [`@voyant-travel/inventory-react`](./packages/inventory-react),
@@ -109,14 +180,40 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 
 ### Plugins
 
-- [`@voyant-travel/plugin-netopia`](./packages/plugins/netopia) — Netopia payments
-- [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) — SmartBill e-invoicing (Romanian tax compliance)
-- [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) — Payload CMS sync
-- [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) — Sanity CMS sync
+| Package | Description |
+| --- | --- |
+| [`@voyant-travel/plugin-netopia`](./packages/plugins/netopia) | Netopia payments |
+| [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) | SmartBill e-invoicing (Romanian tax compliance) |
+| [`@voyant-travel/plugin-payload-cms`](./packages/plugins/payload-cms/README.md) | Payload CMS sync |
+| [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) | Sanity CMS sync |
 
-## For contributors
+## Architecture
 
-This repository is the workspace that powers the framework, starters, runners, and examples.
+Voyant keeps a strict boundary between reusable business logic and deployment shells:
+
+- `packages/*` hold reusable business logic, schemas, services, routes, adapters, and contracts
+- `starters/*` and app shells own UI, auth wiring, deployment shape, and runtime-specific configuration
+- Core packages stay framework-agnostic even when first-party starters use React, TanStack Start, Hono, Better Auth, and Cloudflare Workers
+- Transport adapters stay thin and call shared domain services rather than owning business logic
+- Workflow business logic ships as plain SDK packages; orchestrator/runner apps wrap them for a given runtime
+
+Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions
+live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes
+live in [`docs/migrations/`](./docs/migrations/README.md).
+
+### Security model
+
+**One Postgres database + one runtime per organization.** Tenancy is enforced
+at the deployment boundary, not by in-process middleware — so new package work
+under `packages/*` should not add in-process tenant scoping. See
+[ADR-0001](./docs/adr/0001-tenant-scoping.md) for the full rationale, the
+alternatives considered, and the conditions under which the decision should be
+revisited.
+
+## Contributing
+
+This repository is the workspace that powers the framework, starters, runners,
+and examples.
 
 | Area | What it contains |
 | --- | --- |
@@ -127,6 +224,8 @@ This repository is the workspace that powers the framework, starters, runners, a
 | [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
 
 ### Monorepo commands
+
+Voyant uses [pnpm](https://pnpm.io) workspaces and [Turborepo](https://turbo.build).
 
 | Command | Description |
 | --- | --- |
@@ -141,7 +240,8 @@ This repository is the workspace that powers the framework, starters, runners, a
 
 ### Integration test database
 
-The shared Docker test Postgres is defined in [`docker-compose.test.yml`](./docker-compose.test.yml).
+The shared Docker test Postgres is defined in
+[`docker-compose.test.yml`](./docker-compose.test.yml).
 
 - default host port: `5436`
 - override with `TEST_DATABASE_PORT`
@@ -153,23 +253,16 @@ For the bookings package, contributors can use:
 pnpm test:bookings:integration
 ```
 
-That helper starts or reuses the Docker test DB, applies starter migrations, ensures the current additive bookings-session table exists, and runs the bookings DB-backed integration files serially to avoid deadlocks from concurrent table truncation.
+That helper starts or reuses the Docker test DB, applies starter migrations,
+ensures the current additive bookings-session table exists, and runs the
+bookings DB-backed integration files serially to avoid deadlocks from
+concurrent table truncation.
 
-## Architecture
+## Community & support
 
-Voyant keeps a strict boundary:
-
-- `packages/*` hold reusable business logic, schemas, services, routes, adapters, and contracts
-- `starters/*` and app shells own UI, auth wiring, deployment shape, and runtime-specific configuration
-- Core packages stay framework-agnostic even when first-party starters use React, TanStack Start, Hono, Better Auth, and Cloudflare Workers
-- Transport adapters stay thin and call shared domain services rather than owning business logic
-- Workflow business logic ships as plain SDK packages; orchestrator/runner apps wrap them for a given runtime
-
-Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes live in [`docs/migrations/`](./docs/migrations/README.md).
-
-## Security model
-
-**One Postgres database + one runtime per organization.** Tenancy is enforced at the deployment boundary, not by in-process middleware. See [ADR-0001](./docs/adr/0001-tenant-scoping.md) for the full rationale, the alternatives considered, and the conditions under which the decision should be revisited.
+- [Documentation](https://voyant.travel/docs) — guides, references, and concepts
+- [GitHub Issues](https://github.com/voyant-travel/voyant/issues) — bugs and feature requests
+- [@voyant_travel](https://x.com/voyant_travel) — news and updates
 
 ## Credits
 
@@ -177,4 +270,4 @@ Voyant is created and maintained by [PixelMakers](https://pixelmakers.com).
 
 ## License
 
-Apache License, Version 2.0 (`Apache-2.0`). See [LICENSE](./LICENSE).
+Licensed under the [Apache License, Version 2.0](./LICENSE) (`Apache-2.0`).
