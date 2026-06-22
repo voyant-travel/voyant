@@ -447,11 +447,16 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (txModuleNames.has(mod.module.name) && mod.publicRoutes) {
       txPrefixes.push(resolveSurfaceMountPath("/v1/public", mod.publicPath, mod.module.name))
     }
+    // Absolute transactional prefixes for routes mounted outside the name-based
+    // surface (e.g. a lazy family at `/v1/admin/catalog/quote`), so the
+    // deployment doesn't hand-maintain them in `dbTransactionalPaths` (ADR-0008).
+    if (mod.transactionalPaths) txPrefixes.push(...mod.transactionalPaths)
   }
   for (const ext of allExtensions) {
     if (txModuleNames.has(ext.extension.module) && ext.publicRoutes) {
       txPrefixes.push(resolveSurfaceMountPath("/v1/public", ext.publicPath, ext.extension.module))
     }
+    if (ext.transactionalPaths) txPrefixes.push(...ext.transactionalPaths)
   }
 
   // With a `dbTransactional` factory, requests are routed per surface:

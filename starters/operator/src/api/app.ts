@@ -60,30 +60,14 @@ export const app = createVoyantApp<CloudflareBindings, ReturnType<typeof buildOp
   // - `dbTransactional`: per-request Neon WebSocket Pool — the only
   //   Workers-compatible client that supports db.transaction(). createApp
   //   routes it to the surfaces of modules/extensions declaring
-  //   `requiresTransactionalDb`, plus `dbTransactionalPaths` below.
+  //   `requiresTransactionalDb` or `transactionalPaths` — the trips module and
+  //   the catalog booking engine respectively (ADR-0008), so this deployment no
+  //   longer hand-maintains a `dbTransactionalPaths` list.
   // `DB_FORCE_TRANSACTIONAL=1` reverts to the WS client for ALL requests
   // (operational escape hatch if a transactional surface was missed).
   db: (env) =>
     env.DB_FORCE_TRANSACTIONAL === "1" ? dbFromEnvForApp(env) : httpDbFromEnvForApp(env),
   dbTransactional: (env) => dbFromEnvForApp(env),
-  dbTransactionalPaths: [
-    // Catalog booking engine (template-mounted at /v1/{admin,public}/catalog):
-    // book/holds/orders reach bookings' reserve/release transactions through
-    // the owned-product adapter; quote is included conservatively (the
-    // quote-before-reserve path may touch holds). Search and browse stay
-    // on the cheap default client.
-    "/v1/admin/catalog/quote",
-    "/v1/admin/catalog/book",
-    "/v1/admin/catalog/holds",
-    "/v1/admin/catalog/orders",
-    "/v1/public/catalog/quote",
-    "/v1/public/catalog/book",
-    "/v1/public/catalog/holds",
-    // Trips reserves trips via injected bookings deps.
-    "/v1/admin/trips",
-    "/v1/public/trips",
-    "/v1/trips",
-  ],
   // Workflow runtime — managed Cloud forwarding. App code forwards
   // trigger/event calls to Voyant Cloud; workflow bundles execute in the
   // hosted Node runtime.
