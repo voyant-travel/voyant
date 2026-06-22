@@ -1,5 +1,18 @@
 # @voyant-travel/admin-app
 
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [51f7dea]
+- Updated dependencies [0a0a014]
+  - @voyant-travel/commerce-react@0.16.0
+  - @voyant-travel/distribution-react@0.124.0
+  - @voyant-travel/finance-react@0.134.0
+  - @voyant-travel/inventory-react@0.16.0
+  - @voyant-travel/admin@0.115.1
+  - @voyant-travel/auth-react@0.118.0
+
 ## 0.24.0
 
 ### Patch Changes

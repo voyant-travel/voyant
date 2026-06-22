@@ -1,5 +1,11 @@
 # @voyant-travel/admin-client
 
+## 0.115.1
+
+### Patch Changes
+
+- @voyant-travel/admin-contracts@0.104.8
+
 ## 0.115.0
 
 ## 0.114.0
