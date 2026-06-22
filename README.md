@@ -171,6 +171,15 @@ Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions
 live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes
 live in [`docs/migrations/`](./docs/migrations/README.md).
 
+### Security model
+
+**One Postgres database + one runtime per organization.** Tenancy is enforced
+at the deployment boundary, not by in-process middleware — so new package work
+under `packages/*` should not add in-process tenant scoping. See
+[ADR-0001](./docs/adr/0001-tenant-scoping.md) for the full rationale, the
+alternatives considered, and the conditions under which the decision should be
+revisited.
+
 ## Contributing
 
 This repository is the workspace that powers the framework, starters, runners,
