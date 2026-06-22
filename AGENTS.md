@@ -68,3 +68,7 @@ focused on product code, architecture docs, and quality checkers.
   services/workflows, and serialize responses.
 - Avoid exposing internal helpers as public exports unless they are intended as
   supported package API.
+- Never mention the agent or model name (e.g. Codex, Claude, GPT) anywhere in
+  version control: not in branch names, commit subjects or bodies, PR titles or
+  descriptions, `Co-authored-by` trailers, or generated-with footers. Keep
+  commits attributed to the human author only.
