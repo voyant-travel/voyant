@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyant-travel/core"
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -17,6 +18,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: EventBus
   }
 }
 
@@ -26,16 +28,13 @@ export const quoteRoutes = new Hono<Env>()
     return c.json(await quotesService.listQuotes(c.get("db"), query))
   })
   .post("/quotes", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createQuote(
-          c.get("db"),
-          await parseJsonBody(c, insertQuoteSchema),
-          c.get("userId") ?? null,
-        ),
-      },
-      201,
+    const row = await quotesService.createQuote(
+      c.get("db"),
+      await parseJsonBody(c, insertQuoteSchema),
+      c.get("userId") ?? null,
     )
+    if (row) await c.get("eventBus")?.emit("quote.created", { id: row.id })
+    return c.json({ data: row }, 201)
   })
   .get("/quotes/:id", async (c) => {
     const row = await quotesService.getQuoteById(c.get("db"), c.req.param("id"))
@@ -50,11 +49,13 @@ export const quoteRoutes = new Hono<Env>()
       c.get("userId") ?? null,
     )
     if (!row) return c.json({ error: "Quote not found" }, 404)
+    await c.get("eventBus")?.emit("quote.updated", { id: row.id })
     return c.json({ data: row })
   })
   .delete("/quotes/:id", async (c) => {
     const row = await quotesService.deleteQuote(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Quote not found" }, 404)
+    await c.get("eventBus")?.emit("quote.deleted", { id: row.id })
     return c.json({ success: true })
   })
   .get("/quotes/:id/participants", async (c) => {
