@@ -2,7 +2,9 @@ import { clearChannelPushDeps } from "@voyant-travel/distribution/channel-push-w
 import { __resetRegistry } from "@voyant-travel/workflows"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-const workflowImportTimeoutMs = 15_000
+// Generous: this import pulls in the whole workflow module graph and is slow
+// under the concurrent full-suite run (observed >15s under CPU contention).
+const workflowImportTimeoutMs = 30_000
 
 afterEach(() => {
   clearChannelPushDeps()
