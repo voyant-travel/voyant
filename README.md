@@ -160,8 +160,10 @@ runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
 | [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) | Orchestrator engine and Postgres self-host runtime primitives |
 | [`@voyant-travel/workflows-react`](./packages/workflows-react) | Run-inspection hooks, plus an importable admin UI at `./ui` |
 
-Reference apps under [`apps/`](./apps) compose these into deployable shapes:
-`workflows-selfhost-node-server` and `workflows-local-dashboard`.
+Self-hosting composes the `./selfhost` export of
+`@voyant-travel/workflows-orchestrator` (the Node runtime) with the
+`@voyant-travel/workflows-react/ui` dashboard; Voyant Cloud provides the same
+runtime as a managed service.
 
 ### UI and React families
 
@@ -220,7 +222,7 @@ and examples.
 | [`packages/*`](./packages) | Reusable business logic, schemas, services, transport adapters, and integrations |
 | [`packages/plugins/*`](./packages/plugins) | First-party plugin bundles (payments, invoicing, CMS sync) |
 | [`starters/*`](./starters) | First-party starter apps |
-| [`apps/workflows-*`](./apps) | Reference orchestrator/tenant/self-host workers and the local workflows dashboard |
+| [`apps/*`](./apps) | Reference/demo apps, the shadcn registry host, and agent workers |
 | [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
 
 ### Monorepo commands

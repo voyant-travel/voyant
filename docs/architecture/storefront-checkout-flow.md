@@ -333,7 +333,7 @@ relevant phase.
 | 3 checkout-start endpoint + finalize workflow | ✅ done | e5d06d9c8, 6be800a4f |
 | 4 Netopia card path | ✅ done | a556f0fac |
 | 5 Bank-transfer path | ✅ done | a556f0fac |
-| 6 Inquiry path + observability | ✅ done — workflow runs dashboard ships at apps/workflow-runs-dashboard |
+| 6 Inquiry path + observability | ✅ done — workflow runs admin UI ships in `@voyant-travel/workflows-react/ui` |
 
 What works end-to-end after Phase 5:
 
@@ -406,15 +406,14 @@ Followups landed alongside Phase 6:
 for in-process workflows. The catalog-checkout subscriber wraps the
 `runCheckoutFinalize` call with a recorder that writes
 `workflow_runs` + `workflow_run_steps` rows, tagged with the
-booking id, payment session id, and payment intent. The standalone
-dashboard SPA at `apps/workflow-runs-dashboard/` reads the admin
-routes (`/v1/admin/workflow-runs[/:id]`) the operator starter
-mounts via `additionalRoutes`. Run it alongside the operator
-(`pnpm -F @voyant-travel/workflow-runs-dashboard dev`) or build the SPA
-with `VITE_API_BASE` for a separate-origin deployment.
+booking id, payment session id, and payment intent. The
+`WorkflowRunsPage` UI from `@voyant-travel/workflows-react/ui` reads
+the admin routes (`/v1/admin/workflow-runs[/:id]`) the operator
+starter mounts via `additionalRoutes`, and can be embedded in any
+host or pointed at a separate-origin API via its `apiBase` option.
 
 This observability sits beside the durable `@voyant-travel/workflows`
-SDK + `apps/workflows-local-dashboard`. That stack remains the
+SDK + its `./selfhost` runtime. That stack remains the
 right home for *durable* workflows (anything that needs persistence
 across process restarts, fan-out, scheduling). The lightweight
 recorder + SPA fill the gap for in-process sagas like

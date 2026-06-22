@@ -15,11 +15,14 @@ export function createStaticReader(rootDir: string): (path: string) => Promise<U
 }
 
 export async function findDashboardDir(startFrom: string): Promise<string | undefined> {
+  // Convenience fallback for callers that don't pass an explicit `staticDir`:
+  // look for a sibling `local-dashboard/dist` (a workflow dashboard SPA built
+  // from `@voyant-travel/workflows-react/ui`). Production self-host should pass
+  // `staticDir` explicitly.
   const candidates = [
-    join(startFrom, "apps/workflows-local-dashboard/dist"),
+    join(startFrom, "local-dashboard/dist"),
     join(startFrom, "../local-dashboard/dist"),
-    join(startFrom, "../../apps/workflows-local-dashboard/dist"),
-    join(startFrom, "../../../apps/workflows-local-dashboard/dist"),
+    join(startFrom, "../../local-dashboard/dist"),
   ]
   for (const candidate of candidates) {
     try {
