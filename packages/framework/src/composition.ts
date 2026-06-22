@@ -147,6 +147,23 @@ const CATALOG_BOOKING_ROUTE_PATHS = [
   "/v1/public/catalog/slots",
 ] as const
 
+// The transactional subset of the catalog booking engine (ADR-0008): quote /
+// book / holds / orders reach bookings' reserve/release transactions through the
+// owned-product adapter. Search/browse (slots), draft reads, and the booking
+// catalog-snapshot read stay on the cheap default client. Prefix matches, so
+// `/holds` covers `/holds/place` + `/holds/release` and `/orders` covers
+// `/orders/:id[/cancel]`. Declared here (the framework owns these route
+// matchers) so deployments don't hand-list them in `dbTransactionalPaths`.
+const CATALOG_BOOKING_TRANSACTIONAL_PATHS = [
+  "/v1/admin/catalog/quote",
+  "/v1/admin/catalog/book",
+  "/v1/admin/catalog/holds",
+  "/v1/admin/catalog/orders",
+  "/v1/public/catalog/quote",
+  "/v1/public/catalog/book",
+  "/v1/public/catalog/holds",
+] as const
+
 const CATALOG_CONTENT_ROUTE_PATHS = [
   "/v1/admin/products/:id/content",
   "/v1/public/products/:id/content",
@@ -610,11 +627,16 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         }),
         true,
       ),
-    "@voyant-travel/trips": ({ capabilities }) =>
-      createTripsHonoModule({
+    "@voyant-travel/trips": ({ capabilities }) => {
+      // Trips reserves trips via injected bookings deps — every trips surface
+      // (admin/public/legacy) needs the transactional client, so the whole
+      // module is name-based transactional (ADR-0008); no deployment path list.
+      const trips = createTripsHonoModule({
         ...capabilities.createTripsRoutesOptions(),
         publicRoutes: true,
-      }),
+      })
+      return { ...trips, module: { ...trips.module, requiresTransactionalDb: true } }
+    },
     // Standard settings module — schema-owning + lazy absolute-path routes, no
     // providers (reads its own tables). Stage 2 of the operator-settings
     // extraction; previously a deployment-local module.
@@ -636,6 +658,9 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
         paths: CATALOG_BOOKING_ROUTE_PATHS,
         load: capabilities.loadCatalogBookingRoutes,
       },
+      // book/holds/orders/quote transact via the owned-product adapter; declared
+      // here so the deployment's `dbTransactionalPaths` can be empty (ADR-0008).
+      transactionalPaths: CATALOG_BOOKING_TRANSACTIONAL_PATHS,
     }),
     "operator/catalog-content": ({ capabilities }) => ({
       module: { name: "catalog-content" },

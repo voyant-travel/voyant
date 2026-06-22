@@ -56,6 +56,18 @@ export interface HonoModule {
    * require a `staff` actor.
    */
   anonymous?: boolean | readonly string[]
+  /**
+   * Absolute API path prefixes whose requests must be served by the
+   * transaction-capable db client (ADR-0008). For modules whose
+   * transaction-needing routes are NOT under the name-based surface — e.g. a
+   * lazy family mounted at `/v1/admin/catalog/quote` rather than
+   * `/v1/admin/{name}` — and where only a SUBSET of the family's routes
+   * transact (so the boolean `module.requiresTransactionalDb` would be too
+   * broad). For the common case (all of a module's routes transact) prefer
+   * `module.requiresTransactionalDb`. Folded into the transactional-prefix map
+   * so the deployment doesn't hand-maintain `dbTransactionalPaths`.
+   */
+  transactionalPaths?: readonly string[]
 }
 
 export interface HonoExtension {
@@ -88,4 +100,9 @@ export interface HonoExtension {
    * to the extension's public mount.
    */
   anonymous?: boolean | readonly string[]
+  /**
+   * Absolute transactional path prefixes — same semantics as
+   * {@link HonoModule.transactionalPaths}.
+   */
+  transactionalPaths?: readonly string[]
 }
