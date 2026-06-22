@@ -17,6 +17,25 @@ export {
   taxLinesFromBreakdown,
 } from "./service-helpers.js"
 export { applyQuoteToComponent, priceTrip } from "./service-pricing.js"
+export {
+  type AddRequirementInput,
+  addRequirement,
+  assertCandidateSelectable,
+  assertEnvelopeRequirementsSatisfied,
+  assertRequiredRequirementsResolved,
+  availabilityCandidateToRow,
+  expireStaleTripCandidates,
+  isTripCandidateExpired,
+  listEnvelopeRequirements,
+  pinnedComponentValuesFromCandidate,
+  reshopRequirement,
+  reshopTrip,
+  type SelectCandidateInput,
+  type SourceRequirementCandidatesDeps,
+  type SourceRequirementCandidatesInput,
+  selectCandidate,
+  sourceRequirementCandidates,
+} from "./service-requirements.js"
 export { reserveTrip } from "./service-reservation.js"
 export {
   buildTripSnapshotProposal,
@@ -79,6 +98,15 @@ export { TripsInvariantError } from "./service-types.js"
 import { cancelComponents, previewCancellation } from "./service-cancellation.js"
 import { completeTripCheckout, startCheckout } from "./service-checkout.js"
 import { priceTrip } from "./service-pricing.js"
+import {
+  addRequirement,
+  expireStaleTripCandidates,
+  listEnvelopeRequirements,
+  reshopRequirement,
+  reshopTrip,
+  selectCandidate,
+  sourceRequirementCandidates,
+} from "./service-requirements.js"
 import { reserveTrip } from "./service-reservation.js"
 import { freezeTripSnapshot, getTripSnapshotById, listTripSnapshots } from "./service-snapshots.js"
 import {
@@ -118,4 +146,11 @@ export const tripsService = {
   completeTripCheckout,
   previewCancellation,
   cancelComponents,
+  addRequirement,
+  listEnvelopeRequirements,
+  sourceRequirementCandidates,
+  selectCandidate,
+  reshopRequirement,
+  reshopTrip,
+  expireStaleTripCandidates,
 }

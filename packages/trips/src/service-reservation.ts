@@ -27,6 +27,7 @@ import {
   statusToEventType,
 } from "./service-internals.js"
 import { applyQuoteToComponent } from "./service-pricing.js"
+import { assertEnvelopeRequirementsSatisfied } from "./service-requirements.js"
 import { getTrip } from "./service-trips.js"
 import type {
   ReserveComponentResult,
@@ -52,6 +53,9 @@ export async function reserveTrip(
   if (shouldReplayReserve(trip.envelope, input.idempotencyKey)) {
     return reserveReplayResult(trip)
   }
+
+  // Reserve gate: every required requirement must be resolved (selected) first.
+  await assertEnvelopeRequirementsSatisfied(db, input.envelopeId)
 
   if (trip.envelope.status !== "priced") {
     return reserveClaimConflictResult(trip)

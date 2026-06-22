@@ -3443,6 +3443,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core

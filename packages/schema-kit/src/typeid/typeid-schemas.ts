@@ -187,6 +187,8 @@ export const typeIdSchemas = {
   sellabilityExplanation: typeIdSchema("sellability_explanations"),
   tripSnapshot: typeIdSchema("trip_snapshots"),
   tripReservationPlan: typeIdSchema("trip_reservation_plans"),
+  tripRequirement: typeIdSchema("trip_requirements"),
+  tripCandidate: typeIdSchema("trip_candidates"),
   productMedia: typeIdSchema("product_media"),
   productFeature: typeIdSchema("product_features"),
   productFaq: typeIdSchema("product_faqs"),
