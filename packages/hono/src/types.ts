@@ -253,6 +253,13 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   link?: LinkService
   query?: QueryGraphContext | VoyantQueryRuntime
   auth?: VoyantAuthIntegration<TBindings>
+  /**
+   * Hosting/deployment prefix to strip before app-local path decisions such as
+   * auth publicPaths, public-write rate limiting, actor guards, and DB surface
+   * selection. Example: a Hono app mounted at `/api` still declares routes and
+   * publicPaths as `/v1/...`, so set `basePath: "/api"`.
+   */
+  basePath?: string
   publicPaths?: string[]
   logger?: LoggerProvider
   /**

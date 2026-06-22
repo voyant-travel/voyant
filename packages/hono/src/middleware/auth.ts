@@ -126,6 +126,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
   dbSource: DbSource<TBindings>,
   opts?: {
     publicPaths?: string[]
+    basePath?: string
     auth?: VoyantAuthIntegration<TBindings>
   },
 ): MiddlewareHandler<{
@@ -137,12 +138,11 @@ export function requireAuth<TBindings extends VoyantBindings>(
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
 
+    const url = new URL(c.req.url)
+    const p = normalizePathname(url.pathname, { basePath: opts?.basePath })
     // Resolve the surface-appropriate factory once — the db middleware
     // downstream resolves the same one, so both share one client.
-    const dbFactory = selectDbFactory(dbSource, c.req.path)
-
-    const url = new URL(c.req.url)
-    const p = normalizePathname(url.pathname)
+    const dbFactory = selectDbFactory(dbSource, p)
     const isPublicAuth = p === "/auth/callback" || p.startsWith("/auth/")
     const isHealthCheck = p === "/health"
 

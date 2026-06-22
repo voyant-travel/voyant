@@ -8,6 +8,29 @@ import type { VoyantBindings } from "../../src/types.js"
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 
 describe("requireAuth API keys", () => {
+  it("matches public paths under a configured deployment base path", async () => {
+    const dbFactory = vi.fn(() => ({}) as never)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(dbFactory, {
+        basePath: "/api",
+        publicPaths: ["/v1/public/media"],
+      }),
+    )
+    app.get("/api/v1/public/media/:key", (c) => c.json({ actor: c.get("actor") }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/api/v1/public/media/product.jpg"),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ actor: "customer" })
+    expect(dbFactory).not.toHaveBeenCalled()
+  })
+
   it("authenticates comma-separated internal API keys with scoped staff context", async () => {
     const app = new Hono()
     app.use(

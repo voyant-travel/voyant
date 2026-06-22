@@ -2,6 +2,7 @@ import type { Actor } from "@voyant-travel/core"
 import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import type { MiddlewareHandler } from "hono"
 
+import { normalizePathname } from "../lib/public-paths.js"
 import type { VoyantBindings, VoyantVariables } from "../types.js"
 
 function apiKeyResourceFromPath(pathname: string): string | null {
@@ -55,6 +56,18 @@ export function isStaffRbacEnforced(env: unknown): boolean {
   return !(normalized === "0" || normalized === "false" || normalized === "off")
 }
 
+export interface RequireActorOptions {
+  /**
+   * Deployment prefix stripped before deriving API-key/staff RBAC resources.
+   * Keep this aligned with the app-level auth/public-path basePath.
+   */
+  basePath?: string
+}
+
+function isRequireActorOptions(value: unknown): value is RequireActorOptions {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 /**
  * Guards a route surface by actor type.
  *
@@ -80,7 +93,22 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 ): MiddlewareHandler<{
   Bindings: TBindings
   Variables: VoyantVariables
+}>
+export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
+  options: RequireActorOptions,
+  ...allowed: Actor[]
+): MiddlewareHandler<{
+  Bindings: TBindings
+  Variables: VoyantVariables
+}>
+export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
+  ...args: [RequireActorOptions, ...Actor[]] | Actor[]
+): MiddlewareHandler<{
+  Bindings: TBindings
+  Variables: VoyantVariables
 }> {
+  const options = isRequireActorOptions(args[0]) ? args[0] : {}
+  const allowed = (isRequireActorOptions(args[0]) ? args.slice(1) : args) as Actor[]
   if (allowed.length === 0) {
     throw new Error("requireActor: must specify at least one allowed actor")
   }
@@ -90,7 +118,10 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
     if (c.req.method === "OPTIONS") return next()
 
     if (c.get("callerType") === "api_key" || c.get("callerType") === "internal") {
-      const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+      const pathname = normalizePathname(new URL(c.req.url).pathname, {
+        basePath: options.basePath,
+      })
+      const resource = apiKeyResourceFromPath(pathname)
 
       // Meta/discovery endpoints (e.g. `/v1/admin/_meta/capabilities`) report
       // what the caller can do — including the key's own granted scopes — so any
@@ -131,7 +162,10 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
     // resource (e.g. `_meta`) stay open until a module is explicitly covered.
     if (actor === "staff" && c.get("callerType") === "session" && isStaffRbacEnforced(c.env)) {
       const scopes = c.get("scopes")
-      const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+      const pathname = normalizePathname(new URL(c.req.url).pathname, {
+        basePath: options.basePath,
+      })
+      const resource = apiKeyResourceFromPath(pathname)
       if (resource && resource !== "_meta") {
         const actions = apiKeyPermissionActionsForMethod(c.req.method)
         if (!hasAnyApiKeyPermission(scopes, resource, actions)) {
