@@ -101,8 +101,14 @@ export function availabilityCandidateToRow(args: {
  * Build the draft component a selected candidate pins into. The component is
  * intentionally `draft`/unpriced: `priceTrip` re-resolves the selection
  * (`candidateRef` is not replay-safe) and `reserveTrip` re-validates before any
- * supplier dispatch. The sourced connection is carried for booking dispatch;
- * the full candidate origin is kept in `metadata` for audit.
+ * supplier dispatch.
+ *
+ * `sourceKind` is load-bearing: `isCatalogBackedTripComponent` requires it for
+ * the component to be priced via the catalog path (rather than falling through
+ * to placeholder pricing → `unavailable`), and the catalog booking engine
+ * routes on it — `"owned"` (`OWNED_SOURCE_KIND`) to an owned handler keyed by
+ * entityModule, anything else to a sourced adapter keyed by `sourceConnectionId`.
+ * The candidate's `sourceKind` is already `"owned"`/`"sourced"`, which aligns.
  */
 export function pinnedComponentValuesFromCandidate(
   candidate: TripCandidate,
@@ -115,6 +121,7 @@ export function pinnedComponentValuesFromCandidate(
     status: "draft",
     entityModule: candidate.entityModule,
     entityId: candidate.entityId,
+    sourceKind: candidate.sourceKind,
     sourceConnectionId: candidate.sourceConnectionId,
     componentCurrency: candidate.priceCurrency,
     metadata: {

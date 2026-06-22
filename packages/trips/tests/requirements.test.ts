@@ -1,7 +1,8 @@
 import type { AvailabilityCandidate } from "@voyant-travel/catalog-contracts"
 import { describe, expect, it } from "vitest"
 
-import type { TripCandidate, TripRequirement } from "../src/schema.js"
+import { isCatalogBackedTripComponent } from "../src/catalog-component-adapter.js"
+import type { TripCandidate, TripComponent, TripRequirement } from "../src/schema.js"
 import {
   assertCandidateSelectable,
   assertRequiredRequirementsResolved,
@@ -169,6 +170,7 @@ describe("pinnedComponentValuesFromCandidate", () => {
       status: "draft",
       entityModule: "accommodations",
       entityId: "acc_1",
+      sourceKind: "sourced",
       sourceConnectionId: "conn_a",
       componentCurrency: "USD",
     })
@@ -177,5 +179,19 @@ describe("pinnedComponentValuesFromCandidate", () => {
       candidateRef: "ref_1",
       selection: { ratePlanId: "rate_1" },
     })
+  })
+
+  it("sets sourceKind so the pinned component is catalog-backed (priced, not placeholder)", () => {
+    // Regression: a pinned component without sourceKind falls through to
+    // placeholder pricing → `unavailable`. It must be routed via the catalog path.
+    const sourced = pinnedComponentValuesFromCandidate(candidate(), 0)
+    expect(isCatalogBackedTripComponent(sourced as TripComponent)).toBe(true)
+
+    const owned = pinnedComponentValuesFromCandidate(
+      candidate({ sourceKind: "owned", sourceConnectionId: null, sourceModule: "accommodations" }),
+      0,
+    )
+    expect(owned.sourceKind).toBe("owned") // routes to the owned handler
+    expect(isCatalogBackedTripComponent(owned as TripComponent)).toBe(true)
   })
 })
