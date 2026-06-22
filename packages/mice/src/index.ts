@@ -45,6 +45,9 @@ export const miceLinkable = {
 
 export const miceModule: Module = {
   name: "mice",
+  // Enrollment, rooming-delegate replace, and session-inclusion set run inside
+  // db.transaction(...) — route /v1/admin/mice/* to the transactional DB.
+  requiresTransactionalDb: true,
   linkable: miceLinkable,
 }
 

@@ -143,6 +143,8 @@ export const miceAdminRoutes = new Hono<Env>()
         return c.json({ error: "Delegate not found" }, 404)
       case "session_not_found":
         return c.json({ error: "Session not found" }, 404)
+      case "program_mismatch":
+        return c.json({ error: "Session belongs to a different program" }, 409)
     }
   })
   // Rooming manifest (RFC voyant#1489 Phase 3).
@@ -177,6 +179,14 @@ export const miceAdminRoutes = new Hono<Env>()
         return c.json({ error: "Rooming assignment not found" }, 404)
       case "delegate_not_found":
         return c.json({ error: "Delegate not found", detail: { missing: outcome.missing } }, 404)
+      case "program_mismatch":
+        return c.json(
+          {
+            error: "Delegate belongs to a different program",
+            detail: { offending: outcome.offending },
+          },
+          409,
+        )
     }
   })
 

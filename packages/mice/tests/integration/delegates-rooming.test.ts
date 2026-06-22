@@ -54,6 +54,15 @@ describe.skipIf(!DB_AVAILABLE)("mice delegates + rooming", () => {
 
     const bad = await enrollDelegate(db, created.delegate.id, { sessionId: "mpss_nope" })
     expect(bad.status).toBe("session_not_found")
+
+    // A session from a DIFFERENT program must be rejected.
+    const other = await seedProgram()
+    const otherSession = await createSession(db, { programId: other.id, title: "Other" })
+    if (otherSession.status !== "ok") throw new Error("other session failed")
+    const mismatch = await enrollDelegate(db, created.delegate.id, {
+      sessionId: otherSession.session.id,
+    })
+    expect(mismatch.status).toBe("program_mismatch")
   })
 
   it("assigns a shared room (many delegates) and replaces occupants", async () => {
@@ -83,5 +92,12 @@ describe.skipIf(!DB_AVAILABLE)("mice delegates + rooming", () => {
     // A stale delegate id is a handled 4xx, not an FK 500.
     const bad = await setRoomingDelegates(db, aid, [{ delegateId: "mpdl_nope" }])
     expect(bad.status).toBe("delegate_not_found")
+
+    // A delegate from another program can't be roomed into this assignment.
+    const other = await seedProgram()
+    const otherDelegate = await createDelegate(db, { programId: other.id, role: "attendee" })
+    if (otherDelegate.status !== "ok") throw new Error("other delegate failed")
+    const mismatch = await setRoomingDelegates(db, aid, [{ delegateId: otherDelegate.delegate.id }])
+    expect(mismatch.status).toBe("program_mismatch")
   })
 })

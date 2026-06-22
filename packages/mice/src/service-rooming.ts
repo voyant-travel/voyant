@@ -81,11 +81,13 @@ export type SetRoomingDelegatesOutcome =
   | { status: "ok"; delegates: RoomingAssignmentDelegate[] }
   | { status: "assignment_not_found" }
   | { status: "delegate_not_found"; missing: string[] }
+  | { status: "program_mismatch"; offending: string[] }
 
 /**
  * Replace the occupants of a rooming assignment (full replace). Validates the
- * assignment and that every delegate exists before touching the join, so a
- * stale delegate id is a 4xx rather than an FK 500.
+ * assignment and that every delegate exists AND belongs to the assignment's
+ * program before touching the join — a stale id is a 4xx (not an FK 500) and a
+ * cross-program delegate can't corrupt the program-scoped manifest.
  */
 export async function setRoomingDelegates(
   db: PostgresJsDatabase,
@@ -94,7 +96,7 @@ export async function setRoomingDelegates(
 ): Promise<SetRoomingDelegatesOutcome> {
   return db.transaction(async (tx) => {
     const [assignment] = await tx
-      .select({ id: roomingAssignments.id })
+      .select({ id: roomingAssignments.id, programId: roomingAssignments.programId })
       .from(roomingAssignments)
       .where(eq(roomingAssignments.id, assignmentId))
       .limit(1)
@@ -103,12 +105,14 @@ export async function setRoomingDelegates(
     const ids = delegates.map((d) => d.delegateId)
     if (ids.length) {
       const found = await tx
-        .select({ id: programDelegates.id })
+        .select({ id: programDelegates.id, programId: programDelegates.programId })
         .from(programDelegates)
         .where(inArray(programDelegates.id, ids))
-      const foundIds = new Set(found.map((r) => r.id))
-      const missing = ids.filter((id) => !foundIds.has(id))
+      const byId = new Map(found.map((r) => [r.id, r.programId]))
+      const missing = ids.filter((id) => !byId.has(id))
       if (missing.length) return { status: "delegate_not_found" as const, missing }
+      const offending = ids.filter((id) => byId.get(id) !== assignment.programId)
+      if (offending.length) return { status: "program_mismatch" as const, offending }
     }
 
     await tx

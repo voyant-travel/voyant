@@ -95,6 +95,7 @@ export type EnrollDelegateOutcome =
   | { status: "ok"; enrollment: DelegateSessionEnrollment; idempotent: boolean }
   | { status: "delegate_not_found" }
   | { status: "session_not_found" }
+  | { status: "program_mismatch" }
 
 /** Enroll a delegate in a session. Idempotent on (delegate, session). */
 export async function enrollDelegate(
@@ -104,17 +105,20 @@ export async function enrollDelegate(
 ): Promise<EnrollDelegateOutcome> {
   return db.transaction(async (tx) => {
     const [delegate] = await tx
-      .select({ id: programDelegates.id })
+      .select({ id: programDelegates.id, programId: programDelegates.programId })
       .from(programDelegates)
       .where(eq(programDelegates.id, delegateId))
       .limit(1)
     if (!delegate) return { status: "delegate_not_found" as const }
     const [session] = await tx
-      .select({ id: programSessions.id })
+      .select({ id: programSessions.id, programId: programSessions.programId })
       .from(programSessions)
       .where(eq(programSessions.id, input.sessionId))
       .limit(1)
     if (!session) return { status: "session_not_found" as const }
+    // The session must belong to the delegate's program — neither the FK nor the
+    // unique index includes program_id, so guard against cross-program enrollment.
+    if (session.programId !== delegate.programId) return { status: "program_mismatch" as const }
 
     const [existing] = await tx
       .select()
