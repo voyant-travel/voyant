@@ -53,7 +53,7 @@ import * as productsTaxonomySchema from "../packages/inventory/src/schema-taxono
 import * as legalContractsSchema from "../packages/legal/src/contracts/schema.ts"
 import * as legalPoliciesSchema from "../packages/legal/src/policies/schema.ts"
 import * as notificationsSchema from "../packages/notifications/src/schema.ts"
-import * as operationsAvailabilitySchema from "../packages/operations/src/availability/schema.ts"
+import * as availabilitySchema from "../packages/availability/src/schema.ts"
 import * as operationsGroundDispatchSchema from "../packages/operations/src/ground/schema-dispatch.ts"
 import * as operationsGroundOperationsSchema from "../packages/operations/src/ground/schema-operations.ts"
 import * as operationsGroundOperatorsSchema from "../packages/operations/src/ground/schema-operators.ts"
@@ -168,7 +168,7 @@ const sections: SectionDefinition[] = [
   {
     title: "Operations",
     modules: [
-      operationsAvailabilitySchema,
+      availabilitySchema,
       operationsPlacesSchema,
       operationsResourcesSchema,
       operationsGroundOperatorsSchema,
