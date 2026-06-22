@@ -1,5 +1,25 @@
 # @voyant-travel/hono
 
+## 0.116.0
+
+### Minor Changes
+
+- 684b321: Bundle-level anonymous-access declarations (ADR-0008). `HonoBundle` gains an `anonymous?: string[]` field for **absolute** API paths a plugin exposes that are reachable without a session — for routes that mount outside the `/v1/public/{name}` convention, like a payment-processor webhook. `expandHonoBundles` collects these into `ExpandedHonoBundles.anonymousPaths`, and `createApp` folds them into the assembled anonymous allow-list alongside module/extension `anonymous` declarations and explicit `publicPaths`.
+
+  `netopiaHonoBundle` now declares its callback (`/v1/finance/providers/netopia/callback`) anonymous, so deployments no longer carry it in `publicPaths` — the "reachable-without-auth" decision lives with the plugin that owns the route.
+
+  Additive and non-breaking: a bundle that declares no `anonymous` contributes nothing to the allow-list.
+
+- 2542715: Transactional-path declarations (ADR-0008 Phase 2). `HonoModule`/`HonoExtension` gain `transactionalPaths?: string[]` — absolute API path prefixes that must be served by the transaction-capable db client, for routes mounted outside the name-based surface where only a _subset_ transacts (e.g. a lazy family at `/v1/admin/catalog/quote`). `mountApp` folds these into the transactional-prefix map alongside the existing name-based `requiresTransactionalDb`, so a deployment no longer hand-maintains `dbTransactionalPaths`.
+
+  The standard families now declare their own transactional surface: `@voyant-travel/trips` is name-based `requiresTransactionalDb` (every trips route reserves), and the catalog booking engine (`operator/catalog-booking`) declares its `quote`/`book`/`holds`/`orders` prefixes via `transactionalPaths` (search/draft/snapshot reads stay on the cheap default client). The operator starter's `dbTransactionalPaths` list is removed entirely.
+
+  Additive and non-breaking: `dbTransactionalPaths` is still honored as an escape hatch; a module that declares neither flag is unaffected.
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.6
+
 ## 0.115.0
 
 ### Minor Changes
