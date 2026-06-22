@@ -8,6 +8,17 @@ updates:
       npm-security-and-maintenance:
         patterns:
           - "*"
+    ignore:
+      # Hold back breaking majors that need manual code migration so they don't
+      # ride along in the security/maintenance group and fail CI. Minor and
+      # patch updates (including security fixes) still flow through. Remove an
+      # entry when its migration is scheduled.
+      - dependency-name: "react-resizable-panels" # v4 dropped PanelGroup/PanelResizeHandle named exports
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-day-picker" # v10 changed the ClassNames type
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node" # major bumps break node: builtins typing here
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 10
 
   - package-ecosystem: github-actions
