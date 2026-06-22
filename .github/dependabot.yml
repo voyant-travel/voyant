@@ -8,11 +8,17 @@ updates:
       npm-security-and-maintenance:
         patterns:
           - "*"
+        # Keep majors out of the grouped PR entirely — any major (for any dep)
+        # gets its own isolated PR instead of breaking the security group.
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
-      # Hold back breaking majors that need manual code migration so they don't
-      # ride along in the security/maintenance group and fail CI. Minor and
-      # patch updates (including security fixes) still flow through. Remove an
-      # entry when its migration is scheduled.
+      # Additionally suppress the noisy individual major PRs for deps with known
+      # breaking changes that need manual code migration. Per GitHub docs,
+      # `update-types` ignore conditions affect version updates only, NOT
+      # security updates — a major required to fix an advisory still comes
+      # through. Remove an entry when its migration is scheduled.
       - dependency-name: "react-resizable-panels" # v4 dropped PanelGroup/PanelResizeHandle named exports
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-day-picker" # v10 changed the ClassNames type
