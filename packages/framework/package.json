@@ -40,12 +40,12 @@
   },
   "peerDependencies": {
     "@voyant-travel/hono": "workspace:^",
-    "hono": "^4.12.10"
+    "hono": "^4.12.26"
   },
   "devDependencies": {
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "hono": "^4.12.10",
+    "hono": "^4.12.26",
     "typescript": "^6.0.2",
     "vitest": "^4.0.0"
   },

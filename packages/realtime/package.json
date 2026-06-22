@@ -24,7 +24,7 @@
   "dependencies": {
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "hono": "^4.12.10"
+    "hono": "^4.12.26"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
