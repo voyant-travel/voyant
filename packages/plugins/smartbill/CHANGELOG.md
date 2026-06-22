@@ -1,5 +1,12 @@
 # @voyant-travel/plugin-smartbill
 
+## 0.135.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.135.0
+- @voyant-travel/finance@0.135.0
+
 ## 0.134.1
 
 ### Patch Changes
