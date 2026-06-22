@@ -56,4 +56,46 @@ describe("trips routes", () => {
       error: "Trips operation is admin-only",
     })
   })
+
+  it("blocks requirement routes on the public surface", async () => {
+    const app = createTripsRoutes({ surface: "public" })
+    const adminOnly = [
+      { method: "POST", path: "/trip_123/requirements" },
+      { method: "GET", path: "/trip_123/requirements" },
+      { method: "POST", path: "/requirements/trrq_1/candidates" },
+      { method: "POST", path: "/requirements/trrq_1/select" },
+      { method: "POST", path: "/requirements/trrq_1/reshop" },
+      { method: "POST", path: "/trip_123/reshop" },
+    ]
+    for (const { method, path } of adminOnly) {
+      const res = await app.request(path, {
+        method,
+        body: method === "GET" ? undefined : JSON.stringify({}),
+        headers: { "content-type": "application/json" },
+      })
+      expect(res.status, `${method} ${path}`).toBe(403)
+    }
+  })
+
+  it("reports 501 for sourcing/reshop until the availability fan-out is wired", async () => {
+    const app = createTripsRoutes()
+    const scope = { locale: "en-GB", audience: "staff", market: "GB" }
+
+    const source = await app.request("/requirements/trrq_1/candidates", {
+      method: "POST",
+      body: JSON.stringify({ scope }),
+      headers: { "content-type": "application/json" },
+    })
+    expect(source.status).toBe(501)
+    await expect(source.json()).resolves.toEqual({
+      error: "Trips availability-sourcing dependencies are not configured",
+    })
+
+    const reshop = await app.request("/trip_123/reshop", {
+      method: "POST",
+      body: JSON.stringify({ scope }),
+      headers: { "content-type": "application/json" },
+    })
+    expect(reshop.status).toBe(501)
+  })
 })
