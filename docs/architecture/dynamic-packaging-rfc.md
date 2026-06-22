@@ -3,7 +3,7 @@
 Status: partially shipped — both keystone gaps landed (P1 #2081, P2 #2082); P3–P5 are follow-ups
 Owner: TBD
 Tracking: #1600 (closed → split into #2081 + #2082)
-Related (current): [`catalog-architecture.md`](./catalog-architecture.md), [`catalog-flights-architecture.md`](./catalog-flights-architecture.md), [`catalog-booking-engine.md`](./catalog-booking-engine.md), [`catalog-supply-models.md`](./catalog-supply-models.md), `@voyant-travel/trips`, `@voyant-travel/quotes`, #1541 (Quotes — **shipped**), #1470 (Composite Products — **shipped**)
+Related (current): [`catalog-architecture.md`](./catalog-architecture.md), [`catalog-flights-architecture.md`](./catalog-flights-architecture.md), [`catalog-booking-engine.md`](./catalog-booking-engine.md), [`catalog-supply-models.md`](./catalog-supply-models.md), [ADR-0006](../adr/0006-live-availability-search-contract.md) (availability-search contract), `@voyant-travel/trips`, `@voyant-travel/quotes`, #1541 (Quotes — **shipped**), #1470 (Composite Products — **shipped**)
 
 > **Why this doc was rewritten.** The original RFC (#1600, 2026-06-09) pointed at a `dynamic-packaging-rfc.md` that never landed, named the package `@voyantjs/travel-composer` (now `@voyant-travel/trips`), and phased in work that has since shipped under #1541 and #1470. This version re-bases on the current code and cuts the scope down to the two pieces that genuinely **do not exist yet**.
 

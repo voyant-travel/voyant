@@ -79,6 +79,8 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Trip Envelope** | A customer-facing aggregate that groups one or more Component Bookings or provider/source order refs into one itinerary, checkout, support, document, and cancellation-preview experience. Not necessarily one Booking. | *Trip / Package Envelope, Package Envelope, Product, Booking* |
 | **Composed FIT Trip** | An individually composed Trip Envelope assembled from independent commitments such as a product, stay, flight, transfer, cruise, or staff-confirmed placeholder. | *custom product, mega-booking* |
 | **Component Booking** | One independently committed part of a Trip Envelope, with its own supplier/provider reference or provider/source order ref, cancellation rules, tax treatment, fulfillment state, and operational owner. | *Component Booking / Order, line when lifecycle is independent* |
+| **Trip Requirement** | An unresolved customer need on a Trip Envelope ("3-night stay in Cairo, 2 adults") — vertical + criteria — that is sourced into ranked Trip Candidates and resolved by selecting one. A `required` requirement gates reserve until resolved. | *slot, gap, placeholder* |
+| **Trip Candidate** | An AvailabilityCandidate attached to a Trip Requirement: ranked, TTL'd, and persisted as resumable trip state (re-validated before commit) — **not** a catalog cache. Selecting one pins a draft Component Booking. | *option, offer, cached result* |
 | **Extra** | A child line that modifies or extends a Component Booking and shares that component's lifecycle closely enough to be cancelled, fulfilled, taxed, and supported with it. | *add-on, addon, extension, separate booking when dependent* |
 | **Cruise Extension** | A cruise-specific pre/post-cruise hotel or land program. The offer definition can be shared across multiple cruises/sailings; a selected extension is an Extra when cruise-owned and lifecycle-dependent, or a sibling Component Booking when independently supplied, confirmed, cancelled, taxed, or supported. | *generic extension* |
 
@@ -95,6 +97,7 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Pickup Group**      | A named cluster of Pickup Points with a kind (`pickup`, `dropoff`, `meeting`).                   | *zone, cluster*            |
 | **Room Resource Hold** | Operations-owned execution hold against accommodation capacity or a room allocation source.      | *Program Room Block when used for execution truth* |
 | **Space Resource Hold** | Operations-owned execution hold against a function space, venue area, or layout/time allocation. | *Program Space Block when used for execution truth* |
+| **AvailabilityCandidate** | A normalized live availability-search result from one source (destination + dates + pax → a ranked option), produced by `searchAvailability` and merged by `fanOutAvailabilitySearch`. Carries a non-replay-safe `candidateRef`, the `selection` needed to re-resolve at reserve, a public `price`, an `expiresAt`, and internal-only `providerData` (net/margin/source ref — never public). | *SourcedOffer, Offer, Slot, Option* |
 
 ## Pricing
 
