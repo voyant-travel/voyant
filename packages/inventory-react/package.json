@@ -44,7 +44,7 @@
     "@voyant-travel/utils": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.60.0",
+    "react-hook-form": "^7.80.0",
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
@@ -67,14 +67,14 @@
   "dependencies": {
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
-    "date-fns": "^4.1.0",
-    "motion": "^12.38.0",
-    "react-day-picker": "^9.8.0",
+    "date-fns": "^4.4.0",
+    "motion": "^12.40.0",
+    "react-day-picker": "^10.0.1",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.11",
-    "@types/react": "^19.2.14",
+    "@tanstack/react-query": "^5.101.0",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
@@ -86,13 +86,13 @@
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^0.475.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-hook-form": "^7.60.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2",
-    "zod": "^4.3.6"
+    "lucide-react": "^1.21.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-hook-form": "^7.80.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
+    "zod": "^4.4.3"
   },
   "files": [
     "dist",

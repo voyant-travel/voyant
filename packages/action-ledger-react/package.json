@@ -30,7 +30,7 @@
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^1.21.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -56,8 +56,8 @@
     "@voyant-travel/react": "workspace:^"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.100.11",
-    "@types/react": "^19.2.14",
+    "@tanstack/react-query": "^5.101.0",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/admin": "workspace:^",
@@ -68,11 +68,11 @@
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^0.475.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "lucide-react": "^1.21.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "dist"
