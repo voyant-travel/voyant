@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyant-travel/core"
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
@@ -36,6 +37,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: EventBus
   }
 }
 
@@ -180,7 +182,9 @@ export const supplierRoutes = new Hono<Env>()
   // POST / — Create supplier
   .post("/", async (c) => {
     const data = await parseJsonBody(c, insertSupplierSchema)
-    return c.json({ data: await suppliersService.createSupplier(c.get("db"), data) }, 201)
+    const row = await suppliersService.createSupplier(c.get("db"), data)
+    await c.get("eventBus")?.emit("supplier.created", { id: row.id })
+    return c.json({ data: row }, 201)
   })
 
   // PATCH /:id — Update supplier
@@ -195,6 +199,7 @@ export const supplierRoutes = new Hono<Env>()
       return c.json({ error: "Supplier not found" }, 404)
     }
 
+    await c.get("eventBus")?.emit("supplier.updated", { id: row.id })
     return c.json({ data: row })
   })
 
@@ -206,6 +211,7 @@ export const supplierRoutes = new Hono<Env>()
       return c.json({ error: "Supplier not found" }, 404)
     }
 
+    await c.get("eventBus")?.emit("supplier.deleted", { id: row.id })
     return c.json({ success: true }, 200)
   })
 

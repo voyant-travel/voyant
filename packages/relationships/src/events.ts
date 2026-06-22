@@ -36,3 +36,43 @@ export async function emitCustomerSignalCreated(
     source,
   })
 }
+
+export const PERSON_CHANGED_EVENT = "person.changed" as const
+export const ORGANIZATION_CHANGED_EVENT = "organization.changed" as const
+
+/** Which lifecycle transition produced a `*.changed` event. */
+export type RelationshipChangeAction = "created" | "updated" | "deleted"
+
+export interface PersonChangedEvent {
+  id: string
+  action: RelationshipChangeAction
+}
+
+export interface OrganizationChangedEvent {
+  id: string
+  action: RelationshipChangeAction
+}
+
+/**
+ * Emit `person.changed` after a person create/update/delete so observers
+ * (e.g. a realtime bridge) can refresh CRM views without polling.
+ * Fire-and-forget: a missing bus is a no-op and emission never blocks.
+ */
+export async function emitPersonChanged(
+  eventBus: EventBus | undefined,
+  payload: PersonChangedEvent,
+  source: EventSource = "service",
+): Promise<void> {
+  if (!eventBus) return
+  await eventBus.emit(PERSON_CHANGED_EVENT, payload, { category: "domain", source })
+}
+
+/** Emit `organization.changed` after an organization create/update/delete. */
+export async function emitOrganizationChanged(
+  eventBus: EventBus | undefined,
+  payload: OrganizationChangedEvent,
+  source: EventSource = "service",
+): Promise<void> {
+  if (!eventBus) return
+  await eventBus.emit(ORGANIZATION_CHANGED_EVENT, payload, { category: "domain", source })
+}

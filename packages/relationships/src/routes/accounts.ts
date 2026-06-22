@@ -1,4 +1,4 @@
-import type { ModuleContainer } from "@voyant-travel/core"
+import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import {
   type CustomFieldDefinition,
   customFieldsVisibleIn,
@@ -20,7 +20,7 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
-
+import { emitOrganizationChanged, emitPersonChanged } from "../events.js"
 import {
   RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY,
   type RelationshipsRouteRuntime,
@@ -52,6 +52,7 @@ type Env = {
     db: PostgresJsDatabase
     userId?: string
     container?: ModuleContainer
+    eventBus?: EventBus
   }
 }
 
@@ -138,7 +139,9 @@ export const accountRoutes = new Hono<Env>()
     async (c) => {
       const data = await parseJsonBody(c, insertOrganizationSchema)
       await validateRelationshipsCustomFields(c, organizationEntity, data, "create")
-      return c.json({ data: await relationshipsService.createOrganization(c.get("db"), data) }, 201)
+      const row = await relationshipsService.createOrganization(c.get("db"), data)
+      if (row) await emitOrganizationChanged(c.get("eventBus"), { id: row.id, action: "created" })
+      return c.json({ data: row }, 201)
     },
   )
   .get("/organizations/:id", async (c) => {
@@ -151,6 +154,7 @@ export const accountRoutes = new Hono<Env>()
     await validateRelationshipsCustomFields(c, organizationEntity, data, "update")
     const row = await relationshipsService.updateOrganization(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Organization not found" }, 404)
+    await emitOrganizationChanged(c.get("eventBus"), { id: row.id, action: "updated" })
     return c.json({ data: row })
   })
   .post("/organizations/:id/merge", async (c) => {
@@ -169,6 +173,7 @@ export const accountRoutes = new Hono<Env>()
   .delete("/organizations/:id", async (c) => {
     const row = await relationshipsService.deleteOrganization(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Organization not found" }, 404)
+    await emitOrganizationChanged(c.get("eventBus"), { id: c.req.param("id"), action: "deleted" })
     return c.json({ success: true })
   })
   .get("/organizations/:id/contact-methods", async (c) => {
@@ -258,7 +263,9 @@ export const accountRoutes = new Hono<Env>()
   .post("/people", idempotencyKey({ scope: "POST /v1/admin/relationships/people" }), async (c) => {
     const data = await parseJsonBody(c, insertPersonSchema)
     await validateRelationshipsCustomFields(c, personEntity, data, "create")
-    return c.json({ data: await relationshipsService.createPerson(c.get("db"), data) }, 201)
+    const row = await relationshipsService.createPerson(c.get("db"), data)
+    if (row) await emitPersonChanged(c.get("eventBus"), { id: row.id, action: "created" })
+    return c.json({ data: row }, 201)
   })
   .get("/people/:id", async (c) => {
     const row = await relationshipsService.getPersonById(c.get("db"), c.req.param("id"))
@@ -270,6 +277,7 @@ export const accountRoutes = new Hono<Env>()
     await validateRelationshipsCustomFields(c, personEntity, data, "update")
     const row = await relationshipsService.updatePerson(c.get("db"), c.req.param("id"), data)
     if (!row) return c.json({ error: "Person not found" }, 404)
+    await emitPersonChanged(c.get("eventBus"), { id: row.id, action: "updated" })
     return c.json({ data: row })
   })
   .post("/people/:id/merge", async (c) => {
@@ -288,6 +296,7 @@ export const accountRoutes = new Hono<Env>()
   .delete("/people/:id", async (c) => {
     const row = await relationshipsService.deletePerson(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Person not found" }, 404)
+    await emitPersonChanged(c.get("eventBus"), { id: c.req.param("id"), action: "deleted" })
     return c.json({ success: true })
   })
   .get("/people/:id/contact-methods", async (c) => {

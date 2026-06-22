@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { BookingEngineEnv } from "./booking-engine-runtime"
 
+// Every test does a cold `vi.resetModules()` + dynamic `import()` of the runtime;
+// under full-parallel CI load that import alone can exceed the 5s default and
+// flake the suite. Give the file headroom — the assertions themselves are sync.
+vi.setConfig({ testTimeout: 20000 })
+
 // The plugin is mocked so the test exercises the runtime's warm/fallback wiring
 // (not the real Connect network calls). `registerVoyantConnectSources` mirrors
 // the real plugin: connection-scoped sources register by id, the default pair
