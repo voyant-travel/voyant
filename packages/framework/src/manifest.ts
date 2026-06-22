@@ -7,16 +7,18 @@
  * standard module added to the framework auto-joins the default set — the
  * deployment doesn't re-list it.
  *
- * D.1 ships a FIXED standard profile: `createVoyantApp` always mounts this full
- * set and only appends deployment-local modules/extensions — it does not yet
- * consume `voyant.config` to pare the standard set down. Module subsetting is a
- * later workstream; until then a deployment that must drop a standard module
- * forks the manifest explicitly rather than configuring it away.
+ * The standard set is the DEFAULT, not a fixed profile (ADR-0007). A deployment
+ * may pare it down via `createVoyantApp({ exclude })`; the exclusion is validated
+ * against `FRAMEWORK_CAPABILITY_GRAPH` (below) so dropping a depended-on module
+ * without a substitute fails at boot rather than as a runtime 500. Phase 1 lands
+ * the runtime mechanism here; aligning schema/migration generation with the same
+ * `exclude` set is the immediate follow-up.
  *
  * Workstream B of the consolidated-deployments RFC: the standard registry's
- * factories relocate into this package next; this is the manifest (the "which +
- * order") moving first.
+ * factories live in this package alongside the manifest (the "which + order").
  */
+import type { CapabilityGraph } from "@voyant-travel/hono/composition"
+
 export interface FrameworkManifest {
   modules: readonly string[]
   extensions: readonly string[]
@@ -78,3 +80,27 @@ export const FRAMEWORK_RUNTIME_MANIFEST = {
     "operator/catalog-checkout-extension",
   ],
 } as const satisfies FrameworkManifest
+
+/**
+ * The standard set's capability dependency graph (ADR-0007). It declares which
+ * standard modules `provide` a capability token and which `require` one, so that
+ * subsetting the standard set (`createVoyantApp({ exclude })`) can be validated:
+ * dropping a module whose capability is still required — and not satisfied by an
+ * injected substitute (`provideCapabilities`) — becomes a boot error naming the
+ * orphaned consumers, instead of a runtime 500.
+ *
+ * Phase 1 declares the single port the coupling map proved real:
+ * `people-directory` — person/organization read + upsert + travel-snapshot,
+ * provided by `@voyant-travel/relationships` and consumed by bookings (billing /
+ * traveler resolution), legal (contract-party hydration), and storefront
+ * (customer-portal lookups). Deep CRM features (activities, segments, merges,
+ * custom fields) have no cross-module consumers and carry no token — they leave
+ * with the module. New ports (e.g. a separate `crm-intake` write surface) are
+ * added here as consumers are narrowed onto them.
+ */
+export const FRAMEWORK_CAPABILITY_GRAPH = {
+  "@voyant-travel/relationships": { provides: ["people-directory"] },
+  "@voyant-travel/bookings": { requires: ["people-directory"] },
+  "@voyant-travel/legal": { requires: ["people-directory"] },
+  "@voyant-travel/storefront": { requires: ["people-directory"] },
+} as const satisfies CapabilityGraph

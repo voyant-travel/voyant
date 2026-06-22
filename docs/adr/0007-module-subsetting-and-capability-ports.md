@@ -2,7 +2,7 @@
 
 - **Status:** Proposed (2026-06-22)
 - **Relates to:** [consolidated-deployments-rfc](../architecture/consolidated-deployments-rfc.md) (Workstream B / D.1), [ADR-0006](./0006-live-availability-search-contract.md) (capability-gated adapters as precedent), [custom-modules](../architecture/custom-modules.md)
-- **Implemented by:** _(unstarted — this ADR is the design)_
+- **Implemented by:** Phase 1 runtime mechanism (this PR) — `createVoyantApp({ exclude, provideCapabilities })`, `FRAMEWORK_CAPABILITY_GRAPH`, and the pure `findCapabilityGaps` / `subsetStandardManifest` validators. Schema-side exclusion and the `PeopleDirectory` port extraction (Phases 1-schema → 4) are follow-ups.
 
 ## Context
 
