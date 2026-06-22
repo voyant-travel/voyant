@@ -32,7 +32,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@voyant-travel/hono": "^0.114.0"
+    "@voyant-travel/hono": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/hono": "workspace:^",
