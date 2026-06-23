@@ -268,8 +268,16 @@ const createLeadRoute = createRoute({
       description: "The captured storefront lead/inquiry signal",
       content: { "application/json": { schema: storefrontLeadIntakeEnvelopeSchema } },
     },
+    400: {
+      description: "Rejected by intake guard (invalid request)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
     403: {
       description: "Rejected by the deployment intake guard (e.g. spam/abuse)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    429: {
+      description: "Rejected by intake guard (rate limited)",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -289,8 +297,16 @@ const subscribeNewsletterRoute = createRoute({
       description: "The captured newsletter subscription signal",
       content: { "application/json": { schema: storefrontNewsletterSubscribeEnvelopeSchema } },
     },
+    400: {
+      description: "Rejected by intake guard (invalid request)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
     403: {
       description: "Rejected by the deployment intake guard (e.g. spam/abuse)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    429: {
+      description: "Rejected by intake guard (rate limited)",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -387,8 +403,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       const body = c.req.valid("json")
       const rejected = await runIntakeGuard({ kind: "lead", body, context })
       // The intake guard is a deployment-injected hook; its rejection status is
-      // dynamic (defaulting to 403, the documented rejection status here).
-      if (rejected) return c.json({ error: rejected.error }, rejected.status as 403)
+      // dynamic (400/403/429, all declared in this route's responses, with 403
+      // as the default).
+      if (rejected) return c.json({ error: rejected.error }, rejected.status)
 
       return c.json(
         {
@@ -404,7 +421,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       const context = getRequestContext(c)
       const body = c.req.valid("json")
       const rejected = await runIntakeGuard({ kind: "newsletter", body, context })
-      if (rejected) return c.json({ error: rejected.error }, rejected.status as 403)
+      if (rejected) return c.json({ error: rejected.error }, rejected.status)
 
       return c.json(
         {

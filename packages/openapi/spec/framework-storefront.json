@@ -10856,8 +10856,44 @@
               }
             }
           },
+          "400": {
+            "description": "Rejected by intake guard (invalid request)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
           "403": {
             "description": "Rejected by the deployment intake guard (e.g. spam/abuse)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected by intake guard (rate limited)",
             "content": {
               "application/json": {
                 "schema": {
@@ -11076,8 +11112,44 @@
               }
             }
           },
+          "400": {
+            "description": "Rejected by intake guard (invalid request)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
           "403": {
             "description": "Rejected by the deployment intake guard (e.g. spam/abuse)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected by intake guard (rate limited)",
             "content": {
               "application/json": {
                 "schema": {
