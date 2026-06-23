@@ -1,9 +1,9 @@
-import { parseQuery } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook, parseQuery } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
-import { z } from "zod"
 
 import {
   productDocKey,
@@ -82,14 +82,45 @@ const clampedCategoryListQuerySchema = publicCatalogCategoryListQuerySchema.exte
 })
 
 const clampedTagListQuerySchema = publicCatalogTagListQuerySchema.extend({
-  limit: clampedLimitParam(PUBLIC_LIST_MAX_LIMIT, PUBLIC_LIST_MAX_LIMIT),
+  // `.catch()`/`.transform()` (clamping) can't be introspected by
+  // zod-to-openapi, so pin the documented param type explicitly (voyant#2114).
+  limit: clampedLimitParam(PUBLIC_LIST_MAX_LIMIT, PUBLIC_LIST_MAX_LIMIT).openapi({
+    type: "integer",
+    example: PUBLIC_LIST_MAX_LIMIT,
+  }),
 })
 
 const clampedDestinationListQuerySchema = publicCatalogDestinationListQuerySchema.extend({
   limit: clampedLimitParam(PUBLIC_LIST_MAX_LIMIT, PUBLIC_LIST_MAX_LIMIT),
 })
 
-export const publicProductRoutes = new Hono<Env>()
+/** Wire shape of a public catalog tag (voyant#2114). */
+export const publicCatalogTagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+})
+
+const listTagsRoute = createRoute({
+  method: "get",
+  path: "/tags",
+  request: { query: clampedTagListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of public catalog tags",
+      content: { "application/json": { schema: listResponseSchema(publicCatalogTagSchema) } },
+    },
+  },
+})
+
+// `.openapi()` is declared first: `OpenAPIHono#get` returns the base `Hono`
+// type (honojs/middleware#637), so it cannot precede an `.openapi()` in the
+// chain; it stays ahead of the `/:id` catch-all so `/tags` still matches first.
+export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listTagsRoute, async (c) => {
+    const result = await publicProductsService.listCatalogTags(c.get("db"), c.req.valid("query"))
+    setPublicCacheHeaders(c)
+    return c.json(result, 200)
+  })
   .get("/", async (c) => {
     const query = await parseQuery(c, trimmedProductListQuerySchema)
     const result = await publicProductsService.listCatalogProducts(c.get("db"), query)
@@ -140,12 +171,6 @@ export const publicProductRoutes = new Hono<Env>()
   .get("/categories", async (c) => {
     const query = await parseQuery(c, clampedCategoryListQuerySchema)
     const result = await publicProductsService.listCatalogCategories(c.get("db"), query)
-    setPublicCacheHeaders(c)
-    return c.json(result)
-  })
-  .get("/tags", async (c) => {
-    const query = await parseQuery(c, clampedTagListQuerySchema)
-    const result = await publicProductsService.listCatalogTags(c.get("db"), query)
     setPublicCacheHeaders(c)
     return c.json(result)
   })
