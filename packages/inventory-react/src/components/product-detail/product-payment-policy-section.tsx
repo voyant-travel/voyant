@@ -1,6 +1,6 @@
 "use client"
 
-import type { PaymentPolicy } from "@voyant-travel/finance"
+import type { PaymentPolicy } from "@voyant-travel/finance/payment-policy"
 import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyant-travel/finance-react/ui"
 import { Badge, Button, Label, Switch } from "@voyant-travel/ui/components"
 import { Separator } from "@voyant-travel/ui/components/separator"

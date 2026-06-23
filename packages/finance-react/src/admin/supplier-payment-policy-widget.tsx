@@ -2,7 +2,7 @@
 
 import type { SupplierCustomerPaymentPolicy } from "@voyant-travel/distribution-react/suppliers"
 import type { SupplierDetailHostSlotContext } from "@voyant-travel/distribution-react/suppliers/admin"
-import type { PaymentPolicy } from "@voyant-travel/finance"
+import type { PaymentPolicy } from "@voyant-travel/finance/payment-policy"
 import {
   Button,
   Card,

@@ -1,4 +1,4 @@
-import { safeCaptureException } from "@voyant-travel/hono/observability"
+import { safeCaptureException } from "@voyant-travel/hono/observability/reporter"
 import { describe, expect, it, vi } from "vitest"
 import { type SentryCaptureContext, type SentryLike, sentryReporter } from "../src/index.js"
 

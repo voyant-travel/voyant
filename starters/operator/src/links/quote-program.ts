@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { programLinkable } from "@voyant-travel/mice"
-import { quoteLinkable } from "@voyant-travel/quotes"
+import { programLinkable } from "@voyant-travel/mice/linkables"
+import { quoteLinkable } from "@voyant-travel/quotes/linkables"
 
 /**
  * A MICE program proposal is a quote (the deal primitive); accepting it drives

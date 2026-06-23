@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { programLinkable } from "@voyant-travel/mice"
-import { spaceBlockLinkable } from "@voyant-travel/operations"
+import { programLinkable } from "@voyant-travel/mice/linkables"
+import { spaceBlockLinkable } from "@voyant-travel/operations/places/linkables"
 
 /**
  * A MICE program holds many space blocks (held function-space inventory);

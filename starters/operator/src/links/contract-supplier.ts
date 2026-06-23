@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { supplierLinkable } from "@voyant-travel/distribution"
-import { contractLinkable } from "@voyant-travel/legal"
+import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
+import { contractLinkable } from "@voyant-travel/legal/linkables"
 
 /**
  * A supplier can hold many contracts (supplier agreements, addenda); each

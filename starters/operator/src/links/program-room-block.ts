@@ -1,6 +1,6 @@
-import { roomBlockLinkable } from "@voyant-travel/accommodations"
+import { roomBlockLinkable } from "@voyant-travel/accommodations/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { programLinkable } from "@voyant-travel/mice"
+import { programLinkable } from "@voyant-travel/mice/linkables"
 
 /**
  * A MICE program holds many room blocks; each block belongs to at most one

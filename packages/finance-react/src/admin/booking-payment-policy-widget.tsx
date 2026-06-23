@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { bookingsQueryKeys, useBookingActivity } from "@voyant-travel/bookings-react"
 import type { BookingDetailHostSlotContext } from "@voyant-travel/bookings-react/admin"
-import type { PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance"
+import type { PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance/payment-policy"
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,

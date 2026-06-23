@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { type BookingDraftV1, bookingDraftV1 } from "@voyant-travel/catalog/booking-engine"
+import {
+  type BookingDraftV1,
+  bookingDraftV1,
+} from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
 import type { CruiseContent } from "@voyant-travel/cruises/content-shape"
 import { Badge } from "@voyant-travel/ui/components/badge"

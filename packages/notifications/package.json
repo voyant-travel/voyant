@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./types": "./src/types.ts",
+    "./template-authoring": "./src/template-authoring.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./service": "./src/service.ts",
@@ -66,6 +67,11 @@
         "types": "./dist/types.d.ts",
         "import": "./dist/types.js",
         "default": "./dist/types.js"
+      },
+      "./template-authoring": {
+        "types": "./dist/template-authoring.d.ts",
+        "import": "./dist/template-authoring.js",
+        "default": "./dist/template-authoring.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",

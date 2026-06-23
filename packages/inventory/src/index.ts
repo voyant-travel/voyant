@@ -1,6 +1,7 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { productsCompatibilityLinkable } from "./linkables.js"
 import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"
 
@@ -14,6 +15,7 @@ export {
   PRODUCT_CONTENT_CHANGED_EVENT,
   type ProductContentChangedEvent,
 } from "./events.js"
+export { productLinkable } from "./linkables.js"
 export type { ProductRoutes } from "./routes.js"
 export type { PublicProductRoutes } from "./routes-public.js"
 export { publicProductRoutes } from "./routes-public.js"
@@ -21,18 +23,9 @@ export { productsService } from "./service.js"
 export { catalogProductsService } from "./service-catalog.js"
 export { publicProductsService } from "./service-public.js"
 
-export const productLinkable: LinkableDefinition = {
-  module: "products",
-  entity: "product",
-  table: "products",
-  idPrefix: "prod",
-}
-
 export const productsModule: Module = {
   name: "products",
-  linkable: {
-    product: productLinkable,
-  },
+  linkable: productsCompatibilityLinkable,
 }
 
 export const productsHonoModule: HonoModule = {
@@ -48,10 +41,12 @@ export {
   inventoryBookingExtension,
   inventoryHonoModule,
   inventoryInterfaceDescriptor,
+  inventoryLinkable,
   inventoryModule,
   inventoryProductCompatibilityLinkable,
   inventoryProductLinkable,
   inventoryProductRoutes,
+  productsCompatibilityLinkable,
   publicInventoryProductRoutes,
 } from "./interface.js"
 export type {

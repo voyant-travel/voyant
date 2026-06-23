@@ -15,7 +15,7 @@ import {
   type PromotionalOfferScopeKind,
   promotionalOfferConditionsSchema,
   promotionalOfferScopeSchema,
-} from "@voyant-travel/commerce"
+} from "@voyant-travel/commerce/promotions/validation"
 import {
   defaultFetcher,
   useVoyantReactContext,
@@ -47,7 +47,7 @@ export {
   type PromotionalOfferScopeKind,
   promotionalOfferConditionsSchema,
   promotionalOfferScopeSchema,
-} from "@voyant-travel/commerce"
+} from "@voyant-travel/commerce/promotions/validation"
 
 const promotionalOfferRecordSchema = z.object({
   id: z.string(),

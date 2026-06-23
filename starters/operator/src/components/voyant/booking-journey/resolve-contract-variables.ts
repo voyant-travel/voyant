@@ -42,7 +42,10 @@
 
 import type { BookingEntitySummary } from "@voyant-travel/bookings-react/journey"
 import type { BookingDraftV1, PricingBreakdownV1 } from "@voyant-travel/catalog/booking-engine"
-import type { ComputedScheduleEntry, PaymentPolicySource } from "@voyant-travel/finance"
+import type {
+  ComputedScheduleEntry,
+  PaymentPolicySource,
+} from "@voyant-travel/finance/payment-policy"
 
 export interface OperatorInfoVariables {
   /** Trading name shown to customers. */

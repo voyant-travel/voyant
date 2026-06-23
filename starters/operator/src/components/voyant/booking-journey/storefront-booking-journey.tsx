@@ -28,7 +28,7 @@ import {
   noDepositPolicy,
   type PaymentPolicy,
   type PaymentPolicySource,
-} from "@voyant-travel/finance"
+} from "@voyant-travel/finance/payment-policy"
 
 import { getApiUrl } from "@/lib/env"
 import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"

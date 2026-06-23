@@ -1,5 +1,5 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { Hono } from "hono"
 
@@ -11,6 +11,7 @@ import {
   FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./checkout-routes.js"
 import { createInvoiceFxRoutes } from "./invoice-fx.js"
+import { financeLinkable } from "./linkables.js"
 import {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -98,6 +99,13 @@ export {
   previewCheckoutCollectionSchema,
 } from "./checkout-validation.js"
 export {
+  creditNoteLinkable,
+  financeLinkable,
+  invoiceLinkable,
+  invoiceTemplateLinkable,
+  supplierInvoiceLinkable,
+} from "./linkables.js"
+export {
   type BookingCheckoutUrlSettings,
   type BuildBookingCheckoutUrlOptions,
   type BuildPaymentLinkUrlOptions,
@@ -116,41 +124,6 @@ export {
   supplierInvoiceRoutes,
 } from "./routes-supplier-invoices.js"
 export { type PublicFinanceRuntimeOptions, publicFinanceService } from "./service-public.js"
-
-export const invoiceLinkable: LinkableDefinition = {
-  module: "finance",
-  entity: "invoice",
-  table: "invoices",
-  idPrefix: "inv",
-}
-
-export const invoiceTemplateLinkable: LinkableDefinition = {
-  module: "finance",
-  entity: "invoiceTemplate",
-  table: "invoice_templates",
-  idPrefix: "invt",
-}
-
-export const creditNoteLinkable: LinkableDefinition = {
-  module: "finance",
-  entity: "creditNote",
-  table: "credit_notes",
-  idPrefix: "crn",
-}
-
-export const supplierInvoiceLinkable: LinkableDefinition = {
-  module: "finance",
-  entity: "supplierInvoice",
-  table: "supplier_invoices",
-  idPrefix: "sinv",
-}
-
-export const financeLinkable = {
-  invoice: invoiceLinkable,
-  invoiceTemplate: invoiceTemplateLinkable,
-  creditNote: creditNoteLinkable,
-  supplierInvoice: supplierInvoiceLinkable,
-}
 
 export const financeModule: Module = {
   name: "finance",

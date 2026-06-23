@@ -1,4 +1,4 @@
-import { consoleReporter, safeCaptureException } from "@voyant-travel/hono/observability"
+import { consoleReporter, safeCaptureException } from "@voyant-travel/hono/observability/reporter"
 
 /** Logical app name stamped on emitted error events (RFC voyant#1553). */
 export const OPERATOR_APP_NAME = "operator"

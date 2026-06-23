@@ -5,7 +5,7 @@ import {
   computePaymentSchedule,
   noDepositPolicy,
   type PaymentPolicy,
-} from "@voyant-travel/finance"
+} from "@voyant-travel/finance/payment-policy"
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,

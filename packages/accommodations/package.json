@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
+    "./linkables": "./src/linkables.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -60,6 +61,11 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
         "default": "./dist/schema.js"
+      },
+      "./linkables": {
+        "types": "./dist/linkables.d.ts",
+        "import": "./dist/linkables.js",
+        "default": "./dist/linkables.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",

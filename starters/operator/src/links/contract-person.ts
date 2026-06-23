@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { contractLinkable } from "@voyant-travel/legal"
-import { personLinkable } from "@voyant-travel/relationships"
+import { contractLinkable } from "@voyant-travel/legal/linkables"
+import { personLinkable } from "@voyant-travel/relationships/linkables"
 
 /**
  * A person (customer) can hold many contracts; each contract names at most one

@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { sessionLinkable } from "@voyant-travel/mice"
-import { functionSpaceLinkable } from "@voyant-travel/operations"
+import { sessionLinkable } from "@voyant-travel/mice/linkables"
+import { functionSpaceLinkable } from "@voyant-travel/operations/places/linkables"
 
 /**
  * A MICE agenda session is held in one function space; a space hosts many

@@ -1,6 +1,7 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { accommodationsLinkable } from "./linkables.js"
 import { roomBlockAdminRoutes } from "./routes-room-blocks.js"
 
 /**
@@ -8,16 +9,7 @@ import { roomBlockAdminRoutes } from "./routes-room-blocks.js"
  * standard, package-owned allotment primitive that any deployment can use
  * (the MICE spine merely links to it). See RFC voyant#1489.
  */
-export const roomBlockLinkable: LinkableDefinition = {
-  module: "accommodations",
-  entity: "roomBlock",
-  table: "room_blocks",
-  idPrefix: "hrbl",
-}
-
-export const accommodationsLinkable = {
-  roomBlock: roomBlockLinkable,
-}
+export { accommodationsLinkable, roomBlockLinkable } from "./linkables.js"
 
 export const accommodationsModule: Module = {
   name: "accommodations",

@@ -13,6 +13,7 @@
     "./public-document-delivery": "./src/public-document-delivery.ts",
     "./types": "./src/types.ts",
     "./observability": "./src/observability/index.ts",
+    "./observability/reporter": "./src/observability/reporter.ts",
     "./middleware": "./src/middleware/index.ts",
     "./middleware/auth": "./src/middleware/auth.ts",
     "./middleware/body-size": "./src/middleware/body-size.ts",
@@ -104,6 +105,11 @@
         "types": "./dist/observability/index.d.ts",
         "import": "./dist/observability/index.js",
         "default": "./dist/observability/index.js"
+      },
+      "./observability/reporter": {
+        "types": "./dist/observability/reporter.d.ts",
+        "import": "./dist/observability/reporter.js",
+        "default": "./dist/observability/reporter.js"
       },
       "./middleware": {
         "types": "./dist/middleware/index.d.ts",

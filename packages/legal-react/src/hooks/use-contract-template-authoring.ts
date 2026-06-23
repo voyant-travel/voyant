@@ -1,7 +1,7 @@
 import {
   contractTemplateLiquidSnippets,
   contractTemplateVariableCatalog,
-} from "@voyant-travel/legal/contracts"
+} from "@voyant-travel/legal/contracts/template-authoring"
 
 export function useLegalContractTemplateAuthoring() {
   return {

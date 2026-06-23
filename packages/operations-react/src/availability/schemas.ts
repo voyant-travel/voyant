@@ -12,7 +12,7 @@ import {
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
   upsertResourceTemplateSchema,
-} from "@voyant-travel/operations"
+} from "@voyant-travel/operations/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 

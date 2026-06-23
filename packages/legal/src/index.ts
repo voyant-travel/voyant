@@ -3,7 +3,6 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-import { contractsLinkable } from "./contracts/index.js"
 import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -17,16 +16,11 @@ import {
   type AutoGenerateContractOptions,
   autoGenerateContractForBooking,
 } from "./contracts/service-auto-generate.js"
-import { policiesLinkable } from "./policies/index.js"
+import { legalLinkable } from "./linkables.js"
 import { policiesAdminRoutes, policiesPublicRoutes } from "./policies/routes.js"
-import { legalTermsLinkable } from "./terms/index.js"
 import { legalTermsAdminRoutes, legalTermsPublicRoutes } from "./terms/routes.js"
 
-export const legalLinkable = {
-  ...contractsLinkable,
-  ...policiesLinkable,
-  ...legalTermsLinkable,
-}
+export { legalLinkable } from "./linkables.js"
 
 export const legalModule: Module = {
   name: "legal",
