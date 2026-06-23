@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.7.6
+
+### Patch Changes
+
+- 6a8e6bc: Expose standard finance checkout policy and notifications auto-dispatch policy as optional framework provider fields.
+
 ## 0.7.5
 
 ### Patch Changes
