@@ -11,10 +11,7 @@
 // To eject a route, remove it here (and from the maps below) and add a
 // hand-written route file — the generator skips files without this header.
 import { createRoute } from "@tanstack/react-router"
-import {
-  adminExtensionChildRoutes,
-  adminExtensionRouteOptions,
-} from "@voyant-travel/admin-app/extension-routes"
+import { adminExtensionChildRoutes, adminExtensionRouteOptions } from "@voyant-travel/admin-app"
 import {
   bookingDetailSearchSchema,
   bookingJourneySearchSchema,
@@ -56,24 +53,6 @@ export const ActionLedgerIndexRoute = createRoute({
   getParentRoute: workspace,
   path: "/action-ledger",
   ...adminExtensionRouteOptions(actionLedgerExtension, "action-ledger-index", runtime),
-})
-
-// ---------------------------------------------------------------------------
-// quotes
-// ---------------------------------------------------------------------------
-
-const quotesExtension = extension("quotes")
-
-export const QuotesIndexRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/quotes",
-  ...adminExtensionRouteOptions(quotesExtension, "quotes-index", runtime),
-})
-
-export const QuotesDetailRoute = createRoute({
-  getParentRoute: workspace,
-  path: "/quotes/$id",
-  ...adminExtensionRouteOptions(quotesExtension, "quotes-detail", runtime),
 })
 
 // ---------------------------------------------------------------------------
@@ -505,6 +484,24 @@ export const LegalNumberSeriesRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// mice
+// ---------------------------------------------------------------------------
+
+const miceExtension = extension("mice")
+
+export const MiceProgramsIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/mice",
+  ...adminExtensionRouteOptions(miceExtension, "mice-programs-index", runtime),
+})
+
+export const MiceProgramsDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/mice/$id",
+  ...adminExtensionRouteOptions(miceExtension, "mice-programs-detail", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // notifications
 // ---------------------------------------------------------------------------
 
@@ -633,6 +630,24 @@ export const ResourcesAllocationDetailRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
+// quotes
+// ---------------------------------------------------------------------------
+
+const quotesExtension = extension("quotes")
+
+export const QuotesIndexRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/quotes",
+  ...adminExtensionRouteOptions(quotesExtension, "quotes-index", runtime),
+})
+
+export const QuotesDetailRoute = createRoute({
+  getParentRoute: workspace,
+  path: "/quotes/$id",
+  ...adminExtensionRouteOptions(quotesExtension, "quotes-detail", runtime),
+})
+
+// ---------------------------------------------------------------------------
 // relationships
 // ---------------------------------------------------------------------------
 
@@ -694,8 +709,6 @@ export const TripsDetailRoute = createRoute({
 
 export const adminExtensionRoutes = [
   ActionLedgerIndexRoute,
-  QuotesIndexRoute,
-  QuotesDetailRoute,
   BookingsIndexRoute,
   BookingsDetailRoute,
   BookingsNewRoute,
@@ -741,6 +754,8 @@ export const adminExtensionRoutes = [
   LegalPoliciesIndexRoute,
   LegalPoliciesDetailRoute,
   LegalNumberSeriesRoute,
+  MiceProgramsIndexRoute,
+  MiceProgramsDetailRoute,
   NotificationsIndexRoute,
   NotificationsTemplatesIndexRoute,
   NotificationsTemplatesDetailRoute,
@@ -759,6 +774,8 @@ export const adminExtensionRoutes = [
   ResourcesPoolDetailRoute,
   ResourcesAssignmentDetailRoute,
   ResourcesAllocationDetailRoute,
+  QuotesIndexRoute,
+  QuotesDetailRoute,
   RelationshipsPeopleIndexRoute,
   RelationshipsPeopleDetailRoute,
   RelationshipsOrganizationsIndexRoute,
@@ -769,8 +786,6 @@ export const adminExtensionRoutes = [
 
 export interface AdminExtensionRoutesByFullPath {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/quotes": typeof QuotesIndexRoute
-  "/quotes/$id": typeof QuotesDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -826,6 +841,8 @@ export interface AdminExtensionRoutesByFullPath {
   "/legal/policies": typeof LegalPoliciesIndexRoute
   "/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/legal/number-series": typeof LegalNumberSeriesRoute
+  "/mice": typeof MiceProgramsIndexRoute
+  "/mice/$id": typeof MiceProgramsDetailRoute
   "/notifications": typeof NotificationsIndexRoute
   "/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
@@ -844,6 +861,8 @@ export interface AdminExtensionRoutesByFullPath {
   "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/quotes": typeof QuotesIndexRoute
+  "/quotes/$id": typeof QuotesDetailRoute
   "/people": typeof RelationshipsPeopleIndexRoute
   "/people/$id": typeof RelationshipsPeopleDetailRoute
   "/organizations": typeof RelationshipsOrganizationsIndexRoute
@@ -854,8 +873,6 @@ export interface AdminExtensionRoutesByFullPath {
 
 export interface AdminExtensionRoutesByTo {
   "/action-ledger": typeof ActionLedgerIndexRoute
-  "/quotes": typeof QuotesIndexRoute
-  "/quotes/$id": typeof QuotesDetailRoute
   "/bookings": typeof BookingsIndexRoute
   "/bookings/$id": typeof BookingsDetailRoute
   "/bookings/new": typeof BookingsNewRoute
@@ -910,6 +927,8 @@ export interface AdminExtensionRoutesByTo {
   "/legal/policies": typeof LegalPoliciesIndexRoute
   "/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/legal/number-series": typeof LegalNumberSeriesRoute
+  "/mice": typeof MiceProgramsIndexRoute
+  "/mice/$id": typeof MiceProgramsDetailRoute
   "/notifications": typeof NotificationsIndexRoute
   "/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
@@ -928,6 +947,8 @@ export interface AdminExtensionRoutesByTo {
   "/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/quotes": typeof QuotesIndexRoute
+  "/quotes/$id": typeof QuotesDetailRoute
   "/people": typeof RelationshipsPeopleIndexRoute
   "/people/$id": typeof RelationshipsPeopleDetailRoute
   "/organizations": typeof RelationshipsOrganizationsIndexRoute
@@ -938,8 +959,6 @@ export interface AdminExtensionRoutesByTo {
 
 export interface AdminExtensionRoutesById {
   "/_workspace/action-ledger": typeof ActionLedgerIndexRoute
-  "/_workspace/quotes": typeof QuotesIndexRoute
-  "/_workspace/quotes/$id": typeof QuotesDetailRoute
   "/_workspace/bookings": typeof BookingsIndexRoute
   "/_workspace/bookings/$id": typeof BookingsDetailRoute
   "/_workspace/bookings/new": typeof BookingsNewRoute
@@ -995,6 +1014,8 @@ export interface AdminExtensionRoutesById {
   "/_workspace/legal/policies": typeof LegalPoliciesIndexRoute
   "/_workspace/legal/policies/$id": typeof LegalPoliciesDetailRoute
   "/_workspace/legal/number-series": typeof LegalNumberSeriesRoute
+  "/_workspace/mice": typeof MiceProgramsIndexRoute
+  "/_workspace/mice/$id": typeof MiceProgramsDetailRoute
   "/_workspace/notifications": typeof NotificationsIndexRoute
   "/_workspace/notifications/templates": typeof NotificationsTemplatesIndexRoute
   "/_workspace/notifications/templates/$id": typeof NotificationsTemplatesDetailRoute
@@ -1013,6 +1034,8 @@ export interface AdminExtensionRoutesById {
   "/_workspace/operations/resources/pools/$id": typeof ResourcesPoolDetailRoute
   "/_workspace/operations/resources/assignments/$id": typeof ResourcesAssignmentDetailRoute
   "/_workspace/operations/resources/allocations/$id": typeof ResourcesAllocationDetailRoute
+  "/_workspace/quotes": typeof QuotesIndexRoute
+  "/_workspace/quotes/$id": typeof QuotesDetailRoute
   "/_workspace/people": typeof RelationshipsPeopleIndexRoute
   "/_workspace/people/$id": typeof RelationshipsPeopleDetailRoute
   "/_workspace/organizations": typeof RelationshipsOrganizationsIndexRoute

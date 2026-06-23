@@ -48,6 +48,7 @@ export type OperatorAdminNavMessages = {
   channelSync: string
   promotions: string
   quotes: string
+  mice: string
   actionLedger: string
 }
 
@@ -101,6 +102,7 @@ export const operatorAdminNavMessages = {
       channelSync: "Channel sync",
       promotions: "Promotions",
       quotes: "Quotes",
+      mice: "Programs",
       actionLedger: "Logs",
     },
   },
@@ -153,6 +155,7 @@ export const operatorAdminNavMessages = {
       channelSync: "Sincronizare canale",
       promotions: "Promotii",
       quotes: "Oferte",
+      mice: "Programe",
       actionLedger: "Jurnal actiuni",
     },
   },

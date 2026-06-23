@@ -22,6 +22,7 @@ import type {} from "@voyant-travel/finance-react/admin"
 import type {} from "@voyant-travel/flights-react/admin"
 import type {} from "@voyant-travel/inventory-react/admin"
 import type {} from "@voyant-travel/legal-react/admin"
+import type {} from "@voyant-travel/mice-react/admin"
 import type {} from "@voyant-travel/notifications-react/admin"
 import type {} from "@voyant-travel/operations-react/admin"
 import type {} from "@voyant-travel/quotes-react/admin"
@@ -45,6 +46,8 @@ export const generatedAdminDestinations = {
   "flight.search": () => "/flights",
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
+  "mice.program.detail": ({ programId }) => `/mice/${encodeURIComponent(programId)}`,
+  "mice.program.list": () => "/mice",
   "notificationReminderRule.detail": ({ ruleId }) =>
     `/notifications/reminder-rules/${encodeURIComponent(ruleId)}`,
   "notificationReminderRule.list": () => "/notifications/reminder-rules",
