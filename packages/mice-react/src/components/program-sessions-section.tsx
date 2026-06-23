@@ -145,19 +145,23 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
     setRequiresRegistration(false)
   }
 
+  // `Number` (not `parseInt`) so "12.5"/"1e2" don't silently truncate to an
+  // accepted integer — anything non-integer or negative is rejected, not coerced.
+  const trimmedCapacity = capacity.trim()
+  const capacityNumber = trimmedCapacity === "" ? undefined : Number(trimmedCapacity)
+  const capacityInvalid =
+    capacityNumber !== undefined && (!Number.isInteger(capacityNumber) || capacityNumber < 0)
+  const canSubmit = title.trim().length > 0 && !capacityInvalid && !create.isPending
+
   const submit = async () => {
-    if (!title.trim()) return
-    const parsedCapacity = capacity.trim() === "" ? undefined : Number.parseInt(capacity, 10)
+    if (!canSubmit) return
     await create.mutateAsync({
       programId,
       title: title.trim(),
       sessionType,
       dayDate: dayDate || undefined,
       track: track.trim() || undefined,
-      capacity:
-        parsedCapacity !== undefined && Number.isFinite(parsedCapacity)
-          ? parsedCapacity
-          : undefined,
+      capacity: capacityNumber,
       requiresRegistration,
     })
     reset()
@@ -225,9 +229,16 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
                 id="session-capacity"
                 type="number"
                 min={0}
+                step={1}
                 value={capacity}
                 onChange={(e) => setCapacity(e.target.value)}
+                aria-invalid={capacityInvalid || undefined}
               />
+              {capacityInvalid ? (
+                <p className="text-destructive text-xs">
+                  Capacity must be a whole number of 0 or more.
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -243,7 +254,7 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()} disabled={!title.trim() || create.isPending}>
+          <Button onClick={() => void submit()} disabled={!canSubmit}>
             {create.isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : null}

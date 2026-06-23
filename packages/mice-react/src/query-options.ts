@@ -68,11 +68,25 @@ export function getProgramCostSheetQueryOptions(client: FetchWithValidationOptio
   })
 }
 
-export function getSessionsQueryOptions(client: FetchWithValidationOptions, programId: string) {
+// 200 is the backend's hard per-page max (`sessionListQuerySchema`). A program's
+// agenda is bounded well below that, so the surface requests the full page in one
+// shot instead of paginating — without an explicit limit the backend defaults to
+// 50 and would silently drop the rest.
+const SESSIONS_PAGE_LIMIT = 200
+
+export function getSessionsQueryOptions(
+  client: FetchWithValidationOptions,
+  programId: string,
+  limit: number = SESSIONS_PAGE_LIMIT,
+) {
   return queryOptions({
     queryKey: miceQueryKeys.sessionsList(programId),
     queryFn: () =>
-      fetchWithValidation(`${basePath}/sessions${qs({ programId })}`, sessionListResponse, client),
+      fetchWithValidation(
+        `${basePath}/sessions${qs({ programId, limit })}`,
+        sessionListResponse,
+        client,
+      ),
   })
 }
 
