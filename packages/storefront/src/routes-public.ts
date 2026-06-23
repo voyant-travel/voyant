@@ -10,7 +10,6 @@ import {
   idempotencyKey,
   openApiValidationHook,
   parseJsonBody,
-  parseQuery,
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
@@ -32,8 +31,12 @@ import {
   type StorefrontNewsletterSubscribeInput,
   storefrontBookingSessionBootstrapInputSchema,
   storefrontBookingSessionCompatBootstrapInputSchema,
+  storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
+  storefrontDepartureListResponseSchema,
   storefrontDeparturePricePreviewInputSchema,
+  storefrontDepartureSchema,
+  type storefrontExtensionPricingModeSchema,
   storefrontLeadIntakeEnvelopeSchema,
   storefrontLeadIntakeInputSchema,
   storefrontNewsletterSubscribeEnvelopeSchema,
@@ -42,10 +45,13 @@ import {
   storefrontOfferMutationResponseSchema,
   storefrontOfferRedeemInputSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
   storefrontProductExtensionsQuerySchema,
+  storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,
   storefrontPromotionalOfferListResponseSchema,
   storefrontPromotionalOfferResponseSchema,
+  storefrontSettingsSchema,
 } from "./validation.js"
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
@@ -165,6 +171,167 @@ function attachCheckoutCapability<T extends { sessionId: string }>(
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
+
+/**
+ * The departure-list and availability-summary queries coerce `limit`/`offset`
+ * from the query string (`z.coerce.number()`), and zod-to-openapi cannot
+ * introspect a coercion pipe — it would document them as `number`. Re-pin the
+ * documented param type to `integer` (voyant#2114) while keeping the existing
+ * `[1, 250]` / `>= 0` bounds intact. The annotated schema is a drop-in for the
+ * service's query type, so the handlers keep calling the same service methods.
+ */
+const departureListQueryRouteSchema = storefrontDepartureListQuerySchema.extend({
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(250)
+    .default(100)
+    .openapi({ type: "integer", example: 100 }),
+  offset: z.coerce.number().int().min(0).default(0).openapi({ type: "integer", example: 0 }),
+})
+
+const productAvailabilitySummaryQueryRouteSchema =
+  storefrontProductAvailabilitySummaryQuerySchema.extend({
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(250)
+      .default(100)
+      .openapi({ type: "integer", example: 100 }),
+    offset: z.coerce.number().int().min(0).default(0).openapi({ type: "integer", example: 0 }),
+  })
+
+const settingsRoute = createRoute({
+  method: "get",
+  path: "/settings",
+  responses: {
+    200: {
+      description: "The deployment's public storefront settings",
+      content: { "application/json": { schema: z.object({ data: storefrontSettingsSchema }) } },
+    },
+  },
+})
+
+const departureByIdRoute = createRoute({
+  method: "get",
+  path: "/departures/{departureId}",
+  request: {
+    params: z.object({ departureId: z.string() }),
+  },
+  responses: {
+    200: {
+      description: "A storefront departure (availability slot) by id",
+      content: { "application/json": { schema: z.object({ data: storefrontDepartureSchema }) } },
+    },
+    404: {
+      description: "Storefront departure not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const listProductDeparturesRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/departures",
+  request: {
+    params: z.object({ productId: z.string() }),
+    query: departureListQueryRouteSchema,
+  },
+  responses: {
+    200: {
+      description: "Departures (availability slots) for a product",
+      content: { "application/json": { schema: storefrontDepartureListResponseSchema } },
+    },
+  },
+})
+
+const productAvailabilityRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/availability",
+  request: {
+    params: z.object({ productId: z.string() }),
+    query: productAvailabilitySummaryQueryRouteSchema,
+  },
+  responses: {
+    200: {
+      description: "Availability summary (counts + per-slot states) for a product",
+      content: {
+        "application/json": { schema: storefrontProductAvailabilitySummaryResponseSchema },
+      },
+    },
+  },
+})
+
+const departureItineraryRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/departures/{departureId}/itinerary",
+  request: {
+    params: z.object({ productId: z.string(), departureId: z.string() }),
+  },
+  responses: {
+    200: {
+      description: "Day-by-day itinerary for a product departure",
+      content: {
+        "application/json": { schema: z.object({ data: storefrontDepartureItinerarySchema }) },
+      },
+    },
+    404: {
+      description: "Storefront itinerary not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const productExtensionsRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/extensions",
+  request: {
+    params: z.object({ productId: z.string() }),
+    query: storefrontProductExtensionsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Bookable extensions (extras/add-ons) for a product",
+      content: {
+        "application/json": {
+          schema: z.object({ data: storefrontProductExtensionsResponseSchema }),
+        },
+      },
+    },
+  },
+})
+
+/**
+ * Narrow a product-extension item's loosely-typed (`string`) `pricingMode` onto
+ * the `storefrontExtensionPricingModeSchema` enum that the wire contract
+ * declares (the commerce `addon_pricing_mode` domain, which includes
+ * `unavailable`). The price rules that feed the service widen the column enum to
+ * `string`, so this is a type-level coercion at the serialization boundary — a
+ * cast rather than a `.parse()`, so a valid runtime value can never turn this
+ * catalog read into a 400 (voyant#2114, §17).
+ */
+type StorefrontProductExtensions = Awaited<
+  ReturnType<ReturnType<typeof createStorefrontService>["getProductExtensions"]>
+>
+
+function narrowExtensionPricingMode<T extends { pricingMode: string }>(
+  item: T,
+): Omit<T, "pricingMode"> & { pricingMode: z.infer<typeof storefrontExtensionPricingModeSchema> } {
+  return {
+    ...item,
+    pricingMode: item.pricingMode as z.infer<typeof storefrontExtensionPricingModeSchema>,
+  }
+}
+
+function serializeProductExtensions(extensions: StorefrontProductExtensions) {
+  return {
+    ...extensions,
+    extensions: extensions.extensions.map(narrowExtensionPricingMode),
+    items: extensions.items.map(narrowExtensionPricingMode),
+  }
+}
 
 const listProductOffersRoute = createRoute({
   method: "get",
@@ -433,29 +600,69 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         202,
       )
     })
-    .get("/settings", async (c) => {
-      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
+    .openapi(settingsRoute, async (c) => {
+      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) }, 200)
     })
-    .get("/departures/:departureId", async (c) => {
+    .openapi(departureByIdRoute, async (c) => {
       const departure = await storefrontService.getDeparture(
         c.get("db" as never),
-        c.req.param("departureId"),
+        c.req.valid("param").departureId,
       )
 
       if (!departure) return c.json({ error: "Storefront departure not found" }, 404)
       setPublicCacheHeaders(c)
-      return c.json({ data: departure })
+      return c.json({ data: departure }, 200)
     })
-    .get("/products/:productId/departures", async (c) => {
-      const productId = c.req.param("productId")
-      const query = await parseQuery(c, storefrontDepartureListQuerySchema)
+    .openapi(listProductDeparturesRoute, async (c) => {
+      const { productId } = c.req.valid("param")
+      const query = c.req.valid("query")
       const result = await readThroughDepartures(
         c,
         departuresDocKey(productId, query as Record<string, unknown>),
         () => storefrontService.listProductDepartures(c.get("db" as never), productId, query),
       )
       setPublicCacheHeaders(c)
-      return c.json(result)
+      return c.json(result, 200)
+    })
+    .openapi(productAvailabilityRoute, async (c) => {
+      const { productId } = c.req.valid("param")
+      const availability = await storefrontService.getProductAvailabilitySummary(
+        c.get("db" as never),
+        productId,
+        c.req.valid("query"),
+      )
+
+      setPublicCacheHeaders(c)
+      return c.json({ data: availability }, 200)
+    })
+    .openapi(departureItineraryRoute, async (c) => {
+      const { productId, departureId } = c.req.valid("param")
+      const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
+        departureId,
+        productId,
+      })
+
+      if (!itinerary) return c.json({ error: "Storefront itinerary not found" }, 404)
+      setPublicCacheHeaders(c)
+      return c.json({ data: itinerary }, 200)
+    })
+    .openapi(productExtensionsRoute, async (c) => {
+      const { productId } = c.req.valid("param")
+      const query = c.req.valid("query")
+      const extensions = await storefrontService.getProductExtensions(
+        c.get("db" as never),
+        productId,
+        query.optionId,
+      )
+
+      setPublicCacheHeaders(c)
+      // The service types `pricingMode` as a loose `string` (its price-rule
+      // source widens the column enum); the wire contract is the
+      // `storefrontExtensionPricingModeSchema` enum (commerce `addon_pricing_mode`,
+      // including `unavailable`). Narrow at the boundary so the handler's return
+      // type unifies with the declared response (voyant#2114, §17) — the runtime
+      // values are always valid enum members.
+      return c.json({ data: serializeProductExtensions(extensions) }, 200)
     })
     .post("/departures/:departureId/price", async (c) => {
       const preview = await storefrontService.previewDeparturePrice(
@@ -694,37 +901,6 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           context: getRequestContext(c),
         }),
       })
-    })
-    .get("/products/:productId/extensions", async (c) => {
-      const query = await parseQuery(c, storefrontProductExtensionsQuerySchema)
-      const extensions = await storefrontService.getProductExtensions(
-        c.get("db" as never),
-        c.req.param("productId"),
-        query.optionId,
-      )
-
-      setPublicCacheHeaders(c)
-      return c.json({ data: extensions })
-    })
-    .get("/products/:productId/availability", async (c) => {
-      const availability = await storefrontService.getProductAvailabilitySummary(
-        c.get("db" as never),
-        c.req.param("productId"),
-        await parseQuery(c, storefrontProductAvailabilitySummaryQuerySchema),
-      )
-
-      setPublicCacheHeaders(c)
-      return c.json({ data: availability })
-    })
-    .get("/products/:productId/departures/:departureId/itinerary", async (c) => {
-      const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
-        departureId: c.req.param("departureId"),
-        productId: c.req.param("productId"),
-      })
-
-      if (!itinerary) return c.json({ error: "Storefront itinerary not found" }, 404)
-      setPublicCacheHeaders(c)
-      return c.json({ data: itinerary })
     })
 }
 

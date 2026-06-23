@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
+import type { z } from "zod"
 
+import {
+  storefrontDepartureItinerarySchema,
+  storefrontDepartureSchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductExtensionSchema,
+  storefrontProductExtensionsResponseSchema,
+} from "../../src/validation/departures.js"
 import type {
   StorefrontIntakeResponse,
   StorefrontNewsletterSubscribeResponse,
@@ -8,6 +16,7 @@ import {
   storefrontLeadIntakeEnvelopeSchema,
   storefrontNewsletterSubscribeEnvelopeSchema,
 } from "../../src/validation/intake.js"
+import { storefrontSettingsSchema } from "../../src/validation-settings.js"
 import type { StorefrontVerificationChallengeRecord } from "../../src/verification/validation.js"
 import {
   storefrontVerificationConfirmResponseSchema,
@@ -92,5 +101,185 @@ describe("storefront verification response contracts", () => {
     const schemaInput = { data: baseRecord }
     const parsed = storefrontVerificationStartResponseSchema.safeParse(schemaInput)
     expect(parsed.success).toBe(false)
+  })
+})
+
+/**
+ * Catalog read contracts (voyant#2114, Batch A). Unlike the verification routes,
+ * the departure/availability/itinerary services pre-normalize their Drizzle
+ * `Date`s to ISO strings (`normalizeIso`/`normalizeLocalDate` in
+ * `service-departures-core.ts`), and the wire schemas declare those fields as
+ * plain `z.string()`, so there is no raw-`Date` drift surface to guard here.
+ * These positive round-trips instead lock the documented read shapes against
+ * missing/renamed columns.
+ */
+describe("storefront catalog read response contracts", () => {
+  it("a departure serializes to the documented departure envelope", () => {
+    const departure: z.infer<typeof storefrontDepartureSchema> = {
+      id: "slot_123",
+      productId: "prd_123",
+      itineraryId: "itn_123",
+      optionId: null,
+      dateLocal: "2026-07-01",
+      startAt: "2026-07-01T08:00:00.000Z",
+      endAt: "2026-07-08T16:00:00.000Z",
+      timezone: "Europe/Bucharest",
+      startTime: null,
+      meetingPoint: null,
+      capacity: 20,
+      remaining: 8,
+      departureStatus: "open",
+      nights: 7,
+      days: 8,
+      ratePlans: [],
+      resourceManifest: {
+        kinds: [{ kind: "vehicle", capacity: 20, assigned: 12, available: 8 }],
+        resources: [
+          {
+            id: "res_1",
+            kind: "vehicle",
+            label: "Coach A",
+            refType: "asset",
+            refId: "ast_1",
+            capacity: 20,
+            assigned: 12,
+            available: 8,
+            parentId: null,
+            flags: { shared: true },
+          },
+        ],
+      },
+    }
+
+    const parsed = storefrontDepartureSchema.safeParse(jsonRoundTrip(departure).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("an availability summary serializes to the documented response envelope", () => {
+    const summary: z.infer<typeof storefrontProductAvailabilitySummaryResponseSchema>["data"] = {
+      productId: "prd_123",
+      availabilityState: "available",
+      counts: {
+        total: 1,
+        open: 1,
+        closed: 0,
+        soldOut: 0,
+        cancelled: 0,
+        onRequest: 0,
+        pastCutoff: 0,
+        tooEarly: 0,
+        available: 1,
+      },
+      departures: [
+        {
+          id: "slot_123",
+          productId: "prd_123",
+          optionId: null,
+          dateLocal: "2026-07-01",
+          startAt: "2026-07-01T08:00:00.000Z",
+          endAt: "2026-07-08T16:00:00.000Z",
+          timezone: "Europe/Bucharest",
+          status: "open",
+          availabilityState: "available",
+          capacity: 20,
+          remaining: 8,
+          pastCutoff: false,
+          tooEarly: false,
+        },
+      ],
+      total: 1,
+      limit: 100,
+      offset: 0,
+    }
+
+    const parsed = storefrontProductAvailabilitySummaryResponseSchema.safeParse(
+      jsonRoundTrip(summary),
+    )
+    expect(parsed.success).toBe(true)
+  })
+
+  it("an itinerary serializes to the documented itinerary envelope", () => {
+    const itinerary: z.infer<typeof storefrontDepartureItinerarySchema> = {
+      id: "slot_123",
+      itineraryId: "itn_123",
+      days: [
+        {
+          id: "day_1",
+          title: "Arrival",
+          description: null,
+          thumbnail: null,
+          segments: [{ id: "seg_1", title: "Transfer", description: null }],
+        },
+      ],
+    }
+
+    const parsed = storefrontDepartureItinerarySchema.safeParse(jsonRoundTrip(itinerary).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("product extensions serialize to the documented response envelope", () => {
+    // `pricingMode: "unavailable"` is a valid commerce addon mode (an add-on
+    // disabled for an option). It must round-trip — regression guard for the
+    // earlier narrowing that rejected it (would 400 a valid catalog read).
+    const unavailableExtension: z.infer<typeof storefrontProductExtensionSchema> = {
+      id: "ext_1",
+      name: "Airport transfer",
+      label: "Airport transfer",
+      required: false,
+      selectable: true,
+      hasOptions: false,
+      refProductId: null,
+      thumb: null,
+      pricePerPerson: null,
+      currencyCode: "EUR",
+      pricingMode: "unavailable",
+      defaultQuantity: null,
+      minQuantity: null,
+      maxQuantity: null,
+    }
+    const extensions: z.infer<typeof storefrontProductExtensionsResponseSchema> = {
+      extensions: [unavailableExtension],
+      items: [unavailableExtension],
+      details: {},
+      currencyCode: "EUR",
+    }
+
+    const parsed = storefrontProductExtensionsResponseSchema.safeParse(
+      jsonRoundTrip(extensions).data,
+    )
+    expect(parsed.success).toBe(true)
+  })
+
+  it("resolved settings serialize to the documented settings envelope", () => {
+    const settings: z.infer<typeof storefrontSettingsSchema> = {
+      branding: {
+        logoUrl: null,
+        faviconUrl: null,
+        brandMarkUrl: null,
+        primaryColor: null,
+        accentColor: null,
+        supportedLanguages: ["en"],
+      },
+      support: { email: null, phone: null, links: [] },
+      legal: {
+        termsUrl: null,
+        privacyUrl: null,
+        cancellationUrl: null,
+        defaultContractTemplateId: null,
+      },
+      localization: { defaultLocale: "en", currencyDisplay: "symbol" },
+      forms: { billing: { fields: [] }, travelers: { fields: [] } },
+      payment: {
+        defaultMethod: null,
+        methods: [],
+        structure: "full",
+        schedule: [],
+        defaultSchedule: null,
+        bankTransfer: null,
+      },
+    }
+
+    const parsed = storefrontSettingsSchema.safeParse(jsonRoundTrip(settings).data)
+    expect(parsed.success).toBe(true)
   })
 })

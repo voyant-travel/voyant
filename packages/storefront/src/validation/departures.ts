@@ -64,6 +64,31 @@ export const storefrontDepartureStartTimeSchema = z.object({
   durationMinutes: z.number().int().nullable(),
 })
 
+export const storefrontDepartureResourceManifestSchema = z.object({
+  kinds: z.array(
+    z.object({
+      kind: z.string(),
+      capacity: z.number(),
+      assigned: z.number(),
+      available: z.number(),
+    }),
+  ),
+  resources: z.array(
+    z.object({
+      id: z.string(),
+      kind: z.string(),
+      label: z.string().nullable(),
+      refType: z.string().nullable(),
+      refId: z.string().nullable(),
+      capacity: z.number(),
+      assigned: z.number(),
+      available: z.number(),
+      parentId: z.string().nullable(),
+      flags: z.record(z.string(), z.unknown()),
+    }),
+  ),
+})
+
 export const storefrontDepartureSchema = z.object({
   id: z.string(),
   productId: z.string(),
@@ -81,6 +106,10 @@ export const storefrontDepartureSchema = z.object({
   nights: z.number().int().nullable(),
   days: z.number().int().nullable(),
   ratePlans: z.array(storefrontDepartureRatePlanSchema),
+  // Always present on a built departure (`buildResourceManifest`); `null` when
+  // the departure tracks no resources. Feeds both the departure-by-id and the
+  // product departures list responses.
+  resourceManifest: storefrontDepartureResourceManifestSchema.nullable(),
 })
 
 export const storefrontDepartureListQuerySchema = z.object({
@@ -465,6 +494,20 @@ export const storefrontProductExtensionDetailSchema = z.object({
   media: z.array(storefrontProductExtensionMediaSchema),
 })
 
+// A product extension's `pricingMode` is sourced from commerce option price
+// rules, whose domain is the `addon_pricing_mode` enum — which can disable an
+// add-on for an option via `unavailable` (NOT a value in the bookings-extras
+// `extraPricingModeSchema`). Mirrored locally rather than imported from the
+// commerce barrel to keep the storefront wire layer decoupled (same pattern as
+// products' inlined service-type enum).
+export const storefrontExtensionPricingModeSchema = z.enum([
+  "included",
+  "per_person",
+  "per_booking",
+  "on_request",
+  "unavailable",
+])
+
 export const storefrontProductExtensionSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -476,8 +519,7 @@ export const storefrontProductExtensionSchema = z.object({
   thumb: z.string().nullable(),
   pricePerPerson: z.number().nullable(),
   currencyCode: z.string(),
-  // `z.lazy(() => …)` for cross-package init-cycle protection — see #501.
-  pricingMode: z.lazy(() => extraPricingModeSchema),
+  pricingMode: storefrontExtensionPricingModeSchema,
   defaultQuantity: z.number().int().nullable(),
   minQuantity: z.number().int().nullable(),
   maxQuantity: z.number().int().nullable(),
