@@ -603,9 +603,10 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           return createDefaultBookingDocumentAttachment(document)
         },
         resolveDb: capabilities.resolveDb,
-        autoConfirmAndDispatch: capabilities.notificationsAutoConfirmAndDispatch ?? {
+        autoConfirmAndDispatch: {
           enabled: true,
           templateSlug: "booking-confirmation",
+          ...capabilities.notificationsAutoConfirmAndDispatch,
         },
       }),
     "@voyant-travel/legal": ({ capabilities }) =>

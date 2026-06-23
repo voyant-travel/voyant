@@ -77,6 +77,27 @@ describe("frameworkComposition policy injection", () => {
     )
   })
 
+  it("merges partial notifications auto-dispatch policy with the standard default", () => {
+    frameworkComposition.modules["@voyant-travel/notifications"]?.(
+      compositionContext({
+        notificationsAutoConfirmAndDispatch: {
+          templateSlug: "custom-booking-confirmation",
+          documentTypes: ["contract"],
+        },
+      }),
+    )
+
+    expect(mocks.createNotificationsHonoModule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoConfirmAndDispatch: {
+          enabled: true,
+          templateSlug: "custom-booking-confirmation",
+          documentTypes: ["contract"],
+        },
+      }),
+    )
+  })
+
   it("keeps the standard notifications auto-dispatch default", () => {
     frameworkComposition.modules["@voyant-travel/notifications"]?.(compositionContext())
 
