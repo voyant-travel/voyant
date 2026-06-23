@@ -1,5 +1,36 @@
 # @voyant-travel/commerce
 
+## 0.19.0
+
+### Minor Changes
+
+- 7c5ee80: Modules can own their OpenAPI contract (voyant#2114).
+
+  The composed app root is now an `OpenAPIHono`, so routes authored with
+  `@hono/zod-openapi`'s `createRoute(...).openapi(...)` contribute to a generated
+  OpenAPI document at their real composed path. A new
+  `@voyant-travel/hono/openapi` entrypoint exposes `generateOpenApiDocument` +
+  `selectSurface` for build-time generation (kept off the package barrel so the
+  doc generator stays out of the Worker runtime bundle). Existing plain routes are
+  unaffected.
+
+  The `commerce` markets list route is the first to declare its contract this way,
+  using `listResponseSchema(...)` from `@voyant-travel/types` for its response
+  envelope.
+
+### Patch Changes
+
+- Updated dependencies [7c5ee80]
+  - @voyant-travel/hono@0.117.0
+  - @voyant-travel/bookings@0.137.0
+  - @voyant-travel/catalog@0.135.0
+  - @voyant-travel/distribution@0.127.0
+  - @voyant-travel/finance@0.137.0
+  - @voyant-travel/legal@0.137.0
+  - @voyant-travel/quotes@0.123.5
+  - @voyant-travel/workflow-runs@0.111.9
+  - @voyant-travel/workflows@0.111.9
+
 ## 0.18.1
 
 ### Patch Changes
