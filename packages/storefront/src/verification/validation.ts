@@ -63,6 +63,44 @@ export const storefrontVerificationConfirmResultSchema =
     status: z.literal("verified"),
   })
 
+/**
+ * Wire shape of a challenge record as it crosses the JSON boundary
+ * (voyant#2114, Batch C). The runtime record carries `Date` instances
+ * (`expiresAt`/`verifiedAt`/`createdAt`/`updatedAt`); `c.json(...)` serializes
+ * those to ISO strings, so the documented response must declare strings — not
+ * `z.date()` — to be an honest contract. The contract test round-trips a real
+ * record through `JSON.parse(JSON.stringify(...))` to keep these in step.
+ */
+export const storefrontVerificationChallengeRecordWireSchema = z.object({
+  id: z.string(),
+  channel: storefrontVerificationChannelSchema,
+  destination: z.string(),
+  purpose: z.string(),
+  status: storefrontVerificationStatusSchema,
+  expiresAt: z.string().datetime(),
+  verifiedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+})
+
+/** `{ data }` envelope for the start routes (POST email/sms start). */
+export const storefrontVerificationStartResponseSchema = z.object({
+  data: storefrontVerificationChallengeRecordWireSchema,
+})
+
+/** `{ data }` envelope for the confirm routes; status is always `verified`. */
+export const storefrontVerificationConfirmResponseSchema = z.object({
+  data: storefrontVerificationChallengeRecordWireSchema.extend({
+    status: z.literal("verified"),
+  }),
+})
+
+/** Error envelope shared by the verification non-2xx responses. */
+export const storefrontVerificationErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.string().optional(),
+})
+
 export type StorefrontVerificationChannel = z.infer<typeof storefrontVerificationChannelSchema>
 export type StorefrontVerificationStatus = z.infer<typeof storefrontVerificationStatusSchema>
 export type StartEmailVerificationChallengeInput = z.infer<

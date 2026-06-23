@@ -81,6 +81,20 @@ export const storefrontNewsletterSubscribeResponseSchema = storefrontIntakeRespo
   doubleOptIn: z.enum(["not_configured", "requested"]),
 })
 
+/**
+ * Wire envelopes for the intake routes (voyant#2114, Batch C). The handlers
+ * answer `c.json({ data })`, so the documented response is the `{ data }`-wrapped
+ * intake/newsletter shape. No `Date` fields here, so the wire shape matches the
+ * record schema verbatim.
+ */
+export const storefrontLeadIntakeEnvelopeSchema = z.object({
+  data: storefrontIntakeResponseSchema,
+})
+
+export const storefrontNewsletterSubscribeEnvelopeSchema = z.object({
+  data: storefrontNewsletterSubscribeResponseSchema,
+})
+
 export type StorefrontIntakeConsent = z.infer<typeof storefrontIntakeConsentSchema>
 export type StorefrontLeadContact = z.infer<typeof storefrontLeadContactSchema>
 export type StorefrontLeadIntakeInput = z.infer<typeof storefrontLeadIntakeInputSchema>
