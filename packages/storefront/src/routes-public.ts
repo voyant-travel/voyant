@@ -34,7 +34,9 @@ import {
   storefrontBookingSessionCompatBootstrapInputSchema,
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
+  storefrontLeadIntakeEnvelopeSchema,
   storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeEnvelopeSchema,
   storefrontNewsletterSubscribeInputSchema,
   storefrontOfferApplyInputSchema,
   storefrontOfferMutationResponseSchema,
@@ -249,6 +251,51 @@ const redeemOfferRoute = createRoute({
   },
 })
 
+const createLeadRoute = createRoute({
+  method: "post",
+  path: "/leads",
+  request: {
+    // `required: true` keeps the JSON validator running even when the caller
+    // omits `Content-Type: application/json` (§16); first-party callers send
+    // it via the shared fetch client.
+    body: {
+      required: true,
+      content: { "application/json": { schema: storefrontLeadIntakeInputSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The captured storefront lead/inquiry signal",
+      content: { "application/json": { schema: storefrontLeadIntakeEnvelopeSchema } },
+    },
+    403: {
+      description: "Rejected by the deployment intake guard (e.g. spam/abuse)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const subscribeNewsletterRoute = createRoute({
+  method: "post",
+  path: "/newsletter/subscribe",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: storefrontNewsletterSubscribeInputSchema } },
+    },
+  },
+  responses: {
+    202: {
+      description: "The captured newsletter subscription signal",
+      content: { "application/json": { schema: storefrontNewsletterSubscribeEnvelopeSchema } },
+    },
+    403: {
+      description: "Rejected by the deployment intake guard (e.g. spam/abuse)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions) {
   const storefrontService = createStorefrontService(options)
 
@@ -335,14 +382,13 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         ? c.json({ data: result }, 200)
         : c.json({ error: "Storefront offer redemption is not configured" }, 501)
     })
-    .get("/settings", async (c) => {
-      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
-    })
-    .post("/leads", async (c) => {
+    .openapi(createLeadRoute, async (c) => {
       const context = getRequestContext(c)
-      const body = await parseJsonBody(c, storefrontLeadIntakeInputSchema)
+      const body = c.req.valid("json")
       const rejected = await runIntakeGuard({ kind: "lead", body, context })
-      if (rejected) return c.json({ error: rejected.error }, rejected.status)
+      // The intake guard is a deployment-injected hook; its rejection status is
+      // dynamic (defaulting to 403, the documented rejection status here).
+      if (rejected) return c.json({ error: rejected.error }, rejected.status as 403)
 
       return c.json(
         {
@@ -354,11 +400,11 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         201,
       )
     })
-    .post("/newsletter/subscribe", async (c) => {
+    .openapi(subscribeNewsletterRoute, async (c) => {
       const context = getRequestContext(c)
-      const body = await parseJsonBody(c, storefrontNewsletterSubscribeInputSchema)
+      const body = c.req.valid("json")
       const rejected = await runIntakeGuard({ kind: "newsletter", body, context })
-      if (rejected) return c.json({ error: rejected.error }, rejected.status)
+      if (rejected) return c.json({ error: rejected.error }, rejected.status as 403)
 
       return c.json(
         {
@@ -369,6 +415,9 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         },
         202,
       )
+    })
+    .get("/settings", async (c) => {
+      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
     })
     .get("/departures/:departureId", async (c) => {
       const departure = await storefrontService.getDeparture(
