@@ -46,6 +46,11 @@ export interface ProgramSessionsSectionProps {
   programId: string
 }
 
+// Mirrors the default limit `getSessionsQueryOptions` requests (the backend's
+// `sessionListQuerySchema` max). When an agenda hits it the section says so
+// rather than silently dropping sessions (matching the delegates/RFP surfaces).
+const SESSIONS_PAGE_LIMIT = 200
+
 function timeLabel(session: SessionRecord): string {
   if (session.startsAt) {
     const time = session.startsAt.slice(11, 16)
@@ -63,6 +68,7 @@ function timeLabel(session: SessionRecord): string {
 export function ProgramSessionsSection({ programId }: ProgramSessionsSectionProps) {
   const { data, isLoading } = useProgramSessions(programId)
   const sessions = data?.data ?? []
+  const capped = sessions.length === SESSIONS_PAGE_LIMIT
   const [open, setOpen] = useState(false)
 
   return (
@@ -116,6 +122,12 @@ export function ProgramSessionsSection({ programId }: ProgramSessionsSectionProp
         </Table>
       </div>
 
+      {capped ? (
+        <p className="text-muted-foreground text-xs">
+          Showing the first {SESSIONS_PAGE_LIMIT} sessions.
+        </p>
+      ) : null}
+
       <CreateSessionDialog programId={programId} open={open} onOpenChange={setOpen} />
     </section>
   )
@@ -145,6 +157,12 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
     setRequiresRegistration(false)
   }
 
+  // Reset on every close so a cancelled draft doesn't reappear on reopen.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) reset()
+    onOpenChange(next)
+  }
+
   // `Number` (not `parseInt`) so "12.5"/"1e2" don't silently truncate to an
   // accepted integer — anything non-integer or negative is rejected, not coerced.
   const trimmedCapacity = capacity.trim()
@@ -164,12 +182,11 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
       capacity: capacityNumber,
       requiresRegistration,
     })
-    reset()
-    onOpenChange(false)
+    handleOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New session</DialogTitle>
@@ -251,7 +268,11 @@ function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDia
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={create.isPending}
+          >
             Cancel
           </Button>
           <Button onClick={() => void submit()} disabled={!canSubmit}>

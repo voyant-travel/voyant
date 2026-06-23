@@ -178,6 +178,12 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
     setPersonId("")
   }
 
+  // Reset on every close so a cancelled draft doesn't reappear on reopen.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) reset()
+    onOpenChange(next)
+  }
+
   const submit = async () => {
     await create.mutateAsync({
       programId,
@@ -185,12 +191,11 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
       status,
       personId: personId.trim() || undefined,
     })
-    reset()
-    onOpenChange(false)
+    handleOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add delegate</DialogTitle>
@@ -239,7 +244,11 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={create.isPending}
+          >
             Cancel
           </Button>
           <Button onClick={() => void submit()} disabled={create.isPending}>

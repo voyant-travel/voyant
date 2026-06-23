@@ -45,6 +45,11 @@ function dateRange(start?: string | null, end?: string | null): string {
   return start ?? end ?? "—"
 }
 
+// 200 is the backend's hard per-page max (`programListQuerySchema`). One page
+// covers any realistic operator; when it hits the cap the list says so rather
+// than silently dropping the rest (matching the program sub-section surfaces).
+const PROGRAMS_PAGE_LIMIT = 200
+
 export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsPageProps) {
   const t = {
     title: labels.title ?? "Programs",
@@ -58,8 +63,9 @@ export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsP
     pax: labels.pax ?? "Pax",
     empty: labels.empty ?? "No programs yet.",
   }
-  const { data, isLoading } = usePrograms({ limit: 50 })
+  const { data, isLoading } = usePrograms({ limit: PROGRAMS_PAGE_LIMIT })
   const programs = data?.data ?? []
+  const capped = programs.length === PROGRAMS_PAGE_LIMIT
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -115,6 +121,12 @@ export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsP
           </TableBody>
         </Table>
       </div>
+
+      {capped ? (
+        <p className="text-muted-foreground text-xs">
+          Showing the first {PROGRAMS_PAGE_LIMIT} programs.
+        </p>
+      ) : null}
     </div>
   )
 }
