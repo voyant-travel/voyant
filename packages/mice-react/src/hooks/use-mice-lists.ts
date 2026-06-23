@@ -6,6 +6,7 @@ import { useVoyantContext } from "../provider.js"
 import type { DelegateListFilters, RfpListFilters } from "../query-keys.js"
 import {
   getDelegatesQueryOptions,
+  getRfpQueryOptions,
   getRfpsQueryOptions,
   getRoomingQueryOptions,
   getSessionsQueryOptions,
@@ -49,5 +50,14 @@ export function useProgramRfps(filters: RfpListFilters, options: { enabled?: boo
   return useQuery({
     ...getRfpsQueryOptions({ baseUrl, fetcher }, filters),
     enabled: (options.enabled ?? true) && !!filters.programId,
+  })
+}
+
+/** A single RFP with its embedded invitations + bids (the sourcing funnel). */
+export function useRfp(rfpId: string | undefined, options: { enabled?: boolean } = {}) {
+  const { baseUrl, fetcher } = useVoyantContext()
+  return useQuery({
+    ...getRfpQueryOptions({ baseUrl, fetcher }, rfpId ?? ""),
+    enabled: (options.enabled ?? true) && !!rfpId,
   })
 }
