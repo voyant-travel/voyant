@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest"
 import type { z } from "zod"
-
+import {
+  bootstrapCustomerPortalResultSchema,
+  customerPortalCompanionSchema,
+  customerPortalProfileDocumentSchema,
+  customerPortalProfileSchema,
+  importCustomerPortalBookingTravelersResultSchema,
+} from "../../src/customer-portal/validation-public.js"
 import {
   storefrontDepartureItinerarySchema,
   storefrontDepartureSchema,
   storefrontProductAvailabilitySummaryResponseSchema,
-  storefrontProductExtensionSchema,
+  type storefrontProductExtensionSchema,
   storefrontProductExtensionsResponseSchema,
 } from "../../src/validation/departures.js"
 import type {
@@ -280,6 +286,163 @@ describe("storefront catalog read response contracts", () => {
     }
 
     const parsed = storefrontSettingsSchema.safeParse(jsonRoundTrip(settings).data)
+    expect(parsed.success).toBe(true)
+  })
+})
+
+/**
+ * Customer-portal read contracts (voyant#2114, Batch D). The portal service
+ * pre-normalizes its Drizzle rows before returning: document `createdAt`/
+ * `updatedAt` are converted to ISO strings (`projectPersonDocumentToWire`), and
+ * the date-only fields (`dateOfBirth`, `issueDate`, `expiryDate`) are stored as
+ * `date` columns surfaced as plain strings. The wire schemas declare all of
+ * those as `z.string()`, so the positive round-trips lock the documented shapes
+ * against missing/renamed columns, and the negative case guards the §17 Date →
+ * string normalization on documents.
+ */
+describe("customer-portal response contracts", () => {
+  const documentWire: z.infer<typeof customerPortalProfileDocumentSchema> = {
+    id: "pdoc_123",
+    type: "passport",
+    number: "X1234567",
+    issuingAuthority: "RO",
+    issuingCountry: "RO",
+    issueDate: "2020-01-01",
+    expiryDate: "2030-01-01",
+    attachmentId: null,
+    isPrimary: true,
+    notes: null,
+    createdAt: "2026-06-23T11:00:00.000Z",
+    updatedAt: "2026-06-23T11:00:00.000Z",
+  }
+
+  it("a profile serializes to the documented profile schema", () => {
+    const profile: z.infer<typeof customerPortalProfileSchema> = {
+      userId: "usr_123",
+      email: "traveler@example.com",
+      phoneNumber: null,
+      emailVerified: true,
+      firstName: "Ada",
+      middleName: null,
+      lastName: "Lovelace",
+      avatarUrl: null,
+      locale: "en",
+      timezone: "Europe/Bucharest",
+      seatingPreference: "aisle",
+      dateOfBirth: "1990-05-01",
+      address: {
+        country: "RO",
+        state: null,
+        city: "Bucharest",
+        postalCode: null,
+        addressLine1: null,
+        addressLine2: null,
+      },
+      accessibility: null,
+      dietary: null,
+      loyalty: null,
+      insurance: null,
+      marketingConsent: false,
+      marketingConsentAt: null,
+      marketingConsentSource: null,
+      notificationDefaults: null,
+      uiPrefs: null,
+      customerRecord: null,
+    }
+
+    const parsed = customerPortalProfileSchema.safeParse(jsonRoundTrip(profile).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("a profile document serializes to the documented document schema", () => {
+    const parsed = customerPortalProfileDocumentSchema.safeParse(jsonRoundTrip(documentWire).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("rejects a document whose timestamps were NOT serialized (raw Date is not a wire string)", () => {
+    // Guards the §17 contract: a handler that skipped `projectPersonDocumentToWire`
+    // would emit raw `Date` instances for createdAt/updatedAt, which the wire
+    // schema must reject.
+    const rawDated = {
+      ...documentWire,
+      createdAt: new Date("2026-06-23T11:00:00.000Z"),
+      updatedAt: new Date("2026-06-23T11:00:00.000Z"),
+    }
+    const parsed = customerPortalProfileDocumentSchema.safeParse(rawDated)
+    expect(parsed.success).toBe(false)
+  })
+
+  it("a companion serializes to the documented companion schema", () => {
+    const companion: z.infer<typeof customerPortalCompanionSchema> = {
+      id: "cmp_123",
+      role: "general",
+      name: "Charles Babbage",
+      title: null,
+      email: null,
+      phone: null,
+      isPrimary: false,
+      notes: null,
+      typeKey: null,
+      person: {
+        firstName: "Charles",
+        middleName: null,
+        lastName: "Babbage",
+        dateOfBirth: "1791-12-26",
+        addresses: [],
+        documents: [
+          {
+            type: "drivers_license",
+            number: null,
+            issuingAuthority: null,
+            country: null,
+            issueDate: null,
+            expiryDate: null,
+          },
+        ],
+      },
+      metadata: null,
+    }
+
+    const parsed = customerPortalCompanionSchema.safeParse(jsonRoundTrip(companion).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("a bootstrap result serializes to the documented bootstrap schema", () => {
+    const result: z.infer<typeof bootstrapCustomerPortalResultSchema> = {
+      status: "customer_selection_required",
+      profile: null,
+      candidates: [
+        {
+          id: "cus_123",
+          firstName: "Ada",
+          lastName: "Lovelace",
+          preferredLanguage: null,
+          preferredCurrency: null,
+          dateOfBirth: null,
+          email: "traveler@example.com",
+          phone: null,
+          billingAddress: null,
+          relation: null,
+          status: "active",
+          linkable: true,
+          claimedByAnotherUser: false,
+        },
+      ],
+    }
+
+    const parsed = bootstrapCustomerPortalResultSchema.safeParse(jsonRoundTrip(result).data)
+    expect(parsed.success).toBe(true)
+  })
+
+  it("an import-booking-travelers result serializes to the documented schema", () => {
+    const result: z.infer<typeof importCustomerPortalBookingTravelersResultSchema> = {
+      created: [],
+      skippedCount: 2,
+    }
+
+    const parsed = importCustomerPortalBookingTravelersResultSchema.safeParse(
+      jsonRoundTrip(result).data,
+    )
     expect(parsed.success).toBe(true)
   })
 })
