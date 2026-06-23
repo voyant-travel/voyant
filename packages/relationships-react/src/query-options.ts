@@ -18,7 +18,6 @@ import {
 } from "./schemas.js"
 
 const basePath = "/v1/relationships"
-const adminBasePath = "/v1/admin/relationships"
 
 export function getActivitiesQueryOptions(
   client: FetchWithValidationOptions,
@@ -177,7 +176,7 @@ export function getCustomFieldDefinitionsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `${adminBasePath}/custom-fields${qs ? `?${qs}` : ""}`,
+        `${basePath}/custom-fields${qs ? `?${qs}` : ""}`,
         customFieldDefinitionListResponse,
         { baseUrl: client.baseUrl, fetcher: client.fetcher },
       )

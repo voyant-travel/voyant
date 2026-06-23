@@ -22,7 +22,7 @@ export function useCustomFieldDefinitionMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateCustomFieldDefinitionInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/admin/relationships/custom-fields",
+        "/v1/relationships/custom-fields",
         customFieldDefinitionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useCustomFieldDefinitionMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateCustomFieldDefinitionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/admin/relationships/custom-fields/${id}`,
+        `/v1/relationships/custom-fields/${id}`,
         customFieldDefinitionSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useCustomFieldDefinitionMutation() {
   const remove = useMutation({
     mutationFn: (id: string) =>
       fetchWithValidation(
-        `/v1/admin/relationships/custom-fields/${id}`,
+        `/v1/relationships/custom-fields/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

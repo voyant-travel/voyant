@@ -57,7 +57,6 @@ type FormValues = {
   fieldType: FieldType
   key: string
   label: string
-  isRequired: boolean
   isSearchable: boolean
   options: OptionRow[]
 }
@@ -72,7 +71,6 @@ const defaultFormValues: FormValues = {
   fieldType: "text",
   key: "",
   label: "",
-  isRequired: false,
   isSearchable: false,
   options: [],
 }
@@ -123,7 +121,6 @@ export function CustomFieldDefinitionSheet({
       fieldType: definition.fieldType,
       key: definition.key,
       label: definition.label,
-      isRequired: definition.isRequired,
       isSearchable: definition.isSearchable,
       options: definition.options?.map((option) => ({ ...option, rowKey: nextOptionKey() })) ?? [],
     })
@@ -166,7 +163,6 @@ export function CustomFieldDefinitionSheet({
       const payload: UpdateCustomFieldDefinitionInput = {
         key: values.key.trim(),
         label: values.label.trim(),
-        isRequired: values.isRequired,
         isSearchable: values.isSearchable,
         options,
       }
@@ -177,7 +173,7 @@ export function CustomFieldDefinitionSheet({
         fieldType: values.fieldType,
         key: values.key.trim(),
         label: values.label.trim(),
-        isRequired: values.isRequired,
+        isRequired: false,
         isSearchable: values.isSearchable,
         options,
       }
@@ -272,12 +268,6 @@ export function CustomFieldDefinitionSheet({
             </div>
 
             <div className="grid gap-3 rounded-md border p-4">
-              <ToggleRow
-                label="Required"
-                description="Require a value when this field is shown in authoring forms."
-                checked={values.isRequired}
-                onCheckedChange={(checked) => setValue("isRequired", checked)}
-              />
               <ToggleRow
                 label="Searchable"
                 description="Include this field in custom-field search and filtering workflows."
