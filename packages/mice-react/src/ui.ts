@@ -3,4 +3,8 @@ export {
   type ProgramCostSheetPanelProps,
 } from "./components/program-cost-sheet-panel.js"
 export { ProgramDetailPage, type ProgramDetailPageProps } from "./components/program-detail-page.js"
+export {
+  ProgramSessionsSection,
+  type ProgramSessionsSectionProps,
+} from "./components/program-sessions-section.js"
 export { ProgramsPage, type ProgramsPageProps } from "./components/programs-page.js"

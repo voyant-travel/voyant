@@ -1,0 +1,256 @@
+"use client"
+
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@voyant-travel/ui/components"
+import { Loader2, Plus } from "lucide-react"
+import { useState } from "react"
+
+import { useProgramSessions } from "../hooks/use-mice-lists.js"
+import { useSessionMutation } from "../hooks/use-session-mutation.js"
+import type { SessionRecord } from "../schemas.js"
+
+/** The session types the MICE backend accepts (`createSessionSchema`). */
+const SESSION_TYPES = [
+  "keynote",
+  "breakout",
+  "meal",
+  "networking",
+  "gala",
+  "excursion",
+  "free",
+] as const
+type SessionType = (typeof SESSION_TYPES)[number]
+
+export interface ProgramSessionsSectionProps {
+  programId: string
+}
+
+function timeLabel(session: SessionRecord): string {
+  if (session.startsAt) {
+    const time = session.startsAt.slice(11, 16)
+    return time || session.startsAt
+  }
+  return session.dayDate ?? "—"
+}
+
+/**
+ * Agenda sessions for a program (RFC voyant#1489 Phase 2). Lists the program's
+ * sessions and creates new ones in place — sessions are never a top-level
+ * surface, they are the program's agenda, so this lives inside the program
+ * detail page. Data flows through the shared `@voyant-travel/react` provider.
+ */
+export function ProgramSessionsSection({ programId }: ProgramSessionsSectionProps) {
+  const { data, isLoading } = useProgramSessions(programId)
+  const sessions = data?.data ?? []
+  const [open, setOpen] = useState(false)
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold text-lg tracking-tight">Agenda</h2>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="size-4" aria-hidden="true" />
+          New session
+        </Button>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Day</TableHead>
+              <TableHead>Time</TableHead>
+              <TableHead>Track</TableHead>
+              <TableHead className="text-right">Capacity</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!isLoading && sessions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  No sessions yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              sessions.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {s.sessionType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {s.dayDate ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{timeLabel(s)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{s.track ?? "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums">{s.capacity ?? "—"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <CreateSessionDialog programId={programId} open={open} onOpenChange={setOpen} />
+    </section>
+  )
+}
+
+interface CreateSessionDialogProps {
+  programId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+function CreateSessionDialog({ programId, open, onOpenChange }: CreateSessionDialogProps) {
+  const { create } = useSessionMutation()
+  const [title, setTitle] = useState("")
+  const [sessionType, setSessionType] = useState<SessionType>("breakout")
+  const [dayDate, setDayDate] = useState("")
+  const [track, setTrack] = useState("")
+  const [capacity, setCapacity] = useState("")
+  const [requiresRegistration, setRequiresRegistration] = useState(false)
+
+  const reset = () => {
+    setTitle("")
+    setSessionType("breakout")
+    setDayDate("")
+    setTrack("")
+    setCapacity("")
+    setRequiresRegistration(false)
+  }
+
+  const submit = async () => {
+    if (!title.trim()) return
+    const parsedCapacity = capacity.trim() === "" ? undefined : Number.parseInt(capacity, 10)
+    await create.mutateAsync({
+      programId,
+      title: title.trim(),
+      sessionType,
+      dayDate: dayDate || undefined,
+      track: track.trim() || undefined,
+      capacity:
+        parsedCapacity !== undefined && Number.isFinite(parsedCapacity)
+          ? parsedCapacity
+          : undefined,
+      requiresRegistration,
+    })
+    reset()
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New session</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="session-title">Title</Label>
+            <Input
+              id="session-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Opening keynote"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="session-type">Type</Label>
+              <Select
+                value={sessionType}
+                onValueChange={(value) => setSessionType(value as SessionType)}
+              >
+                <SelectTrigger id="session-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SESSION_TYPES.map((type) => (
+                    <SelectItem key={type} value={type} className="capitalize">
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="session-day">Day</Label>
+              <Input
+                id="session-day"
+                type="date"
+                value={dayDate}
+                onChange={(e) => setDayDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="session-track">Track</Label>
+              <Input
+                id="session-track"
+                value={track}
+                onChange={(e) => setTrack(e.target.value)}
+                placeholder="Plenary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="session-capacity">Capacity</Label>
+              <Input
+                id="session-capacity"
+                type="number"
+                min={0}
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="session-requires-registration"
+              checked={requiresRegistration}
+              onCheckedChange={(checked) => setRequiresRegistration(checked === true)}
+            />
+            <Label htmlFor="session-requires-registration">Requires registration</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={() => void submit()} disabled={!title.trim() || create.isPending}>
+            {create.isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : null}
+            Create session
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

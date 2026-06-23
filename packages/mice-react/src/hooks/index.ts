@@ -11,3 +11,4 @@ export {
   useProgramCostSheet,
   usePrograms,
 } from "./use-programs.js"
+export { useSessionMutation } from "./use-session-mutation.js"

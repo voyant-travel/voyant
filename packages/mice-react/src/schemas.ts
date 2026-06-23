@@ -52,6 +52,7 @@ export const sessionRecordSchema = z.object({
 })
 export type SessionRecord = z.infer<typeof sessionRecordSchema>
 export const sessionListResponse = listEnvelope(sessionRecordSchema)
+export const sessionSingleResponse = singleEnvelope(sessionRecordSchema)
 
 // ── Delegate ──
 export const delegateRecordSchema = z.object({
