@@ -34,6 +34,7 @@ import type {
   ModuleFactory,
 } from "@voyant-travel/hono/composition"
 import { miceHonoModule } from "@voyant-travel/mice"
+import { miceBookingExtension } from "@voyant-travel/mice/booking-extension"
 import { createNetopiaCheckoutStarter } from "@voyant-travel/plugin-netopia"
 import { createRealtimeHonoModule } from "@voyant-travel/realtime"
 import { relationshipsService } from "@voyant-travel/relationships"
@@ -285,6 +286,8 @@ const discoveredExtensions = extensionsFromGlob<OperatorCapabilities>(
 
 export const deploymentLocalExtensions: Record<string, ExtensionFactory<OperatorCapabilities>> = {
   ...discoveredExtensions,
+  // MICE booking sidecar (booking_mice_details) — operator-local (voyant#1489).
+  "@voyant-travel/mice/booking-extension": () => miceBookingExtension,
 }
 
 /**

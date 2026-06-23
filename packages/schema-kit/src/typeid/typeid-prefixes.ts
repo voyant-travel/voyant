@@ -427,6 +427,11 @@ export const PREFIXES = {
   mice_programs: "prog",
   mice_program_sessions: "mpss",
   mice_session_inclusions: "mssi",
+  mice_program_delegates: "mpdl",
+  mice_delegate_session_enrollments: "mdse",
+  mice_rooming_assignments: "mrma",
+  mice_rooming_assignment_delegates: "mrad",
+  booking_mice_details: "bkmd",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

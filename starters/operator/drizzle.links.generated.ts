@@ -276,3 +276,54 @@ export const mice_program_operations_spaceBlock = pgTable(
     uniqueIndex("mice_program_operations_spaceBlock_r_uniq").on(t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
+
+export const relationships_person_mice_delegate = pgTable(
+  "relationships_person_mice_delegate",
+  {
+    id: text("id").primaryKey().notNull(),
+    "relationships_person_id": text("relationships_person_id").notNull(),
+    "mice_delegate_id": text("mice_delegate_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("relationships_person_mice_delegate_pair_idx").on(t["relationships_person_id"], t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_person_mice_delegate_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_mice_delegate_r_uniq").on(t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const bookings_booking_mice_delegate = pgTable(
+  "bookings_booking_mice_delegate",
+  {
+    id: text("id").primaryKey().notNull(),
+    "bookings_booking_id": text("bookings_booking_id").notNull(),
+    "mice_delegate_id": text("mice_delegate_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("bookings_booking_mice_delegate_pair_idx").on(t["bookings_booking_id"], t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("bookings_booking_mice_delegate_l_uniq").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("bookings_booking_mice_delegate_r_uniq").on(t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const accommodations_roomBlock_mice_roomingAssignment = pgTable(
+  "accommodations_roomBlock_mice_roomingAssignment",
+  {
+    id: text("id").primaryKey().notNull(),
+    "accommodations_roomBlock_id": text("accommodations_roomBlock_id").notNull(),
+    "mice_roomingAssignment_id": text("mice_roomingAssignment_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("accommodations_roomBlock_mice_roomingAssignment_pair_idx").on(t["accommodations_roomBlock_id"], t["mice_roomingAssignment_id"]).where(sql`"deleted_at" IS NULL`),
+    index("accommodations_roomBlock_mice_roomingAssignment_l_idx").on(t["accommodations_roomBlock_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("accommodations_roomBlock_mice_roomingAssignment_r_uniq").on(t["mice_roomingAssignment_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)

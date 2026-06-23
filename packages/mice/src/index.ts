@@ -22,13 +22,32 @@ export const sessionLinkable: LinkableDefinition = {
   idPrefix: "mpss",
 }
 
+export const delegateLinkable: LinkableDefinition = {
+  module: "mice",
+  entity: "delegate",
+  table: "mice_program_delegates",
+  idPrefix: "mpdl",
+}
+
+export const roomingAssignmentLinkable: LinkableDefinition = {
+  module: "mice",
+  entity: "roomingAssignment",
+  table: "mice_rooming_assignments",
+  idPrefix: "mrma",
+}
+
 export const miceLinkable = {
   program: programLinkable,
   session: sessionLinkable,
+  delegate: delegateLinkable,
+  roomingAssignment: roomingAssignmentLinkable,
 }
 
 export const miceModule: Module = {
   name: "mice",
+  // Enrollment, rooming-delegate replace, and session-inclusion set run inside
+  // db.transaction(...) — route /v1/admin/mice/* to the transactional DB.
+  requiresTransactionalDb: true,
   linkable: miceLinkable,
 }
 
@@ -43,6 +62,10 @@ export type { MiceAdminRoutes } from "./routes.js"
 export { miceAdminRoutes } from "./routes.js"
 export * from "./schema.js"
 export * from "./service.js"
+export * from "./service-delegates.js"
+export * from "./service-rooming.js"
 export * from "./service-sessions.js"
 export * from "./validation.js"
+export * from "./validation-delegates.js"
+export * from "./validation-rooming.js"
 export * from "./validation-sessions.js"
