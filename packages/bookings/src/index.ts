@@ -1,6 +1,6 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
+import { bookingsLinkable } from "./linkables.js"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
   type BookingRouteRuntimeOptions,
@@ -16,6 +16,7 @@ export {
   bookingActionLedgerCapabilityRegistry,
 } from "./action-ledger-capabilities.js"
 export { bookingsSupplierExtension } from "./extensions/suppliers.js"
+export { bookingLinkable, bookingsLinkable } from "./linkables.js"
 export {
   type BookingPiiAuditEvent,
   type BookingPiiService,
@@ -100,17 +101,6 @@ export {
   type ExpireStaleBookingHoldsResult,
   expireStaleBookingHolds,
 } from "./tasks/index.js"
-
-export const bookingLinkable: LinkableDefinition = {
-  module: "bookings",
-  entity: "booking",
-  table: "bookings",
-  idPrefix: "book",
-}
-
-export const bookingsLinkable = {
-  booking: bookingLinkable,
-}
 
 export const bookingsModule: Module = {
   name: "bookings",

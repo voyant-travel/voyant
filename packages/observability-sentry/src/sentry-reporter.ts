@@ -1,4 +1,4 @@
-import type { ErrorEvent, Reporter } from "@voyant-travel/hono/observability"
+import type { ErrorEvent, Reporter } from "@voyant-travel/hono/observability/reporter"
 
 /**
  * The slice of a Sentry SDK this adapter calls. Declared structurally so the

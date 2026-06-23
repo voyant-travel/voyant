@@ -4,7 +4,7 @@ import {
   customFieldsFromGlob,
   mergeCustomFieldDefinitions,
 } from "@voyant-travel/core/custom-fields"
-import { loadCustomFieldDefinitions } from "@voyant-travel/relationships"
+import { loadCustomFieldDefinitions } from "@voyant-travel/relationships/custom-fields-registry"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**

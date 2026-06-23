@@ -6,7 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./checkout": "./src/checkout/index.ts"
+    "./checkout": "./src/checkout/index.ts",
+    "./markets/validation": "./src/markets/validation.ts",
+    "./promotions/validation": "./src/promotions/validation.ts",
+    "./sellability/validation": "./src/sellability/validation.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -76,6 +79,21 @@
         "types": "./dist/checkout/index.d.ts",
         "import": "./dist/checkout/index.js",
         "default": "./dist/checkout/index.js"
+      },
+      "./markets/validation": {
+        "types": "./dist/markets/validation.d.ts",
+        "import": "./dist/markets/validation.js",
+        "default": "./dist/markets/validation.js"
+      },
+      "./promotions/validation": {
+        "types": "./dist/promotions/validation.d.ts",
+        "import": "./dist/promotions/validation.js",
+        "default": "./dist/promotions/validation.js"
+      },
+      "./sellability/validation": {
+        "types": "./dist/sellability/validation.d.ts",
+        "import": "./dist/sellability/validation.js",
+        "default": "./dist/sellability/validation.js"
       }
     },
     "main": "./dist/index.js",

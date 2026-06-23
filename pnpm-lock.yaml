@@ -4129,6 +4129,9 @@ importers:
       '@voyant-travel/catalog-authoring':
         specifier: workspace:^
         version: link:../../packages/catalog-authoring
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../../packages/catalog-contracts
       '@voyant-travel/catalog-react':
         specifier: workspace:^
         version: link:../../packages/catalog-react

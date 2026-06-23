@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { updateNotificationSettingsSchema } from "@voyant-travel/notifications"
+import type { updateNotificationSettingsSchema } from "@voyant-travel/notifications/validation"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

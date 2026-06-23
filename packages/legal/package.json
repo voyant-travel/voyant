@@ -5,19 +5,24 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./linkables": "./src/linkables.ts",
     "./contract-document-routes": "./src/contract-document-routes.ts",
     "./contract-document": "./src/contracts/contract-document-service.ts",
     "./contract-variables": "./src/contracts/contract-variables.ts",
     "./schema": "./src/schema.ts",
     "./contracts": "./src/contracts/index.ts",
+    "./contracts/linkables": "./src/contracts/linkables.ts",
+    "./contracts/template-authoring": "./src/contracts/template-authoring.ts",
     "./contracts/validation": "./src/contracts/validation.ts",
     "./contracts/routes": "./src/contracts/routes.ts",
     "./contracts/service": "./src/contracts/service.ts",
     "./terms": "./src/terms/index.ts",
+    "./terms/linkables": "./src/terms/linkables.ts",
     "./terms/validation": "./src/terms/validation.ts",
     "./terms/routes": "./src/terms/routes.ts",
     "./terms/service": "./src/terms/service.ts",
     "./policies": "./src/policies/index.ts",
+    "./policies/linkables": "./src/policies/linkables.ts",
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts"
@@ -68,6 +73,11 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./linkables": {
+        "types": "./dist/linkables.d.ts",
+        "import": "./dist/linkables.js",
+        "default": "./dist/linkables.js"
+      },
       "./contract-document-routes": {
         "types": "./dist/contract-document-routes.d.ts",
         "import": "./dist/contract-document-routes.js",
@@ -93,6 +103,16 @@
         "import": "./dist/contracts/index.js",
         "default": "./dist/contracts/index.js"
       },
+      "./contracts/linkables": {
+        "types": "./dist/contracts/linkables.d.ts",
+        "import": "./dist/contracts/linkables.js",
+        "default": "./dist/contracts/linkables.js"
+      },
+      "./contracts/template-authoring": {
+        "types": "./dist/contracts/template-authoring.d.ts",
+        "import": "./dist/contracts/template-authoring.js",
+        "default": "./dist/contracts/template-authoring.js"
+      },
       "./contracts/validation": {
         "types": "./dist/contracts/validation.d.ts",
         "import": "./dist/contracts/validation.js",
@@ -113,6 +133,11 @@
         "import": "./dist/terms/index.js",
         "default": "./dist/terms/index.js"
       },
+      "./terms/linkables": {
+        "types": "./dist/terms/linkables.d.ts",
+        "import": "./dist/terms/linkables.js",
+        "default": "./dist/terms/linkables.js"
+      },
       "./terms/validation": {
         "types": "./dist/terms/validation.d.ts",
         "import": "./dist/terms/validation.js",
@@ -132,6 +157,11 @@
         "types": "./dist/policies/index.d.ts",
         "import": "./dist/policies/index.js",
         "default": "./dist/policies/index.js"
+      },
+      "./policies/linkables": {
+        "types": "./dist/policies/linkables.d.ts",
+        "import": "./dist/policies/linkables.js",
+        "default": "./dist/policies/linkables.js"
       },
       "./policies/validation": {
         "types": "./dist/policies/validation.d.ts",

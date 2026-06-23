@@ -8,7 +8,7 @@ import {
   notificationTargetTypeSchema,
   previewNotificationTemplateResultSchema as notificationTemplatePreviewRecordSchema,
   notificationTemplateStatusSchema,
-} from "@voyant-travel/notifications"
+} from "@voyant-travel/notifications/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 

@@ -1,6 +1,7 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "./events.js"
+import { relationshipsLinkable } from "./linkables.js"
 import {
   buildRelationshipsRouteRuntime,
   RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -9,28 +10,12 @@ import {
 import { relationshipsRoutes } from "./routes/index.js"
 import { relationshipsService } from "./service/index.js"
 
+export { organizationLinkable, personLinkable, relationshipsLinkable } from "./linkables.js"
 export type { RelationshipsRoutes } from "./routes/index.js"
-
-export const personLinkable: LinkableDefinition = {
-  module: "relationships",
-  entity: "person",
-  table: "people",
-  idPrefix: "pers",
-}
-
-export const organizationLinkable: LinkableDefinition = {
-  module: "relationships",
-  entity: "organization",
-  table: "organizations",
-  idPrefix: "org",
-}
 
 export const relationshipsModule: Module = {
   name: "relationships",
-  linkable: {
-    person: personLinkable,
-    organization: organizationLinkable,
-  },
+  linkable: relationshipsLinkable,
   requiresTransactionalDb: true,
 }
 

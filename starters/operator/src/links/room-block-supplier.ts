@@ -1,6 +1,6 @@
-import { roomBlockLinkable } from "@voyant-travel/accommodations"
+import { roomBlockLinkable } from "@voyant-travel/accommodations/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { supplierLinkable } from "@voyant-travel/distribution"
+import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
 
 /**
  * Each room block is negotiated with one supplier; a supplier can back many

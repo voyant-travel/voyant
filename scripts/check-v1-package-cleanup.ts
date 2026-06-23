@@ -117,18 +117,19 @@ const temporaryOwnerExports = new Map<string, string[]>([
     "@voyant-travel/operations",
     exportList(`
       ./availability ./availability/schema ./availability/validation ./availability/routes
-      ./availability/rrule ./availability/service-holds
+      ./availability/rrule ./availability/service-holds ./availability/slot-timezone
       ./availability/service-catalog-plane-departures ./resources ./resources/schema
       ./resources/validation ./resources/routes ./ground ./ground/schema ./ground/validation
       ./ground/routes ./places ./places/schema ./places/validation ./places/routes
+      ./places/linkables
     `),
   ],
   [
     "@voyant-travel/distribution",
     exportList(`
       ./booking-extension ./channel-push ./suppliers ./suppliers/schema ./suppliers/validation
-      ./suppliers/routes ./external-refs ./external-refs/schema ./external-refs/validation
-      ./external-refs/routes
+      ./suppliers/routes ./suppliers/linkables ./external-refs ./external-refs/schema
+      ./external-refs/validation ./external-refs/routes
     `),
   ],
 ])

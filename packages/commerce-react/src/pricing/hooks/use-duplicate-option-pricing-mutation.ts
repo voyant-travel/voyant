@@ -5,7 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantPricingContext } from "../provider.js"
 import { pricingQueryKeys } from "../query-keys.js"
-import { optionPriceRuleListResponse, optionUnitPriceRuleListResponse } from "../schemas.js"
+import {
+  type OptionPriceRuleRecord,
+  type OptionUnitPriceRuleRecord,
+  optionPriceRuleListResponse,
+  optionUnitPriceRuleListResponse,
+} from "../schemas.js"
 import { useOptionPriceRuleMutation } from "./use-option-price-rule-mutation.js"
 import { useOptionUnitPriceRuleMutation } from "./use-option-unit-price-rule-mutation.js"
 
@@ -29,7 +34,7 @@ export function useDuplicateOptionPricingMutation() {
       productId,
       unitIdMap,
     }: DuplicateOptionPricingInput) => {
-      const { data: sourceRules } = await fetchWithValidation(
+      const { data: sourceRules } = await fetchWithValidation<{ data: OptionPriceRuleRecord[] }>(
         `/v1/pricing/option-price-rules?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
         optionPriceRuleListResponse,
         { baseUrl, fetcher },
@@ -56,7 +61,9 @@ export function useDuplicateOptionPricingMutation() {
           notes: rule.notes,
         })
 
-        const { data: sourceUnitPriceRules } = await fetchWithValidation(
+        const { data: sourceUnitPriceRules } = await fetchWithValidation<{
+          data: OptionUnitPriceRuleRecord[]
+        }>(
           `/v1/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(rule.id)}&limit=500`,
           optionUnitPriceRuleListResponse,
           { baseUrl, fetcher },

@@ -9,7 +9,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { noDepositPolicy, type PaymentPolicy } from "@voyant-travel/finance"
+import { noDepositPolicy, type PaymentPolicy } from "@voyant-travel/finance/payment-policy"
 import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyant-travel/finance-react/ui"
 import {
   Button,

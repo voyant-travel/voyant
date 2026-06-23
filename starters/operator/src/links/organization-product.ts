@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory"
-import { organizationLinkable } from "@voyant-travel/relationships"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory/linkables"
+import { organizationLinkable } from "@voyant-travel/relationships/linkables"
 
 /**
  * Each product has one owning organization (the client); each organization can

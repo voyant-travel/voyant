@@ -1,6 +1,6 @@
-import { bookingLinkable } from "@voyant-travel/bookings"
+import { bookingLinkable } from "@voyant-travel/bookings/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { contractLinkable } from "@voyant-travel/legal"
+import { contractLinkable } from "@voyant-travel/legal/linkables"
 
 /**
  * A booking can have many contracts (customer travel contract, supplier

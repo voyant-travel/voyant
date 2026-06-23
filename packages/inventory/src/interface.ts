@@ -1,36 +1,22 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { productsBookingExtension } from "./booking-extension.js"
+import { inventoryLinkable, productsCompatibilityLinkable } from "./linkables.js"
 import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"
 
-export const inventoryProductLinkable: LinkableDefinition = {
-  module: "inventory",
-  entity: "product",
-  table: "products",
-  idPrefix: "prod",
-}
+export {
+  inventoryLinkable,
+  inventoryProductCompatibilityLinkable,
+  inventoryProductLinkable,
+  productLinkable,
+  productsCompatibilityLinkable,
+} from "./linkables.js"
 
 export const inventoryModule: Module = {
   name: "inventory",
-  linkable: {
-    product: inventoryProductLinkable,
-  },
-}
-
-export const inventoryProductCompatibilityLinkable: LinkableDefinition = {
-  module: "products",
-  entity: "product",
-  table: "products",
-  idPrefix: "prod",
-}
-
-const productsCompatibilityModule: Module = {
-  name: "products",
-  linkable: {
-    product: inventoryProductCompatibilityLinkable,
-  },
+  linkable: inventoryLinkable,
 }
 
 /**
@@ -40,7 +26,10 @@ const productsCompatibilityModule: Module = {
  * `/v1/admin/products` and `/v1/public/products` clients do not break.
  */
 export const inventoryHonoModule: HonoModule = {
-  module: productsCompatibilityModule,
+  module: {
+    name: "products",
+    linkable: productsCompatibilityLinkable,
+  },
   adminRoutes: productRoutes,
   publicRoutes: publicProductRoutes,
   routes: productRoutes,

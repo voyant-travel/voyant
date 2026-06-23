@@ -2,7 +2,7 @@ import {
   insertAddressSchema,
   insertContactPointSchema,
   insertNamedContactSchema,
-} from "@voyant-travel/identity"
+} from "@voyant-travel/identity/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 

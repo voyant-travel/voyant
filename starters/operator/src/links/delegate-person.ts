@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { delegateLinkable } from "@voyant-travel/mice"
-import { personLinkable } from "@voyant-travel/relationships"
+import { delegateLinkable } from "@voyant-travel/mice/linkables"
+import { personLinkable } from "@voyant-travel/relationships/linkables"
 
 /**
  * A delegate is a person (CRM); a person can be a delegate across many

@@ -1,21 +1,12 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { suppliersLinkable } from "./linkables.js"
 import { supplierRoutes } from "./routes.js"
 import { suppliersService } from "./service.js"
 
+export { supplierLinkable, suppliersLinkable } from "./linkables.js"
 export type { SupplierRoutes } from "./routes.js"
-
-export const supplierLinkable: LinkableDefinition = {
-  module: "suppliers",
-  entity: "supplier",
-  table: "suppliers",
-  idPrefix: "supp",
-}
-
-export const suppliersLinkable = {
-  supplier: supplierLinkable,
-}
 
 export const suppliersModule: Module = {
   name: "suppliers",

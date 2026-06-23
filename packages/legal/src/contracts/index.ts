@@ -1,32 +1,3 @@
-import type { LinkableDefinition } from "@voyant-travel/core"
-
-export type {
-  ContractDocumentGenerator,
-  ContractsAdminRoutes,
-  ContractsPublicRoutes,
-  ContractsRouteOptions,
-} from "./routes.js"
-export { createContractsAdminRoutes, createContractsPublicRoutes } from "./routes.js"
-
-export const contractLinkable: LinkableDefinition = {
-  module: "legal",
-  entity: "contract",
-  table: "contracts",
-  idPrefix: "cont",
-}
-
-export const contractTemplateLinkable: LinkableDefinition = {
-  module: "legal",
-  entity: "contractTemplate",
-  table: "contract_templates",
-  idPrefix: "ctpl",
-}
-
-export const contractsLinkable = {
-  contract: contractLinkable,
-  contractTemplate: contractTemplateLinkable,
-}
-
 export type {
   ContractLifecycleEvent,
   ContractLifecycleHook,
@@ -43,6 +14,14 @@ export {
   createContractStageHistoryEntry,
   emitContractLifecycleEvent,
 } from "./lifecycle.js"
+export { contractLinkable, contractsLinkable, contractTemplateLinkable } from "./linkables.js"
+export type {
+  ContractDocumentGenerator,
+  ContractsAdminRoutes,
+  ContractsPublicRoutes,
+  ContractsRouteOptions,
+} from "./routes.js"
+export { createContractsAdminRoutes, createContractsPublicRoutes } from "./routes.js"
 export type {
   Contract,
   ContractAttachment,

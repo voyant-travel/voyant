@@ -1,6 +1,6 @@
 import { defineLink } from "@voyant-travel/core"
-import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory"
-import { personLinkable } from "@voyant-travel/relationships"
+import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory/linkables"
+import { personLinkable } from "@voyant-travel/relationships/linkables"
 
 /**
  * Each product has one owning person (the client); each person can own many products.

@@ -4,7 +4,7 @@ import type {
   NotificationLiquidSnippet,
   NotificationTemplateVariableCategory,
   NotificationTemplateVariableDefinition,
-} from "@voyant-travel/notifications"
+} from "@voyant-travel/notifications/template-authoring"
 
 import {
   ContractTemplateAuthoringHelp,

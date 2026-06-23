@@ -89,6 +89,28 @@ only expose Tailwind source-detection directives for package components.
 - app shell navigation
 - starter-specific theming and layout
 
+## Client-Safe Domain Imports
+
+Browser-facing code must not import a domain package root when that root also
+exports server runtime, Hono routes, schema wiring, or deployment modules. Use a
+narrow package subpath that contains only the browser-safe primitive or contract
+needed by the UI. For example, payment-policy editors and storefront journey
+code import `@voyant-travel/finance/payment-policy`, not
+`@voyant-travel/finance`, because the finance root barrel also wires Hono route
+modules.
+
+The same rule applies to static metadata and authoring helpers. Operator link
+definitions import linkables from package `linkables` subpaths, contract
+template authoring imports `@voyant-travel/legal/contracts/template-authoring`,
+and React packages import schemas from validation subpaths such as
+`@voyant-travel/operations/validation`, `@voyant-travel/notifications/validation`,
+and `@voyant-travel/commerce/markets/validation`.
+
+When a UI needs a reusable domain primitive that only exists on a mixed root
+barrel, add a dedicated subpath export for that primitive and move browser code
+to the subpath. Add or update a checker when the rule is mechanical; the current
+client-boundary check is `pnpm verify:client-package-boundaries`.
+
 ## Module UI Migration
 
 The old combined customer-and-sales surface is split before v1:

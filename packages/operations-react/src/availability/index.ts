@@ -7,7 +7,7 @@ export {
   slotEndDateLocal,
   slotLocalEnd,
   slotLocalStart,
-} from "@voyant-travel/operations"
+} from "@voyant-travel/operations/availability/slot-timezone"
 export {
   defaultFetcher,
   fetchWithValidation,

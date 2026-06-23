@@ -1,6 +1,6 @@
-import { bookingLinkable } from "@voyant-travel/bookings"
+import { bookingLinkable } from "@voyant-travel/bookings/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { delegateLinkable } from "@voyant-travel/mice"
+import { delegateLinkable } from "@voyant-travel/mice/linkables"
 
 /**
  * A delegate's confirmation maps to one booking; one booking ↔ one delegate.

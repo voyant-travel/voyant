@@ -1,6 +1,6 @@
-import { roomBlockLinkable } from "@voyant-travel/accommodations"
+import { roomBlockLinkable } from "@voyant-travel/accommodations/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { roomingAssignmentLinkable } from "@voyant-travel/mice"
+import { roomingAssignmentLinkable } from "@voyant-travel/mice/linkables"
 
 /**
  * A rooming assignment draws from a room block; a block backs many assignments.

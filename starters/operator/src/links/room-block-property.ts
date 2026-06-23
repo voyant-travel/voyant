@@ -1,6 +1,6 @@
-import { roomBlockLinkable } from "@voyant-travel/accommodations"
+import { roomBlockLinkable } from "@voyant-travel/accommodations/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { propertyLinkable } from "@voyant-travel/operations"
+import { propertyLinkable } from "@voyant-travel/operations/places/linkables"
 
 /**
  * Each room block is held against one property; a property can back many

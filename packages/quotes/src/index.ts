@@ -1,30 +1,15 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { quotesLinkable } from "./linkables.js"
 import { quotesRoutes } from "./routes/index.js"
 
+export { quoteLinkable, quotesLinkable, quoteVersionLinkable } from "./linkables.js"
 export type { QuotesRoutes } from "./routes/index.js"
-
-export const quoteLinkable: LinkableDefinition = {
-  module: "quotes",
-  entity: "quote",
-  table: "quotes",
-  idPrefix: "quot",
-}
-
-export const quoteVersionLinkable: LinkableDefinition = {
-  module: "quotes",
-  entity: "quoteVersion",
-  table: "quote_versions",
-  idPrefix: "qver",
-}
 
 export const quotesModule: Module = {
   name: "quotes",
-  linkable: {
-    quote: quoteLinkable,
-    quoteVersion: quoteVersionLinkable,
-  },
+  linkable: quotesLinkable,
   requiresTransactionalDb: true,
 }
 

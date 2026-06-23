@@ -3,7 +3,7 @@
 import {
   notificationLiquidSnippets,
   notificationTemplateVariableCatalog,
-} from "@voyant-travel/notifications"
+} from "@voyant-travel/notifications/template-authoring"
 
 export function useNotificationTemplateAuthoring() {
   return {
