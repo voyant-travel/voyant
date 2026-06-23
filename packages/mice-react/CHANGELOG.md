@@ -1,5 +1,32 @@
 # @voyant-travel/mice-react
 
+## 0.4.0
+
+### Minor Changes
+
+- 31a2f27: MICE Programs **Delegates** surface — roster + session enrollment on the
+  program detail page.
+
+  - `ProgramDelegatesSection` (`./ui`): lists a program's delegates (role,
+    status), adds new ones in place (role, status, optional person), and enrolls
+    a delegate into one of the program's agenda sessions — rendered inside
+    `ProgramDetailPage` below the Agenda. The roster requests the backend's max
+    page (500) and says so when a program hits the cap rather than silently
+    dropping delegates.
+  - `useDelegateMutation` hook (create / update / enroll) invalidating the
+    delegates list root; `delegateSingleResponse` + `enrollmentRecordSchema`
+    schemas for the POST/PATCH/enroll responses.
+
+- e585844: MICE Programs **Agenda** surface — sessions on the program detail page.
+
+  - `ProgramSessionsSection` (`./ui`): lists a program's agenda sessions and
+    creates new ones in place (title, type, day, track, capacity, registration),
+    rendered inside `ProgramDetailPage` below the cost sheet. Sessions are a
+    program's agenda, not a top-level surface, so they nest in the detail.
+  - `useSessionMutation` hook (create + update) invalidating the owning program's
+    session list, plus the `sessionSingleResponse` schema for the POST/PATCH
+    responses.
+
 ## 0.3.0
 
 ### Minor Changes
