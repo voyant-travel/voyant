@@ -191,7 +191,7 @@ function findStaticImports(source, moduleName) {
   const imports = []
   const escapedModule = moduleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   const pattern = new RegExp(
-    `(^|\\n)\\s*import\\s+((?:(?!\\n\\s*import\\s).)*?)\\s+from\\s+["']${escapedModule}["']`,
+    `(^|\\n)\\s*import\\s+((?:(?!\\n\\s*import\\s)[\\s\\S])*?)\\s+from\\s+["']${escapedModule}["']`,
     "g",
   )
 
