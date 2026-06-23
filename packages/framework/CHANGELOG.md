@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [722455d]
+  - @voyant-travel/mice@0.4.0
+
 ## 0.7.2
 
 ### Patch Changes
