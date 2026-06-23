@@ -1,6 +1,10 @@
 export { ActivitiesPage } from "./components/activities-page.js"
 export { CreateActivityDialog } from "./components/create-activity-dialog.js"
 export {
+  CustomFieldDefinitionsPage,
+  type CustomFieldDefinitionsPageProps,
+} from "./components/custom-field-definitions-page.js"
+export {
   OrganizationMergeDialog,
   type OrganizationMergeDialogProps,
   PersonMergeDialog,
