@@ -4,6 +4,7 @@
 
 import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"
 import { createRelationshipsAdminExtension } from "@voyant-travel/relationships-react/admin"
+import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
 import { createDistributionAdminExtension } from "@voyant-travel/distribution-react/admin"
 import { createInventoryAdminExtension } from "@voyant-travel/inventory-react/admin"
 import { createCommerceAdminExtension } from "@voyant-travel/commerce-react/admin"
@@ -15,7 +16,7 @@ import { createNotificationsAdminExtension } from "@voyant-travel/notifications-
 import { createFlightsAdminExtension } from "@voyant-travel/flights-react/admin"
 import { createLegalAdminExtension } from "@voyant-travel/legal-react/admin"
 import { createTripsAdminExtension } from "@voyant-travel/trips-react/admin"
-import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
+import { createMiceAdminExtension } from "@voyant-travel/mice-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -25,6 +26,7 @@ import { createQuotesAdminExtension } from "@voyant-travel/quotes-react/admin"
 export const generatedAdminExtensionFactories = {
   actionLedger: createActionLedgerAdminExtension,
   relationships: createRelationshipsAdminExtension,
+  quotes: createQuotesAdminExtension,
   distribution: createDistributionAdminExtension,
   inventory: createInventoryAdminExtension,
   commerce: createCommerceAdminExtension,
@@ -36,5 +38,5 @@ export const generatedAdminExtensionFactories = {
   flights: createFlightsAdminExtension,
   legal: createLegalAdminExtension,
   trips: createTripsAdminExtension,
-  quotes: createQuotesAdminExtension,
+  mice: createMiceAdminExtension,
 } as const

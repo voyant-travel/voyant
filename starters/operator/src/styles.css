@@ -23,6 +23,7 @@
 @source "../node_modules/@voyant-travel/inventory-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/distribution-react/dist/suppliers/**/*.{js,mjs}";
 @source "../node_modules/@voyant-travel/operations-react/dist/resources/**/*.{js,mjs}";
+@source "../node_modules/@voyant-travel/mice-react/dist/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
    runs from live source, not the package `dist/`. The dist scans above
    only help published consumers and can lag behind src during local dev,
@@ -41,6 +42,7 @@
 @source "../../../packages/inventory-react/src/**/*.{ts,tsx}";
 @source "../../../packages/distribution-react/src/suppliers/**/*.{ts,tsx}";
 @source "../../../packages/operations-react/src/resources/**/*.{ts,tsx}";
+@source "../../../packages/mice-react/src/**/*.{ts,tsx}";
 
 /* Theme (palette, fonts, radius, dark variant, base layer) comes entirely
    from @voyant-travel/ui/styles.css — the framework source of truth. This
@@ -61,3 +63,4 @@
 @import "@voyant-travel/operations-react/resources/styles.css";
 @import "@voyant-travel/catalog-react/styles.css";
 @import "@voyant-travel/flights-react/styles.css";
+@import "@voyant-travel/mice-react/styles.css";

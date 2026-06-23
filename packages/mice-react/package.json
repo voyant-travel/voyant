@@ -18,6 +18,7 @@
     "./query-keys": "./src/query-keys.ts",
     "./query-options": "./src/query-options.ts",
     "./ui": "./src/ui.ts",
+    "./admin": "./src/admin/index.tsx",
     "./styles.css": "./src/styles.css",
     "./components/*": "./src/components/*.tsx"
   },
@@ -113,6 +114,11 @@
         "types": "./dist/ui.d.ts",
         "import": "./dist/ui.js",
         "default": "./dist/ui.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

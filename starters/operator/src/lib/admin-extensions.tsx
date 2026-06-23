@@ -12,7 +12,7 @@ import {
 } from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { Button } from "@voyant-travel/ui/components/button"
-import { Building, FileText, Route, ScrollText, Tag } from "lucide-react"
+import { Building, CalendarRange, FileText, Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -57,6 +57,7 @@ type AdminExtensionNavMessages = Pick<
   | "flights"
   | "invoiceNumberSeries"
   | "invoices"
+  | "mice"
   | "newTrip"
   | "notificationDeliveries"
   | "notificationPreview"
@@ -594,6 +595,20 @@ function createQuotesExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
+// MICE is package-delivered (packaged-admin RFC Phase 3): nav AND the route
+// implementations come from @voyant-travel/mice-react/admin — the Programs nav
+// item (spliced after Bookings via `insertAfter`, since a group program is an
+// operationally-managed booking pipeline of rooms, function space, and
+// delegates), the programs list, and the program detail page where that
+// program's per-currency cost sheet lives. The app only supplies the localized
+// label and the icon.
+function createMiceExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.mice({
+    labels: { programs: messages.mice },
+    icon: CalendarRange,
+  })
+}
+
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
@@ -612,6 +627,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   flights: "Flights",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
+  mice: "Programs",
   newTrip: "New trip",
   notificationDeliveries: "Deliveries",
   notificationPreview: "Preview",
@@ -665,6 +681,7 @@ export function createOperatorAdminExtensions(
       createPromotionsExtension(messages),
       createTripsExtension(messages),
       createQuotesExtension(messages),
+      createMiceExtension(messages),
       createActionLedgerExtension(messages),
       ...discoveredAdminExtensions,
     ),

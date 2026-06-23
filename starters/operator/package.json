@@ -83,6 +83,7 @@
     "@voyant-travel/legal": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
     "@voyant-travel/mice": "workspace:^",
+    "@voyant-travel/mice-react": "workspace:^",
     "@voyant-travel/notifications": "workspace:^",
     "@voyant-travel/notifications-react": "workspace:^",
     "@voyant-travel/operations": "workspace:^",
