@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./app": "./src/app.ts",
+    "./openapi": "./src/openapi.ts",
     "./module": "./src/module.ts",
     "./composition": "./src/composition.ts",
     "./plugin": "./src/plugin.ts",
@@ -37,6 +38,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/storage": "workspace:^",

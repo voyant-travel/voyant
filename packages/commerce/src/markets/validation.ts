@@ -1,10 +1,6 @@
 import { booleanQueryParam } from "@voyant-travel/db/helpers"
+import { paginationSchema } from "@voyant-travel/types"
 import { z } from "zod"
-
-const paginationSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-})
 
 const languageTagSchema = z
   .string()
@@ -51,6 +47,29 @@ export const marketListQuerySchema = paginationSchema.extend({
   countryCode: z.string().optional(),
   search: z.string().optional(),
 })
+
+/**
+ * The serialized (wire) shape of a persisted market row. This is the response
+ * contract: `createdAt`/`updatedAt` are ISO strings (drizzle `Date`s once
+ * JSON-serialized), not `Date` objects. Used as the OpenAPI response schema so
+ * the generated doc tracks the real payload.
+ */
+export const marketSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  status: marketStatusSchema,
+  regionCode: z.string().nullable(),
+  countryCode: z.string().nullable(),
+  defaultLanguageTag: z.string(),
+  defaultCurrency: z.string(),
+  timezone: z.string().nullable(),
+  taxContext: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type Market = z.infer<typeof marketSchema>
 
 export const marketLocaleCoreSchema = z.object({
   languageTag: languageTagSchema,

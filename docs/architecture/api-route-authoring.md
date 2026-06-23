@@ -294,6 +294,64 @@ Rule:
 Default to `{module.name}` for public routes. Use `publicPath` only when the
 public contract is clearer because of it.
 
+## OpenAPI Contracts
+
+The published API specs are **generated from the route handlers**, never hand
+authored. A module owns its OpenAPI contract the same way it owns its routes;
+the deployment composes them, and the spec is emitted at build time from the
+composed app (`@voyant-travel/hono/openapi`). See voyant#2114.
+
+### 16. New and changed routes declare their contract with `@hono/zod-openapi`
+
+Author the route as an `OpenAPIHono` app and a `createRoute(...)` definition,
+then `.openapi(route, handler)`. `OpenAPIHono` is a drop-in `Hono` superclass,
+so a module can migrate one route at a time — untouched routes stay plain and
+simply do not appear in the generated doc yet.
+
+```ts
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi"
+import { listResponseSchema } from "@voyant-travel/types"
+
+const listMarketsRoute = createRoute({
+  method: "get",
+  path: "/markets",
+  request: { query: marketListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of markets",
+      content: { "application/json": { schema: listResponseSchema(marketSchema) } },
+    },
+  },
+})
+
+export const marketsRoutes = new OpenAPIHono<Env>().openapi(listMarketsRoute, (c) =>
+  c.json(marketsService.listMarkets(c.get("db"), c.req.valid("query"))),
+)
+```
+
+- The request schemas you already pass to `parseQuery` / `parseJsonBody` drop
+  straight into `request`; `c.req.valid(...)` replaces the explicit parse.
+- Every response needs a declared schema. For offset-paginated lists this is
+  `listResponseSchema(itemSchema)` from `@voyant-travel/types` — never a
+  re-declared envelope (the canonical one exists precisely to stop the
+  `count` vs `total` drift).
+
+### 17. The response schema is the wire contract — verify it
+
+`@hono/zod-openapi` keeps the generated doc in step with the *declared* response
+schema, but it does **not** check that the handler actually returns that shape.
+A wrong response schema produces a clean — but lying — doc. So a route whose
+response matters carries a contract test that validates the JSON-serialized
+payload against its response schema (typing the fixture as the real Drizzle row
+catches column drift; the round-trip catches `Date` → string and similar). This
+is the only thing that catches response-shape drift.
+
+Rule:
+
+Declare the request and response schema on every new or changed route. Treat
+the declared response schema as the contract, and back it with a contract test.
+Never hand-edit a generated spec.
+
 ## Practical Checklist
 
 When authoring or reviewing a Voyant API route:
@@ -307,6 +365,8 @@ When authoring or reviewing a Voyant API route:
 7. Keep business logic in services or workflows, not in the route body.
 8. Prefer extension over full route override.
 9. Treat the response shape as an intentional contract.
+10. Declare the route with `@hono/zod-openapi` and back its response with a
+    contract test (new and changed routes).
 
 ## Non-Goals
 

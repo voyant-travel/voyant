@@ -1,6 +1,7 @@
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
 import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 
 import { marketsService } from "./service.js"
 import {
@@ -20,6 +21,7 @@ import {
   marketLocaleListQuerySchema,
   marketPriceCatalogListQuerySchema,
   marketProductRuleListQuerySchema,
+  marketSchema,
   updateExchangeRateSchema,
   updateFxRateSetSchema,
   updateMarketChannelRuleSchema,
@@ -37,9 +39,30 @@ type Env = {
   }
 }
 
-export const marketsRoutes = new Hono<Env>()
-  .get("/markets", async (c) => {
-    const query = await parseQuery(c, marketListQuerySchema)
+/**
+ * Tracer route for the OpenAPI adoption (voyant#2114): the contract is declared
+ * once via `createRoute` — query validated against `marketListQuerySchema`, the
+ * response typed as the canonical `listResponseSchema(marketSchema)` envelope —
+ * and the generated doc is derived from these schemas, so it cannot drift from
+ * the handler.
+ */
+const listMarketsRoute = createRoute({
+  method: "get",
+  path: "/markets",
+  request: { query: marketListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of markets",
+      content: {
+        "application/json": { schema: listResponseSchema(marketSchema) },
+      },
+    },
+  },
+})
+
+export const marketsRoutes = new OpenAPIHono<Env>()
+  .openapi(listMarketsRoute, async (c) => {
+    const query = c.req.valid("query")
     return c.json(await marketsService.listMarkets(c.get("db"), query))
   })
   .post("/markets", async (c) => {

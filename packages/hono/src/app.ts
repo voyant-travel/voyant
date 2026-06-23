@@ -1,3 +1,6 @@
+// agent-quality: file-size exception — app.ts is the framework composition root;
+// splitting it is intentional follow-up work, not part of voyant#2114.
+import { OpenAPIHono } from "@hono/zod-openapi"
 import {
   createContainer,
   createEventBus,
@@ -7,7 +10,7 @@ import {
 } from "@voyant-travel/core"
 import { createOutboxEventStore } from "@voyant-travel/db/outbox"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
-import { Hono } from "hono"
+import type { Hono } from "hono"
 
 import { assembleAnonymousPaths } from "./anonymous-paths.js"
 import {
@@ -44,6 +47,12 @@ import { expandHonoPlugins } from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
+
+/** The composed app's Hono env (bindings + framework request variables). */
+type MountEnv<TBindings extends VoyantBindings> = {
+  Bindings: TBindings
+  Variables: VoyantVariables
+}
 
 function resolveConfiguredRateLimitStore<TBindings extends VoyantBindings>(
   config: RateLimitConfig | undefined,
@@ -112,8 +121,10 @@ export interface VoyantAppExtensions<TBindings = unknown> {
  */
 export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
-): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
-  const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
+): Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings> {
+  // Composed root is an OpenAPIHono (drop-in Hono superclass) so the app can
+  // emit a spec; read via `@voyant-travel/hono/openapi` at build time.
+  const app: Hono<MountEnv<TBindings>> = new OpenAPIHono<MountEnv<TBindings>>()
   // Observability sink (RFC #1553) — resolved once and reused by both the
   // outer onError and the forwarded auth sub-app catch point below.
   const reporter = config.reporter ?? noopReporter
@@ -588,8 +599,7 @@ export function mountApp<TBindings extends VoyantBindings>(
   // use this so the time wheel + manifest registration happen without
   // traffic. Binding-dependent drivers that want eager boot must pass
   // the real `env`.
-  const augmented = app as Hono<{ Bindings: TBindings; Variables: VoyantVariables }> &
-    VoyantAppExtensions<TBindings>
+  const augmented = app as Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings>
   augmented.eventBus = eventBus
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
