@@ -1,5 +1,11 @@
 # @voyant-travel/crm-react
 
+## 0.137.1
+
+### Patch Changes
+
+- fd0cb71: Add a reusable admin UI for runtime custom-field definitions.
+
 ## 0.137.0
 
 ### Patch Changes
