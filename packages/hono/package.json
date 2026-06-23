@@ -72,6 +72,11 @@
         "import": "./dist/app.js",
         "default": "./dist/app.js"
       },
+      "./openapi": {
+        "types": "./dist/openapi.d.ts",
+        "import": "./dist/openapi.js",
+        "default": "./dist/openapi.js"
+      },
       "./module": {
         "types": "./dist/module.d.ts",
         "import": "./dist/module.js",

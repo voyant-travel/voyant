@@ -9,7 +9,7 @@
  */
 
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
@@ -35,7 +35,7 @@ const listPromotionsRoute = createRoute({
   },
 })
 
-export const promotionsRoutes = new OpenAPIHono<Env>()
+export const promotionsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listPromotionsRoute, async (c) =>
     c.json(await promotionsService.listOffers(c.get("db"), c.req.valid("query"))),
   )

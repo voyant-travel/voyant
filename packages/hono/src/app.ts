@@ -122,8 +122,12 @@ export interface VoyantAppExtensions<TBindings = unknown> {
 export function mountApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
 ): Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings> {
-  // Composed root is an OpenAPIHono (drop-in Hono superclass) so the app can
-  // emit a spec; read via `@voyant-travel/hono/openapi` at build time.
+  // Composed root is an OpenAPIHono (a drop-in Hono superclass) so module routes
+  // authored with `.openapi()` register here and the spec can be generated via
+  // `@voyant-travel/hono/openapi` at build time. The doc *generator*
+  // (`@asteasolutions/zod-to-openapi` + `openapi3-ts`) is only reachable through
+  // `getOpenAPIDocument`, so it tree-shakes out of the Worker bundle; the
+  // OpenAPIHono registry + validator glue (~35 KB) is the only runtime cost.
   const app: Hono<MountEnv<TBindings>> = new OpenAPIHono<MountEnv<TBindings>>()
   // Observability sink (RFC #1553) — resolved once and reused by both the
   // outer onError and the forwarded auth sub-app catch point below.

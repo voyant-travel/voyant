@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { openApiValidationHook, parseJsonBody, parseQuery } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -60,7 +60,7 @@ const listMarketsRoute = createRoute({
   },
 })
 
-export const marketsRoutes = new OpenAPIHono<Env>()
+export const marketsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listMarketsRoute, async (c) => {
     const query = c.req.valid("query")
     return c.json(await marketsService.listMarkets(c.get("db"), query))
