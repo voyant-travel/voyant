@@ -28,6 +28,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=charters_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/charters-contracts": "workspace:^",
     "@voyant-travel/core": "workspace:^",

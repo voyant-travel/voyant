@@ -18,6 +18,7 @@
  * the runtime half of the migration-resilience work (voyant#1608 / #1620).
  */
 
+import { chartersModule } from "@voyant-travel/charters"
 import { cruisesModule } from "@voyant-travel/cruises"
 import {
   extensionsFromGlob,
@@ -253,6 +254,25 @@ export const deploymentLocalModules: Record<string, ModuleFactory<OperatorCapabi
     lazyAdminRoutes: () => import("./routes/cruises").then((m) => m.createCruiseAdminRoutes()),
     lazyPublicRoutes: () => import("./routes/cruises").then((m) => m.createCruisePublicRoutes()),
     // Storefront cruise detail/search is part of the auth-less journey (ADR-0008).
+    anonymous: true,
+  }),
+  // Charter admin/public routes mounted at /v1/{admin,public}/charters. Charters
+  // is operator-local (niche luxury-yacht vertical) — NOT in the framework
+  // standard set; the operator is the only deployment that surfaces it
+  // (voyant#2191). External charter providers resolve through the package's
+  // process-global adapter registry, so — unlike cruises — no
+  // SourceAdapterRegistry injection is needed; local charters work unconditionally
+  // and external keys 501 with no adapter registered. Reuse the package's
+  // `chartersModule` metadata (not a bare `{ name }`) so `requiresTransactionalDb`
+  // survives — createApp routes these prefixes to the transactional DB the charter
+  // mutation/booking/quote handlers need. The public `chartersPublicRoutes`
+  // bundle is an OpenAPIHono, so its `.openapi()` defs surface in the operator
+  // storefront spec via the build-time lazy-merge (voyant#2114).
+  "operator/charters": () => ({
+    module: chartersModule,
+    lazyAdminRoutes: () => import("./routes/charters").then((m) => m.createCharterAdminRoutes()),
+    lazyPublicRoutes: () => import("./routes/charters").then((m) => m.createCharterPublicRoutes()),
+    // Storefront charter browse/detail is part of the auth-less journey (ADR-0008).
     anonymous: true,
   }),
   // Realtime channels (voyant#1695). Mints scoped client tokens at
