@@ -17974,6 +17974,1112 @@
         }
       }
     },
+    "/v1/public/customer-portal/bookings": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The authenticated customer's bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bookingId": {
+                            "type": "string"
+                          },
+                          "bookingNumber": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "draft",
+                              "on_hold",
+                              "awaiting_payment",
+                              "confirmed",
+                              "in_progress",
+                              "completed",
+                              "expired",
+                              "cancelled"
+                            ]
+                          },
+                          "sellCurrency": {
+                            "type": "string"
+                          },
+                          "sellAmountCents": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "productTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "unpaid",
+                              "partially_paid",
+                              "paid",
+                              "overdue"
+                            ]
+                          },
+                          "startDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "endDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "confirmedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "travelerCount": {
+                            "type": "integer"
+                          },
+                          "primaryTravelerName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "bookingId",
+                          "bookingNumber",
+                          "status",
+                          "sellCurrency",
+                          "sellAmountCents",
+                          "productTitle",
+                          "paymentStatus",
+                          "startDate",
+                          "endDate",
+                          "pax",
+                          "confirmedAt",
+                          "completedAt",
+                          "travelerCount",
+                          "primaryTravelerName"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/bookings/{bookingId}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The booking detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "bookingNumber": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "on_hold",
+                            "awaiting_payment",
+                            "confirmed",
+                            "in_progress",
+                            "completed",
+                            "expired",
+                            "cancelled"
+                          ]
+                        },
+                        "sellCurrency": {
+                          "type": "string"
+                        },
+                        "sellAmountCents": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "startDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "endDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "confirmedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "cancelledAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "completedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "travelers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "participantType": {
+                                "type": "string",
+                                "enum": [
+                                  "traveler",
+                                  "occupant",
+                                  "other"
+                                ]
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "isPrimary": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "participantType",
+                              "firstName",
+                              "lastName",
+                              "isPrimary"
+                            ]
+                          }
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "itemType": {
+                                "type": "string",
+                                "enum": [
+                                  "unit",
+                                  "extra",
+                                  "service",
+                                  "fee",
+                                  "tax",
+                                  "discount",
+                                  "adjustment",
+                                  "accommodation",
+                                  "transport",
+                                  "other"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "draft",
+                                  "on_hold",
+                                  "confirmed",
+                                  "cancelled",
+                                  "expired",
+                                  "fulfilled"
+                                ]
+                              },
+                              "serviceDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "startsAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "endsAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "sellCurrency": {
+                                "type": "string"
+                              },
+                              "unitSellAmountCents": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "totalSellAmountCents": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "travelerLinks": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "travelerId": {
+                                      "type": "string"
+                                    },
+                                    "role": {
+                                      "type": "string",
+                                      "enum": [
+                                        "traveler",
+                                        "occupant",
+                                        "beneficiary",
+                                        "other"
+                                      ]
+                                    },
+                                    "isPrimary": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "travelerId",
+                                    "role",
+                                    "isPrimary"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "description",
+                              "itemType",
+                              "status",
+                              "serviceDate",
+                              "startsAt",
+                              "endsAt",
+                              "quantity",
+                              "sellCurrency",
+                              "unitSellAmountCents",
+                              "totalSellAmountCents",
+                              "notes",
+                              "travelerLinks"
+                            ]
+                          }
+                        },
+                        "billingContact": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "email": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "phone": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "firstName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "city": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "address1": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "address2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "postal": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "email",
+                            "phone",
+                            "firstName",
+                            "lastName",
+                            "country",
+                            "state",
+                            "city",
+                            "address1",
+                            "address2",
+                            "postal"
+                          ]
+                        },
+                        "documents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "booking_document",
+                                  "legal",
+                                  "finance"
+                                ]
+                              },
+                              "travelerId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "visa",
+                                  "insurance",
+                                  "health",
+                                  "passport_copy",
+                                  "contract",
+                                  "invoice",
+                                  "proforma",
+                                  "credit_note",
+                                  "other"
+                                ]
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "fileUrl": {
+                                "type": "string"
+                              },
+                              "mimeType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "reference": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "source",
+                              "travelerId",
+                              "type",
+                              "fileName",
+                              "fileUrl",
+                              "mimeType",
+                              "reference"
+                            ]
+                          }
+                        },
+                        "financials": {
+                          "type": "object",
+                          "properties": {
+                            "documents": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "invoiceId": {
+                                    "type": "string"
+                                  },
+                                  "invoiceNumber": {
+                                    "type": "string"
+                                  },
+                                  "invoiceType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "invoice",
+                                      "proforma",
+                                      "credit_note"
+                                    ]
+                                  },
+                                  "invoiceStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "draft",
+                                      "pending_external_allocation",
+                                      "issued",
+                                      "partially_paid",
+                                      "paid",
+                                      "overdue",
+                                      "void"
+                                    ]
+                                  },
+                                  "currency": {
+                                    "type": "string"
+                                  },
+                                  "totalCents": {
+                                    "type": "integer"
+                                  },
+                                  "paidCents": {
+                                    "type": "integer"
+                                  },
+                                  "balanceDueCents": {
+                                    "type": "integer"
+                                  },
+                                  "issueDate": {
+                                    "type": "string"
+                                  },
+                                  "dueDate": {
+                                    "type": "string"
+                                  },
+                                  "documentStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "missing",
+                                      "pending",
+                                      "ready",
+                                      "failed",
+                                      "stale"
+                                    ]
+                                  },
+                                  "format": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "enum": [
+                                      "html",
+                                      "pdf",
+                                      "xml",
+                                      "json",
+                                      null
+                                    ]
+                                  },
+                                  "generatedAt": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "downloadUrl": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "invoiceId",
+                                  "invoiceNumber",
+                                  "invoiceType",
+                                  "invoiceStatus",
+                                  "currency",
+                                  "totalCents",
+                                  "paidCents",
+                                  "balanceDueCents",
+                                  "issueDate",
+                                  "dueDate",
+                                  "documentStatus",
+                                  "format",
+                                  "generatedAt",
+                                  "downloadUrl"
+                                ]
+                              }
+                            },
+                            "payments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "invoiceId": {
+                                    "type": "string"
+                                  },
+                                  "invoiceNumber": {
+                                    "type": "string"
+                                  },
+                                  "invoiceType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "invoice",
+                                      "proforma",
+                                      "credit_note"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "completed",
+                                      "failed",
+                                      "refunded"
+                                    ]
+                                  },
+                                  "paymentMethod": {
+                                    "type": "string",
+                                    "enum": [
+                                      "bank_transfer",
+                                      "credit_card",
+                                      "debit_card",
+                                      "cash",
+                                      "cheque",
+                                      "wallet",
+                                      "direct_bill",
+                                      "voucher",
+                                      "other"
+                                    ]
+                                  },
+                                  "amountCents": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string"
+                                  },
+                                  "paymentDate": {
+                                    "type": "string"
+                                  },
+                                  "referenceNumber": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "notes": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "invoiceId",
+                                  "invoiceNumber",
+                                  "invoiceType",
+                                  "status",
+                                  "paymentMethod",
+                                  "amountCents",
+                                  "currency",
+                                  "paymentDate",
+                                  "referenceNumber",
+                                  "notes"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "documents",
+                            "payments"
+                          ]
+                        },
+                        "fulfillments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "bookingItemId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "travelerId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "fulfillmentType": {
+                                "type": "string",
+                                "enum": [
+                                  "voucher",
+                                  "ticket",
+                                  "pdf",
+                                  "qr_code",
+                                  "barcode",
+                                  "mobile",
+                                  "other"
+                                ]
+                              },
+                              "deliveryChannel": {
+                                "type": "string",
+                                "enum": [
+                                  "download",
+                                  "email",
+                                  "api",
+                                  "wallet",
+                                  "other"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "issued",
+                                  "reissued",
+                                  "revoked",
+                                  "failed"
+                                ]
+                              },
+                              "artifactUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "bookingItemId",
+                              "travelerId",
+                              "fulfillmentType",
+                              "deliveryChannel",
+                              "status",
+                              "artifactUrl"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "bookingId",
+                        "bookingNumber",
+                        "status",
+                        "sellCurrency",
+                        "sellAmountCents",
+                        "startDate",
+                        "endDate",
+                        "pax",
+                        "confirmedAt",
+                        "cancelledAt",
+                        "completedAt",
+                        "travelers",
+                        "items",
+                        "billingContact",
+                        "documents",
+                        "financials",
+                        "fulfillments"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/bookings/{bookingId}/documents": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The booking's documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "booking_document",
+                              "legal",
+                              "finance"
+                            ]
+                          },
+                          "travelerId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "visa",
+                              "insurance",
+                              "health",
+                              "passport_copy",
+                              "contract",
+                              "invoice",
+                              "proforma",
+                              "credit_note",
+                              "other"
+                            ]
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "fileUrl": {
+                            "type": "string"
+                          },
+                          "mimeType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "source",
+                          "travelerId",
+                          "type",
+                          "fileName",
+                          "fileUrl",
+                          "mimeType",
+                          "reference"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/bookings/{bookingId}/billing-contact": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The booking's billing contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "phone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "firstName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lastName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "country": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "state": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "city": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address1": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address2": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "postal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "email",
+                        "phone",
+                        "firstName",
+                        "lastName",
+                        "country",
+                        "state",
+                        "city",
+                        "address1",
+                        "address2",
+                        "postal"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/storefront-verification/email/start": {
       "post": {
         "requestBody": {

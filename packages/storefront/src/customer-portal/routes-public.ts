@@ -17,6 +17,10 @@ import {
   bootstrapCustomerPortalSchema,
   createCustomerPortalCompanionSchema,
   createCustomerPortalProfileDocumentSchema,
+  customerPortalBookingBillingContactSchema,
+  customerPortalBookingDetailSchema,
+  customerPortalBookingDocumentSchema,
+  customerPortalBookingSummarySchema,
   customerPortalCompanionSchema,
   customerPortalProfileDocumentSchema,
   customerPortalProfileSchema,
@@ -34,10 +38,6 @@ type Env = {
     db: PostgresJsDatabase
     userId?: string
   }
-}
-
-function notFound<T extends Env>(c: Context<T>, error: string) {
-  return c.json({ error }, 404)
 }
 
 function hasErrorResult(
@@ -69,8 +69,20 @@ const importEnvelopeSchema = z.object({
 })
 const successEnvelopeSchema = z.object({ success: z.literal(true) })
 
+const bookingSummaryListEnvelopeSchema = z.object({
+  data: z.array(customerPortalBookingSummarySchema),
+})
+const bookingDetailEnvelopeSchema = z.object({ data: customerPortalBookingDetailSchema })
+const bookingDocumentListEnvelopeSchema = z.object({
+  data: z.array(customerPortalBookingDocumentSchema),
+})
+const bookingBillingContactEnvelopeSchema = z.object({
+  data: customerPortalBookingBillingContactSchema,
+})
+
 const documentIdParamSchema = z.object({ id: z.string() })
 const companionIdParamSchema = z.object({ companionId: z.string() })
+const bookingIdParamSchema = z.object({ bookingId: z.string() })
 
 const getMeRoute = createRoute({
   method: "get",
@@ -337,6 +349,75 @@ const deleteCompanionRoute = createRoute({
   },
 })
 
+const listBookingsRoute = createRoute({
+  method: "get",
+  path: "/bookings",
+  responses: {
+    200: {
+      description: "The authenticated customer's bookings",
+      content: { "application/json": { schema: bookingSummaryListEnvelopeSchema } },
+    },
+    404: {
+      description: "Customer profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getBookingRoute = createRoute({
+  method: "get",
+  path: "/bookings/{bookingId}",
+  request: {
+    params: bookingIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The booking detail",
+      content: { "application/json": { schema: bookingDetailEnvelopeSchema } },
+    },
+    404: {
+      description: "Booking not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const listBookingDocumentsRoute = createRoute({
+  method: "get",
+  path: "/bookings/{bookingId}/documents",
+  request: {
+    params: bookingIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The booking's documents",
+      content: { "application/json": { schema: bookingDocumentListEnvelopeSchema } },
+    },
+    404: {
+      description: "Booking not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getBookingBillingContactRoute = createRoute({
+  method: "get",
+  path: "/bookings/{bookingId}/billing-contact",
+  request: {
+    params: bookingIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The booking's billing contact",
+      content: { "application/json": { schema: bookingBillingContactEnvelopeSchema } },
+    },
+    404: {
+      description: "Booking not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export interface PublicCustomerPortalRouteOptions {
   resolveDocumentDownloadUrl?: (
     bindings: unknown,
@@ -555,52 +636,58 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
 
       return c.json({ success: true } as const, 200)
     })
-    .route("/", customerPortalRoutes)
-    .get("/bookings", async (c) => {
+    .openapi(listBookingsRoute, async (c) => {
       const userId = requireUserId(c)
 
       const bookings = await publicCustomerPortalService.listBookings(c.get("db"), userId)
-      return bookings ? c.json({ data: bookings }) : notFound(c, "Customer profile not found")
+      return bookings
+        ? c.json({ data: bookings }, 200)
+        : c.json({ error: "Customer profile not found" }, 404)
     })
-    .get("/bookings/:bookingId", async (c) => {
+    .openapi(getBookingRoute, async (c) => {
       const userId = requireUserId(c)
 
       const booking = await publicCustomerPortalService.getBooking(
         c.get("db"),
         userId,
-        c.req.param("bookingId"),
+        c.req.valid("param").bookingId,
         {
           resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c, storageKey),
         },
       )
 
-      return booking ? c.json({ data: booking }) : notFound(c, "Booking not found")
+      return booking ? c.json({ data: booking }, 200) : c.json({ error: "Booking not found" }, 404)
     })
-    .get("/bookings/:bookingId/documents", async (c) => {
+    .openapi(listBookingDocumentsRoute, async (c) => {
       const userId = requireUserId(c)
 
       const documents = await publicCustomerPortalService.listBookingDocuments(
         c.get("db"),
         userId,
-        c.req.param("bookingId"),
+        c.req.valid("param").bookingId,
         {
           resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c, storageKey),
         },
       )
 
-      return documents ? c.json({ data: documents }) : notFound(c, "Booking not found")
+      return documents
+        ? c.json({ data: documents }, 200)
+        : c.json({ error: "Booking not found" }, 404)
     })
-    .get("/bookings/:bookingId/billing-contact", async (c) => {
+    .openapi(getBookingBillingContactRoute, async (c) => {
       const userId = requireUserId(c)
 
       const billingContact = await publicCustomerPortalService.getBookingBillingContact(
         c.get("db"),
         userId,
-        c.req.param("bookingId"),
+        c.req.valid("param").bookingId,
       )
 
-      return billingContact ? c.json({ data: billingContact }) : notFound(c, "Booking not found")
+      return billingContact
+        ? c.json({ data: billingContact }, 200)
+        : c.json({ error: "Booking not found" }, 404)
     })
+    .route("/", customerPortalRoutes)
 }
 
 export const publicCustomerPortalRoutes = createPublicCustomerPortalRoutes()
