@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: storefront; existing route module stays co-located until a dedicated split preserves behavior and tests.
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   checkoutCapabilityActions,
   checkoutCapabilityCookie,
@@ -7,13 +8,13 @@ import {
 import { enqueueWriteIntent, getWriteIntent } from "@voyant-travel/db/write-intents"
 import {
   idempotencyKey,
+  openApiValidationHook,
   parseJsonBody,
   parseQuery,
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import {
   BOOKING_BOOTSTRAP_INTENT_EVENT,
@@ -36,10 +37,13 @@ import {
   storefrontLeadIntakeInputSchema,
   storefrontNewsletterSubscribeInputSchema,
   storefrontOfferApplyInputSchema,
+  storefrontOfferMutationResponseSchema,
   storefrontOfferRedeemInputSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductExtensionsQuerySchema,
   storefrontPromotionalOfferListQuerySchema,
+  storefrontPromotionalOfferListResponseSchema,
+  storefrontPromotionalOfferResponseSchema,
 } from "./validation.js"
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
@@ -158,6 +162,93 @@ function attachCheckoutCapability<T extends { sessionId: string }>(
   }
 }
 
+const errorResponseSchema = z.object({ error: z.string() })
+
+const listProductOffersRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/offers",
+  request: {
+    params: z.object({ productId: z.string() }),
+    query: storefrontPromotionalOfferListQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Promotional offers applicable to a product (and optional departure)",
+      content: {
+        "application/json": { schema: storefrontPromotionalOfferListResponseSchema },
+      },
+    },
+  },
+})
+
+const offerBySlugRoute = createRoute({
+  method: "get",
+  path: "/offers/{slug}",
+  request: {
+    params: z.object({ slug: z.string() }),
+    query: storefrontPromotionalOfferListQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "A promotional offer by slug",
+      content: {
+        "application/json": { schema: storefrontPromotionalOfferResponseSchema },
+      },
+    },
+    404: {
+      description: "Storefront offer not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const applyOfferRoute = createRoute({
+  method: "post",
+  path: "/offers/{slug}/apply",
+  request: {
+    params: z.object({ slug: z.string() }),
+    body: {
+      required: true,
+      content: { "application/json": { schema: storefrontOfferApplyInputSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Result of applying a promotional offer",
+      content: {
+        "application/json": { schema: storefrontOfferMutationResponseSchema },
+      },
+    },
+    501: {
+      description: "Storefront offer application is not configured",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const redeemOfferRoute = createRoute({
+  method: "post",
+  path: "/offers/redeem",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: storefrontOfferRedeemInputSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Result of redeeming a promotional offer code",
+      content: {
+        "application/json": { schema: storefrontOfferMutationResponseSchema },
+      },
+    },
+    501: {
+      description: "Storefront offer redemption is not configured",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions) {
   const storefrontService = createStorefrontService(options)
 
@@ -191,7 +282,59 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     }
   }
 
-  return new Hono<Env>()
+  // `.openapi()` legs are declared first: `OpenAPIHono#get`/`#post` return the
+  // base `Hono` type (honojs/middleware#637), so any plain `.get()`/`.post()`
+  // leg cannot precede an `.openapi()` in the chain. The migrated offer routes
+  // carry distinct literal final segments (`/offers`, `/offers/{slug}`,
+  // `/offers/{slug}/apply`, `/offers/redeem`), so hoisting them ahead of the
+  // remaining plain catalog/booking legs preserves route-match order — and
+  // `/offers/redeem` (a POST) never collides with `/offers/{slug}` (a GET).
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listProductOffersRoute, async (c) => {
+      const query = c.req.valid("query")
+      const offers = await storefrontService.listApplicableOffers({
+        productId: c.req.valid("param").productId,
+        departureId: query.departureId,
+        locale: query.locale,
+        context: getRequestContext(c),
+      })
+
+      setPublicCacheHeaders(c)
+      return c.json({ data: offers }, 200)
+    })
+    .openapi(offerBySlugRoute, async (c) => {
+      const query = c.req.valid("query")
+      const offer = await storefrontService.getOfferBySlug({
+        slug: c.req.valid("param").slug,
+        locale: query.locale,
+        context: getRequestContext(c),
+      })
+
+      if (!offer) return c.json({ error: "Storefront offer not found" }, 404)
+      setPublicCacheHeaders(c)
+      return c.json({ data: offer }, 200)
+    })
+    .openapi(applyOfferRoute, async (c) => {
+      const result = await storefrontService.applyOffer({
+        slug: c.req.valid("param").slug,
+        body: c.req.valid("json"),
+        context: getRequestContext(c),
+      })
+
+      return result
+        ? c.json({ data: result }, 200)
+        : c.json({ error: "Storefront offer application is not configured" }, 501)
+    })
+    .openapi(redeemOfferRoute, async (c) => {
+      const result = await storefrontService.redeemOffer({
+        body: c.req.valid("json"),
+        context: getRequestContext(c),
+      })
+
+      return result
+        ? c.json({ data: result }, 200)
+        : c.json({ error: "Storefront offer redemption is not configured" }, 501)
+    })
     .get("/settings", async (c) => {
       return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
     })
@@ -516,51 +659,6 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       if (!itinerary) return c.json({ error: "Storefront itinerary not found" }, 404)
       setPublicCacheHeaders(c)
       return c.json({ data: itinerary })
-    })
-    .get("/products/:productId/offers", async (c) => {
-      const query = await parseQuery(c, storefrontPromotionalOfferListQuerySchema)
-      const offers = await storefrontService.listApplicableOffers({
-        productId: c.req.param("productId"),
-        departureId: query.departureId,
-        locale: query.locale,
-        context: getRequestContext(c),
-      })
-
-      setPublicCacheHeaders(c)
-      return c.json({ data: offers })
-    })
-    .get("/offers/:slug", async (c) => {
-      const query = await parseQuery(c, storefrontPromotionalOfferListQuerySchema)
-      const offer = await storefrontService.getOfferBySlug({
-        slug: c.req.param("slug"),
-        locale: query.locale,
-        context: getRequestContext(c),
-      })
-
-      if (!offer) return c.json({ error: "Storefront offer not found" }, 404)
-      setPublicCacheHeaders(c)
-      return c.json({ data: offer })
-    })
-    .post("/offers/:slug/apply", async (c) => {
-      const result = await storefrontService.applyOffer({
-        slug: c.req.param("slug"),
-        body: await parseJsonBody(c, storefrontOfferApplyInputSchema),
-        context: getRequestContext(c),
-      })
-
-      return result
-        ? c.json({ data: result })
-        : c.json({ error: "Storefront offer application is not configured" }, 501)
-    })
-    .post("/offers/redeem", async (c) => {
-      const result = await storefrontService.redeemOffer({
-        body: await parseJsonBody(c, storefrontOfferRedeemInputSchema),
-        context: getRequestContext(c),
-      })
-
-      return result
-        ? c.json({ data: result })
-        : c.json({ error: "Storefront offer redemption is not configured" }, 501)
     })
 }
 
