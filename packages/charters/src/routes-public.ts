@@ -402,7 +402,7 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
   })
   .openapi(listVoyagesRoute, async (c) => {
     const query = c.req.valid("query")
-    const result = await chartersService.listVoyages(c.get("db"), query)
+    const result = await chartersService.listVoyages(c.get("db"), query, { productStatus: "live" })
     cachePublicRead(c)
     return c.json(result, 200)
   })
@@ -437,6 +437,7 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
     const row = await chartersService.getVoyageById(c.get("db"), parsed.id, {
       withSuites: true,
       withSchedule: true,
+      productStatus: "live",
     })
     if (!row) return c.json({ error: "not_found" }, 404)
     cachePublicRead(c)
@@ -464,6 +465,17 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
       })
       return c.json({ data: quote }, 200)
     }
+    // Gate to a live voyage (P1) and verify the requested suite belongs to the
+    // URL voyage (P2) — a suite from another voyage must not return a quote
+    // under this URL. `payload.suiteId` is the suite's TypeID (`charter_suites.id`),
+    // the same field `pricingService.quotePerSuite` looks up.
+    const voyage = await chartersService.getVoyageById(c.get("db"), parsed.id, {
+      withSuites: true,
+      productStatus: "live",
+    })
+    if (!voyage) return c.json({ error: "not_found" }, 404)
+    const matching = voyage.suites?.find((s) => s.id === payload.suiteId)
+    if (!matching) return c.json({ error: "no_matching_suite" }, 404)
     const quote = await pricingService.quotePerSuite(c.get("db"), {
       suiteId: payload.suiteId,
       currency: payload.currency,
@@ -492,6 +504,12 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
       })
       return c.json({ data: quote }, 200)
     }
+    // Gate to a live voyage (P1) before quoting — draft/archived products'
+    // voyages must not be quotable on the anonymous surface.
+    const voyage = await chartersService.getVoyageById(c.get("db"), parsed.id, {
+      productStatus: "live",
+    })
+    if (!voyage) return c.json({ error: "not_found" }, 404)
     const quote = await pricingService.quoteWholeYacht(c.get("db"), {
       voyageId: parsed.id,
       currency: payload.currency,

@@ -177,7 +177,11 @@ export const chartersService = {
 
   // ---------- voyages ----------
 
-  async listVoyages(db: PostgresJsDatabase, query: VoyageListQuery) {
+  async listVoyages(
+    db: PostgresJsDatabase,
+    query: VoyageListQuery,
+    opts: { productStatus?: CharterProduct["status"] } = {},
+  ) {
     const conditions = []
     if (query.productId) conditions.push(eq(charterVoyages.productId, query.productId))
     if (query.yachtId) conditions.push(eq(charterVoyages.yachtId, query.yachtId))
@@ -190,26 +194,40 @@ export const chartersService = {
         sql`${charterVoyages.bookingModes} @> ${JSON.stringify([query.bookingMode])}::jsonb`,
       )
     }
+    // Public callers pass `productStatus: "live"` to keep draft/archived
+    // products' voyages off the anonymous surface. Admin callers omit it and
+    // see every voyage regardless of product status. When set, the same
+    // join+filter is applied to BOTH the rows and the count query so
+    // pagination/total stay correct.
+    if (opts.productStatus) conditions.push(eq(charterProducts.status, opts.productStatus))
     const where = conditions.length > 0 ? and(...conditions) : undefined
     const { limit, offset } = paginate(query)
 
+    const rowsQuery = db.select({ voyage: charterVoyages }).from(charterVoyages).$dynamic()
+    const countQuery = db.select({ value: count() }).from(charterVoyages).$dynamic()
+    if (opts.productStatus) {
+      rowsQuery.innerJoin(charterProducts, eq(charterVoyages.productId, charterProducts.id))
+      countQuery.innerJoin(charterProducts, eq(charterVoyages.productId, charterProducts.id))
+    }
+
     const [rows, totalRows] = await Promise.all([
-      db
-        .select()
-        .from(charterVoyages)
-        .where(where)
-        .orderBy(asc(charterVoyages.departureDate))
-        .limit(limit)
-        .offset(offset),
-      db.select({ value: count() }).from(charterVoyages).where(where),
+      rowsQuery.where(where).orderBy(asc(charterVoyages.departureDate)).limit(limit).offset(offset),
+      countQuery.where(where),
     ])
-    return listResponse(rows, { total: totalRows[0]?.value ?? 0, limit, offset })
+    return listResponse(
+      rows.map((r) => r.voyage),
+      { total: totalRows[0]?.value ?? 0, limit, offset },
+    )
   },
 
   async getVoyageById(
     db: PostgresJsDatabase,
     id: string,
-    options: { withSuites?: boolean; withSchedule?: boolean } = {},
+    options: {
+      withSuites?: boolean
+      withSchedule?: boolean
+      productStatus?: CharterProduct["status"]
+    } = {},
   ): Promise<
     | (CharterVoyage & {
         suites?: CharterSuite[]
@@ -219,6 +237,18 @@ export const chartersService = {
   > {
     const [row] = await db.select().from(charterVoyages).where(eq(charterVoyages.id, id)).limit(1)
     if (!row) return null
+
+    // Public callers pass `productStatus: "live"` so draft/archived products'
+    // voyages aren't readable on the anonymous surface. Resolve the owning
+    // product's status and treat a mismatch as not-found.
+    if (options.productStatus) {
+      const [product] = await db
+        .select({ status: charterProducts.status })
+        .from(charterProducts)
+        .where(eq(charterProducts.id, row.productId))
+        .limit(1)
+      if (!product || product.status !== options.productStatus) return null
+    }
 
     const out: CharterVoyage & {
       suites?: CharterSuite[]
