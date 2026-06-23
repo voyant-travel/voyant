@@ -18,7 +18,7 @@ import {
   makeFrameworkLogger,
   wireWorkflowRuntime,
 } from "./app-workflows.js"
-import { mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
+import { type LazyRoutesLoader, mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { mountAuthForwarding } from "./lib/auth-forward.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
 import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
@@ -76,6 +76,18 @@ function buildRateLimitPolicy<TBindings extends VoyantBindings>(
 }
 
 /**
+ * A lazy route family recorded at mount time so a build-time OpenAPI generator
+ * can eager-load it and merge its `.openapi()` operations (voyant#2114). Mirrors
+ * `LazyMount` in `./openapi.ts` (kept structurally identical, but declared here
+ * to avoid pulling the build-time-only openapi module into the runtime path).
+ */
+export interface LazyMount {
+  /** Absolute surface mount prefix, or `"/"` for absolute `lazyRoutes`. */
+  prefix: string
+  load: LazyRoutesLoader
+}
+
+/**
  * App handle returned alongside the Hono instance. Carries `ready()` for
  * headless / sibling-process deployments that need to fire the lazy
  * bootstrap before the first HTTP request — workflow runtimes (node
@@ -110,6 +122,13 @@ export interface VoyantAppExtensions<TBindings = unknown> {
    *     await withDbFromEnv(env, (db) => drainOutbox(db, app.eventBus))
    */
   eventBus: import("@voyant-travel/core").EventBus
+  /**
+   * Lazy route families recorded at mount time (the wildcard dispatch stubs in
+   * `lazy-routes.ts` don't reach the composed `OpenAPIHono` registry). A
+   * build-time OpenAPI generator reads this to eager-load + merge their
+   * `.openapi()` operations via `mergeLazyOpenApiPaths`. Never read at runtime.
+   */
+  lazyMounts: LazyMount[]
 }
 
 /**
@@ -542,6 +561,14 @@ export function mountApp<TBindings extends VoyantBindings>(
     )
   }
 
+  // Lazy route families recorded for build-time OpenAPI merging. The wildcard
+  // dispatch stubs registered by `mountLazyRoutesAt`/`mountLazyRoutePaths` never
+  // reach the composed OpenAPIHono registry, so the spec generator replays these
+  // loaders (see `mergeLazyOpenApiPaths`). Recorded in the same loop that mounts
+  // them so the prefix logic is single-sourced here. Cheap array pushes — no
+  // eager `import()` and no runtime read.
+  const lazyMounts: LazyMount[] = []
+
   // Mount module routes
   for (const mod of allModules) {
     const adminPrefix = `/v1/admin/${mod.module.name}`
@@ -554,12 +581,15 @@ export function mountApp<TBindings extends VoyantBindings>(
     }
     if (mod.lazyAdminRoutes) {
       mountLazyRoutesAt(app, adminPrefix, mod.lazyAdminRoutes)
+      lazyMounts.push({ prefix: adminPrefix, load: mod.lazyAdminRoutes })
     }
     if (mod.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, mod.lazyPublicRoutes)
+      lazyMounts.push({ prefix: publicPrefix, load: mod.lazyPublicRoutes })
     }
     if (mod.lazyRoutes) {
       mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
+      lazyMounts.push({ prefix: "/", load: mod.lazyRoutes.load })
     }
     if (mod.routes) {
       app.route(`/v1/${mod.module.name}`, mod.routes)
@@ -578,12 +608,15 @@ export function mountApp<TBindings extends VoyantBindings>(
     }
     if (ext.lazyAdminRoutes) {
       mountLazyRoutesAt(app, adminPrefix, ext.lazyAdminRoutes)
+      lazyMounts.push({ prefix: adminPrefix, load: ext.lazyAdminRoutes })
     }
     if (ext.lazyPublicRoutes) {
       mountLazyRoutesAt(app, publicPrefix, ext.lazyPublicRoutes)
+      lazyMounts.push({ prefix: publicPrefix, load: ext.lazyPublicRoutes })
     }
     if (ext.lazyRoutes) {
       mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
+      lazyMounts.push({ prefix: "/", load: ext.lazyRoutes.load })
     }
     if (ext.routes) {
       app.route(`/v1/${ext.extension.module}`, ext.routes)
@@ -605,6 +638,7 @@ export function mountApp<TBindings extends VoyantBindings>(
   // the real `env`.
   const augmented = app as Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings>
   augmented.eventBus = eventBus
+  augmented.lazyMounts = lazyMounts
   augmented.ready = (bindings?: TBindings) =>
     ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented
