@@ -234,6 +234,7 @@ const createSessionRoute = createRoute({
   path: "/sessions",
   request: {
     body: {
+      required: true,
       content: { "application/json": { schema: publicCreateBookingSessionSchema } },
     },
   },
@@ -275,6 +276,7 @@ const updateSessionRoute = createRoute({
   request: {
     params: sessionParamsSchema,
     body: {
+      required: true,
       content: { "application/json": { schema: publicUpdateBookingSessionSchema } },
     },
   },
@@ -318,6 +320,7 @@ const updateSessionStateRoute = createRoute({
   request: {
     params: sessionParamsSchema,
     body: {
+      required: true,
       content: { "application/json": { schema: publicUpsertBookingSessionStateSchema } },
     },
   },
@@ -341,6 +344,7 @@ const repriceSessionRoute = createRoute({
   request: {
     params: sessionParamsSchema,
     body: {
+      required: true,
       content: { "application/json": { schema: publicRepriceBookingSessionSchema } },
     },
   },
@@ -372,6 +376,7 @@ const confirmSessionRoute = createRoute({
   request: {
     params: sessionParamsSchema,
     body: {
+      required: true,
       content: { "application/json": { schema: publicBookingSessionMutationSchema } },
     },
   },
@@ -397,6 +402,7 @@ const expireSessionRoute = createRoute({
   request: {
     params: sessionParamsSchema,
     body: {
+      required: true,
       content: { "application/json": { schema: publicBookingSessionMutationSchema } },
     },
   },
@@ -445,6 +451,7 @@ const guestLookupRoute = createRoute({
   path: "/guest-lookup",
   request: {
     body: {
+      required: true,
       content: { "application/json": { schema: publicGuestBookingLookupSchema } },
     },
   },
