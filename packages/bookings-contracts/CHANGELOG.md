@@ -1,5 +1,12 @@
 # @voyant-travel/bookings-contracts
 
+## 0.106.6
+
+### Patch Changes
+
+- Updated dependencies [722455d]
+  - @voyant-travel/schema-kit@0.111.0
+
 ## 0.106.5
 
 ### Patch Changes

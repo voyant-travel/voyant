@@ -1,5 +1,12 @@
 # @voyant-travel/relationships-contracts
 
+## 0.108.6
+
+### Patch Changes
+
+- Updated dependencies [722455d]
+  - @voyant-travel/schema-kit@0.111.0
+
 ## 0.108.5
 
 ### Patch Changes
