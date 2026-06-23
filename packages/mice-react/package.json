@@ -18,6 +18,7 @@
     "./query-keys": "./src/query-keys.ts",
     "./query-options": "./src/query-options.ts",
     "./ui": "./src/ui.ts",
+    "./styles.css": "./src/styles.css",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -67,7 +68,8 @@
     "zod": "^4.3.6"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -111,6 +113,9 @@
         "types": "./dist/ui.d.ts",
         "import": "./dist/ui.js",
         "default": "./dist/ui.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",
