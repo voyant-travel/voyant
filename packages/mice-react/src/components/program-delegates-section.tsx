@@ -268,16 +268,25 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
   const [sessionId, setSessionId] = useState("")
   const [status, setStatus] = useState<EnrollmentStatus>("registered")
 
+  // The dialog stays mounted, so reset the form on every close — otherwise a
+  // stale session selection survives a cancel and could be one-click enrolled
+  // for the next delegate opened.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setSessionId("")
+      setStatus("registered")
+    }
+    onOpenChange(next)
+  }
+
   const submit = async () => {
     if (!delegate || !sessionId) return
     await enroll.mutateAsync({ delegateId: delegate.id, sessionId, status })
-    setSessionId("")
-    setStatus("registered")
-    onOpenChange(false)
+    handleOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Enroll delegate in session</DialogTitle>
@@ -320,7 +329,11 @@ function EnrollDelegateDialog({ programId, delegate, onOpenChange }: EnrollDeleg
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={enroll.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={enroll.isPending}
+          >
             Cancel
           </Button>
           <Button onClick={() => void submit()} disabled={!sessionId || enroll.isPending}>
