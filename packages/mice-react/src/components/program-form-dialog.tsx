@@ -98,18 +98,19 @@ export function ProgramFormDialog({
   const paxInvalid = Number.isNaN(estimatedPaxValue) || Number.isNaN(confirmedPaxValue)
   const canSubmit = name.trim().length > 0 && !paxInvalid && !budgetInvalid && !pending
 
+  // Restore to the program's values (edit) or blanks (create) — used on close
+  // so a cancelled edit doesn't leave dirty state for the next open.
   const reset = () => {
-    if (editing) return
-    setName("")
-    setType("conference")
-    setStatus("lead")
-    setDestination("")
-    setStartDate("")
-    setEndDate("")
-    setEstimatedPax("")
-    setConfirmedPax("")
-    setCurrency("")
-    setBudget("")
+    setName(program?.name ?? "")
+    setType((program?.type as ProgramType) ?? "conference")
+    setStatus((program?.status as ProgramStatus) ?? "lead")
+    setDestination(program?.destination ?? "")
+    setStartDate(program?.startDate ?? "")
+    setEndDate(program?.endDate ?? "")
+    setEstimatedPax(program?.estimatedPax != null ? String(program.estimatedPax) : "")
+    setConfirmedPax(program?.confirmedPax != null ? String(program.confirmedPax) : "")
+    setCurrency(program?.currency ?? "")
+    setBudget(program?.budgetAmountCents != null ? String(program.budgetAmountCents / 100) : "")
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -117,23 +118,42 @@ export function ProgramFormDialog({
     onOpenChange(next)
   }
 
+  const budgetCents = budgetTrimmed === "" ? undefined : Math.round((budgetValue as number) * 100)
+
   const submit = async () => {
     if (!canSubmit) return
-    const payload = {
-      name: name.trim(),
-      type,
-      status,
-      destination: destination.trim() || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      estimatedPax: estimatedPaxValue,
-      confirmedPax: confirmedPaxValue,
-      currency: currency.trim() || undefined,
-      budgetAmountCents: budgetValue !== undefined ? Math.round(budgetValue * 100) : undefined,
-    }
+    const name_ = name.trim()
+    const dest = destination.trim()
+    const cur = currency.trim()
+
+    // Edit sends `null` (not `undefined`) for blanked fields so the key is
+    // serialized and the backend clears the column; create omits empties.
     const saved = editing
-      ? await update.mutateAsync({ id: program.id, ...payload })
-      : await create.mutateAsync(payload)
+      ? await update.mutateAsync({
+          id: program.id,
+          name: name_,
+          type,
+          status,
+          destination: dest || null,
+          startDate: startDate || null,
+          endDate: endDate || null,
+          estimatedPax: estimatedPax.trim() === "" ? null : estimatedPaxValue,
+          confirmedPax: confirmedPax.trim() === "" ? null : confirmedPaxValue,
+          currency: cur || null,
+          budgetAmountCents: budgetCents ?? null,
+        })
+      : await create.mutateAsync({
+          name: name_,
+          type,
+          status,
+          destination: dest || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          estimatedPax: estimatedPaxValue,
+          confirmedPax: confirmedPaxValue,
+          currency: cur || undefined,
+          budgetAmountCents: budgetCents,
+        })
     reset()
     onOpenChange(false)
     onSaved?.(saved)

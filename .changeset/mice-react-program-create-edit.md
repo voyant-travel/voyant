@@ -1,8 +1,17 @@
 ---
 "@voyant-travel/mice-react": minor
+"@voyant-travel/mice": minor
 ---
 
 MICE Programs — create and edit a program (the list was previously a dead end).
+
+`@voyant-travel/mice`: `updateProgramSchema` now accepts `null` on the optional
+fields (destination, dates, pax, currency, budget, code, org/contact refs) so a
+PATCH can **clear** them — `.partial()` alone only allowed omitting a key, which
+left the previous value in place. The columns are already nullable and
+`updateProgram` spreads the body into `.set()`, so no migration is needed.
+
+`@voyant-travel/mice-react`:
 
 - New `ProgramFormDialog` (`./ui`): a create/edit form covering name, type,
   lifecycle status, destination, dates, estimated/confirmed pax, currency, and

@@ -67,7 +67,14 @@ export function ProgramDetailPage({ programId }: ProgramDetailPageProps) {
         </Button>
       </div>
 
-      <ProgramFormDialog open={showEdit} onOpenChange={setShowEdit} program={program} />
+      {/* key on the record's updatedAt so a reopen after a save re-initialises
+          the form from the latest values rather than stale local state. */}
+      <ProgramFormDialog
+        key={program.updatedAt}
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        program={program}
+      />
 
       {costSheetResponse?.data ? (
         <ProgramCostSheetPanel costSheet={costSheetResponse.data} />
