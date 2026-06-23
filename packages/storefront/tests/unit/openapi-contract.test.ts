@@ -5,6 +5,7 @@ import {
   storefrontDepartureItinerarySchema,
   storefrontDepartureSchema,
   storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductExtensionSchema,
   storefrontProductExtensionsResponseSchema,
 } from "../../src/validation/departures.js"
 import type {
@@ -131,6 +132,23 @@ describe("storefront catalog read response contracts", () => {
       nights: 7,
       days: 8,
       ratePlans: [],
+      resourceManifest: {
+        kinds: [{ kind: "vehicle", capacity: 20, assigned: 12, available: 8 }],
+        resources: [
+          {
+            id: "res_1",
+            kind: "vehicle",
+            label: "Coach A",
+            refType: "asset",
+            refId: "ast_1",
+            capacity: 20,
+            assigned: 12,
+            available: 8,
+            parentId: null,
+            flags: { shared: true },
+          },
+        ],
+      },
     }
 
     const parsed = storefrontDepartureSchema.safeParse(jsonRoundTrip(departure).data)
@@ -200,9 +218,28 @@ describe("storefront catalog read response contracts", () => {
   })
 
   it("product extensions serialize to the documented response envelope", () => {
+    // `pricingMode: "unavailable"` is a valid commerce addon mode (an add-on
+    // disabled for an option). It must round-trip — regression guard for the
+    // earlier narrowing that rejected it (would 400 a valid catalog read).
+    const unavailableExtension: z.infer<typeof storefrontProductExtensionSchema> = {
+      id: "ext_1",
+      name: "Airport transfer",
+      label: "Airport transfer",
+      required: false,
+      selectable: true,
+      hasOptions: false,
+      refProductId: null,
+      thumb: null,
+      pricePerPerson: null,
+      currencyCode: "EUR",
+      pricingMode: "unavailable",
+      defaultQuantity: null,
+      minQuantity: null,
+      maxQuantity: null,
+    }
     const extensions: z.infer<typeof storefrontProductExtensionsResponseSchema> = {
-      extensions: [],
-      items: [],
+      extensions: [unavailableExtension],
+      items: [unavailableExtension],
       details: {},
       currencyCode: "EUR",
     }

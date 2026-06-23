@@ -5,7 +5,6 @@ import {
   checkoutCapabilityCookie,
   issueCheckoutCapability,
 } from "@voyant-travel/bookings/checkout-capability"
-import { extraPricingModeSchema } from "@voyant-travel/bookings/extras"
 import { enqueueWriteIntent, getWriteIntent } from "@voyant-travel/db/write-intents"
 import {
   idempotencyKey,
@@ -37,6 +36,7 @@ import {
   storefrontDepartureListResponseSchema,
   storefrontDeparturePricePreviewInputSchema,
   storefrontDepartureSchema,
+  type storefrontExtensionPricingModeSchema,
   storefrontLeadIntakeEnvelopeSchema,
   storefrontLeadIntakeInputSchema,
   storefrontNewsletterSubscribeEnvelopeSchema,
@@ -305,9 +305,12 @@ const productExtensionsRoute = createRoute({
 
 /**
  * Narrow a product-extension item's loosely-typed (`string`) `pricingMode` onto
- * the `extraPricingModeSchema` enum that the wire contract declares. The price
- * rules that feed the service widen the column enum to `string`, so this is a
- * type-level coercion at the serialization boundary (voyant#2114, §17).
+ * the `storefrontExtensionPricingModeSchema` enum that the wire contract
+ * declares (the commerce `addon_pricing_mode` domain, which includes
+ * `unavailable`). The price rules that feed the service widen the column enum to
+ * `string`, so this is a type-level coercion at the serialization boundary — a
+ * cast rather than a `.parse()`, so a valid runtime value can never turn this
+ * catalog read into a 400 (voyant#2114, §17).
  */
 type StorefrontProductExtensions = Awaited<
   ReturnType<ReturnType<typeof createStorefrontService>["getProductExtensions"]>
@@ -315,8 +318,11 @@ type StorefrontProductExtensions = Awaited<
 
 function narrowExtensionPricingMode<T extends { pricingMode: string }>(
   item: T,
-): Omit<T, "pricingMode"> & { pricingMode: z.infer<typeof extraPricingModeSchema> } {
-  return { ...item, pricingMode: extraPricingModeSchema.parse(item.pricingMode) }
+): Omit<T, "pricingMode"> & { pricingMode: z.infer<typeof storefrontExtensionPricingModeSchema> } {
+  return {
+    ...item,
+    pricingMode: item.pricingMode as z.infer<typeof storefrontExtensionPricingModeSchema>,
+  }
 }
 
 function serializeProductExtensions(extensions: StorefrontProductExtensions) {
@@ -652,9 +658,10 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       setPublicCacheHeaders(c)
       // The service types `pricingMode` as a loose `string` (its price-rule
       // source widens the column enum); the wire contract is the
-      // `extraPricingModeSchema` enum. Narrow at the boundary so the handler's
-      // return type unifies with the declared response (voyant#2114, §17) — the
-      // runtime values are always valid enum members.
+      // `storefrontExtensionPricingModeSchema` enum (commerce `addon_pricing_mode`,
+      // including `unavailable`). Narrow at the boundary so the handler's return
+      // type unifies with the declared response (voyant#2114, §17) — the runtime
+      // values are always valid enum members.
       return c.json({ data: serializeProductExtensions(extensions) }, 200)
     })
     .post("/departures/:departureId/price", async (c) => {

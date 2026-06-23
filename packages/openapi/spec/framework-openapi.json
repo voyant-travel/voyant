@@ -12661,6 +12661,107 @@
                               "roomPrices"
                             ]
                           }
+                        },
+                        "resourceManifest": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "kinds": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "capacity": {
+                                    "type": "number"
+                                  },
+                                  "assigned": {
+                                    "type": "number"
+                                  },
+                                  "available": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "capacity",
+                                  "assigned",
+                                  "available"
+                                ]
+                              }
+                            },
+                            "resources": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "refType": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "refId": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "capacity": {
+                                    "type": "number"
+                                  },
+                                  "assigned": {
+                                    "type": "number"
+                                  },
+                                  "available": {
+                                    "type": "number"
+                                  },
+                                  "parentId": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "flags": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "kind",
+                                  "label",
+                                  "refType",
+                                  "refId",
+                                  "capacity",
+                                  "assigned",
+                                  "available",
+                                  "parentId",
+                                  "flags"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "kinds",
+                            "resources"
+                          ]
                         }
                       },
                       "required": [
@@ -12679,7 +12780,8 @@
                         "departureStatus",
                         "nights",
                         "days",
-                        "ratePlans"
+                        "ratePlans",
+                        "resourceManifest"
                       ]
                     }
                   },
@@ -13004,6 +13106,107 @@
                                 "roomPrices"
                               ]
                             }
+                          },
+                          "resourceManifest": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "kinds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "capacity": {
+                                      "type": "number"
+                                    },
+                                    "assigned": {
+                                      "type": "number"
+                                    },
+                                    "available": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "capacity",
+                                    "assigned",
+                                    "available"
+                                  ]
+                                }
+                              },
+                              "resources": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "refType": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "refId": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "capacity": {
+                                      "type": "number"
+                                    },
+                                    "assigned": {
+                                      "type": "number"
+                                    },
+                                    "available": {
+                                      "type": "number"
+                                    },
+                                    "parentId": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "flags": {
+                                      "type": "object",
+                                      "additionalProperties": {}
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "kind",
+                                    "label",
+                                    "refType",
+                                    "refId",
+                                    "capacity",
+                                    "assigned",
+                                    "available",
+                                    "parentId",
+                                    "flags"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "kinds",
+                              "resources"
+                            ]
                           }
                         },
                         "required": [
@@ -13022,7 +13225,8 @@
                           "departureStatus",
                           "nights",
                           "days",
-                          "ratePlans"
+                          "ratePlans",
+                          "resourceManifest"
                         ]
                       }
                     },
@@ -13548,9 +13752,8 @@
                                   "included",
                                   "per_person",
                                   "per_booking",
-                                  "quantity_based",
                                   "on_request",
-                                  "free"
+                                  "unavailable"
                                 ]
                               },
                               "defaultQuantity": {
@@ -13640,9 +13843,8 @@
                                   "included",
                                   "per_person",
                                   "per_booking",
-                                  "quantity_based",
                                   "on_request",
-                                  "free"
+                                  "unavailable"
                                 ]
                               },
                               "defaultQuantity": {
