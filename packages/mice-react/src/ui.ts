@@ -2,6 +2,10 @@ export {
   ProgramCostSheetPanel,
   type ProgramCostSheetPanelProps,
 } from "./components/program-cost-sheet-panel.js"
+export {
+  ProgramDelegatesSection,
+  type ProgramDelegatesSectionProps,
+} from "./components/program-delegates-section.js"
 export { ProgramDetailPage, type ProgramDetailPageProps } from "./components/program-detail-page.js"
 export {
   ProgramSessionsSection,

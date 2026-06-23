@@ -1,3 +1,4 @@
+export { useDelegateMutation } from "./use-delegate-mutation.js"
 export {
   useProgramDelegates,
   useProgramRfps,

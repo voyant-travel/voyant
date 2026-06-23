@@ -4,6 +4,7 @@ import { Badge } from "@voyant-travel/ui/components/badge"
 
 import { useProgram, useProgramCostSheet } from "../hooks/use-programs.js"
 import { ProgramCostSheetPanel } from "./program-cost-sheet-panel.js"
+import { ProgramDelegatesSection } from "./program-delegates-section.js"
 import { ProgramSessionsSection } from "./program-sessions-section.js"
 
 export interface ProgramDetailPageProps {
@@ -44,6 +45,8 @@ export function ProgramDetailPage({ programId }: ProgramDetailPageProps) {
       ) : null}
 
       <ProgramSessionsSection programId={programId} />
+
+      <ProgramDelegatesSection programId={programId} />
     </div>
   )
 }

@@ -67,6 +67,17 @@ export const delegateRecordSchema = z.object({
 })
 export type DelegateRecord = z.infer<typeof delegateRecordSchema>
 export const delegateListResponse = listEnvelope(delegateRecordSchema)
+export const delegateSingleResponse = singleEnvelope(delegateRecordSchema)
+
+// ── Session enrollment ──
+export const enrollmentRecordSchema = z.object({
+  id: z.string(),
+  delegateId: z.string(),
+  sessionId: z.string(),
+  status: z.string(),
+})
+export type EnrollmentRecord = z.infer<typeof enrollmentRecordSchema>
+export const enrollmentSingleResponse = singleEnvelope(enrollmentRecordSchema)
 
 // ── Rooming ──
 export const roomingAssignmentRecordSchema = z.object({
