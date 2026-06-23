@@ -8,6 +8,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 
 import { createProgram, getProgram, listPrograms, updateProgram } from "./service.js"
+import { commercialsService } from "./service-commercials.js"
 import {
   createDelegate,
   enrollDelegate,
@@ -82,6 +83,13 @@ export const miceAdminRoutes = new Hono<Env>()
     const program = await getProgram(c.get("db"), c.req.param("id"))
     if (!program) return c.json({ error: "Program not found" }, 404)
     return c.json({ data: program })
+  })
+  // Consolidated commercials — program cost sheet / P&L (Phase 5).
+  .get("/programs/:id/cost-sheet", async (c) => {
+    const id = c.req.param("id")
+    const program = await getProgram(c.get("db"), id)
+    if (!program) return c.json({ error: "Program not found" }, 404)
+    return c.json({ data: await commercialsService.getProgramCostSheet(c.get("db"), id) })
   })
   .patch("/programs/:id", async (c) => {
     const body = await parseJsonBody(c, updateProgramSchema)
