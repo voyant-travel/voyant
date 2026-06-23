@@ -1,10 +1,16 @@
 import { Hono } from "hono"
+import { HTTPException } from "hono/http-exception"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 
 import { requireUserId } from "../../src/auth/require-user.js"
 import { handleApiError, requestId } from "../../src/middleware/error-boundary.js"
-import { parseJsonBody, parseQuery } from "../../src/validation.js"
+import {
+  ApiHttpError,
+  normalizeValidationError,
+  parseJsonBody,
+  parseQuery,
+} from "../../src/validation.js"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -78,5 +84,26 @@ describe("validation helpers", () => {
       error: "Unauthorized",
       code: "unauthorized",
     })
+  })
+})
+
+describe("normalizeValidationError", () => {
+  it("maps a Hono HTTPException 400 onto the framework error contract", () => {
+    // Hono's request validators (e.g. the JSON body parser on `.openapi()`
+    // routes) throw HTTPException before our validation hook runs (voyant#2114).
+    const normalized = normalizeValidationError(
+      new HTTPException(400, { message: "Malformed JSON in request body" }),
+    )
+    expect(normalized).toBeInstanceOf(ApiHttpError)
+    expect(normalized?.status).toBe(400)
+    expect(normalized?.code).toBe("invalid_request")
+    expect(normalized?.message).toBe("Malformed JSON in request body")
+  })
+
+  it("preserves non-400 HTTPException status without an invalid_request code", () => {
+    const normalized = normalizeValidationError(new HTTPException(404, { message: "Not Found" }))
+    expect(normalized).toBeInstanceOf(ApiHttpError)
+    expect(normalized?.status).toBe(404)
+    expect(normalized?.code).toBeUndefined()
   })
 })

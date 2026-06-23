@@ -1,4 +1,5 @@
 import type { Context } from "hono"
+import { HTTPException } from "hono/http-exception"
 import { ZodError, type ZodType } from "zod"
 
 import { DEFAULT_REQUEST_BODY_LIMIT_BYTES } from "./middleware/body-size.js"
@@ -150,6 +151,18 @@ export function normalizeValidationError(error: unknown): ApiHttpError | undefin
 
   if (error instanceof ZodError) {
     return toValidationError(error)
+  }
+
+  if (error instanceof HTTPException) {
+    // Hono's request validators throw HTTPException before our validation hook
+    // runs — most notably HTTPException(400, "Malformed JSON in request body")
+    // from the JSON body parser on `.openapi()` routes. Map it onto the
+    // framework error contract so bad client input is a structured 4xx, not a
+    // 500 (voyant#2114).
+    return new ApiHttpError(error.message, {
+      status: error.status,
+      code: error.status === 400 ? "invalid_request" : undefined,
+    })
   }
 
   return undefined
