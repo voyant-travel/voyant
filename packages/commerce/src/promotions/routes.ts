@@ -8,22 +8,37 @@
  * `@voyant-travel/storefront` once the storefront resolver is wired in PR4.
  */
 
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
+import { parseJsonBody } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
 import { promotionsService } from "./service.js"
 import {
   insertPromotionalOfferSchema,
   promotionalOfferListQuerySchema,
+  promotionalOfferSchema,
   updatePromotionalOfferSchema,
 } from "./validation.js"
 
-export const promotionsRoutes = new Hono<Env>()
-  .get("/", async (c) => {
-    const query = await parseQuery(c, promotionalOfferListQuerySchema)
-    return c.json(await promotionsService.listOffers(c.get("db"), query))
-  })
+const listPromotionsRoute = createRoute({
+  method: "get",
+  path: "/",
+  request: { query: promotionalOfferListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of promotional offers",
+      content: {
+        "application/json": { schema: listResponseSchema(promotionalOfferSchema) },
+      },
+    },
+  },
+})
+
+export const promotionsRoutes = new OpenAPIHono<Env>()
+  .openapi(listPromotionsRoute, async (c) =>
+    c.json(await promotionsService.listOffers(c.get("db"), c.req.valid("query"))),
+  )
   .post("/", async (c) =>
     c.json(
       {
