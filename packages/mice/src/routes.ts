@@ -15,6 +15,7 @@ import {
   listDelegates,
   updateDelegate,
 } from "./service-delegates.js"
+import { rfpService } from "./service-rfp.js"
 import {
   createRoomingAssignment,
   getRoomingAssignment,
@@ -37,6 +38,17 @@ import {
   enrollDelegateSchema,
   updateDelegateSchema,
 } from "./validation-delegates.js"
+import {
+  addBidEvaluationSchema,
+  awardRfpSchema,
+  createBidSchema,
+  createRfpSchema,
+  inviteSupplierSchema,
+  rfpListQuerySchema,
+  setBidLinesSchema,
+  updateBidSchema,
+  updateRfpSchema,
+} from "./validation-rfp.js"
 import {
   createRoomingAssignmentSchema,
   roomingListQuerySchema,
@@ -188,6 +200,77 @@ export const miceAdminRoutes = new Hono<Env>()
           409,
         )
     }
+  })
+  // Sourcing funnel: RFP → invitations → bids → evaluation → award (Phase 4).
+  .get("/rfps", async (c) => {
+    const query = await parseQuery(c, rfpListQuerySchema)
+    return c.json(await rfpService.listRfps(c.get("db"), query))
+  })
+  .post("/rfps", async (c) => {
+    const body = await parseJsonBody(c, createRfpSchema)
+    const outcome = await rfpService.createRfp(c.get("db"), body)
+    if (outcome.status === "program_not_found") return c.json({ error: "Program not found" }, 404)
+    return c.json({ data: outcome.rfp }, 201)
+  })
+  .get("/rfps/:id", async (c) => {
+    const rfp = await rfpService.getRfp(c.get("db"), c.req.param("id"))
+    if (!rfp) return c.json({ error: "RFP not found" }, 404)
+    return c.json({ data: rfp })
+  })
+  .patch("/rfps/:id", async (c) => {
+    const body = await parseJsonBody(c, updateRfpSchema)
+    const rfp = await rfpService.updateRfp(c.get("db"), c.req.param("id"), body)
+    if (!rfp) return c.json({ error: "RFP not found" }, 404)
+    return c.json({ data: rfp })
+  })
+  .post("/rfps/:id/invitations", async (c) => {
+    const body = await parseJsonBody(c, inviteSupplierSchema)
+    const outcome = await rfpService.inviteSupplier(c.get("db"), c.req.param("id"), body)
+    if (outcome.status === "rfp_not_found") return c.json({ error: "RFP not found" }, 404)
+    return c.json({ data: outcome.invitation }, outcome.idempotent ? 200 : 201)
+  })
+  .post("/rfps/:id/bids", async (c) => {
+    const body = await parseJsonBody(c, createBidSchema)
+    const outcome = await rfpService.createBid(c.get("db"), c.req.param("id"), body)
+    if (outcome.status === "rfp_not_found") return c.json({ error: "RFP not found" }, 404)
+    return c.json({ data: outcome.bid }, 201)
+  })
+  .post("/rfps/:id/award", async (c) => {
+    const { bidId } = await parseJsonBody(c, awardRfpSchema)
+    const outcome = await rfpService.awardRfp(c.get("db"), c.req.param("id"), bidId)
+    switch (outcome.status) {
+      case "ok":
+        return c.json({ data: { rfp: outcome.rfp, bid: outcome.bid } })
+      case "rfp_not_found":
+        return c.json({ error: "RFP not found" }, 404)
+      case "bid_not_found":
+        return c.json({ error: "Bid not found on this RFP" }, 404)
+      case "already_awarded":
+        return c.json({ error: "RFP is already awarded" }, 409)
+    }
+  })
+  .get("/bids/:id", async (c) => {
+    const bid = await rfpService.getBid(c.get("db"), c.req.param("id"))
+    if (!bid) return c.json({ error: "Bid not found" }, 404)
+    return c.json({ data: bid })
+  })
+  .patch("/bids/:id", async (c) => {
+    const body = await parseJsonBody(c, updateBidSchema)
+    const bid = await rfpService.updateBid(c.get("db"), c.req.param("id"), body)
+    if (!bid) return c.json({ error: "Bid not found" }, 404)
+    return c.json({ data: bid })
+  })
+  .put("/bids/:id/lines", async (c) => {
+    const { lines } = await parseJsonBody(c, setBidLinesSchema)
+    const outcome = await rfpService.setBidLines(c.get("db"), c.req.param("id"), lines)
+    if (outcome.status === "bid_not_found") return c.json({ error: "Bid not found" }, 404)
+    return c.json({ data: outcome.lines })
+  })
+  .post("/bids/:id/evaluations", async (c) => {
+    const body = await parseJsonBody(c, addBidEvaluationSchema)
+    const outcome = await rfpService.addBidEvaluation(c.get("db"), c.req.param("id"), body)
+    if (outcome.status === "bid_not_found") return c.json({ error: "Bid not found" }, 404)
+    return c.json({ data: outcome.evaluation }, 201)
   })
 
 export type MiceAdminRoutes = typeof miceAdminRoutes

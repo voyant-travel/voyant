@@ -431,6 +431,11 @@ export const PREFIXES = {
   mice_delegate_session_enrollments: "mdse",
   mice_rooming_assignments: "mrma",
   mice_rooming_assignment_delegates: "mrad",
+  mice_rfps: "mrfp",
+  mice_rfp_invitations: "mrfi",
+  mice_bids: "mbid",
+  mice_bid_lines: "mbln",
+  mice_bid_evaluations: "mbev",
   booking_mice_details: "bkmd",
 } as const
 

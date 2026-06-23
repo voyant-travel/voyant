@@ -1,5 +1,5 @@
 import type { LinkDefinition } from "@voyant-travel/core"
-
+import { bidSupplierLink } from "./bid-supplier.js"
 import { contractBookingLink } from "./contract-booking.js"
 import { contractInvoiceLink } from "./contract-invoice.js"
 import { contractOrganizationLink } from "./contract-organization.js"
@@ -21,6 +21,7 @@ import { roomingRoomBlockLink } from "./rooming-room-block.js"
 import { sessionFunctionSpaceLink } from "./session-function-space.js"
 
 export {
+  bidSupplierLink,
   contractBookingLink,
   contractInvoiceLink,
   contractOrganizationLink,
@@ -66,4 +67,5 @@ export const links: LinkDefinition[] = [
   delegatePersonLink,
   delegateBookingLink,
   roomingRoomBlockLink,
+  bidSupplierLink,
 ]

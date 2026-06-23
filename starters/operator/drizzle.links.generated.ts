@@ -327,3 +327,20 @@ export const accommodations_roomBlock_mice_roomingAssignment = pgTable(
     uniqueIndex("accommodations_roomBlock_mice_roomingAssignment_r_uniq").on(t["mice_roomingAssignment_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
+
+export const suppliers_supplier_mice_bid = pgTable(
+  "suppliers_supplier_mice_bid",
+  {
+    id: text("id").primaryKey().notNull(),
+    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
+    "mice_bid_id": text("mice_bid_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("suppliers_supplier_mice_bid_pair_idx").on(t["suppliers_supplier_id"], t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
+    index("suppliers_supplier_mice_bid_l_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("suppliers_supplier_mice_bid_r_uniq").on(t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
