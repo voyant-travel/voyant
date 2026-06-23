@@ -156,7 +156,7 @@
     "@voyant-travel/vite-config": "workspace:^",
     "dotenv": "^17.4.0",
     "drizzle-kit": "^0.31.10",
-    "jsdom": "^29.0.1",
+    "jsdom": "^29.1.1",
     "pg": "^8.20.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "tsx": "^4.21.0",
