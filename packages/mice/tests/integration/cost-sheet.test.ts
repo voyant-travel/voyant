@@ -27,10 +27,7 @@ describe.skipIf(!DB_AVAILABLE)("mice program cost sheet", () => {
     await cleanupTestDb(db)
   })
 
-  it("aggregates room/space/session costs into a P&L with margin", async () => {
-    const program = await createProgram(db, { name: "Acme Summit" })
-
-    // Room block: net 10000 / sell 15000, two nights, 5 held / 2 picked.
+  async function seedRoomBlock(programId: string, currency: string) {
     const [roomType] = await db
       .insert(roomTypes)
       .values({ propertyId: "prop_x", name: "King" })
@@ -38,10 +35,10 @@ describe.skipIf(!DB_AVAILABLE)("mice program cost sheet", () => {
     const [rb] = await db
       .insert(roomBlocks)
       .values({
-        programId: program.id,
+        programId,
         roomTypeId: roomType!.id,
         name: "HQ Hotel",
-        currency: "EUR",
+        currency,
         netRateCents: 10000,
         sellRateCents: 15000,
       })
@@ -54,8 +51,9 @@ describe.skipIf(!DB_AVAILABLE)("mice program cost sheet", () => {
         roomsPickedUp: 2,
       })),
     )
+  }
 
-    // Space block: net 20000 / sell 30000, two slots, 3 held / 1 picked.
+  async function seedSpaceBlock(programId: string, currency: string) {
     const [facility] = await db
       .insert(facilities)
       .values({ kind: "venue", name: "Centre" })
@@ -67,9 +65,10 @@ describe.skipIf(!DB_AVAILABLE)("mice program cost sheet", () => {
     const [sb] = await db
       .insert(spaceBlocks)
       .values({
-        programId: program.id,
+        programId,
         functionSpaceId: fs!.id,
         name: "Plenary",
+        currency,
         netRateCents: 20000,
         sellRateCents: 30000,
       })
@@ -82,39 +81,61 @@ describe.skipIf(!DB_AVAILABLE)("mice program cost sheet", () => {
         unitsPickedUp: 1,
       })),
     )
+  }
 
-    // Session inclusion: 2 × 5000.
+  it("aggregates a single-currency program into one P&L bucket with margin", async () => {
+    const program = await createProgram(db, { name: "Acme Summit", currency: "EUR" })
+    await seedRoomBlock(program.id, "EUR")
+    await seedSpaceBlock(program.id, "EUR")
     const [session] = await db
       .insert(programSessions)
       .values({ programId: program.id, title: "Gala" })
       .returning()
-    await db
-      .insert(sessionInclusions)
-      .values({ sessionId: session!.id, kind: "fnb", quantity: 2, costAmountCents: 5000 })
+    await db.insert(sessionInclusions).values({
+      sessionId: session!.id,
+      kind: "fnb",
+      quantity: 2,
+      costAmountCents: 5000,
+      currency: "EUR",
+    })
 
     const sheet = await getProgramCostSheet(db, program.id)
-
-    // Room: contracted 5×10000×2=100000; picked cost 2×10000×2=40000; sell 2×15000×2=60000.
-    expect(sheet.roomBlocks.contractedCostCents).toBe(100000)
-    expect(sheet.roomBlocks.pickedCostCents).toBe(40000)
-    expect(sheet.roomBlocks.pickedSellCents).toBe(60000)
-    // Space: picked cost 1×20000×2=40000; sell 1×30000×2=60000.
-    expect(sheet.spaceBlocks.pickedCostCents).toBe(40000)
-    expect(sheet.spaceBlocks.pickedSellCents).toBe(60000)
-    // Inclusions: 2×5000=10000.
-    expect(sheet.sessionInclusionsCostCents).toBe(10000)
-    // Totals: cost 40000+40000+10000=90000; sell 120000; margin 30000; 25%.
-    expect(sheet.totals.costCents).toBe(90000)
-    expect(sheet.totals.sellCents).toBe(120000)
-    expect(sheet.totals.marginCents).toBe(30000)
-    expect(sheet.totals.marginPct).toBe(25)
+    expect(sheet.mixedCurrency).toBe(false)
+    expect(sheet.byCurrency).toHaveLength(1)
+    const eur = sheet.byCurrency[0]!
+    expect(eur.currency).toBe("EUR")
+    expect(eur.roomBlocks.contractedCostCents).toBe(100000) // 5×10000×2
+    expect(eur.roomBlocks.pickedCostCents).toBe(40000) // 2×10000×2
+    expect(eur.roomBlocks.pickedSellCents).toBe(60000) // 2×15000×2
+    expect(eur.spaceBlocks.pickedCostCents).toBe(40000) // 1×20000×2
+    expect(eur.spaceBlocks.pickedSellCents).toBe(60000) // 1×30000×2
+    expect(eur.sessionInclusionsCostCents).toBe(10000) // 2×5000
+    expect(eur.costCents).toBe(90000)
+    expect(eur.sellCents).toBe(120000)
+    expect(eur.marginCents).toBe(30000)
+    expect(eur.marginPct).toBe(25)
   })
 
-  it("returns zeros + null margin for a program with no inventory", async () => {
-    const program = await createProgram(db, { name: "Empty" })
+  it("groups a mixed-currency program by currency without summing across them", async () => {
+    const program = await createProgram(db, { name: "Global Summit", currency: "EUR" })
+    await seedRoomBlock(program.id, "EUR")
+    await seedSpaceBlock(program.id, "USD")
+
     const sheet = await getProgramCostSheet(db, program.id)
-    expect(sheet.totals.costCents).toBe(0)
-    expect(sheet.totals.sellCents).toBe(0)
-    expect(sheet.totals.marginPct).toBeNull()
+    expect(sheet.mixedCurrency).toBe(true)
+    expect(sheet.byCurrency.map((c) => c.currency)).toEqual(["EUR", "USD"])
+    const eur = sheet.byCurrency.find((c) => c.currency === "EUR")!
+    const usd = sheet.byCurrency.find((c) => c.currency === "USD")!
+    expect(eur.roomBlocks.pickedCostCents).toBe(40000)
+    expect(eur.spaceBlocks.pickedCostCents).toBe(0)
+    expect(usd.spaceBlocks.pickedCostCents).toBe(40000)
+    expect(usd.roomBlocks.pickedCostCents).toBe(0)
+  })
+
+  it("returns no buckets for a program with no inventory", async () => {
+    const program = await createProgram(db, { name: "Empty", currency: "EUR" })
+    const sheet = await getProgramCostSheet(db, program.id)
+    expect(sheet.mixedCurrency).toBe(false)
+    expect(sheet.byCurrency).toHaveLength(0)
   })
 })

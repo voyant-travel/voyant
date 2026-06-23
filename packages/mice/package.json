@@ -78,6 +78,7 @@
     "directory": "packages/mice"
   },
   "voyant": {
-    "schema": "./schema"
+    "schema": "./schema",
+    "requiresSchemas": ["@voyant-travel/accommodations", "@voyant-travel/operations"]
   }
 }
