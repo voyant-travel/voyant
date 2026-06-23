@@ -104,22 +104,23 @@ export async function inviteSupplier(
   rfpId: string,
   input: InviteSupplierBody,
 ): Promise<InviteSupplierOutcome> {
-  return db.transaction(async (tx) => {
-    const [rfp] = await tx.select({ id: rfps.id }).from(rfps).where(eq(rfps.id, rfpId)).limit(1)
-    if (!rfp) return { status: "rfp_not_found" as const }
-    const [existing] = await tx
-      .select()
-      .from(rfpInvitations)
-      .where(and(eq(rfpInvitations.rfpId, rfpId), eq(rfpInvitations.supplierId, input.supplierId)))
-      .limit(1)
-    if (existing) return { status: "ok" as const, invitation: existing, idempotent: true }
-    const [invitation] = await tx
-      .insert(rfpInvitations)
-      .values({ rfpId, supplierId: input.supplierId })
-      .returning()
-    if (!invitation) throw new Error("inviteSupplier: insert returned no rows")
-    return { status: "ok" as const, invitation, idempotent: false }
-  })
+  const [rfp] = await db.select({ id: rfps.id }).from(rfps).where(eq(rfps.id, rfpId)).limit(1)
+  if (!rfp) return { status: "rfp_not_found" }
+  // Atomic idempotency: a concurrent duplicate hits onConflictDoNothing (no
+  // row returned) rather than racing a lookup into a unique-violation 500.
+  const [inserted] = await db
+    .insert(rfpInvitations)
+    .values({ rfpId, supplierId: input.supplierId })
+    .onConflictDoNothing({ target: [rfpInvitations.rfpId, rfpInvitations.supplierId] })
+    .returning()
+  if (inserted) return { status: "ok", invitation: inserted, idempotent: false }
+  const [existing] = await db
+    .select()
+    .from(rfpInvitations)
+    .where(and(eq(rfpInvitations.rfpId, rfpId), eq(rfpInvitations.supplierId, input.supplierId)))
+    .limit(1)
+  if (!existing) throw new Error("inviteSupplier: conflict but no existing row")
+  return { status: "ok", invitation: existing, idempotent: true }
 }
 
 // ---------- Bids ----------

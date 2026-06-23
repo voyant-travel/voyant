@@ -9,11 +9,16 @@ export const bidStatusSchema = z.enum([
   "rejected",
 ])
 
+// `awarded` (RFP) and `accepted`/`rejected` (bid) are award-controlled — they may
+// only be reached through the atomic `awardRfp` flow, never generic create/update.
+const rfpEditableStatusSchema = z.enum(["draft", "issued", "closed", "cancelled"])
+const bidEditableStatusSchema = z.enum(["draft", "submitted", "under_review"])
+
 export const createRfpSchema = z.object({
   programId: z.string().min(1),
   title: z.string().min(1),
   requirements: z.record(z.string(), z.unknown()).optional(),
-  status: rfpStatusSchema.default("draft"),
+  status: rfpEditableStatusSchema.default("draft"),
   issuedAt: z.string().datetime().optional(),
   dueAt: z.string().datetime().optional(),
   notes: z.string().optional(),
@@ -34,7 +39,7 @@ export const inviteSupplierSchema = z.object({
 
 export const createBidSchema = z.object({
   supplierId: z.string().min(1),
-  status: bidStatusSchema.default("draft"),
+  status: bidEditableStatusSchema.default("draft"),
   totalCents: z.number().int().min(0).optional(),
   currency: z.string().optional(),
   proposalDoc: z.string().optional(),
