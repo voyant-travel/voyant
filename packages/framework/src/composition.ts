@@ -328,8 +328,18 @@ export interface FrameworkProviders {
   >
   /** Resolves bank-transfer payment details for the checkout. */
   resolveBankTransferDetails: NonNullable<FinanceHonoModuleOptions["resolveBankTransferDetails"]>
+  /**
+   * Deployment checkout policy overrides. Optional: omitted deployments keep
+   * the finance module defaults.
+   */
+  financeCheckoutPolicy?: FinanceHonoModuleOptions["policy"]
   /** The configured pay-by-link starter (Netopia; env resolved lazily). */
   netopiaCheckoutStarter: CheckoutPaymentStarter
+  /**
+   * Booking-confirmed notification auto-dispatch policy. Optional: omitted
+   * deployments keep the standard booking-confirmation auto-send.
+   */
+  notificationsAutoConfirmAndDispatch?: CreateNotificationsHonoModuleOptions["autoConfirmAndDispatch"]
   /** Builds the distribution channel-push extension (deployment booking-engine wiring). */
   createChannelPushExtension: () => HonoExtension
   // Lazy route-bundle loaders for the `operator/*` standard families (Tier 4).
@@ -488,6 +498,7 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
             netopia: capabilities.netopiaCheckoutStarter,
           }),
+          policy: capabilities.financeCheckoutPolicy,
           resolveBankTransferDetails: capabilities.resolveBankTransferDetails,
           resolvePublicCheckoutBaseUrl: capabilities.resolvePublicCheckoutBaseUrl,
           listBookingReminderRuns: async (db, bookingId, query) => {
@@ -592,7 +603,10 @@ export const frameworkComposition: CompositionRegistry<FrameworkProviders> = {
           return createDefaultBookingDocumentAttachment(document)
         },
         resolveDb: capabilities.resolveDb,
-        autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
+        autoConfirmAndDispatch: capabilities.notificationsAutoConfirmAndDispatch ?? {
+          enabled: true,
+          templateSlug: "booking-confirmation",
+        },
       }),
     "@voyant-travel/legal": ({ capabilities }) =>
       // Storefront contract preview (slug resolution + by-slug render) is
