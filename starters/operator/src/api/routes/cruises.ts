@@ -25,20 +25,29 @@
  * overlap.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { cruisePublicRoutes } from "@voyant-travel/cruises/public-routes"
 import { cruiseAdminRoutes } from "@voyant-travel/cruises/routes"
-import { Hono } from "hono"
+import type { Hono } from "hono"
 
 import { type BookingEngineEnv, ensureBookingEngineRegistry } from "../lib/booking-engine-runtime"
 
 // The route bundle the module factory mounts. The package routes carry their own
 // per-route Env, so the wrapper stays env-agnostic.
 // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: operator; matches the framework route-bundle convention (packages/hono module.ts).
-type RouteBundle = Hono<any>
+type RouteBundle = Hono<any> | OpenAPIHono<any>
 
-function withSourceAdapterRegistry(routes: RouteBundle): RouteBundle {
-  const wrapped: RouteBundle = new Hono()
-  wrapped.use("*", async (c, next) => {
+// The wrapper is an `OpenAPIHono` (not a plain `Hono`) so the build-time
+// `mergeLazyOpenApiPaths` replay (voyant#2114/#2197) can read the wrapped
+// package routes' `.openapi()` registry — `.route("/", routes)` carries that
+// registry up from an `OpenAPIHono` sub-app into the wrapper, where a plain
+// `new Hono()` would strip it (the merge skips non-`OpenAPIHono` sub-apps).
+// biome-ignore lint/suspicious/noExplicitAny: wrapper is env-agnostic -- owner: operator; matches the framework route-bundle convention (packages/hono module.ts).
+function withSourceAdapterRegistry(routes: RouteBundle): OpenAPIHono<any> {
+  // biome-ignore lint/suspicious/noExplicitAny: env-agnostic wrapper -- owner: operator; `c.set("sourceAdapterRegistry", …)` requires a loose Variables map.
+  const wrapped: OpenAPIHono<any> = new OpenAPIHono()
+  // biome-ignore lint/suspicious/noExplicitAny: Hono middleware context is env-agnostic here -- owner: operator.
+  wrapped.use("*", async (c: any, next: any) => {
     // Await the Connect warm so per-connection cruise providers are resolvable
     // synchronously by the package routes (see the file header).
     const registry = await ensureBookingEngineRegistry(c.env as BookingEngineEnv)
