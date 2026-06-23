@@ -96,8 +96,10 @@ export function createMiceAdminExtension(
         // chunk that evaluates this factory.
         loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
           const { getProgramsQueryOptions } = await import("../query-options.js")
+          // Limit must match `ProgramsPage`'s `usePrograms` so the SSR-prefetched
+          // cache entry hits the page's query key (the key carries its filters).
           return queryClient.ensureQueryData(
-            getProgramsQueryOptions(loaderClient(runtime), { limit: 50 }),
+            getProgramsQueryOptions(loaderClient(runtime), { limit: 200 }),
           )
         },
       },
