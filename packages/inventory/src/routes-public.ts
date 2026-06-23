@@ -56,12 +56,17 @@ function setPublicCacheHeaders(c: Context) {
  * request, so no public list can run unbounded (#1686).
  */
 function clampedLimitParam(defaultLimit: number, maxLimit: number) {
-  return z.coerce
-    .number()
-    .int()
-    .default(defaultLimit)
-    .catch(defaultLimit)
-    .transform((value) => Math.min(Math.max(value, 1), maxLimit))
+  return (
+    z.coerce
+      .number()
+      .int()
+      .default(defaultLimit)
+      .catch(defaultLimit)
+      .transform((value) => Math.min(Math.max(value, 1), maxLimit))
+      // `.catch()`/`.transform()` (clamping) can't be introspected by
+      // zod-to-openapi, so pin the documented param type explicitly (voyant#2114).
+      .openapi({ type: "integer", example: defaultLimit })
+  )
 }
 
 const PRODUCT_LIST_DEFAULT_LIMIT = 20
@@ -82,12 +87,7 @@ const clampedCategoryListQuerySchema = publicCatalogCategoryListQuerySchema.exte
 })
 
 const clampedTagListQuerySchema = publicCatalogTagListQuerySchema.extend({
-  // `.catch()`/`.transform()` (clamping) can't be introspected by
-  // zod-to-openapi, so pin the documented param type explicitly (voyant#2114).
-  limit: clampedLimitParam(PUBLIC_LIST_MAX_LIMIT, PUBLIC_LIST_MAX_LIMIT).openapi({
-    type: "integer",
-    example: PUBLIC_LIST_MAX_LIMIT,
-  }),
+  limit: clampedLimitParam(PUBLIC_LIST_MAX_LIMIT, PUBLIC_LIST_MAX_LIMIT),
 })
 
 const clampedDestinationListQuerySchema = publicCatalogDestinationListQuerySchema.extend({
@@ -112,12 +112,80 @@ const listTagsRoute = createRoute({
   },
 })
 
+/** Wire shape of a public catalog category (voyant#2114). */
+export const publicCatalogCategorySchema = z.object({
+  id: z.string(),
+  parentId: z.string().nullable(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable(),
+  sortOrder: z.number().int(),
+})
+
+const listCategoriesRoute = createRoute({
+  method: "get",
+  path: "/categories",
+  request: { query: clampedCategoryListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of public catalog categories",
+      content: { "application/json": { schema: listResponseSchema(publicCatalogCategorySchema) } },
+    },
+  },
+})
+
+/** Wire shape of a public catalog destination — the translated DTO (voyant#2114). */
+export const publicCatalogDestinationSchema = z.object({
+  id: z.string(),
+  parentId: z.string().nullable(),
+  slug: z.string(),
+  canonicalPlaceId: z.string().nullable(),
+  name: z.string(),
+  description: z.string().nullable(),
+  seoTitle: z.string().nullable(),
+  seoDescription: z.string().nullable(),
+  destinationType: z.string(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  sortOrder: z.number().int(),
+})
+
+const listDestinationsRoute = createRoute({
+  method: "get",
+  path: "/destinations",
+  request: { query: clampedDestinationListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of public catalog destinations",
+      content: {
+        "application/json": { schema: listResponseSchema(publicCatalogDestinationSchema) },
+      },
+    },
+  },
+})
+
 // `.openapi()` is declared first: `OpenAPIHono#get` returns the base `Hono`
 // type (honojs/middleware#637), so it cannot precede an `.openapi()` in the
 // chain; it stays ahead of the `/:id` catch-all so `/tags` still matches first.
 export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listTagsRoute, async (c) => {
     const result = await publicProductsService.listCatalogTags(c.get("db"), c.req.valid("query"))
+    setPublicCacheHeaders(c)
+    return c.json(result, 200)
+  })
+  .openapi(listCategoriesRoute, async (c) => {
+    const result = await publicProductsService.listCatalogCategories(
+      c.get("db"),
+      c.req.valid("query"),
+    )
+    setPublicCacheHeaders(c)
+    return c.json(result, 200)
+  })
+  .openapi(listDestinationsRoute, async (c) => {
+    const result = await publicProductsService.listCatalogDestinations(
+      c.get("db"),
+      c.req.valid("query"),
+    )
     setPublicCacheHeaders(c)
     return c.json(result, 200)
   })
@@ -167,18 +235,6 @@ export const publicProductRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
 
     setPublicCacheHeaders(c)
     return c.json({ data })
-  })
-  .get("/categories", async (c) => {
-    const query = await parseQuery(c, clampedCategoryListQuerySchema)
-    const result = await publicProductsService.listCatalogCategories(c.get("db"), query)
-    setPublicCacheHeaders(c)
-    return c.json(result)
-  })
-  .get("/destinations", async (c) => {
-    const query = await parseQuery(c, clampedDestinationListQuerySchema)
-    const result = await publicProductsService.listCatalogDestinations(c.get("db"), query)
-    setPublicCacheHeaders(c)
-    return c.json(result)
   })
   .get("/:id", async (c) => {
     const query = await parseQuery(c, publicCatalogProductLookupBySlugQuerySchema)
