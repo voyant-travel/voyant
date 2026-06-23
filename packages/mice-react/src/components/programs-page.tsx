@@ -1,0 +1,120 @@
+"use client"
+
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Button } from "@voyant-travel/ui/components/button"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@voyant-travel/ui/components/table"
+
+import { usePrograms } from "../hooks/use-programs.js"
+import type { ProgramRecord } from "../schemas.js"
+
+export interface ProgramsPageProps {
+  /** Called when a program row is opened (host resolves the detail route). */
+  onProgramOpen?: (program: ProgramRecord) => void
+  onCreate?: () => void
+  labels?: {
+    title?: string
+    description?: string
+    create?: string
+    name?: string
+    type?: string
+    status?: string
+    dates?: string
+    pax?: string
+    empty?: string
+  }
+}
+
+const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  lead: "outline",
+  planning: "secondary",
+  contracted: "default",
+  operating: "default",
+  completed: "secondary",
+  cancelled: "outline",
+}
+
+function dateRange(start?: string | null, end?: string | null): string {
+  if (start && end) return `${start} → ${end}`
+  return start ?? end ?? "—"
+}
+
+export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsPageProps) {
+  const t = {
+    title: labels.title ?? "Programs",
+    description:
+      labels.description ?? "Group programs (meetings, incentives, conferences, exhibitions).",
+    create: labels.create ?? "New program",
+    name: labels.name ?? "Name",
+    type: labels.type ?? "Type",
+    status: labels.status ?? "Status",
+    dates: labels.dates ?? "Dates",
+    pax: labels.pax ?? "Pax",
+    empty: labels.empty ?? "No programs yet.",
+  }
+  const { data, isLoading } = usePrograms({ limit: 50 })
+  const programs = data?.data ?? []
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
+          <p className="text-muted-foreground text-sm">{t.description}</p>
+        </div>
+        {onCreate ? <Button onClick={onCreate}>{t.create}</Button> : null}
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t.name}</TableHead>
+              <TableHead>{t.type}</TableHead>
+              <TableHead>{t.status}</TableHead>
+              <TableHead>{t.dates}</TableHead>
+              <TableHead className="text-right">{t.pax}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!isLoading && programs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  {t.empty}
+                </TableCell>
+              </TableRow>
+            ) : (
+              programs.map((p) => (
+                <TableRow
+                  key={p.id}
+                  className={onProgramOpen ? "cursor-pointer" : undefined}
+                  onClick={onProgramOpen ? () => onProgramOpen(p) : undefined}
+                >
+                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell className="capitalize">{p.type}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_VARIANT[p.status] ?? "outline"} className="capitalize">
+                      {p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {dateRange(p.startDate, p.endDate)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {p.confirmedPax ?? p.estimatedPax ?? "—"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
