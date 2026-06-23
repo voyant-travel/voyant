@@ -20,9 +20,11 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=mice_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/operations": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
@@ -76,6 +78,10 @@
     "directory": "packages/mice"
   },
   "voyant": {
-    "schema": "./schema"
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyant-travel/accommodations",
+      "@voyant-travel/operations"
+    ]
   }
 }
