@@ -198,6 +198,37 @@ export const promotionalOfferListQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().optional().default(0),
 })
 
+/**
+ * The serialized (wire) shape of a persisted promotional offer row — the
+ * response contract for the admin list/detail routes. `numeric` columns
+ * serialize as strings and `timestamp` columns as ISO strings; `scope` and
+ * `conditions` reuse the schemas above so the contract can't drift from input
+ * validation. Used as the OpenAPI response schema (voyant#2114).
+ */
+export const promotionalOfferSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable(),
+  discountType: z.enum(["percentage", "fixed_amount"]),
+  discountPercent: z.string().nullable(),
+  discountAmountCents: z.number().int().nullable(),
+  currency: z.string().nullable(),
+  scope: promotionalOfferScopeSchema,
+  conditions: promotionalOfferConditionsSchema,
+  validFrom: z.string().nullable(),
+  validUntil: z.string().nullable(),
+  code: z.string().nullable(),
+  stackable: z.boolean(),
+  active: z.boolean(),
+  // `metadata` is an untyped jsonb column (freeform JSON), so the contract is
+  // intentionally open rather than a record of a fixed shape.
+  metadata: z.unknown(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type PromotionalOffer = z.infer<typeof promotionalOfferSchema>
+
 export type InsertPromotionalOfferInput = z.input<typeof insertPromotionalOfferSchema>
 export type InsertPromotionalOffer = z.infer<typeof insertPromotionalOfferSchema>
 export type UpdatePromotionalOfferInput = z.input<typeof updatePromotionalOfferSchema>

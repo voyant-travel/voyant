@@ -1,0 +1,37 @@
+{
+  "name": "@voyant-travel/openapi",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "description": "Generated OpenAPI 3.1 specification for the Voyant framework's standard API surface (admin + storefront).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/openapi"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./spec/framework-openapi.json",
+    "./admin": "./spec/framework-admin.json",
+    "./storefront": "./spec/framework-storefront.json"
+  },
+  "files": [
+    "spec"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "generate": "UPDATE_OPENAPI=1 vitest run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@hono/zod-openapi": "^1.4.0",
+    "@voyant-travel/framework": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "^6.0.2",
+    "vitest": "4.1.2"
+  }
+}

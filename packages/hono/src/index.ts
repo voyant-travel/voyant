@@ -60,6 +60,7 @@ export {
   runWithRequestId,
   safeCaptureException,
 } from "./observability/index.js"
+export { openApiValidationHook } from "./openapi-validation.js"
 export type {
   ExpandedHonoBundles,
   ExpandedHonoPlugins,

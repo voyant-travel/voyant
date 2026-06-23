@@ -21,6 +21,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=commerce_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",

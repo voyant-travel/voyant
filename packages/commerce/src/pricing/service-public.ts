@@ -1,6 +1,12 @@
 // agent-quality: file-size exception -- owner: pricing; existing service module stays co-located until a dedicated split preserves behavior and tests.
+import type {
+  productBookingModeSchema,
+  productCapacityModeSchema,
+  productOptionStatusSchema,
+} from "@voyant-travel/products-contracts/validation"
 import { and, asc, desc, eq, inArray, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { z } from "zod"
 
 import {
   optionPriceRules,
@@ -63,17 +69,24 @@ function readCount(row: unknown): number {
   return 0
 }
 
+// These rows come from parameter-bound raw SQL over enum-typed columns, so the
+// values are constrained to the product-contract enums; type them precisely
+// (not `string`) so the public snapshot matches `publicPricedOptionSchema`.
+type ProductBookingMode = z.infer<typeof productBookingModeSchema>
+type ProductCapacityMode = z.infer<typeof productCapacityModeSchema>
+type ProductOptionStatus = z.infer<typeof productOptionStatusSchema>
+
 type PublicProductRow = {
   id: string
-  booking_mode: string
-  capacity_mode: string
+  booking_mode: ProductBookingMode
+  capacity_mode: ProductCapacityMode
   sell_currency: string
 }
 
 type PublicProductContext = {
   id: string
-  bookingMode: string
-  capacityMode: string
+  bookingMode: ProductBookingMode
+  capacityMode: ProductCapacityMode
   sellCurrency: string
 }
 
@@ -81,7 +94,7 @@ type PublicProductOptionRow = {
   id: string
   name: string
   description: string | null
-  status: string
+  status: ProductOptionStatus
   is_default: boolean
 }
 

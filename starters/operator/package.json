@@ -9,6 +9,7 @@
     "preview": "pnpm run build && vite preview",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "generate:openapi": "UPDATE_OPENAPI=1 vitest run src/api/openapi.test.ts",
     "deploy": "pnpm run build && wrangler deploy",
     "check:startup": "pnpm run build && wrangler check startup",
     "measure:startup": "pnpm run build && node ../../scripts/measure-cloudflare-startup.mjs .",
