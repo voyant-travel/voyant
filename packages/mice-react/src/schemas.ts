@@ -104,6 +104,7 @@ export const rfpRecordSchema = z.object({
 })
 export type RfpRecord = z.infer<typeof rfpRecordSchema>
 export const rfpListResponse = listEnvelope(rfpRecordSchema)
+export const rfpSingleResponse = singleEnvelope(rfpRecordSchema)
 
 export const bidRecordSchema = z.object({
   id: z.string(),
@@ -115,6 +116,29 @@ export const bidRecordSchema = z.object({
   validUntil: nullableString,
 })
 export type BidRecord = z.infer<typeof bidRecordSchema>
+export const bidSingleResponse = singleEnvelope(bidRecordSchema)
+
+export const invitationRecordSchema = z.object({
+  id: z.string(),
+  rfpId: z.string(),
+  supplierId: z.string(),
+  status: z.string(),
+})
+export type InvitationRecord = z.infer<typeof invitationRecordSchema>
+export const invitationSingleResponse = singleEnvelope(invitationRecordSchema)
+
+// GET /rfps/:id embeds the funnel: its invitations + bids (service `getRfp`).
+export const rfpDetailSchema = rfpRecordSchema.extend({
+  invitations: z.array(invitationRecordSchema),
+  bids: z.array(bidRecordSchema),
+})
+export type RfpDetail = z.infer<typeof rfpDetailSchema>
+export const rfpDetailResponse = singleEnvelope(rfpDetailSchema)
+
+// POST /rfps/:id/award returns the awarded RFP + winning bid together.
+export const awardResultSchema = z.object({ rfp: rfpRecordSchema, bid: bidRecordSchema })
+export type AwardResult = z.infer<typeof awardResultSchema>
+export const awardResponse = singleEnvelope(awardResultSchema)
 
 // ── Cost sheet (per-currency P&L) ──
 const costSheetCategorySchema = z.object({

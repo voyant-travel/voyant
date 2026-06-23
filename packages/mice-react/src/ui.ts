@@ -8,6 +8,10 @@ export {
 } from "./components/program-delegates-section.js"
 export { ProgramDetailPage, type ProgramDetailPageProps } from "./components/program-detail-page.js"
 export {
+  ProgramRfpsSection,
+  type ProgramRfpsSectionProps,
+} from "./components/program-rfps-section.js"
+export {
   ProgramSessionsSection,
   type ProgramSessionsSectionProps,
 } from "./components/program-sessions-section.js"

@@ -14,6 +14,7 @@ import {
   programCostSheetResponse,
   programListResponse,
   programSingleResponse,
+  rfpDetailResponse,
   rfpListResponse,
   roomingListResponse,
   sessionListResponse,
@@ -122,5 +123,12 @@ export function getRfpsQueryOptions(client: FetchWithValidationOptions, filters:
     queryKey: miceQueryKeys.rfpsList(filters),
     queryFn: () =>
       fetchWithValidation(`${basePath}/rfps${qs(asParams(filters))}`, rfpListResponse, client),
+  })
+}
+
+export function getRfpQueryOptions(client: FetchWithValidationOptions, id: string) {
+  return queryOptions({
+    queryKey: miceQueryKeys.rfp(id),
+    queryFn: () => fetchWithValidation(`${basePath}/rfps/${id}`, rfpDetailResponse, client),
   })
 }
