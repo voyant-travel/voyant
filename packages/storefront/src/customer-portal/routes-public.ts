@@ -305,7 +305,11 @@ const updateCompanionRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Companion not found",
+      // `updateCompanion` returns "forbidden" (-> 403) for a missing/unowned
+      // companion; this 404 is only reachable when the authenticated user has
+      // no linked customer record (the service's `null` branch), matching the
+      // other portal routes. A missing companion is a 403, not a 404.
+      description: "Customer profile not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -527,7 +531,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       }
 
       if (!companion) {
-        return c.json({ error: "Companion not found" }, 404)
+        return c.json({ error: "Customer profile not found" }, 404)
       }
 
       return c.json({ data: companion }, 200)

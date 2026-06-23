@@ -18519,7 +18519,7 @@
             }
           },
           "404": {
-            "description": "Companion not found",
+            "description": "Customer profile not found",
             "content": {
               "application/json": {
                 "schema": {
