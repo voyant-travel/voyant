@@ -1,5 +1,14 @@
 # @voyant-travel/operations
 
+## 0.5.1
+
+### Patch Changes
+
+- 12a1eb2: Expose client-safe subpaths for validation schemas, linkable metadata, template authoring metadata, finance payment-policy primitives, and Hono reporter utilities. Move browser-facing React/operator imports off mixed runtime barrels so client bundles do not pull Hono request context or other server-only runtime code.
+- Updated dependencies [12a1eb2]
+  - @voyant-travel/hono@0.116.2
+  - @voyant-travel/identity@0.136.2
+
 ## 0.5.0
 
 ### Minor Changes
