@@ -1,4 +1,13 @@
 export {
+  type CreateCustomFieldDefinitionInput,
+  type UpdateCustomFieldDefinitionInput,
+  useCustomFieldDefinitionMutation,
+} from "./use-custom-field-definition-mutation.js"
+export {
+  type UseCustomFieldDefinitionsOptions,
+  useCustomFieldDefinitions,
+} from "./use-custom-field-definitions.js"
+export {
   type UseCustomerSignalOptions,
   useCustomerSignal,
 } from "./use-customer-signal.js"

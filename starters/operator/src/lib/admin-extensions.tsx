@@ -12,7 +12,15 @@ import {
 } from "@voyant-travel/admin/extensions"
 import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
 import { Button } from "@voyant-travel/ui/components/button"
-import { Building, CalendarRange, FileText, Route, ScrollText, Tag } from "lucide-react"
+import {
+  Building,
+  CalendarRange,
+  FileText,
+  Route,
+  ScrollText,
+  SlidersHorizontal,
+  Tag,
+} from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -200,6 +208,7 @@ const coreRouteMessagesProviders: Record<string, RouteMessagesProviderLoader | u
   "core-account": authMessagesProvider,
   "core-settings-api-tokens": authMessagesProvider,
   "core-settings-channels": distributionMessagesProvider,
+  "core-settings-custom-fields": crmMessagesProvider,
   "core-settings-taxes": financeMessagesProvider,
   "core-settings-cost-categories": financeMessagesProvider,
   "core-settings-pricing-categories": commerceMessagesProvider,
@@ -307,6 +316,33 @@ function createCoreExtension() {
             import("@/components/voyant/settings/operator-settings-page").then((module) =>
               adminRoutePageModule(module.OperatorSettingsPage),
             ),
+        },
+        {
+          id: "custom-fields",
+          path: "/custom-fields",
+          title: "Custom Fields",
+          label: "Custom fields",
+          icon: SlidersHorizontal,
+          group: "general",
+          order: 75,
+          ssr: "data-only",
+          page: () =>
+            import(
+              "@voyant-travel/relationships-react/components/custom-field-definitions-page"
+            ).then((module) => adminRoutePageModule(module.CustomFieldDefinitionsPage)),
+          loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
+            const [{ defaultFetcher }, { getCustomFieldDefinitionsQueryOptions }] =
+              await Promise.all([
+                import("@voyant-travel/relationships-react/client"),
+                import("@voyant-travel/relationships-react"),
+              ])
+            return queryClient.ensureQueryData(
+              getCustomFieldDefinitionsQueryOptions(
+                { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher },
+                { limit: 25, offset: 0 },
+              ),
+            )
+          },
         },
       ],
     },
