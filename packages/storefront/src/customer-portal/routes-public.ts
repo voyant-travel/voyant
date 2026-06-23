@@ -1,12 +1,9 @@
+// agent-quality: file-size exception -- owner: customer-portal; the OpenAPI route definitions and their handlers stay co-located (one app instance) until a dedicated split preserves behavior and tests.
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ModuleContainer } from "@voyant-travel/core"
-import {
-  ForbiddenApiError,
-  handleApiError,
-  parseJsonBody,
-  requireUserId,
-} from "@voyant-travel/hono"
+import { ForbiddenApiError, openApiValidationHook, requireUserId } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import {
   buildPublicCustomerPortalRouteRuntime,
@@ -16,9 +13,14 @@ import {
 import { customerPortalRoutes } from "./routes.js"
 import { publicCustomerPortalService } from "./service-public.js"
 import {
+  bootstrapCustomerPortalResultSchema,
   bootstrapCustomerPortalSchema,
   createCustomerPortalCompanionSchema,
   createCustomerPortalProfileDocumentSchema,
+  customerPortalCompanionSchema,
+  customerPortalProfileDocumentSchema,
+  customerPortalProfileSchema,
+  importCustomerPortalBookingTravelersResultSchema,
   importCustomerPortalBookingTravelersSchema,
   updateCustomerPortalCompanionSchema,
   updateCustomerPortalProfileDocumentSchema,
@@ -52,6 +54,289 @@ function hasBootstrapErrorResult(
   return "error" in value
 }
 
+const errorResponseSchema = z.object({ error: z.string() })
+
+const profileEnvelopeSchema = z.object({ data: customerPortalProfileSchema })
+const documentEnvelopeSchema = z.object({ data: customerPortalProfileDocumentSchema })
+const documentListEnvelopeSchema = z.object({
+  data: z.array(customerPortalProfileDocumentSchema),
+})
+const companionEnvelopeSchema = z.object({ data: customerPortalCompanionSchema })
+const companionListEnvelopeSchema = z.object({ data: z.array(customerPortalCompanionSchema) })
+const bootstrapEnvelopeSchema = z.object({ data: bootstrapCustomerPortalResultSchema })
+const importEnvelopeSchema = z.object({
+  data: importCustomerPortalBookingTravelersResultSchema,
+})
+const successEnvelopeSchema = z.object({ success: z.literal(true) })
+
+const documentIdParamSchema = z.object({ id: z.string() })
+const companionIdParamSchema = z.object({ companionId: z.string() })
+
+const getMeRoute = createRoute({
+  method: "get",
+  path: "/me",
+  responses: {
+    200: {
+      description: "The authenticated customer's portal profile",
+      content: { "application/json": { schema: profileEnvelopeSchema } },
+    },
+    404: {
+      description: "Customer profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const patchMeRoute = createRoute({
+  method: "patch",
+  path: "/me",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateCustomerPortalProfileSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated customer portal profile",
+      content: { "application/json": { schema: profileEnvelopeSchema } },
+    },
+    404: {
+      description: "Customer profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Customer record is not linked to this account",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const listDocumentsRoute = createRoute({
+  method: "get",
+  path: "/me/documents",
+  responses: {
+    200: {
+      description: "The authenticated customer's identity documents",
+      content: { "application/json": { schema: documentListEnvelopeSchema } },
+    },
+  },
+})
+
+const createDocumentRoute = createRoute({
+  method: "post",
+  path: "/me/documents",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: createCustomerPortalProfileDocumentSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created identity document",
+      content: { "application/json": { schema: documentEnvelopeSchema } },
+    },
+    404: {
+      description: "Customer profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateDocumentRoute = createRoute({
+  method: "patch",
+  path: "/me/documents/{id}",
+  request: {
+    params: documentIdParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateCustomerPortalProfileDocumentSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated identity document",
+      content: { "application/json": { schema: documentEnvelopeSchema } },
+    },
+    404: {
+      description: "Document not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteDocumentRoute = createRoute({
+  method: "delete",
+  path: "/me/documents/{id}",
+  request: {
+    params: documentIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The identity document was deleted",
+      content: { "application/json": { schema: successEnvelopeSchema } },
+    },
+    404: {
+      description: "Document not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const setPrimaryDocumentRoute = createRoute({
+  method: "post",
+  path: "/me/documents/{id}/set-primary",
+  request: {
+    params: documentIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The document marked as primary",
+      content: { "application/json": { schema: documentEnvelopeSchema } },
+    },
+    404: {
+      description: "Document not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const bootstrapRoute = createRoute({
+  method: "post",
+  path: "/bootstrap",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: bootstrapCustomerPortalSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The bootstrapped (linked or created) customer portal profile",
+      content: { "application/json": { schema: bootstrapEnvelopeSchema } },
+    },
+    404: {
+      description: "Customer profile or customer record not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      // Two shapes share the 409 status: a customer-selection-required result
+      // envelope (the caller must pick a candidate), and a hard conflict error
+      // (the record is already linked to another account).
+      description: "Customer selection required, or record already linked to another account",
+      content: {
+        "application/json": { schema: z.union([bootstrapEnvelopeSchema, errorResponseSchema]) },
+      },
+    },
+  },
+})
+
+const listCompanionsRoute = createRoute({
+  method: "get",
+  path: "/companions",
+  responses: {
+    200: {
+      description: "The authenticated customer's saved companions",
+      content: { "application/json": { schema: companionListEnvelopeSchema } },
+    },
+  },
+})
+
+const createCompanionRoute = createRoute({
+  method: "post",
+  path: "/companions",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: createCustomerPortalCompanionSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created companion",
+      content: { "application/json": { schema: companionEnvelopeSchema } },
+    },
+    409: {
+      description: "Customer record is not linked to this account",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const importCompanionsRoute = createRoute({
+  method: "post",
+  path: "/companions/import-booking-travelers",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: importCustomerPortalBookingTravelersSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Companions imported from the customer's booking travelers",
+      content: { "application/json": { schema: importEnvelopeSchema } },
+    },
+    409: {
+      description: "Customer record is not linked to this account",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateCompanionRoute = createRoute({
+  method: "patch",
+  path: "/companions/{companionId}",
+  request: {
+    params: companionIdParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateCustomerPortalCompanionSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated companion",
+      content: { "application/json": { schema: companionEnvelopeSchema } },
+    },
+    403: {
+      description: "Companion does not belong to this customer",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      // `updateCompanion` returns "forbidden" (-> 403) for a missing/unowned
+      // companion; this 404 is only reachable when the authenticated user has
+      // no linked customer record (the service's `null` branch), matching the
+      // other portal routes. A missing companion is a 403, not a 404.
+      description: "Customer profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteCompanionRoute = createRoute({
+  method: "delete",
+  path: "/companions/{companionId}",
+  request: {
+    params: companionIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "The companion was deleted",
+      content: { "application/json": { schema: successEnvelopeSchema } },
+    },
+    403: {
+      description: "Companion does not belong to this customer",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Companion not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export interface PublicCustomerPortalRouteOptions {
   resolveDocumentDownloadUrl?: (
     bindings: unknown,
@@ -70,23 +355,30 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
   const resolveDocumentDownloadUrl = (c: Context<Env>, storageKey: string) =>
     getRuntime(c).resolveDocumentDownloadUrl?.(storageKey) ?? null
 
-  return new Hono<Env>()
-    .route("/", customerPortalRoutes)
-    .get("/me", async (c) => {
+  // `.openapi()` legs are declared first: `OpenAPIHono#get`/`#post`/etc return
+  // the base `Hono` type (honojs/middleware#637), so any plain `.get()`/`.post()`
+  // leg (and the `.route()` mount) must follow the annotated legs. Static paths
+  // precede their parameterized siblings (`/companions/import-booking-travelers`
+  // before `/companions/{companionId}`; `/me/documents/{id}/set-primary` is
+  // distinct from the `/me/documents/{id}` legs).
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(getMeRoute, async (c) => {
       const userId = requireUserId(c)
 
       const profile = await publicCustomerPortalService.getProfileWithOptions(c.get("db"), userId, {
         kms: resolveOptionalKms(c),
       })
-      return profile ? c.json({ data: profile }) : notFound(c, "Customer profile not found")
+      return profile
+        ? c.json({ data: profile }, 200)
+        : c.json({ error: "Customer profile not found" }, 404)
     })
-    .patch("/me", async (c) => {
+    .openapi(patchMeRoute, async (c) => {
       const userId = requireUserId(c)
 
       const result = await publicCustomerPortalService.updateProfileWithOptions(
         c.get("db"),
         userId,
-        await parseJsonBody(c, updateCustomerPortalProfileSchema),
+        c.req.valid("json"),
         {
           kms: resolveOptionalKms(c),
         },
@@ -94,80 +386,83 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
 
       if (hasErrorResult(result)) {
         if (result.error === "not_found") {
-          return notFound(c, "Customer profile not found")
+          return c.json({ error: "Customer profile not found" }, 404)
         }
 
         return c.json({ error: "Customer record is not linked to this account" }, 409)
       }
 
-      return c.json({ data: result.profile })
+      return c.json({ data: result.profile }, 200)
     })
-    .get("/me/documents", async (c) => {
+    .openapi(listDocumentsRoute, async (c) => {
       const userId = requireUserId(c)
       const data = await publicCustomerPortalService.listMyDocuments(c.get("db"), userId, {
         kms: resolveOptionalKms(c),
       })
-      return c.json({ data })
+      return c.json({ data }, 200)
     })
-    .post("/me/documents", async (c) => {
+    .openapi(createDocumentRoute, async (c) => {
       const userId = requireUserId(c)
-      const input = await parseJsonBody(c, createCustomerPortalProfileDocumentSchema)
-      const row = await publicCustomerPortalService.createMyDocument(c.get("db"), userId, input, {
-        kms: resolveOptionalKms(c),
-      })
-      if (!row) return notFound(c, "Customer profile not found")
+      const row = await publicCustomerPortalService.createMyDocument(
+        c.get("db"),
+        userId,
+        c.req.valid("json"),
+        {
+          kms: resolveOptionalKms(c),
+        },
+      )
+      if (!row) return c.json({ error: "Customer profile not found" }, 404)
       return c.json({ data: row }, 201)
     })
-    .patch("/me/documents/:id", async (c) => {
-      const userId = requireUserId(c)
-      const input = await parseJsonBody(c, updateCustomerPortalProfileDocumentSchema)
-      const row = await publicCustomerPortalService.updateMyDocument(
-        c.get("db"),
-        userId,
-        c.req.param("id"),
-        input,
-        { kms: resolveOptionalKms(c) },
-      )
-      if (!row) return notFound(c, "Document not found")
-      return c.json({ data: row })
-    })
-    .delete("/me/documents/:id", async (c) => {
-      const userId = requireUserId(c)
-      const result = await publicCustomerPortalService.deleteMyDocument(
-        c.get("db"),
-        userId,
-        c.req.param("id"),
-      )
-      if (!result) return notFound(c, "Document not found")
-      return c.json({ success: true })
-    })
-    .post("/me/documents/:id/set-primary", async (c) => {
+    .openapi(setPrimaryDocumentRoute, async (c) => {
       const userId = requireUserId(c)
       const row = await publicCustomerPortalService.setPrimaryMyDocument(
         c.get("db"),
         userId,
-        c.req.param("id"),
+        c.req.valid("param").id,
         { kms: resolveOptionalKms(c) },
       )
-      if (!row) return notFound(c, "Document not found")
-      return c.json({ data: row })
+      if (!row) return c.json({ error: "Document not found" }, 404)
+      return c.json({ data: row }, 200)
     })
-    .post("/bootstrap", async (c) => {
+    .openapi(updateDocumentRoute, async (c) => {
+      const userId = requireUserId(c)
+      const row = await publicCustomerPortalService.updateMyDocument(
+        c.get("db"),
+        userId,
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        { kms: resolveOptionalKms(c) },
+      )
+      if (!row) return c.json({ error: "Document not found" }, 404)
+      return c.json({ data: row }, 200)
+    })
+    .openapi(deleteDocumentRoute, async (c) => {
+      const userId = requireUserId(c)
+      const result = await publicCustomerPortalService.deleteMyDocument(
+        c.get("db"),
+        userId,
+        c.req.valid("param").id,
+      )
+      if (!result) return c.json({ error: "Document not found" }, 404)
+      return c.json({ success: true } as const, 200)
+    })
+    .openapi(bootstrapRoute, async (c) => {
       const userId = requireUserId(c)
 
       const result = await publicCustomerPortalService.bootstrap(
         c.get("db"),
         userId,
-        await parseJsonBody(c, bootstrapCustomerPortalSchema),
+        c.req.valid("json"),
       )
 
       if (hasBootstrapErrorResult(result)) {
         if (result.error === "not_found") {
-          return notFound(c, "Customer profile not found")
+          return c.json({ error: "Customer profile not found" }, 404)
         }
 
         if (result.error === "customer_record_not_found") {
-          return notFound(c, "Customer record not found")
+          return c.json({ error: "Customer record not found" }, 404)
         }
 
         return c.json({ error: "Customer record is already linked to another account" }, 409)
@@ -177,20 +472,38 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
         return c.json({ data: result }, 409)
       }
 
-      return c.json({ data: result })
+      return c.json({ data: result }, 200)
     })
-    .get("/companions", async (c) => {
+    .openapi(listCompanionsRoute, async (c) => {
       const userId = requireUserId(c)
 
-      return c.json({ data: await publicCustomerPortalService.listCompanions(c.get("db"), userId) })
+      return c.json(
+        { data: await publicCustomerPortalService.listCompanions(c.get("db"), userId) },
+        200,
+      )
     })
-    .post("/companions", async (c) => {
+    .openapi(importCompanionsRoute, async (c) => {
+      const userId = requireUserId(c)
+
+      const result = await publicCustomerPortalService.importBookingTravelersAsCompanions(
+        c.get("db"),
+        userId,
+        c.req.valid("json"),
+      )
+
+      if (!result) {
+        return c.json({ error: "Customer record is not linked to this account" }, 409)
+      }
+
+      return c.json({ data: result }, 200)
+    })
+    .openapi(createCompanionRoute, async (c) => {
       const userId = requireUserId(c)
 
       const companion = await publicCustomerPortalService.createCompanion(
         c.get("db"),
         userId,
-        await parseJsonBody(c, createCustomerPortalCompanionSchema),
+        c.req.valid("json"),
       )
 
       if (!companion) {
@@ -199,66 +512,50 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
 
       return c.json({ data: companion }, 201)
     })
-    .post("/companions/import-booking-travelers", async (c) => {
-      const userId = requireUserId(c)
-
-      const result = await publicCustomerPortalService.importBookingTravelersAsCompanions(
-        c.get("db"),
-        userId,
-        await parseJsonBody(c, importCustomerPortalBookingTravelersSchema),
-      )
-
-      if (!result) {
-        return c.json({ error: "Customer record is not linked to this account" }, 409)
-      }
-
-      return c.json({ data: result })
-    })
-    .patch("/companions/:companionId", async (c) => {
+    .openapi(updateCompanionRoute, async (c) => {
       const userId = requireUserId(c)
 
       const companion = await publicCustomerPortalService.updateCompanion(
         c.get("db"),
         userId,
-        c.req.param("companionId"),
-        await parseJsonBody(c, updateCustomerPortalCompanionSchema),
+        c.req.valid("param").companionId,
+        c.req.valid("json"),
       )
 
       if (companion === "forbidden") {
-        return handleApiError(
-          new ForbiddenApiError("Companion does not belong to this customer"),
-          c,
-        )
+        // Thrown (not returned) so the app's error boundary serializes the
+        // 403 with its full `{ error, code, requestId }` body; throwing keeps
+        // the handler's return type unified with the route's typed response
+        // union while still declaring the 403 in the OpenAPI responses.
+        throw new ForbiddenApiError("Companion does not belong to this customer")
       }
 
       if (!companion) {
-        return notFound(c, "Companion not found")
+        return c.json({ error: "Customer profile not found" }, 404)
       }
 
-      return c.json({ data: companion })
+      return c.json({ data: companion }, 200)
     })
-    .delete("/companions/:companionId", async (c) => {
+    .openapi(deleteCompanionRoute, async (c) => {
       const userId = requireUserId(c)
 
       const result = await publicCustomerPortalService.deleteCompanion(
         c.get("db"),
         userId,
-        c.req.param("companionId"),
+        c.req.valid("param").companionId,
       )
 
       if (result === "forbidden") {
-        return handleApiError(
-          new ForbiddenApiError("Companion does not belong to this customer"),
-          c,
-        )
+        throw new ForbiddenApiError("Companion does not belong to this customer")
       }
 
       if (result === "not_found") {
-        return notFound(c, "Companion not found")
+        return c.json({ error: "Companion not found" }, 404)
       }
 
-      return c.json({ success: true })
+      return c.json({ success: true } as const, 200)
     })
+    .route("/", customerPortalRoutes)
     .get("/bookings", async (c) => {
       const userId = requireUserId(c)
 

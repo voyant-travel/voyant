@@ -13947,6 +13947,4669 @@
         }
       }
     },
+    "/v1/public/customer-portal/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The authenticated customer's portal profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "email"
+                        },
+                        "phoneNumber": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "emailVerified": {
+                          "type": "boolean"
+                        },
+                        "firstName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "middleName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lastName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "avatarUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "locale": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seatingPreference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "aisle",
+                            "window",
+                            "middle",
+                            "no_preference",
+                            null
+                          ]
+                        },
+                        "dateOfBirth": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "city": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "postalCode": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addressLine1": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addressLine2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "country",
+                            "state",
+                            "city",
+                            "postalCode",
+                            "addressLine1",
+                            "addressLine2"
+                          ]
+                        },
+                        "accessibility": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dietary": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loyalty": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "insurance": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketingConsent": {
+                          "type": "boolean"
+                        },
+                        "marketingConsentAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketingConsentSource": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notificationDefaults": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "uiPrefs": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "customerRecord": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "firstName": {
+                              "type": "string"
+                            },
+                            "lastName": {
+                              "type": "string"
+                            },
+                            "preferredLanguage": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "preferredCurrency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dateOfBirth": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "email": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "phone": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "billingAddress": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "enum": [
+                                    "primary",
+                                    "billing",
+                                    "shipping",
+                                    "mailing",
+                                    "meeting",
+                                    "service",
+                                    "legal",
+                                    "other"
+                                  ]
+                                },
+                                "fullText": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "line1": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "line2": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "city": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "region": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "postalCode": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "country": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "isPrimary": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "label",
+                                "fullText",
+                                "line1",
+                                "line2",
+                                "city",
+                                "region",
+                                "postalCode",
+                                "country",
+                                "isPrimary"
+                              ]
+                            },
+                            "relation": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "firstName",
+                            "lastName",
+                            "preferredLanguage",
+                            "preferredCurrency",
+                            "dateOfBirth",
+                            "email",
+                            "phone",
+                            "billingAddress",
+                            "relation",
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "userId",
+                        "email",
+                        "emailVerified",
+                        "firstName",
+                        "middleName",
+                        "lastName",
+                        "avatarUrl",
+                        "locale",
+                        "timezone",
+                        "seatingPreference",
+                        "dateOfBirth",
+                        "address",
+                        "accessibility",
+                        "dietary",
+                        "loyalty",
+                        "insurance",
+                        "marketingConsent",
+                        "marketingConsentAt",
+                        "marketingConsentSource",
+                        "notificationDefaults",
+                        "uiPrefs",
+                        "customerRecord"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "middleName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "lastName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "avatarUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uri"
+                  },
+                  "locale": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "timezone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
+                  },
+                  "seatingPreference": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "aisle",
+                      "window",
+                      "middle",
+                      "no_preference",
+                      null
+                    ]
+                  },
+                  "dateOfBirth": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "country": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "state": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "city": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "postalCode": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "addressLine1": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "addressLine2": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "accessibility": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "dietary": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "loyalty": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "insurance": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "marketingConsent": {
+                    "type": "boolean"
+                  },
+                  "marketingConsentSource": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "notificationDefaults": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "uiPrefs": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "customerRecord": {
+                    "type": "object",
+                    "properties": {
+                      "preferredLanguage": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 35
+                      },
+                      "preferredCurrency": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "dateOfBirth": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "phone": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 50
+                      },
+                      "billingAddress": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "enum": [
+                              "primary",
+                              "billing",
+                              "shipping",
+                              "mailing",
+                              "meeting",
+                              "service",
+                              "legal",
+                              "other"
+                            ]
+                          },
+                          "fullText": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "line1": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "line2": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "region": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "postalCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated customer portal profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "email"
+                        },
+                        "phoneNumber": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "emailVerified": {
+                          "type": "boolean"
+                        },
+                        "firstName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "middleName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lastName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "avatarUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "locale": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seatingPreference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "aisle",
+                            "window",
+                            "middle",
+                            "no_preference",
+                            null
+                          ]
+                        },
+                        "dateOfBirth": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "city": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "postalCode": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addressLine1": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addressLine2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "country",
+                            "state",
+                            "city",
+                            "postalCode",
+                            "addressLine1",
+                            "addressLine2"
+                          ]
+                        },
+                        "accessibility": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dietary": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loyalty": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "insurance": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketingConsent": {
+                          "type": "boolean"
+                        },
+                        "marketingConsentAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "marketingConsentSource": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "notificationDefaults": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "uiPrefs": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        },
+                        "customerRecord": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "firstName": {
+                              "type": "string"
+                            },
+                            "lastName": {
+                              "type": "string"
+                            },
+                            "preferredLanguage": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "preferredCurrency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dateOfBirth": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "email": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "phone": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "billingAddress": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "enum": [
+                                    "primary",
+                                    "billing",
+                                    "shipping",
+                                    "mailing",
+                                    "meeting",
+                                    "service",
+                                    "legal",
+                                    "other"
+                                  ]
+                                },
+                                "fullText": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "line1": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "line2": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "city": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "region": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "postalCode": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "country": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "isPrimary": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "label",
+                                "fullText",
+                                "line1",
+                                "line2",
+                                "city",
+                                "region",
+                                "postalCode",
+                                "country",
+                                "isPrimary"
+                              ]
+                            },
+                            "relation": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "firstName",
+                            "lastName",
+                            "preferredLanguage",
+                            "preferredCurrency",
+                            "dateOfBirth",
+                            "email",
+                            "phone",
+                            "billingAddress",
+                            "relation",
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "userId",
+                        "email",
+                        "emailVerified",
+                        "firstName",
+                        "middleName",
+                        "lastName",
+                        "avatarUrl",
+                        "locale",
+                        "timezone",
+                        "seatingPreference",
+                        "dateOfBirth",
+                        "address",
+                        "accessibility",
+                        "dietary",
+                        "loyalty",
+                        "insurance",
+                        "marketingConsent",
+                        "marketingConsentAt",
+                        "marketingConsentSource",
+                        "notificationDefaults",
+                        "uiPrefs",
+                        "customerRecord"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer record is not linked to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/me/documents": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The authenticated customer's identity documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "passport",
+                              "id_card",
+                              "visa",
+                              "drivers_license",
+                              "other"
+                            ]
+                          },
+                          "number": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "issuingAuthority": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "issuingCountry": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "issueDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expiryDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "attachmentId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "number",
+                          "issuingAuthority",
+                          "issuingCountry",
+                          "issueDate",
+                          "expiryDate",
+                          "attachmentId",
+                          "isPrimary",
+                          "notes",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "passport",
+                      "id_card",
+                      "visa",
+                      "drivers_license",
+                      "other"
+                    ]
+                  },
+                  "number": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "issuingAuthority": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "issuingCountry": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "issueDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "expiryDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "attachmentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1024
+                  },
+                  "isPrimary": {
+                    "type": "boolean"
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created identity document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "passport",
+                            "id_card",
+                            "visa",
+                            "drivers_license",
+                            "other"
+                          ]
+                        },
+                        "number": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingAuthority": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingCountry": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiryDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "attachmentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isPrimary": {
+                          "type": "boolean"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "number",
+                        "issuingAuthority",
+                        "issuingCountry",
+                        "issueDate",
+                        "expiryDate",
+                        "attachmentId",
+                        "isPrimary",
+                        "notes",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/me/documents/{id}/set-primary": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document marked as primary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "passport",
+                            "id_card",
+                            "visa",
+                            "drivers_license",
+                            "other"
+                          ]
+                        },
+                        "number": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingAuthority": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingCountry": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiryDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "attachmentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isPrimary": {
+                          "type": "boolean"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "number",
+                        "issuingAuthority",
+                        "issuingCountry",
+                        "issueDate",
+                        "expiryDate",
+                        "attachmentId",
+                        "isPrimary",
+                        "notes",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/me/documents/{id}": {
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "passport",
+                      "id_card",
+                      "visa",
+                      "drivers_license",
+                      "other"
+                    ]
+                  },
+                  "number": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "issuingAuthority": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "issuingCountry": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "issueDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "expiryDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "attachmentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1024
+                  },
+                  "isPrimary": {
+                    "type": "boolean"
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated identity document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "passport",
+                            "id_card",
+                            "visa",
+                            "drivers_license",
+                            "other"
+                          ]
+                        },
+                        "number": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingAuthority": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuingCountry": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiryDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "attachmentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isPrimary": {
+                          "type": "boolean"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "number",
+                        "issuingAuthority",
+                        "issuingCountry",
+                        "issueDate",
+                        "expiryDate",
+                        "attachmentId",
+                        "isPrimary",
+                        "notes",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The identity document was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/bootstrap": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerRecordId": {
+                    "type": "string"
+                  },
+                  "createCustomerIfMissing": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "firstName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "lastName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "marketingConsent": {
+                    "type": "boolean"
+                  },
+                  "marketingConsentSource": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "customerRecord": {
+                    "type": "object",
+                    "properties": {
+                      "preferredLanguage": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 35
+                      },
+                      "preferredCurrency": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "dateOfBirth": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "phone": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 50
+                      },
+                      "billingAddress": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "enum": [
+                              "primary",
+                              "billing",
+                              "shipping",
+                              "mailing",
+                              "meeting",
+                              "service",
+                              "legal",
+                              "other"
+                            ]
+                          },
+                          "fullText": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "line1": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "line2": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "region": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "postalCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The bootstrapped (linked or created) customer portal profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "already_linked",
+                            "linked_existing_customer",
+                            "created_customer",
+                            "customer_selection_required"
+                          ]
+                        },
+                        "profile": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "userId": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "email"
+                            },
+                            "phoneNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "emailVerified": {
+                              "type": "boolean"
+                            },
+                            "firstName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "middleName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "avatarUrl": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "locale": {
+                              "type": "string"
+                            },
+                            "timezone": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "seatingPreference": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "aisle",
+                                "window",
+                                "middle",
+                                "no_preference",
+                                null
+                              ]
+                            },
+                            "dateOfBirth": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "address": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "country": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "state": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "city": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "postalCode": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "addressLine1": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "addressLine2": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "country",
+                                "state",
+                                "city",
+                                "postalCode",
+                                "addressLine1",
+                                "addressLine2"
+                              ]
+                            },
+                            "accessibility": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dietary": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "loyalty": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "insurance": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "marketingConsent": {
+                              "type": "boolean"
+                            },
+                            "marketingConsentAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "marketingConsentSource": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "notificationDefaults": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "uiPrefs": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "customerRecord": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "firstName": {
+                                  "type": "string"
+                                },
+                                "lastName": {
+                                  "type": "string"
+                                },
+                                "preferredLanguage": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "preferredCurrency": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "dateOfBirth": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "email": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "phone": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "billingAddress": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "enum": [
+                                        "primary",
+                                        "billing",
+                                        "shipping",
+                                        "mailing",
+                                        "meeting",
+                                        "service",
+                                        "legal",
+                                        "other"
+                                      ]
+                                    },
+                                    "fullText": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "line1": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "line2": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "city": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "region": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "postalCode": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "country": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "isPrimary": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label",
+                                    "fullText",
+                                    "line1",
+                                    "line2",
+                                    "city",
+                                    "region",
+                                    "postalCode",
+                                    "country",
+                                    "isPrimary"
+                                  ]
+                                },
+                                "relation": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "firstName",
+                                "lastName",
+                                "preferredLanguage",
+                                "preferredCurrency",
+                                "dateOfBirth",
+                                "email",
+                                "phone",
+                                "billingAddress",
+                                "relation",
+                                "status"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "userId",
+                            "email",
+                            "emailVerified",
+                            "firstName",
+                            "middleName",
+                            "lastName",
+                            "avatarUrl",
+                            "locale",
+                            "timezone",
+                            "seatingPreference",
+                            "dateOfBirth",
+                            "address",
+                            "accessibility",
+                            "dietary",
+                            "loyalty",
+                            "insurance",
+                            "marketingConsent",
+                            "marketingConsentAt",
+                            "marketingConsentSource",
+                            "notificationDefaults",
+                            "uiPrefs",
+                            "customerRecord"
+                          ]
+                        },
+                        "candidates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "preferredLanguage": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "preferredCurrency": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "dateOfBirth": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "email": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "phone": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "billingAddress": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "enum": [
+                                      "primary",
+                                      "billing",
+                                      "shipping",
+                                      "mailing",
+                                      "meeting",
+                                      "service",
+                                      "legal",
+                                      "other"
+                                    ]
+                                  },
+                                  "fullText": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "line1": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "line2": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "city": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "region": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "postalCode": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "country": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "isPrimary": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "label",
+                                  "fullText",
+                                  "line1",
+                                  "line2",
+                                  "city",
+                                  "region",
+                                  "postalCode",
+                                  "country",
+                                  "isPrimary"
+                                ]
+                              },
+                              "relation": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "linkable": {
+                                "type": "boolean"
+                              },
+                              "claimedByAnotherUser": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "firstName",
+                              "lastName",
+                              "preferredLanguage",
+                              "preferredCurrency",
+                              "dateOfBirth",
+                              "email",
+                              "phone",
+                              "billingAddress",
+                              "relation",
+                              "status",
+                              "linkable",
+                              "claimedByAnotherUser"
+                            ]
+                          },
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "profile"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile or customer record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer selection required, or record already linked to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "already_linked",
+                                "linked_existing_customer",
+                                "created_customer",
+                                "customer_selection_required"
+                              ]
+                            },
+                            "profile": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "userId": {
+                                  "type": "string"
+                                },
+                                "email": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "email"
+                                },
+                                "phoneNumber": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "emailVerified": {
+                                  "type": "boolean"
+                                },
+                                "firstName": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "middleName": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "lastName": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "avatarUrl": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "locale": {
+                                  "type": "string"
+                                },
+                                "timezone": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "seatingPreference": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "aisle",
+                                    "window",
+                                    "middle",
+                                    "no_preference",
+                                    null
+                                  ]
+                                },
+                                "dateOfBirth": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "address": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "country": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "state": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "city": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "postalCode": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "addressLine1": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "addressLine2": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "country",
+                                    "state",
+                                    "city",
+                                    "postalCode",
+                                    "addressLine1",
+                                    "addressLine2"
+                                  ]
+                                },
+                                "accessibility": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "dietary": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "loyalty": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "insurance": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "marketingConsent": {
+                                  "type": "boolean"
+                                },
+                                "marketingConsentAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "marketingConsentSource": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "notificationDefaults": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "additionalProperties": {}
+                                },
+                                "uiPrefs": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "additionalProperties": {}
+                                },
+                                "customerRecord": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "firstName": {
+                                      "type": "string"
+                                    },
+                                    "lastName": {
+                                      "type": "string"
+                                    },
+                                    "preferredLanguage": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "preferredCurrency": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "dateOfBirth": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "email": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "phone": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "billingAddress": {
+                                      "type": [
+                                        "object",
+                                        "null"
+                                      ],
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "label": {
+                                          "type": "string",
+                                          "enum": [
+                                            "primary",
+                                            "billing",
+                                            "shipping",
+                                            "mailing",
+                                            "meeting",
+                                            "service",
+                                            "legal",
+                                            "other"
+                                          ]
+                                        },
+                                        "fullText": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "line1": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "line2": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "city": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "region": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "postalCode": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "country": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "isPrimary": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "label",
+                                        "fullText",
+                                        "line1",
+                                        "line2",
+                                        "city",
+                                        "region",
+                                        "postalCode",
+                                        "country",
+                                        "isPrimary"
+                                      ]
+                                    },
+                                    "relation": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "status": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "firstName",
+                                    "lastName",
+                                    "preferredLanguage",
+                                    "preferredCurrency",
+                                    "dateOfBirth",
+                                    "email",
+                                    "phone",
+                                    "billingAddress",
+                                    "relation",
+                                    "status"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "userId",
+                                "email",
+                                "emailVerified",
+                                "firstName",
+                                "middleName",
+                                "lastName",
+                                "avatarUrl",
+                                "locale",
+                                "timezone",
+                                "seatingPreference",
+                                "dateOfBirth",
+                                "address",
+                                "accessibility",
+                                "dietary",
+                                "loyalty",
+                                "insurance",
+                                "marketingConsent",
+                                "marketingConsentAt",
+                                "marketingConsentSource",
+                                "notificationDefaults",
+                                "uiPrefs",
+                                "customerRecord"
+                              ]
+                            },
+                            "candidates": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "firstName": {
+                                    "type": "string"
+                                  },
+                                  "lastName": {
+                                    "type": "string"
+                                  },
+                                  "preferredLanguage": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "preferredCurrency": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "dateOfBirth": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "email": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "phone": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "billingAddress": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "enum": [
+                                          "primary",
+                                          "billing",
+                                          "shipping",
+                                          "mailing",
+                                          "meeting",
+                                          "service",
+                                          "legal",
+                                          "other"
+                                        ]
+                                      },
+                                      "fullText": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "line1": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "line2": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "city": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "region": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "postalCode": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "country": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "isPrimary": {
+                                        "type": "boolean"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "label",
+                                      "fullText",
+                                      "line1",
+                                      "line2",
+                                      "city",
+                                      "region",
+                                      "postalCode",
+                                      "country",
+                                      "isPrimary"
+                                    ]
+                                  },
+                                  "relation": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "linkable": {
+                                    "type": "boolean"
+                                  },
+                                  "claimedByAnotherUser": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "firstName",
+                                  "lastName",
+                                  "preferredLanguage",
+                                  "preferredCurrency",
+                                  "dateOfBirth",
+                                  "email",
+                                  "phone",
+                                  "billingAddress",
+                                  "relation",
+                                  "status",
+                                  "linkable",
+                                  "claimedByAnotherUser"
+                                ]
+                              },
+                              "default": []
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "profile"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "error"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/companions": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The authenticated customer's saved companions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "email": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "phone": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "typeKey": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "person": {
+                            "type": "object",
+                            "properties": {
+                              "firstName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "middleName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "lastName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "dateOfBirth": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "addresses": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "country": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "state": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "city": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "postalCode": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "addressLine1": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "addressLine2": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "isDefault": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "country",
+                                    "state",
+                                    "city",
+                                    "postalCode",
+                                    "addressLine1",
+                                    "addressLine2",
+                                    "isDefault"
+                                  ]
+                                }
+                              },
+                              "documents": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "passport",
+                                        "id_card",
+                                        "visa",
+                                        "drivers_license",
+                                        "other"
+                                      ]
+                                    },
+                                    "number": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "issuingAuthority": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "country": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "issueDate": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "expiryDate": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "number",
+                                    "issuingAuthority",
+                                    "country",
+                                    "issueDate",
+                                    "expiryDate"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "firstName",
+                              "middleName",
+                              "lastName",
+                              "dateOfBirth",
+                              "addresses",
+                              "documents"
+                            ]
+                          },
+                          "metadata": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "role",
+                          "name",
+                          "title",
+                          "email",
+                          "phone",
+                          "isPrimary",
+                          "notes",
+                          "typeKey",
+                          "person",
+                          "metadata"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "general",
+                      "primary",
+                      "reservations",
+                      "operations",
+                      "front_desk",
+                      "sales",
+                      "emergency",
+                      "accounting",
+                      "legal",
+                      "other"
+                    ],
+                    "default": "other"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 50
+                  },
+                  "isPrimary": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "typeKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 100
+                  },
+                  "person": {
+                    "type": "object",
+                    "properties": {
+                      "firstName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "middleName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "lastName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "dateOfBirth": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "addresses": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 100
+                            },
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "city": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "postalCode": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 50
+                            },
+                            "addressLine1": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "addressLine2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "isDefault": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "documents": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "passport",
+                                "id_card",
+                                "visa",
+                                "drivers_license",
+                                "other"
+                              ]
+                            },
+                            "number": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "issuingAuthority": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "issueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "expiryDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created companion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "phone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isPrimary": {
+                          "type": "boolean"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "typeKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "person": {
+                          "type": "object",
+                          "properties": {
+                            "firstName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "middleName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dateOfBirth": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addresses": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "country": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "state": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "city": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "postalCode": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "addressLine1": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "addressLine2": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "isDefault": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "country",
+                                  "state",
+                                  "city",
+                                  "postalCode",
+                                  "addressLine1",
+                                  "addressLine2",
+                                  "isDefault"
+                                ]
+                              }
+                            },
+                            "documents": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "passport",
+                                      "id_card",
+                                      "visa",
+                                      "drivers_license",
+                                      "other"
+                                    ]
+                                  },
+                                  "number": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "issuingAuthority": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "country": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "issueDate": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "expiryDate": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "number",
+                                  "issuingAuthority",
+                                  "country",
+                                  "issueDate",
+                                  "expiryDate"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "firstName",
+                            "middleName",
+                            "lastName",
+                            "dateOfBirth",
+                            "addresses",
+                            "documents"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "role",
+                        "name",
+                        "title",
+                        "email",
+                        "phone",
+                        "isPrimary",
+                        "notes",
+                        "typeKey",
+                        "person",
+                        "metadata"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer record is not linked to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/companions/import-booking-travelers": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Companions imported from the customer's booking travelers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "created": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "email": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "phone": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "isPrimary": {
+                                "type": "boolean"
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "typeKey": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "person": {
+                                "type": "object",
+                                "properties": {
+                                  "firstName": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "middleName": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "lastName": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "dateOfBirth": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "addresses": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "country": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "state": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "city": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "postalCode": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "addressLine1": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "addressLine2": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "isDefault": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "country",
+                                        "state",
+                                        "city",
+                                        "postalCode",
+                                        "addressLine1",
+                                        "addressLine2",
+                                        "isDefault"
+                                      ]
+                                    }
+                                  },
+                                  "documents": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "passport",
+                                            "id_card",
+                                            "visa",
+                                            "drivers_license",
+                                            "other"
+                                          ]
+                                        },
+                                        "number": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "issuingAuthority": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "country": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "issueDate": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "expiryDate": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "number",
+                                        "issuingAuthority",
+                                        "country",
+                                        "issueDate",
+                                        "expiryDate"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "firstName",
+                                  "middleName",
+                                  "lastName",
+                                  "dateOfBirth",
+                                  "addresses",
+                                  "documents"
+                                ]
+                              },
+                              "metadata": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "additionalProperties": {}
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "role",
+                              "name",
+                              "title",
+                              "email",
+                              "phone",
+                              "isPrimary",
+                              "notes",
+                              "typeKey",
+                              "person",
+                              "metadata"
+                            ]
+                          }
+                        },
+                        "skippedCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "created",
+                        "skippedCount"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer record is not linked to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/customer-portal/companions/{companionId}": {
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "companionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "general",
+                      "primary",
+                      "reservations",
+                      "operations",
+                      "front_desk",
+                      "sales",
+                      "emergency",
+                      "accounting",
+                      "legal",
+                      "other"
+                    ],
+                    "default": "other"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 50
+                  },
+                  "isPrimary": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "typeKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 100
+                  },
+                  "person": {
+                    "type": "object",
+                    "properties": {
+                      "firstName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "middleName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "lastName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "dateOfBirth": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date"
+                      },
+                      "addresses": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 100
+                            },
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "city": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "postalCode": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 50
+                            },
+                            "addressLine1": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "addressLine2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "isDefault": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "documents": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "passport",
+                                "id_card",
+                                "visa",
+                                "drivers_license",
+                                "other"
+                              ]
+                            },
+                            "number": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "issuingAuthority": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "country": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "issueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "expiryDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated companion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "phone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isPrimary": {
+                          "type": "boolean"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "typeKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "person": {
+                          "type": "object",
+                          "properties": {
+                            "firstName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "middleName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "dateOfBirth": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "addresses": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "country": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "state": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "city": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "postalCode": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "addressLine1": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "addressLine2": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "isDefault": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "country",
+                                  "state",
+                                  "city",
+                                  "postalCode",
+                                  "addressLine1",
+                                  "addressLine2",
+                                  "isDefault"
+                                ]
+                              }
+                            },
+                            "documents": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "passport",
+                                      "id_card",
+                                      "visa",
+                                      "drivers_license",
+                                      "other"
+                                    ]
+                                  },
+                                  "number": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "issuingAuthority": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "country": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "issueDate": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "expiryDate": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "number",
+                                  "issuingAuthority",
+                                  "country",
+                                  "issueDate",
+                                  "expiryDate"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "firstName",
+                            "middleName",
+                            "lastName",
+                            "dateOfBirth",
+                            "addresses",
+                            "documents"
+                          ]
+                        },
+                        "metadata": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "role",
+                        "name",
+                        "title",
+                        "email",
+                        "phone",
+                        "isPrimary",
+                        "notes",
+                        "typeKey",
+                        "person",
+                        "metadata"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Companion does not belong to this customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "companionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The companion was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Companion does not belong to this customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Companion not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/storefront-verification/email/start": {
       "post": {
         "requestBody": {
