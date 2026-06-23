@@ -1,11 +1,6 @@
-import {
-  idempotencyKey,
-  parseJsonBody,
-  parseQuery,
-  UnauthorizedApiError,
-} from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
 import type { Context, MiddlewareHandler } from "hono"
-import { Hono } from "hono"
 
 import {
   type CheckoutCapabilityAction,
@@ -27,8 +22,13 @@ import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { type PublicBookingsServiceResolvers, publicBookingsService } from "./service-public.js"
 import {
   publicBookingOverviewAccessQuerySchema,
+  publicBookingOverviewSchema,
   publicBookingSessionMutationSchema,
+  publicBookingSessionRepriceResultSchema,
+  publicBookingSessionSchema,
+  publicBookingSessionStateSchema,
   publicCreateBookingSessionSchema,
+  publicGuestBookingLookupResponseSchema,
   publicGuestBookingLookupSchema,
   publicRepriceBookingSessionSchema,
   publicUpdateBookingSessionSchema,
@@ -40,9 +40,17 @@ type RateLimitKv = {
   put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
 }
 
-function hasSessionResult(
-  result: { status: string } | { status: "ok"; session: unknown },
-): result is { status: "ok"; session: unknown } {
+const errorResponseSchema = z.object({ error: z.string() })
+
+/**
+ * Narrows a session-mutation result union to the success variants that carry a
+ * `session` while preserving the snapshot's inferred type — the service unions
+ * widen `status` to `string` on some conflict branches, so a plain
+ * `status === "ok"` check cannot discriminate.
+ */
+function hasSession<T extends { status: string }>(
+  result: T,
+): result is Extract<T, { session: unknown }> {
   return "session" in result
 }
 
@@ -108,6 +116,25 @@ function sessionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<
   return async (c, next) => {
     await requireSessionCapability(c, action)
     await next()
+  }
+}
+
+/**
+ * `/sessions/:sessionId` and `/sessions/:sessionId/state` are shared by a GET
+ * (read capability) and a mutating PATCH/PUT (update capability + idempotency).
+ * `createRoute` has no per-method middleware slot and `.use(path)` runs for all
+ * methods on the path, so this single guard branches on the verb to preserve
+ * the exact capability action and the mutating-only idempotency gate.
+ */
+function sessionResourceGuard(): MiddlewareHandler<Env> {
+  const writeIdempotency = idempotencyKey<Env["Bindings"], Env["Variables"]>()
+  return async (c, next) => {
+    const isWrite = c.req.method !== "GET"
+    await requireSessionCapability(c, isWrite ? "session:update" : "session:read")
+    if (isWrite) {
+      return writeIdempotency(c, next)
+    }
+    return next()
   }
 }
 
@@ -200,11 +227,283 @@ function publicResolvers(c: Context): PublicBookingsServiceResolvers {
   }
 }
 
-export const publicBookingRoutes = new Hono<Env>()
-  .post("/sessions", idempotencyKey({ scope: "POST /v1/public/bookings/sessions" }), async (c) => {
+const sessionParamsSchema = z.object({ sessionId: z.string() })
+
+const createSessionRoute = createRoute({
+  method: "post",
+  path: "/sessions",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicCreateBookingSessionSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "Created booking session with a checkout capability",
+      content: { "application/json": { schema: z.object({ data: publicBookingSessionSchema }) } },
+    },
+    404: {
+      description: "Availability slot not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Booking session could not be created",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getSessionRoute = createRoute({
+  method: "get",
+  path: "/sessions/{sessionId}",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "Booking session snapshot",
+      content: { "application/json": { schema: z.object({ data: publicBookingSessionSchema }) } },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateSessionRoute = createRoute({
+  method: "patch",
+  path: "/sessions/{sessionId}",
+  request: {
+    params: sessionParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicUpdateBookingSessionSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Updated booking session snapshot",
+      content: { "application/json": { schema: z.object({ data: publicBookingSessionSchema }) } },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Booking session could not be updated",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getSessionStateRoute = createRoute({
+  method: "get",
+  path: "/sessions/{sessionId}/state",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "Booking session wizard state",
+      content: {
+        "application/json": { schema: z.object({ data: publicBookingSessionStateSchema }) },
+      },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateSessionStateRoute = createRoute({
+  method: "put",
+  path: "/sessions/{sessionId}/state",
+  request: {
+    params: sessionParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicUpsertBookingSessionStateSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Updated booking session wizard state",
+      content: {
+        "application/json": { schema: z.object({ data: publicBookingSessionStateSchema }) },
+      },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const repriceSessionRoute = createRoute({
+  method: "post",
+  path: "/sessions/{sessionId}/reprice",
+  request: {
+    params: sessionParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicRepriceBookingSessionSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Reprice result for the booking session selections",
+      content: {
+        "application/json": { schema: z.object({ data: publicBookingSessionRepriceResultSchema }) },
+      },
+    },
+    400: {
+      description: "Booking session contains an invalid item selection",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Booking session could not be repriced",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const confirmSessionRoute = createRoute({
+  method: "post",
+  path: "/sessions/{sessionId}/confirm",
+  request: {
+    params: sessionParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicBookingSessionMutationSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Confirmed booking session snapshot",
+      content: { "application/json": { schema: z.object({ data: publicBookingSessionSchema }) } },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Booking session could not be confirmed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const expireSessionRoute = createRoute({
+  method: "post",
+  path: "/sessions/{sessionId}/expire",
+  request: {
+    params: sessionParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicBookingSessionMutationSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Expired booking session snapshot",
+      content: { "application/json": { schema: z.object({ data: publicBookingSessionSchema }) } },
+    },
+    404: {
+      description: "Booking session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Booking session could not be expired",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const overviewRoute = createRoute({
+  method: "get",
+  path: "/overview",
+  request: { query: publicBookingOverviewAccessQuerySchema },
+  responses: {
+    200: {
+      description: "Guest-facing booking overview",
+      content: { "application/json": { schema: z.object({ data: publicBookingOverviewSchema }) } },
+    },
+    401: {
+      description: "Missing guest booking access capability",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Booking overview not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    429: {
+      description: "Too many guest booking lookups",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const guestLookupRoute = createRoute({
+  method: "post",
+  path: "/guest-lookup",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: publicGuestBookingLookupSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Booking overview with a guest booking access capability",
+      content: {
+        "application/json": { schema: z.object({ data: publicGuestBookingLookupResponseSchema }) },
+      },
+    },
+    404: {
+      description: "Booking overview not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    429: {
+      description: "Too many guest booking lookups",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+// The `idempotencyKey` and session-capability middleware are registered via
+// `.use(path, mw)` since `createRoute` has no middleware slot. `OpenAPIHono#use`
+// returns the base `Hono` type (honojs/middleware#637), so the middleware is
+// attached as statements on the instance (discarding the return value) before
+// the `.openapi()` chain — middleware is positional, so it must precede the
+// routes it guards.
+const publicBookingApp = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+publicBookingApp.use("/sessions", idempotencyKey({ scope: "POST /v1/public/bookings/sessions" }))
+publicBookingApp.use("/sessions/:sessionId", sessionResourceGuard())
+publicBookingApp.use("/sessions/:sessionId/state", sessionResourceGuard())
+publicBookingApp.use(
+  "/sessions/:sessionId/reprice",
+  sessionCapability("session:reprice"),
+  idempotencyKey(),
+)
+publicBookingApp.use(
+  "/sessions/:sessionId/confirm",
+  sessionCapability("session:finalize"),
+  idempotencyKey(),
+)
+publicBookingApp.use(
+  "/sessions/:sessionId/expire",
+  sessionCapability("session:finalize"),
+  idempotencyKey(),
+)
+
+export const publicBookingRoutes = publicBookingApp
+  .openapi(createSessionRoute, async (c) => {
     const result = await publicBookingsService.createSession(
       c.get("db"),
-      await parseJsonBody(c, publicCreateBookingSessionSchema),
+      c.req.valid("json"),
       c.get("userId"),
       publicResolvers(c),
     )
@@ -213,167 +512,130 @@ export const publicBookingRoutes = new Hono<Env>()
       return notFound(c, "Availability slot not found")
     }
 
-    if (!hasSessionResult(result)) {
+    if (!hasSession(result)) {
       return c.json({ error: sessionConflictError(result.status) }, 409)
     }
 
-    const capability = await issueCheckoutCapability(
-      (result.session as { sessionId: string }).sessionId,
-      getRuntimeEnv(c),
-    )
+    const capability = await issueCheckoutCapability(result.session.sessionId, getRuntimeEnv(c))
     c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
       append: true,
     })
 
-    return c.json(
-      { data: attachCheckoutCapability(result.session as { sessionId: string }, capability) },
-      201,
-    )
+    return c.json({ data: attachCheckoutCapability(result.session, capability) }, 201)
   })
-  .get("/sessions/:sessionId", async (c) => {
-    await requireSessionCapability(c, "session:read")
-
+  .openapi(getSessionRoute, async (c) => {
     const session = await publicBookingsService.getSessionById(
       c.get("db"),
-      c.req.param("sessionId"),
+      c.req.valid("param").sessionId,
     )
 
-    return session ? c.json({ data: session }) : notFound(c, "Booking session not found")
+    return session ? c.json({ data: session }, 200) : notFound(c, "Booking session not found")
   })
-  .patch(
-    "/sessions/:sessionId",
-    sessionCapability("session:update"),
-    idempotencyKey(),
-    async (c) => {
-      const result = await publicBookingsService.updateSession(
-        c.get("db"),
-        c.req.param("sessionId"),
-        await parseJsonBody(c, publicUpdateBookingSessionSchema),
-        c.get("userId"),
-        publicResolvers(c),
-      )
+  .openapi(updateSessionRoute, async (c) => {
+    const result = await publicBookingsService.updateSession(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+      c.req.valid("json"),
+      c.get("userId"),
+      publicResolvers(c),
+    )
 
-      if (result.status === "not_found") {
-        return notFound(c, "Booking session not found")
-      }
+    if (result.status === "not_found") {
+      return notFound(c, "Booking session not found")
+    }
 
-      if (!hasSessionResult(result)) {
-        return c.json({ error: sessionConflictError(result.status) }, 409)
-      }
+    if (!hasSession(result)) {
+      return c.json({ error: sessionConflictError(result.status) }, 409)
+    }
 
-      return c.json({ data: result.session })
-    },
-  )
-  .get("/sessions/:sessionId/state", async (c) => {
-    await requireSessionCapability(c, "session:read")
-
-    const state = await publicBookingsService.getSessionState(c.get("db"), c.req.param("sessionId"))
-
-    return state ? c.json({ data: state }) : notFound(c, "Booking session not found")
+    return c.json({ data: result.session }, 200)
   })
-  .put(
-    "/sessions/:sessionId/state",
-    sessionCapability("session:update"),
-    idempotencyKey(),
-    async (c) => {
-      const result = await publicBookingsService.updateSessionState(
-        c.get("db"),
-        c.req.param("sessionId"),
-        await parseJsonBody(c, publicUpsertBookingSessionStateSchema),
-        publicResolvers(c),
-        c.get("userId"),
-      )
+  .openapi(getSessionStateRoute, async (c) => {
+    const state = await publicBookingsService.getSessionState(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+    )
 
-      if (result.status === "not_found") {
-        return notFound(c, "Booking session not found")
-      }
+    return state ? c.json({ data: state }, 200) : notFound(c, "Booking session not found")
+  })
+  .openapi(updateSessionStateRoute, async (c) => {
+    const result = await publicBookingsService.updateSessionState(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+      c.req.valid("json"),
+      publicResolvers(c),
+      c.get("userId"),
+    )
 
-      return c.json({ data: result.state })
-    },
-  )
-  .post(
-    "/sessions/:sessionId/reprice",
-    sessionCapability("session:reprice"),
-    idempotencyKey(),
-    async (c) => {
-      const result = await publicBookingsService.repriceSession(
-        c.get("db"),
-        c.req.param("sessionId"),
-        await parseJsonBody(c, publicRepriceBookingSessionSchema),
-      )
+    if (result.status === "not_found") {
+      return notFound(c, "Booking session not found")
+    }
 
-      if (result.status === "not_found") {
-        return notFound(c, "Booking session not found")
-      }
+    return c.json({ data: result.state }, 200)
+  })
+  .openapi(repriceSessionRoute, async (c) => {
+    const result = await publicBookingsService.repriceSession(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+      c.req.valid("json"),
+    )
 
-      if (result.status === "invalid_selection") {
-        return c.json({ error: "Booking session contains an invalid item selection" }, 400)
-      }
+    if (result.status === "not_found") {
+      return notFound(c, "Booking session not found")
+    }
 
-      if (result.status !== "ok") {
-        return c.json({ error: sessionConflictError(result.status) }, 409)
-      }
+    if (result.status === "invalid_selection") {
+      return c.json({ error: "Booking session contains an invalid item selection" }, 400)
+    }
 
-      return c.json({
-        data: {
-          pricing: result.pricing,
-          session: result.session,
-        },
-      })
-    },
-  )
-  .post(
-    "/sessions/:sessionId/confirm",
-    sessionCapability("session:finalize"),
-    idempotencyKey(),
-    async (c) => {
-      const result = await publicBookingsService.confirmSession(
-        c.get("db"),
-        c.req.param("sessionId"),
-        await parseJsonBody(c, publicBookingSessionMutationSchema),
-        c.get("userId"),
-      )
+    if (result.status !== "ok") {
+      return c.json({ error: sessionConflictError(result.status) }, 409)
+    }
 
-      if (result.status === "not_found") {
-        return notFound(c, "Booking session not found")
-      }
+    return c.json({ data: { pricing: result.pricing, session: result.session } }, 200)
+  })
+  .openapi(confirmSessionRoute, async (c) => {
+    const result = await publicBookingsService.confirmSession(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+      c.req.valid("json"),
+      c.get("userId"),
+    )
 
-      if (!hasSessionResult(result)) {
-        return c.json({ error: sessionConflictError(result.status) }, 409)
-      }
+    if (result.status === "not_found") {
+      return notFound(c, "Booking session not found")
+    }
 
-      return c.json({ data: result.session })
-    },
-  )
-  .post(
-    "/sessions/:sessionId/expire",
-    sessionCapability("session:finalize"),
-    idempotencyKey(),
-    async (c) => {
-      const result = await publicBookingsService.expireSession(
-        c.get("db"),
-        c.req.param("sessionId"),
-        await parseJsonBody(c, publicBookingSessionMutationSchema),
-        c.get("userId"),
-        {
-          eventBus: c.get("eventBus"),
-          closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
-        },
-      )
+    if (!hasSession(result)) {
+      return c.json({ error: sessionConflictError(result.status) }, 409)
+    }
 
-      if (result.status === "not_found") {
-        return notFound(c, "Booking session not found")
-      }
+    return c.json({ data: result.session }, 200)
+  })
+  .openapi(expireSessionRoute, async (c) => {
+    const result = await publicBookingsService.expireSession(
+      c.get("db"),
+      c.req.valid("param").sessionId,
+      c.req.valid("json"),
+      c.get("userId"),
+      {
+        eventBus: c.get("eventBus"),
+        closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
+      },
+    )
 
-      if (!hasSessionResult(result)) {
-        return c.json({ error: sessionConflictError(result.status) }, 409)
-      }
+    if (result.status === "not_found") {
+      return notFound(c, "Booking session not found")
+    }
 
-      return c.json({ data: result.session })
-    },
-  )
-  .get("/overview", async (c) => {
-    const query = await parseQuery(c, publicBookingOverviewAccessQuerySchema)
+    if (!hasSession(result)) {
+      return c.json({ error: sessionConflictError(result.status) }, 409)
+    }
+
+    return c.json({ data: result.session }, 200)
+  })
+  .openapi(overviewRoute, async (c) => {
+    const query = c.req.valid("query")
     if (query.email) {
       const rateLimited = await enforceGuestBookingLookupRateLimit(
         c,
@@ -401,10 +663,10 @@ export const publicBookingRoutes = new Hono<Env>()
       await requireGuestBookingAccess(c, overview.bookingId, "overview:read", getRuntimeEnv(c))
     }
 
-    return c.json({ data: overview })
+    return c.json({ data: overview }, 200)
   })
-  .post("/guest-lookup", async (c) => {
-    const input = await parseJsonBody(c, publicGuestBookingLookupSchema)
+  .openapi(guestLookupRoute, async (c) => {
+    const input = c.req.valid("json")
     const rateLimited = await enforceGuestBookingLookupRateLimit(c, input.bookingCode)
     if (rateLimited) return rateLimited
 
@@ -418,7 +680,7 @@ export const publicBookingRoutes = new Hono<Env>()
       append: true,
     })
 
-    return c.json({ data: attachGuestBookingAccess(overview, capability) })
+    return c.json({ data: attachGuestBookingAccess(overview, capability) }, 200)
   })
 
 export type PublicBookingRoutes = typeof publicBookingRoutes

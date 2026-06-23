@@ -629,7 +629,7 @@ async function buildOverviewSnapshot(
     Array<{
       id: string
       travelerId: string
-      role: string
+      role: (typeof bookingItemTravelers.$inferSelect)["role"]
       isPrimary: boolean
     }>
   >()
@@ -1040,7 +1040,7 @@ async function buildSessionSnapshot(db: PostgresJsDatabase, bookingId: string) {
     Array<{
       id: string
       travelerId: string
-      role: string
+      role: (typeof bookingItemTravelers.$inferSelect)["role"]
       isPrimary: boolean
     }>
   >()
