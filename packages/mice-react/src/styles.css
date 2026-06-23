@@ -8,4 +8,4 @@
  * Without it, classes that only appear inside this package won't be compiled
  * into the final bundle.
  */
-@source "./components/**/*.{ts,tsx}";
+@source "./{admin,components}/**/*.{ts,tsx}";
