@@ -16,7 +16,7 @@ import { buildOperatorOpenApiDocuments } from "./openapi.js"
  * (runs this file with `UPDATE_OPENAPI=1`, rewriting the artifacts).
  */
 const OUT_DIR = join(process.cwd(), "openapi")
-const docs = buildOperatorOpenApiDocuments()
+const docs = await buildOperatorOpenApiDocuments()
 const artifacts = {
   "framework-openapi.json": docs.full,
   "framework-admin.json": docs.admin,

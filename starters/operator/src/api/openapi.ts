@@ -1,5 +1,15 @@
-import { generateOpenApiDocument, selectSurface } from "@voyant-travel/hono/openapi"
+import {
+  generateOpenApiDocument,
+  mergeLazyOpenApiPaths,
+  selectSurface,
+} from "@voyant-travel/hono/openapi"
 import { app } from "./app.js"
+
+const OPENAPI_INFO = {
+  title: "Voyant Operator API",
+  version: "0.0.0",
+  description: "Generated from the composed operator app. Do not edit by hand.",
+} as const
 
 /**
  * Build-time OpenAPI generation for the operator deployment (voyant#2114).
@@ -14,14 +24,13 @@ import { app } from "./app.js"
  * imported by the generator script + the drift test — never by the Worker
  * entrypoint, so the doc generator stays out of the runtime bundle.
  */
-export function buildOperatorOpenApiDocuments() {
-  const full = generateOpenApiDocument(app, {
-    info: {
-      title: "Voyant Operator API",
-      version: "0.0.0",
-      description: "Generated from the composed operator app. Do not edit by hand.",
-    },
-  })
+export async function buildOperatorOpenApiDocuments() {
+  const options = { info: OPENAPI_INFO }
+  const eager = generateOpenApiDocument(app, options)
+  // Lazy route families mount as wildcard dispatch stubs at runtime, so their
+  // `.openapi()` operations never reach the composed registry — replay their
+  // loaders at build time and merge any documented routes (voyant#2114).
+  const full = await mergeLazyOpenApiPaths(eager, app.lazyMounts ?? [], options)
   return {
     full,
     admin: selectSurface(full, "admin"),
