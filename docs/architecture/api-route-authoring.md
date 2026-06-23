@@ -335,6 +335,16 @@ export const marketsRoutes = new OpenAPIHono<Env>().openapi(listMarketsRoute, (c
   `listResponseSchema(itemSchema)` from `@voyant-travel/types` — never a
   re-declared envelope (the canonical one exists precisely to stop the
   `count` vs `total` drift).
+- Routes with a JSON body declare it as
+  `request: { body: { required: true, content: { "application/json": { schema } } } }`.
+  `required: true` is mandatory: `@hono/zod-openapi` only parses the body when the
+  request carries `Content-Type: application/json` (Hono leaves the value as `{}`
+  otherwise), so a body-backed route must require that content type — which the
+  generated contract already declares. A request that omits the header gets a
+  clean `invalid_request` 400 via the shared `openApiValidationHook`. This is a
+  deliberate tightening over the old `parseJsonBody` (which parsed regardless of
+  header); first-party callers send the header via the shared `fetchWithValidation`
+  client, so they are unaffected.
 
 ### 17. The response schema is the wire contract — verify it
 
