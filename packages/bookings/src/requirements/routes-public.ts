@@ -1,11 +1,14 @@
-import { parseQuery } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import { bookingRequirementsService } from "./service.js"
 import type { ResolveBookingRequirementsProductSnapshot } from "./service-public.js"
-import { publicTransportRequirementsQuerySchema } from "./validation.js"
+import {
+  publicTransportRequirementsQuerySchema,
+  publicTransportRequirementsSchema,
+} from "./validation.js"
 
 type Env = {
   Variables: {
@@ -20,6 +23,27 @@ function cachePublicRead(c: Context) {
   c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
+const transportRequirementsRoute = createRoute({
+  method: "get",
+  path: "/products/{productId}/transport-requirements",
+  request: {
+    params: z.object({ productId: z.string() }),
+    query: publicTransportRequirementsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Public transport requirements for a product",
+      content: {
+        "application/json": { schema: z.object({ data: publicTransportRequirementsSchema }) },
+      },
+    },
+    404: {
+      description: "Product not found",
+      content: { "application/json": { schema: z.object({ error: z.string() }) } },
+    },
+  },
+})
+
 export interface PublicBookingRequirementsRoutesOptions {
   resolveProductSnapshot?: ResolveBookingRequirementsProductSnapshot
 }
@@ -27,23 +51,24 @@ export interface PublicBookingRequirementsRoutesOptions {
 export function createPublicBookingRequirementsRoutes(
   options: PublicBookingRequirementsRoutesOptions = {},
 ) {
-  return new Hono<Env>().get("/products/:productId/transport-requirements", async (c) => {
-    const query = await parseQuery(c, publicTransportRequirementsQuerySchema)
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(
+    transportRequirementsRoute,
+    async (c) => {
+      const result = await bookingRequirementsService.getPublicTransportRequirements(
+        c.get("db"),
+        c.req.valid("param").productId,
+        c.req.valid("query"),
+        options.resolveProductSnapshot,
+      )
 
-    const result = await bookingRequirementsService.getPublicTransportRequirements(
-      c.get("db"),
-      c.req.param("productId"),
-      query,
-      options.resolveProductSnapshot,
-    )
+      if (!result) {
+        return c.json({ error: "Product not found" }, 404)
+      }
 
-    if (!result) {
-      return c.json({ error: "Product not found" }, 404)
-    }
-
-    cachePublicRead(c)
-    return c.json({ data: result })
-  })
+      cachePublicRead(c)
+      return c.json({ data: result }, 200)
+    },
+  )
 }
 
 export const publicBookingRequirementsRoutes = createPublicBookingRequirementsRoutes()
