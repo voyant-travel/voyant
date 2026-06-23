@@ -79,6 +79,9 @@
   },
   "voyant": {
     "schema": "./schema",
-    "requiresSchemas": ["@voyant-travel/accommodations", "@voyant-travel/operations"]
+    "requiresSchemas": [
+      "@voyant-travel/accommodations",
+      "@voyant-travel/operations"
+    ]
   }
 }
