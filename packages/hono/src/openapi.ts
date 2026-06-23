@@ -34,6 +34,7 @@ export interface GenerateOpenApiOptions {
   servers?: OpenApiServer[]
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: accepts any composed app, regardless of its Env/Schema/BasePath; narrowed to OpenAPIHono below.
 type AnyApp = Hono<any, any, any>
 
 /**

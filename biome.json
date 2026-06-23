@@ -54,6 +54,8 @@
       "!**/*.gen.ts",
       "!**/*.generated.ts",
       "!**/migrations",
+      "!packages/openapi/spec",
+      "!starters/operator/openapi",
       "!packages/admin/src/styles.css",
       "!packages/ui/src/styles.css",
       "!packages/ui/src/styles/globals.css",
