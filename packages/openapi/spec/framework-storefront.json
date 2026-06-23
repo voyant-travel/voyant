@@ -9396,6 +9396,1231 @@
           }
         }
       }
+    },
+    "/v1/public/products/{productId}/offers": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "productId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "departureId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotional offers applicable to a product (and optional departure)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "discountType": {
+                            "type": "string",
+                            "enum": [
+                              "percentage",
+                              "fixed_amount"
+                            ]
+                          },
+                          "discountValue": {
+                            "type": "string"
+                          },
+                          "currency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "applicableProductIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "applicableDepartureIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "validFrom": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "validTo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "minTravelers": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "imageMobileUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "imageDesktopUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "stackable": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "slug",
+                          "description",
+                          "discountType",
+                          "discountValue",
+                          "currency",
+                          "applicableProductIds",
+                          "applicableDepartureIds",
+                          "validFrom",
+                          "validTo",
+                          "minTravelers",
+                          "imageMobileUrl",
+                          "imageDesktopUrl",
+                          "stackable",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/offers/{slug}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "departureId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A promotional offer by slug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": [
+                            "percentage",
+                            "fixed_amount"
+                          ]
+                        },
+                        "discountValue": {
+                          "type": "string"
+                        },
+                        "currency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "applicableProductIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "applicableDepartureIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "validFrom": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "validTo": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minTravelers": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "imageMobileUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "imageDesktopUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "stackable": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "description",
+                        "discountType",
+                        "discountValue",
+                        "currency",
+                        "applicableProductIds",
+                        "applicableDepartureIds",
+                        "validFrom",
+                        "validTo",
+                        "minTravelers",
+                        "imageMobileUrl",
+                        "imageDesktopUrl",
+                        "stackable",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Storefront offer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/offers/{slug}/apply": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "departureId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "bookingId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "sessionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 2
+                  },
+                  "pax": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "staff",
+                      "customer",
+                      "partner",
+                      "supplier"
+                    ],
+                    "default": "customer"
+                  },
+                  "market": {
+                    "type": "string",
+                    "minLength": 1,
+                    "default": "default"
+                  },
+                  "basePriceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                },
+                "required": [
+                  "productId",
+                  "pax",
+                  "basePriceCents",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result of applying a promotional offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "applied",
+                            "not_applicable",
+                            "invalid",
+                            "conflict"
+                          ]
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "offer_not_found",
+                            "offer_expired",
+                            "offer_not_yet_valid",
+                            "code_not_found",
+                            "code_required",
+                            "code_expired",
+                            "code_not_yet_valid",
+                            "scope",
+                            "min_pax",
+                            "eligibility",
+                            "currency",
+                            "no_discount",
+                            "booking_mismatch",
+                            "session_mismatch",
+                            "conflict",
+                            null
+                          ]
+                        },
+                        "offer": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "discountType": {
+                              "type": "string",
+                              "enum": [
+                                "percentage",
+                                "fixed_amount"
+                              ]
+                            },
+                            "discountValue": {
+                              "type": "string"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "applicableProductIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "applicableDepartureIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "validFrom": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "validTo": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "minTravelers": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "imageMobileUrl": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "imageDesktopUrl": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "stackable": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "slug",
+                            "description",
+                            "discountType",
+                            "discountValue",
+                            "currency",
+                            "applicableProductIds",
+                            "applicableDepartureIds",
+                            "validFrom",
+                            "validTo",
+                            "minTravelers",
+                            "imageMobileUrl",
+                            "imageDesktopUrl",
+                            "stackable",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "target": {
+                          "type": "object",
+                          "properties": {
+                            "bookingId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sessionId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "departureId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "bookingId",
+                            "sessionId",
+                            "productId",
+                            "departureId"
+                          ]
+                        },
+                        "pricing": {
+                          "type": "object",
+                          "properties": {
+                            "basePriceCents": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "discountAppliedCents": {
+                              "type": "integer"
+                            },
+                            "discountedPriceCents": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "basePriceCents",
+                            "currency",
+                            "discountAppliedCents",
+                            "discountedPriceCents"
+                          ]
+                        },
+                        "appliedOffers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "offerId": {
+                                "type": "string"
+                              },
+                              "offerName": {
+                                "type": "string"
+                              },
+                              "discountAppliedCents": {
+                                "type": "integer"
+                              },
+                              "discountedPriceCents": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string"
+                              },
+                              "discountKind": {
+                                "type": "string",
+                                "enum": [
+                                  "percentage",
+                                  "fixed_amount"
+                                ]
+                              },
+                              "discountPercent": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "discountAmountCents": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "appliedCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "stackable": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "offerId",
+                              "offerName",
+                              "discountAppliedCents",
+                              "discountedPriceCents",
+                              "currency",
+                              "discountKind",
+                              "discountPercent",
+                              "discountAmountCents",
+                              "appliedCode",
+                              "stackable"
+                            ]
+                          }
+                        },
+                        "conflict": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "policy": {
+                              "type": "string",
+                              "enum": [
+                                "best_discount_wins",
+                                "stackable_compose"
+                              ]
+                            },
+                            "autoAppliedOfferIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "manualOfferId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "selectedOfferIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "message": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "policy",
+                            "autoAppliedOfferIds",
+                            "manualOfferId",
+                            "selectedOfferIds",
+                            "message"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "reason",
+                        "offer",
+                        "target",
+                        "pricing",
+                        "appliedOffers",
+                        "conflict"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Storefront offer application is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/offers/redeem": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "departureId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "bookingId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "sessionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 2
+                  },
+                  "pax": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "staff",
+                      "customer",
+                      "partner",
+                      "supplier"
+                    ],
+                    "default": "customer"
+                  },
+                  "market": {
+                    "type": "string",
+                    "minLength": 1,
+                    "default": "default"
+                  },
+                  "basePriceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "productId",
+                  "pax",
+                  "basePriceCents",
+                  "currency",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result of redeeming a promotional offer code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "applied",
+                            "not_applicable",
+                            "invalid",
+                            "conflict"
+                          ]
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "offer_not_found",
+                            "offer_expired",
+                            "offer_not_yet_valid",
+                            "code_not_found",
+                            "code_required",
+                            "code_expired",
+                            "code_not_yet_valid",
+                            "scope",
+                            "min_pax",
+                            "eligibility",
+                            "currency",
+                            "no_discount",
+                            "booking_mismatch",
+                            "session_mismatch",
+                            "conflict",
+                            null
+                          ]
+                        },
+                        "offer": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "discountType": {
+                              "type": "string",
+                              "enum": [
+                                "percentage",
+                                "fixed_amount"
+                              ]
+                            },
+                            "discountValue": {
+                              "type": "string"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "applicableProductIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "applicableDepartureIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "validFrom": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "validTo": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "minTravelers": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "imageMobileUrl": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "imageDesktopUrl": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "stackable": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "slug",
+                            "description",
+                            "discountType",
+                            "discountValue",
+                            "currency",
+                            "applicableProductIds",
+                            "applicableDepartureIds",
+                            "validFrom",
+                            "validTo",
+                            "minTravelers",
+                            "imageMobileUrl",
+                            "imageDesktopUrl",
+                            "stackable",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "target": {
+                          "type": "object",
+                          "properties": {
+                            "bookingId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "sessionId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "productId": {
+                              "type": "string"
+                            },
+                            "departureId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "bookingId",
+                            "sessionId",
+                            "productId",
+                            "departureId"
+                          ]
+                        },
+                        "pricing": {
+                          "type": "object",
+                          "properties": {
+                            "basePriceCents": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "discountAppliedCents": {
+                              "type": "integer"
+                            },
+                            "discountedPriceCents": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "basePriceCents",
+                            "currency",
+                            "discountAppliedCents",
+                            "discountedPriceCents"
+                          ]
+                        },
+                        "appliedOffers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "offerId": {
+                                "type": "string"
+                              },
+                              "offerName": {
+                                "type": "string"
+                              },
+                              "discountAppliedCents": {
+                                "type": "integer"
+                              },
+                              "discountedPriceCents": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string"
+                              },
+                              "discountKind": {
+                                "type": "string",
+                                "enum": [
+                                  "percentage",
+                                  "fixed_amount"
+                                ]
+                              },
+                              "discountPercent": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "discountAmountCents": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "appliedCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "stackable": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "offerId",
+                              "offerName",
+                              "discountAppliedCents",
+                              "discountedPriceCents",
+                              "currency",
+                              "discountKind",
+                              "discountPercent",
+                              "discountAmountCents",
+                              "appliedCode",
+                              "stackable"
+                            ]
+                          }
+                        },
+                        "conflict": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "policy": {
+                              "type": "string",
+                              "enum": [
+                                "best_discount_wins",
+                                "stackable_compose"
+                              ]
+                            },
+                            "autoAppliedOfferIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "manualOfferId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "selectedOfferIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "message": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "policy",
+                            "autoAppliedOfferIds",
+                            "manualOfferId",
+                            "selectedOfferIds",
+                            "message"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "reason",
+                        "offer",
+                        "target",
+                        "pricing",
+                        "appliedOffers",
+                        "conflict"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Storefront offer redemption is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
