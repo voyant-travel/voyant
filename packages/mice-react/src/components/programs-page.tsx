@@ -10,14 +10,20 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components/table"
+import { Plus } from "lucide-react"
+import { useState } from "react"
 
 import { usePrograms } from "../hooks/use-programs.js"
 import type { ProgramRecord } from "../schemas.js"
+import { ProgramFormDialog } from "./program-form-dialog.js"
 
 export interface ProgramsPageProps {
-  /** Called when a program row is opened (host resolves the detail route). */
+  /**
+   * Called when a program is opened — and after one is created — so the host
+   * resolves the detail route. Creating a program lands the operator straight
+   * in its detail, where the agenda / delegates / sourcing surfaces live.
+   */
   onProgramOpen?: (program: ProgramRecord) => void
-  onCreate?: () => void
   labels?: {
     title?: string
     description?: string
@@ -50,7 +56,7 @@ function dateRange(start?: string | null, end?: string | null): string {
 // than silently dropping the rest (matching the program sub-section surfaces).
 const PROGRAMS_PAGE_LIMIT = 200
 
-export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsPageProps) {
+export function ProgramsPage({ onProgramOpen, labels = {} }: ProgramsPageProps) {
   const t = {
     title: labels.title ?? "Programs",
     description:
@@ -66,6 +72,7 @@ export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsP
   const { data, isLoading } = usePrograms({ limit: PROGRAMS_PAGE_LIMIT })
   const programs = data?.data ?? []
   const capped = programs.length === PROGRAMS_PAGE_LIMIT
+  const [showCreate, setShowCreate] = useState(false)
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -74,7 +81,10 @@ export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsP
           <h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
           <p className="text-muted-foreground text-sm">{t.description}</p>
         </div>
-        {onCreate ? <Button onClick={onCreate}>{t.create}</Button> : null}
+        <Button onClick={() => setShowCreate(true)}>
+          <Plus className="size-4" aria-hidden="true" />
+          {t.create}
+        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -127,6 +137,12 @@ export function ProgramsPage({ onProgramOpen, onCreate, labels = {} }: ProgramsP
           Showing the first {PROGRAMS_PAGE_LIMIT} programs.
         </p>
       ) : null}
+
+      <ProgramFormDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        onSaved={(program) => onProgramOpen?.(program)}
+      />
     </div>
   )
 }

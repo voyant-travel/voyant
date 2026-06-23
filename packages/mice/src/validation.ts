@@ -36,7 +36,23 @@ export const createProgramSchema = z.object({
   budgetAmountCents: z.number().int().min(0).optional(),
 })
 
-export const updateProgramSchema = createProgramSchema.partial()
+// Update accepts `null` on the optional fields so a PATCH can CLEAR them (the
+// columns are nullable and `updateProgram` spreads the body into `.set()`).
+// `.partial()` alone only allows omitting a key, which leaves the prior value
+// in place — operators could set an optional field but never clear it.
+export const updateProgramSchema = createProgramSchema.partial().extend({
+  organizationId: z.string().min(1).nullish(),
+  primaryContactPersonId: z.string().min(1).nullish(),
+  accountManagerId: z.string().min(1).nullish(),
+  code: z.string().nullish(),
+  destination: z.string().nullish(),
+  startDate: isoDate.nullish(),
+  endDate: isoDate.nullish(),
+  estimatedPax: z.number().int().min(0).nullish(),
+  confirmedPax: z.number().int().min(0).nullish(),
+  currency: z.string().nullish(),
+  budgetAmountCents: z.number().int().min(0).nullish(),
+})
 
 export const programListQuerySchema = z.object({
   status: programStatusSchema.optional(),
