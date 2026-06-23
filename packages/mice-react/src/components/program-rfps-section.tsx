@@ -64,13 +64,14 @@ function formatMoney(
   currency: string | null | undefined,
 ): string {
   if (cents == null) return "—"
-  const code = currency || "USD"
+  const amount = cents / 100
+  // Never fabricate a currency: a priced bid with no currency shows the bare
+  // amount, not a defaulted code that could be compared/awarded as the wrong one.
+  if (!currency) return amount.toFixed(2)
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(
-      cents / 100,
-    )
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount)
   } catch {
-    return `${(cents / 100).toFixed(2)} ${code}`
+    return `${amount.toFixed(2)} ${currency}`
   }
 }
 
@@ -276,9 +277,17 @@ function ManageRfpDialog({ rfpId, onOpenChange }: ManageRfpDialogProps) {
   const totalCents = bidTotal.trim() === "" ? undefined : Number(bidTotal) * 100
   const bidTotalInvalid =
     totalCents !== undefined && (!Number.isFinite(totalCents) || totalCents < 0)
+  // A priced bid must carry a currency — otherwise it can't be compared or
+  // awarded safely in a multi-currency RFP (per-currency, no FX).
+  const bidCurrencyMissing = totalCents !== undefined && bidCurrency.trim() === ""
+  const canSubmitBid =
+    bidSupplierId.trim().length > 0 &&
+    !bidTotalInvalid &&
+    !bidCurrencyMissing &&
+    !createBid.isPending
 
   const submitBid = async () => {
-    if (!rfpId || !bidSupplierId.trim() || bidTotalInvalid) return
+    if (!rfpId || !canSubmitBid) return
     await createBid.mutateAsync({
       rfpId,
       supplierId: bidSupplierId.trim(),
@@ -348,11 +357,9 @@ function ManageRfpDialog({ rfpId, onOpenChange }: ManageRfpDialogProps) {
                       value={bidCurrency}
                       onChange={(e) => setBidCurrency(e.target.value)}
                       placeholder="EUR"
+                      aria-invalid={bidCurrencyMissing || undefined}
                     />
-                    <Button
-                      onClick={() => void submitBid()}
-                      disabled={!bidSupplierId.trim() || bidTotalInvalid || createBid.isPending}
-                    >
+                    <Button onClick={() => void submitBid()} disabled={!canSubmitBid}>
                       {createBid.isPending ? (
                         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                       ) : null}
@@ -361,6 +368,10 @@ function ManageRfpDialog({ rfpId, onOpenChange }: ManageRfpDialogProps) {
                   </div>
                   {bidTotalInvalid ? (
                     <p className="text-destructive text-xs">Total must be 0 or more.</p>
+                  ) : bidCurrencyMissing ? (
+                    <p className="text-destructive text-xs">
+                      A priced bid needs a currency (e.g. EUR).
+                    </p>
                   ) : null}
                 </div>
 
