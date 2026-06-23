@@ -36,11 +36,27 @@ export const roomingAssignmentLinkable: LinkableDefinition = {
   idPrefix: "mrma",
 }
 
+export const rfpLinkable: LinkableDefinition = {
+  module: "mice",
+  entity: "rfp",
+  table: "mice_rfps",
+  idPrefix: "mrfp",
+}
+
+export const bidLinkable: LinkableDefinition = {
+  module: "mice",
+  entity: "bid",
+  table: "mice_bids",
+  idPrefix: "mbid",
+}
+
 export const miceLinkable = {
   program: programLinkable,
   session: sessionLinkable,
   delegate: delegateLinkable,
   roomingAssignment: roomingAssignmentLinkable,
+  rfp: rfpLinkable,
+  bid: bidLinkable,
 }
 
 export const miceModule: Module = {
@@ -63,9 +79,11 @@ export { miceAdminRoutes } from "./routes.js"
 export * from "./schema.js"
 export * from "./service.js"
 export * from "./service-delegates.js"
+export * from "./service-rfp.js"
 export * from "./service-rooming.js"
 export * from "./service-sessions.js"
 export * from "./validation.js"
 export * from "./validation-delegates.js"
+export * from "./validation-rfp.js"
 export * from "./validation-rooming.js"
 export * from "./validation-sessions.js"

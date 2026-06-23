@@ -62,5 +62,6 @@ export type NewProgram = typeof programs.$inferInsert
 export type { BookingMiceDetail, NewBookingMiceDetail } from "./booking-extension.js"
 export { bookingMiceDetails } from "./booking-extension.js"
 export * from "./schema-delegates.js"
+export * from "./schema-rfp.js"
 export * from "./schema-rooming.js"
 export * from "./schema-sessions.js"
