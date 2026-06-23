@@ -1,5 +1,11 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.111.8
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.111.8
+
 ## 0.111.7
 
 ### Patch Changes

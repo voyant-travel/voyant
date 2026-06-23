@@ -1,5 +1,19 @@
 # @voyant-travel/framework
 
+## 0.7.5
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.136.1
+- @voyant-travel/catalog@0.134.1
+- @voyant-travel/distribution@0.126.1
+- @voyant-travel/finance@0.136.1
+- @voyant-travel/flights@0.136.1
+- @voyant-travel/identity@0.136.1
+- @voyant-travel/legal@0.136.1
+- @voyant-travel/notifications@0.116.5
+- @voyant-travel/trips@0.127.1
+
 ## 0.7.4
 
 ### Patch Changes
