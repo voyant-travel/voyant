@@ -25,7 +25,7 @@ import { tryGetExecutionCtx } from "./lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "./lib/public-paths.js"
 import { requestScopedEventBus } from "./lib/request-event-bus.js"
 import { requireAuth } from "./middleware/auth.js"
-import { DEFAULT_REQUEST_BODY_LIMIT_BYTES, requestBodyLimit } from "./middleware/body-size.js"
+import { MAX_GLOBAL_REQUEST_BODY_BYTES, requestBodyLimit } from "./middleware/body-size.js"
 import { cors } from "./middleware/cors.js"
 import { db } from "./middleware/db.js"
 import { handleApiError, requestId } from "./middleware/error-boundary.js"
@@ -339,7 +339,10 @@ export function mountApp<TBindings extends VoyantBindings>(
     app.use(
       "*",
       requestBodyLimit({
-        maxBytes: config.requestBodyLimit?.maxBytes ?? DEFAULT_REQUEST_BODY_LIMIT_BYTES,
+        // Outer ceiling sized to the largest legitimate body (uploads); per-route
+        // logic (parseJsonBody's 10 MiB, the upload route's 25 MiB) enforces finer
+        // caps. See MAX_GLOBAL_REQUEST_BODY_BYTES.
+        maxBytes: config.requestBodyLimit?.maxBytes ?? MAX_GLOBAL_REQUEST_BODY_BYTES,
       }),
     )
   }

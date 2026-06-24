@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   DEFAULT_REQUEST_BODY_LIMIT_BYTES,
+  MAX_GLOBAL_REQUEST_BODY_BYTES,
   requestBodyLimit,
 } from "../../src/middleware/body-size.js"
 
@@ -22,6 +23,13 @@ function buildApp() {
 describe("requestBodyLimit middleware", () => {
   it("exposes the default cap", () => {
     expect(DEFAULT_REQUEST_BODY_LIMIT_BYTES).toBe(10 * 1024 * 1024)
+  })
+
+  it("the global outer ceiling stays at/above the 25 MiB upload allowance", () => {
+    // Guards the upload regression: the app-wide guard must never reject a body
+    // the media upload route (25 MiB file + multipart envelope) legitimately
+    // accepts. Lowering this below the upload cap would 413 valid uploads.
+    expect(MAX_GLOBAL_REQUEST_BODY_BYTES).toBeGreaterThanOrEqual(25 * 1024 * 1024)
   })
 
   it("rejects a request whose Content-Length exceeds the cap (header fast-path)", async () => {

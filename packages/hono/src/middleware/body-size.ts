@@ -7,6 +7,19 @@ export interface RequestBodyLimitOptions {
 
 export const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 10 * 1024 * 1024
 
+/**
+ * App-wide OUTER ceiling for the global `requestBodyLimit` mount. It must be at
+ * least the largest body any legitimate route accepts so the global stream cap
+ * never rejects valid traffic — the media upload route allows a 25 MiB file in a
+ * multipart envelope (`MAX_MULTIPART_UPLOAD_BYTES` = 25 MiB + 1 MiB in
+ * `@voyant-travel/storage`). Finer limits stay per-route: `parseJsonBody`/
+ * `readBoundedRequestText` keep the tighter `DEFAULT_REQUEST_BODY_LIMIT_BYTES`
+ * (10 MiB) for JSON, and the upload route enforces its own 25 MiB cap. Raising
+ * the global guard to a header-only check would reopen the no-Content-Length
+ * hole; lowering it below this would reject valid uploads (voyant#2114).
+ */
+export const MAX_GLOBAL_REQUEST_BODY_BYTES = 26 * 1024 * 1024
+
 export function requestBodyLimit(options: RequestBodyLimitOptions): MiddlewareHandler {
   // Hono's bodyLimit checks the Content-Length header AND wraps the request body
   // stream so it throws once the actual read exceeds maxSize. That stream cap is
