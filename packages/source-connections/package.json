@@ -1,0 +1,85 @@
+{
+  "name": "@voyant-travel/source-connections",
+  "version": "0.1.0",
+  "description": "Source connection registry schema, lifecycle service, and admin routes for federated Voyant deployments.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./service": "./src/service.ts",
+    "./validation": "./src/validation.ts",
+    "./routes": "./src/routes.ts"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ tests/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=source_connections_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
+  },
+  "dependencies": {
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./validation": {
+        "types": "./dist/validation.d.ts",
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/source-connections"
+  }
+}

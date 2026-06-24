@@ -6,5 +6,6 @@ export const schema = [
   "../../packages/action-ledger/src/schema.ts",
   "../../packages/relationships/src/schema.ts",
   "../../packages/identity/src/schema.ts",
+  "../../packages/source-connections/src/schema.ts",
   "../../packages/workflow-runs/src/schema.ts",
 ] as const
