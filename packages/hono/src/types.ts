@@ -308,11 +308,12 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    */
   metrics?: boolean
   /**
-   * Default request body limit enforced by `Content-Length` before route
-   * handlers parse JSON/form data. Enabled by default at 10 MiB. Set
-   * `false` to disable or pass `{ maxBytes }` to override.
+   * Default request body limit enforced before route handlers parse
+   * JSON/form data. Content-type-aware: JSON bodies are capped at 10 MiB
+   * (`jsonMaxBytes`), non-JSON bodies (uploads) at the 26 MiB outer ceiling
+   * (`maxBytes`). Set `false` to disable, or override either cap.
    */
-  requestBodyLimit?: false | { maxBytes: number }
+  requestBodyLimit?: false | { maxBytes?: number; jsonMaxBytes?: number }
   /**
    * Default app-wide security headers. Enabled by default. Set `false`
    * to disable, or override CSP/HSTS via the option object.
