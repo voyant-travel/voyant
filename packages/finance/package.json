@@ -34,6 +34,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=finance_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",

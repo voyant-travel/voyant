@@ -1,6 +1,33 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
-import type { Env } from "./routes-shared.js"
+/**
+ * Admin CRUD routes for finance reference-data resources — mounted by the
+ * operator starter under `/v1/admin/finance/...` (staff-actor-gated by the
+ * parent app's middleware chain). Covers six resources: invoice-number-series,
+ * invoice-templates, tax-regimes, tax-classes, tax-policy-profiles,
+ * tax-policy-rules.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208 — finance sub-batch 9A). Request schemas reuse the existing
+ * `validation.ts` (`@voyant-travel/finance-contracts`) schemas the handlers
+ * already parse; response row schemas are authored from the Drizzle
+ * `$inferSelect` shapes (§17: `Date`/timestamp columns serialize to strings
+ * over the wire; integer money/rate fields stay numbers). Each resource is its
+ * own small `OpenAPIHono` sub-chain composed onto `financeReferenceDataRoutes`
+ * via `.route("/")` — six small chains keep type-inference cost bounded (one
+ * flat 31-leg chain has O(n²) inference cost and OOMs the framework build).
+ *
+ * agent-quality: file-size exception — intentional: a mechanically-repetitive
+ * CRUD bundle over six finance reference-data resources (31 legs), each with a
+ * `createRoute` def + handler co-located per the established admin route
+ * pattern (mirrors the sibling pricing `routes-rules.ts`). Splitting per
+ * resource would fragment the single mounted instance without aiding review.
+ * See voyant#2114 / voyant#2208.
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
+
+import { type Env, notFound } from "./routes-shared.js"
 import { financeService } from "./service.js"
 import {
   insertInvoiceNumberSeriesSchema,
@@ -23,251 +50,911 @@ import {
   updateTaxRegimeSchema,
 } from "./validation.js"
 
-export const financeReferenceDataRoutes = new Hono<Env>()
+const errorResponseSchema = z.object({ error: z.string() })
+const deleteResponseSchema = z.object({ success: z.boolean() })
+const idParamSchema = z.object({ id: z.string() })
 
-  // ========================================================================
-  // Invoice Number Series
-  // ========================================================================
+/**
+ * Insert helpers return `row ?? null`, but a successful `INSERT ... RETURNING`
+ * always yields exactly one row. Narrow the type for the 201 response (a
+ * missing row is an unexpected DB fault and surfaces as a 500).
+ */
+function created<T>(row: T | null): T {
+  if (row === null) throw new Error("Insert returned no row")
+  return row
+}
 
-  .get("/invoice-number-series", async (c) => {
-    const query = parseQuery(c, invoiceNumberSeriesListQuerySchema)
-    return c.json(await financeService.listInvoiceNumberSeries(c.get("db"), query))
-  })
+const isoTimestamp = z.string()
+const metadataSchema = z.unknown().nullable()
 
-  .post("/invoice-number-series", async (c) => {
-    const row = await financeService.createInvoiceNumberSeries(
+// --- Response row schemas (authored from the Drizzle $inferSelect shapes;
+//     §17: timestamp columns are strings on the wire; integer money/rate
+//     columns stay numbers) ------------------------------------------------
+
+const invoiceNumberSeriesSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  prefix: z.string(),
+  separator: z.string(),
+  padLength: z.number().int(),
+  currentSequence: z.number().int(),
+  resetStrategy: z.enum(["never", "annual", "monthly"]),
+  resetAt: isoTimestamp.nullable(),
+  scope: z.enum(["invoice", "proforma", "credit_note"]),
+  isDefault: z.boolean(),
+  externalProvider: z.string().nullable(),
+  externalConfigKey: z.string().nullable(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const invoiceTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  language: z.string(),
+  jurisdiction: z.string().nullable(),
+  bodyFormat: z.enum(["html", "markdown", "lexical_json"]),
+  body: z.string(),
+  cssStyles: z.string().nullable(),
+  isDefault: z.boolean(),
+  active: z.boolean(),
+  metadata: metadataSchema,
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const taxRegimeSchema = z.object({
+  id: z.string(),
+  code: z.enum([
+    "standard",
+    "reduced",
+    "exempt",
+    "reverse_charge",
+    "margin_scheme_art311",
+    "zero_rated",
+    "out_of_scope",
+    "other",
+  ]),
+  name: z.string(),
+  jurisdiction: z.string().nullable(),
+  ratePercent: z.number().int().nullable(),
+  description: z.string().nullable(),
+  legalReference: z.string().nullable(),
+  active: z.boolean(),
+  metadata: metadataSchema,
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const taxClassLineSchema = z.object({
+  regime_id: z.string(),
+  applies_to: z.enum(["base", "addon", "accommodation", "all"]),
+})
+
+const taxClassSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  defaultRegimeId: z.string().nullable(),
+  lines: z.array(taxClassLineSchema).nullable(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const taxPolicyProfileSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  jurisdiction: z.string().nullable(),
+  description: z.string().nullable(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const taxPolicyRuleSchema = z.object({
+  id: z.string(),
+  profileId: z.string(),
+  side: z.enum(["sell", "buy"]),
+  priority: z.number().int(),
+  name: z.string(),
+  appliesTo: z.enum(["base", "addon", "accommodation", "all"]),
+  condition: z.record(z.string(), z.unknown()).nullable(),
+  taxRegimeId: z.string(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const allocateInvoiceNumberResultSchema = z.object({
+  data: z.object({
+    sequence: z.number().int(),
+    formattedNumber: z.string(),
+  }),
+})
+
+// --- invoice-number-series ------------------------------------------------
+
+const listInvoiceNumberSeriesRoute = createRoute({
+  method: "get",
+  path: "/invoice-number-series",
+  request: { query: invoiceNumberSeriesListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of invoice number series",
+      content: { "application/json": { schema: listResponseSchema(invoiceNumberSeriesSchema) } },
+    },
+  },
+})
+
+const createInvoiceNumberSeriesRoute = createRoute({
+  method: "post",
+  path: "/invoice-number-series",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertInvoiceNumberSeriesSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created invoice number series",
+      content: { "application/json": { schema: z.object({ data: invoiceNumberSeriesSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getInvoiceNumberSeriesRoute = createRoute({
+  method: "get",
+  path: "/invoice-number-series/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "An invoice number series by id",
+      content: { "application/json": { schema: z.object({ data: invoiceNumberSeriesSchema }) } },
+    },
+    404: {
+      description: "Invoice number series not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateInvoiceNumberSeriesRoute = createRoute({
+  method: "patch",
+  path: "/invoice-number-series/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateInvoiceNumberSeriesSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated invoice number series",
+      content: { "application/json": { schema: z.object({ data: invoiceNumberSeriesSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Invoice number series not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteInvoiceNumberSeriesRoute = createRoute({
+  method: "delete",
+  path: "/invoice-number-series/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Invoice number series deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Invoice number series not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const allocateInvoiceNumberRoute = createRoute({
+  method: "post",
+  path: "/invoice-number-series/{id}/allocate",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The allocated sequence + formatted number",
+      content: { "application/json": { schema: allocateInvoiceNumberResultSchema } },
+    },
+    404: {
+      description: "Invoice number series not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Invoice number series is inactive",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const invoiceNumberSeriesRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listInvoiceNumberSeriesRoute, async (c) =>
+    c.json(await financeService.listInvoiceNumberSeries(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createInvoiceNumberSeriesRoute, async (c) =>
+    c.json(
+      {
+        data: created(
+          await financeService.createInvoiceNumberSeries(c.get("db"), c.req.valid("json")),
+        ),
+      },
+      201,
+    ),
+  )
+  .openapi(getInvoiceNumberSeriesRoute, async (c) => {
+    const row = await financeService.getInvoiceNumberSeriesById(
       c.get("db"),
-      await parseJsonBody(c, insertInvoiceNumberSeriesSchema),
+      c.req.valid("param").id,
     )
-    return c.json({ data: row }, 201)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Invoice number series not found")
   })
-
-  .get("/invoice-number-series/:id", async (c) => {
-    const row = await financeService.getInvoiceNumberSeriesById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Invoice number series not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  .patch("/invoice-number-series/:id", async (c) => {
+  .openapi(updateInvoiceNumberSeriesRoute, async (c) => {
     const row = await financeService.updateInvoiceNumberSeries(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateInvoiceNumberSeriesSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Invoice number series not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Invoice number series not found")
   })
-
-  .delete("/invoice-number-series/:id", async (c) => {
-    const row = await financeService.deleteInvoiceNumberSeries(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Invoice number series not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteInvoiceNumberSeriesRoute, async (c) => {
+    const row = await financeService.deleteInvoiceNumberSeries(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Invoice number series not found")
   })
-
-  .post("/invoice-number-series/:id/allocate", async (c) => {
-    const result = await financeService.allocateInvoiceNumber(c.get("db"), c.req.param("id"))
+  .openapi(allocateInvoiceNumberRoute, async (c) => {
+    const result = await financeService.allocateInvoiceNumber(c.get("db"), c.req.valid("param").id)
     if (result.status === "not_found") {
-      return c.json({ error: "Invoice number series not found" }, 404)
+      return notFound(c, "Invoice number series not found")
     }
     if (result.status === "inactive") {
       return c.json({ error: "Invoice number series is inactive" }, 409)
     }
-    return c.json({
-      data: { sequence: result.sequence, formattedNumber: result.formattedNumber },
-    })
-  })
-
-  // ========================================================================
-  // Invoice Templates
-  // ========================================================================
-
-  .get("/invoice-templates", async (c) => {
-    const query = parseQuery(c, invoiceTemplateListQuerySchema)
-    return c.json(await financeService.listInvoiceTemplates(c.get("db"), query))
-  })
-
-  .post("/invoice-templates", async (c) => {
-    const row = await financeService.createInvoiceTemplate(
-      c.get("db"),
-      await parseJsonBody(c, insertInvoiceTemplateSchema),
+    return c.json(
+      { data: { sequence: result.sequence, formattedNumber: result.formattedNumber } },
+      200,
     )
-    return c.json({ data: row }, 201)
   })
 
-  .get("/invoice-templates/:id", async (c) => {
-    const row = await financeService.getInvoiceTemplateById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Invoice template not found" }, 404)
-    return c.json({ data: row })
-  })
+// --- invoice-templates ----------------------------------------------------
 
-  .patch("/invoice-templates/:id", async (c) => {
+const listInvoiceTemplatesRoute = createRoute({
+  method: "get",
+  path: "/invoice-templates",
+  request: { query: invoiceTemplateListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of invoice templates",
+      content: { "application/json": { schema: listResponseSchema(invoiceTemplateSchema) } },
+    },
+  },
+})
+
+const createInvoiceTemplateRoute = createRoute({
+  method: "post",
+  path: "/invoice-templates",
+  request: {
+    body: {
+      required: true,
+      description: "Invoice template. `slug` must be kebab-case (`^[a-z0-9-]+$`).",
+      content: { "application/json": { schema: insertInvoiceTemplateSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created invoice template",
+      content: { "application/json": { schema: z.object({ data: invoiceTemplateSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getInvoiceTemplateRoute = createRoute({
+  method: "get",
+  path: "/invoice-templates/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "An invoice template by id",
+      content: { "application/json": { schema: z.object({ data: invoiceTemplateSchema }) } },
+    },
+    404: {
+      description: "Invoice template not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateInvoiceTemplateRoute = createRoute({
+  method: "patch",
+  path: "/invoice-templates/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      description: "Invoice template patch. `slug` must be kebab-case (`^[a-z0-9-]+$`).",
+      content: { "application/json": { schema: updateInvoiceTemplateSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated invoice template",
+      content: { "application/json": { schema: z.object({ data: invoiceTemplateSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Invoice template not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteInvoiceTemplateRoute = createRoute({
+  method: "delete",
+  path: "/invoice-templates/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Invoice template deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Invoice template not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const invoiceTemplateRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listInvoiceTemplatesRoute, async (c) =>
+    c.json(await financeService.listInvoiceTemplates(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createInvoiceTemplateRoute, async (c) =>
+    c.json(
+      {
+        data: created(await financeService.createInvoiceTemplate(c.get("db"), c.req.valid("json"))),
+      },
+      201,
+    ),
+  )
+  .openapi(getInvoiceTemplateRoute, async (c) => {
+    const row = await financeService.getInvoiceTemplateById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Invoice template not found")
+  })
+  .openapi(updateInvoiceTemplateRoute, async (c) => {
     const row = await financeService.updateInvoiceTemplate(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateInvoiceTemplateSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Invoice template not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Invoice template not found")
+  })
+  .openapi(deleteInvoiceTemplateRoute, async (c) => {
+    const row = await financeService.deleteInvoiceTemplate(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Invoice template not found")
   })
 
-  .delete("/invoice-templates/:id", async (c) => {
-    const row = await financeService.deleteInvoiceTemplate(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Invoice template not found" }, 404)
-    return c.json({ success: true })
+// --- tax-regimes ----------------------------------------------------------
+
+const listTaxRegimesRoute = createRoute({
+  method: "get",
+  path: "/tax-regimes",
+  request: { query: taxRegimeListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of tax regimes",
+      content: { "application/json": { schema: listResponseSchema(taxRegimeSchema) } },
+    },
+  },
+})
+
+const createTaxRegimeRoute = createRoute({
+  method: "post",
+  path: "/tax-regimes",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertTaxRegimeSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created tax regime",
+      content: { "application/json": { schema: z.object({ data: taxRegimeSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getTaxRegimeRoute = createRoute({
+  method: "get",
+  path: "/tax-regimes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A tax regime by id",
+      content: { "application/json": { schema: z.object({ data: taxRegimeSchema }) } },
+    },
+    404: {
+      description: "Tax regime not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateTaxRegimeRoute = createRoute({
+  method: "patch",
+  path: "/tax-regimes/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTaxRegimeSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated tax regime",
+      content: { "application/json": { schema: z.object({ data: taxRegimeSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Tax regime not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteTaxRegimeRoute = createRoute({
+  method: "delete",
+  path: "/tax-regimes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Tax regime deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Tax regime not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const taxRegimeRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listTaxRegimesRoute, async (c) =>
+    c.json(await financeService.listTaxRegimes(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createTaxRegimeRoute, async (c) =>
+    c.json(
+      { data: created(await financeService.createTaxRegime(c.get("db"), c.req.valid("json"))) },
+      201,
+    ),
+  )
+  .openapi(getTaxRegimeRoute, async (c) => {
+    const row = await financeService.getTaxRegimeById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax regime not found")
   })
-
-  // ========================================================================
-  // Tax Regimes
-  // ========================================================================
-
-  .get("/tax-regimes", async (c) => {
-    const query = parseQuery(c, taxRegimeListQuerySchema)
-    return c.json(await financeService.listTaxRegimes(c.get("db"), query))
-  })
-
-  .post("/tax-regimes", async (c) => {
-    const row = await financeService.createTaxRegime(
-      c.get("db"),
-      await parseJsonBody(c, insertTaxRegimeSchema),
-    )
-    return c.json({ data: row }, 201)
-  })
-
-  .get("/tax-regimes/:id", async (c) => {
-    const row = await financeService.getTaxRegimeById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax regime not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  .patch("/tax-regimes/:id", async (c) => {
+  .openapi(updateTaxRegimeRoute, async (c) => {
     const row = await financeService.updateTaxRegime(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateTaxRegimeSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Tax regime not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax regime not found")
+  })
+  .openapi(deleteTaxRegimeRoute, async (c) => {
+    const row = await financeService.deleteTaxRegime(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Tax regime not found")
   })
 
-  .delete("/tax-regimes/:id", async (c) => {
-    const row = await financeService.deleteTaxRegime(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax regime not found" }, 404)
-    return c.json({ success: true })
+// --- tax-classes ----------------------------------------------------------
+
+const listTaxClassesRoute = createRoute({
+  method: "get",
+  path: "/tax-classes",
+  request: { query: taxClassListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of tax classes",
+      content: { "application/json": { schema: listResponseSchema(taxClassSchema) } },
+    },
+  },
+})
+
+const createTaxClassRoute = createRoute({
+  method: "post",
+  path: "/tax-classes",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertTaxClassSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created tax class",
+      content: { "application/json": { schema: z.object({ data: taxClassSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getTaxClassRoute = createRoute({
+  method: "get",
+  path: "/tax-classes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A tax class by id",
+      content: { "application/json": { schema: z.object({ data: taxClassSchema }) } },
+    },
+    404: {
+      description: "Tax class not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateTaxClassRoute = createRoute({
+  method: "patch",
+  path: "/tax-classes/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTaxClassSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated tax class",
+      content: { "application/json": { schema: z.object({ data: taxClassSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Tax class not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteTaxClassRoute = createRoute({
+  method: "delete",
+  path: "/tax-classes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Tax class deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Tax class not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const taxClassRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listTaxClassesRoute, async (c) =>
+    c.json(await financeService.listTaxClasses(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createTaxClassRoute, async (c) =>
+    c.json(
+      { data: created(await financeService.createTaxClass(c.get("db"), c.req.valid("json"))) },
+      201,
+    ),
+  )
+  .openapi(getTaxClassRoute, async (c) => {
+    const row = await financeService.getTaxClassById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax class not found")
   })
-
-  // ========================================================================
-  // Tax Classes
-  // ========================================================================
-
-  .get("/tax-classes", async (c) => {
-    const query = parseQuery(c, taxClassListQuerySchema)
-    return c.json(await financeService.listTaxClasses(c.get("db"), query))
-  })
-
-  .post("/tax-classes", async (c) => {
-    const row = await financeService.createTaxClass(
-      c.get("db"),
-      await parseJsonBody(c, insertTaxClassSchema),
-    )
-    return c.json({ data: row }, 201)
-  })
-
-  .get("/tax-classes/:id", async (c) => {
-    const row = await financeService.getTaxClassById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax class not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  .patch("/tax-classes/:id", async (c) => {
+  .openapi(updateTaxClassRoute, async (c) => {
     const row = await financeService.updateTaxClass(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateTaxClassSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Tax class not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax class not found")
+  })
+  .openapi(deleteTaxClassRoute, async (c) => {
+    const row = await financeService.deleteTaxClass(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Tax class not found")
   })
 
-  .delete("/tax-classes/:id", async (c) => {
-    const row = await financeService.deleteTaxClass(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax class not found" }, 404)
-    return c.json({ success: true })
+// --- tax-policy-profiles --------------------------------------------------
+
+const listTaxPolicyProfilesRoute = createRoute({
+  method: "get",
+  path: "/tax-policy-profiles",
+  request: { query: taxPolicyProfileListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of tax policy profiles",
+      content: { "application/json": { schema: listResponseSchema(taxPolicyProfileSchema) } },
+    },
+  },
+})
+
+const createTaxPolicyProfileRoute = createRoute({
+  method: "post",
+  path: "/tax-policy-profiles",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertTaxPolicyProfileSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created tax policy profile",
+      content: { "application/json": { schema: z.object({ data: taxPolicyProfileSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getTaxPolicyProfileRoute = createRoute({
+  method: "get",
+  path: "/tax-policy-profiles/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A tax policy profile by id",
+      content: { "application/json": { schema: z.object({ data: taxPolicyProfileSchema }) } },
+    },
+    404: {
+      description: "Tax policy profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateTaxPolicyProfileRoute = createRoute({
+  method: "patch",
+  path: "/tax-policy-profiles/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTaxPolicyProfileSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated tax policy profile",
+      content: { "application/json": { schema: z.object({ data: taxPolicyProfileSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Tax policy profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteTaxPolicyProfileRoute = createRoute({
+  method: "delete",
+  path: "/tax-policy-profiles/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Tax policy profile deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Tax policy profile not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const taxPolicyProfileRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listTaxPolicyProfilesRoute, async (c) =>
+    c.json(await financeService.listTaxPolicyProfiles(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createTaxPolicyProfileRoute, async (c) =>
+    c.json(
+      {
+        data: created(
+          await financeService.createTaxPolicyProfile(c.get("db"), c.req.valid("json")),
+        ),
+      },
+      201,
+    ),
+  )
+  .openapi(getTaxPolicyProfileRoute, async (c) => {
+    const row = await financeService.getTaxPolicyProfileById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy profile not found")
   })
-
-  // ========================================================================
-  // Tax Policy Profiles
-  // ========================================================================
-
-  .get("/tax-policy-profiles", async (c) => {
-    const query = parseQuery(c, taxPolicyProfileListQuerySchema)
-    return c.json(await financeService.listTaxPolicyProfiles(c.get("db"), query))
-  })
-
-  .post("/tax-policy-profiles", async (c) => {
-    const row = await financeService.createTaxPolicyProfile(
-      c.get("db"),
-      await parseJsonBody(c, insertTaxPolicyProfileSchema),
-    )
-    return c.json({ data: row }, 201)
-  })
-
-  .get("/tax-policy-profiles/:id", async (c) => {
-    const row = await financeService.getTaxPolicyProfileById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  .patch("/tax-policy-profiles/:id", async (c) => {
+  .openapi(updateTaxPolicyProfileRoute, async (c) => {
     const row = await financeService.updateTaxPolicyProfile(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateTaxPolicyProfileSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy profile not found")
+  })
+  .openapi(deleteTaxPolicyProfileRoute, async (c) => {
+    const row = await financeService.deleteTaxPolicyProfile(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Tax policy profile not found")
   })
 
-  .delete("/tax-policy-profiles/:id", async (c) => {
-    const row = await financeService.deleteTaxPolicyProfile(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
-    return c.json({ success: true })
+// --- tax-policy-rules -----------------------------------------------------
+
+const listTaxPolicyRulesRoute = createRoute({
+  method: "get",
+  path: "/tax-policy-rules",
+  request: { query: taxPolicyRuleListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of tax policy rules",
+      content: { "application/json": { schema: listResponseSchema(taxPolicyRuleSchema) } },
+    },
+  },
+})
+
+const createTaxPolicyRuleRoute = createRoute({
+  method: "post",
+  path: "/tax-policy-rules",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertTaxPolicyRuleSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created tax policy rule",
+      content: { "application/json": { schema: z.object({ data: taxPolicyRuleSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getTaxPolicyRuleRoute = createRoute({
+  method: "get",
+  path: "/tax-policy-rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A tax policy rule by id",
+      content: { "application/json": { schema: z.object({ data: taxPolicyRuleSchema }) } },
+    },
+    404: {
+      description: "Tax policy rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateTaxPolicyRuleRoute = createRoute({
+  method: "patch",
+  path: "/tax-policy-rules/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTaxPolicyRuleSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated tax policy rule",
+      content: { "application/json": { schema: z.object({ data: taxPolicyRuleSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Tax policy rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteTaxPolicyRuleRoute = createRoute({
+  method: "delete",
+  path: "/tax-policy-rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Tax policy rule deleted",
+      content: { "application/json": { schema: deleteResponseSchema } },
+    },
+    404: {
+      description: "Tax policy rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const taxPolicyRuleRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listTaxPolicyRulesRoute, async (c) =>
+    c.json(await financeService.listTaxPolicyRules(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createTaxPolicyRuleRoute, async (c) =>
+    c.json(
+      { data: created(await financeService.createTaxPolicyRule(c.get("db"), c.req.valid("json"))) },
+      201,
+    ),
+  )
+  .openapi(getTaxPolicyRuleRoute, async (c) => {
+    const row = await financeService.getTaxPolicyRuleById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy rule not found")
   })
-
-  // ========================================================================
-  // Tax Policy Rules
-  // ========================================================================
-
-  .get("/tax-policy-rules", async (c) => {
-    const query = parseQuery(c, taxPolicyRuleListQuerySchema)
-    return c.json(await financeService.listTaxPolicyRules(c.get("db"), query))
-  })
-
-  .post("/tax-policy-rules", async (c) => {
-    const row = await financeService.createTaxPolicyRule(
-      c.get("db"),
-      await parseJsonBody(c, insertTaxPolicyRuleSchema),
-    )
-    return c.json({ data: row }, 201)
-  })
-
-  .get("/tax-policy-rules/:id", async (c) => {
-    const row = await financeService.getTaxPolicyRuleById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  .patch("/tax-policy-rules/:id", async (c) => {
+  .openapi(updateTaxPolicyRuleRoute, async (c) => {
     const row = await financeService.updateTaxPolicyRule(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateTaxPolicyRuleSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : notFound(c, "Tax policy rule not found")
+  })
+  .openapi(deleteTaxPolicyRuleRoute, async (c) => {
+    const row = await financeService.deleteTaxPolicyRule(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true }, 200) : notFound(c, "Tax policy rule not found")
   })
 
-  .delete("/tax-policy-rules/:id", async (c) => {
-    const row = await financeService.deleteTaxPolicyRule(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
-    return c.json({ success: true })
-  })
+// Compose the six per-resource sub-chains onto a single OpenAPIHono so the
+// `.openapi()` operations propagate up through the parent `financeRoutes`
+// registry (OpenAPIHono.route copies the sub-app's registered routes).
+export const financeReferenceDataRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
+  .route("/", invoiceNumberSeriesRoutes)
+  .route("/", invoiceTemplateRoutes)
+  .route("/", taxRegimeRoutes)
+  .route("/", taxClassRoutes)
+  .route("/", taxPolicyProfileRoutes)
+  .route("/", taxPolicyRuleRoutes)
