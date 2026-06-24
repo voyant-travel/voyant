@@ -74,6 +74,14 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/catalog/package-offers", "POST")).not.toBe(404)
   })
 
+  it("mounts charters lazy admin + public surfaces (operator-local, voyant#2191)", async () => {
+    // The public charter browse list is served (local-only when no adapter is
+    // registered) — proves the operator actually mounts charters at runtime, not
+    // just that it surfaces in the spec.
+    expect(await status("/v1/public/charters")).not.toBe(404)
+    expect(await status("/v1/admin/charters/products")).not.toBe(404)
+  })
+
   it("mounts multi-prefix lazyRoutes families (catalog-booking, media, settings, payment-link)", async () => {
     expect(await status("/v1/admin/catalog/orders")).not.toBe(404)
     expect(await status("/v1/admin/media/anything")).not.toBe(404)
