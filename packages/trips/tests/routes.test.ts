@@ -59,18 +59,25 @@ describe("trips routes", () => {
 
   it("blocks requirement routes on the public surface", async () => {
     const app = createTripsRoutes({ surface: "public" })
+    // Bodies are valid so the migrated routes reach the admin-only surface
+    // guard (403) rather than tripping the OpenAPI body validator (400) first.
+    const scope = { locale: "en-GB", audience: "staff", market: "GB" }
     const adminOnly = [
-      { method: "POST", path: "/trip_123/requirements" },
+      {
+        method: "POST",
+        path: "/trip_123/requirements",
+        body: { vertical: "accommodation", criteriaVersion: "v1" },
+      },
       { method: "GET", path: "/trip_123/requirements" },
-      { method: "POST", path: "/requirements/trrq_1/candidates" },
-      { method: "POST", path: "/requirements/trrq_1/select" },
-      { method: "POST", path: "/requirements/trrq_1/reshop" },
-      { method: "POST", path: "/trip_123/reshop" },
+      { method: "POST", path: "/requirements/trrq_1/candidates", body: { scope } },
+      { method: "POST", path: "/requirements/trrq_1/select", body: { candidateId: "trcd_1" } },
+      { method: "POST", path: "/requirements/trrq_1/reshop", body: { scope } },
+      { method: "POST", path: "/trip_123/reshop", body: { scope } },
     ]
-    for (const { method, path } of adminOnly) {
+    for (const { method, path, body } of adminOnly) {
       const res = await app.request(path, {
         method,
-        body: method === "GET" ? undefined : JSON.stringify({}),
+        body: body ? JSON.stringify(body) : undefined,
         headers: { "content-type": "application/json" },
       })
       expect(res.status, `${method} ${path}`).toBe(403)
