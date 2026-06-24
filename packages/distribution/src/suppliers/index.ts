@@ -2,7 +2,7 @@ import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { suppliersLinkable } from "./linkables.js"
-import { supplierRoutes } from "./routes.js"
+import { suppliersAdminRoutes } from "./routes.js"
 import { suppliersService } from "./service.js"
 
 export { supplierLinkable, suppliersLinkable } from "./linkables.js"
@@ -15,8 +15,8 @@ export const suppliersModule: Module = {
 
 export const suppliersHonoModule: HonoModule = {
   module: suppliersModule,
-  adminRoutes: supplierRoutes,
-  routes: supplierRoutes,
+  adminRoutes: suppliersAdminRoutes,
+  routes: suppliersAdminRoutes,
 }
 
 export type {
