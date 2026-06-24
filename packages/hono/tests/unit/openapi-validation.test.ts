@@ -190,4 +190,23 @@ describe("content-type enforcement for .openapi() json bodies", () => {
     expect(response.status).toBe(400)
     expect(await response.json()).toMatchObject({ code: "invalid_request" })
   })
+
+  // The guard must MATCH Hono's parser acceptance exactly: content-types Hono
+  // leaves unparsed (it is case-sensitive and rejects a bare trailing `;`) must
+  // 400 here, not slip through as a silent no-op patch.
+  it.each(["Application/JSON", "application/json;"])(
+    "rejects %j, which Hono's json parser does not accept",
+    async (contentType) => {
+      vi.spyOn(console, "error").mockImplementation(() => {})
+
+      const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+        method: "PATCH",
+        headers: { "content-type": contentType },
+        body: JSON.stringify({ name: "renamed" }),
+      })
+
+      expect(response.status).toBe(400)
+      expect(await response.json()).toMatchObject({ code: "invalid_request" })
+    },
+  )
 })
