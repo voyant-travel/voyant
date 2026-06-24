@@ -1,4 +1,5 @@
 import {
+  type CatalogBookingMountTarget,
   type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
@@ -17,7 +18,7 @@ import { availabilitySlots } from "@voyant-travel/operations"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
@@ -116,7 +117,7 @@ export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBooking
  * catalog-snapshot) onto an absolute-path Hono app, wired with this
  * deployment's options + cross-package readers.
  */
-export function mountCatalogBookingRoutes(hono: Hono): void {
+export function mountCatalogBookingRoutes(hono: CatalogBookingMountTarget): void {
   mountPackageCatalogBookingRoutes(hono, createOperatorCatalogBookingRouteModuleOptions())
 }
 

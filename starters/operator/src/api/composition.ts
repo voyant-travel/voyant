@@ -18,6 +18,7 @@
  * the runtime half of the migration-resilience work (voyant#1608 / #1620).
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { chartersModule } from "@voyant-travel/charters"
 import { cruisesModule } from "@voyant-travel/cruises"
 import {
@@ -137,7 +138,13 @@ export function buildOperatorProviders(): OperatorCapabilities {
     loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     loadCatalogBookingRoutes: () =>
       import("./runtime/catalog-booking-runtime").then((m) => {
-        const app = new Hono()
+        // OpenAPIHono parent so the booking-engine sub-apps' `.openapi()` defs
+        // (quote/book/drafts/holds) surface in the operator spec via the
+        // build-time lazy-merge — `mergeLazyOpenApiPaths` skips plain `Hono`
+        // wrappers, which carry no registry (voyant#2114 / voyant#2208). The
+        // mount accepts a `Pick<Hono, "route" | "get">`, so the OpenAPIHono is
+        // passed without a cast despite its non-blank default `Env`.
+        const app = new OpenAPIHono()
         m.mountCatalogBookingRoutes(app)
         return app
       }),

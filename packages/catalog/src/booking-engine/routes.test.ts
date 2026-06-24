@@ -103,7 +103,7 @@ describe("createCatalogBookingRoutes", () => {
 
     expect(response.status).toBe(400)
     await expect(response.json()).resolves.toMatchObject({
-      error: "Invalid JSON body",
+      error: "Malformed JSON in request body",
       code: "invalid_request",
     })
   })
@@ -244,6 +244,55 @@ describe("createCatalogBookingRoutes", () => {
         createdBy: "user_1",
       }),
     )
+  })
+
+  it("serializes draft GET timestamps as ISO strings (contract §17)", async () => {
+    vi.mocked(getBookingDraft).mockResolvedValue({
+      id: "draft_1",
+      entity_module: "products",
+      entity_id: "prod_1",
+      source_kind: "owned",
+      source_connection_id: null,
+      source_ref: null,
+      draft_payload: { entity: { id: "prod_1" } },
+      current_step: "configure",
+      current_quote_id: null,
+      hold_expires_at: null,
+      consumed_booking_id: null,
+      consumed_at: null,
+      created_by: "user_1",
+      expires_at: new Date("2026-05-06T10:00:00.000Z"),
+      created_at: new Date("2026-05-05T10:00:00.000Z"),
+      updated_at: new Date("2026-05-05T10:00:00.000Z"),
+    } as never)
+    const { app } = createTestApp()
+
+    const response = await app.request("/v1/public/catalog/drafts/draft_1")
+
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as Record<string, unknown>
+    expect(body).toMatchObject({
+      id: "draft_1",
+      entity_module: "products",
+      entity_id: "prod_1",
+      source_connection_id: null,
+      created_at: "2026-05-05T10:00:00.000Z",
+      updated_at: "2026-05-05T10:00:00.000Z",
+      expires_at: "2026-05-06T10:00:00.000Z",
+    })
+    // §17: Date-origin columns are strings over the wire, never Date.
+    expect(typeof body.created_at).toBe("string")
+    expect(typeof body.expires_at).toBe("string")
+  })
+
+  it("returns 404 for a missing draft", async () => {
+    vi.mocked(getBookingDraft).mockResolvedValue(null)
+    const { app } = createTestApp()
+
+    const response = await app.request("/v1/public/catalog/drafts/missing")
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({ error: "draft not found" })
   })
 
   it("books draft-first, forwards draft parameters, and reports draft consume races", async () => {

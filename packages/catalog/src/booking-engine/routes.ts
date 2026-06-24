@@ -1,8 +1,26 @@
+/**
+ * Catalog booking-engine routes (quote / book / drafts / holds). The factory is
+ * mounted on BOTH adminRoutes AND publicRoutes, so each leg appears under
+ * `/v1/admin/catalog/*` and `/v1/public/catalog/*`.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208). Request schemas reuse `routes-contracts`; quote/book responses
+ * reuse the `@voyant-travel/catalog-contracts` V1 wire schemas the handlers
+ * already serialize through; the draft row schema is authored from
+ * `SelectBookingDraft` (§17: timestamp columns serialize to ISO strings).
+ *
+ * agent-quality: file-size exception — intentional: the seven `createRoute`
+ * objects (each with its real status set) co-locate with the handler helpers
+ * per the established admin route pattern (mirrors `commerce/pricing/
+ * routes-core.ts`). Splitting the route table from its handlers would fragment
+ * one mounted instance without aiding review. See voyant#2114 / voyant#2208.
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { handleApiError, parseJsonBody, RequestValidationError } from "@voyant-travel/hono"
+import { handleApiError, openApiValidationHook, RequestValidationError } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import type { SourceAdapterContext } from "../adapter/contract.js"
 import { readSourcedEntry } from "../services/sourced-entry-service.js"
@@ -40,7 +58,12 @@ import { type QuoteEntityResult, quoteEntity } from "./quote.js"
 import {
   bookBodySchema,
   type CatalogBookingAdapterContextInput,
+  type CatalogBookingBookBody,
+  type CatalogBookingDraftBody,
+  type CatalogBookingHoldPlaceBody,
+  type CatalogBookingHoldReleaseBody,
   type CatalogBookingProvenance,
+  type CatalogBookingQuoteBody,
   type CatalogBookingRoutesOptions,
   draftBodySchema,
   holdPlaceBodySchema,
@@ -49,6 +72,261 @@ import {
 } from "./routes-contracts.js"
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
+
+/**
+ * Deployment `Variables` the engine reads off the request context — `db` and
+ * `userId` are resolved by the parent app's middleware chain and read back
+ * through the injected `resolveDb`/`resolveActorId` resolvers. Kept permissive
+ * because the resolvers own the actual lookup.
+ */
+type Env = {
+  Variables: {
+    db?: AnyDrizzleDb
+    userId?: string
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// OpenAPI route + response schemas (voyant#2114 / voyant#2208).
+//
+// Request schemas reuse `routes-contracts` (which mirror the
+// `@voyant-travel/catalog-contracts` engine schemas); quote/book response
+// schemas reuse the catalog-contracts V1 wire schemas the handlers already
+// serialize through. The draft row schema is authored here from
+// `SelectBookingDraft` — §17: `timestamp` columns serialize to ISO strings
+// over the wire, never `Date`.
+//
+// Both factories mount on adminRoutes AND publicRoutes, so these ops appear
+// under `/v1/admin/catalog/*` and `/v1/public/catalog/*` (dual-surface).
+// ─────────────────────────────────────────────────────────────────
+
+const errorResponseSchema = z.object({
+  error: z.string(),
+  code: z.string().optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
+})
+
+const idParamSchema = z.object({ id: z.string() })
+
+/** Wire shape of a `booking_drafts` row (§17: timestamps → ISO strings). */
+const bookingDraftRowSchema = z.object({
+  id: z.string(),
+  entity_module: z.string(),
+  entity_id: z.string(),
+  source_kind: z.string(),
+  source_connection_id: z.string().nullable(),
+  source_ref: z.string().nullable(),
+  draft_payload: z.record(z.string(), z.unknown()),
+  current_step: z.string().nullable(),
+  current_quote_id: z.string().nullable(),
+  hold_expires_at: z.string().nullable(),
+  consumed_booking_id: z.string().nullable(),
+  consumed_at: z.string().nullable(),
+  created_by: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  expires_at: z.string(),
+})
+
+const holdPlaceResponseSchema = z.object({
+  holdToken: z.string(),
+  expiresAt: z.string(),
+})
+
+const quoteRoute = createRoute({
+  method: "post",
+  path: "/quote",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: quoteBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Quote for the entity at the requested scope",
+      content: { "application/json": { schema: quoteResponseV1 } },
+    },
+    400: {
+      description: "invalid_request — body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Quote/order referenced by the engine was not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Quote expired or conflicts with current availability",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream reservation failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "No adapter/handler registered for this vertical",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const bookRoute = createRoute({
+  method: "post",
+  path: "/book",
+  request: {
+    body: {
+      required: true,
+      description:
+        "Either `quoteId` or `draftId` is required (cross-field rule enforced server-side; the schema is a permissive superset).",
+      content: { "application/json": { schema: bookBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Booking committed for the resolved quote",
+      content: { "application/json": { schema: bookResponseV1 } },
+    },
+    400: {
+      description: "invalid_request — body failed validation, or quoteId could not be resolved",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Draft not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Draft has no current quote, quote expired/mismatched, or order conflict",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream reservation failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "No adapter/handler registered for this vertical",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const draftPutRoute = createRoute({
+  method: "put",
+  path: "/drafts/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: draftBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Existing draft updated",
+      content: { "application/json": { schema: bookingDraftRowSchema } },
+    },
+    201: {
+      description: "Draft created",
+      content: { "application/json": { schema: bookingDraftRowSchema } },
+    },
+    400: {
+      description:
+        "invalid_request — body failed validation, or entityModule/entityId missing on create",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const draftGetRoute = createRoute({
+  method: "get",
+  path: "/drafts/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The draft by id",
+      content: { "application/json": { schema: bookingDraftRowSchema } },
+    },
+    404: {
+      description: "Draft not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const draftDeleteRoute = createRoute({
+  method: "delete",
+  path: "/drafts/{id}",
+  responses: {
+    204: { description: "Draft deleted (idempotent)" },
+  },
+  request: { params: idParamSchema },
+})
+
+const holdPlaceRoute = createRoute({
+  method: "post",
+  path: "/holds/place",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: holdPlaceBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Soft hold placed",
+      content: { "application/json": { schema: holdPlaceResponseSchema } },
+    },
+    400: {
+      description: "invalid_request — body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Quote/order referenced by the hold was not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Hold conflicts with current availability",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream hold failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "No hold primitive registered for this vertical",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const holdReleaseRoute = createRoute({
+  method: "post",
+  path: "/holds/release",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: holdReleaseBodySchema } },
+    },
+  },
+  responses: {
+    204: { description: "Hold released (idempotent; no-op when none registered)" },
+    400: {
+      description: "invalid_request — body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Quote/order referenced by the hold was not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Hold conflicts with current availability",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream release failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
 export type {
   CatalogBookingAdapterContextInput,
@@ -68,15 +346,40 @@ export type {
   CatalogBookingRoutesOptions,
 } from "./routes-contracts.js"
 
-export function createCatalogBookingRoutes(options: CatalogBookingRoutesOptions): Hono {
-  return new Hono()
-    .post("/quote", async (c) => handleQuote(c, options))
-    .post("/book", async (c) => handleBook(c, options))
-    .put("/drafts/:id", async (c) => handleDraftPut(c, options))
-    .get("/drafts/:id", async (c) => handleDraftGet(c, options))
-    .delete("/drafts/:id", async (c) => handleDraftDelete(c, options))
-    .post("/holds/place", async (c) => handleHoldPlace(c, options))
-    .post("/holds/release", async (c) => handleHoldRelease(c, options))
+export function createCatalogBookingRoutes(options: CatalogBookingRoutesOptions): OpenAPIHono<Env> {
+  // The handlers branch across many declared statuses and serialize through the
+  // V1 contract schemas, returning a plain `Response`. `.openapi()` infers a
+  // per-route typed-response union the bare `Response` doesn't structurally
+  // satisfy; `asRouteResponse` bridges the two without weakening the handlers.
+  // Runtime payloads honor the declared schemas (asserted by the contract tests).
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(quoteRoute, async (c) => asRouteResponse(handleQuote(c, options, c.req.valid("json"))))
+    .openapi(bookRoute, async (c) => asRouteResponse(handleBook(c, options, c.req.valid("json"))))
+    .openapi(draftPutRoute, async (c) =>
+      asRouteResponse(handleDraftPut(c, options, c.req.valid("param").id, c.req.valid("json"))),
+    )
+    .openapi(draftGetRoute, async (c) =>
+      asRouteResponse(handleDraftGet(c, options, c.req.valid("param").id)),
+    )
+    .openapi(draftDeleteRoute, async (c) =>
+      asRouteResponse(handleDraftDelete(c, options, c.req.valid("param").id)),
+    )
+    .openapi(holdPlaceRoute, async (c) =>
+      asRouteResponse(handleHoldPlace(c, options, c.req.valid("json"))),
+    )
+    .openapi(holdReleaseRoute, async (c) =>
+      asRouteResponse(handleHoldRelease(c, options, c.req.valid("json"))),
+    )
+}
+
+/**
+ * Bridge a helper's plain `Promise<Response>` to the typed-response shape
+ * `.openapi()` infers per route. The runtime value is already a valid `Response`
+ * honoring the declared schemas; this only relaxes the compile-time union.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union (voyant#2114)
+function asRouteResponse(response: Promise<Response>): Promise<any> {
+  return response
 }
 
 export function createCatalogBookingHonoModule(options: CatalogBookingRoutesOptions): HonoModule {
@@ -87,8 +390,11 @@ export function createCatalogBookingHonoModule(options: CatalogBookingRoutesOpti
   }
 }
 
-async function handleQuote(c: Context, options: CatalogBookingRoutesOptions): Promise<Response> {
-  const body = await parseJsonBody(c, quoteBodySchema)
+async function handleQuote(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  body: CatalogBookingQuoteBody,
+): Promise<Response> {
   const db = options.resolveDb(c)
   const provenance = body.sourceKind
     ? {
@@ -145,8 +451,11 @@ async function handleQuote(c: Context, options: CatalogBookingRoutesOptions): Pr
   }
 }
 
-async function handleBook(c: Context, options: CatalogBookingRoutesOptions): Promise<Response> {
-  const body = await parseJsonBody(c, bookBodySchema)
+async function handleBook(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  body: CatalogBookingBookBody,
+): Promise<Response> {
   const db = options.resolveDb(c)
   const correlationId = resolveCorrelationId(c, options)
 
@@ -219,11 +528,12 @@ async function handleBook(c: Context, options: CatalogBookingRoutesOptions): Pro
   }
 }
 
-async function handleDraftPut(c: Context, options: CatalogBookingRoutesOptions): Promise<Response> {
-  const id = c.req.param("id")
-  if (!id) throw new RequestValidationError("id is required")
-
-  const body = await parseJsonBody(c, draftBodySchema)
+async function handleDraftPut(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  id: string,
+  body: CatalogBookingDraftBody,
+): Promise<Response> {
   const db = options.resolveDb(c)
   const existing = await getBookingDraft(db, id)
   if (existing) {
@@ -264,9 +574,11 @@ async function handleDraftPut(c: Context, options: CatalogBookingRoutesOptions):
   return c.json(created, 201)
 }
 
-async function handleDraftGet(c: Context, options: CatalogBookingRoutesOptions): Promise<Response> {
-  const id = c.req.param("id")
-  if (!id) throw new RequestValidationError("id is required")
+async function handleDraftGet(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  id: string,
+): Promise<Response> {
   const row = await getBookingDraft(options.resolveDb(c), id)
   if (!row) return c.json({ error: "draft not found" }, 404)
   return c.json(row)
@@ -275,9 +587,8 @@ async function handleDraftGet(c: Context, options: CatalogBookingRoutesOptions):
 async function handleDraftDelete(
   c: Context,
   options: CatalogBookingRoutesOptions,
+  id: string,
 ): Promise<Response> {
-  const id = c.req.param("id")
-  if (!id) throw new RequestValidationError("id is required")
   await deleteBookingDraft(options.resolveDb(c), id)
   return c.body(null, 204)
 }
@@ -285,8 +596,8 @@ async function handleDraftDelete(
 async function handleHoldPlace(
   c: Context,
   options: CatalogBookingRoutesOptions,
+  body: CatalogBookingHoldPlaceBody,
 ): Promise<Response> {
-  const body = await parseJsonBody(c, holdPlaceBodySchema)
   const ownedHandlers = options.resolveOwnedHandlers?.(c)
   const handler = ownedHandlers?.resolve(body.entityModule)
   if (!handler?.placeHold) {
@@ -332,8 +643,8 @@ async function handleHoldPlace(
 async function handleHoldRelease(
   c: Context,
   options: CatalogBookingRoutesOptions,
+  body: CatalogBookingHoldReleaseBody,
 ): Promise<Response> {
-  const body = await parseJsonBody(c, holdReleaseBodySchema)
   const ownedHandlers = options.resolveOwnedHandlers?.(c)
   const handler = ownedHandlers?.resolve(body.entityModule)
   if (!handler?.releaseHold) {

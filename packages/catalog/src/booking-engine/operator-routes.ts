@@ -203,8 +203,23 @@ export function createCatalogBookingOrdersRoutes(options: CatalogBookingRouteMod
  * `mountCatalogBookingRoutes`, minus the cross-package snapshot/slots
  * handlers that have to stay in the deployment (cycle).
  */
+/**
+ * Structural mount target — just the `.route()`/`.get()` surface this function
+ * uses. Decoupled from Hono's full generic signature so deployments can pass an
+ * `OpenAPIHono` parent (whose default `Env` is not assignable to a bare `Hono`'s
+ * via the chained-return `.fetch` variance) WITHOUT a cast — which is what makes
+ * the mounted `.openapi()` sub-apps surface in the build-time OpenAPI spec
+ * (voyant#2114 / voyant#2208).
+ */
+export interface CatalogBookingMountTarget {
+  // biome-ignore lint/suspicious/noExplicitAny: intentional — accept any Env-typed sub-app/handler; the mount only composes routes (voyant#2114)
+  route(path: string, app: Hono<any, any, any>): unknown
+  // biome-ignore lint/suspicious/noExplicitAny: intentional — accept any Env-typed sub-app/handler; the mount only composes routes (voyant#2114)
+  get(path: string, handler: (c: Context<any>) => Response | Promise<Response>): unknown
+}
+
 export function mountCatalogBookingRoutes(
-  hono: Hono,
+  hono: CatalogBookingMountTarget,
   options: CatalogBookingRouteModuleOptions,
 ): void {
   for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
