@@ -15,21 +15,22 @@
  * deeply-nested composed/opaque sub-objects (pricing/reshop/candidate payloads,
  * frozen snapshot blobs) are documented pass-throughs typed as `z.unknown()`.
  *
- * All legs are chained onto a single `OpenAPIHono` instance. A per-resource
- * `.route("/", subApp)` split was prototyped but `@hono/zod-openapi` does not
- * propagate a mounted sub-app's `.openapi()` registry definitions to the
- * parent — the trips operations would then never reach the composed operator
- * OpenAPI document. A flat chain matches the merged reference modules
- * (`commerce/src/pricing/routes-core.ts`, `catalog/src/booking-engine/routes.ts`).
- * See voyant#2208.
+ * The 24 legs are split across per-resource `OpenAPIHono` sub-chains
+ * (envelopes / snapshots / components / requirements / lifecycle / health),
+ * each composed onto the parent `OpenAPIHono` via `.route("/", subApp)`.
+ * Mounting an `OpenAPIHono` child with `.route("/")` DOES propagate the child's
+ * `.openapi()` registry definitions into the parent's generated spec (proven by
+ * `commerce/src/pricing/routes-rules.ts` and `distribution/src/suppliers/routes.ts`),
+ * so all trips operations still reach the composed operator OpenAPI document and
+ * the emitted paths are unchanged. The split keeps per-chain type-inference cost
+ * bounded — one flat 24-leg `.openapi()` chain has O(n²) inference cost and
+ * OOMed CI's typecheck at its 8 GB heap. See voyant#2114 / voyant#2208.
  *
  * agent-quality: file-size exception — intentional: 24 Travel Composer legs
  * (envelope/snapshot/component/requirement CRUD + the price/reserve/checkout/
  * cancel lifecycle) authored as `createRoute` objects co-located with their
- * handlers on a single chained `OpenAPIHono`. The single-instance chain is
- * load-bearing (see the registry-propagation note above); splitting per
- * resource would break OpenAPI registration without aiding review. See
- * voyant#2114 / voyant#2208.
+ * handlers, grouped into per-resource `OpenAPIHono` sub-chains composed onto a
+ * single parent. See voyant#2114 / voyant#2208.
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
@@ -1075,11 +1076,16 @@ const cancelComponentsRoute = createRoute({
   },
 })
 
-// ── Sub-chain factories ───────────────────────────────────────────────────
+// ── Per-resource sub-chain factories ──────────────────────────────────────
+//
+// Each factory builds a small `OpenAPIHono` chain for one resource group,
+// closing over `options` (surface gating + injected deps). The parent
+// `createTripsRoutes` composes them via `.route("/", subApp)`, which propagates
+// each child's `.openapi()` registry definitions into the parent spec while
+// keeping per-chain type-inference cost bounded. See voyant#2114 / voyant#2208.
 
-export function createTripsRoutes(options: TripsRoutesOptions = {}) {
+function createEnvelopeRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(healthRoute, (c) => c.json({ data: tripsService.getStatus() }, 200))
     .openapi(listTripsRoute, async (c) =>
       c.json(await tripsService.listTrips(c.get("db"), c.req.valid("query")), 200),
     )
@@ -1112,6 +1118,28 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
         return c.json({ error: message }, status)
       }
     })
+    .openapi(reshopTripRoute, async (c) => {
+      if (isPublicSurface(options)) return publicForbidden(c)
+      const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
+      if (!deps) {
+        return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
+      }
+      try {
+        const result = await tripsService.reshopTrip(
+          c.get("db"),
+          { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
+          deps,
+        )
+        return c.json({ data: result }, 200)
+      } catch (error) {
+        const { message, status } = routeError(error)
+        return c.json({ error: message }, status)
+      }
+    })
+}
+
+function createSnapshotRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(listSnapshotsRoute, async (c) => {
       if (isPublicSurface(options)) return publicForbidden(c)
       return c.json(
@@ -1143,6 +1171,10 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
       if (!snapshot) return c.json({ error: "Trip snapshot not found" }, 404)
       return c.json({ data: snapshot }, 200)
     })
+}
+
+function createComponentRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(addComponentRoute, async (c) => {
       try {
         const component = await tripsService.addComponent(c.get("db"), {
@@ -1212,6 +1244,10 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
         return c.json({ error: message }, status)
       }
     })
+}
+
+function createRequirementRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(addRequirementRoute, async (c) => {
       if (isPublicSurface(options)) return publicForbidden(c)
       try {
@@ -1287,24 +1323,10 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
         return c.json({ error: message }, status)
       }
     })
-    .openapi(reshopTripRoute, async (c) => {
-      if (isPublicSurface(options)) return publicForbidden(c)
-      const deps = resolveRouteDeps(c, options.sourceCandidatesDeps)
-      if (!deps) {
-        return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
-      }
-      try {
-        const result = await tripsService.reshopTrip(
-          c.get("db"),
-          { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
-          deps,
-        )
-        return c.json({ data: result }, 200)
-      } catch (error) {
-        const { message, status } = routeError(error)
-        return c.json({ error: message }, status)
-      }
-    })
+}
+
+function createLifecycleRoutes(options: TripsRoutesOptions): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(priceTripRoute, async (c) => {
       const deps = resolveRouteDeps(c, options.priceTripDeps)
       if (!deps) {
@@ -1386,6 +1408,22 @@ export function createTripsRoutes(options: TripsRoutesOptions = {}) {
         return c.json({ error: message }, status)
       }
     })
+}
+
+function createHealthRoutes(): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(healthRoute, (c) =>
+    c.json({ data: tripsService.getStatus() }, 200),
+  )
+}
+
+export function createTripsRoutes(options: TripsRoutesOptions = {}): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .route("/", createHealthRoutes())
+    .route("/", createEnvelopeRoutes(options))
+    .route("/", createSnapshotRoutes(options))
+    .route("/", createComponentRoutes(options))
+    .route("/", createRequirementRoutes(options))
+    .route("/", createLifecycleRoutes(options))
 }
 
 export const tripsRoutes = createTripsRoutes()

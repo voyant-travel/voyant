@@ -22442,6 +22442,367 @@
         }
       }
     },
+    "/v1/public/trips/{envelopeId}/reshop": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "envelopeId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "locale": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "audience": {
+                        "type": "string",
+                        "enum": [
+                          "staff",
+                          "customer",
+                          "partner",
+                          "supplier"
+                        ]
+                      },
+                      "market": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "currency": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      }
+                    },
+                    "required": [
+                      "locale",
+                      "audience",
+                      "market"
+                    ]
+                  },
+                  "deadlineMs": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "scope"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-requirement re-shop results for the envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "requirement": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "envelopeId": {
+                                "type": "string"
+                              },
+                              "sequence": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "vertical": {
+                                "type": "string"
+                              },
+                              "criteria": {
+                                "type": "object",
+                                "additionalProperties": {}
+                              },
+                              "criteriaVersion": {
+                                "type": "string"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "selectedCandidateId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "resolvedComponentId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "lastSourcedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "metadata": {
+                                "type": "object",
+                                "additionalProperties": {}
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "envelopeId",
+                              "sequence",
+                              "status",
+                              "title",
+                              "description",
+                              "vertical",
+                              "criteria",
+                              "criteriaVersion",
+                              "required",
+                              "selectedCandidateId",
+                              "resolvedComponentId",
+                              "lastSourcedAt",
+                              "metadata",
+                              "createdAt",
+                              "updatedAt"
+                            ]
+                          },
+                          "candidates": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "requirementId": {
+                                  "type": "string"
+                                },
+                                "envelopeId": {
+                                  "type": "string"
+                                },
+                                "rank": {
+                                  "type": "integer"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "candidateRef": {
+                                  "type": "string"
+                                },
+                                "entityModule": {
+                                  "type": "string"
+                                },
+                                "entityId": {
+                                  "type": "string"
+                                },
+                                "sourceKind": {
+                                  "type": "string"
+                                },
+                                "sourceConnectionId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "sourceModule": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "selection": {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                "priceCurrency": {
+                                  "type": "string"
+                                },
+                                "priceAmount": {
+                                  "type": "string"
+                                },
+                                "expiresAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "providerData": {},
+                                "createdAt": {
+                                  "type": "string"
+                                },
+                                "updatedAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "requirementId",
+                                "envelopeId",
+                                "rank",
+                                "status",
+                                "candidateRef",
+                                "entityModule",
+                                "entityId",
+                                "sourceKind",
+                                "sourceConnectionId",
+                                "sourceModule",
+                                "selection",
+                                "priceCurrency",
+                                "priceAmount",
+                                "expiresAt",
+                                "createdAt",
+                                "updatedAt"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "requirement",
+                          "candidates"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request — body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin-only operation invoked on the public surface",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trip envelope not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Envelope cannot be re-shopped in its current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Availability-sourcing dependencies are not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/trips/{envelopeId}/snapshots": {
       "get": {
         "parameters": [
@@ -26491,367 +26852,6 @@
           },
           "409": {
             "description": "Requirement cannot be re-shopped in its current state",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Availability-sourcing dependencies are not configured",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/public/trips/{envelopeId}/reshop": {
-      "post": {
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "envelopeId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "scope": {
-                    "type": "object",
-                    "properties": {
-                      "locale": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "audience": {
-                        "type": "string",
-                        "enum": [
-                          "staff",
-                          "customer",
-                          "partner",
-                          "supplier"
-                        ]
-                      },
-                      "market": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "currency": {
-                        "type": "string",
-                        "minLength": 3,
-                        "maxLength": 3
-                      }
-                    },
-                    "required": [
-                      "locale",
-                      "audience",
-                      "market"
-                    ]
-                  },
-                  "deadlineMs": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0
-                  }
-                },
-                "required": [
-                  "scope"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Per-requirement re-shop results for the envelope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "requirement": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "envelopeId": {
-                                "type": "string"
-                              },
-                              "sequence": {
-                                "type": "integer"
-                              },
-                              "status": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "vertical": {
-                                "type": "string"
-                              },
-                              "criteria": {
-                                "type": "object",
-                                "additionalProperties": {}
-                              },
-                              "criteriaVersion": {
-                                "type": "string"
-                              },
-                              "required": {
-                                "type": "boolean"
-                              },
-                              "selectedCandidateId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "resolvedComponentId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "lastSourcedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "metadata": {
-                                "type": "object",
-                                "additionalProperties": {}
-                              },
-                              "createdAt": {
-                                "type": "string"
-                              },
-                              "updatedAt": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "envelopeId",
-                              "sequence",
-                              "status",
-                              "title",
-                              "description",
-                              "vertical",
-                              "criteria",
-                              "criteriaVersion",
-                              "required",
-                              "selectedCandidateId",
-                              "resolvedComponentId",
-                              "lastSourcedAt",
-                              "metadata",
-                              "createdAt",
-                              "updatedAt"
-                            ]
-                          },
-                          "candidates": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "requirementId": {
-                                  "type": "string"
-                                },
-                                "envelopeId": {
-                                  "type": "string"
-                                },
-                                "rank": {
-                                  "type": "integer"
-                                },
-                                "status": {
-                                  "type": "string"
-                                },
-                                "candidateRef": {
-                                  "type": "string"
-                                },
-                                "entityModule": {
-                                  "type": "string"
-                                },
-                                "entityId": {
-                                  "type": "string"
-                                },
-                                "sourceKind": {
-                                  "type": "string"
-                                },
-                                "sourceConnectionId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
-                                },
-                                "sourceModule": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
-                                },
-                                "selection": {
-                                  "type": "object",
-                                  "additionalProperties": {}
-                                },
-                                "priceCurrency": {
-                                  "type": "string"
-                                },
-                                "priceAmount": {
-                                  "type": "string"
-                                },
-                                "expiresAt": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
-                                },
-                                "providerData": {},
-                                "createdAt": {
-                                  "type": "string"
-                                },
-                                "updatedAt": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "requirementId",
-                                "envelopeId",
-                                "rank",
-                                "status",
-                                "candidateRef",
-                                "entityModule",
-                                "entityId",
-                                "sourceKind",
-                                "sourceConnectionId",
-                                "sourceModule",
-                                "selection",
-                                "priceCurrency",
-                                "priceAmount",
-                                "expiresAt",
-                                "createdAt",
-                                "updatedAt"
-                              ]
-                            }
-                          }
-                        },
-                        "required": [
-                          "requirement",
-                          "candidates"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "data"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "invalid_request — body failed validation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Admin-only operation invoked on the public surface",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trip envelope not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Envelope cannot be re-shopped in its current state",
             "content": {
               "application/json": {
                 "schema": {
