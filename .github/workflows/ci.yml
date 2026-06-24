@@ -93,6 +93,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
+      # The composed framework app's tsc build grows with each module's
+      # OpenAPIHono route chain; match the heap the typecheck/db-checks jobs
+      # already use so `tsc -p` doesn't OOM at the default ~4GB (voyant#2114).
+      NODE_OPTIONS: --max-old-space-size=8192
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
