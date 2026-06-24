@@ -45,6 +45,13 @@ const createPromotionRoute = createRoute({
   request: {
     body: {
       required: true,
+      description:
+        "Discount fields are conditional on `discountType` (enforced server-side; " +
+        "violations return a 400 `invalid_request`): `percentage` requires " +
+        "`discountPercent` and must omit `discountAmountCents`/`currency`; " +
+        "`fixed_amount` requires `discountAmountCents` + `currency` and must omit " +
+        "`discountPercent`. These cross-field rules can't be expressed structurally " +
+        "in JSON Schema, so the body schema is a permissive superset.",
       content: { "application/json": { schema: insertPromotionalOfferSchema } },
     },
   },
@@ -79,6 +86,13 @@ const updatePromotionRoute = createRoute({
     params: idParamSchema,
     body: {
       required: true,
+      description:
+        "Partial update. When `discountType` is supplied, the same conditional " +
+        "rules as create apply (enforced server-side, 400 `invalid_request` on " +
+        "violation): `percentage` requires `discountPercent` and omits " +
+        "`discountAmountCents`/`currency`; `fixed_amount` requires " +
+        "`discountAmountCents` + `currency` and omits `discountPercent`. These " +
+        "cross-field rules aren't structurally representable in JSON Schema.",
       content: { "application/json": { schema: updatePromotionalOfferSchema } },
     },
   },
