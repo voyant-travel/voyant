@@ -8,8 +8,8 @@
  * `@voyant-travel/storefront` once the storefront resolver is wired in PR4.
  */
 
-import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
-import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 
 import { type Env, notFound } from "./routes-shared.js"
@@ -20,6 +20,10 @@ import {
   promotionalOfferSchema,
   updatePromotionalOfferSchema,
 } from "./validation.js"
+
+const errorResponseSchema = z.object({ error: z.string() })
+const offerResponseSchema = z.object({ data: promotionalOfferSchema })
+const idParamSchema = z.object({ id: z.string() })
 
 const listPromotionsRoute = createRoute({
   method: "get",
@@ -35,45 +39,150 @@ const listPromotionsRoute = createRoute({
   },
 })
 
+const createPromotionRoute = createRoute({
+  method: "post",
+  path: "/",
+  request: {
+    body: {
+      required: true,
+      description:
+        "Discount fields are conditional on `discountType` (enforced server-side; " +
+        "violations return a 400 `invalid_request`): `percentage` requires " +
+        "`discountPercent` and must omit `discountAmountCents`/`currency`; " +
+        "`fixed_amount` requires `discountAmountCents` + `currency` and must omit " +
+        "`discountPercent`. These cross-field rules can't be expressed structurally " +
+        "in JSON Schema, so the body schema is a permissive superset.",
+      content: { "application/json": { schema: insertPromotionalOfferSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created promotional offer",
+      content: { "application/json": { schema: offerResponseSchema } },
+    },
+  },
+})
+
+const getPromotionRoute = createRoute({
+  method: "get",
+  path: "/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A promotional offer by id",
+      content: { "application/json": { schema: offerResponseSchema } },
+    },
+    404: {
+      description: "Promotional offer not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updatePromotionRoute = createRoute({
+  method: "patch",
+  path: "/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      description:
+        "Partial update. When `discountType` is supplied, the same conditional " +
+        "rules as create apply (enforced server-side, 400 `invalid_request` on " +
+        "violation): `percentage` requires `discountPercent` and omits " +
+        "`discountAmountCents`/`currency`; `fixed_amount` requires " +
+        "`discountAmountCents` + `currency` and omits `discountPercent`. These " +
+        "cross-field rules aren't structurally representable in JSON Schema.",
+      content: { "application/json": { schema: updatePromotionalOfferSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated promotional offer",
+      content: { "application/json": { schema: offerResponseSchema } },
+    },
+    404: {
+      description: "Promotional offer not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const archivePromotionRoute = createRoute({
+  method: "post",
+  path: "/{id}/archive",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The archived promotional offer",
+      content: { "application/json": { schema: offerResponseSchema } },
+    },
+    404: {
+      description: "Promotional offer not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deletePromotionRoute = createRoute({
+  method: "delete",
+  path: "/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The id of the deleted promotional offer",
+      content: { "application/json": { schema: z.object({ data: idParamSchema }) } },
+    },
+    404: {
+      description: "Promotional offer not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Offer has redemptions and cannot be deleted",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export const promotionsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listPromotionsRoute, async (c) =>
     c.json(await promotionsService.listOffers(c.get("db"), c.req.valid("query"))),
   )
-  .post("/", async (c) =>
+  .openapi(createPromotionRoute, async (c) =>
     c.json(
       {
-        data: await promotionsService.createOffer(
-          c.get("db"),
-          await parseJsonBody(c, insertPromotionalOfferSchema),
-          { eventBus: c.get("eventBus") },
-        ),
+        data: await promotionsService.createOffer(c.get("db"), c.req.valid("json"), {
+          eventBus: c.get("eventBus"),
+        }),
       },
       201,
     ),
   )
-  .get("/:id", async (c) => {
-    const offer = await promotionsService.getOfferById(c.get("db"), c.req.param("id"))
-    return offer ? c.json({ data: offer }) : notFound(c, "Promotional offer not found")
+  .openapi(getPromotionRoute, async (c) => {
+    const offer = await promotionsService.getOfferById(c.get("db"), c.req.valid("param").id)
+    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
   })
-  .patch("/:id", async (c) => {
-    const patch = await parseJsonBody(c, updatePromotionalOfferSchema)
-    const offer = await promotionsService.updateOffer(c.get("db"), c.req.param("id"), patch, {
+  .openapi(updatePromotionRoute, async (c) => {
+    const offer = await promotionsService.updateOffer(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
+      { eventBus: c.get("eventBus") },
+    )
+    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
+  })
+  .openapi(archivePromotionRoute, async (c) => {
+    const offer = await promotionsService.archiveOffer(c.get("db"), c.req.valid("param").id, {
       eventBus: c.get("eventBus"),
     })
-    return offer ? c.json({ data: offer }) : notFound(c, "Promotional offer not found")
+    return offer ? c.json({ data: offer }, 200) : notFound(c, "Promotional offer not found")
   })
-  .post("/:id/archive", async (c) => {
-    const offer = await promotionsService.archiveOffer(c.get("db"), c.req.param("id"), {
-      eventBus: c.get("eventBus"),
-    })
-    return offer ? c.json({ data: offer }) : notFound(c, "Promotional offer not found")
-  })
-  .delete("/:id", async (c) => {
+  .openapi(deletePromotionRoute, async (c) => {
     try {
-      const result = await promotionsService.deleteOffer(c.get("db"), c.req.param("id"), {
+      const result = await promotionsService.deleteOffer(c.get("db"), c.req.valid("param").id, {
         eventBus: c.get("eventBus"),
       })
-      return result ? c.json({ data: result }) : notFound(c, "Promotional offer not found")
+      return result ? c.json({ data: result }, 200) : notFound(c, "Promotional offer not found")
     } catch (err) {
       // `deleteOffer` throws when redemptions exist (the FK RESTRICT
       // would otherwise surface a less helpful error). Translate to 409.
