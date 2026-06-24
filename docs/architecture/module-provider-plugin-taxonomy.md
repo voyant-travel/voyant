@@ -115,6 +115,12 @@ Rule:
 If a package exists primarily to talk to an external system, treat it as an
 adapter package even if it also exports a plugin bundle.
 
+In federated operating mode, an adapter may connect Voyant to a system that
+remains authoritative for selected data or operations. See
+[`federated-operating-mode.md`](./federated-operating-mode.md) for the
+source-of-truth modes, source connection expectations, and when an adapter needs
+a provider, extension, module, or plugin bundle around it.
+
 ### 5. Extensions customize existing module behavior
 
 Extensions add or modify behavior around existing module surfaces.
@@ -184,6 +190,7 @@ The runtime question is:
 - module?
 - provider?
 - extension?
+- adapter?
 
 The packaging question is:
 

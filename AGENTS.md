@@ -22,6 +22,8 @@ and promote repeated review feedback into scripts or docs.
 - API route conventions: `docs/architecture/api-route-authoring.md`
 - Module/provider/adapter/plugin vocabulary:
   `docs/architecture/module-provider-plugin-taxonomy.md`
+- External systems as sources of truth:
+  `docs/architecture/federated-operating-mode.md`
 - Public package surface rules: `docs/frontend-package-strategy.md`
 
 Update the relevant doc when changing an architectural rule. Add or update a

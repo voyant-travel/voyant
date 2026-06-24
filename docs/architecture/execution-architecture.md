@@ -19,6 +19,12 @@ For the boundary between fire-and-forget events and durable background
 execution, see
 [`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md).
 
+For deployments where external systems remain sources of truth and Voyant acts
+as the operating layer, see
+[`federated-operating-mode.md`](./federated-operating-mode.md). That guide
+applies the workflow/schedule/daemon distinction to sync, backfill, live
+upstream calls, reconciliation, and agent-driven external writes.
+
 ## Execution Classes
 
 ### 1. Workflows
@@ -74,6 +80,7 @@ They are a good fit for:
 - external connector bridges
 - polling integrations
 - batch ingestion and long-lived processing
+- source-connection backfills, cursor advancement, and reconciliation
 
 Daemons are different from workflows:
 
