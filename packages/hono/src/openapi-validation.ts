@@ -21,7 +21,17 @@ import { normalizeValidationError, RequestValidationError } from "./validation.j
 // Typed as the library's own `defaultHook` shape (`Hook<any, E, any, any>`) so
 // it stays assignable for every module's specific `OpenAPIHono<Env>`.
 // biome-ignore lint/suspicious/noExplicitAny: matches @hono/zod-openapi's defaultHook signature
-export const openApiValidationHook: Hook<any, any, any, unknown> = (result) => {
+export const openApiValidationHook: Hook<any, any, any, unknown> = (result, c) => {
+  // Hono's json validator yields `{}` (not a parse) when the request lacks an
+  // application/json content-type; partial PATCH schemas then validate `{}` and
+  // silently no-op. Enforce the content-type the route's contract declares so a
+  // missing/incorrect header is a clean invalid_request 400 (voyant#2114, §16).
+  if (result.target === "json") {
+    const contentType = c.req.header("content-type")
+    if (!contentType || !/^application\/([a-z0-9.+-]+\+)?json($|;)/i.test(contentType)) {
+      throw new RequestValidationError("Expected request Content-Type: application/json")
+    }
+  }
   if (!result.success) {
     throw normalizeValidationError(result.error) ?? new RequestValidationError("Invalid request")
   }
