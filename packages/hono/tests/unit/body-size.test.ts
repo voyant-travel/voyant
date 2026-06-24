@@ -185,4 +185,21 @@ describe("requestBodyLimit content-type-aware caps", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ok: true })
   })
+
+  it("clamps the JSON cap to maxBytes so a tighter outer override also tightens JSON", async () => {
+    // Deployment override: a global maxBytes (8) below the JSON default (16).
+    // JSON must be capped at the lower 8, not silently left at 16.
+    const app = new Hono()
+    app.use("*", requestBodyLimit({ maxBytes: 8, jsonMaxBytes: 16 }))
+    app.post("/echo", async (c) => c.json({ received: (await c.req.text()).length }))
+
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "x".repeat(12),
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: "request_body_too_large", maxBytes: 8 })
+  })
 })

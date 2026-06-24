@@ -44,11 +44,16 @@ export function requestBodyLimit(options: RequestBodyLimitOptions): MiddlewareHa
   // JSON bodies keep the tighter cap that `parseJsonBody` historically enforced
   // (10 MiB) so migrated `.openapi()` routes aren't loosened to the upload
   // ceiling. Non-JSON bodies (uploads) get the outer `maxBytes`. (voyant#2114)
+  // Clamp to `maxBytes` so the JSON cap is never LOOSER than the outer ceiling —
+  // a deployment that tightens `maxBytes` below the JSON default (e.g. a 1 MiB
+  // global override) must also tighten JSON, not silently leave it at 10 MiB.
+  const jsonMaxBytes =
+    options.jsonMaxBytes != null ? Math.min(options.jsonMaxBytes, options.maxBytes) : null
   const enforceJson =
-    options.jsonMaxBytes != null
+    jsonMaxBytes != null
       ? bodyLimit({
-          maxSize: options.jsonMaxBytes,
-          onError: (c) => tooLargeResponse(c, options.jsonMaxBytes as number),
+          maxSize: jsonMaxBytes,
+          onError: (c) => tooLargeResponse(c, jsonMaxBytes),
         })
       : null
 
