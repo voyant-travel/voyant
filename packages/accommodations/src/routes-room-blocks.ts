@@ -137,6 +137,10 @@ const createRoomBlockRoute = createRoute({
       description: "The created room block (starts in `inquiry`; nights are set separately)",
       content: { "application/json": { schema: roomBlockResponseSchema } },
     },
+    400: {
+      description: "Invalid request body",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -174,6 +178,10 @@ const setRoomBlockNightsRoute = createRoute({
     200: {
       description: "The recomputed block summary after the nights upsert",
       content: { "application/json": { schema: roomBlockSummaryResponseSchema } },
+    },
+    400: {
+      description: "Invalid request body",
+      content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
       description: "Room block not found",
@@ -235,9 +243,10 @@ const reverseRoomBlockPickupRoute = createRoute({
       required: true,
       description:
         "Reverse a pickup (booking cancelled / rooms reduced). Exactly one of " +
-        "`pickupId` or `stayBookingItemId` is required (enforced server-side; a " +
-        "request with neither is treated as `pickup_not_found` → 404). The pickup " +
-        "must belong to the block in the path or it is treated as not found.",
+        "`pickupId` or `stayBookingItemId` is required; the body schema enforces " +
+        "this, so a request with neither (or both) fails request validation with a " +
+        "400 `invalid_request`. A well-formed request whose pickup isn't found (or " +
+        "belongs to a different block) returns 404.",
       content: { "application/json": { schema: reverseRoomBlockPickupSchema } },
     },
   },
@@ -245,6 +254,10 @@ const reverseRoomBlockPickupRoute = createRoute({
     200: {
       description: "The reversed pickup ledger row",
       content: { "application/json": { schema: roomBlockPickupResponseSchema } },
+    },
+    400: {
+      description: "Invalid body — neither (or both) of `pickupId`/`stayBookingItemId` supplied",
+      content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
       description: "Active pickup not found (or it belongs to a different block)",

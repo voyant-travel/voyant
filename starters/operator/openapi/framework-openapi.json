@@ -27359,6 +27359,24 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -27719,6 +27737,24 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
           "404": {
             "description": "Room block not found",
             "content": {
@@ -28047,7 +28083,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Reverse a pickup (booking cancelled / rooms reduced). Exactly one of `pickupId` or `stayBookingItemId` is required (enforced server-side; a request with neither is treated as `pickup_not_found` → 404). The pickup must belong to the block in the path or it is treated as not found.",
+          "description": "Reverse a pickup (booking cancelled / rooms reduced). Exactly one of `pickupId` or `stayBookingItemId` is required; the body schema enforces this, so a request with neither (or both) fails request validation with a 400 `invalid_request`. A well-formed request whose pickup isn't found (or belongs to a different block) returns 404.",
           "content": {
             "application/json": {
               "schema": {
@@ -28137,6 +28173,24 @@
                   },
                   "required": [
                     "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body — neither (or both) of `pickupId`/`stayBookingItemId` supplied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
                   ]
                 }
               }
