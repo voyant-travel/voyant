@@ -28053,6 +28053,7 @@
     },
     "/v1/admin/finance/invoices/{id}/convert-to-invoice": {
       "post": {
+        "description": "Convert a proforma to a final invoice. Accepts optional overrides (`invoiceNumber`, `issueDate`, `dueDate`) as a JSON body; an empty or absent body is accepted. The body is parsed in the handler (not as a declared OpenAPI request body) because Hono's JSON validator would reject a zero-length `application/json` request before the handler runs.",
         "parameters": [
           {
             "schema": {
@@ -28063,28 +28064,6 @@
             "in": "path"
           }
         ],
-        "requestBody": {
-          "required": false,
-          "description": "Optional overrides for the final invoice: `invoiceNumber`, `issueDate`, `dueDate` (all optional; an empty/absent body is accepted).",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "invoiceNumber": {
-                    "type": "string"
-                  },
-                  "issueDate": {
-                    "type": "string"
-                  },
-                  "dueDate": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "The converted final invoice",
@@ -29155,6 +29134,7 @@
     },
     "/v1/admin/finance/invoices/{id}/void": {
       "post": {
+        "description": "Void an invoice. Accepts an optional `voidReason` JSON body; an empty or absent body is accepted. The body is parsed in the handler (not as a declared OpenAPI request body) because Hono's JSON validator would reject a zero-length `application/json` request before the handler runs.",
         "parameters": [
           {
             "schema": {
@@ -29165,26 +29145,6 @@
             "in": "path"
           }
         ],
-        "requestBody": {
-          "required": false,
-          "description": "Optional void reason (`voidReason`). An empty/absent body is accepted.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "reason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "maxLength": 1000
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "The voided invoice",

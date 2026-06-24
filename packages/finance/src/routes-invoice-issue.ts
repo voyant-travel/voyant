@@ -17,6 +17,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
+import type { MiddlewareHandler } from "hono"
 import {
   errorResponseSchema,
   invoiceListItemSchema,
@@ -110,22 +111,14 @@ const issueInvoiceFromBookingRoute = createRoute({
 const convertProformaToInvoiceRoute = createRoute({
   method: "post",
   path: "/invoices/{id}/convert-to-invoice",
+  description:
+    "Convert a proforma to a final invoice. Accepts optional overrides " +
+    "(`invoiceNumber`, `issueDate`, `dueDate`) as a JSON body; an empty or " +
+    "absent body is accepted. The body is parsed in the handler (not as a " +
+    "declared OpenAPI request body) because Hono's JSON validator would reject a " +
+    "zero-length `application/json` request before the handler runs.",
   request: {
     params: idParamSchema,
-    body: {
-      required: false,
-      description:
-        "Optional overrides for the final invoice: `invoiceNumber`, `issueDate`, `dueDate` (all optional; an empty/absent body is accepted).",
-      content: {
-        "application/json": {
-          schema: z.object({
-            invoiceNumber: z.string().optional(),
-            issueDate: z.string().optional(),
-            dueDate: z.string().optional(),
-          }),
-        },
-      },
-    },
   },
   responses: {
     201: {
@@ -154,12 +147,25 @@ export const financeInvoiceIssueRoutes = new OpenAPIHono<Env>({
 // Kept as statements (not in the fluent chain) because `.use()` narrows the
 // return type away from `OpenAPIHono`, which would strip the `.openapi()`
 // method from the rest of the chain.
-financeInvoiceIssueRoutes.use("/invoices", routeIdempotencyKey("POST /v1/admin/finance/invoices"))
+// `.use(path, ...)` matches every method on `path`, so guard to POST — the
+// create endpoints — otherwise an `Idempotency-Key` on `GET /invoices` would be
+// read/stored under the POST create scope (cached-create replay / key conflict).
+const postOnly =
+  (mw: MiddlewareHandler): MiddlewareHandler =>
+  (c, next) =>
+    c.req.method === "POST" ? mw(c, next) : next()
+
+financeInvoiceIssueRoutes.use(
+  "/invoices",
+  postOnly(routeIdempotencyKey("POST /v1/admin/finance/invoices")),
+)
 financeInvoiceIssueRoutes.use(
   "/invoices/from-booking",
-  routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking", {
-    fingerprintSearchParams: ["wait", "waitTimeoutMs"],
-  }),
+  postOnly(
+    routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking", {
+      fingerprintSearchParams: ["wait", "waitTimeoutMs"],
+    }),
+  ),
 )
 
 financeInvoiceIssueRoutes

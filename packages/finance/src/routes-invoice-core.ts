@@ -23,7 +23,7 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { openApiValidationHook, requireUserId } from "@voyant-travel/hono"
+import { openApiValidationHook, parseOptionalJsonBody, requireUserId } from "@voyant-travel/hono"
 import {
   creditNoteLineItemSchema,
   creditNoteSchema,
@@ -123,13 +123,13 @@ const deleteInvoiceRoute = createRoute({
 const voidInvoiceRoute = createRoute({
   method: "post",
   path: "/invoices/{id}/void",
+  description:
+    "Void an invoice. Accepts an optional `voidReason` JSON body; an empty or " +
+    "absent body is accepted. The body is parsed in the handler (not as a " +
+    "declared OpenAPI request body) because Hono's JSON validator would reject a " +
+    "zero-length `application/json` request before the handler runs.",
   request: {
     params: idParamSchema,
-    body: {
-      required: false,
-      description: "Optional void reason (`voidReason`). An empty/absent body is accepted.",
-      content: { "application/json": { schema: voidInvoiceSchema } },
-    },
   },
   responses: {
     200: {
@@ -221,7 +221,7 @@ const invoiceActionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
     const result = await financeService.voidInvoice(
       c.get("db"),
       c.req.valid("param").id,
-      c.req.valid("json"),
+      (await parseOptionalJsonBody(c, voidInvoiceSchema)) ?? {},
       {
         eventBus: runtime?.eventBus,
         actionLedgerContext: getActionLedgerRequestContext(c),
