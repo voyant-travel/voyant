@@ -1,4 +1,5 @@
-import type { MiddlewareHandler } from "hono"
+import type { Context, MiddlewareHandler } from "hono"
+import { bodyLimit } from "hono/body-limit"
 
 export interface RequestBodyLimitOptions {
   maxBytes: number
@@ -6,27 +7,46 @@ export interface RequestBodyLimitOptions {
 
 export const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 10 * 1024 * 1024
 
+/**
+ * App-wide OUTER ceiling for the global `requestBodyLimit` mount. It must be at
+ * least the largest body any legitimate route accepts so the global stream cap
+ * never rejects valid traffic — the media upload route allows a 25 MiB file in a
+ * multipart envelope (`MAX_MULTIPART_UPLOAD_BYTES` = 25 MiB + 1 MiB in
+ * `@voyant-travel/storage`). Finer limits stay per-route: `parseJsonBody`/
+ * `readBoundedRequestText` keep the tighter `DEFAULT_REQUEST_BODY_LIMIT_BYTES`
+ * (10 MiB) for JSON, and the upload route enforces its own 25 MiB cap. Raising
+ * the global guard to a header-only check would reopen the no-Content-Length
+ * hole; lowering it below this would reject valid uploads (voyant#2114).
+ */
+export const MAX_GLOBAL_REQUEST_BODY_BYTES = 26 * 1024 * 1024
+
 export function requestBodyLimit(options: RequestBodyLimitOptions): MiddlewareHandler {
+  // Hono's bodyLimit checks the Content-Length header AND wraps the request body
+  // stream so it throws once the actual read exceeds maxSize. That stream cap is
+  // what bounds chunked / HTTP/2 requests with no Content-Length header — the
+  // case the previous header-only check could not catch (e.g. `.openapi()` json
+  // routes that read via c.req.json() and never went through parseJsonBody).
+  const enforce = bodyLimit({
+    maxSize: options.maxBytes,
+    onError: (c) => tooLargeResponse(c, options.maxBytes),
+  })
+
   return async (c, next) => {
     if (c.req.method === "GET" || c.req.method === "HEAD" || c.req.method === "OPTIONS") {
       return next()
     }
 
-    const contentLength = c.req.header("content-length")
-    if (contentLength) {
-      const size = Number(contentLength)
-      if (Number.isFinite(size) && size > options.maxBytes) {
-        return c.json(
-          {
-            error: "Request body too large",
-            code: "request_body_too_large",
-            maxBytes: options.maxBytes,
-          },
-          413,
-        )
-      }
-    }
-
-    return next()
+    return enforce(c, next)
   }
+}
+
+function tooLargeResponse(c: Context, maxBytes: number): Response {
+  return c.json(
+    {
+      error: "Request body too large",
+      code: "request_body_too_large",
+      maxBytes,
+    },
+    413,
+  )
 }

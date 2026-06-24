@@ -349,6 +349,18 @@ export const marketsRoutes = new OpenAPIHono<Env>().openapi(listMarketsRoute, (c
   dropping the caller's changes. This is a deliberate tightening over the old
   `parseJsonBody` (which parsed regardless of header); first-party callers send the
   header via the shared `fetchWithValidation` client, so they are unaffected.
+- Request body size is still bounded the same way it was before the migration. The
+  framework-level `requestBodyLimit` middleware (mounted app-wide in `createApp`)
+  enforces its cap on the *actual* request body stream, not just the
+  `Content-Length` header — so a chunked / HTTP/2 oversized body with no
+  `Content-Length` is rejected with a `413 request_body_too_large` even though
+  `.openapi()` json routes read via `c.req.json()` and never pass through
+  `parseJsonBody` / `readBoundedRequestText`. Migrated routes are therefore bounded
+  equivalently to the old `parseJsonBody` path; nothing extra is required per route.
+  The app-wide guard is an *outer* ceiling (`MAX_GLOBAL_REQUEST_BODY_BYTES`, sized to
+  the largest legitimate body — the 25 MiB media upload) so it never rejects valid
+  uploads; finer limits stay per-route (`parseJsonBody`'s 10 MiB
+  `DEFAULT_REQUEST_BODY_LIMIT_BYTES`, the upload route's own 25 MiB cap).
 
 ### 17. The response schema is the wire contract — verify it
 
