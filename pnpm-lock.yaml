@@ -4089,6 +4089,196 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  starters/federated-operator:
+    dependencies:
+      '@better-auth/api-key':
+        specifier: 1.6.11
+        version: 1.6.11(ff516be11108751f13bda9eb16d67a2b)
+      '@fontsource-variable/inter-tight':
+        specifier: ^5.2.7
+        version: 5.2.7
+      '@hono/zod-openapi':
+        specifier: ^1.4.0
+        version: 1.4.0(hono@4.12.25)(zod@4.3.6)
+      '@neondatabase/serverless':
+        specifier: ^1.0.2
+        version: 1.0.2
+      '@tanstack/react-query':
+        specifier: ^5.100.11
+        version: 5.100.11(react@19.2.4)
+      '@tanstack/react-router':
+        specifier: ^1.170.4
+        version: 1.170.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@tanstack/react-start':
+        specifier: ^1.168.6
+        version: 1.168.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../../packages/action-ledger
+      '@voyant-travel/action-ledger-react':
+        specifier: workspace:^
+        version: link:../../packages/action-ledger-react
+      '@voyant-travel/admin':
+        specifier: workspace:^
+        version: link:../../packages/admin
+      '@voyant-travel/auth':
+        specifier: workspace:^
+        version: link:../../packages/auth
+      '@voyant-travel/auth-react':
+        specifier: workspace:^
+        version: link:../../packages/auth-react
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../../packages/core
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../../packages/db
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../../packages/hono
+      '@voyant-travel/identity':
+        specifier: workspace:^
+        version: link:../../packages/identity
+      '@voyant-travel/react':
+        specifier: workspace:^
+        version: link:../../packages/react
+      '@voyant-travel/relationships':
+        specifier: workspace:^
+        version: link:../../packages/relationships
+      '@voyant-travel/relationships-react':
+        specifier: workspace:^
+        version: link:../../packages/relationships-react
+      '@voyant-travel/ui':
+        specifier: workspace:^
+        version: link:../../packages/ui
+      '@voyant-travel/worker-runtime':
+        specifier: workspace:^
+        version: link:../../packages/worker-runtime
+      '@voyant-travel/workflow-runs':
+        specifier: workspace:^
+        version: link:../../packages/workflow-runs
+      '@voyant-travel/workflows-react':
+        specifier: workspace:^
+        version: link:../../packages/workflows-react
+      better-auth:
+        specifier: 1.6.11
+        version: 1.6.11(@cloudflare/workers-types@4.20260426.1)(@opentelemetry/api@1.9.0)(@tanstack/react-start@1.168.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8))(mongodb@7.1.0(socks@2.8.7))(pg@8.20.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)))
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      immer:
+        specifier: ^11.1.4
+        version: 11.1.4
+      lucide-react:
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.4)
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.72.1
+        version: 7.72.1(react@19.2.4)
+      shadcn:
+        specifier: ^4.11.0
+        version: 4.11.0(typescript@6.0.2)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      swr:
+        specifier: ^2.4.1
+        version: 2.4.1(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.5.0
+      tailwindcss:
+        specifier: ^4.2.2
+        version: 4.2.2
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+      zustand:
+        specifier: ^5.0.12
+        version: 5.0.12(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
+    devDependencies:
+      '@cloudflare/vite-plugin':
+        specifier: ^1.36.3
+        version: 1.36.3(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260507.1)(wrangler@4.90.0(@cloudflare/workers-types@4.20260426.1))
+      '@cloudflare/workers-types':
+        specifier: ^4.20260426.1
+        version: 4.20260426.1
+      '@tailwindcss/vite':
+        specifier: ^4.2.2
+        version: 4.2.2(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@tanstack/devtools-vite':
+        specifier: ^0.7.0
+        version: 0.7.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
+      '@types/pg':
+        specifier: ^8.15.6
+        version: 8.20.0
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.1
+        version: 6.0.1(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@voyant-travel/cli':
+        specifier: ^0.30.0
+        version: 0.30.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.7))(zod@4.3.6)
+      '@voyant-travel/framework-migrations':
+        specifier: workspace:^
+        version: link:../../packages/framework-migrations
+      '@voyant-travel/vite-config':
+        specifier: workspace:^
+        version: link:../../packages/vite-config
+      dotenv:
+        specifier: ^17.4.0
+        version: 17.4.0
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1(@noble/hashes@2.0.1)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      wrangler:
+        specifier: ^4.90.0
+        version: 4.90.0(@cloudflare/workers-types@4.20260426.1)
+
   starters/operator:
     dependencies:
       '@base-ui/react':

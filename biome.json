@@ -66,7 +66,8 @@
       "!packages/operations-react/src/*/styles.css",
       "!starters/operator/src/components/ui",
       "!starters/operator/src/lib/async-utils.ts",
-      "!starters/operator/src/styles.css"
+      "!starters/operator/src/styles.css",
+      "!starters/federated-operator/src/styles.css"
     ]
   }
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
 import { useVoyantReactContext } from "@voyant-travel/react"
 import {
   Badge,
@@ -424,9 +423,9 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                     {messages.dashboard.upcomingDeparturesDescription}
                   </CardDescription>
                 </div>
-                <Link to="/bookings" className="text-sm text-primary hover:underline">
+                <a href="/bookings" className="text-sm text-primary hover:underline">
                   {messages.dashboard.viewAll}
-                </Link>
+                </a>
               </CardHeader>
               <CardContent>
                 {bookingsPending ? (
@@ -439,10 +438,9 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                 ) : (
                   <div className="space-y-3">
                     {upcoming.map((booking) => (
-                      <Link
+                      <a
                         key={booking.id}
-                        to="/bookings/$id"
-                        params={{ id: booking.id }}
+                        href={`/bookings/${encodeURIComponent(booking.id)}`}
                         className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                       >
                         <div className="flex flex-col gap-0.5">
@@ -477,7 +475,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                             {booking.status.replace(/_/g, " ")}
                           </Badge>
                         </div>
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 )}

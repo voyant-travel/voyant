@@ -1,6 +1,7 @@
 packages:
   - "packages/*"
   - "packages/plugins/*"
+  - "starters/federated-operator"
   - "starters/operator"
   - "apps/*"
   - "examples/*"
