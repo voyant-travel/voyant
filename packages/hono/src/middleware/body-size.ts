@@ -2,8 +2,19 @@ import type { Context, MiddlewareHandler } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
 export interface RequestBodyLimitOptions {
+  /** Outer ceiling applied to non-JSON bodies (e.g. multipart uploads). */
   maxBytes: number
+  /**
+   * Tighter cap applied when the request `Content-Type` is `application/json`.
+   * When omitted, the outer `maxBytes` ceiling applies to JSON bodies too.
+   */
+  jsonMaxBytes?: number
 }
+
+// Mirrors Hono's own `jsonRegex` (hono/dist/validator/validator.js) and the
+// openApiValidationHook content-type guard EXACTLY — case-sensitive, strict
+// params — so "this matches" ⟺ "Hono parses the body as JSON". Keep in sync.
+const JSON_CONTENT_TYPE = /^application\/([a-z-.]+\+)?json(;\s*[a-zA-Z0-9-]+=([^;]+))*$/
 
 export const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 10 * 1024 * 1024
 
@@ -26,17 +37,37 @@ export function requestBodyLimit(options: RequestBodyLimitOptions): MiddlewareHa
   // what bounds chunked / HTTP/2 requests with no Content-Length header — the
   // case the previous header-only check could not catch (e.g. `.openapi()` json
   // routes that read via c.req.json() and never went through parseJsonBody).
-  const enforce = bodyLimit({
+  const enforceDefault = bodyLimit({
     maxSize: options.maxBytes,
     onError: (c) => tooLargeResponse(c, options.maxBytes),
   })
+  // JSON bodies keep the tighter cap that `parseJsonBody` historically enforced
+  // (10 MiB) so migrated `.openapi()` routes aren't loosened to the upload
+  // ceiling. Non-JSON bodies (uploads) get the outer `maxBytes`. (voyant#2114)
+  // Clamp to `maxBytes` so the JSON cap is never LOOSER than the outer ceiling —
+  // a deployment that tightens `maxBytes` below the JSON default (e.g. a 1 MiB
+  // global override) must also tighten JSON, not silently leave it at 10 MiB.
+  const jsonMaxBytes =
+    options.jsonMaxBytes != null ? Math.min(options.jsonMaxBytes, options.maxBytes) : null
+  const enforceJson =
+    jsonMaxBytes != null
+      ? bodyLimit({
+          maxSize: jsonMaxBytes,
+          onError: (c) => tooLargeResponse(c, jsonMaxBytes),
+        })
+      : null
 
   return async (c, next) => {
     if (c.req.method === "GET" || c.req.method === "HEAD" || c.req.method === "OPTIONS") {
       return next()
     }
 
-    return enforce(c, next)
+    const contentType = c.req.header("content-type")
+    if (enforceJson && contentType && JSON_CONTENT_TYPE.test(contentType)) {
+      return enforceJson(c, next)
+    }
+
+    return enforceDefault(c, next)
   }
 }
 

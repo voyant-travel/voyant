@@ -357,10 +357,12 @@ export const marketsRoutes = new OpenAPIHono<Env>().openapi(listMarketsRoute, (c
   `.openapi()` json routes read via `c.req.json()` and never pass through
   `parseJsonBody` / `readBoundedRequestText`. Migrated routes are therefore bounded
   equivalently to the old `parseJsonBody` path; nothing extra is required per route.
-  The app-wide guard is an *outer* ceiling (`MAX_GLOBAL_REQUEST_BODY_BYTES`, sized to
-  the largest legitimate body — the 25 MiB media upload) so it never rejects valid
-  uploads; finer limits stay per-route (`parseJsonBody`'s 10 MiB
-  `DEFAULT_REQUEST_BODY_LIMIT_BYTES`, the upload route's own 25 MiB cap).
+  The guard is *content-type-aware*: `application/json` bodies are capped at 10 MiB
+  (`jsonMaxBytes`, matching the old `parseJsonBody` `DEFAULT_REQUEST_BODY_LIMIT_BYTES`)
+  so migrated `.openapi()` routes are not loosened, while non-JSON bodies (uploads)
+  get the 26 MiB outer ceiling (`maxBytes` / `MAX_GLOBAL_REQUEST_BODY_BYTES`, sized to
+  the largest legitimate body — the 25 MiB media upload + multipart envelope) so it
+  never rejects valid uploads. The upload route still enforces its own 25 MiB cap.
 
 ### 17. The response schema is the wire contract — verify it
 

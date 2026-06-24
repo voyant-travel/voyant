@@ -104,3 +104,102 @@ describe("requestBodyLimit middleware", () => {
     expect(response.status).toBe(200)
   })
 })
+
+describe("requestBodyLimit content-type-aware caps", () => {
+  function buildSplitApp() {
+    const app = new Hono()
+    app.use("*", requestBodyLimit({ maxBytes: 100, jsonMaxBytes: 16 }))
+    app.post("/echo", async (c) => {
+      const body = await c.req.text()
+      return c.json({ received: body.length })
+    })
+    app.get("/ping", (c) => c.json({ ok: true }))
+    return app
+  }
+
+  it("rejects a JSON body that exceeds the tighter jsonMaxBytes cap (regression guard)", async () => {
+    // The #2229 fix raised the outer ceiling to 26 MiB; this guards that JSON
+    // bodies still get the tighter parseJsonBody-equivalent cap (voyant#2114).
+    const app = buildSplitApp()
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "x".repeat(20),
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: "request_body_too_large", maxBytes: 16 })
+  })
+
+  it("passes a JSON body under the jsonMaxBytes cap", async () => {
+    const app = buildSplitApp()
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "x".repeat(8),
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ received: 8 })
+  })
+
+  it("treats application/json; charset=utf-8 as JSON (capped at jsonMaxBytes)", async () => {
+    const app = buildSplitApp()
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: "x".repeat(20),
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: "request_body_too_large", maxBytes: 16 })
+  })
+
+  it("does NOT cap a non-JSON body at jsonMaxBytes (uses the outer ceiling)", async () => {
+    const app = buildSplitApp()
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: "x".repeat(50),
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ received: 50 })
+  })
+
+  it("rejects a non-JSON body that exceeds the outer maxBytes ceiling", async () => {
+    const app = buildSplitApp()
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: "x".repeat(120),
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: "request_body_too_large", maxBytes: 100 })
+  })
+
+  it("does not block GET requests when both caps are set", async () => {
+    const app = buildSplitApp()
+    const response = await app.request("/ping", { method: "GET" })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ ok: true })
+  })
+
+  it("clamps the JSON cap to maxBytes so a tighter outer override also tightens JSON", async () => {
+    // Deployment override: a global maxBytes (8) below the JSON default (16).
+    // JSON must be capped at the lower 8, not silently left at 16.
+    const app = new Hono()
+    app.use("*", requestBodyLimit({ maxBytes: 8, jsonMaxBytes: 16 }))
+    app.post("/echo", async (c) => c.json({ received: (await c.req.text()).length }))
+
+    const response = await app.request("/echo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "x".repeat(12),
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: "request_body_too_large", maxBytes: 8 })
+  })
+})
