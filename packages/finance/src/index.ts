@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { Hono } from "hono"
@@ -137,7 +138,7 @@ export interface FinanceHonoModuleOptions
     CheckoutRoutesOptions {}
 
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
-  const adminRoutes = new Hono()
+  const adminRoutes = new OpenAPIHono()
     .route("/", financeRoutes)
     .route("/", createFinanceCheckoutAdminRoutes(options))
     .route("/", financeActionLedgerRoutes)

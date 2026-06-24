@@ -1,9 +1,9 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
 } from "@voyant-travel/db/aggregate-snapshots"
 import { parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
 
 import { financeBookingBillingRoutes } from "./routes-booking-billing.js"
 import { financeBookingReadRoutes } from "./routes-booking-reads.js"
@@ -28,7 +28,7 @@ const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=30"
 /** Server-side snapshot TTL — see readThroughAggregateSnapshot (#1629). */
 const DASHBOARD_AGGREGATES_TTL_SECONDS = 60
 
-export const financeRoutes = new Hono<Env>()
+export const financeRoutes = new OpenAPIHono<Env>()
   // Served from a read-through TTL snapshot — the finance aggregate fan-out
   // is ~11 queries, so a warm dashboard load becomes one indexed read (#1629).
   .get("/aggregates", async (c) => {
