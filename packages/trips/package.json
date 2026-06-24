@@ -32,6 +32,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=trips_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
@@ -40,6 +41,7 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/flights": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
