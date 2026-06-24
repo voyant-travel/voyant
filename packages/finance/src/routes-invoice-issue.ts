@@ -1,5 +1,28 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
+/**
+ * Admin invoice issue/lifecycle routes — mounted by the operator starter under
+ * `/v1/admin/finance/...`. Covers the invoice list + create endpoints plus the
+ * two issuance actions (issue-from-booking, convert-proforma-to-invoice).
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208 — finance sub-batch 9B). Request schemas reuse the existing
+ * `@voyant-travel/finance-contracts` schemas the handlers already parse;
+ * response schemas come from the shared `routes-invoice-schemas.ts` row shapes
+ * (authored from the Drizzle `$inferSelect` shapes; §17 dates → strings). The
+ * single resource (`invoices`) is its own `OpenAPIHono` sub-chain composed onto
+ * `financeInvoiceIssueRoutes` via `.route("/")` so the `.openapi()` operations
+ * propagate up through the parent `financeRoutes` registry while keeping
+ * type-inference cost bounded.
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
+import type { MiddlewareHandler } from "hono"
+import {
+  errorResponseSchema,
+  invoiceListItemSchema,
+  invoiceSchema,
+} from "./routes-invoice-schemas.js"
 import {
   getActionLedgerRequestContext,
   getFinanceRouteRuntime,
@@ -18,189 +41,257 @@ import {
   invoiceListQuerySchema,
 } from "./validation.js"
 
-export const financeInvoiceIssueRoutes = new Hono<Env>()
+const idParamSchema = z.object({ id: z.string() })
 
-  // ========================================================================
-  // Invoices CRUD
-  // ========================================================================
+const listInvoicesRoute = createRoute({
+  method: "get",
+  path: "/invoices",
+  request: { query: invoiceListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of invoices (each row carries its linked payment-schedule ids)",
+      content: { "application/json": { schema: listResponseSchema(invoiceListItemSchema) } },
+    },
+  },
+})
 
-  // GET /invoices — List invoices
-  .get("/invoices", async (c) => {
-    const query = parseQuery(c, invoiceListQuerySchema)
-    return c.json(await financeService.listInvoices(c.get("db"), query))
-  })
+const createInvoiceRoute = createRoute({
+  method: "post",
+  path: "/invoices",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertInvoiceSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created invoice",
+      content: { "application/json": { schema: z.object({ data: invoiceSchema.nullable() }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
-  // POST /invoices — Create invoice
-  .post("/invoices", routeIdempotencyKey("POST /v1/admin/finance/invoices"), async (c) => {
-    return c.json(
-      {
-        data: await financeService.createInvoice(
-          c.get("db"),
-          await parseJsonBody(c, insertInvoiceSchema),
-        ),
-      },
-      201,
-    )
-  })
+const issueInvoiceFromBookingRoute = createRoute({
+  method: "post",
+  path: "/invoices/from-booking",
+  request: {
+    body: {
+      required: true,
+      description:
+        "Create + issue an invoice or proforma from a booking (and optionally a payment schedule). `invoiceType` selects invoice vs proforma; `bookingPaymentScheduleId`, when present, must belong to the booking.",
+      content: { "application/json": { schema: invoiceFromBookingSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The issued invoice/proforma",
+      content: { "application/json": { schema: z.object({ data: invoiceSchema.nullable() }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Booking or booking payment schedule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description:
+        "Invoice number allocation failed, the invoice number already exists, or the booking failed issuance validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
-  // POST /invoices/from-booking — Create + issue invoice/proforma from a booking or schedule row
-  .post(
-    "/invoices/from-booking",
+const convertProformaToInvoiceRoute = createRoute({
+  method: "post",
+  path: "/invoices/{id}/convert-to-invoice",
+  description:
+    "Convert a proforma to a final invoice. Accepts optional overrides " +
+    "(`invoiceNumber`, `issueDate`, `dueDate`) as a JSON body; an empty or " +
+    "absent body is accepted. The body is parsed in the handler (not as a " +
+    "declared OpenAPI request body) because Hono's JSON validator would reject a " +
+    "zero-length `application/json` request before the handler runs.",
+  request: {
+    params: idParamSchema,
+  },
+  responses: {
+    201: {
+      description: "The converted final invoice",
+      content: { "application/json": { schema: z.object({ data: invoiceSchema }) } },
+    },
+    404: {
+      description: "Invoice not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description:
+        "The invoice is not a proforma, has already been converted, or a duplicate fiscal invoice already exists",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+export const financeInvoiceIssueRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
+
+// Idempotency-key middleware for the two POST endpoints. Registered ahead of
+// the `.openapi()` route handlers so it wraps them; it no-ops for requests
+// without an `Idempotency-Key` header (so the GET list route is unaffected).
+// Kept as statements (not in the fluent chain) because `.use()` narrows the
+// return type away from `OpenAPIHono`, which would strip the `.openapi()`
+// method from the rest of the chain.
+// `.use(path, ...)` matches every method on `path`, so guard to POST — the
+// create endpoints — otherwise an `Idempotency-Key` on `GET /invoices` would be
+// read/stored under the POST create scope (cached-create replay / key conflict).
+const postOnly =
+  (mw: MiddlewareHandler): MiddlewareHandler =>
+  (c, next) =>
+    c.req.method === "POST" ? mw(c, next) : next()
+
+financeInvoiceIssueRoutes.use(
+  "/invoices",
+  postOnly(routeIdempotencyKey("POST /v1/admin/finance/invoices")),
+)
+financeInvoiceIssueRoutes.use(
+  "/invoices/from-booking",
+  postOnly(
     routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking", {
       fingerprintSearchParams: ["wait", "waitTimeoutMs"],
     }),
-    async (c) => {
-      const input = await parseJsonBody(c, invoiceFromBookingSchema)
-      const db = c.get("db")
-      const [
-        { bookingItems, bookings },
-        { bookingPaymentSchedules },
-        { and, asc, eq },
-        { issueInvoiceFromBooking, issueProformaFromBooking },
-      ] = await Promise.all([
-        import("@voyant-travel/bookings/schema"),
-        import("./schema.js"),
-        import("drizzle-orm"),
-        import("./service-issue.js"),
-      ])
+  ),
+)
 
-      const [booking] = await db
-        .select()
-        .from(bookings)
-        .where(eq(bookings.id, input.bookingId))
-        .limit(1)
-
-      if (!booking) {
-        return c.json({ error: "Booking not found" }, 404)
-      }
-
-      const items = await db
-        .select()
-        .from(bookingItems)
-        .where(eq(bookingItems.bookingId, booking.id))
-        .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
-      const [paymentSchedule] = input.bookingPaymentScheduleId
-        ? await db
-            .select()
-            .from(bookingPaymentSchedules)
-            .where(
-              and(
-                eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
-                eq(bookingPaymentSchedules.bookingId, booking.id),
-              ),
-            )
-            .limit(1)
-        : []
-
-      if (input.bookingPaymentScheduleId && !paymentSchedule) {
-        return c.json({ error: "Booking payment schedule not found" }, 404)
-      }
-
-      const runtime = getFinanceRouteRuntime(c)
-
-      const issuer =
-        input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
-
-      let row: Awaited<ReturnType<typeof issuer>>
-      try {
-        row = await issuer(
-          db,
-          input,
-          {
-            booking: {
-              id: booking.id,
-              bookingNumber: booking.bookingNumber,
-              personId: booking.personId,
-              organizationId: booking.organizationId,
-              startDate: booking.startDate,
-              endDate: booking.endDate,
-              sellCurrency: booking.sellCurrency,
-              baseCurrency: booking.baseCurrency,
-              fxRateSetId: booking.fxRateSetId,
-              sellAmountCents: booking.sellAmountCents,
-              baseSellAmountCents: booking.baseSellAmountCents,
-            },
-            paymentSchedule: paymentSchedule
-              ? {
-                  id: paymentSchedule.id,
-                  bookingId: paymentSchedule.bookingId,
-                  bookingItemId: paymentSchedule.bookingItemId,
-                  scheduleType: paymentSchedule.scheduleType,
-                  dueDate: paymentSchedule.dueDate,
-                  currency: paymentSchedule.currency,
-                  amountCents: paymentSchedule.amountCents,
-                }
-              : null,
-            items: items.map((item) => ({
-              id: item.id,
-              title: item.title,
-              productId: item.productId,
-              productName: item.productNameSnapshot,
-              productNameSnapshot: item.productNameSnapshot,
-              optionNameSnapshot: item.optionNameSnapshot,
-              unitNameSnapshot: item.unitNameSnapshot,
-              departureLabelSnapshot: item.departureLabelSnapshot,
-              startDate: item.serviceDate ?? item.startsAt,
-              serviceDate: item.serviceDate,
-              startsAt: item.startsAt,
-              endDate: item.endsAt ?? item.serviceDate,
-              endsAt: item.endsAt,
-              quantity: item.quantity,
-              unitSellAmountCents: item.unitSellAmountCents,
-              totalSellAmountCents: item.totalSellAmountCents,
-            })),
-          },
-          {
-            ...(runtime ?? {}),
-            actionLedgerContext: getActionLedgerRequestContext(c),
-            actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
-          },
-        )
-      } catch (error) {
-        if (error instanceof InvoiceNumberAllocationError) {
-          return c.json(
-            { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
-            409,
-          )
-        }
-        if (error instanceof InvoiceNumberConflictError) {
-          return c.json(
-            {
-              error: "Invoice number already exists",
-              code: error.code,
-              invoiceNumber: error.invoiceNumber,
-            },
-            409,
-          )
-        }
-        if (error instanceof InvoiceFromBookingValidationError) {
-          return c.json(
-            { error: error.message, code: error.code, details: error.details },
-            error.status,
-          )
-        }
-        throw error
-      }
-
-      return c.json({ data: row }, 201)
-    },
+financeInvoiceIssueRoutes
+  .openapi(listInvoicesRoute, async (c) =>
+    c.json(await financeService.listInvoices(c.get("db"), c.req.valid("query")), 200),
   )
+  .openapi(createInvoiceRoute, async (c) =>
+    c.json(
+      { data: (await financeService.createInvoice(c.get("db"), c.req.valid("json"))) ?? null },
+      201,
+    ),
+  )
+  .openapi(issueInvoiceFromBookingRoute, async (c) => {
+    const input = c.req.valid("json")
+    const db = c.get("db")
+    const [
+      { bookingItems, bookings },
+      { bookingPaymentSchedules },
+      { and, asc, eq },
+      { issueInvoiceFromBooking, issueProformaFromBooking },
+    ] = await Promise.all([
+      import("@voyant-travel/bookings/schema"),
+      import("./schema.js"),
+      import("drizzle-orm"),
+      import("./service-issue.js"),
+    ])
 
-  // POST /invoices/:id/convert-to-invoice — Convert a proforma into a final invoice
-  .post("/invoices/:id/convert-to-invoice", async (c) => {
-    const { convertProformaToInvoice } = await import("./service-issue.js")
-    const input = await c.req
-      .json<{ invoiceNumber?: string; issueDate?: string; dueDate?: string }>()
-      .catch(() => ({}))
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, input.bookingId))
+      .limit(1)
+
+    if (!booking) {
+      return c.json({ error: "Booking not found" }, 404)
+    }
+
+    const items = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, booking.id))
+      .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
+    const [paymentSchedule] = input.bookingPaymentScheduleId
+      ? await db
+          .select()
+          .from(bookingPaymentSchedules)
+          .where(
+            and(
+              eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
+              eq(bookingPaymentSchedules.bookingId, booking.id),
+            ),
+          )
+          .limit(1)
+      : []
+
+    if (input.bookingPaymentScheduleId && !paymentSchedule) {
+      return c.json({ error: "Booking payment schedule not found" }, 404)
+    }
 
     const runtime = getFinanceRouteRuntime(c)
 
-    let result: Awaited<ReturnType<typeof convertProformaToInvoice>>
+    const issuer =
+      input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
+
+    let row: Awaited<ReturnType<typeof issuer>>
     try {
-      result = await convertProformaToInvoice(c.get("db"), c.req.param("id"), input, {
-        eventBus: runtime?.eventBus,
-      })
+      row = await issuer(
+        db,
+        input,
+        {
+          booking: {
+            id: booking.id,
+            bookingNumber: booking.bookingNumber,
+            personId: booking.personId,
+            organizationId: booking.organizationId,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            sellCurrency: booking.sellCurrency,
+            baseCurrency: booking.baseCurrency,
+            fxRateSetId: booking.fxRateSetId,
+            sellAmountCents: booking.sellAmountCents,
+            baseSellAmountCents: booking.baseSellAmountCents,
+          },
+          paymentSchedule: paymentSchedule
+            ? {
+                id: paymentSchedule.id,
+                bookingId: paymentSchedule.bookingId,
+                bookingItemId: paymentSchedule.bookingItemId,
+                scheduleType: paymentSchedule.scheduleType,
+                dueDate: paymentSchedule.dueDate,
+                currency: paymentSchedule.currency,
+                amountCents: paymentSchedule.amountCents,
+              }
+            : null,
+          items: items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            productId: item.productId,
+            productName: item.productNameSnapshot,
+            productNameSnapshot: item.productNameSnapshot,
+            optionNameSnapshot: item.optionNameSnapshot,
+            unitNameSnapshot: item.unitNameSnapshot,
+            departureLabelSnapshot: item.departureLabelSnapshot,
+            startDate: item.serviceDate ?? item.startsAt,
+            serviceDate: item.serviceDate,
+            startsAt: item.startsAt,
+            endDate: item.endsAt ?? item.serviceDate,
+            endsAt: item.endsAt,
+            quantity: item.quantity,
+            unitSellAmountCents: item.unitSellAmountCents,
+            totalSellAmountCents: item.totalSellAmountCents,
+          })),
+        },
+        {
+          ...(runtime ?? {}),
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
+        },
+      )
     } catch (error) {
+      if (error instanceof InvoiceNumberAllocationError) {
+        return c.json(
+          { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
+          409,
+        )
+      }
       if (error instanceof InvoiceNumberConflictError) {
         return c.json(
           {
@@ -210,6 +301,39 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
           },
           409,
         )
+      }
+      if (error instanceof InvoiceFromBookingValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+      throw error
+    }
+
+    return c.json({ data: row }, 201)
+  })
+  .openapi(convertProformaToInvoiceRoute, async (c) => {
+    const { convertProformaToInvoice } = await import("./service-issue.js")
+    const input = await parseJsonBody(
+      c,
+      z.object({
+        invoiceNumber: z.string().optional(),
+        issueDate: z.string().optional(),
+        dueDate: z.string().optional(),
+      }),
+    ).catch(() => ({}))
+
+    const runtime = getFinanceRouteRuntime(c)
+
+    let result: Awaited<ReturnType<typeof convertProformaToInvoice>>
+    try {
+      result = await convertProformaToInvoice(c.get("db"), c.req.valid("param").id, input, {
+        eventBus: runtime?.eventBus,
+      })
+    } catch (error) {
+      if (error instanceof InvoiceNumberConflictError) {
+        return c.json({ error: "Invoice number already exists" }, 409)
       }
       throw error
     }
@@ -221,26 +345,10 @@ export const financeInvoiceIssueRoutes = new Hono<Env>()
       return c.json({ error: "Only proforma invoices can be converted" }, 409)
     }
     if (result.status === "already_converted") {
-      return c.json(
-        {
-          error: "This proforma has already been converted",
-          code: "proforma_already_converted",
-          existingInvoiceId: result.invoice?.id ?? null,
-          existingInvoiceNumber: result.invoice?.invoiceNumber ?? null,
-        },
-        409,
-      )
+      return c.json({ error: "This proforma has already been converted" }, 409)
     }
     if (result.status === "duplicate_fiscal_invoice") {
-      return c.json(
-        {
-          error: "A fiscal invoice already exists for this booking amount",
-          code: "duplicate_fiscal_invoice",
-          existingInvoiceId: result.invoice.id,
-          existingInvoiceNumber: result.invoice.invoiceNumber,
-        },
-        409,
-      )
+      return c.json({ error: "A fiscal invoice already exists for this booking amount" }, 409)
     }
 
     return c.json({ data: result.invoice }, 201)
