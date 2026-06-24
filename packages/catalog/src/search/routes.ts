@@ -1,8 +1,7 @@
-import { parseJsonBody } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { Context, Hono as HonoApp } from "hono"
-import { Hono } from "hono"
-import { z } from "zod"
 
 import type {
   IndexerAdapter,
@@ -17,34 +16,39 @@ import type {
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])
 const searchSortSchema = z.enum(["relevance", "price-asc", "price-desc", "departure-asc", "newest"])
 const searchProjectionSchema = z.enum(["raw", "storefront-card"])
-const searchFilterSchema: z.ZodType<SearchFilter> = z.lazy(() =>
-  z.union([
-    z.object({
-      kind: z.literal("eq"),
-      field: z.string().min(1),
-      value: z.union([z.string(), z.number(), z.boolean()]),
-    }),
-    z.object({
-      kind: z.literal("in"),
-      field: z.string().min(1),
-      values: z.array(z.union([z.string(), z.number()])),
-    }),
-    z.object({
-      kind: z.literal("range"),
-      field: z.string().min(1),
-      gte: z.number().optional(),
-      lte: z.number().optional(),
-    }),
-    z.object({
-      kind: z.literal("and"),
-      clauses: z.array(searchFilterSchema),
-    }),
-    z.object({
-      kind: z.literal("or"),
-      clauses: z.array(searchFilterSchema),
-    }),
-  ]),
-)
+// Registered as a named component (`.openapi(...)`) so zod-to-openapi emits a
+// `$ref` for the recursive `and`/`or` clauses instead of inlining and blowing
+// the stack on the self-reference.
+const searchFilterSchema: z.ZodType<SearchFilter> = z
+  .lazy(() =>
+    z.union([
+      z.object({
+        kind: z.literal("eq"),
+        field: z.string().min(1),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+      z.object({
+        kind: z.literal("in"),
+        field: z.string().min(1),
+        values: z.array(z.union([z.string(), z.number()])),
+      }),
+      z.object({
+        kind: z.literal("range"),
+        field: z.string().min(1),
+        gte: z.number().optional(),
+        lte: z.number().optional(),
+      }),
+      z.object({
+        kind: z.literal("and"),
+        clauses: z.array(searchFilterSchema),
+      }),
+      z.object({
+        kind: z.literal("or"),
+        clauses: z.array(searchFilterSchema),
+      }),
+    ]),
+  )
+  .openapi("CatalogSearchFilter")
 
 const catalogSearchBodySchema = z.object({
   vertical: z.string().min(1).optional(),
@@ -72,6 +76,129 @@ const catalogSearchBodySchema = z.object({
 export type CatalogSearchBody = z.infer<typeof catalogSearchBodySchema>
 export type CatalogSearchProjection = z.infer<typeof searchProjectionSchema>
 export type CatalogSearchSort = SearchSortOption
+
+// ─────────────────────────────────────────────────────────────────
+// OpenAPI route + response schemas (voyant#2114 / voyant#2208).
+//
+// The request schema reuses `catalogSearchBodySchema` (what the handler already
+// parses). Response schemas are authored here from the handler's literal return
+// shape — `hits` mirror the `IndexerDocument` contract, `cards` the
+// `StorefrontCatalogCard` projection (present only when
+// `projection: "storefront-card"`), `facets` the engine bucket map.
+//
+// Mounted on both admin + public surfaces, so `/search` appears under
+// `/v1/admin/catalog/*` AND `/v1/public/catalog/*` (dual-surface).
+// ─────────────────────────────────────────────────────────────────
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+const searchHitSchema = z.object({
+  id: z.string(),
+  score: z.number(),
+  document: z.object({
+    id: z.string(),
+    fields: z.record(z.string(), z.unknown()),
+    embeddings: z.record(z.string(), z.array(z.number())).optional(),
+    embedding_model_id: z.string().optional(),
+  }),
+})
+
+const searchFacetBucketSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  count: z.number(),
+})
+
+const storefrontCardTaxonSchema = z.object({
+  id: z.string().nullable(),
+  name: z.string().nullable(),
+  slug: z.string().nullable(),
+})
+
+const storefrontCardOfferSchema = z.object({
+  id: z.string().nullable(),
+  name: z.string().nullable(),
+  discountKind: z.string().nullable(),
+  discountPercent: z.number().nullable(),
+  discountAmountCents: z.number().nullable(),
+  minPax: z.number().nullable().optional(),
+})
+
+const storefrontCatalogCardSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  slug: z.string().nullable(),
+  primaryCategory: storefrontCardTaxonSchema.nullable(),
+  media: z.object({
+    thumbnailUrl: z.string().nullable(),
+    coverMediaUrl: z.string().nullable(),
+  }),
+  priceFrom: z
+    .object({
+      amountCents: z.number(),
+      currency: z.string().nullable(),
+      originalAmountCents: z.number().nullable(),
+    })
+    .nullable(),
+  offerBadges: z.array(storefrontCardOfferSchema),
+  departures: z.object({
+    upcomingCount: z.number().nullable(),
+    nextDepartureAt: z.string().nullable(),
+    nextDepartureDate: z.string().nullable(),
+    months: z.array(z.string()),
+    dates: z.array(z.string()),
+  }),
+  destinations: z.object({
+    regions: z.array(z.string()),
+    countries: z.array(z.string()),
+    cities: z.array(z.string()),
+    ids: z.array(z.string()),
+    slugs: z.array(z.string()),
+  }),
+  coordinates: z
+    .object({
+      latitude: z.number(),
+      longitude: z.number(),
+    })
+    .nullable(),
+})
+
+const searchResponseSchema = z.object({
+  vertical: z.string(),
+  mode: searchModeSchema,
+  total: z.number(),
+  hits: z.array(searchHitSchema),
+  cards: z.array(storefrontCatalogCardSchema).optional(),
+  facets: z.record(z.string(), z.array(searchFacetBucketSchema)),
+})
+
+const searchRoute = createRoute({
+  method: "post",
+  path: "/search",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: catalogSearchBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Search results for the requested vertical slice",
+      content: { "application/json": { schema: searchResponseSchema } },
+    },
+    400: {
+      description: "invalid_request — body failed validation, or `vertical` is missing",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    500: {
+      description: "Search execution failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "Search indexer is not configured for this deployment",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
 export interface StorefrontCatalogCard {
   id: string
@@ -176,8 +303,18 @@ export interface CatalogSearchRoutesWithSurfaceOptions extends CatalogSearchRout
   surface: CatalogSearchSurface
 }
 
-export function createCatalogSearchRoutes(options: CatalogSearchRoutesWithSurfaceOptions): HonoApp {
-  return new Hono().post("/search", async (c) => handleSearch(c, options))
+export function createCatalogSearchRoutes(
+  options: CatalogSearchRoutesWithSurfaceOptions,
+): OpenAPIHono {
+  // `handleSearch` branches across the declared statuses (200/400/500/503) and
+  // returns a plain `Response`; `.openapi()` infers a typed-response union the
+  // bare `Response` doesn't structurally satisfy, so bridge it. Runtime payloads
+  // honor the declared schemas (asserted by the contract tests).
+  return new OpenAPIHono({ defaultHook: openApiValidationHook }).openapi(
+    searchRoute,
+    // biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union (voyant#2114)
+    async (c): Promise<any> => handleSearch(c, options, c.req.valid("json")),
+  )
 }
 
 export function createCatalogSearchHonoModule(options: CatalogSearchRoutesOptions): HonoModule {
@@ -196,9 +333,8 @@ export function mountCatalogSearchRoutes(hono: HonoApp, options: CatalogSearchRo
 async function handleSearch(
   c: Context,
   options: CatalogSearchRoutesWithSurfaceOptions,
+  body: CatalogSearchBody,
 ): Promise<Response> {
-  const body = await parseJsonBody(c, catalogSearchBodySchema)
-
   if (!body.vertical) return c.json({ error: "vertical is required" }, 400)
 
   const runtime = options.resolveRuntime(c)

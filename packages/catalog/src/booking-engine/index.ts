@@ -138,6 +138,7 @@ export {
   SnapshotContentUnavailableError,
 } from "./errors.js"
 export {
+  type CatalogBookingMountTarget,
   type CatalogBookingRouteModuleOptions,
   type CatalogOwnedProductSummary,
   type CatalogProductContentReadContext,

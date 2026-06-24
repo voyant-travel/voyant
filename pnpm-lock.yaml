@@ -874,6 +874,9 @@ importers:
 
   packages/catalog:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: ^1.4.0
+        version: 1.4.0(hono@4.12.25)(zod@4.3.6)
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts

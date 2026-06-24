@@ -71,6 +71,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ query: "rome" }),
     })
 
@@ -118,6 +119,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ vertical: "products" }),
     })
 
@@ -144,10 +146,12 @@ describe("createCatalogSearchRoutes", () => {
 
     await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ vertical: "products", mode: "keyword" }),
     })
     await app.request("/v1/public/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ vertical: "products", mode: "keyword", locale: "ro-RO" }),
     })
 
@@ -180,6 +184,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ vertical: "products", mode: "hybrid", query: "rome" }),
     })
 
@@ -207,6 +212,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         vertical: "products",
         mode: "keyword",
@@ -285,6 +291,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/public/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         vertical: "products",
         mode: "keyword",
@@ -350,6 +357,48 @@ describe("createCatalogSearchRoutes", () => {
     })
   })
 
+  it("returns the declared search-result wire shape (contract)", async () => {
+    const executeSearch = vi.fn(
+      async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => ({
+        total: 2,
+        facets: { "regions[]": [{ value: "Europe", count: 2 }] },
+        hits: [
+          { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
+          { id: "prod_b", score: 4.25, document: { id: "prod_b", fields: { name: "Beta" } } },
+        ],
+      }),
+    )
+    const app = routeApp({
+      surface: "public",
+      resolveRuntime: () => ({
+        indexer: createIndexer(),
+        defaultScope: { locale: "en-GB", audience: "staff", market: "default" },
+      }),
+      executeSearch,
+    })
+
+    const response = await app.request("/v1/admin/catalog/search", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ vertical: "products", mode: "keyword" }),
+    })
+
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as Record<string, unknown>
+    expect(body).toMatchObject({
+      vertical: "products",
+      mode: "keyword",
+      total: 2,
+      hits: [
+        { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
+        { id: "prod_b", score: 4.25, document: { id: "prod_b", fields: { name: "Beta" } } },
+      ],
+      facets: { "regions[]": [{ value: "Europe", count: 2 }] },
+    })
+    // `cards` is omitted unless storefront-card projection is requested.
+    expect(body.cards).toBeUndefined()
+  })
+
   it("retries hybrid searches as keyword when semantic execution fails", async () => {
     const executeSearch = vi
       .fn(async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults)
@@ -367,6 +416,7 @@ describe("createCatalogSearchRoutes", () => {
 
     const response = await app.request("/v1/admin/catalog/search", {
       method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ vertical: "products", mode: "hybrid", query: "rome" }),
     })
 
