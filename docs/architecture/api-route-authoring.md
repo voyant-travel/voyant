@@ -340,11 +340,15 @@ export const marketsRoutes = new OpenAPIHono<Env>().openapi(listMarketsRoute, (c
   `required: true` is mandatory: `@hono/zod-openapi` only parses the body when the
   request carries `Content-Type: application/json` (Hono leaves the value as `{}`
   otherwise), so a body-backed route must require that content type — which the
-  generated contract already declares. A request that omits the header gets a
-  clean `invalid_request` 400 via the shared `openApiValidationHook`. This is a
-  deliberate tightening over the old `parseJsonBody` (which parsed regardless of
-  header); first-party callers send the header via the shared `fetchWithValidation`
-  client, so they are unaffected.
+  generated contract already declares. The shared `openApiValidationHook` enforces
+  `Content-Type: application/json` for any declared JSON body, so a missing or
+  non-json header is a clean `invalid_request` 400 rather than a `{}` slipping
+  through the validator. This matters most for `.partial()` PATCH update schemas:
+  `{}` *validates* against a partial schema, so without this gate a headerless
+  request would run the handler with an empty patch and silently no-op (200) —
+  dropping the caller's changes. This is a deliberate tightening over the old
+  `parseJsonBody` (which parsed regardless of header); first-party callers send the
+  header via the shared `fetchWithValidation` client, so they are unaffected.
 
 ### 17. The response schema is the wire contract — verify it
 

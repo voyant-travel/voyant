@@ -94,3 +94,119 @@ describe("malformed JSON on an .openapi() body route", () => {
     expect(await response.json()).toMatchObject({ code: "invalid_request" })
   })
 })
+
+/**
+ * Regression guard for the systemic partial-PATCH silent no-op (voyant#2114,
+ * §16). Hono's `json` validator supplies `{}` instead of parsing when the
+ * request omits (or mis-declares) the `application/json` content-type. A
+ * `.partial()` PATCH schema considers `{}` valid, so without the content-type
+ * gate the handler would run with an empty patch and silently drop the caller's
+ * changes (200, no-op). `openApiValidationHook` must turn a missing/incorrect
+ * content-type into a clean `invalid_request` 400 for declared JSON bodies.
+ */
+describe("content-type enforcement for .openapi() json bodies", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function makePatchApp() {
+    const app = new OpenAPIHono({ defaultHook: openApiValidationHook })
+    app.onError(handleApiError)
+    app.use("*", requestId)
+    app.openapi(
+      createRoute({
+        method: "patch",
+        path: "/widgets/{id}",
+        request: {
+          params: openApiZod.object({ id: openApiZod.string() }),
+          body: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: openApiZod.object({ name: openApiZod.string().min(2) }).partial(),
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "ok",
+            content: {
+              "application/json": {
+                schema: openApiZod.object({ name: openApiZod.string().optional() }),
+              },
+            },
+          },
+        },
+      }),
+      (c) => c.json({ name: c.req.valid("json").name }),
+    )
+    return app
+  }
+
+  it("returns a 400 invalid_request for a partial PATCH body sent without a content-type", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+      method: "PATCH",
+      body: JSON.stringify({ name: "renamed" }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: "invalid_request" })
+  })
+
+  it("accepts a partial PATCH body with application/json", async () => {
+    const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "renamed" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ name: "renamed" })
+  })
+
+  it("accepts application/json with a charset parameter", async () => {
+    const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+      method: "PATCH",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ name: "renamed" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ name: "renamed" })
+  })
+
+  it("rejects a non-json content-type for a declared json body", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+      method: "PATCH",
+      headers: { "content-type": "text/plain" },
+      body: JSON.stringify({ name: "renamed" }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: "invalid_request" })
+  })
+
+  // The guard must MATCH Hono's parser acceptance exactly: content-types Hono
+  // leaves unparsed (it is case-sensitive and rejects a bare trailing `;`) must
+  // 400 here, not slip through as a silent no-op patch.
+  it.each([
+    "Application/JSON",
+    "application/json;",
+  ])("rejects %j, which Hono's json parser does not accept", async (contentType) => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const response = await makePatchApp().request("http://example.com/widgets/w_1", {
+      method: "PATCH",
+      headers: { "content-type": contentType },
+      body: JSON.stringify({ name: "renamed" }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: "invalid_request" })
+  })
+})
