@@ -1,0 +1,31 @@
+{
+  // Client/dashboard half of the operator typecheck. See tsconfig.server.json
+  // for the full rationale. This program roots at the React/TanStack surface and
+  // excludes the heavy server composition (api/**, modules/**, entry.ts, …) so it
+  // does NOT re-load the composed module-route graph. The dashboard talks to the
+  // API over HTTP and only imports lightweight shared types, so the exclusion is
+  // clean.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["**/*.tsx", "**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "src/api/**",
+    "src/modules/**",
+    "src/links/**",
+    "src/extensions/**",
+    "src/custom-fields/**",
+    "src/entry.ts",
+    "src/start.ts",
+    "src/hono-api-dispatch.ts",
+    "src/hono-api-dispatch.test.ts",
+    "src/scheduled-crons.ts",
+    "src/workflows.ts",
+    "src/workflows-bundle.test.ts",
+    "src/workflows-import.test.ts",
+    "src/admin.destinations.generated.ts",
+    "src/admin.extensions.generated.ts"
+  ]
+}

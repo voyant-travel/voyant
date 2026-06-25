@@ -7,7 +7,7 @@
     "dev": "vite dev --port 3300",
     "build": "vite build",
     "preview": "pnpm run build && vite preview",
-    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
     "test": "vitest run --passWithNoTests",
     "generate:openapi": "UPDATE_OPENAPI=1 vitest run src/api/openapi.test.ts",
     "deploy": "pnpm run build && wrangler deploy",
