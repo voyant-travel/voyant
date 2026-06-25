@@ -1,0 +1,35 @@
+{
+  // Server/API half of the operator typecheck. See package.json `typecheck`.
+  //
+  // Workspace deps resolve to SOURCE (each package's `exports` points at
+  // `./src/index.ts`), so `tsc` over the whole operator app transitively
+  // re-checks every composed module's route source. As @hono/zod-openapi
+  // adoption grew the admin surface (voyant#2114) that single program's working
+  // set crossed the 16 GB CI runner and OOM'd (exit 134). Splitting the app into
+  // a server program (this file) and a client program (tsconfig.client.json)
+  // keeps the heavy module-composition graph and the heavy React/TanStack
+  // dashboard graph in separate `tsc` processes that run sequentially, so peak
+  // memory is the larger single program rather than their sum.
+  //
+  // This program excludes the entire dashboard surface; the server entrypoints
+  // (api/**, entry.ts, scheduled-crons.ts, …) do not import any local `.tsx` or
+  // dashboard module, so React never loads here. Every operator source file is
+  // checked by this program or the client program (the two cover the tree).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "**/*.tsx",
+    "src/admin/**",
+    "src/components/**",
+    "src/routes/**",
+    "src/hooks/**",
+    "src/routeTree.gen.ts",
+    "src/router.tsx",
+    "src/lib/admin-i18n.ts",
+    "src/lib/dashboard-ssr-query-options.ts"
+  ]
+}
