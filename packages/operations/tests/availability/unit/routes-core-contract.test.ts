@@ -149,7 +149,11 @@ const closeoutRow: InferSelectModel<typeof availabilityCloseouts> = {
 const listCases = [
   ["availability rule", availabilityRuleListRowSchema, { ...ruleRow, productName: "Sunset Tour" }],
   ["availability slot", availabilitySlotListRowSchema, { ...slotRow, productName: "Sunset Tour" }],
-  ["availability closeout", availabilityCloseoutSchema, closeoutRow],
+  [
+    "availability closeout",
+    availabilityCloseoutSchema.extend({ productName: z.string().nullable() }),
+    { ...closeoutRow, productName: "Sunset Tour" },
+  ],
 ] as const
 
 const singleCases = [

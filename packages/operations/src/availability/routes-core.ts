@@ -898,7 +898,15 @@ const listCloseoutsRoute = createRoute({
   responses: {
     200: {
       description: "Paginated availability closeouts",
-      content: { "application/json": { schema: listResponseSchema(availabilityCloseoutSchema) } },
+      content: {
+        // `listCloseouts` left-joins `products` for the display name, so list
+        // rows carry a `productName` the single-closeout schema omits.
+        "application/json": {
+          schema: listResponseSchema(
+            availabilityCloseoutSchema.extend({ productName: z.string().nullable() }),
+          ),
+        },
+      },
     },
   },
 })

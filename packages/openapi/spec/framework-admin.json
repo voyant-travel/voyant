@@ -10597,6 +10597,12 @@
                           },
                           "createdAt": {
                             "type": "string"
+                          },
+                          "productName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -10606,7 +10612,8 @@
                           "dateLocal",
                           "reason",
                           "createdBy",
-                          "createdAt"
+                          "createdAt",
+                          "productName"
                         ]
                       }
                     },
