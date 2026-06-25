@@ -63,20 +63,23 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # Typecheck is split in two so the composed operator app gets the runner to
-      # itself. As @hono/zod-openapi adoption grows the app's type surface, the
-      # operator typecheck's working set approaches the runner's RAM; running it
-      # alongside other typechecks (turbo --concurrency) oversubscribed the 16 GB
-      # runner and the OOM-killer SIGKILLed it (exit 137). Packages are light, so
-      # they fan out at concurrency=4; operator then runs alone with its own heap.
+      # Typecheck is split so the heavy COMPOSITION POINTS each get the runner to
+      # themselves. As @hono/zod-openapi adoption grows the admin surface, three
+      # tsc programs balloon: the operator app, the @voyant-travel/openapi spec
+      # package, and the @voyant-travel/framework composition. Each now needs
+      # >8 GB and would either blow its own heap (exit 134) or, run concurrently,
+      # oversubscribe the 16 GB runner and get OOM-killed (exit 137). So the many
+      # light packages fan out at concurrency=4, then the three heavy programs run
+      # one-at-a-time (concurrency=1), each alone with its own package-script heap.
       - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --filter=!./starters/operator --ui=stream --log-order=stream
+        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
 
-      - name: Typecheck (operator app)
-        # Runs alone — operator's own package script sets the heap (see
-        # starters/operator/package.json); deps are already cached from the step
-        # above so only the composed app is type-checked here.
-        run: pnpm turbo run typecheck --filter=./starters/operator --ui=stream --log-order=stream
+      - name: Typecheck (composition points)
+        # Serial (concurrency=1): operator app, openapi spec, framework composition
+        # each run alone with the full runner + their own heap (see each package's
+        # package.json). Deps are cached from the step above, so only these three
+        # programs run live here.
+        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=@voyant-travel/openapi --filter=./starters/operator --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream
@@ -124,6 +127,15 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Build the @voyant-travel/framework composition first, alone. Its `tsc -p`
+      # grows with every module's OpenAPIHono route chain and now needs >8 GB
+      # (exit 134 at the job's default heap); running it with the full runner +
+      # its own package-script heap avoids that, and because it's a root dep the
+      # rest of the graph would wait on it anyway. The second step reuses its
+      # cached dist, so only the remaining packages build there.
+      - name: Build (framework composition)
+        run: pnpm turbo build --filter=@voyant-travel/framework --ui=stream --log-order=stream
 
       - name: Build
         run: pnpm turbo build --ui=stream --log-order=stream

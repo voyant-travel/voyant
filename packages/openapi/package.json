@@ -18,7 +18,7 @@
     "spec"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc --noEmit",
     "lint": "biome check src/",
     "test": "vitest run",
     "generate": "UPDATE_OPENAPI=1 vitest run"
