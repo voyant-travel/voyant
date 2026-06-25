@@ -120,7 +120,7 @@ const paymentValidationErrorSchema = z.object({
 const listPaymentSessionsRoute = createRoute({
   method: "get",
   path: "/payment-sessions",
-  request: { query: paymentSessionListQueryParamsSchema },
+  request: { query: paymentSessionListQueryParamsSchema.strict() },
   responses: {
     200: {
       description: "List of payment sessions",
@@ -135,7 +135,7 @@ const createPaymentSessionRoute = createRoute({
   request: {
     body: {
       required: true,
-      content: { "application/json": { schema: insertPaymentSessionBodySchema } },
+      content: { "application/json": { schema: insertPaymentSessionBodySchema.strict() } },
     },
   },
   responses: {
@@ -173,7 +173,7 @@ const updatePaymentSessionRoute = createRoute({
     params: idParamSchema,
     body: {
       required: true,
-      content: { "application/json": { schema: updatePaymentSessionBodySchema } },
+      content: { "application/json": { schema: updatePaymentSessionBodySchema.strict() } },
     },
   },
   responses: {
@@ -581,7 +581,7 @@ const paymentInstrumentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValid
 const listPaymentAuthorizationsRoute = createRoute({
   method: "get",
   path: "/payment-authorizations",
-  request: { query: paymentAuthorizationListQueryParamsSchema },
+  request: { query: paymentAuthorizationListQueryParamsSchema.strict() },
   responses: {
     200: {
       description: "List of payment authorizations",
@@ -596,7 +596,7 @@ const createPaymentAuthorizationRoute = createRoute({
   request: {
     body: {
       required: true,
-      content: { "application/json": { schema: insertPaymentAuthorizationBodySchema } },
+      content: { "application/json": { schema: insertPaymentAuthorizationBodySchema.strict() } },
     },
   },
   responses: {
@@ -634,7 +634,7 @@ const updatePaymentAuthorizationRoute = createRoute({
     params: idParamSchema,
     body: {
       required: true,
-      content: { "application/json": { schema: updatePaymentAuthorizationBodySchema } },
+      content: { "application/json": { schema: updatePaymentAuthorizationBodySchema.strict() } },
     },
   },
   responses: {

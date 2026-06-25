@@ -27747,7 +27747,8 @@
                 "required": [
                   "currency",
                   "amountCents"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -28995,7 +28996,8 @@
                       "null"
                     ]
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -33343,7 +33345,8 @@
                 "required": [
                   "currency",
                   "amountCents"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -34060,7 +34063,8 @@
                       "null"
                     ]
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
