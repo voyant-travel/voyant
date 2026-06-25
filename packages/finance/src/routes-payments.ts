@@ -1,5 +1,24 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
+/**
+ * Admin payment routes — mounted by the operator starter under
+ * `/v1/admin/finance/...`. Covers the unified payments view (customer +
+ * supplier, dispatched by typeid prefix) and the supplier-payment collection.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208 — finance sub-batch 9C). Request schemas reuse the existing
+ * `@voyant-travel/finance-contracts` schemas the handlers already parse;
+ * response schemas come from the shared `routes-payment-schemas.ts` row shapes
+ * (authored from the Drizzle `$inferSelect` / `UnifiedPaymentRow` shapes; §17
+ * dates → strings). Each resource is its own small `OpenAPIHono` sub-chain
+ * composed onto `financePaymentRoutes` via `.route("/")` so the `.openapi()`
+ * operations propagate up through the parent `financeRoutes` registry while
+ * keeping type-inference cost bounded.
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
+import { errorResponseSchema, paymentSchema } from "./routes-invoice-schemas.js"
+import { supplierPaymentSchema, unifiedPaymentSchema } from "./routes-payment-schemas.js"
 import { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
 import { financeService } from "./service.js"
@@ -11,59 +30,118 @@ import {
   updateSupplierPaymentSchema,
 } from "./validation.js"
 
-export const financePaymentRoutes = new Hono<Env>()
+const idParamSchema = z.object({ id: z.string() })
 
-  // ========================================================================
-  // Unified Payments (customer + supplier)
-  // ========================================================================
+// --- unified payments (customer + supplier) -------------------------------
 
-  // GET /payments — List customer + supplier payments
-  .get("/payments", async (c) => {
-    const query = parseQuery(c, paymentListQuerySchema)
-    return c.json(await financeService.listAllPayments(c.get("db"), query))
+const listAllPaymentsRoute = createRoute({
+  method: "get",
+  path: "/payments",
+  request: { query: paymentListQuerySchema },
+  responses: {
+    200: {
+      description: "Unified list of customer + supplier payments",
+      content: { "application/json": { schema: listResponseSchema(unifiedPaymentSchema) } },
+    },
+  },
+})
+
+const getPaymentRoute = createRoute({
+  method: "get",
+  path: "/payments/{id}",
+  description:
+    "Look up a single payment by id. Dispatches by typeid prefix: `spay_*` → " +
+    "supplier payment, `pay_*` → customer payment.",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The payment (customer or supplier)",
+      content: { "application/json": { schema: z.object({ data: unifiedPaymentSchema }) } },
+    },
+    404: {
+      description: "Payment not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updatePaymentRoute = createRoute({
+  method: "patch",
+  path: "/payments/{id}",
+  description:
+    "Update a customer payment. Recomputes the invoice's paid/balance/status " +
+    "from the remaining completed payments. Supplier payments (`spay_*` id) " +
+    "must be updated via `/supplier-payments/{id}` and return 400 here.",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updatePaymentSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated customer payment",
+      content: { "application/json": { schema: z.object({ data: paymentSchema }) } },
+    },
+    400: {
+      description: "invalid_request, or a supplier payment id was supplied",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Payment not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deletePaymentRoute = createRoute({
+  method: "delete",
+  path: "/payments/{id}",
+  description:
+    "Remove a customer payment, recomputing invoice totals the same way PATCH " +
+    "does. Supplier payments (`spay_*` id) must be deleted via " +
+    "`/supplier-payments/{id}` and return 400 here.",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The deleted customer payment",
+      content: { "application/json": { schema: z.object({ data: paymentSchema }) } },
+    },
+    400: {
+      description: "A supplier payment id was supplied",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Payment not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const unifiedPaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listAllPaymentsRoute, async (c) =>
+    c.json(await financeService.listAllPayments(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(getPaymentRoute, async (c) => {
+    const row = await financeService.getPaymentById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Payment not found" }, 404)
   })
-
-  // GET /payments/:id — Look up a single payment (customer or supplier)
-  // Dispatches by typeid prefix: spay_* → supplier, pay_* → customer.
-  .get("/payments/:id", async (c) => {
-    const row = await financeService.getPaymentById(c.get("db"), c.req.param("id"))
-    if (!row) {
-      return c.json({ error: "Payment not found" }, 404)
-    }
-    return c.json({ data: row })
-  })
-
-  // PATCH /payments/:id — Update a customer payment.
-  // Recomputes invoice paidCents/balanceDueCents/status from the
-  // remaining completed payments after the change.
-  .patch("/payments/:id", async (c) => {
-    const id = c.req.param("id")
+  .openapi(updatePaymentRoute, async (c) => {
+    const id = c.req.valid("param").id
     if (id.startsWith("spay_")) {
       return c.json({ error: "Use /supplier-payments/:id to update supplier payments" }, 400)
     }
     const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updatePayment(
-      c.get("db"),
-      id,
-      await parseJsonBody(c, updatePaymentSchema),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.payment.route",
-      },
-    )
-    if (!row) {
-      return c.json({ error: "Payment not found" }, 404)
-    }
-    return c.json({ data: row })
+    const row = await financeService.updatePayment(c.get("db"), id, c.req.valid("json"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.payment.route",
+    })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Payment not found" }, 404)
   })
-
-  // DELETE /payments/:id — Remove a customer payment.
-  // Recomputes invoice totals the same way PATCH does, so an
-  // accidentally-recorded payment can be reverted without going
-  // through a credit note.
-  .delete("/payments/:id", async (c) => {
-    const id = c.req.param("id")
+  .openapi(deletePaymentRoute, async (c) => {
+    const id = c.req.valid("param").id
     if (id.startsWith("spay_")) {
       return c.json({ error: "Use /supplier-payments/:id to delete supplier payments" }, 400)
     }
@@ -73,58 +151,101 @@ export const financePaymentRoutes = new Hono<Env>()
       actionLedgerContext: getActionLedgerRequestContext(c),
       actionLedgerAuthorizationSource: "finance.payment.route",
     })
-    if (!row) {
-      return c.json({ error: "Payment not found" }, 404)
-    }
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Payment not found" }, 404)
   })
 
-  // ========================================================================
-  // Supplier Payments
-  // ========================================================================
+// --- supplier payments ----------------------------------------------------
 
-  // GET /supplier-payments — List supplier payments
-  .get("/supplier-payments", async (c) => {
-    const query = parseQuery(c, supplierPaymentListQuerySchema)
-    return c.json(await financeService.listSupplierPayments(c.get("db"), query))
-  })
+const listSupplierPaymentsRoute = createRoute({
+  method: "get",
+  path: "/supplier-payments",
+  request: { query: supplierPaymentListQuerySchema },
+  responses: {
+    200: {
+      description: "List of supplier payments",
+      content: { "application/json": { schema: listResponseSchema(supplierPaymentSchema) } },
+    },
+  },
+})
 
-  // POST /supplier-payments — Record supplier payment
-  .post("/supplier-payments", async (c) => {
+const createSupplierPaymentRoute = createRoute({
+  method: "post",
+  path: "/supplier-payments",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertSupplierPaymentSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The recorded supplier payment",
+      content: { "application/json": { schema: z.object({ data: supplierPaymentSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateSupplierPaymentRoute = createRoute({
+  method: "patch",
+  path: "/supplier-payments/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateSupplierPaymentSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated supplier payment",
+      content: { "application/json": { schema: z.object({ data: supplierPaymentSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Supplier payment not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const supplierPaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listSupplierPaymentsRoute, async (c) =>
+    c.json(await financeService.listSupplierPayments(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createSupplierPaymentRoute, async (c) => {
     const runtime = getFinanceRouteRuntime(c)
-    return c.json(
-      {
-        data: await financeService.createSupplierPayment(
-          c.get("db"),
-          await parseJsonBody(c, insertSupplierPaymentSchema),
-          {
-            ...(runtime ?? {}),
-            actionLedgerContext: getActionLedgerRequestContext(c),
-            actionLedgerAuthorizationSource: "finance.supplier_payment.route",
-          },
-        ),
-      },
-      201,
-    )
+    const row = await financeService.createSupplierPayment(c.get("db"), c.req.valid("json"), {
+      ...(runtime ?? {}),
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.supplier_payment.route",
+    })
+    if (!row) {
+      throw new Error("Failed to create supplier payment")
+    }
+    return c.json({ data: row }, 201)
   })
-
-  // PATCH /supplier-payments/:id — Update supplier payment
-  .patch("/supplier-payments/:id", async (c) => {
+  .openapi(updateSupplierPaymentRoute, async (c) => {
     const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateSupplierPayment(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateSupplierPaymentSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
       {
         ...(runtime ?? {}),
         actionLedgerContext: getActionLedgerRequestContext(c),
         actionLedgerAuthorizationSource: "finance.supplier_payment.route",
       },
     )
-
-    if (!row) {
-      return c.json({ error: "Supplier payment not found" }, 404)
-    }
-
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Supplier payment not found" }, 404)
   })
+
+export const financePaymentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .route("/", unifiedPaymentRoutes)
+  .route("/", supplierPaymentRoutes)
