@@ -15,6 +15,7 @@
 // Re-run after changing any package's `exports` (a CI check enforces freshness).
 //   node scripts/gen-composition-dep-paths.mjs
 
+import { execFileSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -157,6 +158,15 @@ const packages = collectPackages()
 // The three composition-point typecheck programs that re-infer module source.
 // operator's server program keeps its own `@/*` alias; framework + openapi use a
 // dedicated tsconfig.typecheck.json so their build/editor config stays on source.
-injectPaths("starters/operator/tsconfig.server.json", { "@/*": ["./src/*"] })
-injectPaths("packages/framework/tsconfig.typecheck.json", {})
-injectPaths("packages/openapi/tsconfig.typecheck.json", {})
+const CONFIGS = [
+  "starters/operator/tsconfig.server.json",
+  "packages/framework/tsconfig.typecheck.json",
+  "packages/openapi/tsconfig.typecheck.json",
+]
+injectPaths(CONFIGS[0], { "@/*": ["./src/*"] })
+injectPaths(CONFIGS[1], {})
+injectPaths(CONFIGS[2], {})
+
+// Normalize formatting so this generator's output is byte-stable (the
+// freshness check re-runs it and asserts no diff). Biome owns JSON formatting.
+execFileSync("pnpm", ["biome", "format", "--write", ...CONFIGS], { cwd: ROOT, stdio: "ignore" })
