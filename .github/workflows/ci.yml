@@ -63,12 +63,20 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck
-        # concurrency=2 (was 4): the composed operator typecheck now uses ~10 GB
-        # of real RAM as @hono/zod-openapi adoption grows the app's type surface;
-        # running 4 typechecks at once oversubscribed the 16 GB runner and the
-        # OOM-killer cancelled the step. 2-at-a-time keeps peak RAM in budget.
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=2 --ui=stream --log-order=stream
+      # Typecheck is split in two so the composed operator app gets the runner to
+      # itself. As @hono/zod-openapi adoption grows the app's type surface, the
+      # operator typecheck's working set approaches the runner's RAM; running it
+      # alongside other typechecks (turbo --concurrency) oversubscribed the 16 GB
+      # runner and the OOM-killer SIGKILLed it (exit 137). Packages are light, so
+      # they fan out at concurrency=4; operator then runs alone with its own heap.
+      - name: Typecheck (packages)
+        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --filter=!./starters/operator --ui=stream --log-order=stream
+
+      - name: Typecheck (operator app)
+        # Runs alone — operator's own package script sets the heap (see
+        # starters/operator/package.json); deps are already cached from the step
+        # above so only the composed app is type-checked here.
+        run: pnpm turbo run typecheck --filter=./starters/operator --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream
