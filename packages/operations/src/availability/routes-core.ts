@@ -1,16 +1,44 @@
+/**
+ * Availability "core" admin routes — the dashboard read-models (aggregates +
+ * overview) and CRUD/batch surfaces for the four core availability resources:
+ * recurrence rules, start times, departure slots, and closeouts. Mounted on the
+ * legacy `/v1/operations/availability/*` surface (operator React clients hit
+ * those paths) AND, for the published OpenAPI admin contract, on the staff
+ * surface at `/v1/admin/operations/availability/*` (see
+ * `availability/routes.ts`).
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208 — operations sub-batch 10A). Request schemas reuse the exported
+ * `validation.ts` insert/update/list-query schemas the handlers already parse;
+ * response row schemas are authored here from the Drizzle `$inferSelect` shapes
+ * (§17 dates → strings, plus the service-joined `productName` and the slot's
+ * computed `endDateLocal`). Each resource is its own small `OpenAPIHono`
+ * sub-chain composed onto `availabilityCoreRoutes` via `.route("/")` so the
+ * `.openapi()` operations propagate up through the parent registries while
+ * keeping type-inference cost bounded (one flat chain has O(n²) inference cost).
+ *
+ * agent-quality: file-size exception — intentional: a mechanically-repetitive
+ * CRUD + batch bundle over five availability resources (31 legs), each with a
+ * `createRoute` def + co-located handler per the established admin route pattern
+ * (mirrors finance's `routes-invoice-core.ts`). Splitting per resource would
+ * fragment the single mounted instance without aiding review. See voyant#2114 /
+ * voyant#2208 (operations sub-batch 10A).
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   aggregateSnapshotKey,
   readThroughAggregateSnapshot,
 } from "@voyant-travel/db/aggregate-snapshots"
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import { Hono } from "hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
+
 import {
   batchIdsSchema,
   createBatchUpdateSchema,
   type Env,
   handleBatchDelete,
   handleBatchUpdate,
-  notFound,
 } from "./routes-shared.js"
 import { availabilityService } from "./service.js"
 import {
@@ -19,6 +47,7 @@ import {
   availabilityOverviewQuerySchema,
   availabilityRuleListQuerySchema,
   availabilitySlotListQuerySchema,
+  availabilitySlotStatusSchema,
   availabilityStartTimeListQuerySchema,
   insertAvailabilityCloseoutSchema,
   insertAvailabilityRuleSchema,
@@ -52,42 +81,366 @@ function cacheDashboardAggregates(c: {
   c.header("Vary", "Cookie", { append: true })
 }
 
-export const availabilityCoreRoutes = new Hono<Env>()
-  // GET /aggregates — dashboard KPIs, served from a read-through TTL
-  // snapshot (#1629).
-  .get("/aggregates", async (c) => {
-    const query = await parseQuery(c, availabilityAggregatesQuerySchema)
+// --- shared response schemas ------------------------------------------------
+
+const errorResponseSchema = z.object({ error: z.string() })
+const successResponseSchema = z.object({ success: z.literal(true) })
+const idSchema = z.string()
+const idParamSchema = z.object({ id: idSchema })
+
+/** Envelope returned by the shared batch-update handler. */
+function batchUpdateResponseSchema<T extends z.ZodTypeAny>(row: T) {
+  return z.object({
+    data: z.array(row),
+    total: z.number().int(),
+    succeeded: z.number().int(),
+    failed: z.array(z.object({ id: idSchema, error: z.string() })),
+  })
+}
+
+/** Envelope returned by the shared batch-delete handler. */
+const batchDeleteResponseSchema = z.object({
+  deletedIds: z.array(idSchema),
+  total: z.number().int(),
+  succeeded: z.number().int(),
+  failed: z.array(z.object({ id: idSchema, error: z.string() })),
+})
+
+// §17: timestamps/dates are serialized to ISO strings on the wire.
+const availabilityRuleSchema = z.object({
+  id: idSchema,
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  facilityId: z.string().nullable(),
+  timezone: z.string(),
+  recurrenceRule: z.string(),
+  maxCapacity: z.number().int(),
+  maxPickupCapacity: z.number().int().nullable(),
+  minTotalPax: z.number().int().nullable(),
+  cutoffMinutes: z.number().int().nullable(),
+  earlyBookingLimitMinutes: z.number().int().nullable(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+/**
+ * List rows are left-joined to `products` for the display name. `productName`
+ * is `nullable().optional()` because the service spreads the slot/rule columns
+ * through a generic that widens the joined column to `string | null |
+ * undefined`; on the wire it is always present (possibly `null`).
+ */
+const availabilityRuleListRowSchema = availabilityRuleSchema.extend({
+  productName: z.string().nullable().optional(),
+})
+
+const availabilityStartTimeSchema = z.object({
+  id: idSchema,
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  facilityId: z.string().nullable(),
+  label: z.string().nullable(),
+  startTimeLocal: z.string(),
+  durationMinutes: z.number().int().nullable(),
+  sortOrder: z.number().int(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const availabilityStartTimeListRowSchema = availabilityStartTimeSchema.extend({
+  productName: z.string().nullable().optional(),
+})
+
+/** Raw `availability_slots` row (no derived/joined columns). */
+const availabilitySlotBaseSchema = z.object({
+  id: idSchema,
+  productId: z.string(),
+  itineraryId: z.string().nullable(),
+  optionId: z.string().nullable(),
+  facilityId: z.string().nullable(),
+  availabilityRuleId: z.string().nullable(),
+  startTimeId: z.string().nullable(),
+  dateLocal: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string().nullable(),
+  timezone: z.string(),
+  status: availabilitySlotStatusSchema,
+  unlimited: z.boolean(),
+  initialPax: z.number().int().nullable(),
+  remainingPax: z.number().int().nullable(),
+  initialPickups: z.number().int().nullable(),
+  remainingPickups: z.number().int().nullable(),
+  remainingResources: z.number().int().nullable(),
+  pastCutoff: z.boolean(),
+  tooEarly: z.boolean(),
+  nights: z.number().int().nullable(),
+  days: z.number().int().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+/** Single-slot read/mutation rows carry the computed local end date. */
+const availabilitySlotSchema = availabilitySlotBaseSchema.extend({
+  /** Computed local end date (slot timezone); `null` when not derivable. */
+  endDateLocal: z.string().nullable(),
+})
+
+/** List rows additionally carry the joined product display name. */
+const availabilitySlotListRowSchema = availabilitySlotSchema.extend({
+  productName: z.string().nullable().optional(),
+})
+
+/**
+ * The overview's `constrainedSlots` are raw `$inferSelect` rows + the joined
+ * `productName` — they do NOT pass through `withSlotEndDateLocal`, so they have
+ * no `endDateLocal`.
+ */
+const constrainedSlotRowSchema = availabilitySlotBaseSchema.extend({
+  productName: z.string().nullable(),
+})
+
+const slotUnitAvailabilitySchema = z.object({
+  optionUnitId: z.string(),
+  unitName: z.string(),
+  occupancyMax: z.number().int().nullable(),
+  initial: z.number().int().nullable(),
+  reserved: z.number().int(),
+  remaining: z.number().int().nullable(),
+})
+
+const availabilityCloseoutSchema = z.object({
+  id: idSchema,
+  productId: z.string(),
+  slotId: z.string().nullable(),
+  dateLocal: z.string(),
+  reason: z.string().nullable(),
+  createdBy: z.string().nullable(),
+  createdAt: z.string(),
+})
+
+const availabilityAggregatesSchema = z.object({
+  total: z.number().int(),
+  countsByStatus: z.array(
+    z.object({ status: availabilitySlotStatusSchema, count: z.number().int() }),
+  ),
+  upcomingSlots: z.number().int(),
+  upcomingPax: z.number().int(),
+  monthlyDepartures: z.array(z.object({ yearMonth: z.string(), count: z.number().int() })),
+})
+
+const availabilityOverviewSchema = z.object({
+  openSlotsCount: z.number().int(),
+  constrainedSlotsCount: z.number().int(),
+  activeRulesCount: z.number().int(),
+  activePickupPointsCount: z.number().int(),
+  productsWithoutUpcomingDeparturesCount: z.number().int(),
+  productsWithoutUpcomingDepartures: z.array(z.object({ id: idSchema, name: z.string() })),
+  constrainedSlots: z.array(constrainedSlotRowSchema),
+})
+
+// --- dashboard read-models --------------------------------------------------
+
+const getAggregatesRoute = createRoute({
+  method: "get",
+  path: "/aggregates",
+  description:
+    "Dashboard KPI aggregates over availability slots, served from a read-through " +
+    "TTL snapshot (#1629). The optional `from`/`to` ISO-datetime query window is " +
+    "anchored on each slot's `startsAt`.",
+  request: { query: availabilityAggregatesQuerySchema },
+  responses: {
+    200: {
+      description: "Availability dashboard aggregates",
+      content: { "application/json": { schema: z.object({ data: availabilityAggregatesSchema }) } },
+    },
+  },
+})
+
+const getOverviewRoute = createRoute({
+  method: "get",
+  path: "/overview",
+  description:
+    "Availability operations overview — open / constrained slot counts, active " +
+    "rule and pickup-point counts, products lacking upcoming departures, and the " +
+    "next constrained slots needing attention (`attentionLimit`, default 4).",
+  request: { query: availabilityOverviewQuerySchema },
+  responses: {
+    200: {
+      description: "Availability overview read-model",
+      content: { "application/json": { schema: z.object({ data: availabilityOverviewSchema }) } },
+    },
+  },
+})
+
+const dashboardRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(getAggregatesRoute, async (c) => {
+    const query = c.req.valid("query")
     cacheDashboardAggregates(c)
     const snapshot = await readThroughAggregateSnapshot(c.get("db"), {
       key: aggregateSnapshotKey("availability", "aggregates", query),
       ttlSeconds: DASHBOARD_AGGREGATES_TTL_SECONDS,
       compute: () => availabilityService.getAvailabilityAggregates(c.get("db"), query),
     })
-    return c.json({ data: snapshot.data })
+    return c.json({ data: snapshot.data }, 200)
   })
-  .get("/overview", async (c) => {
-    const query = await parseQuery(c, availabilityOverviewQuerySchema)
-    return c.json({
-      data: await availabilityService.getAvailabilityOverview(c.get("db"), query),
-    })
-  })
-  .get("/rules", async (c) => {
-    const query = await parseQuery(c, availabilityRuleListQuerySchema)
-    return c.json(await availabilityService.listRules(c.get("db"), query))
-  })
-  .post("/rules", async (c) =>
+  .openapi(getOverviewRoute, async (c) =>
     c.json(
       {
-        data: await availabilityService.createRule(
-          c.get("db"),
-          await parseJsonBody(c, insertAvailabilityRuleSchema),
-        ),
+        data: await availabilityService.getAvailabilityOverview(c.get("db"), c.req.valid("query")),
       },
-      201,
+      200,
     ),
   )
-  .post("/rules/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateAvailabilityRuleSchema)
+
+// --- recurrence rules -------------------------------------------------------
+
+const listRulesRoute = createRoute({
+  method: "get",
+  path: "/rules",
+  request: { query: availabilityRuleListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated availability recurrence rules",
+      content: {
+        "application/json": { schema: listResponseSchema(availabilityRuleListRowSchema) },
+      },
+    },
+  },
+})
+
+const createRuleRoute = createRoute({
+  method: "post",
+  path: "/rules",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertAvailabilityRuleSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created availability rule",
+      content: { "application/json": { schema: z.object({ data: availabilityRuleSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchUpdateRulesRoute = createRoute({
+  method: "post",
+  path: "/rules/batch-update",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: batchUpdateAvailabilityRuleSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-update results (missing ids reported under `failed`)",
+      content: {
+        "application/json": { schema: batchUpdateResponseSchema(availabilityRuleSchema) },
+      },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchDeleteRulesRoute = createRoute({
+  method: "post",
+  path: "/rules/batch-delete",
+  request: {
+    body: { required: true, content: { "application/json": { schema: batchIdsSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-delete results (missing ids reported under `failed`)",
+      content: { "application/json": { schema: batchDeleteResponseSchema } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getRuleRoute = createRoute({
+  method: "get",
+  path: "/rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "An availability rule by id",
+      content: { "application/json": { schema: z.object({ data: availabilityRuleSchema }) } },
+    },
+    404: {
+      description: "Availability rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateRuleRoute = createRoute({
+  method: "patch",
+  path: "/rules/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateAvailabilityRuleSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated availability rule",
+      content: { "application/json": { schema: z.object({ data: availabilityRuleSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Availability rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteRuleRoute = createRoute({
+  method: "delete",
+  path: "/rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Availability rule deleted",
+      content: { "application/json": { schema: successResponseSchema } },
+    },
+    404: {
+      description: "Availability rule not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const ruleRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listRulesRoute, async (c) =>
+    c.json(await availabilityService.listRules(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createRuleRoute, async (c) => {
+    // Insert always returns the created row (`returning()` over one VALUES row).
+    const row = await availabilityService.createRule(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
+  })
+  .openapi(batchUpdateRulesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -95,51 +448,185 @@ export const availabilityCoreRoutes = new Hono<Env>()
         patch: body.patch,
         update: availabilityService.updateRule,
       }),
+      200,
     )
   })
-  .post("/rules/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteRulesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: availabilityService.deleteRule,
       }),
+      200,
     )
   })
-  .get("/rules/:id", async (c) => {
-    const row = await availabilityService.getRuleById(c.get("db"), c.req.param("id"))
-    return row ? c.json({ data: row }) : notFound(c, "Availability rule not found")
+  .openapi(getRuleRoute, async (c) => {
+    const row = await availabilityService.getRuleById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Availability rule not found" }, 404)
   })
-  .patch("/rules/:id", async (c) => {
+  .openapi(updateRuleRoute, async (c) => {
     const row = await availabilityService.updateRule(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateAvailabilityRuleSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    return row ? c.json({ data: row }) : notFound(c, "Availability rule not found")
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Availability rule not found" }, 404)
   })
-  .delete("/rules/:id", async (c) => {
-    const row = await availabilityService.deleteRule(c.get("db"), c.req.param("id"))
-    return row ? c.json({ success: true }) : notFound(c, "Availability rule not found")
+  .openapi(deleteRuleRoute, async (c) => {
+    const row = await availabilityService.deleteRule(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Availability rule not found" }, 404)
   })
-  .get("/start-times", async (c) => {
-    const query = await parseQuery(c, availabilityStartTimeListQuerySchema)
-    return c.json(await availabilityService.listStartTimes(c.get("db"), query))
-  })
-  .post("/start-times", async (c) =>
-    c.json(
-      {
-        data: await availabilityService.createStartTime(
-          c.get("db"),
-          await parseJsonBody(c, insertAvailabilityStartTimeSchema),
-        ),
+
+// --- start times ------------------------------------------------------------
+
+const listStartTimesRoute = createRoute({
+  method: "get",
+  path: "/start-times",
+  request: { query: availabilityStartTimeListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated availability start times",
+      content: {
+        "application/json": { schema: listResponseSchema(availabilityStartTimeListRowSchema) },
       },
-      201,
-    ),
+    },
+  },
+})
+
+const createStartTimeRoute = createRoute({
+  method: "post",
+  path: "/start-times",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertAvailabilityStartTimeSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created start time",
+      content: { "application/json": { schema: z.object({ data: availabilityStartTimeSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchUpdateStartTimesRoute = createRoute({
+  method: "post",
+  path: "/start-times/batch-update",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: batchUpdateAvailabilityStartTimeSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-update results (missing ids reported under `failed`)",
+      content: {
+        "application/json": { schema: batchUpdateResponseSchema(availabilityStartTimeSchema) },
+      },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchDeleteStartTimesRoute = createRoute({
+  method: "post",
+  path: "/start-times/batch-delete",
+  request: {
+    body: { required: true, content: { "application/json": { schema: batchIdsSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-delete results (missing ids reported under `failed`)",
+      content: { "application/json": { schema: batchDeleteResponseSchema } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getStartTimeRoute = createRoute({
+  method: "get",
+  path: "/start-times/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A start time by id",
+      content: { "application/json": { schema: z.object({ data: availabilityStartTimeSchema }) } },
+    },
+    404: {
+      description: "Availability start time not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateStartTimeRoute = createRoute({
+  method: "patch",
+  path: "/start-times/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateAvailabilityStartTimeSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated start time",
+      content: { "application/json": { schema: z.object({ data: availabilityStartTimeSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Availability start time not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteStartTimeRoute = createRoute({
+  method: "delete",
+  path: "/start-times/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Start time deleted",
+      content: { "application/json": { schema: successResponseSchema } },
+    },
+    404: {
+      description: "Availability start time not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const startTimeRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listStartTimesRoute, async (c) =>
+    c.json(await availabilityService.listStartTimes(c.get("db"), c.req.valid("query")), 200),
   )
-  .post("/start-times/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateAvailabilityStartTimeSchema)
+  .openapi(createStartTimeRoute, async (c) => {
+    const row = await availabilityService.createStartTime(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
+  })
+  .openapi(batchUpdateStartTimesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -147,52 +634,209 @@ export const availabilityCoreRoutes = new Hono<Env>()
         patch: body.patch,
         update: availabilityService.updateStartTime,
       }),
+      200,
     )
   })
-  .post("/start-times/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteStartTimesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: availabilityService.deleteStartTime,
       }),
+      200,
     )
   })
-  .get("/start-times/:id", async (c) => {
-    const row = await availabilityService.getStartTimeById(c.get("db"), c.req.param("id"))
-    return row ? c.json({ data: row }) : notFound(c, "Availability start time not found")
+  .openapi(getStartTimeRoute, async (c) => {
+    const row = await availabilityService.getStartTimeById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Availability start time not found" }, 404)
   })
-  .patch("/start-times/:id", async (c) => {
+  .openapi(updateStartTimeRoute, async (c) => {
     const row = await availabilityService.updateStartTime(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateAvailabilityStartTimeSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    return row ? c.json({ data: row }) : notFound(c, "Availability start time not found")
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Availability start time not found" }, 404)
   })
-  .delete("/start-times/:id", async (c) => {
-    const row = await availabilityService.deleteStartTime(c.get("db"), c.req.param("id"))
-    return row ? c.json({ success: true }) : notFound(c, "Availability start time not found")
+  .openapi(deleteStartTimeRoute, async (c) => {
+    const row = await availabilityService.deleteStartTime(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Availability start time not found" }, 404)
   })
-  .get("/slots", async (c) => {
-    const query = await parseQuery(c, availabilitySlotListQuerySchema)
-    return c.json(await availabilityService.listSlots(c.get("db"), query))
-  })
-  .post("/slots", async (c) =>
-    c.json(
-      {
-        data: await availabilityService.createSlot(
-          c.get("db"),
-          await parseJsonBody(c, insertAvailabilitySlotSchema),
-          { eventBus: c.get("eventBus") },
-        ),
+
+// --- slots ------------------------------------------------------------------
+
+const listSlotsRoute = createRoute({
+  method: "get",
+  path: "/slots",
+  request: { query: availabilitySlotListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated availability slots (departures)",
+      content: {
+        "application/json": { schema: listResponseSchema(availabilitySlotListRowSchema) },
       },
-      201,
-    ),
+    },
+  },
+})
+
+const createSlotRoute = createRoute({
+  method: "post",
+  path: "/slots",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertAvailabilitySlotSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created slot",
+      content: { "application/json": { schema: z.object({ data: availabilitySlotSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchUpdateSlotsRoute = createRoute({
+  method: "post",
+  path: "/slots/batch-update",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: batchUpdateAvailabilitySlotSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-update results (missing ids reported under `failed`)",
+      content: {
+        "application/json": { schema: batchUpdateResponseSchema(availabilitySlotSchema) },
+      },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchDeleteSlotsRoute = createRoute({
+  method: "post",
+  path: "/slots/batch-delete",
+  request: {
+    body: { required: true, content: { "application/json": { schema: batchIdsSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-delete results (missing ids reported under `failed`)",
+      content: { "application/json": { schema: batchDeleteResponseSchema } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getSlotRoute = createRoute({
+  method: "get",
+  path: "/slots/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A slot by id",
+      content: { "application/json": { schema: z.object({ data: availabilitySlotSchema }) } },
+    },
+    404: {
+      description: "Availability slot not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getSlotUnitAvailabilityRoute = createRoute({
+  method: "get",
+  path: "/slots/{id}/unit-availability",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Per-option-unit availability for the slot",
+      content: {
+        "application/json": { schema: z.object({ data: z.array(slotUnitAvailabilitySchema) }) },
+      },
+    },
+    404: {
+      description: "Availability slot not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateSlotRoute = createRoute({
+  method: "patch",
+  path: "/slots/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateAvailabilitySlotSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated slot",
+      content: { "application/json": { schema: z.object({ data: availabilitySlotSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Availability slot not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteSlotRoute = createRoute({
+  method: "delete",
+  path: "/slots/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Slot deleted",
+      content: { "application/json": { schema: successResponseSchema } },
+    },
+    404: {
+      description: "Availability slot not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const slotRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listSlotsRoute, async (c) =>
+    c.json(await availabilityService.listSlots(c.get("db"), c.req.valid("query")), 200),
   )
-  .post("/slots/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateAvailabilitySlotSchema)
+  .openapi(createSlotRoute, async (c) => {
+    const row = await availabilityService.createSlot(c.get("db"), c.req.valid("json"), {
+      eventBus: c.get("eventBus"),
+    })
+    return c.json({ data: row! }, 201)
+  })
+  .openapi(batchUpdateSlotsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -200,58 +844,203 @@ export const availabilityCoreRoutes = new Hono<Env>()
         patch: body.patch,
         update: availabilityService.updateSlot,
       }),
+      200,
     )
   })
-  .post("/slots/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteSlotsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: availabilityService.deleteSlot,
       }),
+      200,
     )
   })
-  .get("/slots/:id", async (c) => {
-    const row = await availabilityService.getSlotById(c.get("db"), c.req.param("id"))
-    return row ? c.json({ data: row }) : notFound(c, "Availability slot not found")
+  .openapi(getSlotRoute, async (c) => {
+    const row = await availabilityService.getSlotById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Availability slot not found" }, 404)
   })
-  .get("/slots/:id/unit-availability", async (c) => {
-    const rows = await availabilityService.getSlotUnitAvailability(c.get("db"), c.req.param("id"))
-    return rows ? c.json({ data: rows }) : notFound(c, "Availability slot not found")
+  .openapi(getSlotUnitAvailabilityRoute, async (c) => {
+    const rows = await availabilityService.getSlotUnitAvailability(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    return rows
+      ? c.json({ data: rows }, 200)
+      : c.json({ error: "Availability slot not found" }, 404)
   })
-  .patch("/slots/:id", async (c) => {
+  .openapi(updateSlotRoute, async (c) => {
     const row = await availabilityService.updateSlot(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateAvailabilitySlotSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
       { eventBus: c.get("eventBus"), source: "manual" },
     )
-    return row ? c.json({ data: row }) : notFound(c, "Availability slot not found")
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Availability slot not found" }, 404)
   })
-  .delete("/slots/:id", async (c) => {
-    const row = await availabilityService.deleteSlot(c.get("db"), c.req.param("id"), {
+  .openapi(deleteSlotRoute, async (c) => {
+    const row = await availabilityService.deleteSlot(c.get("db"), c.req.valid("param").id, {
       eventBus: c.get("eventBus"),
     })
-    return row ? c.json({ success: true }) : notFound(c, "Availability slot not found")
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Availability slot not found" }, 404)
   })
-  .get("/closeouts", async (c) => {
-    const query = await parseQuery(c, availabilityCloseoutListQuerySchema)
-    return c.json(await availabilityService.listCloseouts(c.get("db"), query))
-  })
-  .post("/closeouts", async (c) =>
-    c.json(
-      {
-        data: await availabilityService.createCloseout(
-          c.get("db"),
-          await parseJsonBody(c, insertAvailabilityCloseoutSchema),
-        ),
+
+// --- closeouts --------------------------------------------------------------
+
+const listCloseoutsRoute = createRoute({
+  method: "get",
+  path: "/closeouts",
+  request: { query: availabilityCloseoutListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated availability closeouts",
+      content: {
+        // `listCloseouts` left-joins `products` for the display name, so list
+        // rows carry a `productName` the single-closeout schema omits.
+        "application/json": {
+          schema: listResponseSchema(
+            availabilityCloseoutSchema.extend({ productName: z.string().nullable() }),
+          ),
+        },
       },
-      201,
-    ),
+    },
+  },
+})
+
+const createCloseoutRoute = createRoute({
+  method: "post",
+  path: "/closeouts",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertAvailabilityCloseoutSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created closeout",
+      content: { "application/json": { schema: z.object({ data: availabilityCloseoutSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchUpdateCloseoutsRoute = createRoute({
+  method: "post",
+  path: "/closeouts/batch-update",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: batchUpdateAvailabilityCloseoutSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-update results (missing ids reported under `failed`)",
+      content: {
+        "application/json": { schema: batchUpdateResponseSchema(availabilityCloseoutSchema) },
+      },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const batchDeleteCloseoutsRoute = createRoute({
+  method: "post",
+  path: "/closeouts/batch-delete",
+  request: {
+    body: { required: true, content: { "application/json": { schema: batchIdsSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Per-id batch-delete results (missing ids reported under `failed`)",
+      content: { "application/json": { schema: batchDeleteResponseSchema } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const getCloseoutRoute = createRoute({
+  method: "get",
+  path: "/closeouts/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A closeout by id",
+      content: { "application/json": { schema: z.object({ data: availabilityCloseoutSchema }) } },
+    },
+    404: {
+      description: "Availability closeout not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const updateCloseoutRoute = createRoute({
+  method: "patch",
+  path: "/closeouts/{id}",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateAvailabilityCloseoutSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated closeout",
+      content: { "application/json": { schema: z.object({ data: availabilityCloseoutSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Availability closeout not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const deleteCloseoutRoute = createRoute({
+  method: "delete",
+  path: "/closeouts/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Closeout deleted",
+      content: { "application/json": { schema: successResponseSchema } },
+    },
+    404: {
+      description: "Availability closeout not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const closeoutRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listCloseoutsRoute, async (c) =>
+    c.json(await availabilityService.listCloseouts(c.get("db"), c.req.valid("query")), 200),
   )
-  .post("/closeouts/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateAvailabilityCloseoutSchema)
+  .openapi(createCloseoutRoute, async (c) => {
+    const row = await availabilityService.createCloseout(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
+  })
+  .openapi(batchUpdateCloseoutsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -259,31 +1048,53 @@ export const availabilityCoreRoutes = new Hono<Env>()
         patch: body.patch,
         update: availabilityService.updateCloseout,
       }),
+      200,
     )
   })
-  .post("/closeouts/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteCloseoutsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: availabilityService.deleteCloseout,
       }),
+      200,
     )
   })
-  .get("/closeouts/:id", async (c) => {
-    const row = await availabilityService.getCloseoutById(c.get("db"), c.req.param("id"))
-    return row ? c.json({ data: row }) : notFound(c, "Availability closeout not found")
+  .openapi(getCloseoutRoute, async (c) => {
+    const row = await availabilityService.getCloseoutById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Availability closeout not found" }, 404)
   })
-  .patch("/closeouts/:id", async (c) => {
+  .openapi(updateCloseoutRoute, async (c) => {
     const row = await availabilityService.updateCloseout(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateAvailabilityCloseoutSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    return row ? c.json({ data: row }) : notFound(c, "Availability closeout not found")
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Availability closeout not found" }, 404)
   })
-  .delete("/closeouts/:id", async (c) => {
-    const row = await availabilityService.deleteCloseout(c.get("db"), c.req.param("id"))
-    return row ? c.json({ success: true }) : notFound(c, "Availability closeout not found")
+  .openapi(deleteCloseoutRoute, async (c) => {
+    const row = await availabilityService.deleteCloseout(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Availability closeout not found" }, 404)
   })
+
+/**
+ * Compose the per-resource sub-chains onto a single `OpenAPIHono` so the
+ * `.openapi()` operations propagate up through the parent availability
+ * registries (`OpenAPIHono.route` copies the sub-app's registered routes).
+ */
+export const availabilityCoreRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
+  .route("/", dashboardRoutes)
+  .route("/", ruleRoutes)
+  .route("/", startTimeRoutes)
+  .route("/", slotRoutes)
+  .route("/", closeoutRoutes)

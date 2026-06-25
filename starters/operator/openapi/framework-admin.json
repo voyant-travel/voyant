@@ -6197,6 +6197,5125 @@
         }
       }
     },
+    "/v1/admin/operations/availability/aggregates": {
+      "get": {
+        "description": "Dashboard KPI aggregates over availability slots, served from a read-through TTL snapshot (#1629). The optional `from`/`to` ISO-datetime query window is anchored on each slot's `startsAt`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability dashboard aggregates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "countsByStatus": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "open",
+                                  "closed",
+                                  "sold_out",
+                                  "cancelled"
+                                ]
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "status",
+                              "count"
+                            ]
+                          }
+                        },
+                        "upcomingSlots": {
+                          "type": "integer"
+                        },
+                        "upcomingPax": {
+                          "type": "integer"
+                        },
+                        "monthlyDepartures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "yearMonth": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "yearMonth",
+                              "count"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "countsByStatus",
+                        "upcomingSlots",
+                        "upcomingPax",
+                        "monthlyDepartures"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/overview": {
+      "get": {
+        "description": "Availability operations overview — open / constrained slot counts, active rule and pickup-point counts, products lacking upcoming departures, and the next constrained slots needing attention (`attentionLimit`, default 4).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 4
+            },
+            "required": false,
+            "name": "attentionLimit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability overview read-model",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "openSlotsCount": {
+                          "type": "integer"
+                        },
+                        "constrainedSlotsCount": {
+                          "type": "integer"
+                        },
+                        "activeRulesCount": {
+                          "type": "integer"
+                        },
+                        "activePickupPointsCount": {
+                          "type": "integer"
+                        },
+                        "productsWithoutUpcomingDeparturesCount": {
+                          "type": "integer"
+                        },
+                        "productsWithoutUpcomingDepartures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          }
+                        },
+                        "constrainedSlots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "productId": {
+                                "type": "string"
+                              },
+                              "itineraryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "optionId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "facilityId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "availabilityRuleId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "startTimeId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "dateLocal": {
+                                "type": "string"
+                              },
+                              "startsAt": {
+                                "type": "string"
+                              },
+                              "endsAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "timezone": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "open",
+                                  "closed",
+                                  "sold_out",
+                                  "cancelled"
+                                ]
+                              },
+                              "unlimited": {
+                                "type": "boolean"
+                              },
+                              "initialPax": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "remainingPax": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "initialPickups": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "remainingPickups": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "remainingResources": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "pastCutoff": {
+                                "type": "boolean"
+                              },
+                              "tooEarly": {
+                                "type": "boolean"
+                              },
+                              "nights": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              },
+                              "productName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "productId",
+                              "itineraryId",
+                              "optionId",
+                              "facilityId",
+                              "availabilityRuleId",
+                              "startTimeId",
+                              "dateLocal",
+                              "startsAt",
+                              "endsAt",
+                              "timezone",
+                              "status",
+                              "unlimited",
+                              "initialPax",
+                              "remainingPax",
+                              "initialPickups",
+                              "remainingPickups",
+                              "remainingResources",
+                              "pastCutoff",
+                              "tooEarly",
+                              "nights",
+                              "days",
+                              "notes",
+                              "createdAt",
+                              "updatedAt",
+                              "productName"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "openSlotsCount",
+                        "constrainedSlotsCount",
+                        "activeRulesCount",
+                        "activePickupPointsCount",
+                        "productsWithoutUpcomingDeparturesCount",
+                        "productsWithoutUpcomingDepartures",
+                        "constrainedSlots"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/rules": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "facilityId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated availability recurrence rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "recurrenceRule": {
+                            "type": "string"
+                          },
+                          "maxCapacity": {
+                            "type": "integer"
+                          },
+                          "maxPickupCapacity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "minTotalPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "cutoffMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "earlyBookingLimitMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "optionId",
+                          "facilityId",
+                          "timezone",
+                          "recurrenceRule",
+                          "maxCapacity",
+                          "maxPickupCapacity",
+                          "minTotalPax",
+                          "cutoffMinutes",
+                          "earlyBookingLimitMinutes",
+                          "active",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "recurrenceRule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "maxCapacity": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "maxPickupCapacity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "minTotalPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "cutoffMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "earlyBookingLimitMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": [
+                  "productId",
+                  "timezone",
+                  "recurrenceRule",
+                  "maxCapacity"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created availability rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "recurrenceRule": {
+                          "type": "string"
+                        },
+                        "maxCapacity": {
+                          "type": "integer"
+                        },
+                        "maxPickupCapacity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "minTotalPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "cutoffMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "earlyBookingLimitMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "timezone",
+                        "recurrenceRule",
+                        "maxCapacity",
+                        "maxPickupCapacity",
+                        "minTotalPax",
+                        "cutoffMinutes",
+                        "earlyBookingLimitMinutes",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/rules/batch-update": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "patch": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string"
+                      },
+                      "optionId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "facilityId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "recurrenceRule": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "maxCapacity": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "maxPickupCapacity": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "minTotalPax": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "cutoffMinutes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "earlyBookingLimitMinutes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "active": {
+                        "type": "boolean",
+                        "default": true
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "ids",
+                  "patch"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-update results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "recurrenceRule": {
+                            "type": "string"
+                          },
+                          "maxCapacity": {
+                            "type": "integer"
+                          },
+                          "maxPickupCapacity": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "minTotalPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "cutoffMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "earlyBookingLimitMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "optionId",
+                          "facilityId",
+                          "timezone",
+                          "recurrenceRule",
+                          "maxCapacity",
+                          "maxPickupCapacity",
+                          "minTotalPax",
+                          "cutoffMinutes",
+                          "earlyBookingLimitMinutes",
+                          "active",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/rules/batch-delete": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-delete results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deletedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "deletedIds",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/rules/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An availability rule by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "recurrenceRule": {
+                          "type": "string"
+                        },
+                        "maxCapacity": {
+                          "type": "integer"
+                        },
+                        "maxPickupCapacity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "minTotalPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "cutoffMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "earlyBookingLimitMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "timezone",
+                        "recurrenceRule",
+                        "maxCapacity",
+                        "maxPickupCapacity",
+                        "minTotalPax",
+                        "cutoffMinutes",
+                        "earlyBookingLimitMinutes",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "recurrenceRule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "maxCapacity": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "maxPickupCapacity": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "minTotalPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "cutoffMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "earlyBookingLimitMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated availability rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "recurrenceRule": {
+                          "type": "string"
+                        },
+                        "maxCapacity": {
+                          "type": "integer"
+                        },
+                        "maxPickupCapacity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "minTotalPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "cutoffMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "earlyBookingLimitMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "timezone",
+                        "recurrenceRule",
+                        "maxCapacity",
+                        "maxPickupCapacity",
+                        "minTotalPax",
+                        "cutoffMinutes",
+                        "earlyBookingLimitMinutes",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability rule deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/start-times": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "facilityId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated availability start times",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "label": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "startTimeLocal": {
+                            "type": "string"
+                          },
+                          "durationMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "optionId",
+                          "facilityId",
+                          "label",
+                          "startTimeLocal",
+                          "durationMinutes",
+                          "sortOrder",
+                          "active",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "label": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "startTimeLocal": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "durationMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": [
+                  "productId",
+                  "startTimeLocal"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created start time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeLocal": {
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "label",
+                        "startTimeLocal",
+                        "durationMinutes",
+                        "sortOrder",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/start-times/batch-update": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "patch": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string"
+                      },
+                      "optionId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "facilityId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "label": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "startTimeLocal": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "durationMinutes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "sortOrder": {
+                        "type": "integer",
+                        "default": 0
+                      },
+                      "active": {
+                        "type": "boolean",
+                        "default": true
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "ids",
+                  "patch"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-update results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "label": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "startTimeLocal": {
+                            "type": "string"
+                          },
+                          "durationMinutes": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "optionId",
+                          "facilityId",
+                          "label",
+                          "startTimeLocal",
+                          "durationMinutes",
+                          "sortOrder",
+                          "active",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/start-times/batch-delete": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-delete results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deletedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "deletedIds",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/start-times/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A start time by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeLocal": {
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "label",
+                        "startTimeLocal",
+                        "durationMinutes",
+                        "sortOrder",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability start time not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "label": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "startTimeLocal": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "durationMinutes": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated start time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeLocal": {
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "sortOrder": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "optionId",
+                        "facilityId",
+                        "label",
+                        "startTimeLocal",
+                        "durationMinutes",
+                        "sortOrder",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability start time not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Start time deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability start time not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/slots": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "itineraryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "optionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "facilityId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "availabilityRuleId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "startTimeId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "dateLocal",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "startsAtFrom",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "sold_out",
+                "cancelled"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated availability slots (departures)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "itineraryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "availabilityRuleId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "startTimeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string"
+                          },
+                          "endsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "open",
+                              "closed",
+                              "sold_out",
+                              "cancelled"
+                            ]
+                          },
+                          "unlimited": {
+                            "type": "boolean"
+                          },
+                          "initialPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "initialPickups": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingPickups": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingResources": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "pastCutoff": {
+                            "type": "boolean"
+                          },
+                          "tooEarly": {
+                            "type": "boolean"
+                          },
+                          "nights": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "days": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "endDateLocal": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "productName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "itineraryId",
+                          "optionId",
+                          "facilityId",
+                          "availabilityRuleId",
+                          "startTimeId",
+                          "dateLocal",
+                          "startsAt",
+                          "endsAt",
+                          "timezone",
+                          "status",
+                          "unlimited",
+                          "initialPax",
+                          "remainingPax",
+                          "initialPickups",
+                          "remainingPickups",
+                          "remainingResources",
+                          "pastCutoff",
+                          "tooEarly",
+                          "nights",
+                          "days",
+                          "notes",
+                          "createdAt",
+                          "updatedAt",
+                          "endDateLocal"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "itineraryId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "availabilityRuleId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "startTimeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dateLocal": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "closed",
+                      "sold_out",
+                      "cancelled"
+                    ],
+                    "default": "open"
+                  },
+                  "unlimited": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "initialPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "initialPickups": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingPickups": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingResources": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "pastCutoff": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "tooEarly": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "nights": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "days": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "productId",
+                  "dateLocal",
+                  "startsAt",
+                  "timezone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "itineraryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "availabilityRuleId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "startsAt": {
+                          "type": "string"
+                        },
+                        "endsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "open",
+                            "closed",
+                            "sold_out",
+                            "cancelled"
+                          ]
+                        },
+                        "unlimited": {
+                          "type": "boolean"
+                        },
+                        "initialPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "initialPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingResources": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "pastCutoff": {
+                          "type": "boolean"
+                        },
+                        "tooEarly": {
+                          "type": "boolean"
+                        },
+                        "nights": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "days": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "endDateLocal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "itineraryId",
+                        "optionId",
+                        "facilityId",
+                        "availabilityRuleId",
+                        "startTimeId",
+                        "dateLocal",
+                        "startsAt",
+                        "endsAt",
+                        "timezone",
+                        "status",
+                        "unlimited",
+                        "initialPax",
+                        "remainingPax",
+                        "initialPickups",
+                        "remainingPickups",
+                        "remainingResources",
+                        "pastCutoff",
+                        "tooEarly",
+                        "nights",
+                        "days",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "endDateLocal"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/slots/batch-update": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "patch": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string"
+                      },
+                      "itineraryId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "optionId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "facilityId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "availabilityRuleId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "startTimeId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "dateLocal": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "endsAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "open",
+                          "closed",
+                          "sold_out",
+                          "cancelled"
+                        ],
+                        "default": "open"
+                      },
+                      "unlimited": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "initialPax": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "remainingPax": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "initialPickups": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "remainingPickups": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "remainingResources": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "pastCutoff": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "tooEarly": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "nights": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "days": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "ids",
+                  "patch"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-update results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "itineraryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "optionId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "facilityId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "availabilityRuleId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "startTimeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string"
+                          },
+                          "endsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "open",
+                              "closed",
+                              "sold_out",
+                              "cancelled"
+                            ]
+                          },
+                          "unlimited": {
+                            "type": "boolean"
+                          },
+                          "initialPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingPax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "initialPickups": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingPickups": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "remainingResources": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "pastCutoff": {
+                            "type": "boolean"
+                          },
+                          "tooEarly": {
+                            "type": "boolean"
+                          },
+                          "nights": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "days": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "notes": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "endDateLocal": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "itineraryId",
+                          "optionId",
+                          "facilityId",
+                          "availabilityRuleId",
+                          "startTimeId",
+                          "dateLocal",
+                          "startsAt",
+                          "endsAt",
+                          "timezone",
+                          "status",
+                          "unlimited",
+                          "initialPax",
+                          "remainingPax",
+                          "initialPickups",
+                          "remainingPickups",
+                          "remainingResources",
+                          "pastCutoff",
+                          "tooEarly",
+                          "nights",
+                          "days",
+                          "notes",
+                          "createdAt",
+                          "updatedAt",
+                          "endDateLocal"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/slots/batch-delete": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-delete results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deletedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "deletedIds",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/slots/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A slot by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "itineraryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "availabilityRuleId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "startsAt": {
+                          "type": "string"
+                        },
+                        "endsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "open",
+                            "closed",
+                            "sold_out",
+                            "cancelled"
+                          ]
+                        },
+                        "unlimited": {
+                          "type": "boolean"
+                        },
+                        "initialPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "initialPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingResources": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "pastCutoff": {
+                          "type": "boolean"
+                        },
+                        "tooEarly": {
+                          "type": "boolean"
+                        },
+                        "nights": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "days": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "endDateLocal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "itineraryId",
+                        "optionId",
+                        "facilityId",
+                        "availabilityRuleId",
+                        "startTimeId",
+                        "dateLocal",
+                        "startsAt",
+                        "endsAt",
+                        "timezone",
+                        "status",
+                        "unlimited",
+                        "initialPax",
+                        "remainingPax",
+                        "initialPickups",
+                        "remainingPickups",
+                        "remainingResources",
+                        "pastCutoff",
+                        "tooEarly",
+                        "nights",
+                        "days",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "endDateLocal"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability slot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "itineraryId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "optionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "facilityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "availabilityRuleId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "startTimeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dateLocal": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "closed",
+                      "sold_out",
+                      "cancelled"
+                    ],
+                    "default": "open"
+                  },
+                  "unlimited": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "initialPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingPax": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "initialPickups": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingPickups": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "remainingResources": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "pastCutoff": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "tooEarly": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "nights": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "days": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "itineraryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "facilityId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "availabilityRuleId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startTimeId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "startsAt": {
+                          "type": "string"
+                        },
+                        "endsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "open",
+                            "closed",
+                            "sold_out",
+                            "cancelled"
+                          ]
+                        },
+                        "unlimited": {
+                          "type": "boolean"
+                        },
+                        "initialPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPax": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "initialPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingPickups": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "remainingResources": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "pastCutoff": {
+                          "type": "boolean"
+                        },
+                        "tooEarly": {
+                          "type": "boolean"
+                        },
+                        "nights": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "days": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "endDateLocal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "itineraryId",
+                        "optionId",
+                        "facilityId",
+                        "availabilityRuleId",
+                        "startTimeId",
+                        "dateLocal",
+                        "startsAt",
+                        "endsAt",
+                        "timezone",
+                        "status",
+                        "unlimited",
+                        "initialPax",
+                        "remainingPax",
+                        "initialPickups",
+                        "remainingPickups",
+                        "remainingResources",
+                        "pastCutoff",
+                        "tooEarly",
+                        "nights",
+                        "days",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "endDateLocal"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability slot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Slot deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability slot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/slots/{id}/unit-availability": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-option-unit availability for the slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "optionUnitId": {
+                            "type": "string"
+                          },
+                          "unitName": {
+                            "type": "string"
+                          },
+                          "occupancyMax": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "initial": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "reserved": {
+                            "type": "integer"
+                          },
+                          "remaining": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "optionUnitId",
+                          "unitName",
+                          "occupancyMax",
+                          "initial",
+                          "reserved",
+                          "remaining"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability slot not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/closeouts": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "productId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "slotId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "dateLocal",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated availability closeouts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "slotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "slotId",
+                          "dateLocal",
+                          "reason",
+                          "createdBy",
+                          "createdAt",
+                          "productName"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "limit",
+                    "offset"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "slotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dateLocal": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "productId",
+                  "dateLocal"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created closeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "slotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdBy": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "slotId",
+                        "dateLocal",
+                        "reason",
+                        "createdBy",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/closeouts/batch-update": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "patch": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string"
+                      },
+                      "slotId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "dateLocal": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "reason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "createdBy": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "ids",
+                  "patch"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-update results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productId": {
+                            "type": "string"
+                          },
+                          "slotId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productId",
+                          "slotId",
+                          "dateLocal",
+                          "reason",
+                          "createdBy",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/closeouts/batch-delete": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-id batch-delete results (missing ids reported under `failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deletedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "succeeded": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "deletedIds",
+                    "total",
+                    "succeeded",
+                    "failed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/operations/availability/closeouts/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A closeout by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "slotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdBy": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "slotId",
+                        "dateLocal",
+                        "reason",
+                        "createdBy",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability closeout not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "slotId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dateLocal": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated closeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productId": {
+                          "type": "string"
+                        },
+                        "slotId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "dateLocal": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdBy": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productId",
+                        "slotId",
+                        "dateLocal",
+                        "reason",
+                        "createdBy",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability closeout not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Closeout deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Availability closeout not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/suppliers/{id}/contact-points": {
       "get": {
         "parameters": [
