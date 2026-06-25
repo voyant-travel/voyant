@@ -1,8 +1,9 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -49,12 +50,17 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
 }
 
 export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}): HonoModule {
-  const legalAdminRoutes = new Hono()
+  // Parents are `OpenAPIHono` so the contracts sub-chains' `.openapi()`
+  // operations propagate up into the framework/operator OpenAPI registries
+  // (voyant#2114). The still-plain-Hono policies/terms children mount cleanly on
+  // an `OpenAPIHono` parent and keep working at runtime; they convert in a later
+  // batch. The shared `openApiValidationHook` is the `defaultHook`.
+  const legalAdminRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
     .route("/contracts", createContractsAdminRoutes(options))
     .route("/policies", policiesAdminRoutes)
     .route("/terms", legalTermsAdminRoutes)
 
-  const legalPublicRoutes = new Hono()
+  const legalPublicRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
     .route("/contracts", createContractsPublicRoutes(options))
     .route("/policies", policiesPublicRoutes)
     .route("/terms", legalTermsPublicRoutes)

@@ -1,4 +1,23 @@
 // agent-quality: file-size exception -- owner: legal; existing route module stays co-located until a dedicated split preserves behavior and tests.
+//
+// Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 —
+// legal contracts batch). The plain `.get/.post(...)` handlers became
+// `createRoute(...).openapi(...)` definitions grouped into several per-resource
+// child `OpenAPIHono` sub-chains, composed onto the returned factory parent via
+// `.route("/", child)` so the `.openapi()` operations propagate up through the
+// legal admin/public parent registries while keeping type-inference cost bounded
+// (one flat `.openapi().openapi()...` chain has O(n²) inference cost).
+//
+// Request schemas reuse the exported `@voyant-travel/legal-contracts` validation
+// insert/update/list-query schemas the handlers already parse; response row
+// schemas are authored here from the Drizzle `$inferSelect` shapes (§17 dates →
+// strings). The contract LIST left-joins `people` + the `person_directory`
+// view, so the contract list row extends the base contract schema with the four
+// nullable joined columns. Routes that parse an optional/empty body
+// (`parseOptionalJsonBody`) declare no forcing OpenAPI request body and parse
+// in-handler; multipart upload + redirect download legs declare their non-JSON
+// shapes explicitly. The factory/provider wiring + business logic are unchanged.
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import { type BookingPiiService, shouldRevealBookingPii } from "@voyant-travel/bookings"
 import type { EventBus, ModuleContainer } from "@voyant-travel/core"
@@ -7,15 +26,16 @@ import {
   createPublicDocumentDeliveryGrant,
   idempotencyKey,
   isStaffRbacEnforced,
+  openApiValidationHook,
   parseJsonBody,
   parseOptionalJsonBody,
-  parseQuery,
   resolveStoredDocumentDownload,
 } from "@voyant-travel/hono"
+import { legalTargetKindSchema } from "@voyant-travel/legal-contracts/targets/validation"
 import type { StorageProvider } from "@voyant-travel/storage"
+import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
 import type { ContractLifecycleHook } from "./lifecycle.js"
 import {
   buildContractsRouteRuntime,
@@ -26,8 +46,14 @@ import { renderPreviewResponse } from "./route-template-preview.js"
 import { contractsService } from "./service.js"
 import { generateContractForBookingFromDefaults } from "./service-auto-generate.js"
 import {
+  contractBodyFormatSchema,
   contractListQuerySchema,
+  contractNumberResetStrategySchema,
   contractNumberSeriesListQuerySchema,
+  contractScopeSchema,
+  contractSignatureMethodSchema,
+  contractStageHistoryEntrySchema,
+  contractStatusSchema,
   contractTemplateDefaultQuerySchema,
   contractTemplateListQuerySchema,
   generateContractDocumentInputSchema,
@@ -223,7 +249,14 @@ async function buildUploadedAttachmentInput({
   }
 }
 
-async function parseAttachmentUploadRequest(c: Context<Env>) {
+async function parseAttachmentUploadRequest(c: Context<Env>): Promise<
+  | { error: Response; form?: undefined; file?: undefined }
+  | {
+      error?: undefined
+      form: Record<string, unknown>
+      file: File
+    }
+> {
   const form = (await c.req.parseBody()) as Record<string, unknown>
   const file = Array.isArray(form.file) ? form.file[0] : form.file
   if (!(file instanceof File)) {
@@ -232,7 +265,18 @@ async function parseAttachmentUploadRequest(c: Context<Env>) {
   return { form, file }
 }
 
-async function renderAdminTemplatePreview(c: Context<Env>) {
+/**
+ * Bridge a helper's plain `Promise<Response>` to the typed-response shape
+ * `.openapi()` infers per route. The runtime value already honors the declared
+ * schemas; this only relaxes the compile-time union (mirrors the catalog
+ * booking-engine backfill, voyant#2114).
+ */
+// biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union (voyant#2114)
+function asRouteResponse(response: Promise<Response>): Promise<any> {
+  return response
+}
+
+async function renderAdminTemplatePreview(c: Context<Env>): Promise<Response> {
   const id = c.req.param("id")
   if (!id) return c.json({ error: "Template not found" }, 404)
   const input = await parseJsonBody(c, renderTemplateInputSchema)
@@ -242,7 +286,7 @@ async function renderAdminTemplatePreview(c: Context<Env>) {
   return renderPreviewResponse(c, { ...input, body })
 }
 
-async function renderPublicTemplatePreview(c: Context<Env>) {
+async function renderPublicTemplatePreview(c: Context<Env>): Promise<Response> {
   const id = c.req.param("id")
   if (!id) return c.json({ error: "Template not found" }, 404)
   const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
@@ -254,7 +298,7 @@ async function renderPublicTemplatePreview(c: Context<Env>) {
   })
 }
 
-async function renderPublicTemplatePreviewBySlug(c: Context<Env>) {
+async function renderPublicTemplatePreviewBySlug(c: Context<Env>): Promise<Response> {
   const slug = c.req.param("slug")
   if (!slug) return c.json({ error: "Template not found" }, 404)
   const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
@@ -282,7 +326,7 @@ async function uploadContractAttachment(
   c: Context<Env>,
   options: ContractsRouteOptions,
   contractId: string,
-) {
+): Promise<Response> {
   const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
   const storage = runtime.documentStorage
   if (!storage) {
@@ -293,7 +337,7 @@ async function uploadContractAttachment(
   if (!contract) return c.json({ error: "Contract not found" }, 404)
 
   const parsed = await parseAttachmentUploadRequest(c)
-  if ("error" in parsed) return parsed.error
+  if (parsed.error) return parsed.error
 
   const row = await contractsService.createAttachment(
     c.get("db"),
@@ -309,11 +353,53 @@ async function uploadContractAttachment(
   return c.json({ data: row }, 201)
 }
 
+async function replaceContractAttachmentUpload(
+  c: Context<Env>,
+  options: ContractsRouteOptions,
+): Promise<Response> {
+  const attachmentId = c.req.param("attachmentId")!
+  const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+  const storage = runtime.documentStorage
+  if (!storage) {
+    return c.json({ error: "Contract document storage is not configured" }, 501)
+  }
+
+  const existing = await contractsService.getAttachmentById(c.get("db"), attachmentId)
+  if (!existing) return c.json({ error: "Attachment not found" }, 404)
+
+  const parsed = await parseAttachmentUploadRequest(c)
+  if (parsed.error) return parsed.error
+
+  const row = await contractsService.updateAttachment(
+    c.get("db"),
+    attachmentId,
+    await buildUploadedAttachmentInput({
+      storage,
+      contractId: existing.contractId,
+      form: parsed.form,
+      file: parsed.file,
+    }),
+  )
+  if (!row) return c.json({ error: "Attachment not found" }, 404)
+  if (existing.storageKey && existing.storageKey !== row.storageKey) {
+    try {
+      await storage.delete(existing.storageKey)
+    } catch (error) {
+      console.warn(
+        `[legal] failed to delete replaced contract attachment object ${existing.storageKey}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+  return c.json({ data: row }, 200)
+}
+
 async function regenerateContractDocument(
   c: Context<Env>,
   options: ContractsRouteOptions,
   contractId: string,
-) {
+): Promise<Response> {
   const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
   const generator = runtime.documentGenerator
   if (!generator) {
@@ -345,7 +431,10 @@ async function regenerateContractDocument(
   return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) })
 }
 
-async function generateContractDocumentForBooking(c: Context<Env>, options: ContractsRouteOptions) {
+async function generateContractDocumentForBooking(
+  c: Context<Env>,
+  options: ContractsRouteOptions,
+): Promise<Response> {
   const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
   const generator = runtime.documentGenerator
   if (!generator) {
@@ -418,348 +507,6 @@ async function generateContractDocumentForBooking(c: Context<Env>, options: Cont
   )
 }
 
-export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
-  return new Hono<Env>()
-    .get("/templates", async (c) => {
-      const query = parseQuery(c, contractTemplateListQuerySchema)
-      return c.json(await contractsService.listTemplates(c.get("db"), query))
-    })
-    .get("/templates/default", async (c) => {
-      const query = parseQuery(c, contractTemplateDefaultQuerySchema)
-      const row = await contractsService.getDefaultTemplate(c.get("db"), query)
-      if (!row) return c.json({ error: "Template not found" }, 404)
-      return c.json({ data: row })
-    })
-    .post("/templates", async (c) => {
-      const row = await contractsService.createTemplate(
-        c.get("db"),
-        await parseJsonBody(c, insertContractTemplateSchema),
-      )
-      return c.json({ data: row }, 201)
-    })
-    .get("/templates/:id", async (c) => {
-      const row = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Template not found" }, 404)
-      return c.json({ data: row })
-    })
-    .patch("/templates/:id", async (c) => {
-      const row = await contractsService.updateTemplate(
-        c.get("db"),
-        c.req.param("id"),
-        await parseJsonBody(c, updateContractTemplateSchema),
-      )
-      if (!row) return c.json({ error: "Template not found" }, 404)
-      return c.json({ data: row })
-    })
-    .delete("/templates/:id", async (c) => {
-      const row = await contractsService.deleteTemplate(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Template not found" }, 404)
-      return c.json({ success: true })
-    })
-    .post("/templates/:id/preview", renderAdminTemplatePreview)
-    .post("/templates/:id/render-preview", renderAdminTemplatePreview)
-    .get("/templates/:id/versions", async (c) => {
-      const rows = await contractsService.listTemplateVersions(c.get("db"), c.req.param("id"))
-      return c.json({ data: rows })
-    })
-    .post("/templates/:id/versions", async (c) => {
-      const version = await contractsService.createTemplateVersion(
-        c.get("db"),
-        c.req.param("id"),
-        await parseJsonBody(c, insertContractTemplateVersionSchema),
-      )
-      if (!version) return c.json({ error: "Template not found" }, 404)
-      return c.json({ data: version }, 201)
-    })
-    .get("/template-versions/:id", async (c) => {
-      const row = await contractsService.getTemplateVersionById(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Template version not found" }, 404)
-      return c.json({ data: row })
-    })
-    .get("/number-series", async (c) => {
-      const query = parseQuery(c, contractNumberSeriesListQuerySchema)
-      const rows = await contractsService.listSeries(c.get("db"), query)
-      return c.json({ data: rows })
-    })
-    .post("/number-series", async (c) => {
-      const row = await contractsService.createSeries(
-        c.get("db"),
-        await parseJsonBody(c, insertContractNumberSeriesSchema),
-      )
-      return c.json({ data: row }, 201)
-    })
-    .get("/number-series/:id", async (c) => {
-      const row = await contractsService.getSeriesById(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Series not found" }, 404)
-      return c.json({ data: row })
-    })
-    .patch("/number-series/:id", async (c) => {
-      const row = await contractsService.updateSeries(
-        c.get("db"),
-        c.req.param("id"),
-        await parseJsonBody(c, updateContractNumberSeriesSchema),
-      )
-      if (!row) return c.json({ error: "Series not found" }, 404)
-      return c.json({ data: row })
-    })
-    .delete("/number-series/:id", async (c) => {
-      const row = await contractsService.deleteSeries(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Series not found" }, 404)
-      return c.json({ success: true })
-    })
-    .post("/bookings/:bookingId/generate-document", async (c) => {
-      return generateContractDocumentForBooking(c, options)
-    })
-    .get("/", async (c) => {
-      const query = parseQuery(c, contractListQuerySchema)
-      return c.json(await contractsService.listContracts(c.get("db"), query))
-    })
-    .post("/", idempotencyKey({ scope: "POST /v1/admin/legal/contracts" }), async (c) => {
-      const row = await contractsService.createContract(
-        c.get("db"),
-        await parseJsonBody(c, insertContractSchema),
-      )
-      return c.json({ data: row }, 201)
-    })
-    .get("/:id", async (c) => {
-      const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Contract not found" }, 404)
-      return c.json({ data: row })
-    })
-    .patch("/:id", async (c) => {
-      const row = await contractsService.updateContract(
-        c.get("db"),
-        c.req.param("id"),
-        await parseJsonBody(c, updateContractSchema),
-      )
-      if (!row) return c.json({ error: "Contract not found" }, 404)
-      return c.json({ data: row })
-    })
-    .delete("/:id", async (c) => {
-      const result = await contractsService.deleteContract(c.get("db"), c.req.param("id"))
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_deletable") {
-        return c.json({ error: "Only draft or void contracts can be deleted" }, 409)
-      }
-      return c.json({ success: true })
-    })
-    .post("/:id/issue", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const result = await contractsService.issueContract(c.get("db"), c.req.param("id"), runtime)
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_draft") {
-        return c.json({ error: "Only draft contracts can be issued" }, 409)
-      }
-      return c.json({ data: result.contract })
-    })
-    .post("/:id/send", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      // Body is optional — older callers POST without one and the
-      // service falls back to defaults. The Send-contract dialog POSTs
-      // `{ recipientEmail, subject, message }` so the notification
-      // subscriber can deliver the operator's customised copy.
-      const input = await parseOptionalJsonBody(c, sendContractInputSchema)
-      const result = await contractsService.sendContract(
-        c.get("db"),
-        c.req.param("id"),
-        runtime,
-        input ?? undefined,
-      )
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_issued") {
-        return c.json({ error: "Only issued/sent contracts can be sent" }, 409)
-      }
-      return c.json({ data: result.contract })
-    })
-    .post("/:id/sign", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const input = await parseJsonBody(c, insertContractSignatureSchema)
-      const result = await contractsService.signContract(
-        c.get("db"),
-        c.req.param("id"),
-        input,
-        runtime,
-      )
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_signable") {
-        return c.json({ error: "Contract is not in a signable state" }, 409)
-      }
-      return c.json({ data: { contract: result.contract, signature: result.signature } })
-    })
-    .post("/:id/execute", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const result = await contractsService.executeContract(c.get("db"), c.req.param("id"), runtime)
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_signed") {
-        return c.json({ error: "Only signed contracts can be executed" }, 409)
-      }
-      return c.json({ data: result.contract })
-    })
-    .post("/:id/void", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const result = await contractsService.voidContract(c.get("db"), c.req.param("id"), runtime)
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "already_void") {
-        return c.json({ error: "Contract is already void" }, 409)
-      }
-      return c.json({ data: result.contract })
-    })
-    .post("/:id/render", async (c) => {
-      const input = await parseJsonBody(c, renderTemplateInputSchema)
-      const contract = await contractsService.getContractById(c.get("db"), c.req.param("id"))
-      if (!contract) return c.json({ error: "Contract not found" }, 404)
-      return renderPreviewResponse(c, input)
-    })
-    .post("/:id/generate-document", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const generator = runtime.documentGenerator
-      if (!generator) {
-        return c.json({ error: "Contract document generator is not configured" }, 501)
-      }
-
-      const input = await parseOptionalJsonBody(c, generateContractDocumentInputSchema)
-      const result = await contractsService.generateContractDocument(
-        c.get("db"),
-        c.req.param("id"),
-        input,
-        {
-          generator,
-          bindings: c.env,
-          eventBus: runtime.eventBus,
-          lifecycleHooks: runtime.lifecycleHooks,
-        },
-      )
-
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_draft") {
-        return c.json(
-          { error: "Only draft contracts can be auto-issued for document generation" },
-          409,
-        )
-      }
-      if (result.status === "render_unavailable") {
-        return c.json({ error: "Contract has no renderable body or template version" }, 409)
-      }
-      if (result.status === "generator_failed") {
-        return c.json({ error: "Contract document generation failed" }, 502)
-      }
-      if (!("attachment" in result)) {
-        return c.json({ error: "Contract document generation failed" }, 502)
-      }
-
-      return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) }, 201)
-    })
-    .post("/:id/regenerate-document", async (c) => {
-      return regenerateContractDocument(c, options, c.req.param("id"))
-    })
-    .post("/:id/regenerate-pdf", async (c) => {
-      return regenerateContractDocument(c, options, c.req.param("id"))
-    })
-    .get("/:id/signatures", async (c) => {
-      const rows = await contractsService.listSignatures(c.get("db"), c.req.param("id"))
-      return c.json({ data: rows })
-    })
-    .get("/:id/attachments", async (c) => {
-      const rows = await contractsService.listAttachments(c.get("db"), c.req.param("id"))
-      return c.json({ data: rows })
-    })
-    .post("/:id/attachments", async (c) => {
-      const row = await contractsService.createAttachment(
-        c.get("db"),
-        c.req.param("id"),
-        await parseJsonBody(c, insertContractAttachmentSchema),
-      )
-      if (!row) return c.json({ error: "Contract not found" }, 404)
-      return c.json({ data: row }, 201)
-    })
-    .post("/:id/attachments/upload", async (c) => {
-      return uploadContractAttachment(c, options, c.req.param("id"))
-    })
-    .post("/:id/attach-document", async (c) => {
-      return uploadContractAttachment(c, options, c.req.param("id"))
-    })
-    .patch("/attachments/:attachmentId", async (c) => {
-      const row = await contractsService.updateAttachment(
-        c.get("db"),
-        c.req.param("attachmentId"),
-        await parseJsonBody(c, updateContractAttachmentSchema),
-      )
-      if (!row) return c.json({ error: "Attachment not found" }, 404)
-      return c.json({ data: row })
-    })
-    .patch("/attachments/:attachmentId/upload", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const storage = runtime.documentStorage
-      if (!storage) {
-        return c.json({ error: "Contract document storage is not configured" }, 501)
-      }
-
-      const existing = await contractsService.getAttachmentById(
-        c.get("db"),
-        c.req.param("attachmentId"),
-      )
-      if (!existing) return c.json({ error: "Attachment not found" }, 404)
-
-      const parsed = await parseAttachmentUploadRequest(c)
-      if ("error" in parsed) return parsed.error
-
-      const row = await contractsService.updateAttachment(
-        c.get("db"),
-        c.req.param("attachmentId"),
-        await buildUploadedAttachmentInput({
-          storage,
-          contractId: existing.contractId,
-          form: parsed.form,
-          file: parsed.file,
-        }),
-      )
-      if (!row) return c.json({ error: "Attachment not found" }, 404)
-      if (existing.storageKey && existing.storageKey !== row.storageKey) {
-        try {
-          await storage.delete(existing.storageKey)
-        } catch (error) {
-          console.warn(
-            `[legal] failed to delete replaced contract attachment object ${existing.storageKey}: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-          )
-        }
-      }
-      return c.json({ data: row })
-    })
-    .get("/attachments/:attachmentId/download", async (c) => {
-      const attachment = await contractsService.getAttachmentById(
-        c.get("db"),
-        c.req.param("attachmentId"),
-      )
-      if (!attachment) return c.json({ error: "Attachment not found" }, 404)
-
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const download = await resolveStoredDocumentDownload(
-        { ...attachment, filename: attachment.name },
-        {
-          bindings: c.env,
-          resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
-        },
-      )
-      if (download.status === "resolver_not_configured") {
-        return c.json({ error: "Document download resolver is not configured" }, 501)
-      }
-      if (download.status !== "ready") {
-        return c.json({ error: "Attachment file is not available" }, 404)
-      }
-
-      return c.redirect(download.download.url, 302)
-    })
-    .delete("/attachments/:attachmentId", async (c) => {
-      const row = await contractsService.deleteAttachment(c.get("db"), c.req.param("attachmentId"))
-      if (!row) return c.json({ error: "Attachment not found" }, 404)
-      return c.json({ success: true })
-    })
-}
-
-export const contractsAdminRoutes = createContractsAdminRoutes()
-
 async function attachDownloadEnvelope<
   T extends {
     attachment: {
@@ -812,50 +559,1352 @@ async function attachDownloadEnvelope<
   return { ...withAdminDownload, publicDownload }
 }
 
-export function createContractsPublicRoutes(options: ContractsRouteOptions = {}) {
-  return (
-    new Hono<Env>()
-      .get("/templates/default", async (c) => {
-        const query = parseQuery(c, contractTemplateDefaultQuerySchema)
-        const row = await contractsService.getDefaultTemplate(c.get("db"), query)
-        if (!row) return c.json({ error: "Template not found" }, 404)
-        cachePublicLegalRead(c)
-        return c.json({ data: row })
-      })
-      .post("/templates/:id/preview", renderPublicTemplatePreview)
-      .post("/templates/:id/render-preview", renderPublicTemplatePreview)
-      /**
-       * Slug-based variant — storefronts wire products to a contract
-       * template via slug at config time, not id, so they can render the
-       * preview in the booking journey before any contract row exists.
-       * The dialog at /shop/book/... POSTs here with the draft variables.
-       */
-      .post("/templates/by-slug/:slug/preview", renderPublicTemplatePreviewBySlug)
-      .post("/templates/by-slug/:slug/render-preview", renderPublicTemplatePreviewBySlug)
-      .get("/:id", async (c) => {
-        preventSharedCache(c)
-        const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
-        if (!row) return c.json({ error: "Contract not found" }, 404)
-        const { metadata: _metadata, ...publicContract } = row
-        return c.json({ data: publicContract })
-      })
-      .post("/:id/sign", async (c) => {
-        preventSharedCache(c)
-        const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-        const input = await parseJsonBody(c, insertContractSignatureSchema)
-        const result = await contractsService.signContract(
-          c.get("db"),
-          c.req.param("id"),
-          input,
-          runtime,
+// --- shared response building blocks ----------------------------------------
+
+const errorResponseSchema = z.object({ error: z.string() })
+const successResponseSchema = z.object({ success: z.literal(true) })
+const idSchema = z.string()
+const idParamSchema = z.object({ id: idSchema })
+const isoTimestamp = z.string()
+const jsonRecord = z.record(z.string(), z.unknown())
+// Open jsonb columns (`variables`, `metadata`, `variableSchema`) are typed as
+// `unknown` by Drizzle's `$inferSelect`, so the wire schema must accept any JSON
+// value rather than force a record shape.
+const jsonValue = z.unknown()
+
+const dataEnvelope = <T extends z.ZodTypeAny>(schema: T) => z.object({ data: schema })
+
+const invalidRequestResponse = {
+  description: "invalid_request: request body failed validation",
+  content: { "application/json": { schema: errorResponseSchema } },
+} as const
+
+const notFoundResponse = (description: string) => ({
+  description,
+  content: { "application/json": { schema: errorResponseSchema } },
+})
+
+const conflictResponse = (description: string) => ({
+  description,
+  content: { "application/json": { schema: errorResponseSchema } },
+})
+
+// §17: timestamps/dates are serialized to ISO strings on the wire.
+
+const contractTemplateSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  slug: z.string(),
+  scope: contractScopeSchema,
+  language: z.string(),
+  description: z.string().nullable(),
+  body: z.string(),
+  variableSchema: jsonValue,
+  currentVersionId: z.string().nullable(),
+  channelId: z.string().nullable(),
+  isDefault: z.boolean(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const contractTemplateVersionSchema = z.object({
+  id: idSchema,
+  templateId: z.string(),
+  version: z.number().int(),
+  body: z.string(),
+  variableSchema: jsonValue,
+  changelog: z.string().nullable(),
+  createdBy: z.string().nullable(),
+  createdAt: isoTimestamp,
+})
+
+const contractNumberSeriesSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  prefix: z.string(),
+  separator: z.string(),
+  padLength: z.number().int(),
+  currentSequence: z.number().int(),
+  resetStrategy: contractNumberResetStrategySchema,
+  resetAt: isoTimestamp.nullable(),
+  scope: contractScopeSchema,
+  isDefault: z.boolean(),
+  externalProvider: z.string().nullable(),
+  externalConfigKey: z.string().nullable(),
+  active: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const contractSchema = z.object({
+  id: idSchema,
+  contractNumber: z.string().nullable(),
+  scope: contractScopeSchema,
+  status: contractStatusSchema,
+  stageHistory: z.array(contractStageHistoryEntrySchema),
+  title: z.string(),
+  templateVersionId: z.string().nullable(),
+  seriesId: z.string().nullable(),
+  personId: z.string().nullable(),
+  organizationId: z.string().nullable(),
+  supplierId: z.string().nullable(),
+  channelId: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable(),
+  targetId: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  targetSourceRef: z.string().nullable(),
+  legacyTransactionOfferId: z.string().nullable(),
+  legacyTransactionOrderId: z.string().nullable(),
+  issuedAt: isoTimestamp.nullable(),
+  sentAt: isoTimestamp.nullable(),
+  executedAt: isoTimestamp.nullable(),
+  expiresAt: isoTimestamp.nullable(),
+  voidedAt: isoTimestamp.nullable(),
+  language: z.string(),
+  renderedBodyFormat: contractBodyFormatSchema,
+  renderedBody: z.string().nullable(),
+  variables: jsonValue,
+  metadata: jsonValue,
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+// The contract LIST left-joins `people` + the `person_directory` view, so the
+// list row carries four extra nullable columns absent from the base
+// `contracts.$inferSelect` shape.
+const contractListRowSchema = contractSchema.extend({
+  personFirstName: z.string().nullable(),
+  personLastName: z.string().nullable(),
+  personEmail: z.string().nullable(),
+  personPhone: z.string().nullable(),
+})
+
+const contractSignatureSchema = z.object({
+  id: idSchema,
+  contractId: z.string(),
+  signerName: z.string(),
+  signerEmail: z.string().nullable(),
+  signerRole: z.string().nullable(),
+  personId: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable(),
+  targetId: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  targetSourceRef: z.string().nullable(),
+  legacyTransactionOfferId: z.string().nullable(),
+  legacyTransactionOrderId: z.string().nullable(),
+  method: contractSignatureMethodSchema,
+  provider: z.string().nullable(),
+  externalReference: z.string().nullable(),
+  signatureData: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  signedAt: isoTimestamp,
+  metadata: jsonValue,
+  createdAt: isoTimestamp,
+})
+
+const contractAttachmentSchema = z.object({
+  id: idSchema,
+  contractId: z.string(),
+  kind: z.string(),
+  name: z.string(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  storageKey: z.string().nullable(),
+  checksum: z.string().nullable(),
+  targetKind: legalTargetKindSchema.nullable(),
+  targetId: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  targetSourceRef: z.string().nullable(),
+  legacyTransactionOfferId: z.string().nullable(),
+  legacyTransactionOrderId: z.string().nullable(),
+  metadata: jsonValue,
+  createdAt: isoTimestamp,
+})
+
+// `renderPreviewResponse` serializes `{ data: { rendered, ...extra } }` — the
+// rendered payload + optional template descriptor are loosely typed (handler
+// composes them dynamically), so the envelope's `data` is an open record.
+const renderPreviewEnvelopeSchema = z.object({ data: jsonRecord })
+
+// The document-generate envelope is `{ data: <contract+attachment+download> }`
+// composed by `attachDownloadEnvelope`; the dynamic download/publicDownload
+// fields keep it an open record.
+const documentEnvelopeSchema = z.object({ data: jsonRecord })
+
+export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
+  // --- templates + preview --------------------------------------------------
+
+  const listTemplatesRoute = createRoute({
+    method: "get",
+    path: "/templates",
+    request: { query: contractTemplateListQuerySchema },
+    responses: {
+      200: {
+        description: "Paginated contract templates",
+        content: { "application/json": { schema: listResponseSchema(contractTemplateSchema) } },
+      },
+    },
+  })
+
+  const getDefaultTemplateRoute = createRoute({
+    method: "get",
+    path: "/templates/default",
+    request: { query: contractTemplateDefaultQuerySchema },
+    responses: {
+      200: {
+        description: "The resolved default contract template for the scope/language",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateSchema) } },
+      },
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const createTemplateRoute = createRoute({
+    method: "post",
+    path: "/templates",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractTemplateSchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "The created contract template",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateSchema) } },
+      },
+      400: invalidRequestResponse,
+    },
+  })
+
+  const getTemplateRoute = createRoute({
+    method: "get",
+    path: "/templates/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A contract template by id",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateSchema) } },
+      },
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const updateTemplateRoute = createRoute({
+    method: "patch",
+    path: "/templates/{id}",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateContractTemplateSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The updated contract template",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const deleteTemplateRoute = createRoute({
+    method: "delete",
+    path: "/templates/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "Contract template deleted",
+        content: { "application/json": { schema: successResponseSchema } },
+      },
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const previewTemplateRoute = createRoute({
+    method: "post",
+    path: "/templates/{id}/preview",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: renderTemplateInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const renderPreviewTemplateRoute = createRoute({
+    method: "post",
+    path: "/templates/{id}/render-preview",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: renderTemplateInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const templateRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listTemplatesRoute, async (c) =>
+      c.json(await contractsService.listTemplates(c.get("db"), c.req.valid("query")), 200),
+    )
+    .openapi(getDefaultTemplateRoute, async (c) => {
+      const row = await contractsService.getDefaultTemplate(c.get("db"), c.req.valid("query"))
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Template not found" }, 404)
+    })
+    .openapi(createTemplateRoute, async (c) => {
+      const row = await contractsService.createTemplate(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    })
+    .openapi(getTemplateRoute, async (c) => {
+      const row = await contractsService.getTemplateById(c.get("db"), c.req.valid("param").id)
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Template not found" }, 404)
+    })
+    .openapi(updateTemplateRoute, async (c) => {
+      const row = await contractsService.updateTemplate(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Template not found" }, 404)
+    })
+    .openapi(deleteTemplateRoute, async (c) => {
+      const row = await contractsService.deleteTemplate(c.get("db"), c.req.valid("param").id)
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Template not found" }, 404)
+    })
+    .openapi(previewTemplateRoute, (c) => asRouteResponse(renderAdminTemplatePreview(c)))
+    .openapi(renderPreviewTemplateRoute, (c) => asRouteResponse(renderAdminTemplatePreview(c)))
+
+  // --- template versions ----------------------------------------------------
+
+  const listTemplateVersionsRoute = createRoute({
+    method: "get",
+    path: "/templates/{id}/versions",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The template's versions",
+        content: {
+          "application/json": {
+            schema: z.object({ data: z.array(contractTemplateVersionSchema) }),
+          },
+        },
+      },
+    },
+  })
+
+  const createTemplateVersionRoute = createRoute({
+    method: "post",
+    path: "/templates/{id}/versions",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractTemplateVersionSchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "The created template version",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateVersionSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const getTemplateVersionRoute = createRoute({
+    method: "get",
+    path: "/template-versions/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A template version by id",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateVersionSchema) } },
+      },
+      404: notFoundResponse("Template version not found"),
+    },
+  })
+
+  const templateVersionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listTemplateVersionsRoute, async (c) => {
+      const rows = await contractsService.listTemplateVersions(c.get("db"), c.req.valid("param").id)
+      return c.json({ data: rows }, 200)
+    })
+    .openapi(createTemplateVersionRoute, async (c) => {
+      const version = await contractsService.createTemplateVersion(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return version ? c.json({ data: version }, 201) : c.json({ error: "Template not found" }, 404)
+    })
+    .openapi(getTemplateVersionRoute, async (c) => {
+      const row = await contractsService.getTemplateVersionById(
+        c.get("db"),
+        c.req.valid("param").id,
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Template version not found" }, 404)
+    })
+
+  // --- number series --------------------------------------------------------
+
+  const listSeriesRoute = createRoute({
+    method: "get",
+    path: "/number-series",
+    request: { query: contractNumberSeriesListQuerySchema },
+    responses: {
+      200: {
+        description: "Contract number series",
+        content: {
+          "application/json": { schema: z.object({ data: z.array(contractNumberSeriesSchema) }) },
+        },
+      },
+    },
+  })
+
+  const createSeriesRoute = createRoute({
+    method: "post",
+    path: "/number-series",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractNumberSeriesSchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "The created contract number series",
+        content: { "application/json": { schema: dataEnvelope(contractNumberSeriesSchema) } },
+      },
+      400: invalidRequestResponse,
+    },
+  })
+
+  const getSeriesRoute = createRoute({
+    method: "get",
+    path: "/number-series/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A contract number series by id",
+        content: { "application/json": { schema: dataEnvelope(contractNumberSeriesSchema) } },
+      },
+      404: notFoundResponse("Series not found"),
+    },
+  })
+
+  const updateSeriesRoute = createRoute({
+    method: "patch",
+    path: "/number-series/{id}",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateContractNumberSeriesSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The updated contract number series",
+        content: { "application/json": { schema: dataEnvelope(contractNumberSeriesSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Series not found"),
+    },
+  })
+
+  const deleteSeriesRoute = createRoute({
+    method: "delete",
+    path: "/number-series/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "Contract number series deleted",
+        content: { "application/json": { schema: successResponseSchema } },
+      },
+      404: notFoundResponse("Series not found"),
+    },
+  })
+
+  const numberSeriesRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listSeriesRoute, async (c) => {
+      const rows = await contractsService.listSeries(c.get("db"), c.req.valid("query"))
+      return c.json({ data: rows }, 200)
+    })
+    .openapi(createSeriesRoute, async (c) => {
+      const row = await contractsService.createSeries(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    })
+    .openapi(getSeriesRoute, async (c) => {
+      const row = await contractsService.getSeriesById(c.get("db"), c.req.valid("param").id)
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Series not found" }, 404)
+    })
+    .openapi(updateSeriesRoute, async (c) => {
+      const row = await contractsService.updateSeries(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Series not found" }, 404)
+    })
+    .openapi(deleteSeriesRoute, async (c) => {
+      const row = await contractsService.deleteSeries(c.get("db"), c.req.valid("param").id)
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Series not found" }, 404)
+    })
+
+  // --- contracts (CRUD + booking generate) ----------------------------------
+
+  const generateForBookingRoute = createRoute({
+    method: "post",
+    path: "/bookings/{bookingId}/generate-document",
+    request: { params: z.object({ bookingId: idSchema }) },
+    responses: {
+      201: {
+        description: "The generated contract + document for the booking",
+        content: { "application/json": { schema: documentEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Booking or default template not found"),
+      409: conflictResponse("Default template version or number series unavailable/ambiguous"),
+      500: notFoundResponse("Contract could not be created or loaded"),
+      501: notFoundResponse("Contract document generator is not configured"),
+      502: notFoundResponse("Contract document generation failed"),
+    },
+  })
+
+  const listContractsRoute = createRoute({
+    method: "get",
+    path: "/",
+    request: { query: contractListQuerySchema },
+    responses: {
+      200: {
+        description: "Paginated contracts (with joined person summary columns)",
+        content: { "application/json": { schema: listResponseSchema(contractListRowSchema) } },
+      },
+    },
+  })
+
+  const createContractRoute = createRoute({
+    method: "post",
+    path: "/",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractSchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "The created contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      400: invalidRequestResponse,
+    },
+  })
+
+  const getContractRoute = createRoute({
+    method: "get",
+    path: "/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A contract by id",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      404: notFoundResponse("Contract not found"),
+    },
+  })
+
+  const updateContractRoute = createRoute({
+    method: "patch",
+    path: "/{id}",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateContractSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The updated contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+    },
+  })
+
+  const deleteContractRoute = createRoute({
+    method: "delete",
+    path: "/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "Contract deleted",
+        content: { "application/json": { schema: successResponseSchema } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Only draft or void contracts can be deleted"),
+    },
+  })
+
+  const contractRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(generateForBookingRoute, (c) =>
+      asRouteResponse(generateContractDocumentForBooking(c, options)),
+    )
+    .openapi(listContractsRoute, async (c) =>
+      c.json(await contractsService.listContracts(c.get("db"), c.req.valid("query")), 200),
+    )
+    .openapi(createContractRoute, async (c) => {
+      const row = await contractsService.createContract(c.get("db"), c.req.valid("json"))
+      return c.json({ data: row! }, 201)
+    })
+    .openapi(getContractRoute, async (c) => {
+      const row = await contractsService.getContractById(c.get("db"), c.req.valid("param").id)
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Contract not found" }, 404)
+    })
+    .openapi(updateContractRoute, async (c) => {
+      const row = await contractsService.updateContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Contract not found" }, 404)
+    })
+    .openapi(deleteContractRoute, async (c) => {
+      const result = await contractsService.deleteContract(c.get("db"), c.req.valid("param").id)
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_deletable") {
+        return c.json({ error: "Only draft or void contracts can be deleted" }, 409)
+      }
+      return c.json({ success: true } as const, 200)
+    })
+
+  // --- contract lifecycle transitions ---------------------------------------
+
+  const issueContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/issue",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The issued contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Only draft contracts can be issued"),
+    },
+  })
+
+  const sendContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/send",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The sent contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Only issued/sent contracts can be sent"),
+    },
+  })
+
+  const signContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/sign",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractSignatureSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The signed contract + signature",
+        content: {
+          "application/json": {
+            schema: z.object({
+              data: z.object({ contract: contractSchema, signature: contractSignatureSchema }),
+            }),
+          },
+        },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is not in a signable state"),
+    },
+  })
+
+  const executeContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/execute",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The executed contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Only signed contracts can be executed"),
+    },
+  })
+
+  const voidContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/void",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The voided contract",
+        content: { "application/json": { schema: dataEnvelope(contractSchema) } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is already void"),
+    },
+  })
+
+  const renderContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/render",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: renderTemplateInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered contract preview",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+    },
+  })
+
+  const lifecycleRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(issueContractRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.issueContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        runtime,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_draft") {
+        return c.json({ error: "Only draft contracts can be issued" }, 409)
+      }
+      return c.json({ data: result.contract! }, 200)
+    })
+    .openapi(sendContractRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      // Body is optional — older callers POST without one and the
+      // service falls back to defaults. The Send-contract dialog POSTs
+      // `{ recipientEmail, subject, message }` so the notification
+      // subscriber can deliver the operator's customised copy.
+      const input = await parseOptionalJsonBody(c, sendContractInputSchema)
+      const result = await contractsService.sendContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        runtime,
+        input ?? undefined,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_issued") {
+        return c.json({ error: "Only issued/sent contracts can be sent" }, 409)
+      }
+      return c.json({ data: result.contract! }, 200)
+    })
+    .openapi(signContractRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.signContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        runtime,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_signable") {
+        return c.json({ error: "Contract is not in a signable state" }, 409)
+      }
+      return c.json({ data: { contract: result.contract!, signature: result.signature! } }, 200)
+    })
+    .openapi(executeContractRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.executeContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        runtime,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_signed") {
+        return c.json({ error: "Only signed contracts can be executed" }, 409)
+      }
+      return c.json({ data: result.contract! }, 200)
+    })
+    .openapi(voidContractRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.voidContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        runtime,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "already_void") {
+        return c.json({ error: "Contract is already void" }, 409)
+      }
+      return c.json({ data: result.contract! }, 200)
+    })
+    .openapi(renderContractRoute, (c) =>
+      asRouteResponse(
+        (async (): Promise<Response> => {
+          const input = c.req.valid("json")
+          const contract = await contractsService.getContractById(
+            c.get("db"),
+            c.req.valid("param").id,
+          )
+          if (!contract) return c.json({ error: "Contract not found" }, 404)
+          return renderPreviewResponse(c, input)
+        })(),
+      ),
+    )
+
+  // --- contract document generation -----------------------------------------
+
+  const generateDocumentRoute = createRoute({
+    method: "post",
+    path: "/{id}/generate-document",
+    request: { params: idParamSchema },
+    responses: {
+      201: {
+        description: "The generated contract document envelope",
+        content: { "application/json": { schema: documentEnvelopeSchema } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is not draft or has no renderable body"),
+      501: notFoundResponse("Contract document generator is not configured"),
+      502: notFoundResponse("Contract document generation failed"),
+    },
+  })
+
+  const regenerateDocumentRoute = createRoute({
+    method: "post",
+    path: "/{id}/regenerate-document",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The regenerated contract document envelope",
+        content: { "application/json": { schema: documentEnvelopeSchema } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is not draft or has no renderable body"),
+      501: notFoundResponse("Contract document generator is not configured"),
+      502: notFoundResponse("Contract document generation failed"),
+    },
+  })
+
+  const regeneratePdfRoute = createRoute({
+    method: "post",
+    path: "/{id}/regenerate-pdf",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The regenerated contract document envelope",
+        content: { "application/json": { schema: documentEnvelopeSchema } },
+      },
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is not draft or has no renderable body"),
+      501: notFoundResponse("Contract document generator is not configured"),
+      502: notFoundResponse("Contract document generation failed"),
+    },
+  })
+
+  const documentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(generateDocumentRoute, async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const generator = runtime.documentGenerator
+      if (!generator) {
+        return c.json({ error: "Contract document generator is not configured" }, 501)
+      }
+
+      const input = await parseOptionalJsonBody(c, generateContractDocumentInputSchema)
+      const result = await contractsService.generateContractDocument(
+        c.get("db"),
+        c.req.valid("param").id,
+        input,
+        {
+          generator,
+          bindings: c.env,
+          eventBus: runtime.eventBus,
+          lifecycleHooks: runtime.lifecycleHooks,
+        },
+      )
+
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_draft") {
+        return c.json(
+          { error: "Only draft contracts can be auto-issued for document generation" },
+          409,
         )
-        if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-        if (result.status === "not_signable") {
-          return c.json({ error: "Contract is not in a signable state" }, 409)
-        }
-        return c.json({ data: { signature: result.signature } })
-      })
-  )
+      }
+      if (result.status === "render_unavailable") {
+        return c.json({ error: "Contract has no renderable body or template version" }, 409)
+      }
+      if (result.status === "generator_failed") {
+        return c.json({ error: "Contract document generation failed" }, 502)
+      }
+      if (!("attachment" in result)) {
+        return c.json({ error: "Contract document generation failed" }, 502)
+      }
+
+      return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) }, 201)
+    })
+    .openapi(regenerateDocumentRoute, (c) =>
+      asRouteResponse(regenerateContractDocument(c, options, c.req.valid("param").id)),
+    )
+    .openapi(regeneratePdfRoute, (c) =>
+      asRouteResponse(regenerateContractDocument(c, options, c.req.valid("param").id)),
+    )
+
+  // --- signatures + attachments ---------------------------------------------
+
+  const attachmentParamSchema = z.object({ attachmentId: idSchema })
+  const multipartUploadBody = {
+    content: { "multipart/form-data": { schema: z.object({ file: z.unknown() }) } },
+  } as const
+
+  const listSignaturesRoute = createRoute({
+    method: "get",
+    path: "/{id}/signatures",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The contract's signatures",
+        content: {
+          "application/json": { schema: z.object({ data: z.array(contractSignatureSchema) }) },
+        },
+      },
+    },
+  })
+
+  const listAttachmentsRoute = createRoute({
+    method: "get",
+    path: "/{id}/attachments",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "The contract's attachments",
+        content: {
+          "application/json": { schema: z.object({ data: z.array(contractAttachmentSchema) }) },
+        },
+      },
+    },
+  })
+
+  const createAttachmentRoute = createRoute({
+    method: "post",
+    path: "/{id}/attachments",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractAttachmentSchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "The created contract attachment",
+        content: { "application/json": { schema: dataEnvelope(contractAttachmentSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+    },
+  })
+
+  const uploadAttachmentRoute = createRoute({
+    method: "post",
+    path: "/{id}/attachments/upload",
+    request: { params: idParamSchema, body: multipartUploadBody },
+    responses: {
+      201: {
+        description: "The uploaded contract attachment",
+        content: { "application/json": { schema: dataEnvelope(contractAttachmentSchema) } },
+      },
+      400: notFoundResponse("Missing file field in multipart body"),
+      404: notFoundResponse("Contract not found"),
+      501: notFoundResponse("Contract document storage is not configured"),
+    },
+  })
+
+  const attachDocumentRoute = createRoute({
+    method: "post",
+    path: "/{id}/attach-document",
+    request: { params: idParamSchema, body: multipartUploadBody },
+    responses: {
+      201: {
+        description: "The uploaded contract attachment",
+        content: { "application/json": { schema: dataEnvelope(contractAttachmentSchema) } },
+      },
+      400: notFoundResponse("Missing file field in multipart body"),
+      404: notFoundResponse("Contract not found"),
+      501: notFoundResponse("Contract document storage is not configured"),
+    },
+  })
+
+  const updateAttachmentRoute = createRoute({
+    method: "patch",
+    path: "/attachments/{attachmentId}",
+    request: {
+      params: attachmentParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateContractAttachmentSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The updated contract attachment",
+        content: { "application/json": { schema: dataEnvelope(contractAttachmentSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Attachment not found"),
+    },
+  })
+
+  const updateAttachmentUploadRoute = createRoute({
+    method: "patch",
+    path: "/attachments/{attachmentId}/upload",
+    request: { params: attachmentParamSchema, body: multipartUploadBody },
+    responses: {
+      200: {
+        description: "The replaced contract attachment",
+        content: { "application/json": { schema: dataEnvelope(contractAttachmentSchema) } },
+      },
+      400: notFoundResponse("Missing file field in multipart body"),
+      404: notFoundResponse("Attachment not found"),
+      501: notFoundResponse("Contract document storage is not configured"),
+    },
+  })
+
+  const downloadAttachmentRoute = createRoute({
+    method: "get",
+    path: "/attachments/{attachmentId}/download",
+    request: { params: attachmentParamSchema },
+    responses: {
+      302: { description: "Redirect to the resolved attachment download URL" },
+      404: notFoundResponse("Attachment file is not available"),
+      501: notFoundResponse("Document download resolver is not configured"),
+    },
+  })
+
+  const deleteAttachmentRoute = createRoute({
+    method: "delete",
+    path: "/attachments/{attachmentId}",
+    request: { params: attachmentParamSchema },
+    responses: {
+      200: {
+        description: "Attachment deleted",
+        content: { "application/json": { schema: successResponseSchema } },
+      },
+      404: notFoundResponse("Attachment not found"),
+    },
+  })
+
+  const signatureAttachmentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listSignaturesRoute, async (c) => {
+      const rows = await contractsService.listSignatures(c.get("db"), c.req.valid("param").id)
+      return c.json({ data: rows }, 200)
+    })
+    .openapi(listAttachmentsRoute, async (c) => {
+      const rows = await contractsService.listAttachments(c.get("db"), c.req.valid("param").id)
+      return c.json({ data: rows }, 200)
+    })
+    .openapi(createAttachmentRoute, async (c) => {
+      const row = await contractsService.createAttachment(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 201) : c.json({ error: "Contract not found" }, 404)
+    })
+    .openapi(uploadAttachmentRoute, (c) =>
+      asRouteResponse(uploadContractAttachment(c, options, c.req.valid("param").id)),
+    )
+    .openapi(attachDocumentRoute, (c) =>
+      asRouteResponse(uploadContractAttachment(c, options, c.req.valid("param").id)),
+    )
+    .openapi(updateAttachmentRoute, async (c) => {
+      const row = await contractsService.updateAttachment(
+        c.get("db"),
+        c.req.valid("param").attachmentId,
+        c.req.valid("json"),
+      )
+      return row ? c.json({ data: row }, 200) : c.json({ error: "Attachment not found" }, 404)
+    })
+    .openapi(updateAttachmentUploadRoute, (c) =>
+      asRouteResponse(replaceContractAttachmentUpload(c, options)),
+    )
+    .openapi(downloadAttachmentRoute, async (c) => {
+      const attachment = await contractsService.getAttachmentById(
+        c.get("db"),
+        c.req.valid("param").attachmentId,
+      )
+      if (!attachment) return c.json({ error: "Attachment not found" }, 404)
+
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const download = await resolveStoredDocumentDownload(
+        { ...attachment, filename: attachment.name },
+        {
+          bindings: c.env,
+          resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
+        },
+      )
+      if (download.status === "resolver_not_configured") {
+        return c.json({ error: "Document download resolver is not configured" }, 501)
+      }
+      if (download.status !== "ready") {
+        return c.json({ error: "Attachment file is not available" }, 404)
+      }
+
+      return c.redirect(download.download.url, 302)
+    })
+    .openapi(deleteAttachmentRoute, async (c) => {
+      const row = await contractsService.deleteAttachment(
+        c.get("db"),
+        c.req.valid("param").attachmentId,
+      )
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Attachment not found" }, 404)
+    })
+
+  const parent = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  // Preserve the original per-route idempotency guard on `POST /`. The
+  // middleware no-ops without an `Idempotency-Key` header (so list GET / is
+  // unaffected); mounted on the literal `/` path it only fires for the
+  // create-contract request.
+  parent.use("/", idempotencyKey({ scope: "POST /v1/admin/legal/contracts" }))
+  return parent
+    .route("/", templateRoutes)
+    .route("/", templateVersionRoutes)
+    .route("/", numberSeriesRoutes)
+    .route("/", contractRoutes)
+    .route("/", lifecycleRoutes)
+    .route("/", documentRoutes)
+    .route("/", signatureAttachmentRoutes)
+}
+
+export const contractsAdminRoutes = createContractsAdminRoutes()
+
+export function createContractsPublicRoutes(options: ContractsRouteOptions = {}) {
+  const getDefaultTemplateRoute = createRoute({
+    method: "get",
+    path: "/templates/default",
+    request: { query: contractTemplateDefaultQuerySchema },
+    responses: {
+      200: {
+        description: "The resolved default contract template for the scope/language",
+        content: { "application/json": { schema: dataEnvelope(contractTemplateSchema) } },
+      },
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const previewTemplateRoute = createRoute({
+    method: "post",
+    path: "/templates/{id}/preview",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: publicRenderTemplatePreviewInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const renderPreviewTemplateRoute = createRoute({
+    method: "post",
+    path: "/templates/{id}/render-preview",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: publicRenderTemplatePreviewInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const previewTemplateBySlugRoute = createRoute({
+    method: "post",
+    path: "/templates/by-slug/{slug}/preview",
+    request: {
+      params: z.object({ slug: z.string() }),
+      body: {
+        required: true,
+        content: { "application/json": { schema: publicRenderTemplatePreviewInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview (with template descriptor)",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const renderPreviewTemplateBySlugRoute = createRoute({
+    method: "post",
+    path: "/templates/by-slug/{slug}/render-preview",
+    request: {
+      params: z.object({ slug: z.string() }),
+      body: {
+        required: true,
+        content: { "application/json": { schema: publicRenderTemplatePreviewInputSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The rendered template preview (with template descriptor)",
+        content: { "application/json": { schema: renderPreviewEnvelopeSchema } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Template not found"),
+    },
+  })
+
+  const getContractRoute = createRoute({
+    method: "get",
+    path: "/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A public-safe contract by id (metadata stripped)",
+        content: {
+          "application/json": { schema: dataEnvelope(contractSchema.omit({ metadata: true })) },
+        },
+      },
+      404: notFoundResponse("Contract not found"),
+    },
+  })
+
+  const signContractRoute = createRoute({
+    method: "post",
+    path: "/{id}/sign",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: insertContractSignatureSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "The recorded signature",
+        content: {
+          "application/json": {
+            schema: z.object({ data: z.object({ signature: contractSignatureSchema }) }),
+          },
+        },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Contract not found"),
+      409: conflictResponse("Contract is not in a signable state"),
+    },
+  })
+
+  const templatePreviewRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(getDefaultTemplateRoute, async (c) => {
+      const row = await contractsService.getDefaultTemplate(c.get("db"), c.req.valid("query"))
+      if (!row) return c.json({ error: "Template not found" }, 404)
+      cachePublicLegalRead(c)
+      return c.json({ data: row }, 200)
+    })
+    .openapi(previewTemplateRoute, (c) => asRouteResponse(renderPublicTemplatePreview(c)))
+    .openapi(renderPreviewTemplateRoute, (c) => asRouteResponse(renderPublicTemplatePreview(c)))
+    .openapi(previewTemplateBySlugRoute, (c) =>
+      asRouteResponse(renderPublicTemplatePreviewBySlug(c)),
+    )
+    .openapi(renderPreviewTemplateBySlugRoute, (c) =>
+      asRouteResponse(renderPublicTemplatePreviewBySlug(c)),
+    )
+
+  const contractRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(getContractRoute, async (c) => {
+      preventSharedCache(c)
+      const row = await contractsService.getContractById(c.get("db"), c.req.valid("param").id)
+      if (!row) return c.json({ error: "Contract not found" }, 404)
+      const { metadata: _metadata, ...publicContract } = row
+      return c.json({ data: publicContract }, 200)
+    })
+    .openapi(signContractRoute, async (c) => {
+      preventSharedCache(c)
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.signContract(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        runtime,
+      )
+      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+      if (result.status === "not_signable") {
+        return c.json({ error: "Contract is not in a signable state" }, 409)
+      }
+      return c.json({ data: { signature: result.signature! } }, 200)
+    })
+
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .route("/", templatePreviewRoutes)
+    .route("/", contractRoutes)
 }
 
 export const contractsPublicRoutes = createContractsPublicRoutes()
