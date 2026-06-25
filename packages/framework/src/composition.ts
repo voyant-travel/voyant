@@ -35,6 +35,7 @@
  * pass them into.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { accommodationsHonoModule } from "@voyant-travel/accommodations"
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import {
@@ -74,7 +75,11 @@ import type {
   CheckoutPaymentStarter,
 } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
-import { createPublicDocumentDeliveryHonoModule, type LazyRoutesLoader } from "@voyant-travel/hono"
+import {
+  createPublicDocumentDeliveryHonoModule,
+  type LazyRoutesLoader,
+  openApiValidationHook,
+} from "@voyant-travel/hono"
 import type { CompositionRegistry } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { identityHonoModule } from "@voyant-travel/identity"
@@ -114,16 +119,22 @@ import {
   type StorefrontVerificationRoutesOptions,
 } from "@voyant-travel/storefront/verification"
 import { createTripsHonoModule, type TripsRoutesOptions } from "@voyant-travel/trips"
-import { Hono } from "hono"
 
 /**
  * Combined "extras" surface — inventory + bookings package extras routes mounted
  * on one module. Pure composition of package route sets (no providers); the
  * deployment used to build this inline.
+ *
+ * An `OpenAPIHono` (not a plain `Hono`) so the bookings extras `.openapi()`
+ * routes' registry propagates up to the composed root and into the framework
+ * OpenAPI spec (voyant#2114). The shared `openApiValidationHook` keeps any
+ * validation failures on the framework's `invalid_request` contract.
  */
 const extrasHonoModule = {
   module: { name: "extras" },
-  routes: new Hono().route("/", inventoryExtrasRoutes).route("/", bookingsExtrasRoutes),
+  routes: new OpenAPIHono({ defaultHook: openApiValidationHook })
+    .route("/", inventoryExtrasRoutes)
+    .route("/", bookingsExtrasRoutes),
 } satisfies HonoModule
 
 // Stable absolute route matchers for the lazy `operator/*` standard families
