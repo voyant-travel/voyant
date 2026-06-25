@@ -138,7 +138,12 @@ jobs:
         run: pnpm turbo build --filter=@voyant-travel/framework --ui=stream --log-order=stream
 
       - name: Build
-        run: pnpm turbo build --ui=stream --log-order=stream
+        # concurrency=2: the framework dist grows with every admin route batch,
+        # which makes the downstream *-react / app builds heavier; at turbo's
+        # default (core-count) concurrency several heavy builds coincided and the
+        # OOM-killer SIGKILLed one (exit 137) on the 16 GB runner. Two-at-a-time
+        # keeps aggregate build RAM in budget. (Framework already built alone above.)
+        run: pnpm turbo build --concurrency=2 --ui=stream --log-order=stream
 
       - name: Package export checks
         run: pnpm verify:package-exports
