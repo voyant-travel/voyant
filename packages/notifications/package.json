@@ -26,6 +26,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=notifications_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^",
