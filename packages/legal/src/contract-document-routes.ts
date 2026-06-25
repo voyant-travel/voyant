@@ -18,7 +18,9 @@
  * so a deployment composes them via `lazyRoutes` using
  * `CONTRACT_DOCUMENT_ROUTE_PATHS`.
  */
-import { type Context, Hono } from "hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import type { Context } from "hono"
 
 /** Minimal structural view of the deployment's document storage backend. */
 export interface ContractDocumentStorageLike {
@@ -149,54 +151,99 @@ function parseDocumentKey(path: string) {
   return segments.join("/")
 }
 
+// --- OpenAPI route definitions (voyant#2114) --------------------------------
+//
+// The booking generate-contract leg is a documented JSON operation surfaced via
+// `.openapi()`. The body is optional (`force`/`preview`), so it declares no
+// forcing OpenAPI request body and parses in-handler. The
+// `/v1/admin/documents/files/*` byte-stream is an admin-only raw download served
+// via `new Response`; it stays a plain `.get(...)` wildcard on the same
+// `OpenAPIHono` (catch-all path keys aren't expressible as a published OpenAPI
+// JSON operation), so it keeps working at runtime without polluting the spec.
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+const generateContractDocumentEnvelopeSchema = z.object({
+  data: z.record(z.string(), z.unknown()),
+})
+
+const generateBookingContractRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/bookings/{bookingId}/generate-contract",
+  request: { params: z.object({ bookingId: z.string() }) },
+  responses: {
+    200: {
+      description: "The generated contract document reference, or a rendered preview",
+      content: { "application/json": { schema: generateContractDocumentEnvelopeSchema } },
+    },
+    400: {
+      description: "bookingId route param is required",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Contract template not found (preview mode)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Contract document generation failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "Contract document storage not configured (missing DOCUMENTS_BUCKET)",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 /**
  * Build the contract-document routes (absolute paths). A deployment composes
  * these via `lazyRoutes` and supplies the generator/preview, storage resolver,
  * and MIME guesser.
  */
-export function createContractDocumentRoutes(options: ContractDocumentRoutesOptions): Hono {
+export function createContractDocumentRoutes(options: ContractDocumentRoutesOptions) {
   const { generateContract, previewContract, resolveStorage, guessMimeType } = options
-  const hono = new Hono()
 
-  // Manual contract-PDF generation for the booking detail page's Documents tab.
-  // POST /v1/admin/bookings/:bookingId/generate-contract
-  hono.post("/v1/admin/bookings/:bookingId/generate-contract", async (c: Context) => {
-    const bookingId = c.req.param("bookingId")
-    if (!bookingId) return c.json({ error: "bookingId route param is required" }, 400)
+  const hono = new OpenAPIHono({ defaultHook: openApiValidationHook })
+    // Manual contract-PDF generation for the booking detail page's Documents tab.
+    .openapi(generateBookingContractRoute, async (c) => {
+      const bookingId = c.req.valid("param").bookingId
+      if (!bookingId) return c.json({ error: "bookingId route param is required" }, 400)
 
-    const body = await c.req
-      .json<{ force?: boolean; preview?: boolean }>()
-      .catch(() => ({}) as { force?: boolean; preview?: boolean })
-    try {
-      if (body.preview === true) {
-        const preview = await previewContract(c.env, c.get("db"), bookingId)
-        if (!preview) {
-          return c.json({ error: "Contract template not found" }, 404)
+      const body = await c.req
+        .json<{ force?: boolean; preview?: boolean }>()
+        .catch(() => ({}) as { force?: boolean; preview?: boolean })
+      try {
+        if (body.preview === true) {
+          const preview = await previewContract(c.env, c.get("db"), bookingId)
+          if (!preview) {
+            return c.json({ error: "Contract template not found" }, 404)
+          }
+          return c.json({ data: preview }, 200)
         }
-        return c.json({ data: preview })
-      }
 
-      const result = await generateContract(c.env, c.get("db"), c.get("eventBus"), bookingId, {
-        force: body.force === true,
-      })
-      if (!result) {
-        return c.json(
-          { error: "Contract document storage not configured (missing DOCUMENTS_BUCKET)" },
-          503,
-        )
+        const result = await generateContract(c.env, c.get("db"), c.get("eventBus"), bookingId, {
+          force: body.force === true,
+        })
+        if (!result) {
+          return c.json(
+            { error: "Contract document storage not configured (missing DOCUMENTS_BUCKET)" },
+            503,
+          )
+        }
+        return c.json({ data: result }, 200)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        return c.json({ error: message }, 502)
       }
-      return c.json({ data: result })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      return c.json({ error: message }, 502)
-    }
-  })
+    })
 
   // GET /v1/admin/documents/files/* — admin-only stream of private
   // documents bytes from the document storage. Used as the fallback
   // download target for environments where the R2 binding isn't backed by a
   // real S3 SigV4 signer. Auth is the standard staff guard inherited from
-  // `/v1/admin/*` middleware in createApp.
+  // `/v1/admin/*` middleware in createApp. Served via `new Response`; a
+  // catch-all path isn't a publishable OpenAPI operation, so it stays a plain
+  // wildcard handler on this OpenAPIHono instance.
   hono.get("/v1/admin/documents/files/*", async (c: Context) => {
     const storage = resolveStorage(c.env)
     if (!storage) {

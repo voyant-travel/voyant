@@ -10072,6 +10072,1278 @@
         }
       }
     },
+    "/v1/public/legal/contracts/templates/default": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "customer",
+                "supplier",
+                "partner",
+                "channel",
+                "other"
+              ],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "scope",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "channelId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 10
+            },
+            "required": false,
+            "name": "language",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "fallbackLanguages",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The resolved default contract template for the scope/language",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "customer",
+                            "supplier",
+                            "partner",
+                            "channel",
+                            "other"
+                          ]
+                        },
+                        "language": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "variableSchema": {},
+                        "currentVersionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "scope",
+                        "language",
+                        "description",
+                        "body",
+                        "currentVersionId",
+                        "channelId",
+                        "isDefault",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/templates/{id}/preview": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "variables"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The rendered template preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/templates/{id}/render-preview": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "variables"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The rendered template preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/templates/by-slug/{slug}/preview": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "variables"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The rendered template preview (with template descriptor)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/templates/by-slug/{slug}/render-preview": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "variables"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The rendered template preview (with template descriptor)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A public-safe contract by id (metadata stripped)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "contractNumber": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "customer",
+                            "supplier",
+                            "partner",
+                            "channel",
+                            "other"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "issued",
+                            "sent",
+                            "signed",
+                            "executed",
+                            "expired",
+                            "void"
+                          ]
+                        },
+                        "stageHistory": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "stage": {
+                                "type": "string",
+                                "enum": [
+                                  "draft",
+                                  "issued",
+                                  "sent",
+                                  "signed",
+                                  "executed",
+                                  "expired",
+                                  "void"
+                                ]
+                              },
+                              "previousStage": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "draft",
+                                  "issued",
+                                  "sent",
+                                  "signed",
+                                  "executed",
+                                  "expired",
+                                  "void",
+                                  null
+                                ]
+                              },
+                              "transition": {
+                                "type": "string",
+                                "enum": [
+                                  "created",
+                                  "issued",
+                                  "sent",
+                                  "signed",
+                                  "executed",
+                                  "voided"
+                                ]
+                              },
+                              "enteredAt": {
+                                "type": "string"
+                              },
+                              "actorId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "stage",
+                              "previousStage",
+                              "transition",
+                              "enteredAt"
+                            ]
+                          }
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "templateVersionId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "seriesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "personId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "organizationId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "supplierId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "channelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "bookingId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "targetKind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "booking",
+                            "quote_version",
+                            "program",
+                            "product",
+                            "inventory_item",
+                            "supplier_channel_relationship",
+                            "provider_source_ref",
+                            null
+                          ]
+                        },
+                        "targetId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "targetProvider": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "targetSourceRef": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "legacyTransactionOfferId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "legacyTransactionOrderId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "issuedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sentAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "executedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "voidedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "language": {
+                          "type": "string"
+                        },
+                        "renderedBodyFormat": {
+                          "type": "string",
+                          "enum": [
+                            "markdown",
+                            "html",
+                            "lexical_json"
+                          ]
+                        },
+                        "renderedBody": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "variables": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "contractNumber",
+                        "scope",
+                        "status",
+                        "stageHistory",
+                        "title",
+                        "templateVersionId",
+                        "seriesId",
+                        "personId",
+                        "organizationId",
+                        "supplierId",
+                        "channelId",
+                        "bookingId",
+                        "targetKind",
+                        "targetId",
+                        "targetProvider",
+                        "targetSourceRef",
+                        "legacyTransactionOfferId",
+                        "legacyTransactionOrderId",
+                        "issuedAt",
+                        "sentAt",
+                        "executedAt",
+                        "expiresAt",
+                        "voidedAt",
+                        "language",
+                        "renderedBodyFormat",
+                        "renderedBody",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/legal/contracts/{id}/sign": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "signerName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "signerEmail": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "email"
+                  },
+                  "signerRole": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "personId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "targetKind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "booking",
+                      "quote_version",
+                      "program",
+                      "product",
+                      "inventory_item",
+                      "supplier_channel_relationship",
+                      "provider_source_ref",
+                      null
+                    ]
+                  },
+                  "targetId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "targetProvider": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "targetSourceRef": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "legacyTransactionOfferId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "legacyTransactionOrderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "manual",
+                      "electronic",
+                      "docusign",
+                      "other"
+                    ],
+                    "default": "manual"
+                  },
+                  "provider": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "externalReference": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "signatureData": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ipAddress": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
+                  },
+                  "userAgent": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500
+                  },
+                  "metadata": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "signerName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recorded signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "signature": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "contractId": {
+                              "type": "string"
+                            },
+                            "signerName": {
+                              "type": "string"
+                            },
+                            "signerEmail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "signerRole": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "personId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "targetKind": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "booking",
+                                "quote_version",
+                                "program",
+                                "product",
+                                "inventory_item",
+                                "supplier_channel_relationship",
+                                "provider_source_ref",
+                                null
+                              ]
+                            },
+                            "targetId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "targetProvider": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "targetSourceRef": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "legacyTransactionOfferId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "legacyTransactionOrderId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": [
+                                "manual",
+                                "electronic",
+                                "docusign",
+                                "other"
+                              ]
+                            },
+                            "provider": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "externalReference": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "signatureData": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "ipAddress": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "userAgent": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "signedAt": {
+                              "type": "string"
+                            },
+                            "metadata": {},
+                            "createdAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "contractId",
+                            "signerName",
+                            "signerEmail",
+                            "signerRole",
+                            "personId",
+                            "targetKind",
+                            "targetId",
+                            "targetProvider",
+                            "targetSourceRef",
+                            "legacyTransactionOfferId",
+                            "legacyTransactionOrderId",
+                            "method",
+                            "provider",
+                            "externalReference",
+                            "signatureData",
+                            "ipAddress",
+                            "userAgent",
+                            "signedAt",
+                            "createdAt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "signature"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_request: request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Contract is not in a signable state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/products/{productId}/offers": {
       "get": {
         "parameters": [
