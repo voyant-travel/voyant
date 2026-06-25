@@ -64,7 +64,11 @@ jobs:
         run: pnpm lint
 
       - name: Typecheck
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --ui=stream --log-order=stream
+        # concurrency=2 (was 4): the composed operator typecheck now uses ~10 GB
+        # of real RAM as @hono/zod-openapi adoption grows the app's type surface;
+        # running 4 typechecks at once oversubscribed the 16 GB runner and the
+        # OOM-killer cancelled the step. 2-at-a-time keeps peak RAM in budget.
+        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=2 --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream
