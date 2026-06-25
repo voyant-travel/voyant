@@ -692,9 +692,6 @@
       "@voyant-travel/db/runtime": ["../../packages/db/dist/runtime/index.d.ts"],
       "@voyant-travel/db/schema": ["../../packages/db/dist/schema/index.d.ts"],
       "@voyant-travel/db/schema/*": ["../../packages/db/dist/schema/*.d.ts"],
-      "@voyant-travel/db/schema/*/*": ["../../packages/db/dist/schema/*/*.d.ts"],
-      "@voyant-travel/db/schema/*/*/*": ["../../packages/db/dist/schema/*/*/*.d.ts"],
-      "@voyant-travel/db/schema/*/*/*/*": ["../../packages/db/dist/schema/*/*/*/*.d.ts"],
       "@voyant-travel/db/schema/00_ensure_schemas": [
         "../../packages/db/dist/schema/00_ensure_schemas.d.ts"
       ],

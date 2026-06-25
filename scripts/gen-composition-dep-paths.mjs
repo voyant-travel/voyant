@@ -106,6 +106,9 @@ function declEntries(pkg) {
     if (typeof value !== "string") continue // skip condition objects / non-string
     if (!value.startsWith("./src/")) continue // only source entrypoints
     if (!/\.tsx?$/.test(value)) continue // only TS sources have .d.ts
+    // tsc `paths` patterns allow at most ONE `*`; skip multi-wildcard subpath
+    // exports (e.g. `./schema/*/*`) and let them resolve via `exports` (src).
+    if ((key.match(/\*/g) ?? []).length > 1 || (value.match(/\*/g) ?? []).length > 1) continue
     const specifier = key === "." ? pkg.name : `${pkg.name}${key.slice(1)}`
     const distRel = value.replace(/^\.\/src\//, "dist/").replace(/\.tsx?$/, ".d.ts")
     entries.push([specifier, join(ROOT, pkg.dir, distRel)])
