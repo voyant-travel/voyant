@@ -15,8 +15,8 @@
 // Re-run after changing any package's `exports` (a CI check enforces freshness).
 //   node scripts/gen-composition-dep-paths.mjs
 
-import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
-import { join, relative, dirname } from "node:path"
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
@@ -123,7 +123,11 @@ function buildPaths(packages, configDir) {
     }
   }
   // Stable ordering for clean diffs.
-  return Object.fromEntries(Object.keys(paths).sort().map((k) => [k, paths[k]]))
+  return Object.fromEntries(
+    Object.keys(paths)
+      .sort()
+      .map((k) => [k, paths[k]]),
+  )
 }
 
 /**
