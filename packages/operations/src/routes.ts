@@ -14,12 +14,16 @@ operationsRoutes.route("/", groundRoutes)
 operationsRoutes.route("/", facilitiesRoutes)
 
 // `OpenAPIHono` so the `.openapi()` operations registered by
-// `availabilityAdminRoutes` propagate up to the composed framework app and
-// surface under `/v1/admin/operations/*` in `framework-admin.json`.
+// `availabilityAdminRoutes` and `groundRoutes` propagate up to the composed
+// framework app and surface under `/v1/admin/operations/*` in
+// `framework-admin.json`. The same `groundRoutes` instance is mounted here (in
+// addition to the legacy surface above) so its CRUD operations are documented
+// on the admin surface.
 export const operationsAdminRoutes = new OpenAPIHono({
   defaultHook: openApiValidationHook,
 })
 operationsAdminRoutes.route("/availability", availabilityAdminRoutes)
+operationsAdminRoutes.route("/", groundRoutes)
 
 export type OperationsRoutes = typeof operationsRoutes
 export type OperationsAdminRoutes = typeof operationsAdminRoutes
