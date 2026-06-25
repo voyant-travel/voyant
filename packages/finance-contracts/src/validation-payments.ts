@@ -425,6 +425,17 @@ export const insertSupplierPaymentSchema = supplierPaymentCoreSchema.refine(
   (v) => Boolean(v.bookingId) || Boolean(v.supplierInvoiceId),
   { message: "a supplier payment must reference a bookingId and/or a supplierInvoiceId" },
 )
+
+/**
+ * Body schema for the nested `POST /supplier-invoices/{id}/payments` route: the
+ * `supplierInvoiceId` is taken from the path, so it's omitted from the body and
+ * the bookingId/supplierInvoiceId invariant is satisfied by the merged path id
+ * (the `insertSupplierPaymentSchema` refine would otherwise 400 a contract-
+ * following body that omits it).
+ */
+export const insertSupplierInvoicePaymentBodySchema = supplierPaymentCoreSchema.omit({
+  supplierInvoiceId: true,
+})
 export const updateSupplierPaymentSchema = supplierPaymentCoreSchema.partial()
 
 export const supplierPaymentListSortFieldSchema = z.enum([

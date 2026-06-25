@@ -1,13 +1,89 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { Extension } from "@voyant-travel/core"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { Env } from "./routes-shared.js"
 import { bookingCreateSchema, createBooking } from "./service-booking-create.js"
 import { dualCreateBooking, dualCreateBookingSchema } from "./service-bookings-dual-create.js"
+
+// --- Response schemas ------------------------------------------------------
+//
+// The success `data` payload is the rich `BookingCreateResult` — a composite of
+// cross-package Drizzle rows (booking, travelers, payment schedules, voucher,
+// invoice, payments) owned by `@voyant-travel/bookings` / `finance`. To avoid
+// asserting (and drifting against) every column those packages own, the heavy
+// row sub-objects are modeled as opaque objects here; the documented contract is
+// the envelope + the discriminated `invoiceDocument` status. The error branches
+// are modeled precisely because they are the stable, caller-facing contract.
+
+const opaqueRow = z.record(z.string(), z.unknown())
+
+const bookingCreateResultSchema = z.object({
+  booking: opaqueRow,
+  travelers: z.array(opaqueRow),
+  paymentSchedules: z.array(opaqueRow),
+  voucherRedemption: z.object({ voucher: opaqueRow, redemption: opaqueRow }).nullable(),
+  groupMembership: z.object({ groupId: z.string(), member: opaqueRow }).nullable(),
+  invoice: opaqueRow.nullable(),
+  invoiceDocument: z.union([
+    z.object({ status: z.literal("requested"), renditionId: z.string().nullable() }),
+    z.object({ status: z.literal("generated"), renditionId: z.string() }),
+    z.object({ status: z.enum(["not_requested", "not_available", "failed"]) }),
+  ]),
+  payments: z.array(opaqueRow),
+})
+
+const dualCreateBookingResultSchema = z.object({
+  primary: bookingCreateResultSchema,
+  secondary: bookingCreateResultSchema,
+  group: opaqueRow,
+  primaryMember: opaqueRow,
+  secondaryMember: opaqueRow,
+})
+
+const notFoundSchema = z.object({ error: z.string() })
+
+// The create/dual-create error branches share an `error` key but carry
+// branch-specific structured fields (`code`, `issues`, `mismatches`, the
+// duplicate-booking refs, occupancy counts, …). They are modeled with a loose
+// `{ error } + catchall` schema (rather than a strict discriminated union) so
+// the inline-constructed handler bodies type-check without per-branch literal
+// narrowing; the per-status `description` documents the structured shapes.
+const createBadRequestSchema = z
+  .object({
+    error: z.string(),
+    code: z.string().optional(),
+    issues: z
+      .array(z.object({ path: z.array(z.union([z.string(), z.number()])), message: z.string() }))
+      .optional(),
+    mismatches: z.array(z.unknown()).optional(),
+    pax: z.number().int().optional(),
+    occupancyMax: z.number().int().optional(),
+    shortfall: z.number().int().optional(),
+  })
+  .catchall(z.unknown())
+
+const createConflictSchema = z
+  .object({
+    error: z.string(),
+    code: z.string().optional(),
+    existingBookingId: z.string().optional(),
+    existingBookingNumber: z.string().optional(),
+    existingBookingStatus: z.string().optional(),
+    currentGroupId: z.string().optional(),
+  })
+  .catchall(z.unknown())
+
+// The dual-create failure branches wrap a per-sub create reason and add
+// `which` + `reasonStatus`, so they are looser supersets of the single-create
+// error shapes.
+const dualBadRequestSchema = z.object({ error: z.string() }).catchall(z.unknown())
+const dualConflictSchema = z.object({ error: z.string() }).catchall(z.unknown())
+const dualServerErrorSchema = z.object({ error: z.string() }).catchall(z.unknown())
 
 function resolveRuntime(container: { resolve: <T>(key: string) => T } | undefined) {
   try {
@@ -54,10 +130,85 @@ function getBookingCreateActionLedgerRequestContext(
  * the endpoint's public-facing path lands at `POST /v1/admin/bookings/create`
  * even though the code lives in `@voyant-travel/finance`. See the header comment in
  * service-booking-create.ts for why finance owns this orchestration.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
+ * voyant#2208 — finance sub-batch 9E). The request bodies reuse the handlers'
+ * existing `bookingCreateSchema` / `dualCreateBookingSchema`; `OpenAPIHono` so
+ * the `.openapi()` operations propagate up through the composed app when the
+ * extension's `adminRoutes` mount at `/v1/admin/bookings`.
  */
-const createBookingRoutes = new Hono<Env>()
-  .post("/create", async (c) => {
-    const input = await parseJsonBody(c, bookingCreateSchema)
+const createBookingRoute = createRoute({
+  method: "post",
+  path: "/create",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: bookingCreateSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "The created booking with its travelers, schedules, invoice, and payments",
+      content: { "application/json": { schema: z.object({ data: bookingCreateResultSchema }) } },
+    },
+    400: {
+      description:
+        "invalid_request: body failed validation, payment schedules invalid, the payload " +
+        "did not match the resolved draft, or the selected rooms cannot seat the party",
+      content: { "application/json": { schema: createBadRequestSchema } },
+    },
+    404: {
+      description: "Product, voucher, or booking group not found",
+      content: { "application/json": { schema: notFoundSchema } },
+    },
+    409: {
+      description:
+        "Conflict: duplicate booking, voucher state conflict, or booking already in a group",
+      content: { "application/json": { schema: createConflictSchema } },
+    },
+  },
+})
+
+const dualCreateBookingRoute = createRoute({
+  method: "post",
+  path: "/dual-create",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: dualCreateBookingSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "Both created bookings linked via a new booking group",
+      content: {
+        "application/json": { schema: z.object({ data: dualCreateBookingResultSchema }) },
+      },
+    },
+    400: {
+      description:
+        "invalid_request: body failed validation, or one sub-booking failed a 400-class " +
+        "precondition (the failing side is named via `which` + `reasonStatus`)",
+      content: { "application/json": { schema: dualBadRequestSchema } },
+    },
+    404: {
+      description: "A sub-booking's product, voucher, or group was not found",
+      content: { "application/json": { schema: notFoundSchema } },
+    },
+    409: {
+      description: "A sub-booking hit a duplicate / voucher / already-in-group conflict",
+      content: { "application/json": { schema: dualConflictSchema } },
+    },
+    500: {
+      description: "Group linking failed for a sub-booking",
+      content: { "application/json": { schema: dualServerErrorSchema } },
+    },
+  },
+})
+
+const createBookingRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(createBookingRoute, async (c) => {
+    const input = c.req.valid("json")
     const runtime = resolveRuntime(c.var.container)
 
     const outcome = await createBooking(c.get("db"), input, {
@@ -135,8 +286,8 @@ const createBookingRoutes = new Hono<Env>()
         )
     }
   })
-  .post("/dual-create", async (c) => {
-    const input = await parseJsonBody(c, dualCreateBookingSchema)
+  .openapi(dualCreateBookingRoute, async (c) => {
+    const input = c.req.valid("json")
     const runtime = resolveRuntime(c.var.container)
 
     const outcome = await dualCreateBooking(c.get("db"), input, {
