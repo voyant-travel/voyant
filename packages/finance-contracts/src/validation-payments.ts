@@ -102,6 +102,18 @@ function withLegacyOrderCompatibility<TShape extends z.ZodRawShape>(schema: z.Zo
     .and(noGenericOrderIdSchema)
 }
 
+/**
+ * Documentable (`ZodObject`) twin of {@link withLegacyOrderCompatibility}: it
+ * carries the same fields plus the `legacyOrderId` shim but omits the
+ * `.and({ orderId?: never })` ban. The ban relies on `z.never()`, which the
+ * `@hono/zod-openapi` spec generator cannot render — so admin routes declare
+ * the `*WithLegacyOrder` variant as the OpenAPI request body while the
+ * intersection variant stays the canonical parse schema everywhere else.
+ */
+function withLegacyOrderField<TShape extends z.ZodRawShape>(schema: z.ZodObject<TShape>) {
+  return schema.extend({ legacyOrderId: z.string().optional().nullable() })
+}
+
 const paymentSessionCoreSchema = z.object({
   target: paymentTargetSchema.optional(),
   provenance: paymentProvenanceSchema.optional(),
@@ -147,6 +159,11 @@ const paymentSessionCoreSchema = z.object({
 
 export const insertPaymentSessionSchema = withLegacyOrderCompatibility(paymentSessionCoreSchema)
 export const updatePaymentSessionSchema = withLegacyOrderCompatibility(
+  paymentSessionCoreSchema.partial(),
+)
+/** Documentable request-body twins (see {@link withLegacyOrderField}). */
+export const insertPaymentSessionBodySchema = withLegacyOrderField(paymentSessionCoreSchema)
+export const updatePaymentSessionBodySchema = withLegacyOrderField(
   paymentSessionCoreSchema.partial(),
 )
 export const paymentSessionListQuerySchema = withLegacyOrderCompatibility(
@@ -288,6 +305,13 @@ export const insertPaymentAuthorizationSchema = withLegacyOrderCompatibility(
   paymentAuthorizationCoreSchema,
 )
 export const updatePaymentAuthorizationSchema = withLegacyOrderCompatibility(
+  paymentAuthorizationCoreSchema.partial(),
+)
+/** Documentable request-body twins (see {@link withLegacyOrderField}). */
+export const insertPaymentAuthorizationBodySchema = withLegacyOrderField(
+  paymentAuthorizationCoreSchema,
+)
+export const updatePaymentAuthorizationBodySchema = withLegacyOrderField(
   paymentAuthorizationCoreSchema.partial(),
 )
 export const paymentAuthorizationListQuerySchema = withLegacyOrderCompatibility(
