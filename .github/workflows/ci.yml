@@ -135,7 +135,11 @@ jobs:
       # rest of the graph would wait on it anyway. The second step reuses its
       # cached dist, so only the remaining packages build there.
       - name: Build (framework composition)
-        run: pnpm turbo build --filter=@voyant-travel/framework --ui=stream --log-order=stream
+        # --filter builds framework AND its whole upstream dep graph; cap at
+        # concurrency=2 so a cold cache (e.g. right after a turbo-hash-invalidating
+        # change) can't coincide several heavy module builds and OOM the 16 GB
+        # runner (exit 137). framework's own build keeps its package-script heap.
+        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=2 --ui=stream --log-order=stream
 
       - name: Build
         # concurrency=2: the framework dist grows with every admin route batch,
