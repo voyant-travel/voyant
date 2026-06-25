@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.json",
-    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "lint": "biome check src",
     "clean": "rm -rf dist"
