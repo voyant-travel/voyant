@@ -20,12 +20,13 @@ availabilityRoutes.route("/", availabilityPickupRoutes)
 // `framework-admin.json`. The same `availabilityCoreRoutes` instance is mounted
 // here (in addition to the legacy surface) so its dashboard + CRUD operations
 // are documented under `/v1/admin/operations/availability/*` alongside the
-// allocation routes.
+// allocation and pickup routes.
 export const availabilityAdminRoutes = new OpenAPIHono<Env>({
   defaultHook: openApiValidationHook,
 })
   .route("/", availabilityCoreRoutes)
   .route("/", availabilityAllocationRoutes)
+  .route("/", availabilityPickupRoutes)
 
 export type AvailabilityRoutes = typeof availabilityRoutes
 export type AvailabilityAdminRoutes = typeof availabilityAdminRoutes
