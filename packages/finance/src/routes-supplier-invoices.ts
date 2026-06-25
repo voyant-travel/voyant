@@ -41,8 +41,8 @@ import {
 } from "./service-supplier-invoices.js"
 import {
   insertSupplierInvoiceAttachmentSchema,
+  insertSupplierInvoicePaymentBodySchema,
   insertSupplierInvoiceSchema,
-  insertSupplierPaymentSchema,
   setSupplierCostAllocationsSchema,
   setSupplierInvoiceLinesSchema,
   supplierInvoiceListQuerySchema,
@@ -562,7 +562,7 @@ const createSupplierInvoicePaymentRoute = createRoute({
     params: idParamSchema,
     body: {
       required: true,
-      content: { "application/json": { schema: insertSupplierPaymentSchema } },
+      content: { "application/json": { schema: insertSupplierInvoicePaymentBodySchema } },
     },
   },
   responses: {

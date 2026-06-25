@@ -60162,12 +60162,6 @@
                     ],
                     "minLength": 1
                   },
-                  "supplierInvoiceId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
                   "supplierId": {
                     "type": [
                       "string",
