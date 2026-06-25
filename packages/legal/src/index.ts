@@ -50,11 +50,10 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
 }
 
 export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}): HonoModule {
-  // Parents are `OpenAPIHono` so the contracts sub-chains' `.openapi()`
-  // operations propagate up into the framework/operator OpenAPI registries
-  // (voyant#2114). The still-plain-Hono policies/terms children mount cleanly on
-  // an `OpenAPIHono` parent and keep working at runtime; they convert in a later
-  // batch. The shared `openApiValidationHook` is the `defaultHook`.
+  // Parents are `OpenAPIHono` so the contracts/policies/terms sub-chains'
+  // `.openapi()` operations propagate up into the framework/operator OpenAPI
+  // registries (voyant#2114). The shared `openApiValidationHook` is the
+  // `defaultHook`.
   const legalAdminRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
     .route("/contracts", createContractsAdminRoutes(options))
     .route("/policies", policiesAdminRoutes)
