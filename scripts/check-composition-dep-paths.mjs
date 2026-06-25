@@ -20,10 +20,12 @@ const CONFIGS = [
 const before = CONFIGS.map((f) => readFileSync(join(ROOT, f), "utf8"))
 execFileSync("node", ["scripts/gen-composition-dep-paths.mjs"], { cwd: ROOT, stdio: "ignore" })
 const after = CONFIGS.map((f) => readFileSync(join(ROOT, f), "utf8"))
-const stale = CONFIGS.filter((f, i) => before[i] !== after[i])
+const stale = CONFIGS.filter((_f, i) => before[i] !== after[i])
 
 // Restore the originals so this check never leaves the tree dirty.
-CONFIGS.forEach((f, i) => writeFileSync(join(ROOT, f), before[i]))
+for (const [i, f] of CONFIGS.entries()) {
+  writeFileSync(join(ROOT, f), before[i])
+}
 
 if (stale.length > 0) {
   console.error(
