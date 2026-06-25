@@ -1,5 +1,11 @@
 # @voyant-travel/admin
 
+## 0.115.3
+
+### Patch Changes
+
+- 2bb3b18: Keep dashboard booking links route-tree agnostic for reduced starters that do not mount native booking routes.
+
 ## 0.115.2
 
 ### Patch Changes

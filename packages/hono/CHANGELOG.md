@@ -1,5 +1,60 @@
 # @voyant-travel/hono
 
+## 0.117.2
+
+### Patch Changes
+
+- d61803e: Require `Content-Type: application/json` for `.openapi()` JSON bodies (voyant#2114).
+
+  Hono's `json` validator supplies `{}` to the schema (instead of parsing) when a
+  request sends a body but omits — or mis-declares — the `application/json`
+  content-type. For schemas with required fields `{}` fails validation and yields
+  a clean 400, but for `.partial()` PATCH update schemas `{}` _validates_: the
+  handler then runs with an empty patch and silently no-ops (200), dropping the
+  caller's changes. This affected every migrated PATCH route with a partial body
+  schema.
+
+  `openApiValidationHook` now enforces the content-type the route's contract
+  declares for the `json` validation target, so a missing or non-json header is a
+  clean `invalid_request` 400 rather than a silent no-op. The regex accepts
+  `application/json`, `application/json; charset=utf-8`, and `application/vnd.x+json`;
+  only the `json` target is gated, so `query`/`param`/`header`/`form` (including
+  multipart uploads) are untouched. The fix is one place in the shared hook and
+  completes §16's content-type policy for all already-merged routes; no route or
+  spec changes required.
+
+- adf0f72: Make the app-wide `requestBodyLimit` cap content-type-aware (voyant#2114).
+
+  A prior fix raised the global ceiling to `MAX_GLOBAL_REQUEST_BODY_BYTES` (26 MiB)
+  so chunked media uploads (25 MiB file + multipart envelope) aren't rejected. That
+  also loosened migrated `.openapi()` JSON routes from the old `parseJsonBody` 10 MiB
+  cap up to 26 MiB.
+
+  `requestBodyLimit` now accepts an optional `jsonMaxBytes` and applies it (via a
+  case-sensitive `application/json` content-type match mirroring Hono's `jsonRegex`)
+  to JSON bodies, while non-JSON bodies (uploads) keep the outer `maxBytes` ceiling.
+  `createApp` wires `jsonMaxBytes` to `DEFAULT_REQUEST_BODY_LIMIT_BYTES` (10 MiB) and
+  `maxBytes` to `MAX_GLOBAL_REQUEST_BODY_BYTES` (26 MiB), restoring the 10 MiB JSON
+  cap for every migrated route while keeping uploads at 26 MiB. The 413 response
+  shape and GET/HEAD/OPTIONS skip are unchanged; both exports are unchanged.
+
+- 99233e6: Enforce the request body-size cap on the actual stream, not just `Content-Length` (voyant#2114).
+
+  The framework-level `requestBodyLimit` middleware previously only checked the
+  `Content-Length` header. The old `parseJsonBody` path additionally read the body
+  through a bounded reader, so it rejected oversized bodies even when no
+  `Content-Length` was present (chunked / HTTP/2). Routes migrated to `.openapi()`
+  read via Hono's `json` validator (`c.req.json()`), which bypasses `parseJsonBody`,
+  so a chunked / no-`Content-Length` oversized body was parsed unbounded — affecting
+  every migrated JSON-body route (public + admin).
+
+  `requestBodyLimit` now wraps Hono's built-in `bodyLimit`, which checks
+  `Content-Length` AND wraps the body stream to abort once the read exceeds the cap.
+  The existing 413 response shape is preserved via `bodyLimit`'s `onError`
+  (`{ error, code: "request_body_too_large", maxBytes }`), GET/HEAD/OPTIONS are still
+  skipped, and `DEFAULT_REQUEST_BODY_LIMIT_BYTES` / `RequestBodyLimitOptions` are
+  unchanged. One-place fix that restores the bound for all migrated routes.
+
 ## 0.117.1
 
 ### Patch Changes
