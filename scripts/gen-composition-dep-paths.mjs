@@ -154,5 +154,9 @@ function injectPaths(configRelPath, extraAliases) {
 
 const packages = collectPackages()
 
-// operator server program keeps its own `@/*` alias.
+// The three composition-point typecheck programs that re-infer module source.
+// operator's server program keeps its own `@/*` alias; framework + openapi use a
+// dedicated tsconfig.typecheck.json so their build/editor config stays on source.
 injectPaths("starters/operator/tsconfig.server.json", { "@/*": ["./src/*"] })
+injectPaths("packages/framework/tsconfig.typecheck.json", {})
+injectPaths("packages/openapi/tsconfig.typecheck.json", {})
