@@ -1,10 +1,17 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import type { Hono } from "hono"
-import { z } from "zod"
+import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi"
+import { listResponseSchema } from "@voyant-travel/types"
 
 import { parseUnifiedKey } from "./lib/key.js"
 import type { CruiseRoutesEnv as Env } from "./routes-env.js"
 import { adapterNotRegistered, invalidKey, resolveExternal } from "./routes-keying.js"
+import {
+  cruiseCabinCategoryRowSchema,
+  cruiseCabinRowSchema,
+  cruiseDeckRowSchema,
+  cruiseShipRowSchema,
+  dataEnvelope,
+  errorResponseSchema,
+} from "./routes-openapi-schemas.js"
 import { cruisesService } from "./service.js"
 import {
   insertCabinCategorySchema,
@@ -18,139 +25,344 @@ import {
   updateShipSchema,
 } from "./validation-cabins.js"
 
-export function registerCruiseShipRoutes(app: Hono<Env>) {
-  app
-    // --- ships ---
-    .get("/ships", async (c) => {
-      const query = parseQuery(c, shipListQuerySchema)
-      const result = await cruisesService.listShips(c.get("db"), query)
-      return c.json(result)
-    })
-    .post("/ships", async (c) => {
-      const data = await parseJsonBody(c, insertShipSchema)
-      const row = await cruisesService.createShip(c.get("db"), data)
-      return c.json({ data: row }, 201)
-    })
-    .get("/ships/:key", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      if (parsed.kind === "external") {
-        const ext = resolveExternal(parsed)
-        if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
-        const ship = await ext.adapter.fetchShip(ext.sourceRef)
-        if (!ship) return c.json({ error: "not_found" }, 404)
-        return c.json({
+const keyParamSchema = z.object({ key: z.string() })
+const arrayEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: z.array(item) })
+const jsonContent = <T extends z.ZodTypeAny>(description: string, schema: T) => ({
+  description,
+  content: { "application/json": { schema } },
+})
+
+/** Local ship row, or the external `{ source, ... }` envelope for adapter ships. */
+const shipDetailDataSchema = z.union([
+  cruiseShipRowSchema,
+  z.object({
+    source: z.literal("external"),
+    sourceProvider: z.string(),
+    sourceRef: z.unknown(),
+    ship: z.unknown(),
+  }),
+])
+
+// --- ships ----------------------------------------------------------------
+
+const listShipsRoute = createRoute({
+  method: "get",
+  path: "/ships",
+  request: { query: shipListQuerySchema },
+  responses: {
+    200: jsonContent("Paginated list of cruise ships", listResponseSchema(cruiseShipRowSchema)),
+  },
+})
+
+const createShipRoute = createRoute({
+  method: "post",
+  path: "/ships",
+  request: {
+    body: { required: true, content: { "application/json": { schema: insertShipSchema } } },
+  },
+  responses: {
+    201: jsonContent("The created ship", dataEnvelope(cruiseShipRowSchema)),
+    400: jsonContent("invalid_request: request body failed validation", errorResponseSchema),
+  },
+})
+
+const getShipRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}",
+  request: { params: keyParamSchema },
+  responses: {
+    200: jsonContent(
+      "A ship by unified key (local row or external adapter shape)",
+      dataEnvelope(shipDetailDataSchema),
+    ),
+    400: jsonContent("Key is not a valid local id or external key", errorResponseSchema),
+    404: jsonContent("Ship not found", errorResponseSchema),
+    501: jsonContent("Referenced adapter is not registered", errorResponseSchema),
+  },
+})
+
+const updateShipRoute = createRoute({
+  method: "put",
+  path: "/ships/{key}",
+  request: {
+    params: keyParamSchema,
+    body: { required: true, content: { "application/json": { schema: updateShipSchema } } },
+  },
+  responses: {
+    200: jsonContent("The updated ship", dataEnvelope(cruiseShipRowSchema)),
+    400: jsonContent("Key is not a valid local id", errorResponseSchema),
+    404: jsonContent("Ship not found", errorResponseSchema),
+    409: jsonContent("External cruise/ship is read-only", errorResponseSchema),
+  },
+})
+
+const listShipDecksRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/decks",
+  request: { params: keyParamSchema },
+  responses: {
+    200: jsonContent(
+      "Decks for the ship (local rows or external adapter decks)",
+      arrayEnvelope(z.unknown()),
+    ),
+    400: jsonContent("Key is not a valid local id or external key", errorResponseSchema),
+    501: jsonContent("Referenced adapter is not registered", errorResponseSchema),
+  },
+})
+
+const createShipDeckRoute = createRoute({
+  method: "post",
+  path: "/ships/{key}/decks",
+  request: {
+    params: keyParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: insertDeckSchema.omit({ shipId: true }) } },
+    },
+  },
+  responses: {
+    201: jsonContent("The created (or upserted) deck", dataEnvelope(cruiseDeckRowSchema)),
+    400: jsonContent("Key is not a valid local id", errorResponseSchema),
+    409: jsonContent("External cruise/ship is read-only", errorResponseSchema),
+  },
+})
+
+const updateDeckRoute = createRoute({
+  method: "put",
+  path: "/decks/{deckId}",
+  request: {
+    params: z.object({ deckId: z.string() }),
+    body: { required: true, content: { "application/json": { schema: updateDeckSchema } } },
+  },
+  responses: {
+    200: jsonContent("The updated deck", dataEnvelope(cruiseDeckRowSchema)),
+    404: jsonContent("Deck not found", errorResponseSchema),
+  },
+})
+
+const listShipCategoriesRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/categories",
+  request: { params: keyParamSchema },
+  responses: {
+    200: jsonContent(
+      "Cabin categories for the ship (local rows or external adapter shapes)",
+      arrayEnvelope(z.unknown()),
+    ),
+    400: jsonContent("Key is not a valid local id or external key", errorResponseSchema),
+    501: jsonContent("Referenced adapter is not registered", errorResponseSchema),
+  },
+})
+
+const replaceShipCategoriesRoute = createRoute({
+  method: "put",
+  path: "/ships/{key}/categories/bulk",
+  request: {
+    params: keyParamSchema,
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({ categories: z.array(insertCabinCategorySchema) }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: jsonContent("The upserted cabin categories", arrayEnvelope(cruiseCabinCategoryRowSchema)),
+    400: jsonContent("Key is not a valid local id", errorResponseSchema),
+    409: jsonContent("External cruise/ship is read-only", errorResponseSchema),
+  },
+})
+
+const updateCategoryRoute = createRoute({
+  method: "put",
+  path: "/categories/{categoryId}",
+  request: {
+    params: z.object({ categoryId: z.string() }),
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateCabinCategorySchema } },
+    },
+  },
+  responses: {
+    200: jsonContent("The updated cabin category", dataEnvelope(cruiseCabinCategoryRowSchema)),
+    404: jsonContent("Cabin category not found", errorResponseSchema),
+  },
+})
+
+const listCategoryCabinsRoute = createRoute({
+  method: "get",
+  path: "/categories/{categoryId}/cabins",
+  request: { params: z.object({ categoryId: z.string() }) },
+  responses: {
+    200: jsonContent("Cabins in the category", arrayEnvelope(cruiseCabinRowSchema)),
+  },
+})
+
+const replaceCategoryCabinsRoute = createRoute({
+  method: "put",
+  path: "/categories/{categoryId}/cabins/bulk",
+  request: {
+    params: z.object({ categoryId: z.string() }),
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({ cabins: z.array(insertCabinSchema.omit({ categoryId: true })) }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: jsonContent("The upserted cabins", arrayEnvelope(cruiseCabinRowSchema)),
+  },
+})
+
+const updateCabinRoute = createRoute({
+  method: "put",
+  path: "/cabins/{cabinId}",
+  request: {
+    params: z.object({ cabinId: z.string() }),
+    body: { required: true, content: { "application/json": { schema: updateCabinSchema } } },
+  },
+  responses: {
+    200: jsonContent("The updated cabin", dataEnvelope(cruiseCabinRowSchema)),
+    404: jsonContent("Cabin not found", errorResponseSchema),
+  },
+})
+
+export function registerCruiseShipRoutes(app: OpenAPIHono<Env>) {
+  // --- ships ---
+  app.openapi(listShipsRoute, async (c) => {
+    const result = await cruisesService.listShips(c.get("db"), c.req.valid("query"))
+    return c.json(result, 200)
+  })
+  app.openapi(createShipRoute, async (c) => {
+    const row = await cruisesService.createShip(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row }, 201)
+  })
+  app.openapi(getShipRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    if (parsed.kind === "external") {
+      const ext = resolveExternal(parsed)
+      if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
+      const ship = await ext.adapter.fetchShip(ext.sourceRef)
+      if (!ship) return c.json({ error: "not_found" }, 404)
+      return c.json(
+        {
           data: {
-            source: "external",
+            source: "external" as const,
             sourceProvider: ext.adapter.name,
             sourceRef: ship.sourceRef,
             ship,
           },
-        })
-      }
-      const row = await cruisesService.getShipById(c.get("db"), parsed.id)
-      if (!row) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: row })
-    })
-    .put("/ships/:key", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      const data = await parseJsonBody(c, updateShipSchema)
-      const row = await cruisesService.updateShip(c.get("db"), parsed.id, data)
-      if (!row) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: row })
-    })
-    .get("/ships/:key/decks", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      if (parsed.kind === "external") {
-        const ext = resolveExternal(parsed)
-        if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
-        const ship = await ext.adapter.fetchShip(ext.sourceRef)
-        return c.json({ data: ship?.decks ?? [] })
-      }
-      const decks = await cruisesService.listShipDecks(c.get("db"), parsed.id)
-      return c.json({ data: decks })
-    })
-    .post("/ships/:key/decks", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      const data = await parseJsonBody(c, insertDeckSchema.omit({ shipId: true }))
-      const row = await cruisesService.upsertDeck(c.get("db"), { ...data, shipId: parsed.id })
-      return c.json({ data: row }, 201)
-    })
-    .put("/decks/:deckId", async (c) => {
-      const data = await parseJsonBody(c, updateDeckSchema)
-      const row = await cruisesService.updateDeck(c.get("db"), c.req.param("deckId"), data)
-      if (!row) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: row })
-    })
-    .get("/ships/:key/categories", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      if (parsed.kind === "external") {
-        const ext = resolveExternal(parsed)
-        if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
-        const ship = await ext.adapter.fetchShip(ext.sourceRef)
-        return c.json({ data: ship?.categories ?? [] })
-      }
-      const categories = await cruisesService.listShipCabinCategories(c.get("db"), parsed.id)
-      return c.json({ data: categories })
-    })
-    .put("/ships/:key/categories/bulk", async (c) => {
-      const parsed = parseUnifiedKey(c.req.param("key"))
-      if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
-      if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-      const payload = await parseJsonBody(
-        c,
-        z.object({ categories: z.array(insertCabinCategorySchema) }),
+        },
+        200,
       )
-      const out: Awaited<ReturnType<typeof cruisesService.upsertCabinCategory>>[] = []
-      for (const cat of payload.categories) {
-        const row = await cruisesService.upsertCabinCategory(c.get("db"), {
-          ...cat,
-          shipId: parsed.id,
-        })
-        out.push(row)
-      }
-      return c.json({ data: out })
-    })
-    .put("/categories/:categoryId", async (c) => {
-      const data = await parseJsonBody(c, updateCabinCategorySchema)
-      const row = await cruisesService.updateCabinCategory(
-        c.get("db"),
-        c.req.param("categoryId"),
-        data,
-      )
-      if (!row) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: row })
-    })
-    .get("/categories/:categoryId/cabins", async (c) => {
-      const cabins = await cruisesService.listCabinsByCategory(
-        c.get("db"),
-        c.req.param("categoryId"),
-      )
-      return c.json({ data: cabins })
-    })
-    .put("/categories/:categoryId/cabins/bulk", async (c) => {
-      const categoryId = c.req.param("categoryId")
-      const payload = await parseJsonBody(
-        c,
-        z.object({ cabins: z.array(insertCabinSchema.omit({ categoryId: true })) }),
-      )
-      const out: Awaited<ReturnType<typeof cruisesService.upsertCabin>>[] = []
-      for (const cabin of payload.cabins) {
-        const row = await cruisesService.upsertCabin(c.get("db"), { ...cabin, categoryId })
-        out.push(row)
-      }
-      return c.json({ data: out })
-    })
-    .put("/cabins/:cabinId", async (c) => {
-      const data = await parseJsonBody(c, updateCabinSchema)
-      const row = await cruisesService.updateCabin(c.get("db"), c.req.param("cabinId"), data)
-      if (!row) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: row })
-    })
+    }
+    const row = await cruisesService.getShipById(c.get("db"), parsed.id)
+    if (!row) return c.json({ error: "not_found" }, 404)
+    return c.json({ data: row }, 200)
+  })
+  app.openapi(updateShipRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    const row = await cruisesService.updateShip(c.get("db"), parsed.id, c.req.valid("json"))
+    if (!row) return c.json({ error: "not_found" }, 404)
+    return c.json({ data: row }, 200)
+  })
+  app.openapi(listShipDecksRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    if (parsed.kind === "external") {
+      const ext = resolveExternal(parsed)
+      if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
+      const ship = await ext.adapter.fetchShip(ext.sourceRef)
+      return c.json({ data: ship?.decks ?? [] }, 200)
+    }
+    const decks = await cruisesService.listShipDecks(c.get("db"), parsed.id)
+    return c.json({ data: decks }, 200)
+  })
+  app.openapi(createShipDeckRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    const data = c.req.valid("json")
+    const row = await cruisesService.upsertDeck(c.get("db"), { ...data, shipId: parsed.id })
+    return c.json({ data: row }, 201)
+  })
+  app.openapi(updateDeckRoute, async (c) => {
+    const row = await cruisesService.updateDeck(
+      c.get("db"),
+      c.req.valid("param").deckId,
+      c.req.valid("json"),
+    )
+    if (!row) return c.json({ error: "not_found" }, 404)
+    return c.json({ data: row }, 200)
+  })
+  app.openapi(listShipCategoriesRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    if (parsed.kind === "external") {
+      const ext = resolveExternal(parsed)
+      if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
+      const ship = await ext.adapter.fetchShip(ext.sourceRef)
+      return c.json({ data: ship?.categories ?? [] }, 200)
+    }
+    const categories = await cruisesService.listShipCabinCategories(c.get("db"), parsed.id)
+    return c.json({ data: categories }, 200)
+  })
+  app.openapi(replaceShipCategoriesRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    const payload = c.req.valid("json")
+    const out: Awaited<ReturnType<typeof cruisesService.upsertCabinCategory>>[] = []
+    for (const cat of payload.categories) {
+      const row = await cruisesService.upsertCabinCategory(c.get("db"), {
+        ...cat,
+        shipId: parsed.id,
+      })
+      out.push(row)
+    }
+    return c.json({ data: out }, 200)
+  })
+  app.openapi(updateCategoryRoute, async (c) => {
+    const row = await cruisesService.updateCabinCategory(
+      c.get("db"),
+      c.req.valid("param").categoryId,
+      c.req.valid("json"),
+    )
+    if (!row) return c.json({ error: "not_found" }, 404)
+    return c.json({ data: row }, 200)
+  })
+  app.openapi(listCategoryCabinsRoute, async (c) => {
+    const cabins = await cruisesService.listCabinsByCategory(
+      c.get("db"),
+      c.req.valid("param").categoryId,
+    )
+    return c.json({ data: cabins }, 200)
+  })
+  app.openapi(replaceCategoryCabinsRoute, async (c) => {
+    const categoryId = c.req.valid("param").categoryId
+    const payload = c.req.valid("json")
+    const out: Awaited<ReturnType<typeof cruisesService.upsertCabin>>[] = []
+    for (const cabin of payload.cabins) {
+      const row = await cruisesService.upsertCabin(c.get("db"), { ...cabin, categoryId })
+      out.push(row)
+    }
+    return c.json({ data: out }, 200)
+  })
+  app.openapi(updateCabinRoute, async (c) => {
+    const row = await cruisesService.updateCabin(
+      c.get("db"),
+      c.req.valid("param").cabinId,
+      c.req.valid("json"),
+    )
+    if (!row) return c.json({ error: "not_found" }, 404)
+    return c.json({ data: row }, 200)
+  })
 }
