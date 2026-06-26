@@ -24,11 +24,20 @@ import type { Hono } from "hono"
 
 import { getBookingEngineRegistryFromContext } from "../lib/booking-engine-runtime"
 
-// Accepts a `Pick<Hono, "route">` so an `OpenAPIHono` parent (whose non-blank
-// default `Env` otherwise isn't assignable to `Hono`) can be passed without a
-// cast — the lazy wrapper uses OpenAPIHono so the product content `.openapi()`
-// def surfaces in the operator spec (voyant#2114).
-export function mountCatalogContentRoutes(hono: Pick<Hono, "route">): void {
+/**
+ * Structural mount target — just the `.route()` surface this function uses.
+ * Decoupled from Hono's full generic signature so the lazy wrapper can pass an
+ * `OpenAPIHono` parent (whose default `Env` isn't assignable to a bare `Hono`)
+ * WITHOUT a cast — which is what makes the mounted product-content `.openapi()`
+ * sub-app surface in the build-time OpenAPI spec (voyant#2114). Mirrors
+ * `CatalogBookingMountTarget`.
+ */
+interface CatalogContentMountTarget {
+  // biome-ignore lint/suspicious/noExplicitAny: intentional — accept any Env-typed sub-app; the mount only composes routes (voyant#2114)
+  route(path: string, app: Hono<any, any, any>): unknown
+}
+
+export function mountCatalogContentRoutes(hono: CatalogContentMountTarget): void {
   // ── Products ─────────────────────────────────────────────────
   const adminProductContentRoutes = createProductContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
