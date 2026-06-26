@@ -15,6 +15,7 @@ const CONFIGS = [
   "starters/operator/tsconfig.server.json",
   "starters/operator/tsconfig.client.json",
   "packages/framework/tsconfig.typecheck.json",
+  "packages/framework/tsconfig.build.json",
   "packages/openapi/tsconfig.typecheck.json",
 ]
 
