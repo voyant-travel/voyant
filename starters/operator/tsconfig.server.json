@@ -156,6 +156,7 @@
       "@voyant-travel/admin/providers/theme": ["../../packages/admin/dist/providers/theme.d.ts"],
       "@voyant-travel/admin/types": ["../../packages/admin/dist/types.d.ts"],
       "@voyant-travel/allotments": ["../../packages/allotments/dist/index.d.ts"],
+      "@voyant-travel/auth": ["../../packages/auth/dist/index.d.ts"],
       "@voyant-travel/auth-react": ["../../packages/auth-react/dist/index.d.ts"],
       "@voyant-travel/auth-react/account": [
         "../../packages/auth-react/dist/components/account-page.d.ts"
@@ -174,6 +175,15 @@
       "@voyant-travel/auth-react/provider": ["../../packages/auth-react/dist/provider.d.ts"],
       "@voyant-travel/auth-react/query-keys": ["../../packages/auth-react/dist/query-keys.d.ts"],
       "@voyant-travel/auth-react/ui": ["../../packages/auth-react/dist/ui.d.ts"],
+      "@voyant-travel/auth/backend": ["../../packages/auth/dist/backend.d.ts"],
+      "@voyant-travel/auth/cloud-admin-session": [
+        "../../packages/auth/dist/cloud-admin-session-public.d.ts"
+      ],
+      "@voyant-travel/auth/cloud-broker": ["../../packages/auth/dist/cloud-broker.d.ts"],
+      "@voyant-travel/auth/edge": ["../../packages/auth/dist/edge.d.ts"],
+      "@voyant-travel/auth/permissions": ["../../packages/auth/dist/permissions.d.ts"],
+      "@voyant-travel/auth/server": ["../../packages/auth/dist/server.d.ts"],
+      "@voyant-travel/auth/workspace": ["../../packages/auth/dist/workspace.d.ts"],
       "@voyant-travel/availability": ["../../packages/availability/dist/index.d.ts"],
       "@voyant-travel/availability/schema": ["../../packages/availability/dist/schema.d.ts"],
       "@voyant-travel/bookings": ["../../packages/bookings/dist/index.d.ts"],
@@ -1843,6 +1853,19 @@
       "@voyant-travel/workflow-runs/workflows": [
         "../../packages/workflow-runs/dist/workflows.d.ts"
       ],
+      "@voyant-travel/workflows": ["../../packages/workflows/dist/index.d.ts"],
+      "@voyant-travel/workflows-orchestrator": [
+        "../../packages/workflows-orchestrator/dist/index.d.ts"
+      ],
+      "@voyant-travel/workflows-orchestrator/in-memory": [
+        "../../packages/workflows-orchestrator/dist/driver-inmemory.d.ts"
+      ],
+      "@voyant-travel/workflows-orchestrator/selfhost": [
+        "../../packages/workflows-orchestrator/dist/node/index.d.ts"
+      ],
+      "@voyant-travel/workflows-orchestrator/testing": [
+        "../../packages/workflows-orchestrator/dist/testing/driver-compliance.d.ts"
+      ],
       "@voyant-travel/workflows-react": ["../../packages/workflows-react/dist/index.d.ts"],
       "@voyant-travel/workflows-react/client": ["../../packages/workflows-react/dist/client.d.ts"],
       "@voyant-travel/workflows-react/components/*": [
@@ -1866,7 +1889,21 @@
       ],
       "@voyant-travel/workflows-react/workflow-schedules-client": [
         "../../packages/workflows-react/dist/workflow-schedules-client.d.ts"
-      ]
+      ],
+      "@voyant-travel/workflows/auth": ["../../packages/workflows/dist/auth/index.d.ts"],
+      "@voyant-travel/workflows/bindings": ["../../packages/workflows/dist/bindings.d.ts"],
+      "@voyant-travel/workflows/client": ["../../packages/workflows/dist/client.d.ts"],
+      "@voyant-travel/workflows/config": ["../../packages/workflows/dist/config.d.ts"],
+      "@voyant-travel/workflows/driver": ["../../packages/workflows/dist/driver.d.ts"],
+      "@voyant-travel/workflows/errors": ["../../packages/workflows/dist/errors.d.ts"],
+      "@voyant-travel/workflows/events": ["../../packages/workflows/dist/events/index.d.ts"],
+      "@voyant-travel/workflows/handler": ["../../packages/workflows/dist/handler/index.d.ts"],
+      "@voyant-travel/workflows/http-ingest": ["../../packages/workflows/dist/http-ingest.d.ts"],
+      "@voyant-travel/workflows/protocol": ["../../packages/workflows/dist/protocol/index.d.ts"],
+      "@voyant-travel/workflows/rate-limit": [
+        "../../packages/workflows/dist/rate-limit/index.d.ts"
+      ],
+      "@voyant-travel/workflows/testing": ["../../packages/workflows/dist/testing/index.d.ts"]
     }
   },
   "include": ["**/*.ts"],
