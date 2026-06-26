@@ -26,7 +26,8 @@ export {
   type CheckoutStartInput,
 } from "@voyant-travel/commerce/checkout"
 
-export function createCatalogCheckoutPublicRoutes(): Hono {
+// biome-ignore lint/suspicious/noExplicitAny: env-agnostic route bundle -- owner: operator; the commerce checkout factory now returns an `OpenAPIHono<CheckoutEnv>` (so its `.openapi()` registry surfaces in the storefront spec via the build-time lazy merge). `Hono<any>` keeps this loader return structurally compatible with `LazyRoutesLoader` (`() => Promise<Hono<any>>`) without leaking the package's internal Env.
+export function createCatalogCheckoutPublicRoutes(): Hono<any> {
   // Pass a per-request options factory so the injected Netopia card-payment
   // start can capture the request `Context` for per-request container access.
   return createCatalogCheckoutRoutes((c) => createOperatorCheckoutStartOptions(c))

@@ -6,21 +6,117 @@
  * supplies the `CheckoutStartOptions` (injected tax-settings + owned-product
  * name + bank-transfer instruction readers) the service needs.
  *
- * Mount the returned Hono at `/v1/public/catalog` (relative paths).
+ * Mount the returned app at `/v1/public/catalog` (relative paths).
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI storefront backfill
+ * (voyant#2114 — commerce checkout sub-batch). The request body reuses the
+ * existing `checkoutStartSchema`; the success response documents the
+ * `CatalogCheckoutStartResult` discriminated union. The typed
+ * `CatalogCheckoutStartError` status union (404/409/500/502) is inlined per the
+ * single leg. The factory returns an `OpenAPIHono` so the build-time
+ * `mergeLazyOpenApiPaths` replay can read its `.openapi()` registry (a plain
+ * `Hono` carries no registry and would be skipped).
  */
 
-import { parseJsonBody } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { EventBus } from "@voyant-travel/core"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
 import type { CheckoutStartOptions } from "./options.js"
 import {
   CatalogCheckoutStartError,
-  type CheckoutStartInput,
   type CheckoutStartRequestMeta,
   checkoutStartSchema,
   startCatalogCheckout,
 } from "./start-service.js"
+
+type CheckoutEnv = {
+  Bindings: Record<string, string | undefined>
+  Variables: {
+    db: PostgresJsDatabase
+    eventBus?: EventBus
+    container?: { resolve(key: string): unknown }
+  }
+}
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+const bankTransferInstructionsSchema = z.object({
+  beneficiary: z.string(),
+  iban: z.string(),
+  bankName: z.string(),
+  reference: z.string(),
+  amountCents: z.number(),
+  currency: z.string(),
+  dueAt: z.string(),
+})
+
+/** Documents the `CatalogCheckoutStartResult` discriminated union. */
+const checkoutStartResultSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("card_redirect"),
+    bookingId: z.string(),
+    paymentSessionId: z.string(),
+    redirectUrl: z.string().nullable(),
+    note: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("bank_transfer_instructions"),
+    bookingId: z.string(),
+    proformaId: z.string().nullable(),
+    proformaNumber: z.string().nullable(),
+    paymentSessionId: z.string().nullable(),
+    instructions: bankTransferInstructionsSchema,
+  }),
+  z.object({
+    kind: z.literal("inquiry_received"),
+    bookingId: z.string(),
+    inquiryId: z.string(),
+    note: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("hold_placed"),
+    bookingId: z.string(),
+  }),
+])
+
+const checkoutStartRoute = createRoute({
+  method: "post",
+  path: "/checkout/start",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: checkoutStartSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Checkout started — card redirect, bank-transfer, inquiry, or hold outcome",
+      content: { "application/json": { schema: checkoutStartResultSchema } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Booking not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Hold expired",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    500: {
+      description: "Could not create payment session",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Payment provider failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
 /**
  * Build the storefront checkout routes. `options` may be a value or a
@@ -30,41 +126,33 @@ import {
  */
 export function createCatalogCheckoutRoutes(
   options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
-): Hono {
-  const routes = new Hono()
-  routes.post("/checkout/start", (c) =>
-    handleCheckoutStart(c, typeof options === "function" ? options(c) : options),
+): OpenAPIHono<CheckoutEnv> {
+  return new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
+    checkoutStartRoute,
+    async (c) => {
+      const resolved = typeof options === "function" ? options(c) : options
+      const body = c.req.valid("json")
+      try {
+        const result = await startCatalogCheckout(
+          {
+            db: c.get("db"),
+            env: c.env,
+            eventBus: c.var.eventBus,
+            resolveRuntime: (key) => c.var.container?.resolve(key),
+            requestMeta: checkoutRequestMeta(c),
+            options: resolved,
+          },
+          body,
+        )
+        return c.json(result, 200)
+      } catch (err) {
+        if (err instanceof CatalogCheckoutStartError) {
+          return c.json({ error: err.code }, err.status)
+        }
+        throw err
+      }
+    },
   )
-  return routes
-}
-
-async function handleCheckoutStart(c: Context, options: CheckoutStartOptions): Promise<Response> {
-  let body: CheckoutStartInput
-  try {
-    body = await parseJsonBody(c, checkoutStartSchema)
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "invalid body" }, 400)
-  }
-
-  try {
-    const result = await startCatalogCheckout(
-      {
-        db: c.get("db") as PostgresJsDatabase,
-        env: c.env as Record<string, string | undefined>,
-        eventBus: c.var.eventBus,
-        resolveRuntime: (key) => c.var.container?.resolve(key),
-        requestMeta: checkoutRequestMeta(c),
-        options,
-      },
-      body,
-    )
-    return c.json(result)
-  } catch (err) {
-    if (err instanceof CatalogCheckoutStartError) {
-      return c.json({ error: err.code }, err.status)
-    }
-    throw err
-  }
 }
 
 function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {
