@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url"
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const CONFIGS = [
   "starters/operator/tsconfig.server.json",
+  "starters/operator/tsconfig.client.json",
   "packages/framework/tsconfig.typecheck.json",
   "packages/openapi/tsconfig.typecheck.json",
 ]
