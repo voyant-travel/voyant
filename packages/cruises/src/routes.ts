@@ -1,4 +1,5 @@
-import { Hono } from "hono"
+import { OpenAPIHono } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 
 import { registerCruiseCoreRoutes } from "./routes-core.js"
 import { registerCruiseDetailRoutes } from "./routes-detail.js"
@@ -8,7 +9,13 @@ import { registerCruiseSearchIndexRoutes } from "./routes-search-index.js"
 import { registerCruiseShipRoutes } from "./routes-ships.js"
 import { registerCruiseVoyageGroupRoutes } from "./routes-voyage-groups.js"
 
-export const cruiseAdminRoutes = new Hono<Env>()
+// `OpenAPIHono` (not a plain `Hono`) so every `.openapi()` route a register
+// function adds contributes an operation to the shared OpenAPI registry the
+// operator's build-time `mergeLazyOpenApiPaths` replay reads (voyant#2114).
+// Register families not yet migrated keep calling plain `.get/.post(...)` on
+// this instance — that works at runtime, the routes are just undocumented until
+// their own backfill batch.
+export const cruiseAdminRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 
 registerCruiseCoreRoutes(cruiseAdminRoutes)
 registerCruiseVoyageGroupRoutes(cruiseAdminRoutes)
