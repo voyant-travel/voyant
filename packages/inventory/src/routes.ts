@@ -1,5 +1,6 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { KVStore } from "@voyant-travel/utils/cache"
-import { Hono } from "hono"
 
 import { invalidateProductReadModel } from "./read-model.js"
 import type { Env } from "./route-env.js"
@@ -60,8 +61,12 @@ export function readModelInvalidation() {
   }
 }
 
-// Product route groups stay split by domain area; mount at root to preserve public paths.
-export const productRoutes = new Hono<Env>()
+// Product route groups stay split by domain area; mount at root to preserve
+// public paths. The parent is an `OpenAPIHono` so the converted children's
+// `.openapi()` operations propagate up into the generated spec (voyant#2114 —
+// inventory core sub-batch). Still-plain children keep working at runtime and
+// are converted in later batches.
+export const productRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   // biome-ignore lint/suspicious/noExplicitAny: the structural middleware shape doesn't need the full Env generics -- owner: inventory; existing suppression is intentional pending typed cleanup.
   .use("*", readModelInvalidation() as any)
   .route("/", productConfigurationRoutes)
