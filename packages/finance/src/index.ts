@@ -2,7 +2,6 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
-import { Hono } from "hono"
 
 import {
   buildFinanceCheckoutRouteRuntime,
@@ -165,7 +164,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
     },
   }
 
-  const publicRoutes = new Hono()
+  const publicRoutes = new OpenAPIHono()
     .route("/", createPublicFinanceRoutes(options))
     .route("/", createFinanceCheckoutRoutes(options))
 
