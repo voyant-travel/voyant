@@ -24,8 +24,6 @@
     "src/scheduled-crons.ts",
     "src/workflows.ts",
     "src/workflows-bundle.test.ts",
-    "src/workflows-import.test.ts",
-    "src/admin.destinations.generated.ts",
-    "src/admin.extensions.generated.ts"
+    "src/workflows-import.test.ts"
   ]
 }
