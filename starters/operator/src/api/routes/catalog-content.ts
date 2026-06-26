@@ -24,7 +24,11 @@ import type { Hono } from "hono"
 
 import { getBookingEngineRegistryFromContext } from "../lib/booking-engine-runtime"
 
-export function mountCatalogContentRoutes(hono: Hono): void {
+// Accepts a `Pick<Hono, "route">` so an `OpenAPIHono` parent (whose non-blank
+// default `Env` otherwise isn't assignable to `Hono`) can be passed without a
+// cast — the lazy wrapper uses OpenAPIHono so the product content `.openapi()`
+// def surfaces in the operator spec (voyant#2114).
+export function mountCatalogContentRoutes(hono: Pick<Hono, "route">): void {
   // ── Products ─────────────────────────────────────────────────
   const adminProductContentRoutes = createProductContentRoutes({
     resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
