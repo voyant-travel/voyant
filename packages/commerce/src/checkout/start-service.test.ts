@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 import type { CheckoutStartOptions } from "./options.js"
@@ -56,9 +57,13 @@ describe("startCatalogCheckout", () => {
 describe("createCatalogCheckoutRoutes", () => {
   it("returns 400 on an invalid checkout body", async () => {
     // Invalid body fails schema validation before the handler reads `db`,
-    // so no db wiring is needed for the 400 path.
+    // so no db wiring is needed for the 400 path. The `@hono/zod-openapi`
+    // validation hook throws a `RequestValidationError`; the framework's
+    // `handleApiError` (wired via `onError` as `createApp` does) normalizes it to
+    // the shared `{ error, code: "invalid_request", ... }` 400 contract.
     const app = new Hono()
-    app.route("/v1/public/catalog", createCatalogCheckoutRoutes(stubOptions()))
+      .onError(handleApiError)
+      .route("/v1/public/catalog", createCatalogCheckoutRoutes(stubOptions()))
 
     const res = await app.request("/v1/public/catalog/checkout/start", {
       method: "POST",
