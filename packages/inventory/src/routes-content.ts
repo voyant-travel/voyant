@@ -25,12 +25,51 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.3.
  */
 
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { productContentSchema } from "@voyant-travel/products-contracts/content-shape"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import { getProductContent, type ProductContentScope } from "./service-content.js"
+
+const contentResponseSchema = z.object({
+  data: z.object({
+    content: productContentSchema,
+    served_locale: z.string(),
+    match_kind: z.enum(["exact", "language_match", "fallback_chain", "any"]),
+    source: z.enum(["sourced-cache", "sourced-fresh", "synthesized", "owned"]),
+    served_stale: z.boolean(),
+    synthesized: z.boolean(),
+    machine_translated: z.boolean(),
+  }),
+})
+
+const contentNotFoundSchema = z.object({ error: z.string(), detail: z.string() })
+
+/**
+ * Locale/market/currency preferences are read out of the query string and the
+ * `Accept-Language` header by `parseScope` (priority chain), so they are not
+ * declared as a validated query schema here — only the `{id}` path param is
+ * validated. The response carries the resolved `ProductContent` plus locale +
+ * freshness metadata.
+ */
+const getProductContentRoute = createRoute({
+  method: "get",
+  path: "/{id}/content",
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: {
+      description: "Resolved product content with locale + freshness metadata",
+      content: { "application/json": { schema: contentResponseSchema } },
+    },
+    404: {
+      description: "Product not found (no owned row + no sourced-entry row)",
+      content: { "application/json": { schema: contentNotFoundSchema } },
+    },
+  },
+})
 
 export interface ProductContentRoutesEnv {
   Variables: {
@@ -61,15 +100,17 @@ export interface CreateProductContentRoutesOptions {
 }
 
 /**
- * Build the product content router. Returns a Hono instance that
- * exposes a single `GET /:id/content` route. Templates mount it under
+ * Build the product content router. Returns an `OpenAPIHono` instance that
+ * exposes a single `GET /{id}/content` route. Templates mount it under
  * `/v1/admin/products` or `/v1/public/products` as appropriate.
  */
 export function createProductContentRoutes(
   options: CreateProductContentRoutesOptions,
-): Hono<ProductContentRoutesEnv> {
-  return new Hono<ProductContentRoutesEnv>().get("/:id/content", async (c) => {
-    const entityId = c.req.param("id")
+): OpenAPIHono<ProductContentRoutesEnv> {
+  return new OpenAPIHono<ProductContentRoutesEnv>({
+    defaultHook: openApiValidationHook,
+  }).openapi(getProductContentRoute, async (c) => {
+    const entityId = c.req.valid("param").id
     const scope = parseScope(c)
     const registry = options.resolveRegistry(c)
 
@@ -88,17 +129,20 @@ export function createProductContentRoutes(
       )
     }
 
-    return c.json({
-      data: {
-        content: result.content,
-        served_locale: result.resolution.served_locale,
-        match_kind: result.resolution.match_kind,
-        source: result.source,
-        served_stale: result.served_stale,
-        synthesized: result.synthesized,
-        machine_translated: result.machine_translated,
+    return c.json(
+      {
+        data: {
+          content: result.content,
+          served_locale: result.resolution.served_locale,
+          match_kind: result.resolution.match_kind,
+          source: result.source,
+          served_stale: result.served_stale,
+          synthesized: result.synthesized,
+          machine_translated: result.machine_translated,
+        },
       },
-    })
+      200,
+    )
   })
 
   function parseScope(c: Context): ProductContentScope {

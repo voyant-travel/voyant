@@ -18,8 +18,10 @@
  * binding or cloud client.
  */
 
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { StorageProvider } from "@voyant-travel/storage"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import { emitProductContentChanged } from "./events.js"
 import type { Env } from "./route-env.js"
@@ -32,6 +34,69 @@ import {
 
 /** 5 MiB cap on a generated brochure PDF before it's rejected with 413. */
 const DEFAULT_MAX_BROCHURE_PDF_BYTES = 5 * 1024 * 1024
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+/**
+ * Generated-brochure row schema, authored from the `product_media`
+ * `$inferSelect` shape (the brochure is persisted via `upsertBrochure`). §17:
+ * timestamp columns serialize to strings over the wire.
+ */
+const brochureMediaSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  dayId: z.string().nullable(),
+  mediaType: z.enum(["image", "video", "document"]),
+  name: z.string(),
+  url: z.string(),
+  storageKey: z.string().nullable(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().nullable(),
+  altText: z.string().nullable(),
+  sortOrder: z.number(),
+  isCover: z.boolean(),
+  isBrochure: z.boolean(),
+  isBrochureCurrent: z.boolean(),
+  brochureVersion: z.number().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const generateBrochureRoute = createRoute({
+  method: "post",
+  path: "/{id}/brochure/generate",
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: {
+      description: "The generated + stored brochure with upload metadata",
+      content: {
+        "application/json": {
+          schema: z.object({
+            data: brochureMediaSchema,
+            metadata: z.object({
+              filename: z.string(),
+              sizeBytes: z.number(),
+              storageKey: z.string(),
+              url: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: "id route param is required",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    413: {
+      description: "Generated brochure exceeds the configured size cap",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "Storage not configured",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
 /**
  * Deployment-supplied options for the product brochure route. Structural only —
@@ -65,53 +130,58 @@ export interface ProductBrochureRoutesOptions {
  * `/v1/admin/products`). Storage + the optional printer are injected via
  * `options`.
  */
-export function createProductBrochureRoutes(options: ProductBrochureRoutesOptions): Hono<Env> {
-  const hono = new Hono<Env>()
+export function createProductBrochureRoutes(
+  options: ProductBrochureRoutesOptions,
+): OpenAPIHono<Env> {
   const maxSizeBytes = options.maxSizeBytes ?? DEFAULT_MAX_BROCHURE_PDF_BYTES
 
-  hono.post("/:id/brochure/generate", async (c) => {
-    const storage = options.resolveStorage(c)
-    if (!storage) {
-      return c.json({ error: "Storage not configured" }, 503)
-    }
-
-    const productId = c.req.param("id")
-    if (!productId) return c.json({ error: "id route param is required" }, 400)
-
-    const printer = options.resolvePrinter?.(c) ?? null
-    const keyPrefix = options.keyPrefix?.(productId) ?? `brochures/products/${productId}`
-
-    let generated: Awaited<ReturnType<typeof generateAndStoreProductBrochure>>
-    try {
-      generated = await generateAndStoreProductBrochure(c.get("db"), productId, {
-        storage,
-        template: options.template ?? createDefaultProductBrochureTemplate(),
-        ...(printer ? { printer } : {}),
-        keyPrefix,
-        filename: ({ productId: generatedProductId, filename }) =>
-          `brochure-${generatedProductId}-${Date.now()}-${filename}`,
-        maxSizeBytes,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      if (message.includes("Generated brochure is too large")) {
-        return c.json({ error: message }, 413)
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(
+    generateBrochureRoute,
+    async (c) => {
+      const storage = options.resolveStorage(c)
+      if (!storage) {
+        return c.json({ error: "Storage not configured" }, 503)
       }
-      throw err
-    }
 
-    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
+      const productId = c.req.valid("param").id
+      if (!productId) return c.json({ error: "id route param is required" }, 400)
 
-    return c.json({
-      data: generated.brochure,
-      metadata: {
-        filename: generated.filename,
-        sizeBytes: generated.sizeBytes,
-        storageKey: generated.storageKey,
-        url: generated.url,
-      },
-    })
-  })
+      const printer = options.resolvePrinter?.(c) ?? null
+      const keyPrefix = options.keyPrefix?.(productId) ?? `brochures/products/${productId}`
 
-  return hono
+      let generated: Awaited<ReturnType<typeof generateAndStoreProductBrochure>>
+      try {
+        generated = await generateAndStoreProductBrochure(c.get("db"), productId, {
+          storage,
+          template: options.template ?? createDefaultProductBrochureTemplate(),
+          ...(printer ? { printer } : {}),
+          keyPrefix,
+          filename: ({ productId: generatedProductId, filename }) =>
+            `brochure-${generatedProductId}-${Date.now()}-${filename}`,
+          maxSizeBytes,
+        })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (message.includes("Generated brochure is too large")) {
+          return c.json({ error: message }, 413)
+        }
+        throw err
+      }
+
+      await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
+
+      return c.json(
+        {
+          data: generated.brochure,
+          metadata: {
+            filename: generated.filename,
+            sizeBytes: generated.sizeBytes,
+            storageKey: generated.storageKey,
+            url: generated.url,
+          },
+        },
+        200,
+      )
+    },
+  )
 }

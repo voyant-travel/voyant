@@ -17,9 +17,10 @@
  * change here — never in the route implementations.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { createProductBrochureRoutes } from "@voyant-travel/inventory/routes-brochure"
 import { createMediaRoutes, type VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import { createProductBrochurePrinter } from "../../lib/brochure-printer"
 import { createVideoUploadTicket } from "../../lib/video-uploads"
@@ -58,8 +59,14 @@ function buildBrochureRoutes() {
  * deployment's options. Brochure routes mount under `/v1/admin/products`; the
  * media routes already register absolute paths.
  */
-export function buildOperatorMediaRoutes(): Hono {
-  const app = new Hono()
+export function buildOperatorMediaRoutes(): OpenAPIHono {
+  // OpenAPIHono parent so the brochure-generation sub-app's `.openapi()` def
+  // (`POST /v1/admin/products/{id}/brochure/generate`) surfaces in the operator
+  // spec via the build-time lazy-merge — `mergeLazyOpenApiPaths` skips plain
+  // `Hono` wrappers, which carry no registry (voyant#2114). The upload + binary
+  // serve routes from `@voyant-travel/storage` stay plain `Hono` (multipart /
+  // wildcard byte streams), so they remain undocumented.
+  const app = new OpenAPIHono()
   app.route("/", buildMediaUploadAndServeRoutes())
   app.route("/v1/admin/products", buildBrochureRoutes())
   return app
