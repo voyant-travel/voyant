@@ -2890,6 +2890,9 @@ importers:
 
   packages/operator-settings:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: ^1.4.0
+        version: 1.4.0(hono@4.12.25)(zod@4.3.6)
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
@@ -3991,6 +3994,9 @@ importers:
 
   packages/workflow-runs:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: ^1.4.0
+        version: 1.4.0(hono@4.12.25)(zod@4.3.6)
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -4000,6 +4006,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/workflows':
         specifier: workspace:^
         version: link:../workflows
