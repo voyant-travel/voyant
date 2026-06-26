@@ -129,6 +129,7 @@
       "@voyant-travel/admin/providers/theme": ["../admin/dist/providers/theme.d.ts"],
       "@voyant-travel/admin/types": ["../admin/dist/types.d.ts"],
       "@voyant-travel/allotments": ["../allotments/dist/index.d.ts"],
+      "@voyant-travel/auth": ["../auth/dist/index.d.ts"],
       "@voyant-travel/auth-react": ["../auth-react/dist/index.d.ts"],
       "@voyant-travel/auth-react/account": ["../auth-react/dist/components/account-page.d.ts"],
       "@voyant-travel/auth-react/client": ["../auth-react/dist/client.d.ts"],
@@ -143,6 +144,13 @@
       "@voyant-travel/auth-react/provider": ["../auth-react/dist/provider.d.ts"],
       "@voyant-travel/auth-react/query-keys": ["../auth-react/dist/query-keys.d.ts"],
       "@voyant-travel/auth-react/ui": ["../auth-react/dist/ui.d.ts"],
+      "@voyant-travel/auth/backend": ["../auth/dist/backend.d.ts"],
+      "@voyant-travel/auth/cloud-admin-session": ["../auth/dist/cloud-admin-session-public.d.ts"],
+      "@voyant-travel/auth/cloud-broker": ["../auth/dist/cloud-broker.d.ts"],
+      "@voyant-travel/auth/edge": ["../auth/dist/edge.d.ts"],
+      "@voyant-travel/auth/permissions": ["../auth/dist/permissions.d.ts"],
+      "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
+      "@voyant-travel/auth/workspace": ["../auth/dist/workspace.d.ts"],
       "@voyant-travel/availability": ["../availability/dist/index.d.ts"],
       "@voyant-travel/availability/schema": ["../availability/dist/schema.d.ts"],
       "@voyant-travel/bookings": ["../bookings/dist/index.d.ts"],
@@ -1424,6 +1432,17 @@
       "@voyant-travel/workflow-runs/schema": ["../workflow-runs/dist/schema.d.ts"],
       "@voyant-travel/workflow-runs/service": ["../workflow-runs/dist/service.d.ts"],
       "@voyant-travel/workflow-runs/workflows": ["../workflow-runs/dist/workflows.d.ts"],
+      "@voyant-travel/workflows": ["../workflows/dist/index.d.ts"],
+      "@voyant-travel/workflows-orchestrator": ["../workflows-orchestrator/dist/index.d.ts"],
+      "@voyant-travel/workflows-orchestrator/in-memory": [
+        "../workflows-orchestrator/dist/driver-inmemory.d.ts"
+      ],
+      "@voyant-travel/workflows-orchestrator/selfhost": [
+        "../workflows-orchestrator/dist/node/index.d.ts"
+      ],
+      "@voyant-travel/workflows-orchestrator/testing": [
+        "../workflows-orchestrator/dist/testing/driver-compliance.d.ts"
+      ],
       "@voyant-travel/workflows-react": ["../workflows-react/dist/index.d.ts"],
       "@voyant-travel/workflows-react/client": ["../workflows-react/dist/client.d.ts"],
       "@voyant-travel/workflows-react/components/*": ["../workflows-react/dist/components/*.d.ts"],
@@ -1439,7 +1458,19 @@
       ],
       "@voyant-travel/workflows-react/workflow-schedules-client": [
         "../workflows-react/dist/workflow-schedules-client.d.ts"
-      ]
+      ],
+      "@voyant-travel/workflows/auth": ["../workflows/dist/auth/index.d.ts"],
+      "@voyant-travel/workflows/bindings": ["../workflows/dist/bindings.d.ts"],
+      "@voyant-travel/workflows/client": ["../workflows/dist/client.d.ts"],
+      "@voyant-travel/workflows/config": ["../workflows/dist/config.d.ts"],
+      "@voyant-travel/workflows/driver": ["../workflows/dist/driver.d.ts"],
+      "@voyant-travel/workflows/errors": ["../workflows/dist/errors.d.ts"],
+      "@voyant-travel/workflows/events": ["../workflows/dist/events/index.d.ts"],
+      "@voyant-travel/workflows/handler": ["../workflows/dist/handler/index.d.ts"],
+      "@voyant-travel/workflows/http-ingest": ["../workflows/dist/http-ingest.d.ts"],
+      "@voyant-travel/workflows/protocol": ["../workflows/dist/protocol/index.d.ts"],
+      "@voyant-travel/workflows/rate-limit": ["../workflows/dist/rate-limit/index.d.ts"],
+      "@voyant-travel/workflows/testing": ["../workflows/dist/testing/index.d.ts"]
     }
   },
   "include": ["src/**/*"]

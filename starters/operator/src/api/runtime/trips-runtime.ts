@@ -44,7 +44,7 @@ export const tripsPaymentBundle: HonoBundle = {
 
       try {
         await withDbFromEnv(env, async (rawDb) => {
-          const db = rawDb as PostgresJsDatabase
+          const db = rawDb as unknown as PostgresJsDatabase
           await tripsService.completeTripCheckout(db, {
             envelopeId: data.targetId ?? undefined,
             paymentSessionId: data.paymentSessionId,

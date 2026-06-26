@@ -100,18 +100,34 @@ function collectPackages() {
   return out
 }
 
+/** Resolve an `exports` value to its TS source entrypoint. Handles both string
+ * targets (`"./src/x.ts"`) and condition objects (`{types,development,...}`);
+ * for objects, prefer the condition that points at TS source so we can derive
+ * the matching declaration. */
+function sourceTarget(value) {
+  if (typeof value === "string") return value
+  if (value && typeof value === "object") {
+    for (const cond of ["types", "development", "import", "default", "node"]) {
+      const v = value[cond]
+      if (typeof v === "string" && v.startsWith("./src/")) return v
+    }
+  }
+  return undefined
+}
+
 /** Map a package's `exports` to `{ specifier: distDeclAbsPath }` entries. */
 function declEntries(pkg) {
   const entries = []
   for (const [key, value] of Object.entries(pkg.exports)) {
-    if (typeof value !== "string") continue // skip condition objects / non-string
-    if (!value.startsWith("./src/")) continue // only source entrypoints
-    if (!/\.tsx?$/.test(value)) continue // only TS sources have .d.ts
+    const target = sourceTarget(value)
+    if (!target) continue // no TS source entrypoint
+    if (!target.startsWith("./src/")) continue // only source entrypoints
+    if (!/\.tsx?$/.test(target)) continue // only TS sources have .d.ts
     // tsc `paths` patterns allow at most ONE `*`; skip multi-wildcard subpath
     // exports (e.g. `./schema/*/*`) and let them resolve via `exports` (src).
-    if ((key.match(/\*/g) ?? []).length > 1 || (value.match(/\*/g) ?? []).length > 1) continue
+    if ((key.match(/\*/g) ?? []).length > 1 || (target.match(/\*/g) ?? []).length > 1) continue
     const specifier = key === "." ? pkg.name : `${pkg.name}${key.slice(1)}`
-    const distRel = value.replace(/^\.\/src\//, "dist/").replace(/\.tsx?$/, ".d.ts")
+    const distRel = target.replace(/^\.\/src\//, "dist/").replace(/\.tsx?$/, ".d.ts")
     entries.push([specifier, join(ROOT, pkg.dir, distRel)])
   }
   return entries
@@ -155,17 +171,21 @@ function injectPaths(configRelPath, extraAliases) {
 
 const packages = collectPackages()
 
-// The three composition-point typecheck programs that re-infer module source.
-// operator's server program keeps its own `@/*` alias; framework + openapi use a
-// dedicated tsconfig.typecheck.json so their build/editor config stays on source.
+// The composition-point typecheck programs that would otherwise re-infer module
+// source. operator's server + client programs keep their own `@/*` alias (the
+// client dashboard imports the *-react UI packages, which must resolve to dist
+// declarations or they blow the heap); framework + openapi use a dedicated
+// tsconfig.typecheck.json so their build/editor config stays on source.
 const CONFIGS = [
   "starters/operator/tsconfig.server.json",
+  "starters/operator/tsconfig.client.json",
   "packages/framework/tsconfig.typecheck.json",
   "packages/openapi/tsconfig.typecheck.json",
 ]
 injectPaths(CONFIGS[0], { "@/*": ["./src/*"] })
-injectPaths(CONFIGS[1], {})
+injectPaths(CONFIGS[1], { "@/*": ["./src/*"] })
 injectPaths(CONFIGS[2], {})
+injectPaths(CONFIGS[3], {})
 
 // Normalize formatting so this generator's output is byte-stable (the
 // freshness check re-runs it and asserts no diff). Biome owns JSON formatting.
