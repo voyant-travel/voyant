@@ -150,7 +150,13 @@ export function buildOperatorProviders(): OperatorCapabilities {
       }),
     loadCatalogContentRoutes: () =>
       import("./routes/catalog-content").then((m) => {
-        const app = new Hono()
+        // OpenAPIHono parent so the product content sub-app's `.openapi()` def
+        // (`GET /{id}/content`) surfaces in the operator spec via the build-time
+        // lazy-merge — `mergeLazyOpenApiPaths` skips plain `Hono` wrappers, which
+        // carry no registry (voyant#2114). The cruise/accommodation content
+        // factories are still plain `Hono`, so only the product content routes
+        // are documented for now.
+        const app = new OpenAPIHono()
         m.mountCatalogContentRoutes(app)
         return app
       }),
