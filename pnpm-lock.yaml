@@ -2484,6 +2484,9 @@ importers:
 
   packages/mice:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: ^1.4.0
+        version: 1.4.0(hono@4.12.25)(zod@4.3.6)
       '@voyant-travel/accommodations':
         specifier: workspace:^
         version: link:../accommodations
