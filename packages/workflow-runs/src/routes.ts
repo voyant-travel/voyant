@@ -13,14 +13,56 @@
  * `runners` registry is consulted for rerun/resume; if it's not
  * provided (or doesn't have a runner for the workflow), those
  * endpoints return 501 with a clear error.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 —
+ * workflow-runs batch). The legs are authored as `createRoute(...).openapi(...)`
+ * on an internal `OpenAPIHono` child (carrying the shared `openApiValidationHook`),
+ * then composed onto the supplied mount target via `.route("/", child)` so the
+ * `.openapi()` operations propagate to the composed app's registry and surface
+ * in the operator spec. The mount target is structural (`{ route }` only) so an
+ * `OpenAPIHono` parent — the `additionalRoutes(hono)` app the starters pass — is
+ * assignable without a cast or caller change.
+ *
+ * The trigger/rerun bodies and the list query keep their verbatim in-handler
+ * parsing + typed-error shaping (idempotency confirmation, scope checks, custom
+ * `invalid_query`/`invalid_body` envelopes), so those legs declare no OpenAPI
+ * request schema — only path params + the per-status response unions. Handlers
+ * return bare `Response`s, bridged to the inferred typed-response union via
+ * `asRouteResponse`. Response row schemas are authored here from the Drizzle
+ * `$inferSelect` shapes (§17: timestamps → ISO strings; jsonb input/result/error
+ * → open records). Business logic is unchanged.
  */
 
-import { handleApiError, parseJsonBody } from "@voyant-travel/hono"
-import type { Hono } from "hono"
-import { z } from "zod"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { handleApiError, openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
+import type { Context, Hono } from "hono"
 
 import type { WorkflowRunnerRegistry } from "./runner.js"
 import { workflowRunsService } from "./service.js"
+
+/**
+ * Structural mount target — just the `.route()` surface this function uses.
+ * Decoupled from Hono's full generic signature so deployments can pass an
+ * `OpenAPIHono` parent (the `additionalRoutes(hono)` app) WITHOUT a cast — which
+ * is what makes the mounted `.openapi()` child surface in the build-time OpenAPI
+ * spec (voyant#2114).
+ */
+export interface WorkflowRunsMountTarget {
+  // biome-ignore lint/suspicious/noExplicitAny: intentional — accept any Env-typed sub-app; the mount only composes routes (voyant#2114)
+  route(path: string, app: Hono<any, any, any>): unknown
+}
+
+/**
+ * Bridges a handler's bare `Response` (and Date-bearing Drizzle rows whose wire
+ * shape is the declared `z.string()` timestamp) to the `.openapi()` per-route
+ * inferred typed-response union. Runtime payloads honor the declared schemas
+ * (asserted by the contract tests); this only relaxes the compile-time check.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union (voyant#2114)
+function asRouteResponse(response: Promise<Response>): Promise<any> {
+  return response
+}
 
 const listQuerySchema = z.object({
   workflowName: z.string().min(1).optional(),
@@ -96,13 +138,163 @@ export interface MountWorkflowRunsAdminRoutesOptions {
   adminSurface?: WorkflowAdminSurface
 }
 
+// ──────────────────────────────────────────────────────────────────
+// Response schemas (Drizzle `$inferSelect` → wire shapes)
+// ──────────────────────────────────────────────────────────────────
+
+const isoTimestamp = z.string()
+const jsonRecord = z.record(z.string(), z.unknown()).nullable()
+
+/** Compact error payload stored as jsonb on a run/step. */
+const workflowRunErrorSchema = z
+  .object({
+    message: z.string(),
+    code: z.string().optional(),
+    stepName: z.string().optional(),
+    stack: z.string().optional(),
+  })
+  .nullable()
+
+/** `workflow_runs` row. */
+const workflowRunSchema = z.object({
+  id: z.string(),
+  workflowName: z.string(),
+  trigger: z.string(),
+  correlationId: z.string().nullable(),
+  tags: z.array(z.string()),
+  status: z.enum(["running", "succeeded", "failed", "cancelled"]),
+  input: jsonRecord,
+  result: jsonRecord,
+  error: workflowRunErrorSchema,
+  parentRunId: z.string().nullable(),
+  triggeredByUserId: z.string().nullable(),
+  resumeFromStep: z.string().nullable(),
+  startedAt: isoTimestamp,
+  completedAt: isoTimestamp.nullable(),
+  durationMs: z.number().int().nullable(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+/** `workflow_run_steps` row. */
+const workflowRunStepSchema = z.object({
+  id: z.string(),
+  runId: z.string(),
+  stepName: z.string(),
+  sequence: z.number().int(),
+  status: z.enum(["running", "succeeded", "failed", "skipped", "compensated"]),
+  output: jsonRecord,
+  error: workflowRunErrorSchema,
+  startedAt: isoTimestamp,
+  completedAt: isoTimestamp.nullable(),
+  durationMs: z.number().int().nullable(),
+})
+
+/** Permissive error envelope — every typed-error leg returns `{ error, ... }`. */
+const errorResponseSchema = z.object({ error: z.string() }).catchall(z.unknown())
+
+const listRunsResponseSchema = listResponseSchema(workflowRunSchema)
+const runDetailResponseSchema = z.object({
+  data: z.object({ run: workflowRunSchema, steps: z.array(workflowRunStepSchema) }),
+})
+const triggerResponseSchema = z.object({
+  data: z.object({ runId: z.string(), workflowName: z.string(), status: z.string() }),
+})
+const rerunResponseSchema = z.object({
+  data: z.object({ runId: z.string(), parentRunId: z.string() }),
+})
+const resumeResponseSchema = z.object({
+  data: z.object({
+    runId: z.string(),
+    parentRunId: z.string(),
+    resumeFromStep: z.string(),
+  }),
+})
+
+const idParamSchema = z.object({ id: z.string() })
+const nameParamSchema = z.object({ name: z.string() })
+
+const json = <T extends z.ZodTypeAny>(schema: T, description: string) => ({
+  description,
+  content: { "application/json": { schema } },
+})
+const err = (description: string) => json(errorResponseSchema, description)
+
+// ──────────────────────────────────────────────────────────────────
+// Route definitions
+// ──────────────────────────────────────────────────────────────────
+
+const listRunsRoute = createRoute({
+  method: "get",
+  path: "/v1/admin/workflow-runs",
+  responses: {
+    200: json(listRunsResponseSchema, "Recorded workflow runs (filtered + paginated)"),
+    400: err("invalid_query: filter/pagination query failed validation"),
+    500: err("db_unavailable / list_failed"),
+  },
+})
+
+const getRunRoute = createRoute({
+  method: "get",
+  path: "/v1/admin/workflow-runs/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: json(runDetailResponseSchema, "The run with its ordered steps"),
+    404: err("not_found"),
+    500: err("db_unavailable / get_failed"),
+  },
+})
+
+const triggerWorkflowRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/workflows/{name}/runs",
+  request: { params: nameParamSchema },
+  responses: {
+    202: json(triggerResponseSchema, "Run queued"),
+    400: err("invalid_request: trigger body failed validation"),
+    403: err("workflow_admin_surface_restricted / missing trigger scope"),
+    404: err("runner_not_registered"),
+    500: err("trigger_failed"),
+    501: err("trigger_not_configured / trigger_not_supported"),
+  },
+})
+
+const rerunRunRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/workflow-runs/{id}/rerun",
+  request: { params: idParamSchema },
+  responses: {
+    202: json(rerunResponseSchema, "Rerun queued"),
+    400: err("invalid_body"),
+    403: err("workflow_admin_surface_restricted"),
+    404: err("not_found"),
+    409: err("rerun_not_allowed / confirmation_required / rerun_blocked"),
+    500: err("rerun_failed"),
+    501: err("rerun_not_configured / runner_not_registered"),
+  },
+})
+
+const resumeRunRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/workflow-runs/{id}/resume",
+  request: { params: idParamSchema },
+  responses: {
+    202: json(resumeResponseSchema, "Resume queued"),
+    403: err("workflow_admin_surface_restricted"),
+    404: err("not_found"),
+    409: err("resume_not_allowed / no_failed_step / incomplete_prior_step"),
+    500: err("resume_failed"),
+    501: err("resume_not_configured / runner_not_registered"),
+  },
+})
+
 export function mountWorkflowRunsAdminRoutes(
-  hono: Hono,
+  hono: WorkflowRunsMountTarget,
   opts: MountWorkflowRunsAdminRoutesOptions = {},
 ): void {
   const adminSurface = opts.adminSurface ?? defaultWorkflowAdminSurface()
 
-  hono.get("/v1/admin/workflow-runs", async (c) => {
+  const handleListRuns = async (c: Context): Promise<Response> => {
     const params = Object.fromEntries(new URL(c.req.url).searchParams)
     const parsed = listQuerySchema.safeParse(params)
     if (!parsed.success) {
@@ -127,14 +319,14 @@ export function mountWorkflowRunsAdminRoutes(
         500,
       )
     }
-  })
+  }
 
-  hono.get("/v1/admin/workflow-runs/:id", async (c) => {
+  const handleGetRun = async (c: Context): Promise<Response> => {
     // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed -- owner: workflow-runs; existing suppression is intentional pending typed cleanup.
     const db = (c.var as any).db
     if (!db) return c.json({ error: "db_unavailable" }, 500)
     try {
-      const result = await workflowRunsService.getRunById(db, c.req.param("id"))
+      const result = await workflowRunsService.getRunById(db, c.req.param("id") ?? "")
       if (!result) return c.json({ error: "not_found" }, 404)
       return c.json({ data: result })
     } catch (err) {
@@ -147,9 +339,9 @@ export function mountWorkflowRunsAdminRoutes(
         500,
       )
     }
-  })
+  }
 
-  hono.post("/v1/admin/workflows/:name/runs", async (c) => {
+  const handleTrigger = async (c: Context): Promise<Response> => {
     const blocked = rejectWorkflowAdminAction(adminSurface, c)
     if (blocked) return blocked
 
@@ -167,7 +359,7 @@ export function mountWorkflowRunsAdminRoutes(
       return handleApiError(err, c)
     }
 
-    const workflowName = c.req.param("name")
+    const workflowName = c.req.param("name") ?? ""
     const runner = opts.runners.get(workflowName)
     if (!runner) {
       return c.json(
@@ -210,9 +402,9 @@ export function mountWorkflowRunsAdminRoutes(
         500,
       )
     }
-  })
+  }
 
-  hono.post("/v1/admin/workflow-runs/:id/rerun", async (c) => {
+  const handleRerun = async (c: Context): Promise<Response> => {
     const blocked = rejectWorkflowAdminAction(adminSurface, c)
     if (blocked) return blocked
 
@@ -225,7 +417,7 @@ export function mountWorkflowRunsAdminRoutes(
         501,
       )
     }
-    const parentId = c.req.param("id")
+    const parentId = c.req.param("id") ?? ""
     const detail = await workflowRunsService.getRunById(db, parentId)
     if (!detail) return c.json({ error: "not_found" }, 404)
 
@@ -293,9 +485,9 @@ export function mountWorkflowRunsAdminRoutes(
         500,
       )
     }
-  })
+  }
 
-  hono.post("/v1/admin/workflow-runs/:id/resume", async (c) => {
+  const handleResume = async (c: Context): Promise<Response> => {
     const blocked = rejectWorkflowAdminAction(adminSurface, c)
     if (blocked) return blocked
 
@@ -309,7 +501,7 @@ export function mountWorkflowRunsAdminRoutes(
       )
     }
 
-    const parentId = c.req.param("id")
+    const parentId = c.req.param("id") ?? ""
     const detail = await workflowRunsService.getRunById(db, parentId)
     if (!detail) return c.json({ error: "not_found" }, 404)
     if (detail.run.status !== "failed") {
@@ -387,7 +579,16 @@ export function mountWorkflowRunsAdminRoutes(
         500,
       )
     }
-  })
+  }
+
+  const routes = new OpenAPIHono({ defaultHook: openApiValidationHook })
+    .openapi(listRunsRoute, (c) => asRouteResponse(handleListRuns(c)))
+    .openapi(getRunRoute, (c) => asRouteResponse(handleGetRun(c)))
+    .openapi(triggerWorkflowRoute, (c) => asRouteResponse(handleTrigger(c)))
+    .openapi(rerunRunRoute, (c) => asRouteResponse(handleRerun(c)))
+    .openapi(resumeRunRoute, (c) => asRouteResponse(handleResume(c)))
+
+  hono.route("/", routes)
 }
 
 function rejectWorkflowAdminAction(
