@@ -26,7 +26,7 @@ export async function runScheduledExternalCruiseCatalogRefresh(
   env: CloudflareBindings & BookingEngineEnv,
 ) {
   return withDbFromEnv(env, async (rawDb) => {
-    const db = rawDb as PostgresJsDatabase
+    const db = rawDb as unknown as PostgresJsDatabase
     const embeddings = buildEmbeddingProvider(env)
     const indexer = buildTypesenseIndexer(env, embeddings)
 

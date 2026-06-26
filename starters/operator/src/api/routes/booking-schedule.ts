@@ -78,7 +78,11 @@ export const bookingScheduleBundle: HonoBundle = {
     eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
       try {
         await withDbFromEnv(env, async (db) => {
-          await generatePaymentScheduleForBooking(db as PostgresJsDatabase, data.bookingId, options)
+          await generatePaymentScheduleForBooking(
+            db as unknown as PostgresJsDatabase,
+            data.bookingId,
+            options,
+          )
         })
       } catch (err) {
         console.error("[booking-schedule] failed to generate schedule", {

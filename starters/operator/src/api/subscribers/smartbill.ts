@@ -103,7 +103,7 @@ export function createSmartbillSettlementPollers(
 async function ensureSmartbillInvoiceNumberSeries(env: SmartbillEnv, runtime: SmartbillRuntime) {
   try {
     await withDbFromEnv(env, async (rawDb) => {
-      const db = rawDb as PostgresJsDatabase
+      const db = rawDb as unknown as PostgresJsDatabase
       await financeService.ensureExternalInvoiceNumberSeries(db, [
         {
           provider: "smartbill",
@@ -175,7 +175,7 @@ async function syncIssuedInvoice(
   const invoiceId = payload.invoiceId
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
-    const db = rawDb as PostgresJsDatabase
+    const db = rawDb as unknown as PostgresJsDatabase
     await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
   })
 }
