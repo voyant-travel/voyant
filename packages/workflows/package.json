@@ -99,13 +99,13 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "build:examples": "tsc -p tsconfig.examples.json",
     "spike": "pnpm build && pnpm build:examples && node examples-dist/drive.js",
     "check-types": "tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
     "test:watch": "vitest"
   },
   "dependencies": {

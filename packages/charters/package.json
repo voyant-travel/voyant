@@ -19,10 +19,10 @@
     "./draft-shape": "./src/draft-shape.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=charters_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"

@@ -10,11 +10,9 @@
       "env": [
         "DATABASE_URL",
         "DB_ADAPTER",
-
         "SESSION_CLAIMS_SECRET",
         "BETTER_AUTH_SECRET",
         "INTERNAL_API_KEY",
-
         "KMS_PROVIDER",
         "KMS_LOCAL_KEY",
         "GCP_PROJECT_ID",
@@ -24,18 +22,14 @@
         "GCP_KMS_LOCATION",
         "GCP_KMS_PEOPLE_KEY_NAME",
         "GCP_KMS_INTEGRATIONS_KEY_NAME",
-
         "HATCHET_CLIENT_TOKEN",
         "HATCHET_CLIENT_HOST_PORT",
-
         "APP_URL",
         "API_BASE_URL",
         "DASH_BASE_URL",
         "CORS_ALLOWLIST",
-
         "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_API_TOKEN",
-
         "NODE_ENV"
       ]
     },
@@ -44,7 +38,9 @@
       "env": ["TEST_DATABASE_URL"]
     },
     "lint": {},
-    "typecheck": {},
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -53,14 +49,11 @@
   "globalEnv": [
     "DATABASE_URL",
     "DB_ADAPTER",
-
     "POSTHOG_API_KEY",
     "POSTHOG_HOST",
-
     "SESSION_CLAIMS_SECRET",
     "BETTER_AUTH_SECRET",
     "INTERNAL_API_KEY",
-
     "KMS_PROVIDER",
     "KMS_LOCAL_KEY",
     "GCP_PROJECT_ID",
@@ -70,18 +63,14 @@
     "GCP_KMS_LOCATION",
     "GCP_KMS_PEOPLE_KEY_NAME",
     "GCP_KMS_INTEGRATIONS_KEY_NAME",
-
     "TRIGGER_SECRET_KEY",
     "TRIGGER_PROJECT_REF",
-
     "APP_URL",
     "API_BASE_URL",
     "DASH_BASE_URL",
     "CORS_ALLOWLIST",
-
     "CLOUDFLARE_ACCOUNT_ID",
     "CLOUDFLARE_API_TOKEN",
-
     "NODE_ENV"
   ]
 }
