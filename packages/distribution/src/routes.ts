@@ -1,11 +1,37 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+/**
+ * Distribution admin routes — channels (+ identity contact points / named
+ * contacts), channel contracts, commission rules, product mappings, booking
+ * links, and webhook events, plus the inventory and settlement sub-chains
+ * mounted from `routes/inventory.ts` and `routes/settlements.ts`.
+ *
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 —
+ * distribution sub-batch) via a NON-BREAKING dual-mount: the same
+ * `OpenAPIHono` instance is exported as `distributionRoutes` and mounted by the
+ * framework on BOTH the legacy `/v1/distribution/*` surface (the
+ * `distribution-react` dashboard still calls those paths) AND the documented
+ * staff surface at `/v1/admin/distribution/*` (see `index.ts`). Request schemas
+ * reuse the exported `validation.ts` insert/update/list-query schemas the
+ * handlers already parsed; response row schemas live in
+ * `routes/openapi-schemas.ts` (authored from the Drizzle `$inferSelect` shapes;
+ * §17 timestamps/dates → strings). Business logic, identity sync, and the wire
+ * envelopes (`{ data, total, limit, offset }` lists, `{ data }` singles,
+ * `{ success: true }` deletes) are unchanged; handlers read `c.req.valid(...)`.
+ *
+ * Each resource family is its own small `OpenAPIHono` sub-chain composed onto
+ * the parent via `.route("/")` so the `.openapi()` operations propagate up while
+ * keeping type-inference cost bounded (one flat chain has O(n²) inference cost).
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import {
   insertContactPointForEntitySchema,
   insertNamedContactForEntitySchema,
   updateContactPointSchema as updateIdentityContactPointSchema,
   updateNamedContactSchema as updateIdentityNamedContactSchema,
 } from "@voyant-travel/identity/validation"
-import { Hono } from "hono"
+import { listResponseSchema } from "@voyant-travel/types"
+
 import {
   batchIdsSchema,
   batchUpdateChannelBookingLinkSchema,
@@ -19,6 +45,21 @@ import {
 } from "./routes/batch.js"
 import type { DistributionRouteEnv } from "./routes/env.js"
 import { inventoryRoutes } from "./routes/inventory.js"
+import {
+  batchDeleteResponseSchema,
+  batchUpdateResponseSchema,
+  channelBookingLinkSchema,
+  channelCommissionRuleSchema,
+  channelContactPointSchema,
+  channelContractSchema,
+  channelNamedContactSchema,
+  channelProductMappingSchema,
+  channelSchema,
+  channelWebhookEventSchema,
+  errorResponseSchema,
+  idParamSchema,
+  successResponseSchema,
+} from "./routes/openapi-schemas.js"
 import { settlementRoutes } from "./routes/settlements.js"
 import { distributionService } from "./service.js"
 import {
@@ -42,24 +83,99 @@ import {
   updateChannelWebhookEventSchema,
 } from "./validation.js"
 
-export const distributionRoutes = new Hono<DistributionRouteEnv>()
-  .get("/channels", async (c) => {
-    const query = await parseQuery(c, channelListQuerySchema)
-    return c.json(await distributionService.listChannels(c.get("db"), query))
+const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
+  content: { "application/json": { schema } },
+})
+
+const requiredJsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  body: { required: true, content: { "application/json": { schema } } },
+})
+
+// --- channels ---------------------------------------------------------------
+
+const listChannelsRoute = createRoute({
+  method: "get",
+  path: "/channels",
+  request: { query: channelListQuerySchema },
+  responses: {
+    200: { description: "Paginated channels", ...jsonContent(listResponseSchema(channelSchema)) },
+  },
+})
+
+const createChannelRoute = createRoute({
+  method: "post",
+  path: "/channels",
+  request: requiredJsonBody(insertChannelSchema),
+  responses: {
+    201: { description: "The created channel", ...jsonContent(z.object({ data: channelSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateChannelsRoute = createRoute({
+  method: "post",
+  path: "/channels/batch-update",
+  request: requiredJsonBody(batchUpdateChannelSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteChannelsRoute = createRoute({
+  method: "post",
+  path: "/channels/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getChannelRoute = createRoute({
+  method: "get",
+  path: "/channels/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "A channel by id", ...jsonContent(z.object({ data: channelSchema })) },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateChannelRoute = createRoute({
+  method: "patch",
+  path: "/channels/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelSchema) },
+  responses: {
+    200: { description: "The updated channel", ...jsonContent(z.object({ data: channelSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteChannelRoute = createRoute({
+  method: "delete",
+  path: "/channels/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Channel deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openApiValidationHook })
+  .openapi(listChannelsRoute, async (c) =>
+    c.json(await distributionService.listChannels(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createChannelRoute, async (c) => {
+    const row = await distributionService.createChannel(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/channels", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createChannel(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/channels/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelSchema)
+  .openapi(batchUpdateChannelsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -67,116 +183,314 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateChannel.bind(distributionService),
       }),
+      200,
     )
   })
-  .post("/channels/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteChannelsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteChannel,
       }),
+      200,
     )
   })
-  .get("/channels/:id", async (c) => {
-    const row = await distributionService.getChannelById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getChannelRoute, async (c) => {
+    const row = await distributionService.getChannelById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Channel not found" }, 404)
   })
-  .patch("/channels/:id", async (c) => {
+  .openapi(updateChannelRoute, async (c) => {
     const row = await distributionService.updateChannel(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Channel not found" }, 404)
   })
-  .delete("/channels/:id", async (c) => {
-    const row = await distributionService.deleteChannel(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteChannelRoute, async (c) => {
+    const row = await distributionService.deleteChannel(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel not found" }, 404)
   })
-  .get("/channels/:id/contact-points", async (c) => {
-    const rows = await distributionService.listChannelContactPoints(c.get("db"), c.req.param("id"))
-    if (!rows) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: rows })
+
+// --- channel contact points / named contacts --------------------------------
+
+const channelIdParamSchema = z.object({ id: z.string() })
+const contactPointIdParamSchema = z.object({ contactPointId: z.string() })
+const contactIdParamSchema = z.object({ contactId: z.string() })
+
+const listChannelContactPointsRoute = createRoute({
+  method: "get",
+  path: "/channels/{id}/contact-points",
+  request: { params: channelIdParamSchema },
+  responses: {
+    200: {
+      description: "Contact points for a channel",
+      ...jsonContent(z.object({ data: z.array(channelContactPointSchema) })),
+    },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const createChannelContactPointRoute = createRoute({
+  method: "post",
+  path: "/channels/{id}/contact-points",
+  request: { params: channelIdParamSchema, ...requiredJsonBody(insertContactPointForEntitySchema) },
+  responses: {
+    201: {
+      description: "The created contact point",
+      ...jsonContent(z.object({ data: channelContactPointSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateChannelContactPointRoute = createRoute({
+  method: "patch",
+  path: "/channel-contact-points/{contactPointId}",
+  request: {
+    params: contactPointIdParamSchema,
+    ...requiredJsonBody(updateIdentityContactPointSchema),
+  },
+  responses: {
+    200: {
+      description: "The updated contact point",
+      ...jsonContent(z.object({ data: channelContactPointSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel contact point not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteChannelContactPointRoute = createRoute({
+  method: "delete",
+  path: "/channel-contact-points/{contactPointId}",
+  request: { params: contactPointIdParamSchema },
+  responses: {
+    200: { description: "Contact point deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel contact point not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const listChannelContactsRoute = createRoute({
+  method: "get",
+  path: "/channels/{id}/contacts",
+  request: { params: channelIdParamSchema },
+  responses: {
+    200: {
+      description: "Named contacts for a channel",
+      ...jsonContent(z.object({ data: z.array(channelNamedContactSchema) })),
+    },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const createChannelContactRoute = createRoute({
+  method: "post",
+  path: "/channels/{id}/contacts",
+  request: { params: channelIdParamSchema, ...requiredJsonBody(insertNamedContactForEntitySchema) },
+  responses: {
+    201: {
+      description: "The created named contact",
+      ...jsonContent(z.object({ data: channelNamedContactSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateChannelContactRoute = createRoute({
+  method: "patch",
+  path: "/channel-contacts/{contactId}",
+  request: { params: contactIdParamSchema, ...requiredJsonBody(updateIdentityNamedContactSchema) },
+  responses: {
+    200: {
+      description: "The updated named contact",
+      ...jsonContent(z.object({ data: channelNamedContactSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel contact not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteChannelContactRoute = createRoute({
+  method: "delete",
+  path: "/channel-contacts/{contactId}",
+  request: { params: contactIdParamSchema },
+  responses: {
+    200: { description: "Named contact deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel contact not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const channelContactRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .openapi(listChannelContactPointsRoute, async (c) => {
+    const rows = await distributionService.listChannelContactPoints(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    return rows ? c.json({ data: rows }, 200) : c.json({ error: "Channel not found" }, 404)
   })
-  .post("/channels/:id/contact-points", async (c) => {
+  .openapi(createChannelContactPointRoute, async (c) => {
     const row = await distributionService.createChannelContactPoint(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertContactPointForEntitySchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: row }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Channel not found" }, 404)
   })
-  .patch("/channel-contact-points/:contactPointId", async (c) => {
+  .openapi(updateChannelContactPointRoute, async (c) => {
     const row = await distributionService.updateChannelContactPoint(
       c.get("db"),
-      c.req.param("contactPointId"),
-      await parseJsonBody(c, updateIdentityContactPointSchema),
+      c.req.valid("param").contactPointId,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel contact point not found" }, 404)
-    return c.json({ data: row })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel contact point not found" }, 404)
   })
-  .delete("/channel-contact-points/:contactPointId", async (c) => {
+  .openapi(deleteChannelContactPointRoute, async (c) => {
     const row = await distributionService.deleteChannelContactPoint(
       c.get("db"),
-      c.req.param("contactPointId"),
+      c.req.valid("param").contactPointId,
     )
-    if (!row) return c.json({ error: "Channel contact point not found" }, 404)
-    return c.json({ success: true })
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel contact point not found" }, 404)
   })
-  .get("/channels/:id/contacts", async (c) => {
-    const rows = await distributionService.listChannelContacts(c.get("db"), c.req.param("id"))
-    if (!rows) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: rows })
+  .openapi(listChannelContactsRoute, async (c) => {
+    const rows = await distributionService.listChannelContacts(c.get("db"), c.req.valid("param").id)
+    return rows ? c.json({ data: rows }, 200) : c.json({ error: "Channel not found" }, 404)
   })
-  .post("/channels/:id/contacts", async (c) => {
+  .openapi(createChannelContactRoute, async (c) => {
     const row = await distributionService.createChannelContact(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertNamedContactForEntitySchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel not found" }, 404)
-    return c.json({ data: row }, 201)
+    return row ? c.json({ data: row }, 201) : c.json({ error: "Channel not found" }, 404)
   })
-  .patch("/channel-contacts/:contactId", async (c) => {
+  .openapi(updateChannelContactRoute, async (c) => {
     const row = await distributionService.updateChannelContact(
       c.get("db"),
-      c.req.param("contactId"),
-      await parseJsonBody(c, updateIdentityNamedContactSchema),
+      c.req.valid("param").contactId,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel contact not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Channel contact not found" }, 404)
   })
-  .delete("/channel-contacts/:contactId", async (c) => {
+  .openapi(deleteChannelContactRoute, async (c) => {
     const row = await distributionService.deleteChannelContact(
       c.get("db"),
-      c.req.param("contactId"),
+      c.req.valid("param").contactId,
     )
-    if (!row) return c.json({ error: "Channel contact not found" }, 404)
-    return c.json({ success: true })
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel contact not found" }, 404)
   })
-  .get("/contracts", async (c) => {
-    const query = await parseQuery(c, channelContractListQuerySchema)
-    return c.json(await distributionService.listContracts(c.get("db"), query))
+
+// --- contracts --------------------------------------------------------------
+
+const listContractsRoute = createRoute({
+  method: "get",
+  path: "/contracts",
+  request: { query: channelContractListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated channel contracts",
+      ...jsonContent(listResponseSchema(channelContractSchema)),
+    },
+  },
+})
+
+const createContractRoute = createRoute({
+  method: "post",
+  path: "/contracts",
+  request: requiredJsonBody(insertChannelContractSchema),
+  responses: {
+    201: {
+      description: "The created contract",
+      ...jsonContent(z.object({ data: channelContractSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateContractsRoute = createRoute({
+  method: "post",
+  path: "/contracts/batch-update",
+  request: requiredJsonBody(batchUpdateChannelContractSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelContractSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteContractsRoute = createRoute({
+  method: "post",
+  path: "/contracts/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getContractRoute = createRoute({
+  method: "get",
+  path: "/contracts/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A contract by id",
+      ...jsonContent(z.object({ data: channelContractSchema })),
+    },
+    404: { description: "Channel contract not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateContractRoute = createRoute({
+  method: "patch",
+  path: "/contracts/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelContractSchema) },
+  responses: {
+    200: {
+      description: "The updated contract",
+      ...jsonContent(z.object({ data: channelContractSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel contract not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteContractRoute = createRoute({
+  method: "delete",
+  path: "/contracts/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Contract deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel contract not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const contractRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openApiValidationHook })
+  .openapi(listContractsRoute, async (c) =>
+    c.json(await distributionService.listContracts(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createContractRoute, async (c) => {
+    const row = await distributionService.createContract(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/contracts", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createContract(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelContractSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/contracts/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelContractSchema)
+  .openapi(batchUpdateContractsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -184,54 +498,138 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateContract,
       }),
+      200,
     )
   })
-  .post("/contracts/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteContractsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteContract,
       }),
+      200,
     )
   })
-  .get("/contracts/:id", async (c) => {
-    const row = await distributionService.getContractById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel contract not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getContractRoute, async (c) => {
+    const row = await distributionService.getContractById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Channel contract not found" }, 404)
   })
-  .patch("/contracts/:id", async (c) => {
+  .openapi(updateContractRoute, async (c) => {
     const row = await distributionService.updateContract(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelContractSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel contract not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Channel contract not found" }, 404)
   })
-  .delete("/contracts/:id", async (c) => {
-    const row = await distributionService.deleteContract(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel contract not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteContractRoute, async (c) => {
+    const row = await distributionService.deleteContract(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel contract not found" }, 404)
   })
-  .get("/commission-rules", async (c) => {
-    const query = await parseQuery(c, channelCommissionRuleListQuerySchema)
-    return c.json(await distributionService.listCommissionRules(c.get("db"), query))
+
+// --- commission rules -------------------------------------------------------
+
+const listCommissionRulesRoute = createRoute({
+  method: "get",
+  path: "/commission-rules",
+  request: { query: channelCommissionRuleListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated commission rules",
+      ...jsonContent(listResponseSchema(channelCommissionRuleSchema)),
+    },
+  },
+})
+
+const createCommissionRuleRoute = createRoute({
+  method: "post",
+  path: "/commission-rules",
+  request: requiredJsonBody(insertChannelCommissionRuleSchema),
+  responses: {
+    201: {
+      description: "The created commission rule",
+      ...jsonContent(z.object({ data: channelCommissionRuleSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateCommissionRulesRoute = createRoute({
+  method: "post",
+  path: "/commission-rules/batch-update",
+  request: requiredJsonBody(batchUpdateChannelCommissionRuleSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelCommissionRuleSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteCommissionRulesRoute = createRoute({
+  method: "post",
+  path: "/commission-rules/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getCommissionRuleRoute = createRoute({
+  method: "get",
+  path: "/commission-rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A commission rule by id",
+      ...jsonContent(z.object({ data: channelCommissionRuleSchema })),
+    },
+    404: { description: "Channel commission rule not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateCommissionRuleRoute = createRoute({
+  method: "patch",
+  path: "/commission-rules/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelCommissionRuleSchema) },
+  responses: {
+    200: {
+      description: "The updated commission rule",
+      ...jsonContent(z.object({ data: channelCommissionRuleSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel commission rule not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteCommissionRuleRoute = createRoute({
+  method: "delete",
+  path: "/commission-rules/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Commission rule deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel commission rule not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const commissionRuleRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .openapi(listCommissionRulesRoute, async (c) =>
+    c.json(await distributionService.listCommissionRules(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createCommissionRuleRoute, async (c) => {
+    const row = await distributionService.createCommissionRule(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/commission-rules", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createCommissionRule(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelCommissionRuleSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/commission-rules/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelCommissionRuleSchema)
+  .openapi(batchUpdateCommissionRulesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -239,54 +637,145 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateCommissionRule,
       }),
+      200,
     )
   })
-  .post("/commission-rules/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteCommissionRulesRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteCommissionRule,
       }),
+      200,
     )
   })
-  .get("/commission-rules/:id", async (c) => {
-    const row = await distributionService.getCommissionRuleById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel commission rule not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getCommissionRuleRoute, async (c) => {
+    const row = await distributionService.getCommissionRuleById(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel commission rule not found" }, 404)
   })
-  .patch("/commission-rules/:id", async (c) => {
+  .openapi(updateCommissionRuleRoute, async (c) => {
     const row = await distributionService.updateCommissionRule(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelCommissionRuleSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel commission rule not found" }, 404)
-    return c.json({ data: row })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel commission rule not found" }, 404)
   })
-  .delete("/commission-rules/:id", async (c) => {
-    const row = await distributionService.deleteCommissionRule(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel commission rule not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteCommissionRuleRoute, async (c) => {
+    const row = await distributionService.deleteCommissionRule(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel commission rule not found" }, 404)
   })
-  .get("/product-mappings", async (c) => {
-    const query = await parseQuery(c, channelProductMappingListQuerySchema)
-    return c.json(await distributionService.listProductMappings(c.get("db"), query))
+
+// --- product mappings -------------------------------------------------------
+
+const listProductMappingsRoute = createRoute({
+  method: "get",
+  path: "/product-mappings",
+  request: { query: channelProductMappingListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated product mappings",
+      ...jsonContent(listResponseSchema(channelProductMappingSchema)),
+    },
+  },
+})
+
+const createProductMappingRoute = createRoute({
+  method: "post",
+  path: "/product-mappings",
+  request: requiredJsonBody(insertChannelProductMappingSchema),
+  responses: {
+    201: {
+      description: "The created product mapping",
+      ...jsonContent(z.object({ data: channelProductMappingSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateProductMappingsRoute = createRoute({
+  method: "post",
+  path: "/product-mappings/batch-update",
+  request: requiredJsonBody(batchUpdateChannelProductMappingSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelProductMappingSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteProductMappingsRoute = createRoute({
+  method: "post",
+  path: "/product-mappings/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getProductMappingRoute = createRoute({
+  method: "get",
+  path: "/product-mappings/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A product mapping by id",
+      ...jsonContent(z.object({ data: channelProductMappingSchema })),
+    },
+    404: { description: "Channel product mapping not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateProductMappingRoute = createRoute({
+  method: "patch",
+  path: "/product-mappings/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelProductMappingSchema) },
+  responses: {
+    200: {
+      description: "The updated product mapping",
+      ...jsonContent(z.object({ data: channelProductMappingSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel product mapping not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteProductMappingRoute = createRoute({
+  method: "delete",
+  path: "/product-mappings/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Product mapping deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel product mapping not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const productMappingRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .openapi(listProductMappingsRoute, async (c) =>
+    c.json(await distributionService.listProductMappings(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createProductMappingRoute, async (c) => {
+    const row = await distributionService.createProductMapping(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/product-mappings", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createProductMapping(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelProductMappingSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/product-mappings/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelProductMappingSchema)
+  .openapi(batchUpdateProductMappingsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -294,54 +783,145 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateProductMapping,
       }),
+      200,
     )
   })
-  .post("/product-mappings/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteProductMappingsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteProductMapping,
       }),
+      200,
     )
   })
-  .get("/product-mappings/:id", async (c) => {
-    const row = await distributionService.getProductMappingById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel product mapping not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getProductMappingRoute, async (c) => {
+    const row = await distributionService.getProductMappingById(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel product mapping not found" }, 404)
   })
-  .patch("/product-mappings/:id", async (c) => {
+  .openapi(updateProductMappingRoute, async (c) => {
     const row = await distributionService.updateProductMapping(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelProductMappingSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel product mapping not found" }, 404)
-    return c.json({ data: row })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel product mapping not found" }, 404)
   })
-  .delete("/product-mappings/:id", async (c) => {
-    const row = await distributionService.deleteProductMapping(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel product mapping not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteProductMappingRoute, async (c) => {
+    const row = await distributionService.deleteProductMapping(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel product mapping not found" }, 404)
   })
-  .get("/booking-links", async (c) => {
-    const query = await parseQuery(c, channelBookingLinkListQuerySchema)
-    return c.json(await distributionService.listBookingLinks(c.get("db"), query))
+
+// --- booking links ----------------------------------------------------------
+
+const listBookingLinksRoute = createRoute({
+  method: "get",
+  path: "/booking-links",
+  request: { query: channelBookingLinkListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated booking links",
+      ...jsonContent(listResponseSchema(channelBookingLinkSchema)),
+    },
+  },
+})
+
+const createBookingLinkRoute = createRoute({
+  method: "post",
+  path: "/booking-links",
+  request: requiredJsonBody(insertChannelBookingLinkSchema),
+  responses: {
+    201: {
+      description: "The created booking link",
+      ...jsonContent(z.object({ data: channelBookingLinkSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateBookingLinksRoute = createRoute({
+  method: "post",
+  path: "/booking-links/batch-update",
+  request: requiredJsonBody(batchUpdateChannelBookingLinkSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelBookingLinkSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteBookingLinksRoute = createRoute({
+  method: "post",
+  path: "/booking-links/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getBookingLinkRoute = createRoute({
+  method: "get",
+  path: "/booking-links/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A booking link by id",
+      ...jsonContent(z.object({ data: channelBookingLinkSchema })),
+    },
+    404: { description: "Channel booking link not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateBookingLinkRoute = createRoute({
+  method: "patch",
+  path: "/booking-links/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelBookingLinkSchema) },
+  responses: {
+    200: {
+      description: "The updated booking link",
+      ...jsonContent(z.object({ data: channelBookingLinkSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel booking link not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteBookingLinkRoute = createRoute({
+  method: "delete",
+  path: "/booking-links/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Booking link deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel booking link not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const bookingLinkRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .openapi(listBookingLinksRoute, async (c) =>
+    c.json(await distributionService.listBookingLinks(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createBookingLinkRoute, async (c) => {
+    const row = await distributionService.createBookingLink(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/booking-links", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createBookingLink(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelBookingLinkSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/booking-links/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelBookingLinkSchema)
+  .openapi(batchUpdateBookingLinksRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -349,54 +929,142 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateBookingLink,
       }),
+      200,
     )
   })
-  .post("/booking-links/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteBookingLinksRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteBookingLink,
       }),
+      200,
     )
   })
-  .get("/booking-links/:id", async (c) => {
-    const row = await distributionService.getBookingLinkById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel booking link not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getBookingLinkRoute, async (c) => {
+    const row = await distributionService.getBookingLinkById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel booking link not found" }, 404)
   })
-  .patch("/booking-links/:id", async (c) => {
+  .openapi(updateBookingLinkRoute, async (c) => {
     const row = await distributionService.updateBookingLink(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelBookingLinkSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel booking link not found" }, 404)
-    return c.json({ data: row })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel booking link not found" }, 404)
   })
-  .delete("/booking-links/:id", async (c) => {
-    const row = await distributionService.deleteBookingLink(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel booking link not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteBookingLinkRoute, async (c) => {
+    const row = await distributionService.deleteBookingLink(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel booking link not found" }, 404)
   })
-  .get("/webhook-events", async (c) => {
-    const query = await parseQuery(c, channelWebhookEventListQuerySchema)
-    return c.json(await distributionService.listWebhookEvents(c.get("db"), query))
+
+// --- webhook events ---------------------------------------------------------
+
+const listWebhookEventsRoute = createRoute({
+  method: "get",
+  path: "/webhook-events",
+  request: { query: channelWebhookEventListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated webhook events",
+      ...jsonContent(listResponseSchema(channelWebhookEventSchema)),
+    },
+  },
+})
+
+const createWebhookEventRoute = createRoute({
+  method: "post",
+  path: "/webhook-events",
+  request: requiredJsonBody(insertChannelWebhookEventSchema),
+  responses: {
+    201: {
+      description: "The created webhook event",
+      ...jsonContent(z.object({ data: channelWebhookEventSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchUpdateWebhookEventsRoute = createRoute({
+  method: "post",
+  path: "/webhook-events/batch-update",
+  request: requiredJsonBody(batchUpdateChannelWebhookEventSchema),
+  responses: {
+    200: {
+      description: "Per-id batch-update results",
+      ...jsonContent(batchUpdateResponseSchema(channelWebhookEventSchema)),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const batchDeleteWebhookEventsRoute = createRoute({
+  method: "post",
+  path: "/webhook-events/batch-delete",
+  request: requiredJsonBody(batchIdsSchema),
+  responses: {
+    200: { description: "Per-id batch-delete results", ...jsonContent(batchDeleteResponseSchema) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getWebhookEventRoute = createRoute({
+  method: "get",
+  path: "/webhook-events/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A webhook event by id",
+      ...jsonContent(z.object({ data: channelWebhookEventSchema })),
+    },
+    404: { description: "Channel webhook event not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateWebhookEventRoute = createRoute({
+  method: "patch",
+  path: "/webhook-events/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateChannelWebhookEventSchema) },
+  responses: {
+    200: {
+      description: "The updated webhook event",
+      ...jsonContent(z.object({ data: channelWebhookEventSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Channel webhook event not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteWebhookEventRoute = createRoute({
+  method: "delete",
+  path: "/webhook-events/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Webhook event deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Channel webhook event not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const webhookEventRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .openapi(listWebhookEventsRoute, async (c) =>
+    c.json(await distributionService.listWebhookEvents(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createWebhookEventRoute, async (c) => {
+    const row = await distributionService.createWebhookEvent(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/webhook-events", async (c) => {
-    return c.json(
-      {
-        data: await distributionService.createWebhookEvent(
-          c.get("db"),
-          await parseJsonBody(c, insertChannelWebhookEventSchema),
-        ),
-      },
-      201,
-    )
-  })
-  .post("/webhook-events/batch-update", async (c) => {
-    const body = await parseJsonBody(c, batchUpdateChannelWebhookEventSchema)
+  .openapi(batchUpdateWebhookEventsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
@@ -404,37 +1072,53 @@ export const distributionRoutes = new Hono<DistributionRouteEnv>()
         patch: body.patch,
         update: distributionService.updateWebhookEvent,
       }),
+      200,
     )
   })
-  .post("/webhook-events/batch-delete", async (c) => {
-    const body = await parseJsonBody(c, batchIdsSchema)
+  .openapi(batchDeleteWebhookEventsRoute, async (c) => {
+    const body = c.req.valid("json")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
         remove: distributionService.deleteWebhookEvent,
       }),
+      200,
     )
   })
-  .get("/webhook-events/:id", async (c) => {
-    const row = await distributionService.getWebhookEventById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel webhook event not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getWebhookEventRoute, async (c) => {
+    const row = await distributionService.getWebhookEventById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel webhook event not found" }, 404)
   })
-  .patch("/webhook-events/:id", async (c) => {
+  .openapi(updateWebhookEventRoute, async (c) => {
     const row = await distributionService.updateWebhookEvent(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateChannelWebhookEventSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Channel webhook event not found" }, 404)
-    return c.json({ data: row })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Channel webhook event not found" }, 404)
   })
-  .delete("/webhook-events/:id", async (c) => {
-    const row = await distributionService.deleteWebhookEvent(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Channel webhook event not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteWebhookEventRoute, async (c) => {
+    const row = await distributionService.deleteWebhookEvent(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Channel webhook event not found" }, 404)
   })
+
+export const distributionRoutes = new OpenAPIHono<DistributionRouteEnv>({
+  defaultHook: openApiValidationHook,
+})
+  .route("/", channelRoutes)
+  .route("/", channelContactRoutes)
+  .route("/", contractRoutes)
+  .route("/", commissionRuleRoutes)
+  .route("/", productMappingRoutes)
+  .route("/", bookingLinkRoutes)
+  .route("/", webhookEventRoutes)
   .route("/", inventoryRoutes)
   .route("/", settlementRoutes)
 

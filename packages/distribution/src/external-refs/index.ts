@@ -12,7 +12,10 @@ export const externalRefsModule: Module = {
 
 export const externalRefsHonoModule: HonoModule = {
   module: externalRefsModule,
+  // Dual-mount (voyant#2114): same `OpenAPIHono` instance on the legacy
+  // `/v1/external-refs/*` surface AND the documented `/v1/admin/external-refs/*`.
   routes: externalRefsRoutes,
+  adminRoutes: externalRefsRoutes,
 }
 
 export type { ExternalRef, NewExternalRef } from "./schema.js"
