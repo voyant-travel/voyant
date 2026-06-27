@@ -92,7 +92,7 @@ export function DistributionChannelsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/channels",
+                    endpoint: "/v1/admin/distribution/channels",
                     target: "channels-activate",
                     noun: "channel",
                     payload: { status: "active" },
@@ -111,7 +111,7 @@ export function DistributionChannelsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/channels",
+                    endpoint: "/v1/admin/distribution/channels",
                     target: "channels-archive",
                     noun: "channel",
                     payload: { status: "archived" },
@@ -132,7 +132,7 @@ export function DistributionChannelsTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/channels",
+                    endpoint: "/v1/admin/distribution/channels",
                     target: "channels-delete",
                     noun: "channel",
                     clearSelection,
@@ -204,7 +204,7 @@ export function DistributionContractsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/contracts",
+                    endpoint: "/v1/admin/distribution/contracts",
                     target: "contracts-activate",
                     noun: "contract",
                     payload: { status: "active" },
@@ -223,7 +223,7 @@ export function DistributionContractsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/contracts",
+                    endpoint: "/v1/admin/distribution/contracts",
                     target: "contracts-expire",
                     noun: "contract",
                     payload: { status: "expired" },
@@ -244,7 +244,7 @@ export function DistributionContractsTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/contracts",
+                    endpoint: "/v1/admin/distribution/contracts",
                     target: "contracts-delete",
                     noun: "contract",
                     clearSelection,
@@ -321,7 +321,7 @@ export function DistributionCommissionsTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/commission-rules",
+                    endpoint: "/v1/admin/distribution/commission-rules",
                     target: "commission-rules-delete",
                     noun: "commissionRule",
                     clearSelection,

@@ -18,7 +18,7 @@ export function useSupplierNoteMutation(supplierId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateSupplierNoteInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${supplierId}/notes`,
+        `/v1/admin/suppliers/${supplierId}/notes`,
         supplierNoteResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

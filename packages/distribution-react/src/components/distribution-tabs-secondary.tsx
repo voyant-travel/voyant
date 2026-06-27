@@ -95,7 +95,7 @@ export function DistributionMappingsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/product-mappings",
+                    endpoint: "/v1/admin/distribution/product-mappings",
                     target: "mappings-activate",
                     noun: "mapping",
                     payload: { active: true },
@@ -114,7 +114,7 @@ export function DistributionMappingsTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/product-mappings",
+                    endpoint: "/v1/admin/distribution/product-mappings",
                     target: "mappings-deactivate",
                     noun: "mapping",
                     payload: { active: false },
@@ -135,7 +135,7 @@ export function DistributionMappingsTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/product-mappings",
+                    endpoint: "/v1/admin/distribution/product-mappings",
                     target: "mappings-delete",
                     noun: "mapping",
                     clearSelection,
@@ -208,7 +208,7 @@ export function DistributionBookingLinksTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/booking-links",
+                    endpoint: "/v1/admin/distribution/booking-links",
                     target: "booking-links-delete",
                     noun: "bookingLink",
                     clearSelection,
@@ -279,7 +279,7 @@ export function DistributionWebhooksTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/webhook-events",
+                    endpoint: "/v1/admin/distribution/webhook-events",
                     target: "webhook-events-processed",
                     noun: "webhookEvent",
                     payload: { status: "processed" },
@@ -298,7 +298,7 @@ export function DistributionWebhooksTab(props: {
                 onConfirm={() =>
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/webhook-events",
+                    endpoint: "/v1/admin/distribution/webhook-events",
                     target: "webhook-events-ignored",
                     noun: "webhookEvent",
                     payload: { status: "ignored" },
@@ -319,7 +319,7 @@ export function DistributionWebhooksTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/distribution/webhook-events",
+                    endpoint: "/v1/admin/distribution/webhook-events",
                     target: "webhook-events-delete",
                     noun: "webhookEvent",
                     clearSelection,

@@ -78,7 +78,7 @@ export function ContractDetailPage({
 
   const remove = useMutation({
     mutationFn: () =>
-      fetchWithValidation(`/v1/distribution/contracts/${id}`, successEnvelope, client, {
+      fetchWithValidation(`/v1/admin/distribution/contracts/${id}`, successEnvelope, client, {
         method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {

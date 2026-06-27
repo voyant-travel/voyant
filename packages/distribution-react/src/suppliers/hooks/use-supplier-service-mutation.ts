@@ -26,7 +26,7 @@ export function useSupplierServiceMutation(supplierId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateSupplierServiceInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services`,
+        `/v1/admin/suppliers/${supplierId}/services`,
         supplierServiceResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -49,7 +49,7 @@ export function useSupplierServiceMutation(supplierId: string) {
       input: UpdateSupplierServiceInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}`,
         supplierServiceResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -66,7 +66,7 @@ export function useSupplierServiceMutation(supplierId: string) {
   const remove = useMutation({
     mutationFn: async (serviceId: string) =>
       fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}`,
         deleteSuccessResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },

@@ -26,7 +26,7 @@ export function getExternalRefsQueryOptions(
     queryKey: externalRefsQueryKeys.refsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/external-refs/refs${toQueryString(filters)}`,
+        `/v1/admin/external-refs/refs${toQueryString(filters)}`,
         externalRefListResponse,
         client,
       ),
@@ -38,7 +38,7 @@ export function getExternalRefQueryOptions(client: FetchWithValidationOptions, i
     queryKey: externalRefsQueryKeys.ref(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/external-refs/refs/${id}`,
+        `/v1/admin/external-refs/refs/${id}`,
         externalRefSingleResponse,
         client,
       )

@@ -66,9 +66,14 @@ export function MappingDetailPage({
 
   const remove = useMutation({
     mutationFn: () =>
-      fetchWithValidation(`/v1/distribution/product-mappings/${id}`, successEnvelope, client, {
-        method: "DELETE", // i18n-literal-ok HTTP method
-      }),
+      fetchWithValidation(
+        `/v1/admin/distribution/product-mappings/${id}`,
+        successEnvelope,
+        client,
+        {
+          method: "DELETE", // i18n-literal-ok HTTP method
+        },
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: distributionQueryKeys.mappings() })
       queryClient.removeQueries({ queryKey: distributionQueryKeys.mapping(id) })

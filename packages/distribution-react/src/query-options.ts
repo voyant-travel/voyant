@@ -50,7 +50,11 @@ export function getSuppliersQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/suppliers${qs ? `?${qs}` : ""}`, supplierListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/suppliers${qs ? `?${qs}` : ""}`,
+        supplierListResponse,
+        client,
+      )
     },
   })
 }
@@ -63,7 +67,7 @@ export function getSupplierQueryOptions(
     queryKey: distributionQueryKeys.supplier(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getSupplierQueryOptions requires an id")
-      return fetchWithValidation(`/v1/suppliers/${id}`, supplierSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/suppliers/${id}`, supplierSingleResponse, client)
     },
   })
 }
@@ -79,7 +83,11 @@ export function getProductsQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/products${qs ? `?${qs}` : ""}`,
+        productListResponse,
+        client,
+      )
     },
   })
 }
@@ -92,7 +100,7 @@ export function getProductQueryOptions(
     queryKey: distributionQueryKeys.product(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getProductQueryOptions requires an id")
-      return fetchWithValidation(`/v1/products/${id}`, productSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/products/${id}`, productSingleResponse, client)
     },
   })
 }
@@ -108,7 +116,11 @@ export function getBookingsQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/bookings${qs ? `?${qs}` : ""}`, bookingListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/bookings${qs ? `?${qs}` : ""}`,
+        bookingListResponse,
+        client,
+      )
     },
   })
 }
@@ -121,7 +133,7 @@ export function getBookingQueryOptions(
     queryKey: distributionQueryKeys.booking(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getBookingQueryOptions requires an id")
-      return fetchWithValidation(`/v1/bookings/${id}`, bookingSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/bookings/${id}`, bookingSingleResponse, client)
     },
   })
 }
@@ -138,7 +150,7 @@ export function getChannelsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/channels${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/channels${qs ? `?${qs}` : ""}`,
         channelListResponse,
         client,
       )
@@ -154,7 +166,11 @@ export function getChannelQueryOptions(
     queryKey: distributionQueryKeys.channel(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getChannelQueryOptions requires an id")
-      return fetchWithValidation(`/v1/distribution/channels/${id}`, channelSingleResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/distribution/channels/${id}`,
+        channelSingleResponse,
+        client,
+      )
     },
   })
 }
@@ -172,7 +188,7 @@ export function getContractsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/contracts${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/contracts${qs ? `?${qs}` : ""}`,
         channelContractListResponse,
         client,
       )
@@ -189,7 +205,7 @@ export function getContractQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getContractQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/distribution/contracts/${id}`,
+        `/v1/admin/distribution/contracts/${id}`,
         channelContractSingleResponse,
         client,
       )
@@ -210,7 +226,7 @@ export function getCommissionRulesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/commission-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/commission-rules${qs ? `?${qs}` : ""}`,
         channelCommissionRuleListResponse,
         client,
       )
@@ -227,7 +243,7 @@ export function getCommissionRuleQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getCommissionRuleQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/distribution/commission-rules/${id}`,
+        `/v1/admin/distribution/commission-rules/${id}`,
         channelCommissionRuleSingleResponse,
         client,
       )
@@ -248,7 +264,7 @@ export function getMappingsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/product-mappings${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/product-mappings${qs ? `?${qs}` : ""}`,
         channelProductMappingListResponse,
         client,
       )
@@ -265,7 +281,7 @@ export function getMappingQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getMappingQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/distribution/product-mappings/${id}`,
+        `/v1/admin/distribution/product-mappings/${id}`,
         channelProductMappingSingleResponse,
         client,
       )
@@ -286,7 +302,7 @@ export function getBookingLinksQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/booking-links${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/booking-links${qs ? `?${qs}` : ""}`,
         channelBookingLinkListResponse,
         client,
       )
@@ -303,7 +319,7 @@ export function getBookingLinkQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getBookingLinkQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/distribution/booking-links/${id}`,
+        `/v1/admin/distribution/booking-links/${id}`,
         channelBookingLinkSingleResponse,
         client,
       )
@@ -324,7 +340,7 @@ export function getWebhookEventsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/distribution/webhook-events${qs ? `?${qs}` : ""}`,
+        `/v1/admin/distribution/webhook-events${qs ? `?${qs}` : ""}`,
         channelWebhookEventListResponse,
         client,
       )
@@ -341,7 +357,7 @@ export function getWebhookEventQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getWebhookEventQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/distribution/webhook-events/${id}`,
+        `/v1/admin/distribution/webhook-events/${id}`,
         channelWebhookEventSingleResponse,
         client,
       )

@@ -66,7 +66,7 @@ export function BookingLinkDetailPage({
 
   const remove = useMutation({
     mutationFn: () =>
-      fetchWithValidation(`/v1/distribution/booking-links/${id}`, successEnvelope, client, {
+      fetchWithValidation(`/v1/admin/distribution/booking-links/${id}`, successEnvelope, client, {
         method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {

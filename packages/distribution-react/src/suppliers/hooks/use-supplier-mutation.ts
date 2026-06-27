@@ -41,7 +41,7 @@ export function useSupplierMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateSupplierInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/suppliers",
+        "/v1/admin/suppliers",
         supplierDetailResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -57,7 +57,7 @@ export function useSupplierMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateSupplierInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${id}`,
+        `/v1/admin/suppliers/${id}`,
         supplierDetailResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -73,7 +73,7 @@ export function useSupplierMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/suppliers/${id}`,
+        `/v1/admin/suppliers/${id}`,
         deleteSuccessResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },
