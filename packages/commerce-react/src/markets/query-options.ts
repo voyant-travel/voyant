@@ -38,7 +38,7 @@ export function getMarketsQueryOptions(
     queryKey: marketsQueryKeys.marketsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/markets/markets${toQueryString(filters)}`,
+        `/v1/admin/markets/markets${toQueryString(filters)}`,
         marketListResponse,
         client,
       ),

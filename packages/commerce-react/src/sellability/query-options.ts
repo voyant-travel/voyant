@@ -27,7 +27,7 @@ export function getSellabilityPoliciesQueryOptions(
     queryKey: sellabilityQueryKeys.policiesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/sellability/policies${toQueryString(filters)}`,
+        `/v1/admin/sellability/policies${toQueryString(filters)}`,
         sellabilityPolicyListResponse,
         client,
       ),
@@ -39,7 +39,7 @@ export function getSellabilityPolicyQueryOptions(client: FetchWithValidationOpti
     queryKey: sellabilityQueryKeys.policy(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/sellability/policies/${id}`,
+        `/v1/admin/sellability/policies/${id}`,
         sellabilityPolicySingleResponse,
         client,
       )

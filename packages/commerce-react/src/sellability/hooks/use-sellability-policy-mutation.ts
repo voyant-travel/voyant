@@ -22,7 +22,7 @@ export function useSellabilityPolicyMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateSellabilityPolicyInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/sellability/policies",
+        "/v1/admin/sellability/policies",
         sellabilityPolicySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useSellabilityPolicyMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateSellabilityPolicyInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/sellability/policies/${id}`,
+        `/v1/admin/sellability/policies/${id}`,
         sellabilityPolicySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useSellabilityPolicyMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/sellability/policies/${id}`,
+        `/v1/admin/sellability/policies/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
