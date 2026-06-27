@@ -28,7 +28,7 @@ export function useMarketCurrencyMutation() {
       input: CreateMarketCurrencyInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/markets/${marketId}/currencies`,
+        `/v1/admin/markets/markets/${marketId}/currencies`,
         marketCurrencySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -44,7 +44,7 @@ export function useMarketCurrencyMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateMarketCurrencyInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/market-currencies/${id}`,
+        `/v1/admin/markets/market-currencies/${id}`,
         marketCurrencySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -60,7 +60,7 @@ export function useMarketCurrencyMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/markets/market-currencies/${id}`,
+        `/v1/admin/markets/market-currencies/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

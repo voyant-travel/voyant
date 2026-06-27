@@ -321,7 +321,7 @@ export function getMarketProductRulesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.markets, "product-rules", filters] as const,
-    queryFn: () => list<MarketProductRuleRecord>(api, "/v1/markets/product-rules", filters),
+    queryFn: () => list<MarketProductRuleRecord>(api, "/v1/admin/markets/product-rules", filters),
   })
 }
 
@@ -400,7 +400,7 @@ export function useDeparturePriceOverrideMutation() {
 }
 
 export function useMarketProductRuleMutation() {
-  return useApiMutation<MarketProductRuleRecord>("/v1/markets/product-rules", [
+  return useApiMutation<MarketProductRuleRecord>("/v1/admin/markets/product-rules", [
     ...commerceQueryKeys.markets,
     "product-rules",
   ])

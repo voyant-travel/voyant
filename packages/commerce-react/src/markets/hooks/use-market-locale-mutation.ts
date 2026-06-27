@@ -28,7 +28,7 @@ export function useMarketLocaleMutation() {
       input: CreateMarketLocaleInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/markets/${marketId}/locales`,
+        `/v1/admin/markets/markets/${marketId}/locales`,
         marketLocaleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -44,7 +44,7 @@ export function useMarketLocaleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateMarketLocaleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/market-locales/${id}`,
+        `/v1/admin/markets/market-locales/${id}`,
         marketLocaleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -60,7 +60,7 @@ export function useMarketLocaleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/markets/market-locales/${id}`,
+        `/v1/admin/markets/market-locales/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
