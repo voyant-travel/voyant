@@ -28,7 +28,7 @@ export function useSlotExtraManifestMutation(slotId: string) {
   const setSelection = useMutation({
     mutationFn: (input: SlotExtraSelectionPatchInput) =>
       fetchWithValidation(
-        `/v1/extras/slot-manifests/${slotId}/selections`,
+        `/v1/admin/extras/slot-manifests/${slotId}/selections`,
         slotExtraManifestMutationResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -39,7 +39,7 @@ export function useSlotExtraManifestMutation(slotId: string) {
   const bulkSetSelections = useMutation({
     mutationFn: (input: SlotExtraSelectionBulkInput) =>
       fetchWithValidation(
-        `/v1/extras/slot-manifests/${slotId}/selections/bulk`,
+        `/v1/admin/extras/slot-manifests/${slotId}/selections/bulk`,
         slotExtraManifestMutationResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -50,7 +50,7 @@ export function useSlotExtraManifestMutation(slotId: string) {
   const bulkUpdateCollections = useMutation({
     mutationFn: (input: SlotExtraCollectionBulkInput) =>
       fetchWithValidation(
-        `/v1/extras/slot-manifests/${slotId}/collections/bulk`,
+        `/v1/admin/extras/slot-manifests/${slotId}/collections/bulk`,
         slotExtraManifestMutationResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

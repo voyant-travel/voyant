@@ -56,7 +56,7 @@ export function getContactRequirementsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/booking-requirements/contact-requirements${qs ? `?${qs}` : ""}`,
+        `/v1/admin/booking-requirements/contact-requirements${qs ? `?${qs}` : ""}`,
         contactRequirementListResponse,
         client,
       )
@@ -77,7 +77,7 @@ export function getBookingQuestionsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/booking-requirements/questions${qs ? `?${qs}` : ""}`,
+        `/v1/admin/booking-requirements/questions${qs ? `?${qs}` : ""}`,
         bookingQuestionListResponse,
         client,
       )
@@ -100,7 +100,7 @@ export function getQuestionOptionsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/booking-requirements/question-options${qs ? `?${qs}` : ""}`,
+        `/v1/admin/booking-requirements/question-options${qs ? `?${qs}` : ""}`,
         bookingQuestionOptionListResponse,
         client,
       )

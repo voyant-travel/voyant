@@ -130,11 +130,14 @@ import { createTripsHonoModule, type TripsRoutesOptions } from "@voyant-travel/t
  * OpenAPI spec (voyant#2114). The shared `openApiValidationHook` keeps any
  * validation failures on the framework's `invalid_request` contract.
  */
+const extrasCombinedRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
+  .route("/", inventoryExtrasRoutes)
+  .route("/", bookingsExtrasRoutes)
+
 const extrasHonoModule = {
   module: { name: "extras" },
-  routes: new OpenAPIHono({ defaultHook: openApiValidationHook })
-    .route("/", inventoryExtrasRoutes)
-    .route("/", bookingsExtrasRoutes),
+  routes: extrasCombinedRoutes,
+  adminRoutes: extrasCombinedRoutes,
 } satisfies HonoModule
 
 // Stable absolute route matchers for the lazy `operator/*` standard families
