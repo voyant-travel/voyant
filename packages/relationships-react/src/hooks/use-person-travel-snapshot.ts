@@ -29,7 +29,7 @@ export function usePersonTravelSnapshot(
     queryFn: async () => {
       if (!personId) throw new Error("usePersonTravelSnapshot requires a personId")
       return fetchWithValidation(
-        `/v1/relationships/people/${personId}/travel-snapshot`,
+        `/v1/admin/relationships/people/${personId}/travel-snapshot`,
         personTravelSnapshotResponse,
         { baseUrl, fetcher },
       )

@@ -33,7 +33,7 @@ export function usePeople(options: UsePeopleOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/people${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/people${qs ? `?${qs}` : ""}`,
         personListResponse,
         {
           baseUrl,

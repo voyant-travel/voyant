@@ -135,7 +135,7 @@ function formatAddress(state: FormState): string | null {
 
 /**
  * Create/edit form for a Person. Validates via the server-side Zod schema
- * exposed on `/api/v1/relationships/people` — client-side errors surface as toast-
+ * exposed on `/api/v1/admin/relationships/people` — client-side errors surface as toast-
  * friendly `VoyantApiError`s inside the mutation.
  */
 export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {

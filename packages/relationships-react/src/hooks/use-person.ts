@@ -25,7 +25,7 @@ export function usePerson(id: string | undefined, options: UsePersonOptions = {}
     queryFn: async () => {
       if (!id) throw new Error("usePerson requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${id}`,
+        `/v1/admin/relationships/people/${id}`,
         personSingleResponse,
         {
           baseUrl,

@@ -37,7 +37,7 @@ export function useOrganizationMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateOrganizationInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/relationships/organizations",
+        "/v1/admin/relationships/organizations",
         organizationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -52,7 +52,7 @@ export function useOrganizationMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateOrganizationInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/organizations/${id}`,
+        `/v1/admin/relationships/organizations/${id}`,
         organizationSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -68,7 +68,7 @@ export function useOrganizationMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/relationships/organizations/${id}`,
+        `/v1/admin/relationships/organizations/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -83,7 +83,7 @@ export function useOrganizationMutation() {
   const merge = useMutation({
     mutationFn: async ({ keepId, mergeId }: MergeOrganizationInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/organizations/${keepId}/merge`,
+        `/v1/admin/relationships/organizations/${keepId}/merge`,
         organizationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({ mergeId }) },

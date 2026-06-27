@@ -30,7 +30,7 @@ export function useCustomerSignals(options: UseCustomerSignalsOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/customer-signals${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/customer-signals${qs ? `?${qs}` : ""}`,
         customerSignalListResponse,
         { baseUrl, fetcher },
       )
@@ -56,7 +56,7 @@ export function useCustomerSignalsForPerson(
     queryFn: async () => {
       if (!personId) throw new Error("useCustomerSignalsForPerson requires a personId")
       return fetchWithValidation(
-        `/v1/relationships/people/${personId}/signals`,
+        `/v1/admin/relationships/people/${personId}/signals`,
         customerSignalListByPersonResponse,
         { baseUrl, fetcher },
       )

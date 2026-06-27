@@ -55,7 +55,7 @@ export function useCustomerSignalMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateCustomerSignalInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/relationships/customer-signals",
+        "/v1/admin/relationships/customer-signals",
         customerSignalSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -71,7 +71,7 @@ export function useCustomerSignalMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateCustomerSignalInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/customer-signals/${id}`,
+        `/v1/admin/relationships/customer-signals/${id}`,
         customerSignalSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -88,7 +88,7 @@ export function useCustomerSignalMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/relationships/customer-signals/${id}`,
+        `/v1/admin/relationships/customer-signals/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -106,7 +106,7 @@ export function useCustomerSignalMutation() {
   const resolve = useMutation({
     mutationFn: async ({ id, bookingId }: { id: string; bookingId: string }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/customer-signals/${id}/resolve`,
+        `/v1/admin/relationships/customer-signals/${id}/resolve`,
         customerSignalSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({ bookingId }) },

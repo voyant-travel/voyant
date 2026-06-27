@@ -29,7 +29,7 @@ export function useActivities(options: UseActivitiesOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/activities${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/activities${qs ? `?${qs}` : ""}`,
         activityListResponse,
         {
           baseUrl,

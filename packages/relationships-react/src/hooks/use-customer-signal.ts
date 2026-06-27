@@ -20,7 +20,7 @@ export function useCustomerSignal(id: string | undefined, options: UseCustomerSi
     queryFn: async () => {
       if (!id) throw new Error("useCustomerSignal requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/customer-signals/${id}`,
+        `/v1/admin/relationships/customer-signals/${id}`,
         customerSignalSingleResponse,
         { baseUrl, fetcher },
       )

@@ -66,7 +66,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
     mutationFn: async (input: CreatePersonDocumentInput) => {
       if (!personId) throw new Error("usePersonDocumentMutation requires a personId")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${personId}/documents`,
+        `/v1/admin/relationships/people/${personId}/documents`,
         personDocumentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -79,7 +79,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePersonDocumentInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/person-documents/${id}`,
+        `/v1/admin/relationships/person-documents/${id}`,
         personDocumentSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -95,7 +95,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/relationships/person-documents/${id}`,
+        `/v1/admin/relationships/person-documents/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -110,7 +110,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
   const setPrimary = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/person-documents/${id}/set-primary`,
+        `/v1/admin/relationships/person-documents/${id}/set-primary`,
         personDocumentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST" },
@@ -133,7 +133,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
     mutationFn: async (input: CreatePersonDocumentFromPlaintextInput) => {
       if (!personId) throw new Error("usePersonDocumentMutation requires a personId")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${personId}/documents/from-plaintext`,
+        `/v1/admin/relationships/people/${personId}/documents/from-plaintext`,
         personDocumentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -152,7 +152,7 @@ export function usePersonDocumentMutation(personId: string | undefined) {
       input: UpdatePersonDocumentFromPlaintextInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/person-documents/${id}/from-plaintext`,
+        `/v1/admin/relationships/person-documents/${id}/from-plaintext`,
         personDocumentSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
