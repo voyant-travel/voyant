@@ -29,7 +29,7 @@ export function getProductExtrasQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/extras/product-extras${qs ? `?${qs}` : ""}`,
+        `/v1/admin/extras/product-extras${qs ? `?${qs}` : ""}`,
         productExtraListResponse,
         client,
       )
@@ -42,7 +42,7 @@ export function getProductExtraQueryOptions(client: FetchWithValidationOptions, 
     queryKey: extrasQueryKeys.productExtra(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/extras/product-extras/${id}`,
+        `/v1/admin/extras/product-extras/${id}`,
         productExtraSingleResponse,
         client,
       )
@@ -59,7 +59,7 @@ export function getSlotExtraManifestQueryOptions(
     queryKey: extrasQueryKeys.slotManifest(slotId),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/extras/slot-manifests/${slotId}`,
+        `/v1/admin/extras/slot-manifests/${slotId}`,
         slotExtraManifestResponse,
         client,
       )

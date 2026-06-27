@@ -22,7 +22,7 @@ export function useProductExtraMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateProductExtraInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/extras/product-extras",
+        "/v1/admin/extras/product-extras",
         productExtraSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useProductExtraMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateProductExtraInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/extras/product-extras/${id}`,
+        `/v1/admin/extras/product-extras/${id}`,
         productExtraSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useProductExtraMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/extras/product-extras/${id}`,
+        `/v1/admin/extras/product-extras/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

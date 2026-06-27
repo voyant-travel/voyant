@@ -48,4 +48,5 @@ export const bookingsExtrasModule: Module = {
 export const bookingsExtrasHonoModule: HonoModule = {
   module: bookingsExtrasModule,
   routes: bookingsExtrasRoutes,
+  adminRoutes: bookingsExtrasRoutes,
 }
