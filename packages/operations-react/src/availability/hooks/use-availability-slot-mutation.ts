@@ -19,7 +19,7 @@ export function useAvailabilitySlotMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAvailabilitySlotInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/availability/slots",
+        "/v1/admin/operations/availability/slots",
         availabilitySlotRecordResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -37,7 +37,7 @@ export function useAvailabilitySlotMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateAvailabilitySlotInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/availability/slots/${id}`,
+        `/v1/admin/operations/availability/slots/${id}`,
         availabilitySlotRecordResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -55,7 +55,7 @@ export function useAvailabilitySlotMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/availability/slots/${id}`,
+        `/v1/admin/operations/availability/slots/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

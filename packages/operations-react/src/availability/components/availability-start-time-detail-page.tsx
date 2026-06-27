@@ -58,7 +58,7 @@ export function getAvailabilityStartTimeDetailQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAvailabilityStartTimeDetailQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/operations/availability/start-times/${id}`,
+        `/v1/admin/operations/availability/start-times/${id}`,
         availabilityStartTimeDetailResponse,
         client,
       )

@@ -78,7 +78,7 @@ export function AvailabilityRulesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/rules",
+                  endpoint: "/v1/admin/operations/availability/rules",
                   target: "rules-activate",
                   nounSingular: props.messages.nouns.ruleSingular,
                   nounPlural: props.messages.nouns.rulePlural,
@@ -99,7 +99,7 @@ export function AvailabilityRulesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/rules",
+                  endpoint: "/v1/admin/operations/availability/rules",
                   target: "rules-deactivate",
                   nounSingular: props.messages.nouns.ruleSingular,
                   nounPlural: props.messages.nouns.rulePlural,
@@ -122,7 +122,7 @@ export function AvailabilityRulesTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/rules",
+                  endpoint: "/v1/admin/operations/availability/rules",
                   target: "rules-delete",
                   nounSingular: props.messages.nouns.ruleSingular,
                   nounPlural: props.messages.nouns.rulePlural,
@@ -189,7 +189,7 @@ export function AvailabilityStartTimesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/start-times",
+                  endpoint: "/v1/admin/operations/availability/start-times",
                   target: "start-times-activate",
                   nounSingular: props.messages.nouns.startTimeSingular,
                   nounPlural: props.messages.nouns.startTimePlural,
@@ -210,7 +210,7 @@ export function AvailabilityStartTimesTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/start-times",
+                  endpoint: "/v1/admin/operations/availability/start-times",
                   target: "start-times-deactivate",
                   nounSingular: props.messages.nouns.startTimeSingular,
                   nounPlural: props.messages.nouns.startTimePlural,
@@ -233,7 +233,7 @@ export function AvailabilityStartTimesTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/start-times",
+                  endpoint: "/v1/admin/operations/availability/start-times",
                   target: "start-times-delete",
                   nounSingular: props.messages.nouns.startTimeSingular,
                   nounPlural: props.messages.nouns.startTimePlural,
@@ -300,7 +300,7 @@ export function AvailabilityCloseoutsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/closeouts",
+                  endpoint: "/v1/admin/operations/availability/closeouts",
                   target: "closeouts-delete",
                   nounSingular: props.messages.nouns.closeoutSingular,
                   nounPlural: props.messages.nouns.closeoutPlural,
@@ -366,7 +366,7 @@ export function AvailabilityPickupPointsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/pickup-points",
+                  endpoint: "/v1/admin/operations/availability/pickup-points",
                   target: "pickup-points-activate",
                   nounSingular: props.messages.nouns.pickupPointSingular,
                   nounPlural: props.messages.nouns.pickupPointPlural,
@@ -387,7 +387,7 @@ export function AvailabilityPickupPointsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/pickup-points",
+                  endpoint: "/v1/admin/operations/availability/pickup-points",
                   target: "pickup-points-deactivate",
                   nounSingular: props.messages.nouns.pickupPointSingular,
                   nounPlural: props.messages.nouns.pickupPointPlural,
@@ -410,7 +410,7 @@ export function AvailabilityPickupPointsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/availability/pickup-points",
+                  endpoint: "/v1/admin/operations/availability/pickup-points",
                   target: "pickup-points-delete",
                   nounSingular: props.messages.nouns.pickupPointSingular,
                   nounPlural: props.messages.nouns.pickupPointPlural,

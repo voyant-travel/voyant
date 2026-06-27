@@ -54,7 +54,11 @@ export function getSuppliersQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/suppliers${qs ? `?${qs}` : ""}`, supplierListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/suppliers${qs ? `?${qs}` : ""}`,
+        supplierListResponse,
+        client,
+      )
     },
   })
 }
@@ -71,7 +75,11 @@ export function getProductsQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/products${qs ? `?${qs}` : ""}`,
+        productListResponse,
+        client,
+      )
     },
   })
 }
@@ -88,7 +96,11 @@ export function getBookingsQueryOptions(
       const params = new URLSearchParams()
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/bookings${qs ? `?${qs}` : ""}`, bookingListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/bookings${qs ? `?${qs}` : ""}`,
+        bookingListResponse,
+        client,
+      )
     },
   })
 }
@@ -107,7 +119,7 @@ export function getSlotsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/slots${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/slots${qs ? `?${qs}` : ""}`,
         slotListResponse,
         client,
       )
@@ -129,7 +141,7 @@ export function getRulesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/rules${qs ? `?${qs}` : ""}`,
         ruleListResponse,
         client,
       )
@@ -151,7 +163,7 @@ export function getStartTimesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/start-times${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/start-times${qs ? `?${qs}` : ""}`,
         startTimeListResponse,
         client,
       )
@@ -176,7 +188,7 @@ export function getResourcesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/resources${qs ? `?${qs}` : ""}`,
         resourceListResponse,
         client,
       )
@@ -196,7 +208,7 @@ export function getResourceQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getResourceQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/resources/${id}`,
+        `/v1/admin/operations/resources/${id}`,
         resourceSingleResponse,
         client,
       )
@@ -222,7 +234,7 @@ export function getPoolsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/pools${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/pools${qs ? `?${qs}` : ""}`,
         resourcePoolListResponse,
         client,
       )
@@ -242,7 +254,7 @@ export function getPoolQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getPoolQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/pools/${id}`,
+        `/v1/admin/operations/pools/${id}`,
         resourcePoolSingleResponse,
         client,
       )
@@ -269,7 +281,7 @@ export function getAllocationsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/allocations${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/allocations${qs ? `?${qs}` : ""}`,
         resourceAllocationListResponse,
         client,
       )
@@ -289,7 +301,7 @@ export function getAllocationQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAllocationQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/allocations/${id}`,
+        `/v1/admin/operations/allocations/${id}`,
         resourceAllocationSingleResponse,
         client,
       )
@@ -316,7 +328,7 @@ export function getAssignmentsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/slot-assignments${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/slot-assignments${qs ? `?${qs}` : ""}`,
         resourceSlotAssignmentListResponse,
         client,
       )
@@ -336,7 +348,7 @@ export function getAssignmentQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAssignmentQueryOptions requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/slot-assignments/${id}`,
+        `/v1/admin/operations/slot-assignments/${id}`,
         resourceSlotAssignmentSingleResponse,
         client,
       )
@@ -360,7 +372,7 @@ export function getCloseoutsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/closeouts${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/closeouts${qs ? `?${qs}` : ""}`,
         resourceCloseoutListResponse,
         client,
       )

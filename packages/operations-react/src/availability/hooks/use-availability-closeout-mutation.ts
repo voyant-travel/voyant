@@ -19,7 +19,7 @@ export function useAvailabilityCloseoutMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAvailabilityCloseoutInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/availability/closeouts",
+        "/v1/admin/operations/availability/closeouts",
         availabilityCloseoutSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -37,7 +37,7 @@ export function useAvailabilityCloseoutMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateAvailabilityCloseoutInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/availability/closeouts/${id}`,
+        `/v1/admin/operations/availability/closeouts/${id}`,
         availabilityCloseoutSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -52,7 +52,7 @@ export function useAvailabilityCloseoutMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/availability/closeouts/${id}`,
+        `/v1/admin/operations/availability/closeouts/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

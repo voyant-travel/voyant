@@ -22,7 +22,7 @@ export function useGroundVehicleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateGroundVehicleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/vehicles",
+        "/v1/admin/operations/vehicles",
         groundVehicleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useGroundVehicleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateGroundVehicleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/vehicles/${id}`,
+        `/v1/admin/operations/vehicles/${id}`,
         groundVehicleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useGroundVehicleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/vehicles/${id}`,
+        `/v1/admin/operations/vehicles/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

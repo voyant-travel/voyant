@@ -19,7 +19,7 @@ export function useGroundDriverMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateGroundDriverInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/drivers",
+        "/v1/admin/operations/drivers",
         groundDriverSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function useGroundDriverMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateGroundDriverInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/drivers/${id}`,
+        `/v1/admin/operations/drivers/${id}`,
         groundDriverSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useGroundDriverMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/drivers/${id}`,
+        `/v1/admin/operations/drivers/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

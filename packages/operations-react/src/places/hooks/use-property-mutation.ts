@@ -19,7 +19,7 @@ export function usePropertyMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePropertyInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/properties",
+        "/v1/admin/operations/properties",
         propertySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function usePropertyMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePropertyInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/properties/${id}`,
+        `/v1/admin/operations/properties/${id}`,
         propertySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function usePropertyMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/properties/${id}`,
+        `/v1/admin/operations/properties/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

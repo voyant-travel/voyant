@@ -24,7 +24,7 @@ export function useFacilityFeatureMutation() {
   const create = useMutation({
     mutationFn: async ({ facilityId, ...input }: CreateFacilityFeatureInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/facilities/${facilityId}/features`,
+        `/v1/admin/operations/facilities/${facilityId}/features`,
         facilityFeatureSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -40,7 +40,7 @@ export function useFacilityFeatureMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateFacilityFeatureInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/facility-features/${id}`,
+        `/v1/admin/operations/facility-features/${id}`,
         facilityFeatureSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -56,7 +56,7 @@ export function useFacilityFeatureMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/facility-features/${id}`,
+        `/v1/admin/operations/facility-features/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

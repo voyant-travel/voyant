@@ -19,7 +19,7 @@ export function useAvailabilityPickupPointMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAvailabilityPickupPointInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/availability/pickup-points",
+        "/v1/admin/operations/availability/pickup-points",
         availabilityPickupPointSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -43,7 +43,7 @@ export function useAvailabilityPickupPointMutation() {
       input: UpdateAvailabilityPickupPointInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/availability/pickup-points/${id}`,
+        `/v1/admin/operations/availability/pickup-points/${id}`,
         availabilityPickupPointSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -58,7 +58,7 @@ export function useAvailabilityPickupPointMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/availability/pickup-points/${id}`,
+        `/v1/admin/operations/availability/pickup-points/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

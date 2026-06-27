@@ -19,7 +19,7 @@ export function useAvailabilityStartTimeMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAvailabilityStartTimeInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/availability/start-times",
+        "/v1/admin/operations/availability/start-times",
         availabilityStartTimeSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -37,7 +37,7 @@ export function useAvailabilityStartTimeMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateAvailabilityStartTimeInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/availability/start-times/${id}`,
+        `/v1/admin/operations/availability/start-times/${id}`,
         availabilityStartTimeSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -55,7 +55,7 @@ export function useAvailabilityStartTimeMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/availability/start-times/${id}`,
+        `/v1/admin/operations/availability/start-times/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
