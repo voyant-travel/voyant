@@ -72,14 +72,18 @@ jobs:
       # light packages fan out at concurrency=4, then the three heavy programs run
       # one-at-a-time (concurrency=1), each alone with its own package-script heap.
       - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
+        # Excludes the composition points AND the "heavy" packages (commerce,
+        # distribution, identity, octo) whose typecheck depends on ^build — running
+        # those dep-builds here, concurrently with other heavy src-typechecks, would
+        # OOM-kill the 16 GB runner (exit 137). They run in the serial step below.
+        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --filter=!@voyant-travel/commerce --filter=!@voyant-travel/distribution --filter=!@voyant-travel/identity --filter=!@voyant-travel/octo --ui=stream --log-order=stream
 
       - name: Typecheck (composition points)
-        # Serial (concurrency=1): operator app, openapi spec, framework composition
-        # each run alone with the full runner + their own heap (see each package's
-        # package.json). Deps are cached from the step above, so only these three
-        # programs run live here.
-        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=@voyant-travel/openapi --filter=./starters/operator --ui=stream --log-order=stream
+        # Serial (concurrency=1): operator app, openapi spec, framework composition,
+        # and the heavy packages (commerce/distribution/identity/octo, which build
+        # their deps to dist first via ^build) each run alone with the full runner.
+        # Deps are cached from the step above, so only these programs run live here.
+        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=@voyant-travel/openapi --filter=./starters/operator --filter=@voyant-travel/commerce --filter=@voyant-travel/distribution --filter=@voyant-travel/identity --filter=@voyant-travel/octo --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream
