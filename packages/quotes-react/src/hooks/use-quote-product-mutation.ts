@@ -34,7 +34,7 @@ export function useQuoteProductMutation() {
   const create = useMutation({
     mutationFn: async ({ quoteId, input }: { quoteId: string; input: CreateQuoteProductInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/products`,
+        `/v1/admin/quotes/quotes/${quoteId}/products`,
         quoteProductSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useQuoteProductMutation() {
       input: UpdateQuoteProductInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-products/${id}`,
+        `/v1/admin/quotes/quote-products/${id}`,
         quoteProductSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -67,7 +67,7 @@ export function useQuoteProductMutation() {
   const remove = useMutation({
     mutationFn: async ({ id }: { id: string; quoteId: string }) => {
       await fetchWithValidation(
-        `/v1/quotes/quote-products/${id}`,
+        `/v1/admin/quotes/quote-products/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

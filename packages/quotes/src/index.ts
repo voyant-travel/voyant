@@ -16,7 +16,12 @@ export const quotesModule: Module = {
 export function createQuotesHonoModule(): HonoModule {
   return {
     module: quotesModule,
+    // Dual-mount (voyant#2114): the same `OpenAPIHono` instance is mounted on the
+    // legacy `/v1/quotes/*` surface (the `quotes-react` dashboard still calls
+    // those paths) AND the documented staff surface at `/v1/admin/quotes/*`
+    // (picked up by the admin OpenAPI spec).
     routes: quotesRoutes,
+    adminRoutes: quotesRoutes,
   }
 }
 

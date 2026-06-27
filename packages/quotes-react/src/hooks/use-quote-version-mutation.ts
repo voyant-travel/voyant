@@ -64,7 +64,7 @@ export function useQuoteVersionMutation() {
   const create = useMutation({
     mutationFn: async ({ quoteId, input }: { quoteId: string; input: CreateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/versions`,
+        `/v1/admin/quotes/quotes/${quoteId}/versions`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -86,7 +86,7 @@ export function useQuoteVersionMutation() {
   const snapshot = useMutation({
     mutationFn: async ({ quoteId }: { quoteId: string }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/versions/snapshot`,
+        `/v1/admin/quotes/quotes/${quoteId}/versions/snapshot`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST" },
@@ -107,7 +107,7 @@ export function useQuoteVersionMutation() {
   const setValidUntil = useMutation({
     mutationFn: async ({ id, validUntil }: { id: string; validUntil: string | null }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}/validity`,
+        `/v1/admin/quotes/quote-versions/${id}/validity`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify({ validUntil }) },
@@ -161,7 +161,7 @@ export function useQuoteVersionMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}`,
+        `/v1/admin/quotes/quote-versions/${id}`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -178,7 +178,7 @@ export function useQuoteVersionMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}`,
+        `/v1/admin/quotes/quote-versions/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -193,7 +193,7 @@ export function useQuoteVersionMutation() {
   const send = useMutation({
     mutationFn: async ({ id, input }: { id: string; input?: SendQuoteVersionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}/send`,
+        `/v1/admin/quotes/quote-versions/${id}/send`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? {}) },
@@ -210,7 +210,7 @@ export function useQuoteVersionMutation() {
   const view = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}/view`,
+        `/v1/admin/quotes/quote-versions/${id}/view`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({}) },
@@ -226,7 +226,7 @@ export function useQuoteVersionMutation() {
   const decline = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}/decline`,
+        `/v1/admin/quotes/quote-versions/${id}/decline`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({}) },
@@ -243,7 +243,7 @@ export function useQuoteVersionMutation() {
   const accept = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}/accept`,
+        `/v1/admin/quotes/quote-versions/${id}/accept`,
         acceptQuoteVersionResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({}) },
@@ -269,7 +269,7 @@ export function useQuoteVersionMutation() {
   const expire = useMutation({
     mutationFn: async (input?: ExpireQuoteVersionsInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/quotes/quote-versions/expire",
+        "/v1/admin/quotes/quote-versions/expire",
         quoteVersionArrayResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? {}) },
@@ -296,7 +296,7 @@ export function useQuoteVersionMutation() {
       input: CreateQuoteVersionLineInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${quoteVersionId}/lines`,
+        `/v1/admin/quotes/quote-versions/${quoteVersionId}/lines`,
         quoteVersionLineSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -324,7 +324,7 @@ export function useQuoteVersionMutation() {
       input: UpdateQuoteVersionLineInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-version-lines/${lineId}`,
+        `/v1/admin/quotes/quote-version-lines/${lineId}`,
         quoteVersionLineSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -350,7 +350,7 @@ export function useQuoteVersionMutation() {
       lineId: string
     }) => {
       return fetchWithValidation(
-        `/v1/quotes/quote-version-lines/${lineId}`,
+        `/v1/admin/quotes/quote-version-lines/${lineId}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

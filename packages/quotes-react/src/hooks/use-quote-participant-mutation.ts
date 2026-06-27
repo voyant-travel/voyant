@@ -31,7 +31,7 @@ export function useQuoteParticipantMutation() {
       input: CreateQuoteParticipantInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/participants`,
+        `/v1/admin/quotes/quotes/${quoteId}/participants`,
         quoteParticipantSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -44,7 +44,7 @@ export function useQuoteParticipantMutation() {
   const remove = useMutation({
     mutationFn: async ({ id }: { id: string; quoteId: string }) => {
       await fetchWithValidation(
-        `/v1/quotes/quote-participants/${id}`,
+        `/v1/admin/quotes/quote-participants/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

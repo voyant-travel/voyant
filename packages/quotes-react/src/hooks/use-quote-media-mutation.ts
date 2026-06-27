@@ -29,7 +29,7 @@ export function useQuoteMediaMutation() {
   const create = useMutation({
     mutationFn: async ({ quoteId, input }: { quoteId: string; input: CreateQuoteMediaInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/media`,
+        `/v1/admin/quotes/quotes/${quoteId}/media`,
         quoteMediaSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -64,7 +64,7 @@ export function useQuoteMediaMutation() {
           ? "image"
           : "document"
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/media`,
+        `/v1/admin/quotes/quotes/${quoteId}/media`,
         quoteMediaSingleResponse,
         { baseUrl, fetcher },
         {
@@ -87,7 +87,7 @@ export function useQuoteMediaMutation() {
   const remove = useMutation({
     mutationFn: async ({ id }: { id: string; quoteId: string }) => {
       await fetchWithValidation(
-        `/v1/quotes/quote-media/${id}`,
+        `/v1/admin/quotes/quote-media/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

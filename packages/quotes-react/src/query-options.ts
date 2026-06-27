@@ -20,7 +20,7 @@ import {
   stageSingleResponse,
 } from "./schemas.js"
 
-const basePath = "/v1/quotes"
+const basePath = "/v1/admin/quotes"
 
 export function getPipelinesQueryOptions(
   client: FetchWithValidationOptions,

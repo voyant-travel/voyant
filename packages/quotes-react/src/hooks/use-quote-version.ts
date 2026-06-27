@@ -20,7 +20,7 @@ export function useQuoteVersion(id: string | undefined, options: UseQuoteVersion
     queryFn: async () => {
       if (!id) throw new Error("useQuoteVersion requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${id}`,
+        `/v1/admin/quotes/quote-versions/${id}`,
         quoteVersionSingleResponse,
         { baseUrl, fetcher },
       )
@@ -42,7 +42,7 @@ export function useQuoteVersionLines(
     queryFn: async () => {
       if (!quoteVersionId) throw new Error("useQuoteVersionLines requires a quoteVersionId")
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quote-versions/${quoteVersionId}/lines`,
+        `/v1/admin/quotes/quote-versions/${quoteVersionId}/lines`,
         quoteVersionLineListResponse,
         { baseUrl, fetcher },
       )

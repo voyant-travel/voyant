@@ -19,10 +19,14 @@ export function useQuote(id: string | undefined, options: UseQuoteOptions = {}) 
     queryKey: quotesQueryKeys.quote(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("useQuote requires an id")
-      const { data } = await fetchWithValidation(`/v1/quotes/quotes/${id}`, quoteSingleResponse, {
-        baseUrl,
-        fetcher,
-      })
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quotes/quotes/${id}`,
+        quoteSingleResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
       return data
     },
     enabled: enabled && Boolean(id),

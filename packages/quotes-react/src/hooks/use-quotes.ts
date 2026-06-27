@@ -33,10 +33,14 @@ export function useQuotes(options: UseQuotesOptions = {}) {
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
-      return fetchWithValidation(`/v1/quotes/quotes${qs ? `?${qs}` : ""}`, quoteListResponse, {
-        baseUrl,
-        fetcher,
-      })
+      return fetchWithValidation(
+        `/v1/admin/quotes/quotes${qs ? `?${qs}` : ""}`,
+        quoteListResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
     },
     enabled,
   })

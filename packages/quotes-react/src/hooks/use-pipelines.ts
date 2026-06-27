@@ -24,7 +24,7 @@ export function usePipelines(options: UsePipelinesOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/quotes/pipelines${qs ? `?${qs}` : ""}`,
+        `/v1/admin/quotes/pipelines${qs ? `?${qs}` : ""}`,
         pipelineListResponse,
         {
           baseUrl,
@@ -49,7 +49,7 @@ export function usePipeline(id: string | undefined, options: UsePipelineOptions 
     queryFn: async () => {
       if (!id) throw new Error("usePipeline requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/quotes/pipelines/${id}`,
+        `/v1/admin/quotes/pipelines/${id}`,
         pipelineSingleResponse,
         { baseUrl, fetcher },
       )
