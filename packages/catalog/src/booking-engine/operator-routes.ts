@@ -36,10 +36,12 @@
  * modules, it only calls the readers the deployment hands it.
  */
 
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type Context, Hono } from "hono"
+import type { Context, Hono } from "hono"
 
 import { bookingCatalogSnapshotTable, catalogSourcedEntriesTable } from "../schema.js"
 import { readSourcedEntry } from "../services/sourced-entry-service.js"
@@ -182,19 +184,170 @@ function getDb(options: CatalogBookingRouteModuleOptions, c: Context): AnyDrizzl
   return options.booking.resolveDb(c)
 }
 
+// ─────────────────────────────────────────────────────────────────
+// OpenAPI route + response schemas (voyant#2114 / voyant#2208)
+//
+// The order rows + cancel result are projections of the engine's internal
+// `catalog_orders`/cancel shapes, so the documented 200 bodies are open records.
+// Request bodies/queries stay validated IN-HANDLER (the handlers own their
+// custom 400 shapes and the typed engine error → status mapping), so the
+// declared request parts are permissive: opaque JSON bodies and all-optional
+// query strings the handlers re-parse from the URL.
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Deployment `Variables` the engine reads off the request context — resolved by
+ * the parent app's middleware chain. Permissive: the resolvers own the lookup.
+ */
+type Env = { Variables: { db?: AnyDrizzleDb; userId?: string } }
+
+/** Engine `BookingEngineError` envelope (`{ error, code?, context? }`). */
+const errorResponseSchema = z.object({
+  error: z.string(),
+  code: z.string().optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
+})
+
+const idParamSchema = z.object({ id: z.string() })
+
+/** Open order-row projection (engine internal shape). */
+const orderRowSchema = z.record(z.string(), z.unknown())
+
+const ordersListResponseSchema = z.object({ rows: z.array(orderRowSchema) })
+
+/** §17: `availability_slots` rows serialize their timestamp columns to strings. */
+const slotRowSchema = z.object({
+  id: z.string(),
+  dateLocal: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string().nullable(),
+  timezone: z.string(),
+  status: z.string(),
+  unlimited: z.boolean(),
+  remainingPax: z.number().nullable(),
+  initialPax: z.number().nullable(),
+  nights: z.number().nullable(),
+  days: z.number().nullable(),
+})
+
+const slotsResponseSchema = z.object({ rows: z.array(slotRowSchema) })
+
+const snapshotResponseSchema = z.object({ data: z.record(z.string(), z.unknown()) })
+
+/** Opaque JSON request body — the handler validates it in-line. */
+const opaqueJsonBody = {
+  required: false,
+  content: { "application/json": { schema: z.unknown() } },
+} as const
+
+/** All-optional list query — the handler re-parses the raw URL search params. */
+const ordersListQuerySchema = z.object({
+  bookingId: z.string().optional(),
+  entityModule: z.string().optional(),
+  sourceKinds: z.string().optional(),
+  limit: z.string().optional(),
+  offset: z.string().optional(),
+})
+
+/** Required-but-validated-in-handler slots query (custom 400 when absent). */
+const slotsQuerySchema = z.object({
+  entityModule: z.string().optional(),
+  entityId: z.string().optional(),
+})
+
+const ordersListRoute = createRoute({
+  method: "get",
+  path: "/orders",
+  request: { query: ordersListQuerySchema },
+  responses: {
+    200: {
+      description: "Catalog orders matching the optional filters",
+      content: { "application/json": { schema: ordersListResponseSchema } },
+    },
+  },
+})
+
+const orderGetRoute = createRoute({
+  method: "get",
+  path: "/orders/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "A catalog order by id",
+      content: { "application/json": { schema: orderRowSchema } },
+    },
+    400: {
+      description: "id is required",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "order not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const orderCancelRoute = createRoute({
+  method: "post",
+  path: "/orders/{id}/cancel",
+  request: { params: idParamSchema, body: opaqueJsonBody },
+  responses: {
+    200: {
+      description: "Cancellation dispatched to the registered source adapter",
+      content: { "application/json": { schema: orderRowSchema } },
+    },
+    400: {
+      description: "bookingId, entityModule, and entityId are required in the body",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Quote/order referenced by the engine was not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    409: {
+      description: "Order already cancelled or conflicts with current state",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    500: {
+      description: "Unexpected cancellation failure",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Upstream reservation/cancel failed",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "No adapter/handler registered for this vertical",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 /**
  * Admin-only order-management routes (relative paths; mount at
  * `/v1/admin/catalog`). Surfaces snapshot rows cross-vertically and routes
- * cancels back through the registered source adapter.
+ * cancels back through the registered source adapter. Migrated to
+ * `@hono/zod-openapi` for the admin OpenAPI backfill (voyant#2114) — the
+ * handlers keep returning a plain `Response`, bridged to the inferred
+ * typed-response union by `asRouteResponse`.
  */
-export function createCatalogBookingOrdersRoutes(options: CatalogBookingRouteModuleOptions): Hono {
-  const hono = new Hono()
+export function createCatalogBookingOrdersRoutes(
+  options: CatalogBookingRouteModuleOptions,
+): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(ordersListRoute, (c) => asRouteResponse(handleListOrders(c, options)))
+    .openapi(orderGetRoute, (c) => asRouteResponse(handleGetOrder(c, options)))
+    .openapi(orderCancelRoute, (c) => asRouteResponse(handleCancel(c, options)))
+}
 
-  hono.get("/orders", async (c) => handleListOrders(c, options))
-  hono.get("/orders/:id", async (c) => handleGetOrder(c, options))
-  hono.post("/orders/:id/cancel", async (c) => handleCancel(c, options))
-
-  return hono
+/**
+ * Bridge a handler's plain `Promise<Response>` to the typed-response shape
+ * `.openapi()` infers per route. The runtime value already honors the declared
+ * schemas; this only relaxes the compile-time union.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union (voyant#2114)
+function asRouteResponse(response: Promise<Response>): Promise<any> {
+  return response
 }
 
 /**
@@ -216,6 +369,14 @@ export interface CatalogBookingMountTarget {
   route(path: string, app: Hono<any, any, any>): unknown
   // biome-ignore lint/suspicious/noExplicitAny: intentional — accept any Env-typed sub-app/handler; the mount only composes routes (voyant#2114)
   get(path: string, handler: (c: Context<any>) => Response | Promise<Response>): unknown
+  /**
+   * Register an `@hono/zod-openapi` route + handler. Accepts `any` so an
+   * `OpenAPIHono` parent satisfies the target without a cast — this is what
+   * surfaces the slots/catalog-snapshot legs in the build-time OpenAPI spec
+   * (voyant#2114 / voyant#2208).
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: intentional — bridges createRoute()/handler onto an OpenAPIHono parent (voyant#2114)
+  openapi(route: any, handler: any): unknown
 }
 
 export function mountCatalogBookingRoutes(
@@ -234,7 +395,22 @@ export function mountCatalogBookingRoutes(
   // customers pick from real available options, not a free-form
   // calendar (per booking-journey-architecture §10).
   for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
-    hono.get(`${prefix}/slots`, async (c) => handleListSlots(c, options))
+    const slotsRoute = createRoute({
+      method: "get",
+      path: `${prefix}/slots`,
+      request: { query: slotsQuerySchema },
+      responses: {
+        200: {
+          description: "Available departures / slots for a product",
+          content: { "application/json": { schema: slotsResponseSchema } },
+        },
+        400: {
+          description: "entityModule and entityId are required",
+          content: { "application/json": { schema: errorResponseSchema } },
+        },
+      },
+    })
+    hono.openapi(slotsRoute, (c: Context) => asRouteResponse(handleListSlots(c, options)))
   }
 
   // Admin-only — read the catalog snapshot tied to a booking.
@@ -242,8 +418,27 @@ export function mountCatalogBookingRoutes(
   // surfaces the frozen entity reference + pricing + (optionally) the
   // captured content payload so operators can see exactly what the
   // customer was quoted at booking time.
-  hono.get("/v1/admin/bookings/:id/catalog-snapshot", async (c) =>
-    handleGetBookingSnapshot(c, options),
+  const catalogSnapshotRoute = createRoute({
+    method: "get",
+    path: "/v1/admin/bookings/{id}/catalog-snapshot",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "Frozen catalog snapshot for a booking (+ admin-resolved labels)",
+        content: { "application/json": { schema: snapshotResponseSchema } },
+      },
+      400: {
+        description: "id is required",
+        content: { "application/json": { schema: errorResponseSchema } },
+      },
+      404: {
+        description: "snapshot_not_found — no snapshot exists for this booking",
+        content: { "application/json": { schema: errorResponseSchema } },
+      },
+    },
+  })
+  hono.openapi(catalogSnapshotRoute, (c: Context) =>
+    asRouteResponse(handleGetBookingSnapshot(c, options)),
   )
 }
 

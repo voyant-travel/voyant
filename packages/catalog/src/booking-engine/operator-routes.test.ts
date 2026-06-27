@@ -1,3 +1,4 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { readSourcedEntry } from "../services/sourced-entry-service.js"
@@ -210,7 +211,7 @@ describe("createCatalogBookingOrdersRoutes", () => {
 
 describe("mountCatalogBookingRoutes", () => {
   it("mounts the booking-engine surface on both admin and public prefixes", async () => {
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions())
 
     const admin = await app.request("/v1/admin/catalog/quote", { method: "POST" })
@@ -223,7 +224,7 @@ describe("mountCatalogBookingRoutes", () => {
 
   it("mounts admin-only order routes", async () => {
     vi.mocked(listOrders).mockResolvedValue({ rows: [] })
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions())
 
     const res = await app.request("/v1/admin/catalog/orders")
@@ -235,7 +236,7 @@ describe("mountCatalogBookingRoutes", () => {
 
 describe("GET /catalog/slots", () => {
   it("400s when entityModule/entityId are missing", async () => {
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions())
 
     const res = await app.request("/v1/admin/catalog/slots?entityModule=products")
@@ -245,7 +246,7 @@ describe("GET /catalog/slots", () => {
   })
 
   it("returns empty rows for non-products entities", async () => {
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions())
 
     const res = await app.request("/v1/public/catalog/slots?entityModule=cruises&entityId=crz_1")
@@ -274,7 +275,7 @@ describe("GET /catalog/slots", () => {
         ],
       },
     }))
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions({ getProductContent }))
 
     const res = await app.request("/v1/admin/catalog/slots?entityModule=products&entityId=prod_1")
@@ -309,7 +310,7 @@ describe("GET /catalog/slots", () => {
     vi.mocked(readSourcedEntry).mockResolvedValue(null)
     const ownedRows = [{ id: "slot_1", dateLocal: "2999-01-01" }]
     const listAvailabilitySlots = vi.fn(async () => ownedRows as never)
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, makeOptions({ listAvailabilitySlots }))
 
     const res = await app.request("/v1/public/catalog/slots?entityModule=products&entityId=prod_1")
@@ -328,7 +329,7 @@ describe("GET /admin/bookings/:id/catalog-snapshot", () => {
   it("404s when no snapshot exists", async () => {
     const options = makeOptions()
     options.booking.resolveDb = () => makeFakeDb([[]])
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, options)
 
     const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
@@ -353,7 +354,7 @@ describe("GET /admin/bookings/:id/catalog-snapshot", () => {
     ])
     const options = makeOptions()
     options.booking.resolveDb = () => db
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, options)
 
     const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
@@ -390,7 +391,7 @@ describe("GET /admin/bookings/:id/catalog-snapshot", () => {
     }))
     const options = makeOptions({ getOwnedProductById })
     options.booking.resolveDb = () => db
-    const app = new Hono()
+    const app = new OpenAPIHono()
     mountCatalogBookingRoutes(app, options)
 
     const res = await app.request("/v1/admin/bookings/bk_1/catalog-snapshot")
