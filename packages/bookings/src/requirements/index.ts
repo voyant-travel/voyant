@@ -18,7 +18,6 @@ export const bookingRequirementsModule: Module = {
 
 export const bookingRequirementsHonoModule: HonoModule = {
   module: bookingRequirementsModule,
-  routes: bookingRequirementsRoutes,
   adminRoutes: bookingRequirementsRoutes,
   publicRoutes: publicBookingRequirementsRoutes,
 }
@@ -32,7 +31,6 @@ export function createBookingRequirementsHonoModule(
 ): HonoModule {
   return {
     module: bookingRequirementsModule,
-    routes: bookingRequirementsRoutes,
     adminRoutes: bookingRequirementsRoutes,
     publicRoutes: options.publicRoutes
       ? createPublicBookingRequirementsRoutes(options.publicRoutes)

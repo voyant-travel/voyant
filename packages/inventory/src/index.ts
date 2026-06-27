@@ -32,7 +32,6 @@ export const productsHonoModule: HonoModule = {
   module: productsModule,
   adminRoutes: productRoutes,
   publicRoutes: publicProductRoutes,
-  routes: productRoutes,
 }
 
 export {

@@ -136,7 +136,6 @@ const extrasCombinedRoutes = new OpenAPIHono({ defaultHook: openApiValidationHoo
 
 const extrasHonoModule = {
   module: { name: "extras" },
-  routes: extrasCombinedRoutes,
   adminRoutes: extrasCombinedRoutes,
 } satisfies HonoModule
 

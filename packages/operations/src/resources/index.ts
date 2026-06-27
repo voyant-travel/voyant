@@ -12,7 +12,7 @@ export const resourcesModule: Module = {
 
 export const resourcesHonoModule: HonoModule = {
   module: resourcesModule,
-  routes: resourcesRoutes,
+  adminRoutes: resourcesRoutes,
 }
 
 export type {

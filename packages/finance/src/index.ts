@@ -172,7 +172,6 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
     module,
     adminRoutes,
     publicRoutes,
-    routes: adminRoutes,
   }
 }
 

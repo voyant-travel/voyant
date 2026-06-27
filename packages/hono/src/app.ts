@@ -540,11 +540,13 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (pathname.startsWith("/v1/admin/") || pathname.startsWith("/v1/public/")) {
       return next()
     }
-    // Anonymous legacy/webhook routes (ADR-0008) — e.g. a bundle-declared
-    // payment-processor callback at `/v1/finance/...`. `requireAuth` already
-    // skipped credential resolution for these, but it only stamps an actor on
-    // `/v1/public/*`, so without this skip the fail-closed staff guard would 401
-    // a route that is meant to be reachable without a session.
+    // The per-module `routes` legacy mount is gone, so this now backstops bare
+    // absolute bundle/lazy paths (e.g. `/v1/uploads`, `/v1/media/*`) plus passes
+    // anonymous webhooks (ADR-0008) — e.g. a bundle-declared payment-processor
+    // callback at `/v1/finance/...`. `requireAuth` already skipped credential
+    // resolution for these, but it only stamps an actor on `/v1/public/*`, so
+    // without this skip the fail-closed staff guard would 401 a route that is
+    // meant to be reachable without a session.
     if (matchesPublicPath(pathname, anonymousPaths)) {
       return next()
     }
@@ -603,9 +605,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (mod.webhookRoutes) {
       app.route(`/v1/${mod.module.name}`, mod.webhookRoutes)
     }
-    if (mod.routes) {
-      app.route(`/v1/${mod.module.name}`, mod.routes)
-    }
   }
 
   // Mount extension routes
@@ -632,9 +631,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     }
     if (ext.webhookRoutes) {
       app.route(`/v1/${ext.extension.module}`, ext.webhookRoutes)
-    }
-    if (ext.routes) {
-      app.route(`/v1/${ext.extension.module}`, ext.routes)
     }
   }
 

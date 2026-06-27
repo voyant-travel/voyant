@@ -535,6 +535,5 @@ export function createNotificationsHonoModule(
   return {
     module,
     adminRoutes: routes,
-    routes,
   }
 }

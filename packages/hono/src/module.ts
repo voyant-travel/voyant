@@ -5,15 +5,6 @@ import type { LazyHonoRoutes, LazyRoutesLoader } from "./lazy-routes.js"
 
 export interface HonoModule {
   module: Module
-  /**
-   * Legacy routes — mounted at `/v1/{module.name}`. Gated by the caller's
-   * `requireAuth` configuration. Use `adminRoutes` / `publicRoutes` for new
-   * modules that participate in the admin/public API split.
-   *
-   * @deprecated Prefer `adminRoutes` or `publicRoutes`.
-   */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
-  routes?: Hono<any>
   /** Staff-facing routes — mounted at `/v1/admin/{module.name}`. */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   adminRoutes?: Hono<any>
@@ -86,9 +77,6 @@ export interface HonoModule {
 
 export interface HonoExtension {
   extension: Extension
-  /** @deprecated Prefer `adminRoutes` or `publicRoutes`. */
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
-  routes?: Hono<any>
   /** Staff-facing routes — mounted at `/v1/admin/{extension.module}`. */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   adminRoutes?: Hono<any>

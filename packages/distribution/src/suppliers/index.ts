@@ -16,7 +16,6 @@ export const suppliersModule: Module = {
 export const suppliersHonoModule: HonoModule = {
   module: suppliersModule,
   adminRoutes: suppliersAdminRoutes,
-  routes: suppliersAdminRoutes,
 }
 
 export type {
