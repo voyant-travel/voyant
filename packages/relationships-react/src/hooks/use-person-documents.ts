@@ -35,7 +35,7 @@ export function usePersonDocuments(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/people/${personId}/documents${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/people/${personId}/documents${qs ? `?${qs}` : ""}`,
         personDocumentListResponse,
         { baseUrl, fetcher },
       )

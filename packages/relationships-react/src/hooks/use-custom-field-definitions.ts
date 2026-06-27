@@ -25,7 +25,7 @@ export function useCustomFieldDefinitions(options: UseCustomFieldDefinitionsOpti
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/relationships/custom-fields${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/custom-fields${qs ? `?${qs}` : ""}`,
         customFieldDefinitionListResponse,
         { baseUrl, fetcher },
       )

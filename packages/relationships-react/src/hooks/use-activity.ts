@@ -20,7 +20,7 @@ export function useActivity(id: string | undefined, options: UseActivityOptions 
     queryFn: async () => {
       if (!id) throw new Error("useActivity requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/activities/${id}`,
+        `/v1/admin/relationships/activities/${id}`,
         activitySingleResponse,
         { baseUrl, fetcher },
       )
@@ -39,7 +39,7 @@ export function useActivityLinks(activityId: string | undefined, options: UseAct
     queryFn: async () => {
       if (!activityId) throw new Error("useActivityLinks requires an activityId")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/activities/${activityId}/links`,
+        `/v1/admin/relationships/activities/${activityId}/links`,
         activityLinkListResponse,
         { baseUrl, fetcher },
       )

@@ -20,7 +20,7 @@ export function useOrganization(id: string | undefined, options: UseOrganization
     queryFn: async () => {
       if (!id) throw new Error("useOrganization requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/organizations/${id}`,
+        `/v1/admin/relationships/organizations/${id}`,
         organizationSingleResponse,
         { baseUrl, fetcher },
       )

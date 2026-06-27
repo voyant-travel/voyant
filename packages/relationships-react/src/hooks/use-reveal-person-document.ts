@@ -31,7 +31,7 @@ export function useRevealPersonDocument(
     queryKey: relationshipsQueryKeys.personDocumentReveal(documentId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/relationships/person-documents/${documentId}/reveal`,
+        `/v1/admin/relationships/person-documents/${documentId}/reveal`,
         personDocumentRevealResponse,
         { baseUrl, fetcher },
       ),

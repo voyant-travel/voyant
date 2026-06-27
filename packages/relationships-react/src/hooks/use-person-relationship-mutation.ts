@@ -50,7 +50,7 @@ export function usePersonRelationshipMutation(personId: string | undefined) {
     mutationFn: async (input: CreatePersonRelationshipInput) => {
       if (!personId) throw new Error("usePersonRelationshipMutation requires a personId")
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${personId}/relationships`,
+        `/v1/admin/relationships/people/${personId}/relationships`,
         personRelationshipSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -63,7 +63,7 @@ export function usePersonRelationshipMutation(personId: string | undefined) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePersonRelationshipInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/person-relationships/${id}`,
+        `/v1/admin/relationships/person-relationships/${id}`,
         personRelationshipSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -76,7 +76,7 @@ export function usePersonRelationshipMutation(personId: string | undefined) {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/relationships/person-relationships/${id}`,
+        `/v1/admin/relationships/person-relationships/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

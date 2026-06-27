@@ -28,7 +28,7 @@ export function useOrganizations(options: UseOrganizationsOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/organizations${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/organizations${qs ? `?${qs}` : ""}`,
         organizationListResponse,
         { baseUrl, fetcher },
       )

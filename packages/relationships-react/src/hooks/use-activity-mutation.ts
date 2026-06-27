@@ -37,7 +37,7 @@ export function useActivityMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateActivityInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/relationships/activities",
+        "/v1/admin/relationships/activities",
         activitySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -52,7 +52,7 @@ export function useActivityMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateActivityInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/activities/${id}`,
+        `/v1/admin/relationships/activities/${id}`,
         activitySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -68,7 +68,7 @@ export function useActivityMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/relationships/activities/${id}`,
+        `/v1/admin/relationships/activities/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -89,7 +89,7 @@ export function useActivityMutation() {
       input: CreateActivityLinkInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/activities/${activityId}/links`,
+        `/v1/admin/relationships/activities/${activityId}/links`,
         activityLinkSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -113,7 +113,7 @@ export function useActivityMutation() {
       linkId: string
     }) => {
       return fetchWithValidation(
-        `/v1/relationships/activity-links/${linkId}`,
+        `/v1/admin/relationships/activity-links/${linkId}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

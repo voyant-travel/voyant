@@ -56,7 +56,7 @@ export function usePersonMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePersonInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/relationships/people",
+        "/v1/admin/relationships/people",
         personSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -71,7 +71,7 @@ export function usePersonMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePersonInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${id}`,
+        `/v1/admin/relationships/people/${id}`,
         personSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -87,7 +87,7 @@ export function usePersonMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/relationships/people/${id}`,
+        `/v1/admin/relationships/people/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -102,7 +102,7 @@ export function usePersonMutation() {
   const merge = useMutation({
     mutationFn: async ({ keepId, mergeId }: MergePersonInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/relationships/people/${keepId}/merge`,
+        `/v1/admin/relationships/people/${keepId}/merge`,
         personSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({ mergeId }) },
@@ -130,7 +130,7 @@ export function usePersonMutation() {
       input: UpdatePersonProfilePiiInput
     }) => {
       return fetchWithValidation(
-        `/v1/relationships/people/${personId}/profile-pii`,
+        `/v1/admin/relationships/people/${personId}/profile-pii`,
         successResponseSchema,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },

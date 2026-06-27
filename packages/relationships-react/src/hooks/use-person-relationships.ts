@@ -34,7 +34,7 @@ export function usePersonRelationships(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/relationships/people/${personId}/relationships${qs ? `?${qs}` : ""}`,
+        `/v1/admin/relationships/people/${personId}/relationships${qs ? `?${qs}` : ""}`,
         personRelationshipListResponse,
         { baseUrl, fetcher },
       )
