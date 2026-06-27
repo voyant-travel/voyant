@@ -19,7 +19,7 @@ export function useNamedContactMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateNamedContactInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/identity/named-contacts",
+        "/v1/admin/identity/named-contacts",
         namedContactSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function useNamedContactMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateNamedContactInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/identity/named-contacts/${id}`,
+        `/v1/admin/identity/named-contacts/${id}`,
         namedContactSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useNamedContactMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/identity/named-contacts/${id}`,
+        `/v1/admin/identity/named-contacts/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

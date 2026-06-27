@@ -19,7 +19,7 @@ export function useAddressMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAddressInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/identity/addresses",
+        "/v1/admin/identity/addresses",
         addressSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function useAddressMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateAddressInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/identity/addresses/${id}`,
+        `/v1/admin/identity/addresses/${id}`,
         addressSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useAddressMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/identity/addresses/${id}`,
+        `/v1/admin/identity/addresses/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
