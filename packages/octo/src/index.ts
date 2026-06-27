@@ -37,7 +37,15 @@ export const octoModule: Module = {
 
 export const octoHonoModule: HonoModule = {
   module: octoModule,
+  // Dual-mount (voyant#2114): the same `OpenAPIHono` instance is mounted on the
+  // legacy `/v1/octo/*` surface (back-compat) AND the documented partner surface
+  // at `/v1/public/octo/*`. OCTo (Open Connectivity for Tours & Activities) is a
+  // connectivity API consumed by resellers/suppliers — a partner-facing surface,
+  // not a staff admin dashboard — so the documented leg is `publicRoutes`, not
+  // `adminRoutes`. The legacy `routes` mount is retained so no existing caller
+  // breaks.
   routes: octoRoutes,
+  publicRoutes: octoRoutes,
 }
 
 export { octoRoutes, octoService }

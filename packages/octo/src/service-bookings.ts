@@ -188,7 +188,7 @@ export async function listProjectedBookings(db: PostgresJsDatabase, query: OctoB
   )
 
   return {
-    data: data.filter((row) => Boolean(row)),
+    data: data.filter((row): row is NonNullable<typeof row> => Boolean(row)),
     total: result.total,
     limit: result.limit,
     offset: result.offset,

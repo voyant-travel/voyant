@@ -19,6 +19,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
