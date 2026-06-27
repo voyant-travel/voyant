@@ -22,7 +22,7 @@ export function useMarketMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateMarketInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/markets/markets",
+        "/v1/admin/markets/markets",
         marketSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

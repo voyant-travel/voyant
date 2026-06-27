@@ -311,7 +311,7 @@ export function getMarketsQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.markets, "markets", filters] as const,
-    queryFn: () => list<MarketRecord>(api, "/v1/markets/markets", filters),
+    queryFn: () => list<MarketRecord>(api, "/v1/admin/markets/markets", filters),
   })
 }
 
