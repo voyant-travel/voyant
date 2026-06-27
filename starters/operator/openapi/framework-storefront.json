@@ -39548,6 +39548,139 @@
         }
       }
     },
+    "/v1/public/catalog/slots": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "entityModule",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "entityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available departures / slots for a product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "dateLocal": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string"
+                          },
+                          "endsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "unlimited": {
+                            "type": "boolean"
+                          },
+                          "remainingPax": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "initialPax": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "nights": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "days": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dateLocal",
+                          "startsAt",
+                          "endsAt",
+                          "timezone",
+                          "status",
+                          "unlimited",
+                          "remainingPax",
+                          "initialPax",
+                          "nights",
+                          "days"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "rows"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "entityModule and entityId are required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/public/products/{id}/content": {
       "get": {
         "parameters": [

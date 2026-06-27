@@ -22,7 +22,7 @@ import {
 } from "@voyant-travel/catalog/offers"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
-import type { Context, Hono } from "hono"
+import type { Context } from "hono"
 
 interface PackageOffersEnv {
   VOYANT_API_KEY?: string
@@ -175,7 +175,13 @@ export function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRo
   }
 }
 
-/** The catalog offer admin routes, wired with this deployment's options. */
-export function createCatalogOffersAdminRoutesForOperator(): Hono {
+/**
+ * The catalog offer admin routes, wired with this deployment's options. Returns
+ * an `OpenAPIHono` so the package-owned `.openapi()` defs surface in the
+ * operator spec via the build-time lazy-merge (voyant#2114 / voyant#2208).
+ */
+export function createCatalogOffersAdminRoutesForOperator(): ReturnType<
+  typeof createCatalogOffersAdminRoutes
+> {
   return createCatalogOffersAdminRoutes(createOperatorCatalogOffersRouteModuleOptions())
 }
