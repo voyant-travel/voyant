@@ -1,5 +1,8 @@
 {
-  "extends": "@voyant-travel/voyant-typescript-config/react-library.json",
+  "extends": [
+    "@voyant-travel/voyant-typescript-config/react-library.json",
+    "../typescript-config/dep-paths.json"
+  ],
   "compilerOptions": {
     "composite": false,
     "outDir": "dist",

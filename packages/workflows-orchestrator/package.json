@@ -51,14 +51,15 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "dev": "tsc -w -p tsconfig.json",
     "test:integration": "vitest run --maxWorkers=1 --testTimeout=30000 --hookTimeout=30000 src/node/__tests__/migrate.integration.test.ts src/node/__tests__/postgres-integration.test.ts src/node/__tests__/selfhost-server-postgres.integration.test.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.typecheck.json"
   },
   "dependencies": {
     "@voyant-travel/workflows": "workspace:^",
