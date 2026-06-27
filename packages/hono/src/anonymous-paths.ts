@@ -1,3 +1,5 @@
+import type { Hono } from "hono"
+
 import type { HonoExtension, HonoModule } from "./module.js"
 import { resolveSurfaceMountPath } from "./mount-paths.js"
 
@@ -32,11 +34,30 @@ export function assembleAnonymousPaths(
     }
   }
 
+  // Inbound webhook routes are unauthenticated by construction (the handler
+  // verifies the provider signature), so their concrete absolute paths are
+  // auto-added to the allow-list — no per-deployment `publicPaths` entry. Mounted
+  // at `/v1/{name}`, matching the mount in `app.ts`. Parameterized/wildcard paths
+  // are skipped (the literal `matchesPublicPath` matcher can't match them) and
+  // must be declared via `anonymous` if ever needed.
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; mirrors the HonoModule.webhookRoutes suppression.
+  const addWebhooks = (name: string, routes: Hono<any> | undefined): void => {
+    if (!routes) return
+    for (const route of routes.routes) {
+      const path = route.path
+      if (path.includes(":") || path.includes("*")) continue
+      const trimmed = path.replace(/\/+$/g, "")
+      paths.add(`/v1/${name}${trimmed === "/" ? "" : trimmed}`)
+    }
+  }
+
   for (const m of modules) {
     add(resolveSurfaceMountPath("/v1/public", m.publicPath, m.module.name), m.anonymous)
+    addWebhooks(m.module.name, m.webhookRoutes)
   }
   for (const e of extensions) {
     add(resolveSurfaceMountPath("/v1/public", e.publicPath, e.extension.module), e.anonymous)
+    addWebhooks(e.extension.module, e.webhookRoutes)
   }
 
   return [...paths].sort()

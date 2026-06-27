@@ -21,6 +21,20 @@ export interface HonoModule {
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   publicRoutes?: Hono<any>
   /**
+   * Inbound webhook routes — e.g. a payment-processor callback POSTed by an
+   * external system with no session. Mounted at `/v1/{module.name}` (so existing
+   * processor-registered callback URLs are preserved), and their concrete paths
+   * are AUTOMATICALLY added to the anonymous allow-list (ADR-0008) — no
+   * `anonymous` declaration or `publicPaths` entry needed. The handler is
+   * responsible for verifying the provider signature. Distinct from `routes`
+   * (deprecated catch-all) and from `publicRoutes` (session-bearing customer
+   * surface): a webhook is unauthenticated by construction and verified in-band.
+   * Only concrete paths are auto-allow-listed; parameterized/wildcard webhook
+   * paths must additionally be declared via `anonymous`.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
+  webhookRoutes?: Hono<any>
+  /**
    * Lazy variant of `adminRoutes` — the route bundle is dynamically imported on
    * first request and cached per isolate. Mounted at `/v1/admin/{module.name}`
    * with the request context bridged in, so it behaves identically to eager
@@ -81,6 +95,12 @@ export interface HonoExtension {
   /** Customer/partner/supplier-facing routes — mounted at `/v1/public/{extension.module}`. */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   publicRoutes?: Hono<any>
+  /**
+   * Inbound webhook routes — mounted at `/v1/{extension.module}`, concrete paths
+   * auto-added to the anonymous allow-list (ADR-0008). See `HonoModule.webhookRoutes`.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
+  webhookRoutes?: Hono<any>
   /** Lazy variant of `adminRoutes` — mounted at `/v1/admin/{extension.module}` (see HonoModule). */
   lazyAdminRoutes?: LazyRoutesLoader
   /** Lazy variant of `publicRoutes` — mounted at `/v1/public/{publicPath ?? extension.module}`. */
