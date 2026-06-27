@@ -801,7 +801,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
             )
           : null
       const failedStatuses = new Set(["failed", "cancelled", "expired"])
-      const paymentStatus =
+      const paymentStatus: "paid" | "failed" | "pending" =
         booking.status === "confirmed" || paidSession
           ? "paid"
           : sessions.length > 0 && sessions.every((session) => failedStatuses.has(session.status))
