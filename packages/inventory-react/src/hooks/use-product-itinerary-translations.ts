@@ -27,7 +27,7 @@ export function useProductItineraryTranslations(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/itineraries/${itineraryId}/translations`,
+        `/v1/admin/products/${productId}/itineraries/${itineraryId}/translations`,
         productItineraryTranslationListResponse,
         { baseUrl, fetcher },
       )

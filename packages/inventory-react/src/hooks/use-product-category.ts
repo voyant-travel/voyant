@@ -22,7 +22,7 @@ export function useProductCategory(
     queryKey: productsQueryKeys.productCategory(id ?? "__missing__"),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/products/product-categories/${id}`,
+        `/v1/admin/products/product-categories/${id}`,
         productCategorySingleResponse,
         { baseUrl, fetcher },
       )

@@ -26,7 +26,7 @@ export function useProductCategories(options: UseProductCategoriesOptions = {}) 
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/products/product-categories${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/product-categories${qs ? `?${qs}` : ""}`,
         productCategoryListResponse,
         { baseUrl, fetcher },
       )

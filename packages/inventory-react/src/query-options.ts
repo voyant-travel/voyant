@@ -70,7 +70,11 @@ export function getProductsQueryOptions(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
 
-      return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/products${qs ? `?${qs}` : ""}`,
+        productListResponse,
+        client,
+      )
     },
   })
 }
@@ -88,7 +92,7 @@ export function getProductQueryOptions(
       if (!id) throw new Error("getProductQueryOptions requires an id")
 
       const { data } = await fetchWithValidation(
-        `/v1/products/${id}`,
+        `/v1/admin/products/${id}`,
         productSingleResponse,
         client,
       )
@@ -114,7 +118,7 @@ export function getProductTypesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/products/product-types${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/product-types${qs ? `?${qs}` : ""}`,
         productTypeListResponse,
         client,
       )
@@ -132,7 +136,7 @@ export function getProductTypeQueryOptions(
       if (!id) throw new Error("getProductTypeQueryOptions requires an id")
 
       const { data } = await fetchWithValidation(
-        `/v1/products/product-types/${id}`,
+        `/v1/admin/products/product-types/${id}`,
         productTypeSingleResponse,
         client,
       )
@@ -157,7 +161,7 @@ export function getProductTagsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/products/product-tags${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/product-tags${qs ? `?${qs}` : ""}`,
         productTagListResponse,
         client,
       )
@@ -183,7 +187,7 @@ export function getProductCategoriesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/products/product-categories${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/product-categories${qs ? `?${qs}` : ""}`,
         productCategoryListResponse,
         client,
       )
@@ -208,7 +212,7 @@ export function getProductOptionsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/products/options${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/options${qs ? `?${qs}` : ""}`,
         productOptionListResponse,
         client,
       )
@@ -229,7 +233,7 @@ export function getProductOptionQueryOptions(
       if (!id) throw new Error("getProductOptionQueryOptions requires an id")
 
       const { data } = await fetchWithValidation(
-        `/v1/products/options/${id}`,
+        `/v1/admin/products/options/${id}`,
         productOptionSingleResponse,
         client,
       )
@@ -255,7 +259,7 @@ export function getOptionUnitsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/products/units${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/units${qs ? `?${qs}` : ""}`,
         optionUnitListResponse,
         client,
       )
@@ -276,7 +280,7 @@ export function getOptionUnitQueryOptions(
       if (!id) throw new Error("getOptionUnitQueryOptions requires an id")
 
       const { data } = await fetchWithValidation(
-        `/v1/products/units/${id}`,
+        `/v1/admin/products/units/${id}`,
         optionUnitSingleResponse,
         client,
       )
@@ -297,7 +301,11 @@ export function getProductDaysQueryOptions(
     queryFn: async () => {
       if (!productId) throw new Error("getProductDaysQueryOptions requires a productId")
 
-      return fetchWithValidation(`/v1/products/${productId}/days`, productDaysResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/products/${productId}/days`,
+        productDaysResponse,
+        client,
+      )
     },
   })
 }
@@ -317,7 +325,7 @@ export function getProductItinerariesQueryOptions(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/itineraries`,
+        `/v1/admin/products/${productId}/itineraries`,
         productItinerariesResponse,
         client,
       )
@@ -341,7 +349,7 @@ export function getProductItineraryDaysQueryOptions(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/itineraries/${itineraryId}/days`,
+        `/v1/admin/products/${productId}/itineraries/${itineraryId}/days`,
         productDaysResponse,
         client,
       )
@@ -365,7 +373,7 @@ export function getProductDayServicesQueryOptions(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services`,
+        `/v1/admin/products/${productId}/days/${dayId}/services`,
         productDayServicesResponse,
         client,
       )
@@ -386,7 +394,7 @@ export function getProductVersionsQueryOptions(
       if (!productId) throw new Error("getProductVersionsQueryOptions requires a productId")
 
       return fetchWithValidation(
-        `/v1/products/${productId}/versions`,
+        `/v1/admin/products/${productId}/versions`,
         productVersionsResponse,
         client,
       )
@@ -417,8 +425,8 @@ export function getProductMediaQueryOptions(
       if (offset !== undefined) params.set("offset", String(offset))
       const qs = params.toString()
       const basePath = dayId
-        ? `/v1/products/${productId}/days/${dayId}/media`
-        : `/v1/products/${productId}/media`
+        ? `/v1/admin/products/${productId}/days/${dayId}/media`
+        : `/v1/admin/products/${productId}/media`
 
       return fetchWithValidation(
         `${basePath}${qs ? `?${qs}` : ""}`,

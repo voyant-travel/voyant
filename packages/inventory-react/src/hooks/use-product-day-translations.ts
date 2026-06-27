@@ -27,7 +27,7 @@ export function useProductDayTranslations(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/translations`,
+        `/v1/admin/products/${productId}/days/${dayId}/translations`,
         productDayTranslationListResponse,
         { baseUrl, fetcher },
       )

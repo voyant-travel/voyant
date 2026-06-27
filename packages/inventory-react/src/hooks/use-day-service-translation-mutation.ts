@@ -38,7 +38,7 @@ export function useDayServiceTranslationMutation() {
       input: CreateDayServiceTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}/translations`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}/translations`,
         dayServiceTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -63,7 +63,7 @@ export function useDayServiceTranslationMutation() {
       input: UpdateDayServiceTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}/translations/${translationId}`,
         dayServiceTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -86,7 +86,7 @@ export function useDayServiceTranslationMutation() {
       translationId: string
     }) => {
       await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}/translations/${translationId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

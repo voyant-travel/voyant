@@ -31,7 +31,7 @@ export function useProductOptionMutation() {
   const create = useMutation({
     mutationFn: async ({ productId, ...input }: CreateProductOptionInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/options`,
+        `/v1/admin/products/${productId}/options`,
         productOptionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -47,7 +47,7 @@ export function useProductOptionMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateProductOptionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/options/${id}`,
+        `/v1/admin/products/options/${id}`,
         productOptionSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -63,7 +63,7 @@ export function useProductOptionMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/products/options/${id}`,
+        `/v1/admin/products/options/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

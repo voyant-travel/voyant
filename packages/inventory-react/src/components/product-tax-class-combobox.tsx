@@ -54,7 +54,7 @@ function useTaxClassOptions() {
       const params = new URLSearchParams()
       params.set("limit", String(PAGE_SIZE))
       params.set("active", "true")
-      return fetchWithValidation(`/v1/finance/tax-classes?${params}`, taxClassListResponse, {
+      return fetchWithValidation(`/v1/admin/finance/tax-classes?${params}`, taxClassListResponse, {
         baseUrl,
         fetcher,
       })
@@ -70,7 +70,7 @@ function useSelectedTaxClass(id: string | null | undefined) {
     queryFn: async () => {
       if (!id) throw new Error("useSelectedTaxClass requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/finance/tax-classes/${id}`,
+        `/v1/admin/finance/tax-classes/${id}`,
         taxClassSingleResponse,
         { baseUrl, fetcher },
       )

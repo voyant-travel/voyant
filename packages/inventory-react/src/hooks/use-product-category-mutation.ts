@@ -30,7 +30,7 @@ export function useProductCategoryMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateProductCategoryInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/products/product-categories",
+        "/v1/admin/products/product-categories",
         productCategorySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -45,7 +45,7 @@ export function useProductCategoryMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateProductCategoryInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/product-categories/${id}`,
+        `/v1/admin/products/product-categories/${id}`,
         productCategorySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -61,7 +61,7 @@ export function useProductCategoryMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/products/product-categories/${id}`,
+        `/v1/admin/products/product-categories/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

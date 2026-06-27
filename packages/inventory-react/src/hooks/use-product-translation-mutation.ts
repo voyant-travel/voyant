@@ -25,7 +25,7 @@ export function useProductTranslationMutation() {
       input: CreateProductTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/translations`,
+        `/v1/admin/products/${productId}/translations`,
         productTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useProductTranslationMutation() {
       input: UpdateProductTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/translations/${translationId}`,
+        `/v1/admin/products/translations/${translationId}`,
         productTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -75,7 +75,7 @@ export function useProductTranslationMutation() {
       translationId: string
     }) => {
       await fetchWithValidation(
-        `/v1/products/translations/${translationId}`,
+        `/v1/admin/products/translations/${translationId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

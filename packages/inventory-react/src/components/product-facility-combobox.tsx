@@ -55,10 +55,14 @@ function useFacilityOptions(search: string) {
       params.set("limit", String(PAGE_SIZE))
       params.set("status", "active")
       if (search) params.set("search", search)
-      return fetchWithValidation(`/v1/operations/facilities?${params}`, facilityListResponse, {
-        baseUrl,
-        fetcher,
-      })
+      return fetchWithValidation(
+        `/v1/admin/operations/facilities?${params}`,
+        facilityListResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
     },
   })
 }
@@ -71,7 +75,7 @@ function useSelectedFacility(id: string | null | undefined) {
     queryFn: async () => {
       if (!id) throw new Error("useSelectedFacility requires an id")
       const { data } = await fetchWithValidation(
-        `/v1/operations/facilities/${id}`,
+        `/v1/admin/operations/facilities/${id}`,
         facilitySingleResponse,
         { baseUrl, fetcher },
       )

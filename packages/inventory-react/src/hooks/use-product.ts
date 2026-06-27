@@ -19,10 +19,14 @@ export function useProduct(id: string | undefined, options: UseProductOptions = 
     queryKey: productsQueryKeys.product(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("useProduct requires an id")
-      const { data } = await fetchWithValidation(`/v1/products/${id}`, productSingleResponse, {
-        baseUrl,
-        fetcher,
-      })
+      const { data } = await fetchWithValidation(
+        `/v1/admin/products/${id}`,
+        productSingleResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
       return data
     },
     enabled: enabled && Boolean(id),

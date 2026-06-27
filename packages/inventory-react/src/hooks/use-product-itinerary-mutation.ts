@@ -26,7 +26,7 @@ export function useProductItineraryMutation() {
       input: CreateProductItineraryInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/itineraries`,
+        `/v1/admin/products/${productId}/itineraries`,
         productItineraryResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useProductItineraryMutation() {
       input: UpdateProductItineraryInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/itineraries/${itineraryId}`,
+        `/v1/admin/products/itineraries/${itineraryId}`,
         productItineraryResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -73,7 +73,7 @@ export function useProductItineraryMutation() {
   const remove = useMutation({
     mutationFn: async ({ productId, itineraryId }: { productId: string; itineraryId: string }) =>
       fetchWithValidation(
-        `/v1/products/itineraries/${itineraryId}`,
+        `/v1/admin/products/itineraries/${itineraryId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -99,7 +99,7 @@ export function useProductItineraryMutation() {
       input?: DuplicateProductItineraryInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/itineraries/${itineraryId}/duplicate`,
+        `/v1/admin/products/itineraries/${itineraryId}/duplicate`,
         productItineraryResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? {}) },

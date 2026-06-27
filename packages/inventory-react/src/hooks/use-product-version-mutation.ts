@@ -17,7 +17,7 @@ export function useProductVersionMutation() {
       ...input
     }: CreateProductVersionInput & { productId: string }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/versions`,
+        `/v1/admin/products/${productId}/versions`,
         productVersionResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

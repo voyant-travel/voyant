@@ -27,8 +27,8 @@ export function useProductMediaMutation() {
       ...input
     }: CreateProductMediaInput & { productId: string }) => {
       const path = input.dayId
-        ? `/v1/products/${productId}/days/${input.dayId}/media`
-        : `/v1/products/${productId}/media`
+        ? `/v1/admin/products/${productId}/days/${input.dayId}/media`
+        : `/v1/admin/products/${productId}/media`
       const { data } = await fetchWithValidation(
         path,
         productMediaResponse,
@@ -47,7 +47,7 @@ export function useProductMediaMutation() {
   const update = useMutation({
     mutationFn: async ({ mediaId, input }: { mediaId: string; input: UpdateProductMediaInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/media/${mediaId}`,
+        `/v1/admin/products/media/${mediaId}`,
         productMediaResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -65,7 +65,7 @@ export function useProductMediaMutation() {
   const remove = useMutation({
     mutationFn: async (mediaId: string) =>
       fetchWithValidation(
-        `/v1/products/media/${mediaId}`,
+        `/v1/admin/products/media/${mediaId}`,
         productMediaResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -81,7 +81,7 @@ export function useProductMediaMutation() {
   const setCover = useMutation({
     mutationFn: async (mediaId: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/media/${mediaId}/set-cover`,
+        `/v1/admin/products/media/${mediaId}/set-cover`,
         productMediaResponse,
         { baseUrl, fetcher },
         { method: "PATCH" },
@@ -98,7 +98,7 @@ export function useProductMediaMutation() {
   const reorder = useMutation({
     mutationFn: async ({ productId, items }: ReorderProductMediaInput & { productId: string }) =>
       fetchWithValidation(
-        `/v1/products/${productId}/media/reorder`,
+        `/v1/admin/products/${productId}/media/reorder`,
         reorderResponseSchema,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify({ items }) },

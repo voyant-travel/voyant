@@ -171,7 +171,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
   const { data: typesData } = useQuery({
     queryKey: ["product-types"],
     queryFn: () =>
-      api.get<{ data: ProductTypeOption[] }>("/v1/products/product-types?limit=25&active=true"),
+      api.get<{ data: ProductTypeOption[] }>(
+        "/v1/admin/products/product-types?limit=25&active=true",
+      ),
   })
 
   const { data: taxClassesData } = useQuery({
@@ -214,11 +216,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     }
 
     if (isEditing) {
-      await api.patch(`/v1/products/${product.id}`, payload)
+      await api.patch(`/v1/admin/products/${product.id}`, payload)
       await translations.persist(product.id, persistOptions)
       onSuccess()
     } else {
-      const result = await api.post<{ id: string }>("/v1/products", payload)
+      const result = await api.post<{ id: string }>("/v1/admin/products", payload)
       await translations.persist(result.id, persistOptions)
       onSuccess(result.id)
     }

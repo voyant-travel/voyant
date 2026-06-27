@@ -23,7 +23,10 @@ export function listProductActionLedger(
   input: ProductActionLedgerListInput = {},
 ) {
   return fetchWithValidation(
-    withQueryParams(`/v1/products/${productId}/action-ledger`, toProductActionLedgerQuery(input)),
+    withQueryParams(
+      `/v1/admin/products/${productId}/action-ledger`,
+      toProductActionLedgerQuery(input),
+    ),
     productActionLedgerListResponse,
     client,
   )

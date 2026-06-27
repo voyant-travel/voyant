@@ -28,7 +28,7 @@ export function useProducts(options: UseProductsOptions = {}) {
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
-      return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, {
+      return fetchWithValidation(`/v1/admin/products${qs ? `?${qs}` : ""}`, productListResponse, {
         baseUrl,
         fetcher,
       })

@@ -34,7 +34,7 @@ export function useProductDayTranslationMutation() {
       input: CreateProductDayTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/translations`,
+        `/v1/admin/products/${productId}/days/${dayId}/translations`,
         productDayTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -57,7 +57,7 @@ export function useProductDayTranslationMutation() {
       input: UpdateProductDayTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/translations/${translationId}`,
         productDayTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -78,7 +78,7 @@ export function useProductDayTranslationMutation() {
       translationId: string
     }) => {
       await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/translations/${translationId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

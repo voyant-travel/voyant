@@ -32,7 +32,7 @@ export function useDayServiceTranslations(
       }
 
       return fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}/translations`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}/translations`,
         dayServiceTranslationListResponse,
         { baseUrl, fetcher },
       )
