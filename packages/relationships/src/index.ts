@@ -40,7 +40,12 @@ export function createRelationshipsHonoModule(
   }
   return {
     module,
+    // Dual-mount the same instance (voyant#2276 step 3.5): `routes` keeps the
+    // legacy `/v1/relationships/*` surface working while `adminRoutes` exposes
+    // the documented `/v1/admin/relationships/*` surface that the OpenAPI
+    // generator reads. Only the converted children (accounts.ts) are documented.
     routes: relationshipsRoutes,
+    adminRoutes: relationshipsRoutes,
   }
 }
 
