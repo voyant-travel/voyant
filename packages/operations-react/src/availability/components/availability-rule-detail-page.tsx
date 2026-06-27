@@ -48,7 +48,7 @@ export function getAvailabilityRuleDetailQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getAvailabilityRuleDetailQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/operations/availability/rules/${id}`,
+        `/v1/admin/operations/availability/rules/${id}`,
         availabilityRuleSingleResponse,
         client,
       )

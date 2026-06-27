@@ -39,7 +39,11 @@ export function ResourceDetailHost({ id }: ResourceDetailHostProps) {
       onOpenSupplier={(supplierId) => navigateTo("supplier.detail", { supplierId })}
       onOpenAssignment={(assignmentId) => navigateTo("resourceAssignment.detail", { assignmentId })}
       onDelete={async (resource) => {
-        await sendResourcesMutation(client, "DELETE", `/v1/operations/resources/${resource.id}`)
+        await sendResourcesMutation(
+          client,
+          "DELETE",
+          `/v1/admin/operations/resources/${resource.id}`,
+        )
         await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.resources() })
         navigateTo("resource.list", {})
       }}
@@ -65,7 +69,7 @@ export function ResourcePoolDetailHost({ id }: ResourcePoolDetailHostProps) {
       onOpenAllocation={(allocationId) => navigateTo("resourceAllocation.detail", { allocationId })}
       onOpenAssignment={(assignmentId) => navigateTo("resourceAssignment.detail", { assignmentId })}
       onDelete={async (pool) => {
-        await sendResourcesMutation(client, "DELETE", `/v1/operations/pools/${pool.id}`)
+        await sendResourcesMutation(client, "DELETE", `/v1/admin/operations/pools/${pool.id}`)
         await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.pools() })
         navigateTo("resource.list", {})
       }}
@@ -92,7 +96,7 @@ export function ResourceAssignmentDetailHost({ id }: ResourceAssignmentDetailHos
         await sendResourcesMutation(
           client,
           "DELETE",
-          `/v1/operations/slot-assignments/${assignment.id}`,
+          `/v1/admin/operations/slot-assignments/${assignment.id}`,
         )
         await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.assignments() })
         navigateTo("resource.list", {})
@@ -117,7 +121,11 @@ export function ResourceAllocationDetailHost({ id }: ResourceAllocationDetailHos
       onOpenPool={(poolId) => navigateTo("resourcePool.detail", { poolId })}
       onOpenProduct={(productId) => navigateTo("product.detail", { productId })}
       onDelete={async (allocation) => {
-        await sendResourcesMutation(client, "DELETE", `/v1/operations/allocations/${allocation.id}`)
+        await sendResourcesMutation(
+          client,
+          "DELETE",
+          `/v1/admin/operations/allocations/${allocation.id}`,
+        )
         await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.allocations() })
         navigateTo("resource.list", {})
       }}

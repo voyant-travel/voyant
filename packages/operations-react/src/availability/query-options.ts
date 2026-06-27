@@ -47,7 +47,11 @@ export function getProductsQueryOptions(
       if (filters.search) params.set("search", filters.search)
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/products${qs ? `?${qs}` : ""}`,
+        productListResponse,
+        client,
+      )
     },
   })
 }
@@ -65,7 +69,7 @@ export function getRulesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/rules${qs ? `?${qs}` : ""}`,
         availabilityRuleListResponse,
         client,
       )
@@ -86,7 +90,7 @@ export function getStartTimesQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/start-times${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/start-times${qs ? `?${qs}` : ""}`,
         availabilityStartTimeListResponse,
         client,
       )
@@ -115,7 +119,7 @@ export function getSlotsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/slots${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/slots${qs ? `?${qs}` : ""}`,
         availabilitySlotListResponse,
         client,
       )
@@ -138,7 +142,7 @@ export function getAvailabilityOverviewQueryOptions(
       }
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/overview${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/overview${qs ? `?${qs}` : ""}`,
         availabilityOverviewResponse,
         client,
       )
@@ -160,7 +164,7 @@ export function getCloseoutsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/closeouts${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/closeouts${qs ? `?${qs}` : ""}`,
         availabilityCloseoutListResponse,
         client,
       )
@@ -182,7 +186,7 @@ export function getPickupPointsQueryOptions(
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/pickup-points${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/availability/pickup-points${qs ? `?${qs}` : ""}`,
         availabilityPickupPointListResponse,
         client,
       )
@@ -199,7 +203,7 @@ export function getSlotQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getSlotQueryOptions requires an id")
       return fetchWithValidation(
-        `/v1/operations/availability/slots/${id}`,
+        `/v1/admin/operations/availability/slots/${id}`,
         availabilitySlotSingleResponse,
         client,
       )
@@ -216,7 +220,7 @@ export function getSlotUnitAvailabilityQueryOptions(
     queryFn: async () => {
       if (!slotId) throw new Error("getSlotUnitAvailabilityQueryOptions requires a slotId")
       return fetchWithValidation(
-        `/v1/operations/availability/slots/${slotId}/unit-availability`,
+        `/v1/admin/operations/availability/slots/${slotId}/unit-availability`,
         slotUnitAvailabilityListResponse,
         client,
       )
@@ -266,7 +270,7 @@ export function getProductQueryOptions(
     queryKey: availabilityQueryKeys.product(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getProductQueryOptions requires an id")
-      return fetchWithValidation(`/v1/products/${id}`, productSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/products/${id}`, productSingleResponse, client)
     },
   })
 }
@@ -304,7 +308,7 @@ export function getSlotPickupsQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/slot-pickups?${qs}`,
+        `/v1/admin/operations/availability/slot-pickups?${qs}`,
         availabilitySlotPickupListResponse,
         client,
       )
@@ -327,7 +331,7 @@ export function getSlotCloseoutsQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/availability/closeouts?${qs}`,
+        `/v1/admin/operations/availability/closeouts?${qs}`,
         availabilityCloseoutListResponse,
         client,
       )
@@ -350,7 +354,7 @@ export function getSlotAssignmentsQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/slot-assignments?${qs}`,
+        `/v1/admin/operations/slot-assignments?${qs}`,
         availabilitySlotAssignmentListResponse,
         client,
       )
@@ -369,7 +373,7 @@ export function getSlotResourcesQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/operations/resources${qs ? `?${qs}` : ""}`,
+        `/v1/admin/operations/resources${qs ? `?${qs}` : ""}`,
         resourceSummaryListResponse,
         client,
       )
@@ -388,7 +392,7 @@ export function getSlotBookingsQueryOptions(
       appendPagination(params, options)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/bookings${qs ? `?${qs}` : ""}`,
+        `/v1/admin/bookings${qs ? `?${qs}` : ""}`,
         bookingSummaryListResponse,
         client,
       )

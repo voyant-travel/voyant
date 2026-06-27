@@ -130,7 +130,7 @@ export function AvailabilitySlotsTab(props: {
                           : props.messages.verbClosed
                   props.handleBulkUpdate({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/operations/availability/slots",
+                    endpoint: "/v1/admin/operations/availability/slots",
                     target: `slots-status-${value}`,
                     nounSingular: props.messages.nouns.slotSingular,
                     nounPlural: props.messages.nouns.slotPlural,
@@ -163,7 +163,7 @@ export function AvailabilitySlotsTab(props: {
                   onConfirm={() =>
                     props.handleBulkUpdate({
                       ids: selectedRows.map((row) => row.original.id),
-                      endpoint: "/v1/operations/availability/slots",
+                      endpoint: "/v1/admin/operations/availability/slots",
                       target: "slots-open",
                       nounSingular: props.messages.nouns.slotSingular,
                       nounPlural: props.messages.nouns.slotPlural,
@@ -184,7 +184,7 @@ export function AvailabilitySlotsTab(props: {
                   onConfirm={() =>
                     props.handleBulkUpdate({
                       ids: selectedRows.map((row) => row.original.id),
-                      endpoint: "/v1/operations/availability/slots",
+                      endpoint: "/v1/admin/operations/availability/slots",
                       target: "slots-close",
                       nounSingular: props.messages.nouns.slotSingular,
                       nounPlural: props.messages.nouns.slotPlural,
@@ -210,7 +210,7 @@ export function AvailabilitySlotsTab(props: {
                 onConfirm={() =>
                   props.handleBulkDelete({
                     ids: selectedRows.map((row) => row.original.id),
-                    endpoint: "/v1/operations/availability/slots",
+                    endpoint: "/v1/admin/operations/availability/slots",
                     target: "slots-delete",
                     nounSingular: props.messages.nouns.slotSingular,
                     nounPlural: props.messages.nouns.slotPlural,

@@ -19,7 +19,7 @@ export function useAvailabilityRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateAvailabilityRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/availability/rules",
+        "/v1/admin/operations/availability/rules",
         availabilityRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -37,7 +37,7 @@ export function useAvailabilityRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateAvailabilityRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/availability/rules/${id}`,
+        `/v1/admin/operations/availability/rules/${id}`,
         availabilityRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -55,7 +55,7 @@ export function useAvailabilityRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/availability/rules/${id}`,
+        `/v1/admin/operations/availability/rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

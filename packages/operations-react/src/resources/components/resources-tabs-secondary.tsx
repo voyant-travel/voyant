@@ -273,7 +273,7 @@ export function AssignmentsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/slot-assignments",
+                  endpoint: "/v1/admin/operations/slot-assignments",
                   target: "assignments-assigned",
                   nounSingular: "assignment",
                   nounPlural: "assignments",
@@ -299,7 +299,7 @@ export function AssignmentsTab(props: {
               onConfirm={() =>
                 props.handleBulkUpdate({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/slot-assignments",
+                  endpoint: "/v1/admin/operations/slot-assignments",
                   target: "assignments-released",
                   nounSingular: "assignment",
                   nounPlural: "assignments",
@@ -327,7 +327,7 @@ export function AssignmentsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/slot-assignments",
+                  endpoint: "/v1/admin/operations/slot-assignments",
                   target: "assignments-delete",
                   nounSingular: "assignment",
                   nounPlural: "assignments",
@@ -402,7 +402,7 @@ export function CloseoutsTab(props: {
               onConfirm={() =>
                 props.handleBulkDelete({
                   ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/operations/closeouts",
+                  endpoint: "/v1/admin/operations/closeouts",
                   target: "closeouts-delete",
                   nounSingular: "closeout",
                   nounPlural: "closeouts",

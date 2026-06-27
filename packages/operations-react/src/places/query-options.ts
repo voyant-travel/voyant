@@ -44,7 +44,7 @@ export function getFacilitiesQueryOptions(
     queryKey: facilitiesQueryKeys.facilitiesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/facilities${toQueryString(filters)}`,
+        `/v1/admin/operations/facilities${toQueryString(filters)}`,
         facilityListResponse,
         client,
       ),
@@ -56,7 +56,7 @@ export function getFacilityQueryOptions(client: FetchWithValidationOptions, id: 
     queryKey: facilitiesQueryKeys.facility(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/facilities/${id}`,
+        `/v1/admin/operations/facilities/${id}`,
         facilitySingleResponse,
         client,
       )
@@ -77,7 +77,7 @@ export function getFacilityFeaturesQueryOptions(
         throw new Error("getFacilityFeaturesQueryOptions requires a facilityId")
       }
       return fetchWithValidation(
-        `/v1/operations/facility-features${toQueryString(filters)}`,
+        `/v1/admin/operations/facility-features${toQueryString(filters)}`,
         facilityFeatureListResponse,
         client,
       )
@@ -90,7 +90,7 @@ export function getFacilityFeatureQueryOptions(client: FetchWithValidationOption
     queryKey: facilitiesQueryKeys.facilityFeature(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/facility-features/${id}`,
+        `/v1/admin/operations/facility-features/${id}`,
         facilityFeatureSingleResponse,
         client,
       )
@@ -111,7 +111,7 @@ export function getFacilityOperationSchedulesQueryOptions(
         throw new Error("getFacilityOperationSchedulesQueryOptions requires a facilityId")
       }
       return fetchWithValidation(
-        `/v1/operations/facility-operation-schedules${toQueryString(filters)}`,
+        `/v1/admin/operations/facility-operation-schedules${toQueryString(filters)}`,
         facilityOperationScheduleListResponse,
         client,
       )
@@ -127,7 +127,7 @@ export function getFacilityOperationScheduleQueryOptions(
     queryKey: facilitiesQueryKeys.facilityOperationSchedule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/facility-operation-schedules/${id}`,
+        `/v1/admin/operations/facility-operation-schedules/${id}`,
         facilityOperationScheduleSingleResponse,
         client,
       )
@@ -145,7 +145,7 @@ export function getPropertiesQueryOptions(
     queryKey: facilitiesQueryKeys.propertiesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/properties${toQueryString(filters)}`,
+        `/v1/admin/operations/properties${toQueryString(filters)}`,
         propertyListResponse,
         client,
       ),
@@ -157,7 +157,7 @@ export function getPropertyQueryOptions(client: FetchWithValidationOptions, id: 
     queryKey: facilitiesQueryKeys.property(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/properties/${id}`,
+        `/v1/admin/operations/properties/${id}`,
         propertySingleResponse,
         client,
       )
@@ -175,7 +175,7 @@ export function getPropertyGroupsQueryOptions(
     queryKey: facilitiesQueryKeys.propertyGroupsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/operations/property-groups${toQueryString(filters)}`,
+        `/v1/admin/operations/property-groups${toQueryString(filters)}`,
         propertyGroupListResponse,
         client,
       ),
@@ -187,7 +187,7 @@ export function getPropertyGroupQueryOptions(client: FetchWithValidationOptions,
     queryKey: facilitiesQueryKeys.propertyGroup(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/property-groups/${id}`,
+        `/v1/admin/operations/property-groups/${id}`,
         propertyGroupSingleResponse,
         client,
       )
@@ -208,7 +208,7 @@ export function getPropertyGroupMembersQueryOptions(
         throw new Error("getPropertyGroupMembersQueryOptions requires a groupId")
       }
       return fetchWithValidation(
-        `/v1/operations/property-group-members${toQueryString(filters)}`,
+        `/v1/admin/operations/property-group-members${toQueryString(filters)}`,
         propertyGroupMemberListResponse,
         client,
       )
@@ -221,7 +221,7 @@ export function getPropertyGroupMemberQueryOptions(client: FetchWithValidationOp
     queryKey: facilitiesQueryKeys.propertyGroupMember(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/property-group-members/${id}`,
+        `/v1/admin/operations/property-group-members/${id}`,
         propertyGroupMemberSingleResponse,
         client,
       )

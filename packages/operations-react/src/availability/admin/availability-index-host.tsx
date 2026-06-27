@@ -55,22 +55,22 @@ export function AvailabilityIndexHost() {
   // additional tabs slot in without touching the host.
   const runBatchUpdate = (endpoint: string, ids: string[], payload: Record<string, unknown>) => {
     switch (endpoint) {
-      case "/v1/operations/availability/rules":
+      case "/v1/admin/operations/availability/rules":
         return ruleBatch.batchUpdate.mutateAsync({
           ids,
           patch: payload as UpdateAvailabilityRuleInput,
         })
-      case "/v1/operations/availability/start-times":
+      case "/v1/admin/operations/availability/start-times":
         return startTimeBatch.batchUpdate.mutateAsync({
           ids,
           patch: payload as UpdateAvailabilityStartTimeInput,
         })
-      case "/v1/operations/availability/closeouts":
+      case "/v1/admin/operations/availability/closeouts":
         return closeoutBatch.batchUpdate.mutateAsync({
           ids,
           patch: payload as UpdateAvailabilityCloseoutInput,
         })
-      case "/v1/operations/availability/pickup-points":
+      case "/v1/admin/operations/availability/pickup-points":
         return pickupPointBatch.batchUpdate.mutateAsync({
           ids,
           patch: payload as UpdateAvailabilityPickupPointInput,
@@ -85,13 +85,13 @@ export function AvailabilityIndexHost() {
 
   const runBatchDelete = (endpoint: string, ids: string[]) => {
     switch (endpoint) {
-      case "/v1/operations/availability/rules":
+      case "/v1/admin/operations/availability/rules":
         return ruleBatch.batchDelete.mutateAsync({ ids })
-      case "/v1/operations/availability/start-times":
+      case "/v1/admin/operations/availability/start-times":
         return startTimeBatch.batchDelete.mutateAsync({ ids })
-      case "/v1/operations/availability/closeouts":
+      case "/v1/admin/operations/availability/closeouts":
         return closeoutBatch.batchDelete.mutateAsync({ ids })
-      case "/v1/operations/availability/pickup-points":
+      case "/v1/admin/operations/availability/pickup-points":
         return pickupPointBatch.batchDelete.mutateAsync({ ids })
       default:
         return slotBatch.batchDelete.mutateAsync({ ids })

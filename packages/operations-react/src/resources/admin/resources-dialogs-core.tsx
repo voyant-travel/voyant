@@ -112,11 +112,11 @@ export function ResourceDialog({
       await sendResourcesMutation(
         client,
         "PATCH",
-        `/v1/operations/resources/${resource?.id}`,
+        `/v1/admin/operations/resources/${resource?.id}`,
         payload,
       )
     } else {
-      await sendResourcesMutation(client, "POST", "/v1/operations/resources", payload)
+      await sendResourcesMutation(client, "POST", "/v1/admin/operations/resources", payload)
     }
     onSuccess()
   }
@@ -280,9 +280,14 @@ export function ResourcePoolDialog({
     }
 
     if (isEditing) {
-      await sendResourcesMutation(client, "PATCH", `/v1/operations/pools/${pool?.id}`, payload)
+      await sendResourcesMutation(
+        client,
+        "PATCH",
+        `/v1/admin/operations/pools/${pool?.id}`,
+        payload,
+      )
     } else {
-      await sendResourcesMutation(client, "POST", "/v1/operations/pools", payload)
+      await sendResourcesMutation(client, "POST", "/v1/admin/operations/pools", payload)
     }
     onSuccess()
   }

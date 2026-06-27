@@ -22,7 +22,7 @@ export function useGroundOperatorMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateGroundOperatorInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/operations/operators",
+        "/v1/admin/operations/operators",
         groundOperatorSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useGroundOperatorMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateGroundOperatorInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/operations/operators/${id}`,
+        `/v1/admin/operations/operators/${id}`,
         groundOperatorSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useGroundOperatorMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/operations/operators/${id}`,
+        `/v1/admin/operations/operators/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
