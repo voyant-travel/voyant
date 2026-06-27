@@ -27,13 +27,14 @@
  * `@voyant-travel/finance`, so the booking / invoice / payment-session reads
  * use those schemas directly.
  */
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
 
@@ -133,6 +134,256 @@ export interface PaymentLinkRoutesOptions {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Wire schemas (voyant#2114). These public checkout projections have no
+// first-class schema elsewhere, so they are authored here from the exact
+// shapes the handlers serialize.
+// ─────────────────────────────────────────────────────────────────
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+const bankTransferDetailsSchema = z.object({
+  beneficiary: z.string(),
+  iban: z.string(),
+  bankName: z.string().nullish(),
+})
+
+const paymentLinkConfigSchema = z.object({
+  publicCheckoutBaseUrl: z.string().nullable(),
+  bankTransfer: bankTransferDetailsSchema.nullable(),
+})
+
+const tripComponentSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  entityModule: z.string().nullable(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  thumbnailAlt: z.string().nullable(),
+  scheduledStartsAt: z.string().nullable(),
+  scheduledEndsAt: z.string().nullable(),
+  sourceAmountCents: z.number().nullable(),
+  sourceCurrency: z.string(),
+  targetAmountCents: z.number().nullable(),
+  targetCurrency: z.string(),
+  fx: z.object({ rate: z.number(), quotedAt: z.string() }).nullable(),
+})
+
+const tripSummarySchema = z.object({
+  envelopeId: z.string(),
+  currency: z.string(),
+  totalAmountCents: z.number(),
+  components: z.array(tripComponentSchema),
+})
+
+const bookingSummaryItemSchema = z.object({
+  id: z.string(),
+  productName: z.string(),
+  optionName: z.string().nullable(),
+  unitName: z.string().nullable(),
+  departureLabel: z.string().nullable(),
+  startsAt: z.string().nullable(),
+  endsAt: z.string().nullable(),
+  serviceDate: z.string().nullable(),
+  quantity: z.number(),
+  itemType: z.string(),
+  amountCents: z.number().nullable(),
+  currency: z.string(),
+})
+
+const bookingSummarySchema = z.object({
+  bookingId: z.string(),
+  bookingNumber: z.string(),
+  status: z.string(),
+  pax: z.number().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  chargeAmountCents: z.number(),
+  currency: z.string(),
+  bookingTotalAmountCents: z.number().nullable(),
+  bookingCurrency: z.string(),
+  items: z.array(bookingSummaryItemSchema),
+})
+
+const bankTransferInstructionsSchema = z.object({
+  beneficiary: z.string(),
+  iban: z.string(),
+  bankName: z.string(),
+  reference: z.string(),
+  amountCents: z.number(),
+  currency: z.string(),
+  dueAt: z.string().nullable(),
+  proformaNumber: z.string().nullable(),
+})
+
+const checkoutStatusSessionSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  amountCents: z.number(),
+  currency: z.string(),
+  invoiceId: z.string().nullable(),
+  paymentMethod: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  failedAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+})
+
+const checkoutStatusSchema = z.object({
+  bookingId: z.string(),
+  bookingNumber: z.string(),
+  bookingStatus: z.string(),
+  paymentStatus: z.enum(["paid", "failed", "pending"]),
+  session: checkoutStatusSessionSchema.nullable(),
+  bankTransferInstructions: bankTransferInstructionsSchema.nullable(),
+  updatedAt: z.string().nullable(),
+})
+
+const sessionParamsSchema = z.object({ sessionId: z.string() })
+
+const paymentLinkConfigRoute = createRoute({
+  method: "get",
+  path: "/v1/public/payment-link-config",
+  responses: {
+    200: {
+      description: "Public payment-link configuration (checkout base URL + bank-transfer details)",
+      content: { "application/json": { schema: z.object({ data: paymentLinkConfigSchema }) } },
+    },
+  },
+})
+
+const retryPaymentLinkRoute = createRoute({
+  method: "post",
+  path: "/v1/public/payment-link/{sessionId}/retry",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "A fresh (or already-paid) payment session for the link",
+      content: {
+        "application/json": {
+          schema: z.object({
+            data: z.object({ sessionId: z.string(), alreadyPaid: z.boolean().optional() }),
+          }),
+        },
+      },
+    },
+    404: {
+      description: "Session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    500: {
+      description: "Failed to create a fresh payment session",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const resolvePaymentLinkRoute = createRoute({
+  method: "get",
+  path: "/v1/public/payment-link/resolve",
+  request: { query: z.object({ ref: z.string().optional() }) },
+  responses: {
+    200: {
+      description: "The payment-session id matched by reference",
+      content: {
+        "application/json": { schema: z.object({ data: z.object({ sessionId: z.string() }) }) },
+      },
+    },
+    400: {
+      description: "Missing ref query param",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Payment session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const startCardPaymentLinkRoute = createRoute({
+  method: "post",
+  path: "/v1/public/payment-link/{sessionId}/start-card",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "The card-provider redirect URL for the session",
+      content: {
+        "application/json": {
+          schema: z.object({ data: z.object({ redirectUrl: z.string().nullable() }) }),
+        },
+      },
+    },
+    404: {
+      description: "Session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    502: {
+      description: "Card processor failed to start the payment",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    503: {
+      description: "Card processor not configured",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const tripSummaryRoute = createRoute({
+  method: "get",
+  path: "/v1/public/payment-link/{sessionId}/trip-summary",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "Trip summary for a trip-issued payment session (null for non-trip sessions)",
+      content: { "application/json": { schema: z.object({ data: tripSummarySchema.nullable() }) } },
+    },
+    404: {
+      description: "Session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const bookingSummaryRoute = createRoute({
+  method: "get",
+  path: "/v1/public/payment-link/{sessionId}/booking-summary",
+  request: { params: sessionParamsSchema },
+  responses: {
+    200: {
+      description: "Booking summary for a booking-attached payment session (null otherwise)",
+      content: {
+        "application/json": { schema: z.object({ data: bookingSummarySchema.nullable() }) },
+      },
+    },
+    404: {
+      description: "Session not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const checkoutStatusRoute = createRoute({
+  method: "get",
+  path: "/v1/public/bookings/{bookingId}/checkout-status",
+  request: {
+    params: z.object({ bookingId: z.string() }),
+    query: z.object({
+      session: z.string().optional(),
+      orderId: z.string().optional(),
+      ref: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: "The booking's checkout/payment status with its latest session",
+      content: { "application/json": { schema: z.object({ data: checkoutStatusSchema }) } },
+    },
+    404: {
+      description: "Booking not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+// ─────────────────────────────────────────────────────────────────
 // Local helpers
 // ─────────────────────────────────────────────────────────────────
 
@@ -140,13 +391,13 @@ function cachePublicPaymentLinkConfig(c: Context) {
   c.header("Cache-Control", PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL)
 }
 
-function requireRouteParam(c: Context, name: string): string | Response {
-  const value = c.req.param(name)
-  return value ? value : c.json({ error: `${name} route param is required` }, 400)
-}
-
 function getDb(c: Context): PostgresJsDatabase {
   return c.get("db") as PostgresJsDatabase
+}
+
+function toIsoString(value: Date | string | null): string | null {
+  if (value === null) return null
+  return value instanceof Date ? value.toISOString() : value
 }
 
 async function buildPublicBankTransferInstructions(
@@ -192,319 +443,320 @@ async function buildPublicBankTransferInstructions(
  * Build the public payment-link routes. Paths are ABSOLUTE so the deployment
  * can lazy-mount the returned app directly via `lazyRoutes.paths`.
  */
-export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Hono {
-  const hono = new Hono()
-
-  hono.get("/v1/public/payment-link-config", async (c) => {
-    const bankTransfer = await options.resolveBankTransferDetails(c)
-    cachePublicPaymentLinkConfig(c)
-    return c.json({
-      data: {
-        publicCheckoutBaseUrl: options.resolvePublicCheckoutBaseUrl(c),
-        bankTransfer,
-      },
-    })
-  })
-
-  hono.post("/v1/public/payment-link/:sessionId/retry", async (c) => {
-    const sessionId = requireRouteParam(c, "sessionId")
-    if (sessionId instanceof Response) return sessionId
-    const db = getDb(c)
-    const [original] = await db
-      .select()
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, sessionId))
-      .limit(1)
-    if (!original) return c.json({ error: "Session not found" }, 404)
-    if (original.status === "paid" || original.status === "authorized") {
-      return c.json({ data: { sessionId: original.id, alreadyPaid: true } })
-    }
-    const dbCast = db as Parameters<typeof financeService.createPaymentSession>[0]
-    const fresh = await financeService.createPaymentSession(dbCast, {
-      targetType: original.targetType,
-      targetId: original.targetId ?? undefined,
-      bookingId: original.bookingId ?? undefined,
-      invoiceId: original.invoiceId ?? undefined,
-      bookingPaymentScheduleId: original.bookingPaymentScheduleId ?? undefined,
-      bookingGuaranteeId: original.bookingGuaranteeId ?? undefined,
-      currency: original.currency,
-      amountCents: original.amountCents,
-      status: "pending",
-      provider: original.provider ?? undefined,
-      paymentMethod: original.paymentMethod ?? undefined,
-      payerEmail: original.payerEmail ?? undefined,
-      payerName: original.payerName ?? undefined,
-      notes: original.notes ?? undefined,
-    })
-    if (!fresh) return c.json({ error: "Failed to create payment session" }, 500)
-    return c.json({ data: { sessionId: fresh.id } })
-  })
-
-  hono.get("/v1/public/payment-link/resolve", async (c) => {
-    const ref = c.req.query("ref")
-    if (!ref) return c.json({ error: "ref query param is required" }, 400)
-    const db = getDb(c)
-    const [session] = await db
-      .select({ id: paymentSessions.id })
-      .from(paymentSessions)
-      .where(
-        or(
-          eq(paymentSessions.id, ref),
-          eq(paymentSessions.clientReference, ref),
-          eq(paymentSessions.externalReference, ref),
-        ),
+export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): OpenAPIHono {
+  const sessionActionRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
+    .openapi(paymentLinkConfigRoute, async (c) => {
+      const bankTransfer = await options.resolveBankTransferDetails(c)
+      cachePublicPaymentLinkConfig(c)
+      return c.json(
+        {
+          data: {
+            publicCheckoutBaseUrl: options.resolvePublicCheckoutBaseUrl(c),
+            bankTransfer,
+          },
+        },
+        200,
       )
-      .limit(1)
-    if (!session) return c.json({ error: "Payment session not found" }, 404)
-    return c.json({ data: { sessionId: session.id } })
-  })
-
-  hono.post("/v1/public/payment-link/:sessionId/start-card", async (c) => {
-    const sessionId = requireRouteParam(c, "sessionId")
-    if (sessionId instanceof Response) return sessionId
-    const db = getDb(c)
-    const [session] = await db
-      .select()
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, sessionId))
-      .limit(1)
-    if (!session) return c.json({ error: "Session not found" }, 404)
-    if (session.redirectUrl) {
-      return c.json({ data: { redirectUrl: session.redirectUrl } })
-    }
-    try {
-      const started = await options.startCardPayment(c, {
-        id: session.id,
-        payerName: session.payerName,
-        payerEmail: session.payerEmail,
-        notes: session.notes,
-        redirectUrl: session.redirectUrl,
-      })
-      if (!started.configured) {
-        return c.json({ error: "Card processor not configured" }, 503)
+    })
+    .openapi(retryPaymentLinkRoute, async (c) => {
+      const { sessionId } = c.req.valid("param")
+      const db = getDb(c)
+      const [original] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!original) return c.json({ error: "Session not found" }, 404)
+      if (original.status === "paid" || original.status === "authorized") {
+        return c.json({ data: { sessionId: original.id, alreadyPaid: true } }, 200)
       }
-      return c.json({ data: { redirectUrl: started.redirectUrl } })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start card payment"
-      return c.json({ error: message }, 502)
-    }
-  })
-
-  hono.get("/v1/public/payment-link/:sessionId/trip-summary", async (c) => {
-    const sessionId = requireRouteParam(c, "sessionId")
-    if (sessionId instanceof Response) return sessionId
-    const db = getDb(c)
-    const [session] = await db
-      .select()
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, sessionId))
-      .limit(1)
-    if (!session) return c.json({ error: "Session not found" }, 404)
-
-    const metadata = (session.metadata ?? {}) as Record<string, unknown>
-    const tripEnvelopeId =
-      typeof metadata.tripEnvelopeId === "string" ? metadata.tripEnvelopeId : null
-    if (!tripEnvelopeId) return c.json({ data: null })
-
-    const tripData = await options.resolveTripData(c, tripEnvelopeId, {
-      id: session.id,
-      status: session.status,
-      amountCents: session.amountCents,
-      currency: session.currency,
-      provider: session.provider,
+      const dbCast = db as Parameters<typeof financeService.createPaymentSession>[0]
+      const fresh = await financeService.createPaymentSession(dbCast, {
+        targetType: original.targetType,
+        targetId: original.targetId ?? undefined,
+        bookingId: original.bookingId ?? undefined,
+        invoiceId: original.invoiceId ?? undefined,
+        bookingPaymentScheduleId: original.bookingPaymentScheduleId ?? undefined,
+        bookingGuaranteeId: original.bookingGuaranteeId ?? undefined,
+        currency: original.currency,
+        amountCents: original.amountCents,
+        status: "pending",
+        provider: original.provider ?? undefined,
+        paymentMethod: original.paymentMethod ?? undefined,
+        payerEmail: original.payerEmail ?? undefined,
+        payerName: original.payerName ?? undefined,
+        notes: original.notes ?? undefined,
+      })
+      if (!fresh) return c.json({ error: "Failed to create payment session" }, 500)
+      return c.json({ data: { sessionId: fresh.id } }, 200)
     })
-    if (!tripData) return c.json({ data: null })
-
-    const { envelope, components: visibleComponents, productNameById, mediaByProductId } = tripData
-
-    type Allocation = {
-      componentId?: string
-      sourceAmountCents?: number
-      sourceCurrency?: string
-      targetAmountCents?: number
-      targetCurrency?: string
-      fx?: { rate: number; quotedAt: string } | null
-    }
-    const allocationsRaw = Array.isArray(metadata.componentAllocations)
-      ? (metadata.componentAllocations as Allocation[])
-      : []
-    const allocationByComponentId = new Map<string, Allocation>()
-    for (const allocation of allocationsRaw) {
-      if (allocation.componentId) allocationByComponentId.set(allocation.componentId, allocation)
-    }
-
-    const trip = {
-      envelopeId: envelope.id,
-      currency: session.currency,
-      totalAmountCents: session.amountCents,
-      components: visibleComponents.map((component) => {
-        const metadataRecord = (component.metadata ?? {}) as Record<string, unknown>
-        const catalogItem = (metadataRecord.catalogItem ?? null) as { name?: string } | null
-        const flightDraft = (metadataRecord.flightDraft ?? null) as {
-          origin?: string
-          destination?: string
-        } | null
-        const schedule = resolvePublicTripComponentSchedule(metadataRecord)
-        const fallbackName =
-          catalogItem?.name ??
-          (component.entityId ? productNameById.get(component.entityId) : null) ??
-          (flightDraft?.origin && flightDraft?.destination
-            ? `${flightDraft.origin} -> ${flightDraft.destination}`
-            : null) ??
-          component.description ??
-          component.kind.replaceAll("_", " ")
-        const thumbnail = component.entityId
-          ? (mediaByProductId.get(component.entityId) ?? null)
-          : null
-        const catalogThumbnailUrl = publicStringValue(
-          readPublicRecord(metadataRecord.catalogItem)?.thumbnailUrl,
+    .openapi(resolvePaymentLinkRoute, async (c) => {
+      const ref = c.req.valid("query").ref
+      if (!ref) return c.json({ error: "ref query param is required" }, 400)
+      const db = getDb(c)
+      const [session] = await db
+        .select({ id: paymentSessions.id })
+        .from(paymentSessions)
+        .where(
+          or(
+            eq(paymentSessions.id, ref),
+            eq(paymentSessions.clientReference, ref),
+            eq(paymentSessions.externalReference, ref),
+          ),
         )
-        const allocation = allocationByComponentId.get(component.id)
-        return {
-          id: component.id,
-          kind: component.kind,
-          entityModule: component.entityModule,
-          title: fallbackName,
-          thumbnailUrl: thumbnail?.url ?? catalogThumbnailUrl ?? null,
-          thumbnailAlt: thumbnail?.altText ?? null,
-          scheduledStartsAt: schedule.start,
-          scheduledEndsAt: schedule.end,
-          sourceAmountCents:
-            allocation?.sourceAmountCents ?? component.componentTotalAmountCents ?? null,
-          sourceCurrency:
-            allocation?.sourceCurrency ?? component.componentCurrency ?? session.currency,
-          targetAmountCents:
-            allocation?.targetAmountCents ?? component.componentTotalAmountCents ?? null,
-          targetCurrency: allocation?.targetCurrency ?? session.currency,
-          fx: allocation?.fx ?? null,
+        .limit(1)
+      if (!session) return c.json({ error: "Payment session not found" }, 404)
+      return c.json({ data: { sessionId: session.id } }, 200)
+    })
+    .openapi(startCardPaymentLinkRoute, async (c) => {
+      const { sessionId } = c.req.valid("param")
+      const db = getDb(c)
+      const [session] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
+      if (session.redirectUrl) {
+        return c.json({ data: { redirectUrl: session.redirectUrl } }, 200)
+      }
+      try {
+        const started = await options.startCardPayment(c, {
+          id: session.id,
+          payerName: session.payerName,
+          payerEmail: session.payerEmail,
+          notes: session.notes,
+          redirectUrl: session.redirectUrl,
+        })
+        if (!started.configured) {
+          return c.json({ error: "Card processor not configured" }, 503)
         }
-      }),
-    }
-    return c.json({ data: trip })
-  })
-
-  hono.get("/v1/public/payment-link/:sessionId/booking-summary", async (c) => {
-    const sessionId = requireRouteParam(c, "sessionId")
-    if (sessionId instanceof Response) return sessionId
-    const db = getDb(c)
-    const [session] = await db
-      .select({
-        id: paymentSessions.id,
-        bookingId: paymentSessions.bookingId,
-        amountCents: paymentSessions.amountCents,
-        currency: paymentSessions.currency,
-        metadata: paymentSessions.metadata,
-      })
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, sessionId))
-      .limit(1)
-    if (!session) return c.json({ error: "Session not found" }, 404)
-
-    const metadata = (session.metadata ?? {}) as Record<string, unknown>
-    if (typeof metadata.tripEnvelopeId === "string" && metadata.tripEnvelopeId.length > 0) {
-      return c.json({ data: null })
-    }
-    if (!session.bookingId) return c.json({ data: null })
-
-    const [booking] = await db
-      .select({
-        id: bookings.id,
-        bookingNumber: bookings.bookingNumber,
-        status: bookings.status,
-        sellCurrency: bookings.sellCurrency,
-        sellAmountCents: bookings.sellAmountCents,
-        pax: bookings.pax,
-        startDate: bookings.startDate,
-        endDate: bookings.endDate,
-      })
-      .from(bookings)
-      .where(eq(bookings.id, session.bookingId))
-      .limit(1)
-    if (!booking) return c.json({ data: null })
-
-    const items = await db
-      .select({
-        id: bookingItems.id,
-        title: bookingItems.title,
-        itemType: bookingItems.itemType,
-        quantity: bookingItems.quantity,
-        totalSellAmountCents: bookingItems.totalSellAmountCents,
-        sellCurrency: bookingItems.sellCurrency,
-        startsAt: bookingItems.startsAt,
-        endsAt: bookingItems.endsAt,
-        serviceDate: bookingItems.serviceDate,
-        productNameSnapshot: bookingItems.productNameSnapshot,
-        optionNameSnapshot: bookingItems.optionNameSnapshot,
-        unitNameSnapshot: bookingItems.unitNameSnapshot,
-        departureLabelSnapshot: bookingItems.departureLabelSnapshot,
-      })
-      .from(bookingItems)
-      .where(eq(bookingItems.bookingId, booking.id))
-      .orderBy(asc(bookingItems.createdAt))
-
-    return c.json({
-      data: {
-        bookingId: booking.id,
-        bookingNumber: booking.bookingNumber,
-        status: booking.status,
-        pax: booking.pax,
-        startDate: booking.startDate,
-        endDate: booking.endDate,
-        chargeAmountCents: session.amountCents,
-        currency: session.currency ?? booking.sellCurrency,
-        bookingTotalAmountCents: booking.sellAmountCents,
-        bookingCurrency: booking.sellCurrency,
-        items: items.map((item) => ({
-          id: item.id,
-          productName: item.productNameSnapshot ?? item.title,
-          optionName: item.optionNameSnapshot,
-          unitName: item.unitNameSnapshot,
-          departureLabel: item.departureLabelSnapshot,
-          startsAt: item.startsAt instanceof Date ? item.startsAt.toISOString() : item.startsAt,
-          endsAt: item.endsAt instanceof Date ? item.endsAt.toISOString() : item.endsAt,
-          serviceDate: item.serviceDate,
-          quantity: item.quantity,
-          itemType: item.itemType,
-          amountCents: item.totalSellAmountCents,
-          currency: item.sellCurrency,
-        })),
-      },
+        return c.json({ data: { redirectUrl: started.redirectUrl } }, 200)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to start card payment"
+        return c.json({ error: message }, 502)
+      }
     })
-  })
 
-  hono.get("/v1/public/bookings/:bookingId/checkout-status", async (c) => {
-    const bookingId = requireRouteParam(c, "bookingId")
-    if (bookingId instanceof Response) return bookingId
-    const ref = c.req.query("session") ?? c.req.query("orderId") ?? c.req.query("ref") ?? null
-    const db = getDb(c)
+  const summaryRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
+    .openapi(tripSummaryRoute, async (c) => {
+      const { sessionId } = c.req.valid("param")
+      const db = getDb(c)
+      const [session] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
 
-    const [booking] = await db
-      .select({
-        id: bookings.id,
-        bookingNumber: bookings.bookingNumber,
-        status: bookings.status,
-        updatedAt: bookings.updatedAt,
+      const metadata = (session.metadata ?? {}) as Record<string, unknown>
+      const tripEnvelopeId =
+        typeof metadata.tripEnvelopeId === "string" ? metadata.tripEnvelopeId : null
+      if (!tripEnvelopeId) return c.json({ data: null }, 200)
+
+      const tripData = await options.resolveTripData(c, tripEnvelopeId, {
+        id: session.id,
+        status: session.status,
+        amountCents: session.amountCents,
+        currency: session.currency,
+        provider: session.provider,
       })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
-      .limit(1)
-    if (!booking) return c.json({ error: "Booking not found" }, 404)
+      if (!tripData) return c.json({ data: null }, 200)
 
-    const sessionRefFilter = ref
-      ? or(
-          eq(paymentSessions.id, ref),
-          eq(paymentSessions.clientReference, ref),
-          eq(paymentSessions.externalReference, ref),
-          eq(paymentSessions.providerSessionId, ref),
-          eq(paymentSessions.providerPaymentId, ref),
-        )
-      : undefined
-    const sessionWhere = sessionRefFilter
-      ? and(eq(paymentSessions.bookingId, bookingId), sessionRefFilter)
-      : eq(paymentSessions.bookingId, bookingId)
+      const {
+        envelope,
+        components: visibleComponents,
+        productNameById,
+        mediaByProductId,
+      } = tripData
 
-    let sessions = await db
-      .select({
+      type Allocation = {
+        componentId?: string
+        sourceAmountCents?: number
+        sourceCurrency?: string
+        targetAmountCents?: number
+        targetCurrency?: string
+        fx?: { rate: number; quotedAt: string } | null
+      }
+      const allocationsRaw = Array.isArray(metadata.componentAllocations)
+        ? (metadata.componentAllocations as Allocation[])
+        : []
+      const allocationByComponentId = new Map<string, Allocation>()
+      for (const allocation of allocationsRaw) {
+        if (allocation.componentId) allocationByComponentId.set(allocation.componentId, allocation)
+      }
+
+      const trip = {
+        envelopeId: envelope.id,
+        currency: session.currency,
+        totalAmountCents: session.amountCents,
+        components: visibleComponents.map((component) => {
+          const metadataRecord = (component.metadata ?? {}) as Record<string, unknown>
+          const catalogItem = (metadataRecord.catalogItem ?? null) as { name?: string } | null
+          const flightDraft = (metadataRecord.flightDraft ?? null) as {
+            origin?: string
+            destination?: string
+          } | null
+          const schedule = resolvePublicTripComponentSchedule(metadataRecord)
+          const fallbackName =
+            catalogItem?.name ??
+            (component.entityId ? productNameById.get(component.entityId) : null) ??
+            (flightDraft?.origin && flightDraft?.destination
+              ? `${flightDraft.origin} -> ${flightDraft.destination}`
+              : null) ??
+            component.description ??
+            component.kind.replaceAll("_", " ")
+          const thumbnail = component.entityId
+            ? (mediaByProductId.get(component.entityId) ?? null)
+            : null
+          const catalogThumbnailUrl = publicStringValue(
+            readPublicRecord(metadataRecord.catalogItem)?.thumbnailUrl,
+          )
+          const allocation = allocationByComponentId.get(component.id)
+          return {
+            id: component.id,
+            kind: component.kind,
+            entityModule: component.entityModule,
+            title: fallbackName,
+            thumbnailUrl: thumbnail?.url ?? catalogThumbnailUrl ?? null,
+            thumbnailAlt: thumbnail?.altText ?? null,
+            scheduledStartsAt: schedule.start,
+            scheduledEndsAt: schedule.end,
+            sourceAmountCents:
+              allocation?.sourceAmountCents ?? component.componentTotalAmountCents ?? null,
+            sourceCurrency:
+              allocation?.sourceCurrency ?? component.componentCurrency ?? session.currency,
+            targetAmountCents:
+              allocation?.targetAmountCents ?? component.componentTotalAmountCents ?? null,
+            targetCurrency: allocation?.targetCurrency ?? session.currency,
+            fx: allocation?.fx ?? null,
+          }
+        }),
+      }
+      return c.json({ data: trip }, 200)
+    })
+    .openapi(bookingSummaryRoute, async (c) => {
+      const { sessionId } = c.req.valid("param")
+      const db = getDb(c)
+      const [session] = await db
+        .select({
+          id: paymentSessions.id,
+          bookingId: paymentSessions.bookingId,
+          amountCents: paymentSessions.amountCents,
+          currency: paymentSessions.currency,
+          metadata: paymentSessions.metadata,
+        })
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
+
+      const metadata = (session.metadata ?? {}) as Record<string, unknown>
+      if (typeof metadata.tripEnvelopeId === "string" && metadata.tripEnvelopeId.length > 0) {
+        return c.json({ data: null }, 200)
+      }
+      if (!session.bookingId) return c.json({ data: null }, 200)
+
+      const [booking] = await db
+        .select({
+          id: bookings.id,
+          bookingNumber: bookings.bookingNumber,
+          status: bookings.status,
+          sellCurrency: bookings.sellCurrency,
+          sellAmountCents: bookings.sellAmountCents,
+          pax: bookings.pax,
+          startDate: bookings.startDate,
+          endDate: bookings.endDate,
+        })
+        .from(bookings)
+        .where(eq(bookings.id, session.bookingId))
+        .limit(1)
+      if (!booking) return c.json({ data: null }, 200)
+
+      const items = await db
+        .select({
+          id: bookingItems.id,
+          title: bookingItems.title,
+          itemType: bookingItems.itemType,
+          quantity: bookingItems.quantity,
+          totalSellAmountCents: bookingItems.totalSellAmountCents,
+          sellCurrency: bookingItems.sellCurrency,
+          startsAt: bookingItems.startsAt,
+          endsAt: bookingItems.endsAt,
+          serviceDate: bookingItems.serviceDate,
+          productNameSnapshot: bookingItems.productNameSnapshot,
+          optionNameSnapshot: bookingItems.optionNameSnapshot,
+          unitNameSnapshot: bookingItems.unitNameSnapshot,
+          departureLabelSnapshot: bookingItems.departureLabelSnapshot,
+        })
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+        .orderBy(asc(bookingItems.createdAt))
+
+      return c.json(
+        {
+          data: {
+            bookingId: booking.id,
+            bookingNumber: booking.bookingNumber,
+            status: booking.status,
+            pax: booking.pax,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            chargeAmountCents: session.amountCents,
+            currency: session.currency ?? booking.sellCurrency,
+            bookingTotalAmountCents: booking.sellAmountCents,
+            bookingCurrency: booking.sellCurrency,
+            items: items.map((item) => ({
+              id: item.id,
+              productName: item.productNameSnapshot ?? item.title,
+              optionName: item.optionNameSnapshot,
+              unitName: item.unitNameSnapshot,
+              departureLabel: item.departureLabelSnapshot,
+              startsAt: item.startsAt instanceof Date ? item.startsAt.toISOString() : item.startsAt,
+              endsAt: item.endsAt instanceof Date ? item.endsAt.toISOString() : item.endsAt,
+              serviceDate: item.serviceDate,
+              quantity: item.quantity,
+              itemType: item.itemType,
+              amountCents: item.totalSellAmountCents,
+              currency: item.sellCurrency,
+            })),
+          },
+        },
+        200,
+      )
+    })
+    .openapi(checkoutStatusRoute, async (c) => {
+      const { bookingId } = c.req.valid("param")
+      const query = c.req.valid("query")
+      const ref = query.session ?? query.orderId ?? query.ref ?? null
+      const db = getDb(c)
+
+      const [booking] = await db
+        .select({
+          id: bookings.id,
+          bookingNumber: bookings.bookingNumber,
+          status: bookings.status,
+          updatedAt: bookings.updatedAt,
+        })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
+      if (!booking) return c.json({ error: "Booking not found" }, 404)
+
+      const sessionRefFilter = ref
+        ? or(
+            eq(paymentSessions.id, ref),
+            eq(paymentSessions.clientReference, ref),
+            eq(paymentSessions.externalReference, ref),
+            eq(paymentSessions.providerSessionId, ref),
+            eq(paymentSessions.providerPaymentId, ref),
+          )
+        : undefined
+      const sessionWhere = sessionRefFilter
+        ? and(eq(paymentSessions.bookingId, bookingId), sessionRefFilter)
+        : eq(paymentSessions.bookingId, bookingId)
+
+      const sessionColumns = {
         id: paymentSessions.id,
         status: paymentSessions.status,
         amountCents: paymentSessions.amountCents,
@@ -514,69 +766,74 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Hono
         completedAt: paymentSessions.completedAt,
         failedAt: paymentSessions.failedAt,
         updatedAt: paymentSessions.updatedAt,
-      })
-      .from(paymentSessions)
-      .where(sessionWhere)
-      .orderBy(desc(paymentSessions.createdAt))
-      .limit(5)
+      }
 
-    if (sessions.length === 0 && ref) {
-      sessions = await db
-        .select({
-          id: paymentSessions.id,
-          status: paymentSessions.status,
-          amountCents: paymentSessions.amountCents,
-          currency: paymentSessions.currency,
-          invoiceId: paymentSessions.invoiceId,
-          paymentMethod: paymentSessions.paymentMethod,
-          completedAt: paymentSessions.completedAt,
-          failedAt: paymentSessions.failedAt,
-          updatedAt: paymentSessions.updatedAt,
-        })
+      let sessions = await db
+        .select(sessionColumns)
         .from(paymentSessions)
-        .where(eq(paymentSessions.bookingId, bookingId))
+        .where(sessionWhere)
         .orderBy(desc(paymentSessions.createdAt))
         .limit(5)
-    }
 
-    const paidSession = sessions.find(
-      (session) => session.status === "paid" || session.status === "authorized",
-    )
-    const latestSession = paidSession ?? sessions[0] ?? null
-    const isBankTransferSession =
-      latestSession?.paymentMethod === "bank_transfer" ||
-      (booking.status === "awaiting_payment" && Boolean(latestSession?.invoiceId))
-    const bankTransferInstructions =
-      isBankTransferSession && latestSession
-        ? await buildPublicBankTransferInstructions(
-            c,
-            options,
-            booking.bookingNumber,
-            latestSession,
-          )
-        : null
-    const failedStatuses = new Set(["failed", "cancelled", "expired"])
-    const paymentStatus =
-      booking.status === "confirmed" || paidSession
-        ? "paid"
-        : sessions.length > 0 && sessions.every((session) => failedStatuses.has(session.status))
-          ? "failed"
-          : "pending"
+      if (sessions.length === 0 && ref) {
+        sessions = await db
+          .select(sessionColumns)
+          .from(paymentSessions)
+          .where(eq(paymentSessions.bookingId, bookingId))
+          .orderBy(desc(paymentSessions.createdAt))
+          .limit(5)
+      }
 
-    return c.json({
-      data: {
-        bookingId: booking.id,
-        bookingNumber: booking.bookingNumber,
-        bookingStatus: booking.status,
-        paymentStatus,
-        session: latestSession,
-        bankTransferInstructions,
-        updatedAt: (latestSession?.updatedAt ?? booking.updatedAt)?.toISOString?.() ?? null,
-      },
+      const paidSession = sessions.find(
+        (session) => session.status === "paid" || session.status === "authorized",
+      )
+      const latestSession = paidSession ?? sessions[0] ?? null
+      const isBankTransferSession =
+        latestSession?.paymentMethod === "bank_transfer" ||
+        (booking.status === "awaiting_payment" && Boolean(latestSession?.invoiceId))
+      const bankTransferInstructions =
+        isBankTransferSession && latestSession
+          ? await buildPublicBankTransferInstructions(
+              c,
+              options,
+              booking.bookingNumber,
+              latestSession,
+            )
+          : null
+      const failedStatuses = new Set(["failed", "cancelled", "expired"])
+      const paymentStatus: "paid" | "failed" | "pending" =
+        booking.status === "confirmed" || paidSession
+          ? "paid"
+          : sessions.length > 0 && sessions.every((session) => failedStatuses.has(session.status))
+            ? "failed"
+            : "pending"
+
+      return c.json(
+        {
+          data: {
+            bookingId: booking.id,
+            bookingNumber: booking.bookingNumber,
+            bookingStatus: booking.status,
+            paymentStatus,
+            session: latestSession
+              ? {
+                  ...latestSession,
+                  completedAt: toIsoString(latestSession.completedAt),
+                  failedAt: toIsoString(latestSession.failedAt),
+                  updatedAt: toIsoString(latestSession.updatedAt),
+                }
+              : null,
+            bankTransferInstructions,
+            updatedAt: (latestSession?.updatedAt ?? booking.updatedAt)?.toISOString?.() ?? null,
+          },
+        },
+        200,
+      )
     })
-  })
 
-  return hono
+  return new OpenAPIHono({ defaultHook: openApiValidationHook })
+    .route("/", sessionActionRoutes)
+    .route("/", summaryRoutes)
 }
 
 // ─────────────────────────────────────────────────────────────────

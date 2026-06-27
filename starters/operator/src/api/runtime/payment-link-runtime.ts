@@ -201,6 +201,7 @@ export function createOperatorPaymentLinkRouteOptions(): PaymentLinkRoutesOption
 }
 
 /** The public payment-link routes, wired with this deployment's options. */
-export function buildOperatorPaymentLinkRoutes(): Hono {
+// biome-ignore lint/suspicious/noExplicitAny: createPaymentLinkRoutes now returns an OpenAPIHono (non-blank Env), assignable to Hono<any> for the lazy loader (voyant#2114)
+export function buildOperatorPaymentLinkRoutes(): Hono<any> {
   return createPaymentLinkRoutes(createOperatorPaymentLinkRouteOptions())
 }
