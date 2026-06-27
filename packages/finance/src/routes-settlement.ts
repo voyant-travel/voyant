@@ -1,6 +1,6 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus, ModuleContainer } from "@voyant-travel/core"
-import { parseOptionalJsonBody } from "@voyant-travel/hono"
-import { Hono } from "hono"
+import { openApiValidationHook, parseOptionalJsonBody } from "@voyant-travel/hono"
 
 import {
   buildFinanceRouteRuntime,
@@ -8,7 +8,10 @@ import {
   type FinanceRouteRuntime,
 } from "./route-runtime.js"
 import { financeSettlementService, type InvoiceSettlementPoller } from "./service-settlement.js"
-import { pollInvoiceSettlementInputSchema } from "./validation.js"
+import {
+  polledInvoiceSettlementResultSchema,
+  pollInvoiceSettlementInputSchema,
+} from "./validation.js"
 
 type Env = {
   Bindings: Record<string, unknown>
@@ -39,27 +42,55 @@ function getRuntime(
   )
 }
 
-export function createFinanceAdminSettlementRoutes(options: FinanceSettlementRouteOptions = {}) {
-  return new Hono<Env>().post("/invoices/:id/poll-settlement", async (c) => {
-    const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+const errorResponseSchema = z.object({ error: z.string() })
 
-    const result = await financeSettlementService.pollInvoiceSettlement(
-      c.get("db"),
-      c.req.param("id"),
-      await parseOptionalJsonBody(c, pollInvoiceSettlementInputSchema),
-      {
-        bindings: c.env,
-        invoiceSettlementPollers: runtime.invoiceSettlementPollers,
-        eventBus: runtime.eventBus,
+// The optional poll body is parsed in-handler (`parseOptionalJsonBody`) so a
+// missing/empty body stays valid — the route declares only the path param +
+// response envelopes.
+const pollInvoiceSettlementRoute = createRoute({
+  method: "post",
+  path: "/invoices/{id}/poll-settlement",
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: {
+      description: "Polled settlement result (external-ref sync + optional payment reconciliation)",
+      content: {
+        "application/json": { schema: z.object({ data: polledInvoiceSettlementResultSchema }) },
       },
-    )
+    },
+    404: {
+      description: "Invoice not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
 
-    if ("status" in result && result.status === "not_found") {
-      return c.json({ error: "Invoice not found" }, 404)
-    }
+export function createFinanceAdminSettlementRoutes(options: FinanceSettlementRouteOptions = {}) {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(
+    pollInvoiceSettlementRoute,
+    async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
 
-    return c.json({ data: result })
-  })
+      const result = await financeSettlementService.pollInvoiceSettlement(
+        c.get("db"),
+        c.req.valid("param").id,
+        await parseOptionalJsonBody(c, pollInvoiceSettlementInputSchema),
+        {
+          bindings: c.env,
+          invoiceSettlementPollers: runtime.invoiceSettlementPollers,
+          eventBus: runtime.eventBus,
+        },
+      )
+
+      // The not_found sentinel is the only union member carrying a `status`
+      // key, so `"status" in result` cleanly narrows it out for the 200 path.
+      if ("status" in result) {
+        return c.json({ error: "Invoice not found" }, 404)
+      }
+
+      return c.json({ data: result }, 200)
+    },
+  )
 }
 
 export type { InvoiceSettlementPoller } from "./service-settlement.js"

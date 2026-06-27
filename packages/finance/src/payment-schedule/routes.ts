@@ -23,14 +23,14 @@
  * `booking-schedule.ts`.
  */
 
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
 import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type Context, Hono } from "hono"
-import { z } from "zod"
+import type { Context } from "hono"
 import {
   computePaymentSchedule,
   noDepositPolicy,
@@ -225,6 +225,50 @@ const regenerateScheduleBodySchema = z.object({
   customerPaymentPolicy: policyApiSchema.nullable().optional(),
 })
 
+// Cascade source the resolver stamps on the response (booking → listing →
+// category → supplier → operator default). Mirrors `PaymentPolicySource`.
+const paymentPolicySourceSchema = z.enum([
+  "booking",
+  "listing",
+  "category",
+  "supplier",
+  "operator_default",
+])
+
+const errorResponseSchema = z.object({ error: z.string() })
+
+// Schedule rows are the raw `booking_payment_schedules` Drizzle select rows.
+// They have no first-class wire schema (the journey-specific projection lives
+// in the public payment-options surface), so the documented envelope keeps the
+// `schedule` array permissive while pinning the policy + cascade-source shapes
+// the contract test asserts.
+const regenerateScheduleResponseSchema = z.object({
+  data: z.object({
+    schedule: z.array(z.unknown()),
+    bookingPolicy: policyApiSchema.nullable(),
+    cascadeSource: paymentPolicySourceSchema,
+  }),
+})
+
+// The optional override body is parsed in-handler (`parseJsonBody`) so a
+// missing/empty body stays valid and a malformed override still 400s — the
+// route therefore declares only the path param + response envelopes.
+const regenerateScheduleRoute = createRoute({
+  method: "post",
+  path: "/{bookingId}/payment-schedule/regenerate",
+  request: { params: z.object({ bookingId: z.string() }) },
+  responses: {
+    200: {
+      description: "Regenerated payment schedule + resolved booking policy + cascade source",
+      content: { "application/json": { schema: regenerateScheduleResponseSchema } },
+    },
+    400: {
+      description: "Missing booking id or invalid payment-policy override body",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 async function handleRegenerateSchedule(
   c: Context,
   options: BookingScheduleRoutesOptions,
@@ -300,15 +344,18 @@ async function handleRegenerateSchedule(
     .where(eq(bookings.id, bookingId))
     .limit(1)
 
-  return c.json({
-    data: {
-      schedule: rows,
-      bookingPolicy: updatedBooking?.customerPaymentPolicy ?? null,
-      cascadeSource:
-        options.readPolicySourceFromInternalNotes(updatedBooking?.internalNotes ?? "") ??
-        "operator_default",
+  return c.json(
+    {
+      data: {
+        schedule: rows,
+        bookingPolicy: updatedBooking?.customerPaymentPolicy ?? null,
+        cascadeSource:
+          options.readPolicySourceFromInternalNotes(updatedBooking?.internalNotes ?? "") ??
+          "operator_default",
+      },
     },
-  })
+    200,
+  )
 }
 
 function getPaymentScheduleActionLedgerRequestContext(
@@ -348,18 +395,36 @@ const resolvePolicyBodySchema = z.object({
   ratePlanId: z.string().optional(),
 })
 
+const resolvePolicyResponseSchema = z.object({
+  data: z.object({
+    policy: policyApiSchema,
+    source: paymentPolicySourceSchema,
+  }),
+})
+
+const resolvePolicyRoute = createRoute({
+  method: "post",
+  path: "/resolve",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: resolvePolicyBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Resolved effective payment policy + cascade source for an entity",
+      content: { "application/json": { schema: resolvePolicyResponseSchema } },
+    },
+  },
+})
+
 async function handleResolvePolicy(
   c: Context,
   options: BookingScheduleRoutesOptions,
+  body: z.infer<typeof resolvePolicyBodySchema>,
 ): Promise<Response> {
   const db = options.resolveDb(c)
-
-  let body: z.infer<typeof resolvePolicyBodySchema>
-  try {
-    body = await parseJsonBody(c, resolvePolicyBodySchema)
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "invalid_body" }, 400)
-  }
 
   const operatorDefault = (await options.resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
 
@@ -377,12 +442,26 @@ async function handleResolvePolicy(
     operatorDefault,
   })
 
-  return c.json({
-    data: {
-      policy,
-      source,
+  return c.json(
+    {
+      data: {
+        policy,
+        source,
+      },
     },
-  })
+    200,
+  )
+}
+
+/**
+ * Bridge handlers that return a bare `Response` (the `{ data }` / `{ error }`
+ * envelopes the orchestration builds) to the `.openapi()` per-route typed
+ * response union. The runtime payloads honor the declared schemas (asserted by
+ * the contract tests); this only relaxes the compile-time check.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: intentional — bridges bare Response to the inferred typed-response union.
+function asRouteResponse(response: Promise<Response>): Promise<any> {
+  return response
 }
 
 /**
@@ -390,10 +469,11 @@ async function handleResolvePolicy(
  *
  *   POST /:bookingId/payment-schedule/regenerate
  */
-export function createBookingScheduleAdminRoutes(options: BookingScheduleRoutesOptions): Hono {
-  const hono = new Hono()
-  hono.post("/:bookingId/payment-schedule/regenerate", (c) => handleRegenerateSchedule(c, options))
-  return hono
+export function createBookingScheduleAdminRoutes(options: BookingScheduleRoutesOptions) {
+  return new OpenAPIHono({ defaultHook: openApiValidationHook }).openapi(
+    regenerateScheduleRoute,
+    (c) => asRouteResponse(handleRegenerateSchedule(c, options)),
+  )
 }
 
 /**
@@ -402,8 +482,8 @@ export function createBookingScheduleAdminRoutes(options: BookingScheduleRoutesO
  *
  *   POST /resolve  — anonymous storefront preview of the effective policy.
  */
-export function createPaymentPolicyPublicRoutes(options: BookingScheduleRoutesOptions): Hono {
-  const hono = new Hono()
-  hono.post("/resolve", (c) => handleResolvePolicy(c, options))
-  return hono
+export function createPaymentPolicyPublicRoutes(options: BookingScheduleRoutesOptions) {
+  return new OpenAPIHono({ defaultHook: openApiValidationHook }).openapi(resolvePolicyRoute, (c) =>
+    asRouteResponse(handleResolvePolicy(c, options, c.req.valid("json"))),
+  )
 }
