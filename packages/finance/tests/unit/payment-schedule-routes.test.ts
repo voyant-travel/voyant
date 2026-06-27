@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -149,7 +150,11 @@ describe("createPaymentPolicyPublicRoutes — POST /resolve", () => {
   it("rejects an invalid body with 400", async () => {
     const stub = makeDbStub()
     const options = baseOptions({ resolveDb: () => stub.db })
+    // The route now validates the body via `@hono/zod-openapi` + the shared
+    // `openApiValidationHook`, which throws a RequestValidationError mapped to a
+    // 400 by `handleApiError` (the same error boundary createApp installs).
     const app = new Hono().route("/", createPaymentPolicyPublicRoutes(options))
+    app.onError(handleApiError)
 
     const res = await app.request("/resolve", {
       method: "POST",
