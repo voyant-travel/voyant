@@ -151,7 +151,7 @@ describe("netopiaHonoPlugin.bootstrap", () => {
       c.set("container", container)
       await next()
     })
-    app.route("/", extension!.routes)
+    app.route("/", extension!.adminRoutes)
 
     const res = await app.request("/providers/netopia/config", { method: "GET" })
     expect(res.status).toBe(500)

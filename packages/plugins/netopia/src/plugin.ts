@@ -318,7 +318,13 @@ const netopiaFinanceExtensionDef: Extension = {
 export function createNetopiaFinanceExtension(options: NetopiaRuntimeOptions = {}): HonoExtension {
   return {
     extension: netopiaFinanceExtensionDef,
-    routes: createNetopiaFinanceRoutes(options),
+    // Operator-initiated payment ops (start a session / collect an invoice / read
+    // config) — staff-guarded, mounted at `/v1/admin/finance/providers/netopia/*`.
+    // The `/v1/admin/finance` prefix shares finance's transactional-db routing
+    // (app.ts derives all three surfaces from `requiresTransactionalDb`), so the
+    // payment-session writes keep the transaction-capable client. The Netopia IPN
+    // callback stays on `webhookRoutes` (anonymous, signature-verified).
+    adminRoutes: createNetopiaFinanceRoutes(options),
     webhookRoutes: createNetopiaFinanceWebhookRoutes(options),
   }
 }
