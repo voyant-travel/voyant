@@ -12,7 +12,12 @@ export const distributionModule: Module = {
 
 export const distributionHonoModule: HonoModule = {
   module: distributionModule,
+  // Dual-mount (voyant#2114): the same `OpenAPIHono` instance is mounted on the
+  // legacy `/v1/distribution/*` surface (the `distribution-react` dashboard
+  // still calls those paths) AND the documented staff surface at
+  // `/v1/admin/distribution/*` (picked up by the admin OpenAPI spec).
   routes: distributionRoutes,
+  adminRoutes: distributionRoutes,
 }
 
 export * from "./booking-extension.js"
