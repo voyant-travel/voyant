@@ -19,7 +19,7 @@ export function useExternalRefMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateExternalRefInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/external-refs/refs",
+        "/v1/admin/external-refs/refs",
         externalRefSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -35,7 +35,7 @@ export function useExternalRefMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateExternalRefInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/external-refs/refs/${id}`,
+        `/v1/admin/external-refs/refs/${id}`,
         externalRefSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useExternalRefMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/external-refs/refs/${id}`,
+        `/v1/admin/external-refs/refs/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

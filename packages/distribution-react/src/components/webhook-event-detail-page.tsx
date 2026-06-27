@@ -58,7 +58,7 @@ export function WebhookEventDetailPage({
 
   const remove = useMutation({
     mutationFn: () =>
-      fetchWithValidation(`/v1/distribution/webhook-events/${id}`, successEnvelope, client, {
+      fetchWithValidation(`/v1/admin/distribution/webhook-events/${id}`, successEnvelope, client, {
         method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {

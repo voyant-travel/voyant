@@ -29,7 +29,7 @@ export function useChannelMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateChannelInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/distribution/channels",
+        "/v1/admin/distribution/channels",
         channelSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -45,7 +45,7 @@ export function useChannelMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateChannelInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/distribution/channels/${id}`,
+        `/v1/admin/distribution/channels/${id}`,
         channelSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -61,7 +61,7 @@ export function useChannelMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/distribution/channels/${id}`,
+        `/v1/admin/distribution/channels/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

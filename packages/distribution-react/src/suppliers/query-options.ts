@@ -37,7 +37,11 @@ export function getSuppliersQueryOptions(
       if (filters.sortDir) params.set("sortDir", filters.sortDir)
       appendPagination(params, filters)
       const qs = params.toString()
-      return fetchWithValidation(`/v1/suppliers${qs ? `?${qs}` : ""}`, supplierListResponse, client)
+      return fetchWithValidation(
+        `/v1/admin/suppliers${qs ? `?${qs}` : ""}`,
+        supplierListResponse,
+        client,
+      )
     },
   })
 }
@@ -45,7 +49,7 @@ export function getSuppliersQueryOptions(
 export function getSupplierQueryOptions(client: FetchWithValidationOptions, id: string) {
   return queryOptions({
     queryKey: suppliersQueryKeys.supplierDetail(id),
-    queryFn: () => fetchWithValidation(`/v1/suppliers/${id}`, supplierDetailResponse, client),
+    queryFn: () => fetchWithValidation(`/v1/admin/suppliers/${id}`, supplierDetailResponse, client),
   })
 }
 
@@ -56,7 +60,11 @@ export function getSupplierServicesQueryOptions(
   return queryOptions({
     queryKey: suppliersQueryKeys.supplierServices(supplierId),
     queryFn: () =>
-      fetchWithValidation(`/v1/suppliers/${supplierId}/services`, supplierServicesResponse, client),
+      fetchWithValidation(
+        `/v1/admin/suppliers/${supplierId}/services`,
+        supplierServicesResponse,
+        client,
+      ),
   })
 }
 
@@ -67,7 +75,7 @@ export function getSupplierNotesQueryOptions(
   return queryOptions({
     queryKey: suppliersQueryKeys.supplierNotes(supplierId),
     queryFn: () =>
-      fetchWithValidation(`/v1/suppliers/${supplierId}/notes`, supplierNotesResponse, client),
+      fetchWithValidation(`/v1/admin/suppliers/${supplierId}/notes`, supplierNotesResponse, client),
   })
 }
 
@@ -80,7 +88,7 @@ export function getSupplierServiceRatesQueryOptions(
     queryKey: suppliersQueryKeys.supplierServiceRates(supplierId, serviceId),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}/rates`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}/rates`,
         supplierRatesResponse,
         client,
       ),

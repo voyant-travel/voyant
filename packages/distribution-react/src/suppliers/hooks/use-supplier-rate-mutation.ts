@@ -34,7 +34,7 @@ export function useSupplierRateMutation(supplierId: string) {
       input: CreateSupplierRateInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}/rates`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}/rates`,
         supplierRateResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -59,7 +59,7 @@ export function useSupplierRateMutation(supplierId: string) {
       input: UpdateSupplierRateInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}/rates/${rateId}`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}/rates/${rateId}`,
         supplierRateResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -76,7 +76,7 @@ export function useSupplierRateMutation(supplierId: string) {
   const remove = useMutation({
     mutationFn: async ({ serviceId, rateId }: { serviceId: string; rateId: string }) =>
       fetchWithValidation(
-        `/v1/suppliers/${supplierId}/services/${serviceId}/rates/${rateId}`,
+        `/v1/admin/suppliers/${supplierId}/services/${serviceId}/rates/${rateId}`,
         deleteSuccessResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },
