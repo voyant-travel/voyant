@@ -80,7 +80,7 @@ export interface OptionUnitsStepperSectionProps {
 
 /**
  * Rooms / per-unit stepper for booking-create flows. Drives
- * `GET /v1/operations/availability/slots/:id/unit-availability` from #235 when a
+ * `GET /v1/admin/operations/availability/slots/:id/unit-availability` from #235 when a
  * departure is selected, and product option-level units before departure
  * selection, so operators can build "2 double rooms and 1 single" drafts.
  *

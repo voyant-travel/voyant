@@ -56,7 +56,7 @@ export interface VoucherPickerSectionProps {
  * usual guards (status, expiry, currency, booking-assignment, balance).
  *
  * The section only *validates* — it doesn't redeem. Redemption happens when
- * the parent calls `POST /v1/finance/vouchers/:id/redeem` at submit time,
+ * the parent calls `POST /v1/admin/finance/vouchers/:id/redeem` at submit time,
  * after the booking exists and the final amount is known. Validate being
  * idempotent means the operator can try a code, correct a typo, and try
  * again without leaving a trail.
