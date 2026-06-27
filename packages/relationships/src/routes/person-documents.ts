@@ -1,14 +1,27 @@
+/**
+ * Relationships "person documents" admin routes — structured identity documents
+ * plus the admin PII conveniences (server-side encrypt/decrypt of the people KMS
+ * envelopes, travel-snapshot pre-fill, and the audited document-number reveal).
+ * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2276 —
+ * step 3.5, stage B). Request schemas reuse the exported `validation.ts`
+ * schemas; response row schemas live in `rest-openapi-schemas.ts`. Handlers read
+ * `c.req.valid(...)` and still call the same `relationshipsService` methods (and
+ * the request-scoped KMS + action-ledger runtime) via `c.get(...)`. Each route
+ * is registered statement-style to keep type-inference cost bounded.
+ */
+
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   type ActionLedgerRequestContextValues,
   evaluateActionLedgerCapabilityAccess,
   ledgerSensitiveRead,
 } from "@voyant-travel/action-ledger"
 import type { ModuleContainer } from "@voyant-travel/core"
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import { encryptOptionalJsonEnvelope } from "@voyant-travel/utils"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { type Context, Hono } from "hono"
+import type { Context } from "hono"
 
 import {
   PERSON_DOCUMENT_REVEAL_ACTION_NAME,
@@ -31,6 +44,15 @@ import {
   updatePersonDocumentSchema,
   updatePersonProfilePiiSchema,
 } from "../validation.js"
+import {
+  errorResponseSchema,
+  forbiddenResponseSchema,
+  idParamSchema,
+  personDocumentRevealSchema,
+  personDocumentSchema,
+  personTravelSnapshotSchema,
+  successResponseSchema,
+} from "./rest-openapi-schemas.js"
 
 type Env = {
   Variables: {
@@ -47,6 +69,14 @@ type Env = {
     apiTokenId?: string
   }
 }
+
+const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
+  content: { "application/json": { schema } },
+})
+
+const requiredJsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  body: { required: true, content: { "application/json": { schema } } },
+})
 
 function getRelationshipsActionLedgerContext(c: Context<Env>): ActionLedgerRequestContextValues {
   return {
@@ -83,227 +113,360 @@ function kmsRequired(c: Context<Env>) {
   )
 }
 
-export const personDocumentRoutes = new Hono<Env>()
-  .get("/people/:id/documents", async (c) => {
-    const query = parseQuery(c, personDocumentListQuerySchema)
-    return c.json({
-      data: await relationshipsService.listPersonDocuments(c.get("db"), c.req.param("id"), query),
-    })
-  })
-  .post("/people/:id/documents", async (c) => {
-    const row = await relationshipsService.createPersonDocument(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertPersonDocumentSchema),
-    )
-    if (!row) return c.json({ error: "Person not found" }, 404)
-    return c.json({ data: row }, 201)
-  })
-  .get("/person-documents/:id", async (c) => {
-    const row = await relationshipsService.getPersonDocument(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Document not found" }, 404)
-    return c.json({ data: row })
-  })
-  .patch("/person-documents/:id", async (c) => {
-    const row = await relationshipsService.updatePersonDocument(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updatePersonDocumentSchema),
-    )
-    if (!row) return c.json({ error: "Document not found" }, 404)
-    return c.json({ data: row })
-  })
-  .delete("/person-documents/:id", async (c) => {
-    const row = await relationshipsService.deletePersonDocument(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Document not found" }, 404)
-    return c.json({ success: true })
-  })
-  .post("/person-documents/:id/set-primary", async (c) => {
-    const row = await relationshipsService.setPrimaryPersonDocument(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Document not found" }, 404)
-    return c.json({ data: row })
-  })
+const listPersonDocumentsRoute = createRoute({
+  method: "get",
+  path: "/people/{id}/documents",
+  request: { params: idParamSchema, query: personDocumentListQuerySchema },
+  responses: {
+    200: {
+      description: "Identity documents for the person",
+      ...jsonContent(z.object({ data: z.array(personDocumentSchema) })),
+    },
+  },
+})
 
-  // ── Admin PII conveniences (server-side encrypt/decrypt) ──────────────
-  // Operator UIs (booking-traveler dialog) need to read a person's
-  // primary passport + free-text PII in plaintext to pre-fill forms,
-  // and write changes back without round-tripping ciphertext through
-  // the browser. Endpoints below use the request-scoped Relationships runtime
-  // to access the people KMS key.
+const createPersonDocumentRoute = createRoute({
+  method: "post",
+  path: "/people/{id}/documents",
+  request: { params: idParamSchema, ...requiredJsonBody(insertPersonDocumentSchema) },
+  responses: {
+    201: {
+      description: "The created identity document",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
+  },
+})
 
-  /**
-   * Decrypted snapshot of a person's primary passport + dietary +
-   * accessibility values. Used by the booking-traveler dialog to
-   * pre-fill snapshot fields when an operator picks an existing
-   * person. Returns 404 when person missing, 503 when KMS unwired.
-   */
-  .get("/people/:id/travel-snapshot", async (c) => {
-    const kms = await getRelationshipsKms(c)
-    if (!kms) return kmsRequired(c)
-    const snapshot = await relationshipsService.loadPersonTravelSnapshot(
-      c.get("db"),
-      c.req.param("id"),
-      {
-        kms,
-      },
-    )
-    if (!snapshot) return c.json({ error: "Person not found" }, 404)
-    return c.json({ data: snapshot })
-  })
+const getPersonDocumentRoute = createRoute({
+  method: "get",
+  path: "/person-documents/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "An identity document by id",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+  },
+})
 
-  /**
-   * Plaintext PATCH for the four free-text PII slots on
-   * `relationships.people`. The route encrypts each provided value server-side
-   * with the people KMS key. `null` clears a slot.
-   */
-  .patch("/people/:id/profile-pii", async (c) => {
-    const kms = await getRelationshipsKms(c)
-    if (!kms) return kmsRequired(c)
-    const body = await parseJsonBody(c, updatePersonProfilePiiSchema)
+const updatePersonDocumentRoute = createRoute({
+  method: "patch",
+  path: "/person-documents/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updatePersonDocumentSchema) },
+  responses: {
+    200: {
+      description: "The updated identity document",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+  },
+})
 
-    const updates: Record<string, { enc: string } | null> = {}
-    for (const [key, column] of [
-      ["accessibility", "accessibilityEncrypted"],
-      ["dietary", "dietaryEncrypted"],
-      ["loyalty", "loyaltyEncrypted"],
-      ["insurance", "insuranceEncrypted"],
-    ] as const) {
-      const value = body[key]
-      if (value === undefined) continue
-      if (value === null) {
-        updates[column] = null
-      } else {
-        updates[column] = await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { text: value })
-      }
+const deletePersonDocumentRoute = createRoute({
+  method: "delete",
+  path: "/person-documents/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Document deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const setPrimaryPersonDocumentRoute = createRoute({
+  method: "post",
+  path: "/person-documents/{id}/set-primary",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The document promoted to primary",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const travelSnapshotRoute = createRoute({
+  method: "get",
+  path: "/people/{id}/travel-snapshot",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Decrypted travel-snapshot pre-fill for the person",
+      ...jsonContent(z.object({ data: personTravelSnapshotSchema })),
+    },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "KMS provider not configured", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateProfilePiiRoute = createRoute({
+  method: "patch",
+  path: "/people/{id}/profile-pii",
+  request: { params: idParamSchema, ...requiredJsonBody(updatePersonProfilePiiSchema) },
+  responses: {
+    200: { description: "PII slots updated", ...jsonContent(successResponseSchema) },
+    400: {
+      description: "invalid_request or nothing to update",
+      ...jsonContent(errorResponseSchema),
+    },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "KMS provider not configured", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const createPersonDocumentFromPlaintextRoute = createRoute({
+  method: "post",
+  path: "/people/{id}/documents/from-plaintext",
+  request: { params: idParamSchema, ...requiredJsonBody(insertPersonDocumentFromPlaintextSchema) },
+  responses: {
+    201: {
+      description: "The created identity document (number encrypted server-side)",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "KMS provider not configured", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updatePersonDocumentFromPlaintextRoute = createRoute({
+  method: "patch",
+  path: "/person-documents/{id}/from-plaintext",
+  request: { params: idParamSchema, ...requiredJsonBody(updatePersonDocumentFromPlaintextSchema) },
+  responses: {
+    200: {
+      description: "The updated identity document (number encrypted server-side)",
+      ...jsonContent(z.object({ data: personDocumentSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "KMS provider not configured", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const revealPersonDocumentRoute = createRoute({
+  method: "get",
+  path: "/person-documents/{id}/reveal",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "The decrypted document number (disclosure recorded in the action ledger)",
+      ...jsonContent(z.object({ data: personDocumentRevealSchema })),
+    },
+    403: {
+      description: "Caller lacks the reveal capability",
+      ...jsonContent(forbiddenResponseSchema),
+    },
+    404: { description: "Document not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "KMS provider not configured", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+export const personDocumentRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+
+personDocumentRoutes.openapi(listPersonDocumentsRoute, async (c) =>
+  c.json(
+    {
+      data: await relationshipsService.listPersonDocuments(
+        c.get("db"),
+        c.req.valid("param").id,
+        c.req.valid("query"),
+      ),
+    },
+    200,
+  ),
+)
+personDocumentRoutes.openapi(createPersonDocumentRoute, async (c) => {
+  const row = await relationshipsService.createPersonDocument(
+    c.get("db"),
+    c.req.valid("param").id,
+    c.req.valid("json"),
+  )
+  return row ? c.json({ data: row }, 201) : c.json({ error: "Person not found" }, 404)
+})
+personDocumentRoutes.openapi(getPersonDocumentRoute, async (c) => {
+  const row = await relationshipsService.getPersonDocument(c.get("db"), c.req.valid("param").id)
+  return row ? c.json({ data: row }, 200) : c.json({ error: "Document not found" }, 404)
+})
+personDocumentRoutes.openapi(updatePersonDocumentRoute, async (c) => {
+  const row = await relationshipsService.updatePersonDocument(
+    c.get("db"),
+    c.req.valid("param").id,
+    c.req.valid("json"),
+  )
+  return row ? c.json({ data: row }, 200) : c.json({ error: "Document not found" }, 404)
+})
+personDocumentRoutes.openapi(deletePersonDocumentRoute, async (c) => {
+  const row = await relationshipsService.deletePersonDocument(c.get("db"), c.req.valid("param").id)
+  return row
+    ? c.json({ success: true } as const, 200)
+    : c.json({ error: "Document not found" }, 404)
+})
+personDocumentRoutes.openapi(setPrimaryPersonDocumentRoute, async (c) => {
+  const row = await relationshipsService.setPrimaryPersonDocument(
+    c.get("db"),
+    c.req.valid("param").id,
+  )
+  return row ? c.json({ data: row }, 200) : c.json({ error: "Document not found" }, 404)
+})
+
+// ── Admin PII conveniences (server-side encrypt/decrypt) ──────────────
+// Operator UIs (booking-traveler dialog) need to read a person's primary
+// passport + free-text PII in plaintext to pre-fill forms, and write changes
+// back without round-tripping ciphertext through the browser. The routes below
+// use the request-scoped Relationships runtime to access the people KMS key.
+
+personDocumentRoutes.openapi(travelSnapshotRoute, async (c) => {
+  const kms = await getRelationshipsKms(c)
+  if (!kms) return kmsRequired(c)
+  const snapshot = await relationshipsService.loadPersonTravelSnapshot(
+    c.get("db"),
+    c.req.valid("param").id,
+    { kms },
+  )
+  return snapshot ? c.json({ data: snapshot }, 200) : c.json({ error: "Person not found" }, 404)
+})
+
+personDocumentRoutes.openapi(updateProfilePiiRoute, async (c) => {
+  const kms = await getRelationshipsKms(c)
+  if (!kms) return kmsRequired(c)
+  const body = c.req.valid("json")
+
+  const updates: Record<string, { enc: string } | null> = {}
+  for (const [key, column] of [
+    ["accessibility", "accessibilityEncrypted"],
+    ["dietary", "dietaryEncrypted"],
+    ["loyalty", "loyaltyEncrypted"],
+    ["insurance", "insuranceEncrypted"],
+  ] as const) {
+    const value = body[key]
+    if (value === undefined) continue
+    if (value === null) {
+      updates[column] = null
+    } else {
+      updates[column] = await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { text: value })
     }
-    if (Object.keys(updates).length === 0) {
-      return c.json({ error: "Nothing to update" }, 400)
-    }
+  }
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: "Nothing to update" }, 400)
+  }
 
-    const [row] = await c
-      .get("db")
-      .update(people)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(people.id, c.req.param("id")))
-      .returning({ id: people.id })
-    if (!row) return c.json({ error: "Person not found" }, 404)
-    return c.json({ success: true })
-  })
+  const [row] = await c
+    .get("db")
+    .update(people)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(people.id, c.req.valid("param").id))
+    .returning({ id: people.id })
+  return row ? c.json({ success: true } as const, 200) : c.json({ error: "Person not found" }, 404)
+})
 
-  /**
-   * Plaintext document create — accepts `number` as cleartext, the
-   * route encrypts via the people KMS key. Mirrors the existing
-   * `POST /people/:id/documents` shape but spares clients from
-   * holding KMS material.
-   */
-  .post("/people/:id/documents/from-plaintext", async (c) => {
-    const kms = await getRelationshipsKms(c)
-    if (!kms) return kmsRequired(c)
-    const body = await parseJsonBody(c, insertPersonDocumentFromPlaintextSchema)
-    const { number, ...rest } = body
-    const numberEncrypted =
-      number == null ? null : await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { number })
-    const row = await relationshipsService.createPersonDocument(c.get("db"), c.req.param("id"), {
+personDocumentRoutes.openapi(createPersonDocumentFromPlaintextRoute, async (c) => {
+  const kms = await getRelationshipsKms(c)
+  if (!kms) return kmsRequired(c)
+  const body = c.req.valid("json")
+  const { number, ...rest } = body
+  const numberEncrypted =
+    number == null ? null : await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { number })
+  const row = await relationshipsService.createPersonDocument(
+    c.get("db"),
+    c.req.valid("param").id,
+    {
       ...rest,
       ...(numberEncrypted !== undefined ? { numberEncrypted } : {}),
-    })
-    if (!row) return c.json({ error: "Person not found" }, 404)
-    return c.json({ data: row }, 201)
+    },
+  )
+  return row ? c.json({ data: row }, 201) : c.json({ error: "Person not found" }, 404)
+})
+
+personDocumentRoutes.openapi(updatePersonDocumentFromPlaintextRoute, async (c) => {
+  const kms = await getRelationshipsKms(c)
+  if (!kms) return kmsRequired(c)
+  const body = c.req.valid("json")
+  const { number, ...rest } = body
+  const updateInput: Record<string, unknown> = { ...rest }
+  if (number !== undefined) {
+    updateInput.numberEncrypted =
+      number === null ? null : await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { number })
+  }
+  const row = await relationshipsService.updatePersonDocument(
+    c.get("db"),
+    c.req.valid("param").id,
+    updateInput,
+  )
+  return row ? c.json({ data: row }, 200) : c.json({ error: "Document not found" }, 404)
+})
+
+/**
+ * Decrypts and returns the plaintext document number for a single person
+ * document. Gated by the `relationships-pii:read` action-ledger capability;
+ * every successful reveal writes an action-ledger row tagged
+ * `relationships.person_document.reveal` so disclosures are auditable. Returns
+ * 403 when the caller lacks the grant, 404 when the document doesn't exist, 503
+ * when KMS isn't wired.
+ */
+personDocumentRoutes.openapi(revealPersonDocumentRoute, async (c) => {
+  const documentId = c.req.valid("param").id
+
+  const access = evaluateActionLedgerCapabilityAccess({
+    definition: PERSON_DOCUMENT_REVEAL_CAPABILITY,
+    actor: c.get("actor") ?? null,
+    callerType: c.get("callerType") ?? null,
+    scopes: c.get("scopes") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
   })
 
-  /**
-   * Plaintext document update — same encryption convention as the
-   * create variant. Only fields explicitly provided are written;
-   * `number: null` clears the encrypted slot.
-   */
-  .patch("/person-documents/:id/from-plaintext", async (c) => {
-    const kms = await getRelationshipsKms(c)
-    if (!kms) return kmsRequired(c)
-    const body = await parseJsonBody(c, updatePersonDocumentFromPlaintextSchema)
-    const { number, ...rest } = body
-    const updateInput: Record<string, unknown> = { ...rest }
-    if (number !== undefined) {
-      updateInput.numberEncrypted =
-        number === null ? null : await encryptOptionalJsonEnvelope(kms, peopleKeyRef, { number })
-    }
-    const row = await relationshipsService.updatePersonDocument(
+  if (!access.allowed) {
+    return c.json({ error: "Forbidden", reason: access.reason }, 403)
+  }
+
+  const kms = await getRelationshipsKms(c)
+  if (!kms) return kmsRequired(c)
+
+  const existing = await relationshipsService.getPersonDocument(c.get("db"), documentId)
+  if (!existing) return c.json({ error: "Document not found" }, 404)
+
+  let revealed: { documentId: string; number: string | null }
+  try {
+    revealed = await ledgerSensitiveRead(
       c.get("db"),
-      c.req.param("id"),
-      updateInput,
+      {
+        context: getRelationshipsActionLedgerContext(c),
+        actionName: PERSON_DOCUMENT_REVEAL_ACTION_NAME,
+        actionVersion: PERSON_DOCUMENT_REVEAL_ACTION_VERSION,
+        status: "succeeded",
+        evaluatedRisk: access.evaluatedRisk ?? "high",
+        targetType: "person_document",
+        targetId: documentId,
+        routeOrToolName: "relationships.person-documents.reveal",
+        capabilityId: PERSON_DOCUMENT_REVEAL_CAPABILITY.id,
+        capabilityVersion: PERSON_DOCUMENT_REVEAL_CAPABILITY.version,
+        authorizationSource:
+          access.authorizationSource ?? PERSON_DOCUMENT_REVEAL_AUTHORIZATION_SOURCE,
+        reasonCode: "person_document_reveal",
+        disclosedFieldSet: ["number"],
+        disclosureSummary: "Person document number reveal",
+        decisionPolicy: PERSON_DOCUMENT_REVEAL_DECISION_POLICY,
+      },
+      async () => {
+        const result = await relationshipsService.revealPersonDocumentNumber(
+          c.get("db"),
+          documentId,
+          { kms },
+        )
+        if (!result) throw new Error("Document not found")
+        return result
+      },
     )
-    if (!row) return c.json({ error: "Document not found" }, 404)
-    return c.json({ data: row })
-  })
-
-  /**
-   * Decrypts and returns the plaintext document number for a single
-   * person document. Gated by the `relationships-pii:read` action-ledger
-   * capability; every successful reveal writes an action-ledger row
-   * tagged `relationships.person_document.reveal` so disclosures are auditable.
-   * Returns 403 when the caller lacks the grant, 404 when the document
-   * doesn't exist, 503 when KMS isn't wired.
-   */
-  .get("/person-documents/:id/reveal", async (c) => {
-    const documentId = c.req.param("id")
-
-    const access = evaluateActionLedgerCapabilityAccess({
-      definition: PERSON_DOCUMENT_REVEAL_CAPABILITY,
-      actor: c.get("actor") ?? null,
-      callerType: c.get("callerType") ?? null,
-      scopes: c.get("scopes") ?? null,
-      isInternalRequest: c.get("isInternalRequest") ?? false,
-    })
-
-    if (!access.allowed) {
-      return c.json({ error: "Forbidden", reason: access.reason }, 403)
+  } catch (error) {
+    if (error instanceof Error && error.message === "Document not found") {
+      return c.json({ error: "Document not found" }, 404)
     }
+    throw error
+  }
 
-    const kms = await getRelationshipsKms(c)
-    if (!kms) return kmsRequired(c)
-
-    const existing = await relationshipsService.getPersonDocument(c.get("db"), documentId)
-    if (!existing) return c.json({ error: "Document not found" }, 404)
-
-    let revealed: { documentId: string; number: string | null }
-    try {
-      revealed = await ledgerSensitiveRead(
-        c.get("db"),
-        {
-          context: getRelationshipsActionLedgerContext(c),
-          actionName: PERSON_DOCUMENT_REVEAL_ACTION_NAME,
-          actionVersion: PERSON_DOCUMENT_REVEAL_ACTION_VERSION,
-          status: "succeeded",
-          evaluatedRisk: access.evaluatedRisk ?? "high",
-          targetType: "person_document",
-          targetId: documentId,
-          routeOrToolName: "relationships.person-documents.reveal",
-          capabilityId: PERSON_DOCUMENT_REVEAL_CAPABILITY.id,
-          capabilityVersion: PERSON_DOCUMENT_REVEAL_CAPABILITY.version,
-          authorizationSource:
-            access.authorizationSource ?? PERSON_DOCUMENT_REVEAL_AUTHORIZATION_SOURCE,
-          reasonCode: "person_document_reveal",
-          disclosedFieldSet: ["number"],
-          disclosureSummary: "Person document number reveal",
-          decisionPolicy: PERSON_DOCUMENT_REVEAL_DECISION_POLICY,
-        },
-        async () => {
-          const result = await relationshipsService.revealPersonDocumentNumber(
-            c.get("db"),
-            documentId,
-            {
-              kms,
-            },
-          )
-          if (!result) throw new Error("Document not found")
-          return result
-        },
-      )
-    } catch (error) {
-      if (error instanceof Error && error.message === "Document not found") {
-        return c.json({ error: "Document not found" }, 404)
-      }
-      throw error
-    }
-
-    return c.json({ data: revealed })
-  })
+  return c.json({ data: revealed }, 200)
+})
