@@ -64,7 +64,7 @@ export function useDuplicateProductOptionMutation() {
           },
         ),
         fetchWithValidation(
-          `/v1/products/option-units?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
+          `/v1/admin/products/units?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
           optionUnitListResponse,
           { baseUrl, fetcher },
         ),
