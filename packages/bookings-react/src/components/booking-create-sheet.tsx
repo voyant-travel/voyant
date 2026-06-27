@@ -139,7 +139,7 @@ export interface BookingCreateFormProps {
  * Operator booking-create sheet. Composes the booking-create picker
  * sections — product, departure, rooms, person, shared-room, travelers,
  * price breakdown, voucher, payment schedule — and submits via the atomic
- * `POST /v1/bookings/create` endpoint so partial failures can't
+ * `POST /v1/admin/bookings/create` endpoint so partial failures can't
  * leave orphan state.
  *
  * Normally consumed via `BookingDialog` which delegates here when no

@@ -33,7 +33,7 @@ export function useSupplierStatusMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateSupplierStatusInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/supplier-statuses`,
+        `/v1/admin/bookings/${bookingId}/supplier-statuses`,
         bookingSupplierStatusSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -51,7 +51,7 @@ export function useSupplierStatusMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateSupplierStatusInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/supplier-statuses/${id}`,
+        `/v1/admin/bookings/${bookingId}/supplier-statuses/${id}`,
         bookingSupplierStatusSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },

@@ -12,7 +12,7 @@ export interface CancelBookingInput {
 }
 
 /**
- * Cancels a booking via POST /v1/bookings/:id/cancel.
+ * Cancels a booking via POST /v1/admin/bookings/:id/cancel.
  * The backend releases allocations, cancels items, and logs a status-change activity.
  */
 export function useBookingCancelMutation(bookingId: string) {
@@ -22,7 +22,7 @@ export function useBookingCancelMutation(bookingId: string) {
   return useMutation({
     mutationFn: async (input: CancelBookingInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/cancel`,
+        `/v1/admin/bookings/${bookingId}/cancel`,
         bookingSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? {}) },

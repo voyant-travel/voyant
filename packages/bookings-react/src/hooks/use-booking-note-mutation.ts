@@ -35,7 +35,7 @@ export function useBookingNoteMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateBookingNoteInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/notes`,
+        `/v1/admin/bookings/${bookingId}/notes`,
         bookingNoteSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -48,7 +48,7 @@ export function useBookingNoteMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async (input: UpdateBookingNoteInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/notes/${input.id}`,
+        `/v1/admin/bookings/${bookingId}/notes/${input.id}`,
         bookingNoteSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify({ content: input.content }) },
@@ -61,7 +61,7 @@ export function useBookingNoteMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (noteId: string) => {
       return fetchWithValidation(
-        `/v1/bookings/${bookingId}/notes/${noteId}`,
+        `/v1/admin/bookings/${bookingId}/notes/${noteId}`,
         successResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },

@@ -39,7 +39,7 @@ export function useBookingGroupMemberMutation() {
   const add = useMutation({
     mutationFn: async (input: AddBookingGroupMemberInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/groups/${input.groupId}/members`,
+        `/v1/admin/bookings/groups/${input.groupId}/members`,
         bookingGroupMemberSingleResponse,
         { baseUrl, fetcher },
         {
@@ -55,7 +55,7 @@ export function useBookingGroupMemberMutation() {
   const remove = useMutation({
     mutationFn: async (input: RemoveBookingGroupMemberInput) =>
       fetchWithValidation(
-        `/v1/bookings/groups/${input.groupId}/members/${input.bookingId}`,
+        `/v1/admin/bookings/groups/${input.groupId}/members/${input.bookingId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

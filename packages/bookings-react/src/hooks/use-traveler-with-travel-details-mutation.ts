@@ -66,7 +66,7 @@ export function useTravelerWithTravelDetailsMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateTravelerWithTravelDetailsInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers/with-travel-details`,
+        `/v1/admin/bookings/${bookingId}/travelers/with-travel-details`,
         travelerWithTravelDetailsResponseSchema,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -85,7 +85,7 @@ export function useTravelerWithTravelDetailsMutation(bookingId: string) {
       input: UpdateTravelerWithTravelDetailsInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/travelers/${travelerId}/with-travel-details`,
+        `/v1/admin/bookings/${bookingId}/travelers/${travelerId}/with-travel-details`,
         travelerWithTravelDetailsResponseSchema,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },

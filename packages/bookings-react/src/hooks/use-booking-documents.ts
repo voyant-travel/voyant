@@ -49,7 +49,7 @@ export function useBookingTravelerDocumentMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateBookingTravelerDocumentInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${bookingId}/documents`,
+        `/v1/admin/bookings/${bookingId}/documents`,
         bookingSingleResponse.extend({
           data: bookingTravelerDocumentsResponse.shape.data.element,
         }),
@@ -74,7 +74,7 @@ export function useBookingTravelerDocumentMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (documentId: string) =>
       fetchWithValidation(
-        `/v1/bookings/${bookingId}/documents/${documentId}`,
+        `/v1/admin/bookings/${bookingId}/documents/${documentId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

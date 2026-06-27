@@ -52,7 +52,7 @@ export function useBookingMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateBookingInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/bookings",
+        "/v1/admin/bookings",
         bookingSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -67,7 +67,7 @@ export function useBookingMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateBookingInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/bookings/${id}`,
+        `/v1/admin/bookings/${id}`,
         bookingSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -83,7 +83,7 @@ export function useBookingMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/bookings/${id}`,
+        `/v1/admin/bookings/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
