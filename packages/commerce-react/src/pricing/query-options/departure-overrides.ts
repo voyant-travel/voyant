@@ -30,7 +30,7 @@ export function getDeparturePriceOverridesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/departure-price-overrides${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/departure-price-overrides${qs ? `?${qs}` : ""}`,
         departurePriceOverrideListResponse,
         client,
       )
@@ -46,7 +46,7 @@ export function getDeparturePriceOverrideQueryOptions(
     queryKey: pricingQueryKeys.departurePriceOverride(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/departure-price-overrides/${id}`,
+        `/v1/admin/pricing/departure-price-overrides/${id}`,
         departurePriceOverrideSingleResponse,
         client,
       )

@@ -30,7 +30,7 @@ export function useDeparturePriceOverrideMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateDeparturePriceOverrideInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/departure-price-overrides",
+        "/v1/admin/pricing/departure-price-overrides",
         departurePriceOverrideSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -48,7 +48,7 @@ export function useDeparturePriceOverrideMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateDeparturePriceOverrideInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/departure-price-overrides/${id}`,
+        `/v1/admin/pricing/departure-price-overrides/${id}`,
         departurePriceOverrideSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -66,7 +66,7 @@ export function useDeparturePriceOverrideMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/departure-price-overrides/${id}`,
+        `/v1/admin/pricing/departure-price-overrides/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

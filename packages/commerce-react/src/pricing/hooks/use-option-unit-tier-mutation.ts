@@ -28,7 +28,7 @@ export function useOptionUnitTierMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateOptionUnitTierInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/option-unit-tiers",
+        "/v1/admin/pricing/option-unit-tiers",
         optionUnitTierSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -44,7 +44,7 @@ export function useOptionUnitTierMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateOptionUnitTierInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-unit-tiers/${id}`,
+        `/v1/admin/pricing/option-unit-tiers/${id}`,
         optionUnitTierSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -60,7 +60,7 @@ export function useOptionUnitTierMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/option-unit-tiers/${id}`,
+        `/v1/admin/pricing/option-unit-tiers/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

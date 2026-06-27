@@ -43,7 +43,7 @@ export function usePriceScheduleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePriceScheduleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/price-schedules",
+        "/v1/admin/pricing/price-schedules",
         priceScheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -59,7 +59,7 @@ export function usePriceScheduleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePriceScheduleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/price-schedules/${id}`,
+        `/v1/admin/pricing/price-schedules/${id}`,
         priceScheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -75,7 +75,7 @@ export function usePriceScheduleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/price-schedules/${id}`,
+        `/v1/admin/pricing/price-schedules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

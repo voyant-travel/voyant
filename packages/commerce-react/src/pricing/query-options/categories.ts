@@ -20,7 +20,7 @@ export function getPricingCategoryQueryOptions(client: FetchWithValidationOption
     queryKey: pricingQueryKeys.pricingCategory(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/pricing-categories/${id}`,
+        `/v1/admin/pricing/pricing-categories/${id}`,
         pricingCategorySingleResponse,
         client,
       )
@@ -50,7 +50,7 @@ export function getPricingCategoriesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/pricing-categories${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/pricing-categories${qs ? `?${qs}` : ""}`,
         pricingCategoryListResponse,
         client,
       )
@@ -79,7 +79,7 @@ export function getPricingCategoryDependenciesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/pricing-category-dependencies${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/pricing-category-dependencies${qs ? `?${qs}` : ""}`,
         pricingCategoryDependencyListResponse,
         client,
       )
@@ -103,7 +103,7 @@ export function getPriceCatalogsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/price-catalogs${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/price-catalogs${qs ? `?${qs}` : ""}`,
         priceCatalogListResponse,
         client,
       )
@@ -116,7 +116,7 @@ export function getPriceCatalogQueryOptions(client: FetchWithValidationOptions, 
     queryKey: [...pricingQueryKeys.priceCatalogs(), "detail", id] as const,
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/price-catalogs/${id}`,
+        `/v1/admin/pricing/price-catalogs/${id}`,
         priceCatalogSingleResponse,
         client,
       )

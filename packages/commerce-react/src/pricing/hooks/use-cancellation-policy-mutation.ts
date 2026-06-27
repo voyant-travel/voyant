@@ -29,7 +29,7 @@ export function useCancellationPolicyMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateCancellationPolicyInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/cancellation-policies",
+        "/v1/admin/pricing/cancellation-policies",
         cancellationPolicySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -45,7 +45,7 @@ export function useCancellationPolicyMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateCancellationPolicyInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/cancellation-policies/${id}`,
+        `/v1/admin/pricing/cancellation-policies/${id}`,
         cancellationPolicySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -61,7 +61,7 @@ export function useCancellationPolicyMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/cancellation-policies/${id}`,
+        `/v1/admin/pricing/cancellation-policies/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

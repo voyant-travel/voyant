@@ -32,7 +32,7 @@ export function useExtraPriceRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateExtraPriceRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/extra-price-rules",
+        "/v1/admin/pricing/extra-price-rules",
         extraPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -48,7 +48,7 @@ export function useExtraPriceRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateExtraPriceRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/extra-price-rules/${id}`,
+        `/v1/admin/pricing/extra-price-rules/${id}`,
         extraPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -64,7 +64,7 @@ export function useExtraPriceRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/extra-price-rules/${id}`,
+        `/v1/admin/pricing/extra-price-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

@@ -30,7 +30,7 @@ export function usePickupPriceRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePickupPriceRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/pickup-price-rules",
+        "/v1/admin/pricing/pickup-price-rules",
         pickupPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -46,7 +46,7 @@ export function usePickupPriceRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePickupPriceRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/pickup-price-rules/${id}`,
+        `/v1/admin/pricing/pickup-price-rules/${id}`,
         pickupPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -62,7 +62,7 @@ export function usePickupPriceRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/pickup-price-rules/${id}`,
+        `/v1/admin/pricing/pickup-price-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

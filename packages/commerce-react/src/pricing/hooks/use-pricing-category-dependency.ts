@@ -22,7 +22,7 @@ export function usePricingCategoryDependency(
     queryKey: pricingQueryKeys.pricingCategoryDependency(id ?? "__missing__"),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/pricing-category-dependencies/${id}`,
+        `/v1/admin/pricing/pricing-category-dependencies/${id}`,
         pricingCategoryDependencySingleResponse,
         { baseUrl, fetcher },
       )

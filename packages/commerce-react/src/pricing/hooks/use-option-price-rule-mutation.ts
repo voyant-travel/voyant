@@ -47,7 +47,7 @@ export function useOptionPriceRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateOptionPriceRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/option-price-rules",
+        "/v1/admin/pricing/option-price-rules",
         optionPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -63,7 +63,7 @@ export function useOptionPriceRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateOptionPriceRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-price-rules/${id}`,
+        `/v1/admin/pricing/option-price-rules/${id}`,
         optionPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -79,7 +79,7 @@ export function useOptionPriceRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/option-price-rules/${id}`,
+        `/v1/admin/pricing/option-price-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

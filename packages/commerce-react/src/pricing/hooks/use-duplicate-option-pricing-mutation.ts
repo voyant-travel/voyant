@@ -35,7 +35,7 @@ export function useDuplicateOptionPricingMutation() {
       unitIdMap,
     }: DuplicateOptionPricingInput) => {
       const { data: sourceRules } = await fetchWithValidation<{ data: OptionPriceRuleRecord[] }>(
-        `/v1/pricing/option-price-rules?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
+        `/v1/admin/pricing/option-price-rules?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
         optionPriceRuleListResponse,
         { baseUrl, fetcher },
       )
@@ -64,7 +64,7 @@ export function useDuplicateOptionPricingMutation() {
         const { data: sourceUnitPriceRules } = await fetchWithValidation<{
           data: OptionUnitPriceRuleRecord[]
         }>(
-          `/v1/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(rule.id)}&limit=500`,
+          `/v1/admin/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(rule.id)}&limit=500`,
           optionUnitPriceRuleListResponse,
           { baseUrl, fetcher },
         )

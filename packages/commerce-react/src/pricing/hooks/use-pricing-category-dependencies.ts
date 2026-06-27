@@ -32,7 +32,7 @@ export function usePricingCategoryDependencies(
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/pricing/pricing-category-dependencies${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/pricing-category-dependencies${qs ? `?${qs}` : ""}`,
         pricingCategoryDependencyListResponse,
         { baseUrl, fetcher },
       )

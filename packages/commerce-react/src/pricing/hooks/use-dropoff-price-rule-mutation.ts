@@ -32,7 +32,7 @@ export function useDropoffPriceRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateDropoffPriceRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/dropoff-price-rules",
+        "/v1/admin/pricing/dropoff-price-rules",
         dropoffPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -48,7 +48,7 @@ export function useDropoffPriceRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateDropoffPriceRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/dropoff-price-rules/${id}`,
+        `/v1/admin/pricing/dropoff-price-rules/${id}`,
         dropoffPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -64,7 +64,7 @@ export function useDropoffPriceRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/dropoff-price-rules/${id}`,
+        `/v1/admin/pricing/dropoff-price-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
