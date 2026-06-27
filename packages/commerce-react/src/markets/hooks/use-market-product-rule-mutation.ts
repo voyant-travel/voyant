@@ -22,7 +22,7 @@ export function useMarketProductRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateMarketProductRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/markets/product-rules",
+        "/v1/admin/markets/product-rules",
         marketProductRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useMarketProductRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateMarketProductRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/product-rules/${id}`,
+        `/v1/admin/markets/product-rules/${id}`,
         marketProductRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useMarketProductRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/markets/product-rules/${id}`,
+        `/v1/admin/markets/product-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

@@ -38,7 +38,7 @@ export function useMarketMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateMarketInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/markets/${id}`,
+        `/v1/admin/markets/markets/${id}`,
         marketSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useMarketMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/markets/markets/${id}`,
+        `/v1/admin/markets/markets/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

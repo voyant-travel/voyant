@@ -50,7 +50,7 @@ export function getMarketQueryOptions(client: FetchWithValidationOptions, id: st
     queryKey: marketsQueryKeys.market(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/markets/${id}`,
+        `/v1/admin/markets/markets/${id}`,
         marketSingleResponse,
         client,
       )
@@ -69,7 +69,7 @@ export function getMarketLocalesQueryOptions(
     queryFn: async () => {
       if (!filters.marketId) throw new Error("getMarketLocalesQueryOptions requires a marketId")
       return fetchWithValidation(
-        `/v1/markets/market-locales${toQueryString(filters)}`,
+        `/v1/admin/markets/market-locales${toQueryString(filters)}`,
         marketLocaleListResponse,
         client,
       )
@@ -82,7 +82,7 @@ export function getMarketLocaleQueryOptions(client: FetchWithValidationOptions, 
     queryKey: marketsQueryKeys.marketLocale(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/market-locales/${id}`,
+        `/v1/admin/markets/market-locales/${id}`,
         marketLocaleSingleResponse,
         client,
       )
@@ -101,7 +101,7 @@ export function getMarketCurrenciesQueryOptions(
     queryFn: async () => {
       if (!filters.marketId) throw new Error("getMarketCurrenciesQueryOptions requires a marketId")
       return fetchWithValidation(
-        `/v1/markets/market-currencies${toQueryString(filters)}`,
+        `/v1/admin/markets/market-currencies${toQueryString(filters)}`,
         marketCurrencyListResponse,
         client,
       )
@@ -114,7 +114,7 @@ export function getMarketCurrencyQueryOptions(client: FetchWithValidationOptions
     queryKey: marketsQueryKeys.marketCurrency(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/market-currencies/${id}`,
+        `/v1/admin/markets/market-currencies/${id}`,
         marketCurrencySingleResponse,
         client,
       )
@@ -132,7 +132,7 @@ export function getMarketProductRulesQueryOptions(
     queryKey: marketsQueryKeys.marketProductRulesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/markets/product-rules${toQueryString(filters)}`,
+        `/v1/admin/markets/product-rules${toQueryString(filters)}`,
         marketProductRuleListResponse,
         client,
       ),
@@ -144,7 +144,7 @@ export function getMarketProductRuleQueryOptions(client: FetchWithValidationOpti
     queryKey: marketsQueryKeys.marketProductRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/markets/product-rules/${id}`,
+        `/v1/admin/markets/product-rules/${id}`,
         marketProductRuleSingleResponse,
         client,
       )
