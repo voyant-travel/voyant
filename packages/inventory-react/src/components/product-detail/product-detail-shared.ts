@@ -71,7 +71,7 @@ export type ProductMediaItem = {
 export function getProductDaysQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-days", id],
-    queryFn: () => api.get<{ data: ProductDay[] }>(`/v1/products/${id}/days`),
+    queryFn: () => api.get<{ data: ProductDay[] }>(`/v1/admin/products/${id}/days`),
   })
 }
 
@@ -80,7 +80,7 @@ export function getProductSlotsQueryOptions(api: ProductDetailApi, id: string) {
     queryKey: ["product-slots", id],
     queryFn: () =>
       api.get<{ data: DepartureSlot[] }>(
-        `/v1/operations/availability/slots?productId=${id}&limit=25`,
+        `/v1/admin/operations/availability/slots?productId=${id}&limit=25`,
       ),
   })
 }
@@ -90,7 +90,7 @@ export function getProductRulesQueryOptions(api: ProductDetailApi, id: string) {
     queryKey: ["product-rules", id],
     queryFn: () =>
       api.get<{ data: AvailabilityRule[] }>(
-        `/v1/operations/availability/rules?productId=${id}&limit=50`,
+        `/v1/admin/operations/availability/rules?productId=${id}&limit=50`,
       ),
   })
 }
@@ -103,14 +103,14 @@ export function getProductDayServicesQueryOptions(
   return queryOptions({
     queryKey: ["product-day-services", productId, dayId],
     queryFn: () =>
-      api.get<{ data: DayService[] }>(`/v1/products/${productId}/days/${dayId}/services`),
+      api.get<{ data: DayService[] }>(`/v1/admin/products/${productId}/days/${dayId}/services`),
   })
 }
 
 export function getChannelsQueryOptions(api: ProductDetailApi) {
   return queryOptions({
     queryKey: ["channels"],
-    queryFn: () => api.get<{ data: ChannelInfo[] }>("/v1/distribution/channels?limit=25"),
+    queryFn: () => api.get<{ data: ChannelInfo[] }>("/v1/admin/distribution/channels?limit=25"),
   })
 }
 
@@ -119,7 +119,7 @@ export function getProductChannelMappingsQueryOptions(api: ProductDetailApi, id:
     queryKey: ["product-channel-mappings", id],
     queryFn: () =>
       api.get<{ data: ChannelProductMapping[] }>(
-        `/v1/distribution/product-mappings?productId=${id}&limit=25`,
+        `/v1/admin/distribution/product-mappings?productId=${id}&limit=25`,
       ),
   })
 }
@@ -128,7 +128,9 @@ export function getProductMediaQueryOptions(api: ProductDetailApi, id: string) {
   return queryOptions({
     queryKey: ["product-media", id],
     queryFn: () =>
-      api.get<{ data: ProductMediaItem[]; total: number }>(`/v1/products/${id}/media?limit=50`),
+      api.get<{ data: ProductMediaItem[]; total: number }>(
+        `/v1/admin/products/${id}/media?limit=50`,
+      ),
   })
 }
 
@@ -141,7 +143,7 @@ export function getProductDayMediaQueryOptions(
     queryKey: ["day-media", productId, dayId],
     queryFn: () =>
       api.get<{ data: ProductMediaItem[]; total: number }>(
-        `/v1/products/${productId}/days/${dayId}/media?limit=50`,
+        `/v1/admin/products/${productId}/days/${dayId}/media?limit=50`,
       ),
   })
 }

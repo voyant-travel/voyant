@@ -146,12 +146,12 @@ export function ServiceForm({ productId, dayId, service, onSuccess, onCancel }: 
       const res = await api.get<{
         data: Array<{ id: string; name: string }>
         total: number
-      }>("/v1/suppliers?limit=100")
+      }>("/v1/admin/suppliers?limit=100")
       const options: SupplierServiceOption[] = []
       for (const supplier of res.data) {
         const servicesRes = await api.get<{
           data: Array<{ id: string; serviceType: string; name: string }>
-        }>(`/v1/suppliers/${supplier.id}/services`)
+        }>(`/v1/admin/suppliers/${supplier.id}/services`)
         for (const svc of servicesRes.data) {
           options.push({
             id: svc.id,
@@ -200,9 +200,12 @@ export function ServiceForm({ productId, dayId, service, onSuccess, onCancel }: 
     }
 
     if (isEditing) {
-      await api.patch(`/v1/products/${productId}/days/${dayId}/services/${service.id}`, payload)
+      await api.patch(
+        `/v1/admin/products/${productId}/days/${dayId}/services/${service.id}`,
+        payload,
+      )
     } else {
-      await api.post(`/v1/products/${productId}/days/${dayId}/services`, payload)
+      await api.post(`/v1/admin/products/${productId}/days/${dayId}/services`, payload)
     }
     onSuccess()
   }

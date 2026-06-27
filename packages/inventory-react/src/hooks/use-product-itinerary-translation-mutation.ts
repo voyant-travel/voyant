@@ -36,7 +36,7 @@ export function useProductItineraryTranslationMutation() {
       input: CreateProductItineraryTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/itineraries/${itineraryId}/translations`,
+        `/v1/admin/products/${productId}/itineraries/${itineraryId}/translations`,
         productItineraryTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -59,7 +59,7 @@ export function useProductItineraryTranslationMutation() {
       input: UpdateProductItineraryTranslationInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/itineraries/${itineraryId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/itineraries/${itineraryId}/translations/${translationId}`,
         productItineraryTranslationSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -80,7 +80,7 @@ export function useProductItineraryTranslationMutation() {
       translationId: string
     }) => {
       await fetchWithValidation(
-        `/v1/products/${productId}/itineraries/${itineraryId}/translations/${translationId}`,
+        `/v1/admin/products/${productId}/itineraries/${itineraryId}/translations/${translationId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

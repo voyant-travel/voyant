@@ -222,7 +222,8 @@ export function getOptionPriceRulesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "option-price-rules", filters] as const,
-    queryFn: () => list<OptionPriceRuleRecord>(api, "/v1/pricing/option-price-rules", filters),
+    queryFn: () =>
+      list<OptionPriceRuleRecord>(api, "/v1/admin/pricing/option-price-rules", filters),
   })
 }
 
@@ -233,7 +234,7 @@ export function getOptionUnitPriceRulesQueryOptions(
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "option-unit-price-rules", filters] as const,
     queryFn: () =>
-      list<OptionUnitPriceRuleRecord>(api, "/v1/pricing/option-unit-price-rules", filters),
+      list<OptionUnitPriceRuleRecord>(api, "/v1/admin/pricing/option-unit-price-rules", filters),
   })
 }
 
@@ -243,7 +244,8 @@ export function getPricingCategoriesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "pricing-categories", filters] as const,
-    queryFn: () => list<PricingCategoryRecord>(api, "/v1/pricing/pricing-categories", filters),
+    queryFn: () =>
+      list<PricingCategoryRecord>(api, "/v1/admin/pricing/pricing-categories", filters),
   })
 }
 
@@ -253,7 +255,7 @@ export function getPriceCatalogsQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "price-catalogs", filters] as const,
-    queryFn: () => list<PriceCatalogRecord>(api, "/v1/pricing/price-catalogs", filters),
+    queryFn: () => list<PriceCatalogRecord>(api, "/v1/admin/pricing/price-catalogs", filters),
   })
 }
 
@@ -263,7 +265,7 @@ export function getPriceSchedulesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "price-schedules", filters] as const,
-    queryFn: () => list<PriceScheduleRecord>(api, "/v1/pricing/price-schedules", filters),
+    queryFn: () => list<PriceScheduleRecord>(api, "/v1/admin/pricing/price-schedules", filters),
   })
 }
 
@@ -274,7 +276,7 @@ export function getCancellationPoliciesQueryOptions(
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "cancellation-policies", filters] as const,
     queryFn: () =>
-      list<CancellationPolicyRecord>(api, "/v1/pricing/cancellation-policies", filters),
+      list<CancellationPolicyRecord>(api, "/v1/admin/pricing/cancellation-policies", filters),
   })
 }
 
@@ -284,7 +286,7 @@ export function getExtraPriceRulesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "extra-price-rules", filters] as const,
-    queryFn: () => list<ExtraPriceRuleRecord>(api, "/v1/pricing/extra-price-rules", filters),
+    queryFn: () => list<ExtraPriceRuleRecord>(api, "/v1/admin/pricing/extra-price-rules", filters),
   })
 }
 
@@ -295,7 +297,11 @@ export function getDeparturePriceOverridesQueryOptions(
   return queryOptions({
     queryKey: [...commerceQueryKeys.pricing, "departure-price-overrides", filters] as const,
     queryFn: () =>
-      list<DeparturePriceOverrideRecord>(api, "/v1/pricing/departure-price-overrides", filters),
+      list<DeparturePriceOverrideRecord>(
+        api,
+        "/v1/admin/pricing/departure-price-overrides",
+        filters,
+      ),
   })
 }
 
@@ -352,45 +358,45 @@ function useApiMutation<TRecord>(path: string, cacheKey: readonly unknown[]) {
 }
 
 export function useOptionPriceRuleMutation() {
-  return useApiMutation<OptionPriceRuleRecord>("/v1/pricing/option-price-rules", [
+  return useApiMutation<OptionPriceRuleRecord>("/v1/admin/pricing/option-price-rules", [
     ...commerceQueryKeys.pricing,
     "option-price-rules",
   ])
 }
 
 export function useOptionUnitPriceRuleMutation() {
-  return useApiMutation<OptionUnitPriceRuleRecord>("/v1/pricing/option-unit-price-rules", [
+  return useApiMutation<OptionUnitPriceRuleRecord>("/v1/admin/pricing/option-unit-price-rules", [
     ...commerceQueryKeys.pricing,
     "option-unit-price-rules",
   ])
 }
 
 export function usePriceCatalogMutation() {
-  return useApiMutation<PriceCatalogRecord>("/v1/pricing/price-catalogs", [
+  return useApiMutation<PriceCatalogRecord>("/v1/admin/pricing/price-catalogs", [
     ...commerceQueryKeys.pricing,
     "price-catalogs",
   ])
 }
 
 export function usePricingCategoryMutation() {
-  return useApiMutation<PricingCategoryRecord>("/v1/pricing/pricing-categories", [
+  return useApiMutation<PricingCategoryRecord>("/v1/admin/pricing/pricing-categories", [
     ...commerceQueryKeys.pricing,
     "pricing-categories",
   ])
 }
 
 export function useExtraPriceRuleMutation() {
-  return useApiMutation<ExtraPriceRuleRecord>("/v1/pricing/extra-price-rules", [
+  return useApiMutation<ExtraPriceRuleRecord>("/v1/admin/pricing/extra-price-rules", [
     ...commerceQueryKeys.pricing,
     "extra-price-rules",
   ])
 }
 
 export function useDeparturePriceOverrideMutation() {
-  return useApiMutation<DeparturePriceOverrideRecord>("/v1/pricing/departure-price-overrides", [
-    ...commerceQueryKeys.pricing,
-    "departure-price-overrides",
-  ])
+  return useApiMutation<DeparturePriceOverrideRecord>(
+    "/v1/admin/pricing/departure-price-overrides",
+    [...commerceQueryKeys.pricing, "departure-price-overrides"],
+  )
 }
 
 export function useMarketProductRuleMutation() {
@@ -447,13 +453,13 @@ export function useDuplicateOptionPricingMutation(api?: ProductDetailApi) {
       if (!resolvedApi) return
       const sourceRules = await list<OptionPriceRuleRecord>(
         resolvedApi,
-        "/v1/pricing/option-price-rules",
+        "/v1/admin/pricing/option-price-rules",
         { optionId: sourceOptionId, limit: 100 },
       )
       for (const rule of sourceRules.data) {
         const createdRule = await createRecord<OptionPriceRuleRecord>(
           resolvedApi,
-          "/v1/pricing/option-price-rules",
+          "/v1/admin/pricing/option-price-rules",
           {
             productId,
             optionId: targetOptionId,
@@ -476,7 +482,7 @@ export function useDuplicateOptionPricingMutation(api?: ProductDetailApi) {
         )
         const unitRules = await list<OptionUnitPriceRuleRecord>(
           resolvedApi,
-          "/v1/pricing/option-unit-price-rules",
+          "/v1/admin/pricing/option-unit-price-rules",
           { optionPriceRuleId: rule.id, limit: 100 },
         )
         for (const unitRule of unitRules.data) {
@@ -484,7 +490,7 @@ export function useDuplicateOptionPricingMutation(api?: ProductDetailApi) {
           if (!targetUnitId) continue
           await createRecord<OptionUnitPriceRuleRecord>(
             resolvedApi,
-            "/v1/pricing/option-unit-price-rules",
+            "/v1/admin/pricing/option-unit-price-rules",
             {
               optionPriceRuleId: createdRule.id,
               optionId: targetOptionId,

@@ -24,7 +24,7 @@ export function useProductTags(options: UseProductTagsOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/products/product-tags${qs ? `?${qs}` : ""}`,
+        `/v1/admin/products/product-tags${qs ? `?${qs}` : ""}`,
         productTagListResponse,
         { baseUrl, fetcher },
       )

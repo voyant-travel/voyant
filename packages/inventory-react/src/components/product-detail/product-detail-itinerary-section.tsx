@@ -354,7 +354,9 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
                     onDeleteService={(serviceId) => {
                       if (window.confirm(productMessages.deleteServiceConfirm)) {
                         void api
-                          .delete(`/v1/products/${productId}/days/${day.id}/services/${serviceId}`)
+                          .delete(
+                            `/v1/admin/products/${productId}/days/${day.id}/services/${serviceId}`,
+                          )
                           .then(async () => {
                             await queryClient.invalidateQueries({
                               queryKey: ["product-day-services", productId, day.id],

@@ -304,11 +304,11 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     }
 
     if (isEditing) {
-      await api.patch(`/v1/operations/availability/slots/${slot.id}`, baseFields)
+      await api.patch(`/v1/admin/operations/availability/slots/${slot.id}`, baseFields)
     } else {
       // New slots haven't been booked against yet, so seeding remainingPax
       // from initialPax is correct on create.
-      await api.post("/v1/operations/availability/slots", {
+      await api.post("/v1/admin/operations/availability/slots", {
         ...baseFields,
         remainingPax: initialPax,
       })

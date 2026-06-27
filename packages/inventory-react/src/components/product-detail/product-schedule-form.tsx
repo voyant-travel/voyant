@@ -290,9 +290,9 @@ export function ScheduleForm({ productId, rule, onSuccess, onCancel }: ScheduleF
     }
 
     if (isEditing) {
-      await api.patch(`/v1/operations/availability/rules/${rule.id}`, payload)
+      await api.patch(`/v1/admin/operations/availability/rules/${rule.id}`, payload)
     } else {
-      await api.post("/v1/operations/availability/rules", payload)
+      await api.post("/v1/admin/operations/availability/rules", payload)
     }
     onSuccess()
   }

@@ -27,7 +27,7 @@ export function useProductTranslations(
       if (!productId) throw new Error("useProductTranslations requires a productId")
 
       return fetchWithValidation(
-        withQueryParams("/v1/products/translations", {
+        withQueryParams("/v1/admin/products/translations", {
           productId,
           languageTag: filters.languageTag,
           limit: filters.limit,

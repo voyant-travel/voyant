@@ -27,7 +27,7 @@ export function useProductTypeMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateProductTypeInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/products/product-types",
+        "/v1/admin/products/product-types",
         productTypeSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -43,7 +43,7 @@ export function useProductTypeMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateProductTypeInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/product-types/${id}`,
+        `/v1/admin/products/product-types/${id}`,
         productTypeSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -59,7 +59,7 @@ export function useProductTypeMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/products/product-types/${id}`,
+        `/v1/admin/products/product-types/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

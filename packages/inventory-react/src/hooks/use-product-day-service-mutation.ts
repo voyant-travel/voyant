@@ -23,7 +23,7 @@ export function useProductDayServiceMutation() {
       ...input
     }: CreateProductDayServiceInput & { productId: string; dayId: string }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services`,
+        `/v1/admin/products/${productId}/days/${dayId}/services`,
         productDayServiceResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -50,7 +50,7 @@ export function useProductDayServiceMutation() {
       input: UpdateProductDayServiceInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}`,
         productDayServiceResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -75,7 +75,7 @@ export function useProductDayServiceMutation() {
       serviceId: string
     }) =>
       fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}/services/${serviceId}`,
+        `/v1/admin/products/${productId}/days/${dayId}/services/${serviceId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

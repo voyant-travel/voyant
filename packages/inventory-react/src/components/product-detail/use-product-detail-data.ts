@@ -66,7 +66,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
 
   const addChannelMapping = useMutation({
     mutationFn: (channelId: string) =>
-      api.post("/v1/distribution/product-mappings", {
+      api.post("/v1/admin/distribution/product-mappings", {
         channelId,
         productId,
         active: true,
@@ -78,7 +78,8 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const removeChannelMapping = useMutation({
-    mutationFn: (mappingId: string) => api.delete(`/v1/distribution/product-mappings/${mappingId}`),
+    mutationFn: (mappingId: string) =>
+      api.delete(`/v1/admin/distribution/product-mappings/${mappingId}`),
     onSuccess: () => {
       void mappingsQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -86,7 +87,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteProduct = useMutation({
-    mutationFn: () => api.delete(`/v1/products/${productId}`),
+    mutationFn: () => api.delete(`/v1/admin/products/${productId}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["products"] })
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -102,7 +103,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteSlot = useMutation({
-    mutationFn: (slotId: string) => api.delete(`/v1/operations/availability/slots/${slotId}`),
+    mutationFn: (slotId: string) => api.delete(`/v1/admin/operations/availability/slots/${slotId}`),
     onSuccess: () => {
       void slotsQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -110,7 +111,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteRule = useMutation({
-    mutationFn: (ruleId: string) => api.delete(`/v1/operations/availability/rules/${ruleId}`),
+    mutationFn: (ruleId: string) => api.delete(`/v1/admin/operations/availability/rules/${ruleId}`),
     onSuccess: () => {
       void rulesQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -122,8 +123,8 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
       if (!host.uploadMedia) throw new Error(productMessages.uploadFailed)
       const result = await host.uploadMedia(file, { productId, dayId })
       const endpoint = dayId
-        ? `/v1/products/${productId}/days/${dayId}/media`
-        : `/v1/products/${productId}/media`
+        ? `/v1/admin/products/${productId}/days/${dayId}/media`
+        : `/v1/admin/products/${productId}/media`
       return api.post(endpoint, {
         mediaType: result.mediaType,
         name: result.name,
@@ -140,7 +141,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const deleteMedia = useMutation({
-    mutationFn: (mediaId: string) => api.delete(`/v1/products/media/${mediaId}`),
+    mutationFn: (mediaId: string) => api.delete(`/v1/admin/products/media/${mediaId}`),
     onSuccess: () => {
       void mediaQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -148,7 +149,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   })
 
   const setCover = useMutation({
-    mutationFn: (mediaId: string) => api.patch(`/v1/products/media/${mediaId}/set-cover`, {}),
+    mutationFn: (mediaId: string) => api.patch(`/v1/admin/products/media/${mediaId}/set-cover`, {}),
     onSuccess: () => {
       void mediaQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })

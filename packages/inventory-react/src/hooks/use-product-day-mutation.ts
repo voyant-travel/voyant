@@ -24,8 +24,8 @@ export function useProductDayMutation() {
     }: CreateProductDayInput & { productId: string; itineraryId?: string }) => {
       const { data } = await fetchWithValidation(
         itineraryId
-          ? `/v1/products/${productId}/itineraries/${itineraryId}/days`
-          : `/v1/products/${productId}/days`,
+          ? `/v1/admin/products/${productId}/itineraries/${itineraryId}/days`
+          : `/v1/admin/products/${productId}/days`,
         productDayResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -53,7 +53,7 @@ export function useProductDayMutation() {
       input: UpdateProductDayInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}`,
+        `/v1/admin/products/${productId}/days/${dayId}`,
         productDayResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -80,7 +80,7 @@ export function useProductDayMutation() {
       itineraryId?: string
     }) =>
       fetchWithValidation(
-        `/v1/products/${productId}/days/${dayId}`,
+        `/v1/admin/products/${productId}/days/${dayId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

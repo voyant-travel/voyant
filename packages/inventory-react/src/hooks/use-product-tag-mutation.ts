@@ -23,7 +23,7 @@ export function useProductTagMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateProductTagInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/products/product-tags",
+        "/v1/admin/products/product-tags",
         productTagSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -38,7 +38,7 @@ export function useProductTagMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateProductTagInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/product-tags/${id}`,
+        `/v1/admin/products/product-tags/${id}`,
         productTagSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useProductTagMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/products/product-tags/${id}`,
+        `/v1/admin/products/product-tags/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

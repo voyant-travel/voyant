@@ -55,10 +55,14 @@ export function useDuplicateProductOptionMutation() {
       availableTo,
     }: DuplicateProductOptionInput): Promise<DuplicateProductOptionResult> => {
       const [{ data: sourceOption }, { data: sourceUnits }] = await Promise.all([
-        fetchWithValidation(`/v1/products/options/${sourceOptionId}`, productOptionSingleResponse, {
-          baseUrl,
-          fetcher,
-        }),
+        fetchWithValidation(
+          `/v1/admin/products/options/${sourceOptionId}`,
+          productOptionSingleResponse,
+          {
+            baseUrl,
+            fetcher,
+          },
+        ),
         fetchWithValidation(
           `/v1/products/option-units?optionId=${encodeURIComponent(sourceOptionId)}&limit=100`,
           optionUnitListResponse,

@@ -19,7 +19,7 @@ export function useProductTag(id: string | null | undefined, options: UseProduct
     queryKey: productsQueryKeys.productTag(id ?? "__missing__"),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/products/product-tags/${id}`,
+        `/v1/admin/products/product-tags/${id}`,
         productTagSingleResponse,
         { baseUrl, fetcher },
       )

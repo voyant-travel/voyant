@@ -36,7 +36,7 @@ export function useOptionUnitMutation() {
   const create = useMutation({
     mutationFn: async ({ optionId, ...input }: CreateOptionUnitInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/options/${optionId}/units`,
+        `/v1/admin/products/options/${optionId}/units`,
         optionUnitSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -54,7 +54,7 @@ export function useOptionUnitMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateOptionUnitInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/products/units/${id}`,
+        `/v1/admin/products/units/${id}`,
         optionUnitSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -70,7 +70,7 @@ export function useOptionUnitMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/products/units/${id}`,
+        `/v1/admin/products/units/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

@@ -27,7 +27,7 @@ async function getProductStartingFromCents(
   productId: string,
 ): Promise<number | null> {
   const rules = await api.get<{ data: OptionPriceRuleSummary[] }>(
-    `/v1/pricing/option-price-rules?productId=${encodeURIComponent(productId)}&limit=100&active=true`,
+    `/v1/admin/pricing/option-price-rules?productId=${encodeURIComponent(productId)}&limit=100&active=true`,
   )
   const ruleIds = rules.data.filter((rule) => rule.active).map((rule) => rule.id)
   if (ruleIds.length === 0) return null
@@ -35,7 +35,7 @@ async function getProductStartingFromCents(
   const unitPriceResponses = await Promise.all(
     ruleIds.map((ruleId) =>
       api.get<{ data: OptionUnitPriceRuleSummary[] }>(
-        `/v1/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(ruleId)}&limit=100&active=true`,
+        `/v1/admin/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(ruleId)}&limit=100&active=true`,
       ),
     ),
   )

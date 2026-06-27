@@ -472,5 +472,5 @@ async function api_post_reorder(
   productId: string,
   items: { id: string; sortOrder: number }[],
 ) {
-  return api.post(`/v1/products/${productId}/media/reorder`, { items })
+  return api.post(`/v1/admin/products/${productId}/media/reorder`, { items })
 }
