@@ -35,7 +35,7 @@ export function getContactPointsQueryOptions(
     queryKey: identityQueryKeys.contactPointsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/identity/contact-points${toQueryString(filters)}`,
+        `/v1/admin/identity/contact-points${toQueryString(filters)}`,
         contactPointListResponse,
         client,
       ),
@@ -47,7 +47,7 @@ export function getContactPointQueryOptions(client: FetchWithValidationOptions, 
     queryKey: identityQueryKeys.contactPoint(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/identity/contact-points/${id}`,
+        `/v1/admin/identity/contact-points/${id}`,
         contactPointSingleResponse,
         client,
       )
@@ -65,7 +65,7 @@ export function getAddressesQueryOptions(
     queryKey: identityQueryKeys.addressesList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/identity/addresses${toQueryString(filters)}`,
+        `/v1/admin/identity/addresses${toQueryString(filters)}`,
         addressListResponse,
         client,
       ),
@@ -77,7 +77,7 @@ export function getAddressQueryOptions(client: FetchWithValidationOptions, id: s
     queryKey: identityQueryKeys.address(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/identity/addresses/${id}`,
+        `/v1/admin/identity/addresses/${id}`,
         addressSingleResponse,
         client,
       )
@@ -95,7 +95,7 @@ export function getNamedContactsQueryOptions(
     queryKey: identityQueryKeys.namedContactsList(filters),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/identity/named-contacts${toQueryString(filters)}`,
+        `/v1/admin/identity/named-contacts${toQueryString(filters)}`,
         namedContactListResponse,
         client,
       ),
@@ -107,7 +107,7 @@ export function getNamedContactQueryOptions(client: FetchWithValidationOptions, 
     queryKey: identityQueryKeys.namedContact(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/identity/named-contacts/${id}`,
+        `/v1/admin/identity/named-contacts/${id}`,
         namedContactSingleResponse,
         client,
       )
