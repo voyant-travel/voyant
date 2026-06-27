@@ -216,7 +216,46 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         return c.json({ error: response.message }, response.status)
       }
     })
-    .post("/providers/netopia/callback", netopiaCallbackEventKey(), idempotencyKey(), async (c) => {
+    .get("/providers/netopia/config", async (c) => {
+      try {
+        const runtime = resolveRuntime(c)
+        return c.json({
+          data: {
+            apiUrl: runtime.apiUrl,
+            notifyUrl: runtime.notifyUrl,
+            redirectUrl: runtime.redirectUrl,
+            emailTemplate: runtime.emailTemplate,
+            language: runtime.language,
+            successStatuses: runtime.successStatuses,
+            processingStatuses: runtime.processingStatuses,
+          },
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Missing Netopia config"
+        return c.json({ error: message }, 500)
+      }
+    })
+}
+
+/**
+ * Inbound Netopia IPN callback — POSTed by Netopia's servers with no session;
+ * the handler verifies the JWT/signature in-band (ADR-0008). Lives on its own
+ * `webhookRoutes` instance (not `routes`) so it is anonymous-by-construction and
+ * survives removal of the deprecated legacy mount. Mounted at `/v1/finance`, so
+ * the externally-registered callback URL `/v1/finance/providers/netopia/callback`
+ * is unchanged.
+ */
+export function createNetopiaFinanceWebhookRoutes(options: NetopiaRuntimeOptions = {}) {
+  const resolveRuntime = (c: {
+    env: Record<string, unknown>
+    var: { container: ModuleContainer }
+  }) => getNetopiaRuntime(c.env, options, (key) => c.var.container.resolve(key))
+
+  return new Hono<Env>().post(
+    "/providers/netopia/callback",
+    netopiaCallbackEventKey(),
+    idempotencyKey(),
+    async (c) => {
       const payload = await parseJsonBody(c, netopiaWebhookPayloadSchema)
       const runtime = resolveRuntime(c)
       const rawBody = c.get("netopiaCallbackRawBody" as never) as string | undefined
@@ -267,26 +306,8 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
         return c.json({ data: result }, 503)
       }
       return c.json({ data: result })
-    })
-    .get("/providers/netopia/config", async (c) => {
-      try {
-        const runtime = resolveRuntime(c)
-        return c.json({
-          data: {
-            apiUrl: runtime.apiUrl,
-            notifyUrl: runtime.notifyUrl,
-            redirectUrl: runtime.redirectUrl,
-            emailTemplate: runtime.emailTemplate,
-            language: runtime.language,
-            successStatuses: runtime.successStatuses,
-            processingStatuses: runtime.processingStatuses,
-          },
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Missing Netopia config"
-        return c.json({ error: message }, 500)
-      }
-    })
+    },
+  )
 }
 
 const netopiaFinanceExtensionDef: Extension = {
@@ -298,6 +319,7 @@ export function createNetopiaFinanceExtension(options: NetopiaRuntimeOptions = {
   return {
     extension: netopiaFinanceExtensionDef,
     routes: createNetopiaFinanceRoutes(options),
+    webhookRoutes: createNetopiaFinanceWebhookRoutes(options),
   }
 }
 
@@ -319,12 +341,12 @@ export function netopiaHonoBundle(options: NetopiaRuntimeOptions = {}): HonoBund
         console.warn(`[netopia] Runtime bootstrap skipped: ${message}`)
       }
     },
+    // The Netopia IPN callback (Netopia POSTs the payment result with no session;
+    // the handler verifies the processor signature in-band, ADR-0008) lives on the
+    // extension's `webhookRoutes`, so the framework auto-adds
+    // `/v1/finance/providers/netopia/callback` to the anonymous allow-list — no
+    // bundle-level `anonymous` declaration or deployment `publicPaths` entry.
     extensions: [createNetopiaFinanceExtension(options)],
-    // Netopia's servers POST the payment result here without a session cookie or
-    // bearer; the handler matches it to a payment session by orderID and verifies
-    // the processor signature (ADR-0008). Declared by the plugin that owns the
-    // route, so deployments don't carry it in `publicPaths`.
-    anonymous: ["/v1/finance/providers/netopia/callback"],
   })
 }
 

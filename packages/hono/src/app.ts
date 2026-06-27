@@ -600,6 +600,9 @@ export function mountApp<TBindings extends VoyantBindings>(
       mountLazyRoutePaths(app, mod.lazyRoutes.paths, mod.lazyRoutes.load)
       lazyMounts.push({ prefix: "/", load: mod.lazyRoutes.load })
     }
+    if (mod.webhookRoutes) {
+      app.route(`/v1/${mod.module.name}`, mod.webhookRoutes)
+    }
     if (mod.routes) {
       app.route(`/v1/${mod.module.name}`, mod.routes)
     }
@@ -626,6 +629,9 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (ext.lazyRoutes) {
       mountLazyRoutePaths(app, ext.lazyRoutes.paths, ext.lazyRoutes.load)
       lazyMounts.push({ prefix: "/", load: ext.lazyRoutes.load })
+    }
+    if (ext.webhookRoutes) {
+      app.route(`/v1/${ext.extension.module}`, ext.webhookRoutes)
     }
     if (ext.routes) {
       app.route(`/v1/${ext.extension.module}`, ext.routes)

@@ -3,7 +3,7 @@ import { financeService } from "@voyant-travel/finance"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { createNetopiaFinanceRoutes } from "../../src/plugin.js"
+import { createNetopiaFinanceRoutes, createNetopiaFinanceWebhookRoutes } from "../../src/plugin.js"
 import { netopiaService } from "../../src/service.js"
 
 const runtimeOptions = {
@@ -103,6 +103,7 @@ function buildApp() {
     await next()
   })
   app.route("/", createNetopiaFinanceRoutes(runtimeOptions))
+  app.route("/", createNetopiaFinanceWebhookRoutes(runtimeOptions))
   return { app, db }
 }
 

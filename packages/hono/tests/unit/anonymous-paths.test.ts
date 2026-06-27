@@ -1,7 +1,10 @@
+import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
 import { assembleAnonymousPaths } from "../../src/anonymous-paths.js"
 import type { HonoExtension, HonoModule } from "../../src/module.js"
+
+const noop = (c: { json: (b: unknown) => unknown }) => c.json({})
 
 const mod = (name: string, extra: Partial<HonoModule> = {}): HonoModule => ({
   module: { name },
@@ -84,5 +87,31 @@ describe("assembleAnonymousPaths (ADR-0008)", () => {
       [],
     )
     expect(paths).toEqual(["/v1/public/catalog"])
+  })
+
+  it("auto-adds a module's concrete webhookRoutes paths at /v1/{name}{path}", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: test stub handler
+    const webhookRoutes = new Hono().post("/inbound/callback", noop as any)
+    const paths = assembleAnonymousPaths([mod("payments", { webhookRoutes })], [])
+    expect(paths).toEqual(["/v1/payments/inbound/callback"])
+  })
+
+  it("auto-adds an extension's webhookRoutes at /v1/{extension.module}{path} (the Netopia shape)", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: test stub handler
+    const webhookRoutes = new Hono().post("/providers/netopia/callback", noop as any)
+    const paths = assembleAnonymousPaths([], [ext("finance", { webhookRoutes })])
+    expect(paths).toContain("/v1/finance/providers/netopia/callback")
+  })
+
+  it("does NOT auto-add parameterized or wildcard webhook paths (literal matcher can't match them)", () => {
+    const webhookRoutes = new Hono()
+      // biome-ignore lint/suspicious/noExplicitAny: test stub handler
+      .post("/hooks/:id/callback", noop as any)
+      // biome-ignore lint/suspicious/noExplicitAny: test stub handler
+      .post("/hooks/*", noop as any)
+      // biome-ignore lint/suspicious/noExplicitAny: test stub handler
+      .post("/hooks/fixed", noop as any)
+    const paths = assembleAnonymousPaths([mod("svc", { webhookRoutes })], [])
+    expect(paths).toEqual(["/v1/svc/hooks/fixed"])
   })
 })
