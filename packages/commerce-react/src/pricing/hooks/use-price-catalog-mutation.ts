@@ -29,7 +29,7 @@ export function usePriceCatalogMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePriceCatalogInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/price-catalogs",
+        "/v1/admin/pricing/price-catalogs",
         priceCatalogSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -45,7 +45,7 @@ export function usePriceCatalogMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePriceCatalogInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/price-catalogs/${id}`,
+        `/v1/admin/pricing/price-catalogs/${id}`,
         priceCatalogSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -61,7 +61,7 @@ export function usePriceCatalogMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/price-catalogs/${id}`,
+        `/v1/admin/pricing/price-catalogs/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {

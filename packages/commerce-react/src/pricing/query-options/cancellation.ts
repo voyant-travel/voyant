@@ -29,7 +29,7 @@ export function getCancellationPoliciesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/cancellation-policies${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/cancellation-policies${qs ? `?${qs}` : ""}`,
         cancellationPolicyListResponse,
         client,
       )
@@ -42,7 +42,7 @@ export function getCancellationPolicyQueryOptions(client: FetchWithValidationOpt
     queryKey: [...pricingQueryKeys.cancellationPolicies(), "detail", id] as const,
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/cancellation-policies/${id}`,
+        `/v1/admin/pricing/cancellation-policies/${id}`,
         cancellationPolicySingleResponse,
         client,
       )
@@ -70,7 +70,7 @@ export function getCancellationPolicyRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/cancellation-policy-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/cancellation-policy-rules${qs ? `?${qs}` : ""}`,
         cancellationPolicyRuleListResponse,
         client,
       )
@@ -86,7 +86,7 @@ export function getCancellationPolicyRuleQueryOptions(
     queryKey: pricingQueryKeys.cancellationPolicyRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/cancellation-policy-rules/${id}`,
+        `/v1/admin/pricing/cancellation-policy-rules/${id}`,
         cancellationPolicyRuleSingleResponse,
         client,
       )

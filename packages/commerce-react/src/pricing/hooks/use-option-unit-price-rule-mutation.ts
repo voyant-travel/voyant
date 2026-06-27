@@ -34,7 +34,7 @@ export function useOptionUnitPriceRuleMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateOptionUnitPriceRuleInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/option-unit-price-rules",
+        "/v1/admin/pricing/option-unit-price-rules",
         optionUnitPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -50,7 +50,7 @@ export function useOptionUnitPriceRuleMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateOptionUnitPriceRuleInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-unit-price-rules/${id}`,
+        `/v1/admin/pricing/option-unit-price-rules/${id}`,
         optionUnitPriceRuleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -66,7 +66,7 @@ export function useOptionUnitPriceRuleMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/option-unit-price-rules/${id}`,
+        `/v1/admin/pricing/option-unit-price-rules/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

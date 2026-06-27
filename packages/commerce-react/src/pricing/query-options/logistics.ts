@@ -38,7 +38,7 @@ export function getPickupPriceRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/pickup-price-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/pickup-price-rules${qs ? `?${qs}` : ""}`,
         pickupPriceRuleListResponse,
         client,
       )
@@ -51,7 +51,7 @@ export function getPickupPriceRuleQueryOptions(client: FetchWithValidationOption
     queryKey: pricingQueryKeys.pickupPriceRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/pickup-price-rules/${id}`,
+        `/v1/admin/pricing/pickup-price-rules/${id}`,
         pickupPriceRuleSingleResponse,
         client,
       )
@@ -79,7 +79,7 @@ export function getDropoffPriceRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/dropoff-price-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/dropoff-price-rules${qs ? `?${qs}` : ""}`,
         dropoffPriceRuleListResponse,
         client,
       )
@@ -92,7 +92,7 @@ export function getDropoffPriceRuleQueryOptions(client: FetchWithValidationOptio
     queryKey: pricingQueryKeys.dropoffPriceRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/dropoff-price-rules/${id}`,
+        `/v1/admin/pricing/dropoff-price-rules/${id}`,
         dropoffPriceRuleSingleResponse,
         client,
       )
@@ -123,7 +123,7 @@ export function getExtraPriceRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/extra-price-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/extra-price-rules${qs ? `?${qs}` : ""}`,
         extraPriceRuleListResponse,
         client,
       )
@@ -136,7 +136,7 @@ export function getExtraPriceRuleQueryOptions(client: FetchWithValidationOptions
     queryKey: pricingQueryKeys.extraPriceRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/extra-price-rules/${id}`,
+        `/v1/admin/pricing/extra-price-rules/${id}`,
         extraPriceRuleSingleResponse,
         client,
       )
@@ -164,7 +164,7 @@ export function getOptionStartTimeRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/option-start-time-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/option-start-time-rules${qs ? `?${qs}` : ""}`,
         optionStartTimeRuleListResponse,
         client,
       )
@@ -177,7 +177,7 @@ export function getOptionStartTimeRuleQueryOptions(client: FetchWithValidationOp
     queryKey: pricingQueryKeys.optionStartTimeRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-start-time-rules/${id}`,
+        `/v1/admin/pricing/option-start-time-rules/${id}`,
         optionStartTimeRuleSingleResponse,
         client,
       )

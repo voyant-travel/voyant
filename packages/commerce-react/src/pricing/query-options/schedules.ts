@@ -25,7 +25,7 @@ export function getPriceSchedulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/price-schedules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/price-schedules${qs ? `?${qs}` : ""}`,
         priceScheduleListResponse,
         client,
       )
@@ -38,7 +38,7 @@ export function getPriceScheduleQueryOptions(client: FetchWithValidationOptions,
     queryKey: [...pricingQueryKeys.priceSchedules(), "detail", id] as const,
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/price-schedules/${id}`,
+        `/v1/admin/pricing/price-schedules/${id}`,
         priceScheduleSingleResponse,
         client,
       )

@@ -29,7 +29,7 @@ export function usePricingCategories(options: UsePricingCategoriesOptions = {}) 
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/pricing/pricing-categories${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/pricing-categories${qs ? `?${qs}` : ""}`,
         pricingCategoryListResponse,
         { baseUrl, fetcher },
       )

@@ -40,7 +40,7 @@ export function getOptionPriceRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/option-price-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/option-price-rules${qs ? `?${qs}` : ""}`,
         optionPriceRuleListResponse,
         client,
       )
@@ -53,7 +53,7 @@ export function getOptionPriceRuleQueryOptions(client: FetchWithValidationOption
     queryKey: pricingQueryKeys.optionPriceRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-price-rules/${id}`,
+        `/v1/admin/pricing/option-price-rules/${id}`,
         optionPriceRuleSingleResponse,
         client,
       )
@@ -82,7 +82,7 @@ export function getOptionUnitPriceRulesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/option-unit-price-rules${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/option-unit-price-rules${qs ? `?${qs}` : ""}`,
         optionUnitPriceRuleListResponse,
         client,
       )
@@ -95,7 +95,7 @@ export function getOptionUnitPriceRuleQueryOptions(client: FetchWithValidationOp
     queryKey: pricingQueryKeys.optionUnitPriceRule(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-unit-price-rules/${id}`,
+        `/v1/admin/pricing/option-unit-price-rules/${id}`,
         optionUnitPriceRuleSingleResponse,
         client,
       )
@@ -123,7 +123,7 @@ export function getOptionUnitTiersQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/pricing/option-unit-tiers${qs ? `?${qs}` : ""}`,
+        `/v1/admin/pricing/option-unit-tiers${qs ? `?${qs}` : ""}`,
         optionUnitTierListResponse,
         client,
       )
@@ -136,7 +136,7 @@ export function getOptionUnitTierQueryOptions(client: FetchWithValidationOptions
     queryKey: pricingQueryKeys.optionUnitTier(id),
     queryFn: async () => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/option-unit-tiers/${id}`,
+        `/v1/admin/pricing/option-unit-tiers/${id}`,
         optionUnitTierSingleResponse,
         client,
       )

@@ -26,7 +26,7 @@ export function usePricingCategoryDependencyMutation() {
   const create = useMutation({
     mutationFn: async (input: CreatePricingCategoryDependencyInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/pricing/pricing-category-dependencies",
+        "/v1/admin/pricing/pricing-category-dependencies",
         pricingCategoryDependencySingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -49,7 +49,7 @@ export function usePricingCategoryDependencyMutation() {
       input: UpdatePricingCategoryDependencyInput
     }) => {
       const { data } = await fetchWithValidation(
-        `/v1/pricing/pricing-category-dependencies/${id}`,
+        `/v1/admin/pricing/pricing-category-dependencies/${id}`,
         pricingCategoryDependencySingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -67,7 +67,7 @@ export function usePricingCategoryDependencyMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/pricing/pricing-category-dependencies/${id}`,
+        `/v1/admin/pricing/pricing-category-dependencies/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
