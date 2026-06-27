@@ -59,7 +59,8 @@ for (const base of ["packages", "packages/plugins"]) {
     pkgDirs.push({ name: pkg.name, dir: join(baseAbs, entry.name), simple: entry.name, base })
     for (const [key, value] of Object.entries(pkg.exports ?? {})) {
       const target = sourceTarget(value)
-      if (!target || !target.startsWith("./src/") || !/\.tsx?$/.test(target)) continue
+      if (!target) continue
+      if (!target.startsWith("./src/") || !/\.tsx?$/.test(target)) continue
       if ((key.match(/\*/g) ?? []).length > 1 || (target.match(/\*/g) ?? []).length > 1) continue
       const specifier = key === "." ? pkg.name : `${pkg.name}${key.slice(1)}`
       const distAbs = join(
