@@ -94,6 +94,7 @@ for (const name of HEAVY) {
 const files = HEAVY.flatMap((n) => [
   `packages/${n}/tsconfig.build.json`,
   `packages/${n}/tsconfig.typecheck.json`,
+  `packages/${n}/turbo.json`,
 ])
 execFileSync("pnpm", ["biome", "format", "--write", ...files], { cwd: ROOT, stdio: "ignore" })
 console.log(`heavy-package dep-paths:\n  ${written.join("\n  ")}`)
