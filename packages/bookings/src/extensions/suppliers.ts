@@ -167,5 +167,5 @@ const bookingsSupplierExtensionDef: Extension = {
 
 export const bookingsSupplierExtension: HonoExtension = {
   extension: bookingsSupplierExtensionDef,
-  routes: supplierStatusRoutes,
+  adminRoutes: supplierStatusRoutes,
 }

@@ -12,7 +12,7 @@ export const groundModule: Module = {
 
 export const groundHonoModule: HonoModule = {
   module: groundModule,
-  routes: groundRoutes,
+  adminRoutes: groundRoutes,
 }
 
 export type {

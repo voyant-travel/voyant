@@ -327,7 +327,6 @@ export function createInvoiceFxHonoExtension(options: InvoiceFxRouteOptions = {}
   return {
     extension,
     adminRoutes: createInvoiceFxRoutes(options),
-    routes: createInvoiceFxRoutes(options),
   }
 }
 

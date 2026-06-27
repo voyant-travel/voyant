@@ -125,5 +125,5 @@ const quotesBookingExtensionDef: Extension = {
 
 export const quotesBookingExtension: HonoExtension = {
   extension: quotesBookingExtensionDef,
-  routes: bookingQuoteExtensionRoutes,
+  adminRoutes: bookingQuoteExtensionRoutes,
 }

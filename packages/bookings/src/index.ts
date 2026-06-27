@@ -125,7 +125,6 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
     module,
     adminRoutes: bookingRoutes,
     publicRoutes: publicBookingRoutes,
-    routes: bookingRoutes,
   }
 }
 

@@ -386,10 +386,6 @@ const bookingsCreateExtensionDef: Extension = {
 
 export const bookingsCreateExtension: HonoExtension = {
   extension: bookingsCreateExtensionDef,
-  // Mount on both surfaces to mirror bookings' own module routes. The legacy
-  // `/v1/bookings/...` path is what existing bookings-react hooks hit; the
-  // `/v1/admin/bookings/...` path is staff-guarded and the forward-looking
-  // convention. Both serve the same handler.
+  // Mounted at the staff-guarded `/v1/admin/bookings/...` surface.
   adminRoutes: createBookingRoutes,
-  routes: createBookingRoutes,
 }

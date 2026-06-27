@@ -21,7 +21,7 @@ export const facilitiesModule: Module = {
 
 export const facilitiesHonoModule: HonoModule = {
   module: facilitiesModule,
-  routes: facilitiesRoutes,
+  adminRoutes: facilitiesRoutes,
 }
 
 export const placesModule: Module = {
@@ -30,7 +30,7 @@ export const placesModule: Module = {
 
 export const placesHonoModule: HonoModule = {
   module: placesModule,
-  routes: facilitiesRoutes,
+  adminRoutes: facilitiesRoutes,
 }
 
 export type {

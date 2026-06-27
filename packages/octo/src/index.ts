@@ -37,7 +37,7 @@ export const octoModule: Module = {
 
 export const octoHonoModule: HonoModule = {
   module: octoModule,
-  routes: octoRoutes,
+  publicRoutes: octoRoutes,
 }
 
 export { octoRoutes, octoService }

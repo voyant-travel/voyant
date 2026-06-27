@@ -234,5 +234,5 @@ const productsBookingExtensionDef: Extension = {
 
 export const productsBookingExtension: HonoExtension = {
   extension: productsBookingExtensionDef,
-  routes: bookingProductExtensionRoutes,
+  adminRoutes: bookingProductExtensionRoutes,
 }

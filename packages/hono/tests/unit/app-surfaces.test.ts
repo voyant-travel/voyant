@@ -25,19 +25,16 @@ function makeModule(options: {
   name: string
   admin?: boolean
   public_?: boolean
-  legacy?: boolean
   publicPath?: string
 }): HonoModule {
   const admin = new Hono().get("/ping", (c) => c.json({ surface: "admin", name: options.name }))
   const pub = new Hono().get("/ping", (c) => c.json({ surface: "public", name: options.name }))
-  const legacy = new Hono().get("/ping", (c) => c.json({ surface: "legacy", name: options.name }))
 
   return {
     module: { name: options.name },
     ...(options.admin ? { adminRoutes: admin } : {}),
     ...(options.public_ ? { publicRoutes: pub } : {}),
     ...(options.publicPath ? { publicPath: options.publicPath } : {}),
-    ...(options.legacy ? { routes: legacy } : {}),
   }
 }
 
@@ -162,22 +159,17 @@ describe("mountApp surface mounting", () => {
     expect(body.surface).toBe("public")
   })
 
-  it("still mounts legacy routes under /v1/{name}", async () => {
-    const app = build("staff", [makeModule({ name: "things", legacy: true })])
-    const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as { surface: string }
-    expect(body.surface).toBe("legacy")
-  })
-
-  it("blocks non-staff actors on legacy routes", async () => {
-    const app = build("customer", [makeModule({ name: "things", legacy: true })])
+  // The per-module legacy `/v1/{name}` mount is gone (voyant#2276 step 4), but the
+  // catch-all guard still fail-closes bare `/v1/*` paths (e.g. lazy/bundle routes
+  // like `/v1/uploads`) to staff-only.
+  it("blocks non-staff actors on bare /v1/{name} paths", async () => {
+    const app = build("customer", [makeModule({ name: "things" })])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(403)
   })
 
-  it("returns 401 on legacy routes when actor is unresolved", async () => {
-    const app = build(undefined, [makeModule({ name: "things", legacy: true })])
+  it("returns 401 on bare /v1/{name} paths when actor is unresolved", async () => {
+    const app = build(undefined, [makeModule({ name: "things" })])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(401)
   })

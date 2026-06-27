@@ -114,5 +114,5 @@ const miceBookingExtensionDef: Extension = {
 
 export const miceBookingExtension: HonoExtension = {
   extension: miceBookingExtensionDef,
-  routes: miceBookingExtensionRoutes,
+  adminRoutes: miceBookingExtensionRoutes,
 }

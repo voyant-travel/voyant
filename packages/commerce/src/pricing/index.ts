@@ -17,7 +17,6 @@ export const pricingHonoModule: HonoModule = {
   module: pricingModule,
   adminRoutes: pricingRoutes,
   publicRoutes: publicPricingRoutes,
-  routes: pricingRoutes,
 }
 
 export type {

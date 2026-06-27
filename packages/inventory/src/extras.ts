@@ -98,6 +98,5 @@ export const inventoryExtrasModule: Module = {
 
 export const inventoryExtrasHonoModule: HonoModule = {
   module: inventoryExtrasModule,
-  routes: inventoryExtrasRoutes,
   adminRoutes: inventoryExtrasRoutes,
 }

@@ -32,7 +32,6 @@ export const inventoryHonoModule: HonoModule = {
   },
   adminRoutes: productRoutes,
   publicRoutes: publicProductRoutes,
-  routes: productRoutes,
 }
 
 export const inventoryProductRoutes = productRoutes

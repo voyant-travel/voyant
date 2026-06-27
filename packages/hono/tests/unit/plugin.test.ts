@@ -109,19 +109,22 @@ describe("mountApp with plugins", () => {
     expect(res.status).toBe(200)
   })
 
-  // ADR-0008: a bundle webhook route mounts on the legacy `/v1/{module}` surface
-  // (not `/v1/public`), so `requireAuth` skips auth but stamps no actor; the
-  // fail-closed legacy guard must also skip it, or the "anonymous" route 401s.
-  function webhookBundle(anonymous?: string[]) {
+  // ADR-0008: a bundle's inbound webhook mounts on the legacy `/v1/{module}`
+  // surface (not `/v1/public`) via `webhookRoutes`, whose concrete paths are
+  // auto-added to the anonymous allow-list. So `requireAuth` skips auth (stamping
+  // no actor) and the fail-closed legacy guard lets the credential-less POST
+  // through, while sibling bare paths still fail closed.
+  function webhookBundle() {
     return defineHonoBundle({
       name: "processor",
       extensions: [
         {
           extension: { name: "processor-finance", module: "finance" },
-          routes: new Hono().post("/providers/processor/callback", (c) => c.json({ ok: true })),
+          webhookRoutes: new Hono().post("/providers/processor/callback", (c) =>
+            c.json({ ok: true }),
+          ),
         },
       ],
-      ...(anonymous ? { anonymous } : {}),
     })
   }
 
@@ -135,8 +138,8 @@ describe("mountApp with plugins", () => {
     })
   }
 
-  it("makes a bundle-declared anonymous legacy webhook reachable without a session", async () => {
-    const app = buildUnauthenticated([webhookBundle(["/v1/finance/providers/processor/callback"])])
+  it("makes a bundle-declared webhook reachable without a session", async () => {
+    const app = buildUnauthenticated([webhookBundle()])
     const res = await app.request(
       "/v1/finance/providers/processor/callback",
       { method: "POST" },
@@ -146,10 +149,10 @@ describe("mountApp with plugins", () => {
     expect(res.status).toBe(200)
   })
 
-  it("401s the same legacy webhook route when the bundle does NOT declare it anonymous", async () => {
+  it("401s a sibling bare legacy path that is not an anonymous webhook", async () => {
     const app = buildUnauthenticated([webhookBundle()])
     const res = await app.request(
-      "/v1/finance/providers/processor/callback",
+      "/v1/finance/providers/processor/not-a-webhook",
       { method: "POST" },
       TEST_ENV,
       TEST_CTX,

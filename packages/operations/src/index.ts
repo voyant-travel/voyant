@@ -3,7 +3,7 @@ import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { availabilityLinkable } from "./availability/index.js"
 import { placesLinkable } from "./places/index.js"
-import { operationsAdminRoutes, operationsRoutes } from "./routes.js"
+import { operationsAdminRoutes } from "./routes.js"
 import {
   checkOperationalAvailability,
   confirmResourceHold,
@@ -20,7 +20,6 @@ export const operationsModule: Module = {
 
 export const operationsHonoModule: HonoModule = {
   module: operationsModule,
-  routes: operationsRoutes,
   adminRoutes: operationsAdminRoutes,
 }
 

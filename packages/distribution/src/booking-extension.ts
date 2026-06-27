@@ -145,5 +145,5 @@ const distributionBookingExtensionDef: Extension = {
 
 export const distributionBookingExtension: HonoExtension = {
   extension: distributionBookingExtensionDef,
-  routes: bookingDistributionExtensionRoutes,
+  adminRoutes: bookingDistributionExtensionRoutes,
 }

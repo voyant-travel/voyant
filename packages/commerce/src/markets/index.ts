@@ -13,7 +13,6 @@ export const marketsModule: Module = {
 export const marketsHonoModule: HonoModule = {
   module: marketsModule,
   adminRoutes: marketsRoutes,
-  routes: marketsRoutes,
 }
 
 export type {

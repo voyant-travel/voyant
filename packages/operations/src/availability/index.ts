@@ -1,7 +1,7 @@
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
-import { availabilityAdminRoutes, availabilityRoutes } from "./routes.js"
+import { availabilityAdminRoutes } from "./routes.js"
 import { availabilityService } from "./service.js"
 
 export type { AvailabilityAdminRoutes, AvailabilityRoutes } from "./routes.js"
@@ -29,7 +29,6 @@ export const availabilityModule: Module = {
 
 export const availabilityHonoModule: HonoModule = {
   module: availabilityModule,
-  routes: availabilityRoutes,
   adminRoutes: availabilityAdminRoutes,
 }
 

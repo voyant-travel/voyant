@@ -16,7 +16,6 @@ export const sellabilityModule: Module = {
 export const sellabilityHonoModule: HonoModule = {
   module: sellabilityModule,
   adminRoutes: sellabilityRoutes,
-  routes: sellabilityRoutes,
 }
 
 export function createSellabilityHonoModule(options?: SellabilityRoutesOptions): HonoModule {
@@ -24,7 +23,6 @@ export function createSellabilityHonoModule(options?: SellabilityRoutesOptions):
   return {
     module: sellabilityModule,
     adminRoutes: routes,
-    routes,
   }
 }
 

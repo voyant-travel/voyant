@@ -12,11 +12,6 @@ export const identityModule: Module = {
 
 export const identityHonoModule: HonoModule = {
   module: identityModule,
-  // Dual-mount (voyant#2114): the same `OpenAPIHono` instance is mounted on the
-  // legacy `/v1/identity/*` surface (the dashboard still calls those paths) AND
-  // the documented staff surface at `/v1/admin/identity/*` (picked up by the
-  // admin OpenAPI spec).
-  routes: identityRoutes,
   adminRoutes: identityRoutes,
 }
 
