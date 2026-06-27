@@ -2,7 +2,7 @@ import type { BookingStatus } from "./state-machine.js"
 
 export interface BookingStatusDispatchTarget {
   /**
-   * Path of the verb endpoint to POST to, including `/v1/bookings/:id` prefix.
+   * Path of the verb endpoint to POST to, including `/v1/admin/bookings/:id` prefix.
    * Always begins with a `/`.
    */
   path: string
@@ -48,16 +48,16 @@ export function dispatchBookingStatusChange(
       : {}
 
   if (current === "on_hold" && target === "confirmed") {
-    return { path: `/v1/bookings/${bookingId}/confirm`, body: { ...noteBody, ...suppress } }
+    return { path: `/v1/admin/bookings/${bookingId}/confirm`, body: { ...noteBody, ...suppress } }
   }
   if (current === "on_hold" && target === "expired") {
-    return { path: `/v1/bookings/${bookingId}/expire`, body: noteBody }
+    return { path: `/v1/admin/bookings/${bookingId}/expire`, body: noteBody }
   }
   if (current === "confirmed" && target === "in_progress") {
-    return { path: `/v1/bookings/${bookingId}/start`, body: noteBody }
+    return { path: `/v1/admin/bookings/${bookingId}/start`, body: noteBody }
   }
   if (current === "in_progress" && target === "completed") {
-    return { path: `/v1/bookings/${bookingId}/complete`, body: noteBody }
+    return { path: `/v1/admin/bookings/${bookingId}/complete`, body: noteBody }
   }
   if (
     target === "cancelled" &&
@@ -66,7 +66,7 @@ export function dispatchBookingStatusChange(
       current === "confirmed" ||
       current === "in_progress")
   ) {
-    return { path: `/v1/bookings/${bookingId}/cancel`, body: noteBody }
+    return { path: `/v1/admin/bookings/${bookingId}/cancel`, body: noteBody }
   }
 
   // The override-status route rejects empty reasons. Callers can pass an
@@ -75,7 +75,7 @@ export function dispatchBookingStatusChange(
   const defaultReason = `Status override from ${current} to ${target}`
   const reason = note?.trim() || defaultReason
   return {
-    path: `/v1/bookings/${bookingId}/override-status`,
+    path: `/v1/admin/bookings/${bookingId}/override-status`,
     body: {
       status: target,
       reason,

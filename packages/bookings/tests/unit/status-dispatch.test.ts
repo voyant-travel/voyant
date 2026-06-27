@@ -7,25 +7,25 @@ const BOOKING_ID = "book_01HZA0000000000000000000"
 describe("dispatchBookingStatusChange — named verbs", () => {
   it("on_hold → confirmed routes to /confirm", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "on_hold", "confirmed")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/confirm`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/confirm`)
     expect(target.body).toEqual({})
   })
 
   it("on_hold → expired routes to /expire", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "on_hold", "expired")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/expire`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/expire`)
     expect(target.body).toEqual({})
   })
 
   it("confirmed → in_progress routes to /start", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "confirmed", "in_progress")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/start`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/start`)
     expect(target.body).toEqual({})
   })
 
   it("in_progress → completed routes to /complete", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "in_progress", "completed")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/complete`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/complete`)
     expect(target.body).toEqual({})
   })
 
@@ -36,7 +36,7 @@ describe("dispatchBookingStatusChange — named verbs", () => {
     "in_progress",
   ] as const)("%s → cancelled routes to /cancel", (current) => {
     const target = dispatchBookingStatusChange(BOOKING_ID, current, "cancelled")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/cancel`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/cancel`)
     expect(target.body).toEqual({})
   })
 })
@@ -66,7 +66,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
       "confirmed",
       "data correction per ops",
     )
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "confirmed",
       reason: "data correction per ops",
@@ -76,7 +76,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
 
   it("override uses a default audit reason when no note is provided", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "completed", "draft")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "draft",
       reason: "Status override from completed to draft",
@@ -85,7 +85,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
 
   it("override uses a default audit reason when note is blank", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "cancelled", "confirmed", "   ")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "confirmed",
       reason: "Status override from cancelled to confirmed",
@@ -95,7 +95,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
 
   it("expired → confirmed falls through to /override-status (no named verb)", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "expired", "confirmed", "ops override")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "confirmed",
       reason: "ops override",
@@ -105,7 +105,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
 
   it("draft → confirmed (no named verb for this arrow) routes to override", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "draft", "confirmed", "manual confirm")
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "confirmed",
       reason: "manual confirm",
@@ -121,7 +121,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
       "data correction",
       { suppressLifecycleEvents: true },
     )
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/override-status`)
     expect(target.body).toEqual({
       status: "confirmed",
       reason: "data correction",
@@ -138,7 +138,7 @@ describe("dispatchBookingStatusChange — override fallback", () => {
       "normal confirm",
       { suppressLifecycleEvents: true },
     )
-    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/confirm`)
+    expect(target.path).toBe(`/v1/admin/bookings/${BOOKING_ID}/confirm`)
     expect(target.body).toEqual({ note: "normal confirm" })
   })
 })
