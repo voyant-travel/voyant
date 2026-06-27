@@ -22,6 +22,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=quotes_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",

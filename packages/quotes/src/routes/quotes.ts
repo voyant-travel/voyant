@@ -1,7 +1,8 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core"
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 
 import { quotesService } from "../service/index.js"
 import {
@@ -13,6 +14,15 @@ import {
   updateQuoteProductSchema,
   updateQuoteSchema,
 } from "../validation.js"
+import {
+  errorResponseSchema,
+  idParamSchema,
+  quoteMediaSchema,
+  quoteParticipantSchema,
+  quoteProductSchema,
+  quoteSchema,
+  successResponseSchema,
+} from "./openapi-schemas.js"
 
 type Env = {
   Variables: {
@@ -22,120 +32,308 @@ type Env = {
   }
 }
 
-export const quoteRoutes = new Hono<Env>()
-  .get("/quotes", async (c) => {
-    const query = await parseQuery(c, quoteListQuerySchema)
-    return c.json(await quotesService.listQuotes(c.get("db"), query))
-  })
-  .post("/quotes", async (c) => {
+const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
+  content: { "application/json": { schema } },
+})
+
+const requiredJsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  body: { required: true, content: { "application/json": { schema } } },
+})
+
+// --- quotes -----------------------------------------------------------------
+
+const listQuotesRoute = createRoute({
+  method: "get",
+  path: "/quotes",
+  request: { query: quoteListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of quotes",
+      ...jsonContent(listResponseSchema(quoteSchema)),
+    },
+  },
+})
+
+const createQuoteRoute = createRoute({
+  method: "post",
+  path: "/quotes",
+  request: requiredJsonBody(insertQuoteSchema),
+  responses: {
+    201: { description: "The created quote", ...jsonContent(z.object({ data: quoteSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getQuoteRoute = createRoute({
+  method: "get",
+  path: "/quotes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "A quote by id", ...jsonContent(z.object({ data: quoteSchema })) },
+    404: { description: "Quote not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateQuoteRoute = createRoute({
+  method: "patch",
+  path: "/quotes/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateQuoteSchema) },
+  responses: {
+    200: { description: "The updated quote", ...jsonContent(z.object({ data: quoteSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Quote not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteQuoteRoute = createRoute({
+  method: "delete",
+  path: "/quotes/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Quote deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Quote not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const quotesChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listQuotesRoute, async (c) =>
+    c.json(await quotesService.listQuotes(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createQuoteRoute, async (c) => {
     const row = await quotesService.createQuote(
       c.get("db"),
-      await parseJsonBody(c, insertQuoteSchema),
+      c.req.valid("json"),
       c.get("userId") ?? null,
     )
     if (row) await c.get("eventBus")?.emit("quote.created", { id: row.id })
-    return c.json({ data: row }, 201)
+    return c.json({ data: row! }, 201)
   })
-  .get("/quotes/:id", async (c) => {
-    const row = await quotesService.getQuoteById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Quote not found" }, 404)
-    return c.json({ data: row })
+  .openapi(getQuoteRoute, async (c) => {
+    const row = await quotesService.getQuoteById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Quote not found" }, 404)
   })
-  .patch("/quotes/:id", async (c) => {
+  .openapi(updateQuoteRoute, async (c) => {
     const row = await quotesService.updateQuote(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateQuoteSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
       c.get("userId") ?? null,
     )
     if (!row) return c.json({ error: "Quote not found" }, 404)
     await c.get("eventBus")?.emit("quote.updated", { id: row.id })
-    return c.json({ data: row })
+    return c.json({ data: row }, 200)
   })
-  .delete("/quotes/:id", async (c) => {
-    const row = await quotesService.deleteQuote(c.get("db"), c.req.param("id"))
+  .openapi(deleteQuoteRoute, async (c) => {
+    const row = await quotesService.deleteQuote(c.get("db"), c.req.valid("param").id)
     if (!row) return c.json({ error: "Quote not found" }, 404)
     await c.get("eventBus")?.emit("quote.deleted", { id: row.id })
-    return c.json({ success: true })
+    return c.json({ success: true } as const, 200)
   })
-  .get("/quotes/:id/participants", async (c) => {
-    return c.json({
-      data: await quotesService.listQuoteParticipants(c.get("db"), c.req.param("id")),
-    })
-  })
-  .post("/quotes/:id/participants", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createQuoteParticipant(
-          c.get("db"),
-          c.req.param("id"),
-          await parseJsonBody(c, insertQuoteParticipantSchema),
-        ),
-      },
-      201,
+
+// --- quote participants -----------------------------------------------------
+
+const listQuoteParticipantsRoute = createRoute({
+  method: "get",
+  path: "/quotes/{id}/participants",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Participants for a quote",
+      ...jsonContent(z.object({ data: z.array(quoteParticipantSchema) })),
+    },
+  },
+})
+
+const createQuoteParticipantRoute = createRoute({
+  method: "post",
+  path: "/quotes/{id}/participants",
+  request: { params: idParamSchema, ...requiredJsonBody(insertQuoteParticipantSchema) },
+  responses: {
+    201: {
+      description: "The created quote participant",
+      ...jsonContent(z.object({ data: quoteParticipantSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteQuoteParticipantRoute = createRoute({
+  method: "delete",
+  path: "/quote-participants/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Quote participant deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Quote participant not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const participantsChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listQuoteParticipantsRoute, async (c) =>
+    c.json(
+      { data: await quotesService.listQuoteParticipants(c.get("db"), c.req.valid("param").id) },
+      200,
+    ),
+  )
+  .openapi(createQuoteParticipantRoute, async (c) => {
+    const row = await quotesService.createQuoteParticipant(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
+    return c.json({ data: row! }, 201)
   })
-  .delete("/quote-participants/:id", async (c) => {
-    const row = await quotesService.deleteQuoteParticipant(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Quote participant not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteQuoteParticipantRoute, async (c) => {
+    const row = await quotesService.deleteQuoteParticipant(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Quote participant not found" }, 404)
   })
-  .get("/quotes/:id/products", async (c) => {
-    return c.json({
-      data: await quotesService.listQuoteProducts(c.get("db"), c.req.param("id")),
-    })
-  })
-  .post("/quotes/:id/products", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createQuoteProduct(
-          c.get("db"),
-          c.req.param("id"),
-          await parseJsonBody(c, insertQuoteProductSchema),
-          c.get("userId") ?? null,
-        ),
-      },
-      201,
+
+// --- quote products ---------------------------------------------------------
+
+const listQuoteProductsRoute = createRoute({
+  method: "get",
+  path: "/quotes/{id}/products",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Products for a quote",
+      ...jsonContent(z.object({ data: z.array(quoteProductSchema) })),
+    },
+  },
+})
+
+const createQuoteProductRoute = createRoute({
+  method: "post",
+  path: "/quotes/{id}/products",
+  request: { params: idParamSchema, ...requiredJsonBody(insertQuoteProductSchema) },
+  responses: {
+    201: {
+      description: "The created quote product",
+      ...jsonContent(z.object({ data: quoteProductSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateQuoteProductRoute = createRoute({
+  method: "patch",
+  path: "/quote-products/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateQuoteProductSchema) },
+  responses: {
+    200: {
+      description: "The updated quote product",
+      ...jsonContent(z.object({ data: quoteProductSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Quote product not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteQuoteProductRoute = createRoute({
+  method: "delete",
+  path: "/quote-products/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Quote product deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Quote product not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const productsChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listQuoteProductsRoute, async (c) =>
+    c.json(
+      { data: await quotesService.listQuoteProducts(c.get("db"), c.req.valid("param").id) },
+      200,
+    ),
+  )
+  .openapi(createQuoteProductRoute, async (c) => {
+    const row = await quotesService.createQuoteProduct(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
+      c.get("userId") ?? null,
     )
+    return c.json({ data: row! }, 201)
   })
-  .patch("/quote-products/:id", async (c) => {
+  .openapi(updateQuoteProductRoute, async (c) => {
     const row = await quotesService.updateQuoteProduct(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateQuoteProductSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
       c.get("userId") ?? null,
     )
-    if (!row) return c.json({ error: "Quote product not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Quote product not found" }, 404)
   })
-  .delete("/quote-products/:id", async (c) => {
+  .openapi(deleteQuoteProductRoute, async (c) => {
     const row = await quotesService.deleteQuoteProduct(
       c.get("db"),
-      c.req.param("id"),
+      c.req.valid("param").id,
       c.get("userId") ?? null,
     )
-    if (!row) return c.json({ error: "Quote product not found" }, 404)
-    return c.json({ success: true })
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Quote product not found" }, 404)
   })
-  .get("/quotes/:id/media", async (c) => {
-    return c.json({
-      data: await quotesService.listQuoteMedia(c.get("db"), c.req.param("id")),
-    })
-  })
-  .post("/quotes/:id/media", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createQuoteMedia(
-          c.get("db"),
-          c.req.param("id"),
-          await parseJsonBody(c, insertQuoteMediaSchema),
-        ),
-      },
-      201,
+
+// --- quote media ------------------------------------------------------------
+
+const listQuoteMediaRoute = createRoute({
+  method: "get",
+  path: "/quotes/{id}/media",
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: "Media for a quote",
+      ...jsonContent(z.object({ data: z.array(quoteMediaSchema) })),
+    },
+  },
+})
+
+const createQuoteMediaRoute = createRoute({
+  method: "post",
+  path: "/quotes/{id}/media",
+  request: { params: idParamSchema, ...requiredJsonBody(insertQuoteMediaSchema) },
+  responses: {
+    201: {
+      description: "The created quote media",
+      ...jsonContent(z.object({ data: quoteMediaSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteQuoteMediaRoute = createRoute({
+  method: "delete",
+  path: "/quote-media/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Quote media deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Quote media not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const mediaChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listQuoteMediaRoute, async (c) =>
+    c.json({ data: await quotesService.listQuoteMedia(c.get("db"), c.req.valid("param").id) }, 200),
+  )
+  .openapi(createQuoteMediaRoute, async (c) => {
+    const row = await quotesService.createQuoteMedia(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
+    return c.json({ data: row! }, 201)
   })
-  .delete("/quote-media/:id", async (c) => {
-    const row = await quotesService.deleteQuoteMedia(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Quote media not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteQuoteMediaRoute, async (c) => {
+    const row = await quotesService.deleteQuoteMedia(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Quote media not found" }, 404)
   })
+
+export const quoteRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .route("/", quotesChild)
+  .route("/", participantsChild)
+  .route("/", productsChild)
+  .route("/", mediaChild)

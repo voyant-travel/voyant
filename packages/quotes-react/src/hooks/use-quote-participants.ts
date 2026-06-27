@@ -23,7 +23,7 @@ export function useQuoteParticipants(
     queryKey: quotesQueryKeys.quoteParticipants(quoteId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/quotes/quotes/${quoteId}/participants`,
+        `/v1/admin/quotes/quotes/${quoteId}/participants`,
         quoteParticipantListResponse,
         { baseUrl, fetcher },
       ),

@@ -19,7 +19,7 @@ export function useQuoteMedia(quoteId: string | undefined, options: UseQuoteMedi
   return useQuery({
     queryKey: quotesQueryKeys.quoteMedia(quoteId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/quotes/quotes/${quoteId}/media`, quoteMediaListResponse, {
+      fetchWithValidation(`/v1/admin/quotes/quotes/${quoteId}/media`, quoteMediaListResponse, {
         baseUrl,
         fetcher,
       }),

@@ -23,10 +23,14 @@ export function useStages(options: UseStagesOptions = {}) {
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
-      return fetchWithValidation(`/v1/quotes/stages${qs ? `?${qs}` : ""}`, stageListResponse, {
-        baseUrl,
-        fetcher,
-      })
+      return fetchWithValidation(
+        `/v1/admin/quotes/stages${qs ? `?${qs}` : ""}`,
+        stageListResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
     },
     enabled,
   })
@@ -44,10 +48,14 @@ export function useStage(id: string | undefined, options: UseStageOptions = {}) 
     queryKey: quotesQueryKeys.stage(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("useStage requires an id")
-      const { data } = await fetchWithValidation(`/v1/quotes/stages/${id}`, stageSingleResponse, {
-        baseUrl,
-        fetcher,
-      })
+      const { data } = await fetchWithValidation(
+        `/v1/admin/quotes/stages/${id}`,
+        stageSingleResponse,
+        {
+          baseUrl,
+          fetcher,
+        },
+      )
       return data
     },
     enabled: enabled && Boolean(id),

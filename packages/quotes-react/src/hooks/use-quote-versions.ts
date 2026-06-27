@@ -25,7 +25,7 @@ export function useQuoteVersions(options: UseQuoteVersionsOptions = {}) {
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/quotes/quote-versions${qs ? `?${qs}` : ""}`,
+        `/v1/admin/quotes/quote-versions${qs ? `?${qs}` : ""}`,
         quoteVersionListResponse,
         { baseUrl, fetcher },
       )

@@ -22,7 +22,7 @@ export function useQuoteProducts(
   return useQuery({
     queryKey: quotesQueryKeys.quoteProducts(quoteId ?? ""),
     queryFn: () =>
-      fetchWithValidation(`/v1/quotes/quotes/${quoteId}/products`, quoteProductListResponse, {
+      fetchWithValidation(`/v1/admin/quotes/quotes/${quoteId}/products`, quoteProductListResponse, {
         baseUrl,
         fetcher,
       }),

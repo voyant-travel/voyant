@@ -40,7 +40,7 @@ export function usePipelineMutation() {
   const createPipeline = useMutation({
     mutationFn: async (input: CreatePipelineInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/quotes/pipelines",
+        "/v1/admin/quotes/pipelines",
         pipelineSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -55,7 +55,7 @@ export function usePipelineMutation() {
   const updatePipeline = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePipelineInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/pipelines/${id}`,
+        `/v1/admin/quotes/pipelines/${id}`,
         pipelineSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -71,7 +71,7 @@ export function usePipelineMutation() {
   const removePipeline = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/quotes/pipelines/${id}`,
+        `/v1/admin/quotes/pipelines/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -86,7 +86,7 @@ export function usePipelineMutation() {
   const createStage = useMutation({
     mutationFn: async (input: CreateStageInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/quotes/stages",
+        "/v1/admin/quotes/stages",
         stageSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -101,7 +101,7 @@ export function usePipelineMutation() {
   const updateStage = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateStageInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/stages/${id}`,
+        `/v1/admin/quotes/stages/${id}`,
         stageSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -117,7 +117,7 @@ export function usePipelineMutation() {
   const removeStage = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/quotes/stages/${id}`,
+        `/v1/admin/quotes/stages/${id}`,
         deleteResponseSchema,
         { baseUrl, fetcher },
         { method: "DELETE" },

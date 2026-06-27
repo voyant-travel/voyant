@@ -1,6 +1,7 @@
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 
 import { quotesService } from "../service/index.js"
 import {
@@ -11,6 +12,13 @@ import {
   updatePipelineSchema,
   updateStageSchema,
 } from "../validation.js"
+import {
+  errorResponseSchema,
+  idParamSchema,
+  pipelineSchema,
+  stageSchema,
+  successResponseSchema,
+} from "./openapi-schemas.js"
 
 type Env = {
   Variables: {
@@ -19,72 +27,182 @@ type Env = {
   }
 }
 
-export const pipelineRoutes = new Hono<Env>()
-  .get("/pipelines", async (c) => {
-    const query = await parseQuery(c, pipelineListQuerySchema)
-    return c.json(await quotesService.listPipelines(c.get("db"), query))
+const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
+  content: { "application/json": { schema } },
+})
+
+const requiredJsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
+  body: { required: true, content: { "application/json": { schema } } },
+})
+
+// --- pipelines --------------------------------------------------------------
+
+const listPipelinesRoute = createRoute({
+  method: "get",
+  path: "/pipelines",
+  request: { query: pipelineListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of pipelines",
+      ...jsonContent(listResponseSchema(pipelineSchema)),
+    },
+  },
+})
+
+const createPipelineRoute = createRoute({
+  method: "post",
+  path: "/pipelines",
+  request: requiredJsonBody(insertPipelineSchema),
+  responses: {
+    201: {
+      description: "The created pipeline",
+      ...jsonContent(z.object({ data: pipelineSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getPipelineRoute = createRoute({
+  method: "get",
+  path: "/pipelines/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "A pipeline by id", ...jsonContent(z.object({ data: pipelineSchema })) },
+    404: { description: "Pipeline not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updatePipelineRoute = createRoute({
+  method: "patch",
+  path: "/pipelines/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updatePipelineSchema) },
+  responses: {
+    200: {
+      description: "The updated pipeline",
+      ...jsonContent(z.object({ data: pipelineSchema })),
+    },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Pipeline not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deletePipelineRoute = createRoute({
+  method: "delete",
+  path: "/pipelines/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Pipeline deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Pipeline not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const pipelinesChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listPipelinesRoute, async (c) =>
+    c.json(await quotesService.listPipelines(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createPipelineRoute, async (c) => {
+    const row = await quotesService.createPipeline(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/pipelines", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createPipeline(
-          c.get("db"),
-          await parseJsonBody(c, insertPipelineSchema),
-        ),
-      },
-      201,
-    )
+  .openapi(getPipelineRoute, async (c) => {
+    const row = await quotesService.getPipelineById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Pipeline not found" }, 404)
   })
-  .get("/pipelines/:id", async (c) => {
-    const row = await quotesService.getPipelineById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Pipeline not found" }, 404)
-    return c.json({ data: row })
-  })
-  .patch("/pipelines/:id", async (c) => {
+  .openapi(updatePipelineRoute, async (c) => {
     const row = await quotesService.updatePipeline(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updatePipelineSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Pipeline not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Pipeline not found" }, 404)
   })
-  .delete("/pipelines/:id", async (c) => {
-    const row = await quotesService.deletePipeline(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Pipeline not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deletePipelineRoute, async (c) => {
+    const row = await quotesService.deletePipeline(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ success: true } as const, 200)
+      : c.json({ error: "Pipeline not found" }, 404)
   })
-  .get("/stages", async (c) => {
-    const query = await parseQuery(c, stageListQuerySchema)
-    return c.json(await quotesService.listStages(c.get("db"), query))
+
+// --- stages -----------------------------------------------------------------
+
+const listStagesRoute = createRoute({
+  method: "get",
+  path: "/stages",
+  request: { query: stageListQuerySchema },
+  responses: {
+    200: {
+      description: "Paginated list of stages",
+      ...jsonContent(listResponseSchema(stageSchema)),
+    },
+  },
+})
+
+const createStageRoute = createRoute({
+  method: "post",
+  path: "/stages",
+  request: requiredJsonBody(insertStageSchema),
+  responses: {
+    201: { description: "The created stage", ...jsonContent(z.object({ data: stageSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const getStageRoute = createRoute({
+  method: "get",
+  path: "/stages/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "A stage by id", ...jsonContent(z.object({ data: stageSchema })) },
+    404: { description: "Stage not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const updateStageRoute = createRoute({
+  method: "patch",
+  path: "/stages/{id}",
+  request: { params: idParamSchema, ...requiredJsonBody(updateStageSchema) },
+  responses: {
+    200: { description: "The updated stage", ...jsonContent(z.object({ data: stageSchema })) },
+    400: { description: "invalid_request", ...jsonContent(errorResponseSchema) },
+    404: { description: "Stage not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const deleteStageRoute = createRoute({
+  method: "delete",
+  path: "/stages/{id}",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Stage deleted", ...jsonContent(successResponseSchema) },
+    404: { description: "Stage not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
+const stagesChild = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(listStagesRoute, async (c) =>
+    c.json(await quotesService.listStages(c.get("db"), c.req.valid("query")), 200),
+  )
+  .openapi(createStageRoute, async (c) => {
+    const row = await quotesService.createStage(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
   })
-  .post("/stages", async (c) => {
-    return c.json(
-      {
-        data: await quotesService.createStage(
-          c.get("db"),
-          await parseJsonBody(c, insertStageSchema),
-        ),
-      },
-      201,
-    )
+  .openapi(getStageRoute, async (c) => {
+    const row = await quotesService.getStageById(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Stage not found" }, 404)
   })
-  .get("/stages/:id", async (c) => {
-    const row = await quotesService.getStageById(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Stage not found" }, 404)
-    return c.json({ data: row })
-  })
-  .patch("/stages/:id", async (c) => {
+  .openapi(updateStageRoute, async (c) => {
     const row = await quotesService.updateStage(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateStageSchema),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    if (!row) return c.json({ error: "Stage not found" }, 404)
-    return c.json({ data: row })
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Stage not found" }, 404)
   })
-  .delete("/stages/:id", async (c) => {
-    const row = await quotesService.deleteStage(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Stage not found" }, 404)
-    return c.json({ success: true })
+  .openapi(deleteStageRoute, async (c) => {
+    const row = await quotesService.deleteStage(c.get("db"), c.req.valid("param").id)
+    return row ? c.json({ success: true } as const, 200) : c.json({ error: "Stage not found" }, 404)
   })
+
+export const pipelineRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .route("/", pipelinesChild)
+  .route("/", stagesChild)

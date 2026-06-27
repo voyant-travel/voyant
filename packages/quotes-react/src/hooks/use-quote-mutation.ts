@@ -38,7 +38,7 @@ export function useQuoteMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateQuoteInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/quotes/quotes",
+        "/v1/admin/quotes/quotes",
         quoteSingleResponse,
         {
           baseUrl,
@@ -56,7 +56,7 @@ export function useQuoteMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateQuoteInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/quotes/quotes/${id}`,
+        `/v1/admin/quotes/quotes/${id}`,
         quoteSingleResponse,
         {
           baseUrl,
@@ -75,7 +75,7 @@ export function useQuoteMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       return fetchWithValidation(
-        `/v1/quotes/quotes/${id}`,
+        `/v1/admin/quotes/quotes/${id}`,
         deleteResponseSchema,
         {
           baseUrl,

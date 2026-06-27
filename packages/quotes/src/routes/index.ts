@@ -1,5 +1,7 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
+import type { EventBus } from "@voyant-travel/core"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 
 import { pipelineRoutes } from "./pipelines.js"
 import { quoteVersionRoutes } from "./quote-versions.js"
@@ -9,10 +11,11 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: EventBus
   }
 }
 
-export const quotesRoutes = new Hono<Env>()
+export const quotesRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .route("/", pipelineRoutes)
   .route("/", quoteRoutes)
   .route("/", quoteVersionRoutes)
